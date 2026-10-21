@@ -1,0 +1,125 @@
+{
+  "sourceApi": "65.0",
+  "projectApi": "66.0",
+  "transportApi": "65.0",
+  "orgIdHash": "0ed0fcb4a8bd7067ae47fca4044668ada8007d4034332bdf97c8977c213fc6d6",
+  "nativeObservationCount": 5,
+  "rows": [
+    {
+      "id": "unrelated",
+      "api": "65.0",
+      "context": "anonymous",
+      "outcome": "runtime",
+      "value": {
+        "stable": true,
+        "nonEmpty": true,
+        "nonNull": true
+      },
+      "nativeMessage": "Execution failed at this code:\n\nSystem.AssertException: Assertion Failed: REQUEST_BINDING_OBSERVATION: Expected: REQUEST_BINDING_OBSERVATION, Actual: {\"stable\":true,\"nonEmpty\":true,\"nonNull\":true}",
+      "sources": {
+        "RequestOwnerBox": "public class RequestOwnerBox { public class Request {} }\n",
+        "RequestWorkerBox": "public class RequestWorkerBox { public class Service { public String key(){return Request.getCurrent().getRequestId();} } }\n"
+      },
+      "anonymous": "String first=new RequestWorkerBox.Service().key(); String second=new RequestWorkerBox.Service().key(); Map<String,Object> observation=new Map<String,Object>{'nonNull'=>first!=null,'nonEmpty'=>first!=null && first.length()>0,'stable'=>first==second}; System.assertEquals('REQUEST_BINDING_OBSERVATION',JSON.serialize(observation),'REQUEST_BINDING_OBSERVATION');\n",
+      "rawSHA256": "0a69695a5e518485960f17fad0e93789994a83ab57f892bfc0ba0648d158329b",
+      "sourceSHA256": {
+        "RequestOwnerBox": "4e821cad4589f89694f1192ac09551148000315fa490258ad177d042b3c6c397",
+        "RequestWorkerBox": "15414705ff7f084810105a9e4ad92c2b5839e005ee965b63620db070dcdebb67"
+      },
+      "anonymousSHA256": "0e93facd01d3449a9fe0ab0baa211e081a26f49321ba9b6310c54d2b73d1a4f1"
+    },
+    {
+      "id": "unrelated",
+      "api": "65.0",
+      "context": "isTest",
+      "outcome": "runtime",
+      "value": {
+        "stable": true,
+        "nonEmpty": true,
+        "nonNull": true
+      },
+      "nativeMessage": "System.AssertException: Assertion Failed: REQUEST_BINDING_OBSERVATION: Expected: REQUEST_BINDING_OBSERVATION, Actual: {\"stable\":true,\"nonEmpty\":true,\"nonNull\":true}",
+      "sources": {
+        "RequestOwnerBox": "public class RequestOwnerBox { public class Request {} }\n",
+        "RequestWorkerBox": "public class RequestWorkerBox { public class Service { public String key(){return Request.getCurrent().getRequestId();} } }\n",
+        "RequestUnrelatedProbe": "@IsTest private class RequestUnrelatedProbe { @IsTest static void observe(){String first=new RequestWorkerBox.Service().key(); String second=new RequestWorkerBox.Service().key(); Map<String,Object> observation=new Map<String,Object>{'nonNull'=>first!=null,'nonEmpty'=>first!=null && first.length()>0,'stable'=>first==second}; System.assertEquals('REQUEST_BINDING_OBSERVATION',JSON.serialize(observation),'REQUEST_BINDING_OBSERVATION');} }\n"
+      },
+      "test": "RequestUnrelatedProbe",
+      "rawSHA256": "ea65af905d3904ed9cbc06af96573391b1181727270dd84da6414b9cbcd7477d",
+      "deploymentId": "0Afdq00000EWrYzCAL",
+      "sourceSHA256": {
+        "RequestOwnerBox": "4e821cad4589f89694f1192ac09551148000315fa490258ad177d042b3c6c397",
+        "RequestWorkerBox": "15414705ff7f084810105a9e4ad92c2b5839e005ee965b63620db070dcdebb67",
+        "RequestUnrelatedProbe": "00146edd32577d2b90eb313a498c3cee060e7c625f61fce3176df059359e6dd1"
+      }
+    },
+    {
+      "id": "qualified",
+      "api": "65.0",
+      "context": "anonymous",
+      "outcome": "runtime",
+      "value": {
+        "stable": true,
+        "nonEmpty": true,
+        "nonNull": true
+      },
+      "nativeMessage": "Execution failed at this code:\n\nSystem.AssertException: Assertion Failed: REQUEST_BINDING_OBSERVATION: Expected: REQUEST_BINDING_OBSERVATION, Actual: {\"stable\":true,\"nonEmpty\":true,\"nonNull\":true}",
+      "sources": {
+        "RequestOwnerBox": "public class RequestOwnerBox { public class Request {} }\n",
+        "RequestQualifiedBox": "public class RequestQualifiedBox { public class Request {} public class Service { public String key(){return System.Request.getCurrent().getRequestId();} } }\n"
+      },
+      "anonymous": "String first=new RequestQualifiedBox.Service().key(); String second=new RequestQualifiedBox.Service().key(); Map<String,Object> observation=new Map<String,Object>{'nonNull'=>first!=null,'nonEmpty'=>first!=null && first.length()>0,'stable'=>first==second}; System.assertEquals('REQUEST_BINDING_OBSERVATION',JSON.serialize(observation),'REQUEST_BINDING_OBSERVATION');\n",
+      "rawSHA256": "079dfee436e8b59f1012491eee8cc737cf9ba3bcd4d10a01795b9e790fc90584",
+      "sourceSHA256": {
+        "RequestOwnerBox": "4e821cad4589f89694f1192ac09551148000315fa490258ad177d042b3c6c397",
+        "RequestQualifiedBox": "e8c3610e70e05e792acd94b048a68d6a0a2eb0da4fc5b18424e2ce2eb44be593"
+      },
+      "anonymousSHA256": "bfb6ee981cab259b23310d4def140e0321255a9335563ecb5f6d086eb0673bfe"
+    },
+    {
+      "id": "qualified",
+      "api": "65.0",
+      "context": "isTest",
+      "outcome": "runtime",
+      "value": {
+        "stable": true,
+        "nonEmpty": true,
+        "nonNull": true
+      },
+      "nativeMessage": "System.AssertException: Assertion Failed: REQUEST_BINDING_OBSERVATION: Expected: REQUEST_BINDING_OBSERVATION, Actual: {\"stable\":true,\"nonEmpty\":true,\"nonNull\":true}",
+      "sources": {
+        "RequestOwnerBox": "public class RequestOwnerBox { public class Request {} }\n",
+        "RequestQualifiedBox": "public class RequestQualifiedBox { public class Request {} public class Service { public String key(){return System.Request.getCurrent().getRequestId();} } }\n",
+        "RequestQualifiedProbe": "@IsTest private class RequestQualifiedProbe { @IsTest static void observe(){String first=new RequestQualifiedBox.Service().key(); String second=new RequestQualifiedBox.Service().key(); Map<String,Object> observation=new Map<String,Object>{'nonNull'=>first!=null,'nonEmpty'=>first!=null && first.length()>0,'stable'=>first==second}; System.assertEquals('REQUEST_BINDING_OBSERVATION',JSON.serialize(observation),'REQUEST_BINDING_OBSERVATION');} }\n"
+      },
+      "test": "RequestQualifiedProbe",
+      "rawSHA256": "c5a73a5c0917e379016551f735bf3ca61be4c29bedaba005defe650c4b6e81c6",
+      "deploymentId": "0Afdq00000EWoOFCA1",
+      "sourceSHA256": {
+        "RequestOwnerBox": "4e821cad4589f89694f1192ac09551148000315fa490258ad177d042b3c6c397",
+        "RequestQualifiedBox": "e8c3610e70e05e792acd94b048a68d6a0a2eb0da4fc5b18424e2ce2eb44be593",
+        "RequestQualifiedProbe": "3c241e0987f487f0375ab366f9c79bfe3bf6574b28985a2bbed02cc173f840c1"
+      }
+    },
+    {
+      "id": "ownShadow",
+      "api": "65.0",
+      "context": "isTest",
+      "outcome": "compile-rejected",
+      "value": {
+        "compiled": false,
+        "problems": [
+          "Method does not exist or incorrect signature: void getCurrent() from the type RequestLexicalBlocked.Request"
+        ]
+      },
+      "sources": {
+        "RequestLexicalBlocked": "public class RequestLexicalBlocked { public class Request {} public class Service { public String key(){return Request.getCurrent().getRequestId();} } }\n"
+      },
+      "rawSHA256": "1852249ac846ed1d44ce1c8022a84b7c9f2215bee709772e20952da8bfe822b2",
+      "deploymentId": "0Afdq00000EWrnVCAT",
+      "sourceSHA256": {
+        "RequestLexicalBlocked": "1c1a69f953865c8ec16d03be213e80ea85df659834dee7106257fdf0f61ff6b8"
+      }
+    }
+  ]
+}

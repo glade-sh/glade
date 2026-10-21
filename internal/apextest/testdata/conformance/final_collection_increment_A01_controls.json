@@ -1,0 +1,1171 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "A01-controls",
+  "shapeCount": 12,
+  "nativeObservationCount": 54,
+  "carriedObservationCount": 18,
+  "rows": [
+    {
+      "id": "C166PF_089",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;List<Object> samples=new List<Object>();{Integer n=1;n++;samples.add(new List<Object>{'post++',n});}{Integer n=1;++n;samples.add(new List<Object>{'pre++',n});}{Integer n=1;n--;samples.add(new List<Object>{'post--',n});}{Integer n=1;--n;samples.add(new List<Object>{'pre--',n});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_089|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "c66c3abc11646ec781f0298837307c81c40ee017dbc647081c124b9620eb0b56"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe089": "@IsTest private class C166Observe089{@IsTest static void observe(){String r;List<Object> samples=new List<Object>();{Integer n=1;n++;samples.add(new List<Object>{'post++',n});}{Integer n=1;++n;samples.add(new List<Object>{'pre++',n});}{Integer n=1;n--;samples.add(new List<Object>{'post--',n});}{Integer n=1;--n;samples.add(new List<Object>{'pre--',n});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_089|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe089"
+          ],
+          "sourceSha256": {
+            "class:C166Observe089": "744da23304d5149251ecca83171afa473dc575080aadbd5e49b16ec73e248511"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_090",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;List<Object> samples=new List<Object>();{Integer n=1;Integer o=n++;samples.add(new List<Object>{'post++',o,n});}{Integer n=1;Integer o=++n;samples.add(new List<Object>{'pre++',o,n});}{Integer n=1;Integer o=n--;samples.add(new List<Object>{'post--',o,n});}{Integer n=1;Integer o=--n;samples.add(new List<Object>{'pre--',o,n});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_090|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "555f53bd78ccaab5f492e4b167d04150da6ff25a6a0d0d471021db03125a7f01"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe090": "@IsTest private class C166Observe090{@IsTest static void observe(){String r;List<Object> samples=new List<Object>();{Integer n=1;Integer o=n++;samples.add(new List<Object>{'post++',o,n});}{Integer n=1;Integer o=++n;samples.add(new List<Object>{'pre++',o,n});}{Integer n=1;Integer o=n--;samples.add(new List<Object>{'post--',o,n});}{Integer n=1;Integer o=--n;samples.add(new List<Object>{'pre--',o,n});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_090|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe090"
+          ],
+          "sourceSha256": {
+            "class:C166Observe090": "b5d21dc03b52378f7118cf1c079c177daaf4a661b440000e143032bbdf70cf17"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_091",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;List<Object> samples=new List<Object>();{Integer visits=0;Integer last;for(Integer i=0;i<2;i++){visits++;last=i;}samples.add(new List<Object>{'post++',visits,last});}{Integer visits=0;Integer last;for(Integer i=0;i<2;++i){visits++;last=i;}samples.add(new List<Object>{'pre++',visits,last});}{Integer visits=0;Integer last;for(Integer i=2;i>0;i--){visits++;last=i;}samples.add(new List<Object>{'post--',visits,last});}{Integer visits=0;Integer last;for(Integer i=2;i>0;--i){visits++;last=i;}samples.add(new List<Object>{'pre--',visits,last});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_091|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "1de4fc3753dfb0da7a72c0504e18fd9c2ef59bdf3639e11be2833cce41e584ed"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe091": "@IsTest private class C166Observe091{@IsTest static void observe(){String r;List<Object> samples=new List<Object>();{Integer visits=0;Integer last;for(Integer i=0;i<2;i++){visits++;last=i;}samples.add(new List<Object>{'post++',visits,last});}{Integer visits=0;Integer last;for(Integer i=0;i<2;++i){visits++;last=i;}samples.add(new List<Object>{'pre++',visits,last});}{Integer visits=0;Integer last;for(Integer i=2;i>0;i--){visits++;last=i;}samples.add(new List<Object>{'post--',visits,last});}{Integer visits=0;Integer last;for(Integer i=2;i>0;--i){visits++;last=i;}samples.add(new List<Object>{'pre--',visits,last});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_091|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe091"
+          ],
+          "sourceSha256": {
+            "class:C166Observe091": "0c7ff345e786c6d61064d4e7713b20b3440a4dd51d0144836d5ae5755921c108"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_092",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;List<Object> samples=new List<Object>();{Long n=1;n++;samples.add(new List<Object>{'post++',n});}{Long n=1;++n;samples.add(new List<Object>{'pre++',n});}{Long n=1;n--;samples.add(new List<Object>{'post--',n});}{Long n=1;--n;samples.add(new List<Object>{'pre--',n});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_092|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "3da7b92778fe1e7820cb716a23b9ca27cecb3225a5b70ba1427ae9de1c2977a6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe092": "@IsTest private class C166Observe092{@IsTest static void observe(){String r;List<Object> samples=new List<Object>();{Long n=1;n++;samples.add(new List<Object>{'post++',n});}{Long n=1;++n;samples.add(new List<Object>{'pre++',n});}{Long n=1;n--;samples.add(new List<Object>{'post--',n});}{Long n=1;--n;samples.add(new List<Object>{'pre--',n});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_092|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe092"
+          ],
+          "sourceSha256": {
+            "class:C166Observe092": "b61f88377d34a59c4d5717f7e9adf266e9648f24865643e98701456c6deedba8"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_093",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;List<Object> samples=new List<Object>();{Long n=1;Long o=n++;samples.add(new List<Object>{'post++',o,n});}{Long n=1;Long o=++n;samples.add(new List<Object>{'pre++',o,n});}{Long n=1;Long o=n--;samples.add(new List<Object>{'post--',o,n});}{Long n=1;Long o=--n;samples.add(new List<Object>{'pre--',o,n});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_093|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "0c7660d472485d2863e5e6ae3884ce026a4333a2e90bbc52ab27c7091b05fbb0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe093": "@IsTest private class C166Observe093{@IsTest static void observe(){String r;List<Object> samples=new List<Object>();{Long n=1;Long o=n++;samples.add(new List<Object>{'post++',o,n});}{Long n=1;Long o=++n;samples.add(new List<Object>{'pre++',o,n});}{Long n=1;Long o=n--;samples.add(new List<Object>{'post--',o,n});}{Long n=1;Long o=--n;samples.add(new List<Object>{'pre--',o,n});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_093|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe093"
+          ],
+          "sourceSha256": {
+            "class:C166Observe093": "5e87fa40ea29ea2f98f88510702339e4e1dfa8e7dd78d14b6e6443ff8910d1ec"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_094",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;List<Object> samples=new List<Object>();{Integer visits=0;Long last;for(Long i=0;i<2;i++){visits++;last=i;}samples.add(new List<Object>{'post++',visits,last});}{Integer visits=0;Long last;for(Long i=0;i<2;++i){visits++;last=i;}samples.add(new List<Object>{'pre++',visits,last});}{Integer visits=0;Long last;for(Long i=2;i>0;i--){visits++;last=i;}samples.add(new List<Object>{'post--',visits,last});}{Integer visits=0;Long last;for(Long i=2;i>0;--i){visits++;last=i;}samples.add(new List<Object>{'pre--',visits,last});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_094|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "24d524e01ced8426466d6392a5a1b2251e36b735fc0f24388375d3739bf09de9"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe094": "@IsTest private class C166Observe094{@IsTest static void observe(){String r;List<Object> samples=new List<Object>();{Integer visits=0;Long last;for(Long i=0;i<2;i++){visits++;last=i;}samples.add(new List<Object>{'post++',visits,last});}{Integer visits=0;Long last;for(Long i=0;i<2;++i){visits++;last=i;}samples.add(new List<Object>{'pre++',visits,last});}{Integer visits=0;Long last;for(Long i=2;i>0;i--){visits++;last=i;}samples.add(new List<Object>{'post--',visits,last});}{Integer visits=0;Long last;for(Long i=2;i>0;--i){visits++;last=i;}samples.add(new List<Object>{'pre--',visits,last});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_094|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe094"
+          ],
+          "sourceSha256": {
+            "class:C166Observe094": "9d363a9dab7d63aeca50875405c7b7d74272acf7660b818badc201b6f481ff35"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_095",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;List<Object> samples=new List<Object>();{Double n=1;n++;samples.add(new List<Object>{'post++',n});}{Double n=1;++n;samples.add(new List<Object>{'pre++',n});}{Double n=1;n--;samples.add(new List<Object>{'post--',n});}{Double n=1;--n;samples.add(new List<Object>{'pre--',n});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_095|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "b559068f457119d2478ffe9cfbaec9bfb08d59082788b4696f8831628d6b5ebc"
+          },
+          "expectedByAPI": {},
+          "carriedByAPI": {
+            "62.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2.0],[\"pre++\",2.0],[\"post--\",0.0],[\"pre--\",0.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",2.0],[\\\"pre++\\\",2.0],[\\\"post--\\\",0.0],[\\\"pre--\\\",0.0]]\"}"
+              }
+            },
+            "67.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2.0],[\"pre++\",2.0],[\"post--\",0.0],[\"pre--\",0.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",2.0],[\\\"pre++\\\",2.0],[\\\"post--\\\",0.0],[\\\"pre--\\\",0.0]]\"}"
+              }
+            },
+            "68.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2.0],[\"pre++\",2.0],[\"post--\",0.0],[\"pre--\",0.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",2.0],[\\\"pre++\\\",2.0],[\\\"post--\\\",0.0],[\\\"pre--\\\",0.0]]\"}"
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe095": "@IsTest private class C166Observe095{@IsTest static void observe(){String r;List<Object> samples=new List<Object>();{Double n=1;n++;samples.add(new List<Object>{'post++',n});}{Double n=1;++n;samples.add(new List<Object>{'pre++',n});}{Double n=1;n--;samples.add(new List<Object>{'post--',n});}{Double n=1;--n;samples.add(new List<Object>{'pre--',n});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_095|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe095"
+          ],
+          "sourceSha256": {
+            "class:C166Observe095": "34851b1b4b8297b028e3cdc41c0ab4c5ddac76883fe17f5f35126e2d78a42946"
+          },
+          "expectedByAPI": {},
+          "carriedByAPI": {
+            "62.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2.0],[\"pre++\",2.0],[\"post--\",0.0],[\"pre--\",0.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",2.0],[\\\"pre++\\\",2.0],[\\\"post--\\\",0.0],[\\\"pre--\\\",0.0]]\"}"
+              }
+            },
+            "67.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2.0],[\"pre++\",2.0],[\"post--\",0.0],[\"pre--\",0.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",2.0],[\\\"pre++\\\",2.0],[\\\"post--\\\",0.0],[\\\"pre--\\\",0.0]]\"}"
+              }
+            },
+            "68.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2.0],[\"pre++\",2.0],[\"post--\",0.0],[\"pre--\",0.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",2.0],[\\\"pre++\\\",2.0],[\\\"post--\\\",0.0],[\\\"pre--\\\",0.0]]\"}"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C166PF_096",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;List<Object> samples=new List<Object>();{Double n=1;Double o=n++;samples.add(new List<Object>{'post++',o,n});}{Double n=1;Double o=++n;samples.add(new List<Object>{'pre++',o,n});}{Double n=1;Double o=n--;samples.add(new List<Object>{'post--',o,n});}{Double n=1;Double o=--n;samples.add(new List<Object>{'pre--',o,n});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_096|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "a50818b7878472ceee6a42fbbc17788a105d41d5d68d909ac04e289fc621cee0"
+          },
+          "expectedByAPI": {},
+          "carriedByAPI": {
+            "62.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1.0,2.0],[\"pre++\",2.0,2.0],[\"post--\",1.0,0.0],[\"pre--\",0.0,0.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",1.0,2.0],[\\\"pre++\\\",2.0,2.0],[\\\"post--\\\",1.0,0.0],[\\\"pre--\\\",0.0,0.0]]\"}"
+              }
+            },
+            "67.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1.0,2.0],[\"pre++\",2.0,2.0],[\"post--\",1.0,0.0],[\"pre--\",0.0,0.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",1.0,2.0],[\\\"pre++\\\",2.0,2.0],[\\\"post--\\\",1.0,0.0],[\\\"pre--\\\",0.0,0.0]]\"}"
+              }
+            },
+            "68.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1.0,2.0],[\"pre++\",2.0,2.0],[\"post--\",1.0,0.0],[\"pre--\",0.0,0.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",1.0,2.0],[\\\"pre++\\\",2.0,2.0],[\\\"post--\\\",1.0,0.0],[\\\"pre--\\\",0.0,0.0]]\"}"
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe096": "@IsTest private class C166Observe096{@IsTest static void observe(){String r;List<Object> samples=new List<Object>();{Double n=1;Double o=n++;samples.add(new List<Object>{'post++',o,n});}{Double n=1;Double o=++n;samples.add(new List<Object>{'pre++',o,n});}{Double n=1;Double o=n--;samples.add(new List<Object>{'post--',o,n});}{Double n=1;Double o=--n;samples.add(new List<Object>{'pre--',o,n});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_096|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe096"
+          ],
+          "sourceSha256": {
+            "class:C166Observe096": "31e94d26fdac744e8f3048061ea705dd3afad34a561c6d48c91471a064c1b5b7"
+          },
+          "expectedByAPI": {},
+          "carriedByAPI": {
+            "62.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1.0,2.0],[\"pre++\",2.0,2.0],[\"post--\",1.0,0.0],[\"pre--\",0.0,0.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",1.0,2.0],[\\\"pre++\\\",2.0,2.0],[\\\"post--\\\",1.0,0.0],[\\\"pre--\\\",0.0,0.0]]\"}"
+              }
+            },
+            "67.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1.0,2.0],[\"pre++\",2.0,2.0],[\"post--\",1.0,0.0],[\"pre--\",0.0,0.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",1.0,2.0],[\\\"pre++\\\",2.0,2.0],[\\\"post--\\\",1.0,0.0],[\\\"pre--\\\",0.0,0.0]]\"}"
+              }
+            },
+            "68.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1.0,2.0],[\"pre++\",2.0,2.0],[\"post--\",1.0,0.0],[\"pre--\",0.0,0.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",1.0,2.0],[\\\"pre++\\\",2.0,2.0],[\\\"post--\\\",1.0,0.0],[\\\"pre--\\\",0.0,0.0]]\"}"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C166PF_097",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;List<Object> samples=new List<Object>();{Integer visits=0;Double last;for(Double i=0;i<2;i++){visits++;last=i;}samples.add(new List<Object>{'post++',visits,last});}{Integer visits=0;Double last;for(Double i=0;i<2;++i){visits++;last=i;}samples.add(new List<Object>{'pre++',visits,last});}{Integer visits=0;Double last;for(Double i=2;i>0;i--){visits++;last=i;}samples.add(new List<Object>{'post--',visits,last});}{Integer visits=0;Double last;for(Double i=2;i>0;--i){visits++;last=i;}samples.add(new List<Object>{'pre--',visits,last});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_097|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "051960875e5e9b9d54c736f10477ffb4703d5032d9b435dce63a5442457e99ca"
+          },
+          "expectedByAPI": {},
+          "carriedByAPI": {
+            "62.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1.0],[\"pre++\",2,1.0],[\"post--\",2,1.0],[\"pre--\",2,1.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",2,1.0],[\\\"pre++\\\",2,1.0],[\\\"post--\\\",2,1.0],[\\\"pre--\\\",2,1.0]]\"}"
+              }
+            },
+            "67.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1.0],[\"pre++\",2,1.0],[\"post--\",2,1.0],[\"pre--\",2,1.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",2,1.0],[\\\"pre++\\\",2,1.0],[\\\"post--\\\",2,1.0],[\\\"pre--\\\",2,1.0]]\"}"
+              }
+            },
+            "68.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1.0],[\"pre++\",2,1.0],[\"post--\",2,1.0],[\"pre--\",2,1.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",2,1.0],[\\\"pre++\\\",2,1.0],[\\\"post--\\\",2,1.0],[\\\"pre--\\\",2,1.0]]\"}"
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe097": "@IsTest private class C166Observe097{@IsTest static void observe(){String r;List<Object> samples=new List<Object>();{Integer visits=0;Double last;for(Double i=0;i<2;i++){visits++;last=i;}samples.add(new List<Object>{'post++',visits,last});}{Integer visits=0;Double last;for(Double i=0;i<2;++i){visits++;last=i;}samples.add(new List<Object>{'pre++',visits,last});}{Integer visits=0;Double last;for(Double i=2;i>0;i--){visits++;last=i;}samples.add(new List<Object>{'post--',visits,last});}{Integer visits=0;Double last;for(Double i=2;i>0;--i){visits++;last=i;}samples.add(new List<Object>{'pre--',visits,last});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_097|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe097"
+          ],
+          "sourceSha256": {
+            "class:C166Observe097": "6d490a2cd405108feb0cbc7df061f13a0d35d844dceab76d78c201a438bb3d44"
+          },
+          "expectedByAPI": {},
+          "carriedByAPI": {
+            "62.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1.0],[\"pre++\",2,1.0],[\"post--\",2,1.0],[\"pre--\",2,1.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",2,1.0],[\\\"pre++\\\",2,1.0],[\\\"post--\\\",2,1.0],[\\\"pre--\\\",2,1.0]]\"}"
+              }
+            },
+            "67.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1.0],[\"pre++\",2,1.0],[\"post--\",2,1.0],[\"pre--\",2,1.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",2,1.0],[\\\"pre++\\\",2,1.0],[\\\"post--\\\",2,1.0],[\\\"pre--\\\",2,1.0]]\"}"
+              }
+            },
+            "68.0": {
+              "status": "pre-existing-mismatch",
+              "owner": "classify the one shot baselines and the six vetted candidate repos",
+              "reason": "pre-existing JSON.serialize(Double) whole-number text, identical on base",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1.0],[\"pre++\",2,1.0],[\"post--\",2,1.0],[\"pre--\",2,1.0]]"
+                }
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": "{\"value\":\"[[\\\"post++\\\",2,1.0],[\\\"pre++\\\",2,1.0],[\\\"post--\\\",2,1.0],[\\\"pre--\\\",2,1.0]]\"}"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C166PF_098",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;List<Object> samples=new List<Object>();{Decimal n=1;n++;samples.add(new List<Object>{'post++',n});}{Decimal n=1;++n;samples.add(new List<Object>{'pre++',n});}{Decimal n=1;n--;samples.add(new List<Object>{'post--',n});}{Decimal n=1;--n;samples.add(new List<Object>{'pre--',n});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_098|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "2d518607701f3b2a80e8a1fbfb74758bdc16d0787fc3363e487f7c29c626db86"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe098": "@IsTest private class C166Observe098{@IsTest static void observe(){String r;List<Object> samples=new List<Object>();{Decimal n=1;n++;samples.add(new List<Object>{'post++',n});}{Decimal n=1;++n;samples.add(new List<Object>{'pre++',n});}{Decimal n=1;n--;samples.add(new List<Object>{'post--',n});}{Decimal n=1;--n;samples.add(new List<Object>{'pre--',n});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_098|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe098"
+          ],
+          "sourceSha256": {
+            "class:C166Observe098": "b427691c09bf74774f65fe1d6279c88a3377dc0c7b583879c84aa469f59106ee"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2],[\"pre++\",2],[\"post--\",0],[\"pre--\",0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2],[\\\"pre++\\\",2],[\\\"post--\\\",0],[\\\"pre--\\\",0]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_099",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;List<Object> samples=new List<Object>();{Decimal n=1;Decimal o=n++;samples.add(new List<Object>{'post++',o,n});}{Decimal n=1;Decimal o=++n;samples.add(new List<Object>{'pre++',o,n});}{Decimal n=1;Decimal o=n--;samples.add(new List<Object>{'post--',o,n});}{Decimal n=1;Decimal o=--n;samples.add(new List<Object>{'pre--',o,n});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_099|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "f560eff4025bca4c101dbbf94718a42ab419c3e190053de52a0627aa1a211d32"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe099": "@IsTest private class C166Observe099{@IsTest static void observe(){String r;List<Object> samples=new List<Object>();{Decimal n=1;Decimal o=n++;samples.add(new List<Object>{'post++',o,n});}{Decimal n=1;Decimal o=++n;samples.add(new List<Object>{'pre++',o,n});}{Decimal n=1;Decimal o=n--;samples.add(new List<Object>{'post--',o,n});}{Decimal n=1;Decimal o=--n;samples.add(new List<Object>{'pre--',o,n});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_099|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe099"
+          ],
+          "sourceSha256": {
+            "class:C166Observe099": "8cf220521a939f8d0412200b38336bb9cf6d3f797e32a01a508295b39bc0e710"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",1,2],[\"pre++\",2,2],[\"post--\",1,0],[\"pre--\",0,0]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",1,2],[\\\"pre++\\\",2,2],[\\\"post--\\\",1,0],[\\\"pre--\\\",0,0]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_100",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;List<Object> samples=new List<Object>();{Integer visits=0;Decimal last;for(Decimal i=0;i<2;i++){visits++;last=i;}samples.add(new List<Object>{'post++',visits,last});}{Integer visits=0;Decimal last;for(Decimal i=0;i<2;++i){visits++;last=i;}samples.add(new List<Object>{'pre++',visits,last});}{Integer visits=0;Decimal last;for(Decimal i=2;i>0;i--){visits++;last=i;}samples.add(new List<Object>{'post--',visits,last});}{Integer visits=0;Decimal last;for(Decimal i=2;i>0;--i){visits++;last=i;}samples.add(new List<Object>{'pre--',visits,last});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_100|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "5c9de93bb9f50d0dcb48322be086adb433515e99c77db03309890c9735941f8f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe100": "@IsTest private class C166Observe100{@IsTest static void observe(){String r;List<Object> samples=new List<Object>();{Integer visits=0;Decimal last;for(Decimal i=0;i<2;i++){visits++;last=i;}samples.add(new List<Object>{'post++',visits,last});}{Integer visits=0;Decimal last;for(Decimal i=0;i<2;++i){visits++;last=i;}samples.add(new List<Object>{'pre++',visits,last});}{Integer visits=0;Decimal last;for(Decimal i=2;i>0;i--){visits++;last=i;}samples.add(new List<Object>{'post--',visits,last});}{Integer visits=0;Decimal last;for(Decimal i=2;i>0;--i){visits++;last=i;}samples.add(new List<Object>{'pre--',visits,last});}r=JSON.serialize(samples);System.assert(false,'C126_RESULT|C166PF_100|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe100"
+          ],
+          "sourceSha256": {
+            "class:C166Observe100": "35f9dee6e9bda0be28daf567306019fc4dd7c6ae2f240ff1877028b7bc65f8e1"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "[[\"post++\",2,1],[\"pre++\",2,1],[\"post--\",2,1],[\"pre--\",2,1]]"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"[[\\\"post++\\\",2,1],[\\\"pre++\\\",2,1],[\\\"post--\\\",2,1],[\\\"pre--\\\",2,1]]\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    }
+  ]
+}

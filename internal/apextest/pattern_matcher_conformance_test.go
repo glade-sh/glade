@@ -17,7 +17,28 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Owned Salesforce observations at both API endpoints. CI needs no org or tools.
+// API 68.0 anonymous capture at native-capture
+// has SHA-256 0a68fed3506d6b7afbba29fe43f892884f52df17d98833ca3c81f597e2860879.
+// Its 298 observed primary answers match the stored oracle exactly, and C007
+// stays carried with the same native text. That capture returned no row for
+// R224 or R232. Controls were captured only at 62.0 and 67.0.
+//
+// The API 68.0 native UNCAUGHT recapture at
+// native-capture has SHA-256
+// 1bc8b8f835729d211a6bd0e94062fa6be2508466e59437f8025e8bbbe1deb599. For R224
+// and R232 it observed an uncaught System.UnexpectedException whose message is
+// "Salesforce System Error" followed by request-specific error identifiers.
+// Glade emits the stored text without identifiers, so the rows are not asserted
+// at 68.0; the identifiers stay in private raw evidence.
+//
+// Both API 68.0 sources are anonymous-only: the local @IsTest route at 68.0
+// counts as legacy, not as native named evidence.
+var patternMatcherAPI68Unobserved = map[string]string{
+	"R224": "API 68.0 recapture (A13-R224@68.0) is UNCAUGHT System.UnexpectedException: Salesforce System Error with volatile request identifiers; Glade emits no identifiers; no exact assertion",
+	"R232": "API 68.0 recapture (A13-R232@68.0) is UNCAUGHT System.UnexpectedException: Salesforce System Error with volatile request identifiers; Glade emits no identifiers; no exact assertion",
+}
+
+// Owned Salesforce observations at each captured API. CI needs no org or tools.
 // R078-R086 retain actual message newlines; org.tsv escapes them for row framing.
 func TestPatternMatcherOrgConformance(t *testing.T) {
 	type familyCase struct {
@@ -40,7 +61,7 @@ func TestPatternMatcherOrgConformance(t *testing.T) {
 	if len(data.Cases) != 299 || len(data.Controls) != 25 || len(data.Remaining) != 1 {
 		t.Fatalf("oracle rows: %d + %d; remaining %d", len(data.Cases), len(data.Controls), len(data.Remaining))
 	}
-	if strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle versions: %v", data.APIVersions)
 	}
 	rows := append(append([]familyCase{}, data.Cases...), data.Controls...)
@@ -57,6 +78,15 @@ func TestPatternMatcherOrgConformance(t *testing.T) {
 		}
 		seen[tc.ID] = true
 		t.Logf("Remaining Salesforce mismatch %s (%s): %s", tc.ID, tc.Owner, tc.Reason)
+	}
+	for id := range patternMatcherAPI68Unobserved {
+		found := false
+		for _, tc := range data.Cases {
+			found = found || tc.ID == id
+		}
+		if !found {
+			t.Fatalf("API 68.0 unobserved row is not a primary case: %s", id)
+		}
 	}
 	// Inline capture helpers need public visibility when written as .cls files.
 	helper := `public class P {
@@ -93,6 +123,19 @@ func TestPatternMatcherOrgConformance(t *testing.T) {
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "Pattern and Matcher", api)
+			rows := rows
+			if api == "68.0" {
+				rows = nil
+				for _, tc := range data.Cases {
+					if reason, unobserved := patternMatcherAPI68Unobserved[tc.ID]; unobserved {
+						t.Logf("%s excluded at API %s: %s", tc.ID, api, reason)
+						continue
+					}
+					rows = append(rows, tc)
+				}
+				t.Logf("A13 API %s: %d controls have no native capture at API %s", api, len(data.Controls), api)
+				t.Logf("A13 API %s: %d anonymous-captured rows; @IsTest checks retain anonymous-backed local assertions without native named-route capture", api, len(rows))
+			}
 			root := t.TempDir()
 			names := make([]string, 0, len(data.Declarations)+1)
 			declarations := make(map[string]string, len(data.Declarations)+1)
@@ -198,7 +241,11 @@ func TestPatternMatcherOrgConformance(t *testing.T) {
 							t.Fatal(err)
 						}
 					})
-					counts.run(t, "isTest", "@IsTest", kind, func(t *testing.T) {
+					namedKind := kind
+					if api == "68.0" {
+						namedKind = "legacy"
+					}
+					counts.run(t, "isTest", "@IsTest", namedKind, func(t *testing.T) {
 						if !rejected {
 							result := namedResults[tc.ID]
 							if strings.HasPrefix(tc.Expected, "UNCAUGHT|") {

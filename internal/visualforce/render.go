@@ -220,7 +220,7 @@ func renderApexPage(node *MarkupNode, ctx *RenderContext) (string, error) {
 	if node.Attribute("standardStylesheets") == "" || strings.EqualFold(strings.TrimSpace(standardStyles), "true") {
 		head += `<link rel="stylesheet" href="/styles/glade-visualforce.css" />`
 	}
-	head += strings.Join(ctx.presentationHead, "") + VisualforceAjaxScript() + renderPageRemotingScript(node, ctx)
+	head += strings.Join(ctx.presentationHead, "") + VisualforceAjaxScript() + VisualforceFieldWidgetsScript() + renderPageRemotingScript(node, ctx)
 	return "<!DOCTYPE html><html><head>" + head + "</head><body>" + body + "</body></html>", nil
 }
 
@@ -230,8 +230,11 @@ func renderApexOutput(node *MarkupNode, ctx *RenderContext, outputField bool) (s
 		raw = ""
 	}
 	if outputField {
-		if value, ok := renderFieldOutput(ctx, raw); ok {
-			return "<span" + componentIDAttr(node, ctx) + ">" + value + "</span>", nil
+		if binding, ok := resolveFieldBinding(ctx, raw); ok {
+			if binding.ControllerRecord && !binding.Authorized {
+				return "", nil
+			}
+			return "<span" + componentIDAttr(node, ctx) + ">" + renderFieldOutput(ctx, binding) + "</span>", nil
 		}
 	}
 	literalValue := hasValue && !strings.Contains(raw, "{!")
@@ -367,12 +370,12 @@ func renderApexContainerChildren(node *MarkupNode, ctx *RenderContext) (string, 
 	// multiple child variants keep the existing component-render path.
 	parentSupportCount := 0
 	for _, child := range node.Children {
-		if isApexActionSupportNode(child) && strings.TrimSpace(child.Attribute("rerender")) != "" {
+		if isApexActionSupportNode(child) {
 			parentSupportCount++
 		}
 	}
 	for _, child := range node.Children {
-		if parentSupportCount == 1 && isApexActionSupportNode(child) && len(child.Children) == 0 && strings.TrimSpace(child.Attribute("rerender")) != "" {
+		if parentSupportCount == 1 && isApexActionSupportNode(child) && len(child.Children) == 0 {
 			ctx.countComponent("apex:actionSupport")
 			shouldRender, err := visualforceComponentShouldRender(child, ctx)
 			if err != nil {
@@ -385,11 +388,10 @@ func renderApexContainerChildren(node *MarkupNode, ctx *RenderContext) (string, 
 			if event == "" {
 				event = "change"
 			}
-			hook := VisualforceAjaxLinkHookWithStatus(
-				strings.TrimSpace(child.Attribute("action")),
-				strings.TrimSpace(child.Attribute("rerender")),
-				strings.TrimSpace(child.Attribute("status")),
-			)
+			hook, err := visualforceAjaxEventHook(child, ctx, "onsubmit")
+			if err != nil {
+				return "", "", err
+			}
 			eventAttrs.WriteByte(' ')
 			eventAttrs.WriteString(html.EscapeString(visualforceEventAttributeName(event)))
 			eventAttrs.WriteString(`="`)
@@ -425,14 +427,21 @@ func renderInputFieldLabel(raw string, ctx *ExpressionContext) (string, error) {
 			return "", err
 		}
 		if value.Kind == vm.ValueNull {
-			return "", fmt.Errorf("inputField label cannot be null")
+			return "", nil
 		}
 		if value.Kind == vm.ValueString {
 			return value.Text, nil
 		}
 		return value.String(), nil
 	}
-	return RenderExpressionTemplate(raw, ctx)
+	label, err := RenderExpressionTemplate(raw, ctx)
+	if err == nil && !strings.Contains(raw, "{!") {
+		// label_section_literal_runtime retains the numeric XML ampersand
+		// reference in a literal String attribute; formula captions retain
+		// their evaluated Apex text.
+		label = strings.ReplaceAll(label, "&", "&#38;")
+	}
+	return label, err
 }
 
 func isApexActionSupportNode(node *MarkupNode) bool {
@@ -526,7 +535,14 @@ func renderApexForm(node *MarkupNode, ctx *RenderContext) (string, error) {
 	if ctx.formLifecycle != nil {
 		formMarker = `<input type="hidden" name="__vf_form" value="` + html.EscapeString(visualforceComponentClientID(node, ctx)) + `" />`
 	}
-	return "<form" + attrs.String() + ">" + formMarker + `<input type="hidden" name="` + ViewStateActionFieldName() + `" value="" />` + children + "</form>", nil
+	if visualforceFormContainsField(node) {
+		// field and input rendering label_form_* captures retain the three leading line breaks and
+		// the form-state footer after all field components, including hidden ones.
+		return "<form" + attrs.String() + ">\n\n\n" + formMarker + `<input type="hidden" name="` + ViewStateActionFieldName() + `" value="" />` + children + "\n<div><span></span><span></span></div></form>", nil
+	}
+	// Native form textContent retains three leading line breaks and one
+	// trailing line break, including forms containing only outputText.
+	return "<form" + attrs.String() + ">\n\n\n" + formMarker + `<input type="hidden" name="` + ViewStateActionFieldName() + `" value="" />` + children + "\n</form>", nil
 }
 
 func visualforceFormContainsInputFile(node *MarkupNode) bool {
@@ -555,7 +571,11 @@ func renderApexInputText(node *MarkupNode, ctx *RenderContext, inputType string)
 	if clientID != "" {
 		attrs += ` id="` + html.EscapeString(clientID) + `"`
 	}
-	return attrs + formBooleanAttrs(node, ctx) + ` value="` + html.EscapeString(value) + `" />`, nil
+	eventAttrs, err := renderAjaxInputEventAttributes(node, ctx)
+	if err != nil {
+		return "", err
+	}
+	return attrs + formBooleanAttrs(node, ctx) + eventAttrs + ` value="` + html.EscapeString(value) + `" />`, nil
 }
 
 func renderApexInputTextarea(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -613,7 +633,11 @@ func renderApexInputCheckbox(node *MarkupNode, ctx *RenderContext) (string, erro
 }
 
 func renderApexInputField(node *MarkupNode, ctx *RenderContext) (string, error) {
-	if binding, ok := resolveFieldBinding(ctx, node.Attribute("value")); ok && binding.ObjectName != "" {
+	binding, bound := resolveFieldBinding(ctx, node.Attribute("value"))
+	if bound && binding.ControllerRecord && !binding.Authorized {
+		return "", nil
+	}
+	if bound && !binding.ControllerRecord && binding.ObjectName != "" {
 		raw := strings.TrimSpace(node.Attribute("value"))
 		raw = strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(raw, "{!"), "}"))
 		if len(strings.Split(raw, ".")) != 2 ||
@@ -645,8 +669,31 @@ func renderApexInputField(node *MarkupNode, ctx *RenderContext) (string, error) 
 		return "", err
 	}
 	required := truthyExpressionValue(requiredValue)
+	if bound && binding.ControllerRecord {
+		required = controllerFieldRequired(node, ctx, binding)
+	}
 	var rendered string
-	if input, ok := renderFieldInput(ctx, node.Attribute("value"), id, required); ok {
+	if bound && binding.ControllerRecord {
+		attrs := map[string]string{}
+		for _, attribute := range []string{"styleClass", "style", "tabindex"} {
+			if !node.HasAttribute(attribute) {
+				continue
+			}
+			value, err := RenderExpressionTemplate(node.Attribute(attribute), ctx.Expression)
+			if err != nil {
+				return "", err
+			}
+			key := strings.ToLower(attribute)
+			if key == "styleclass" {
+				key = "class"
+			}
+			attrs[key] = value
+		}
+		rendered = renderControllerFieldInput(ctx, binding, id, required, presentationAttributeText(attrs))
+		if required && binding.Kind != FieldCheckbox && !fieldIsMultiSelect(binding.Field) && !fieldIsReadonly(binding.Field) {
+			rendered = `<div class="requiredInput"><div class="requiredBlock"></div>` + rendered + `</div>`
+		}
+	} else if input, ok := renderFieldInput(ctx, node.Attribute("value"), id, required); ok {
 		rendered = input
 	} else {
 		value, err := RenderExpressionTemplate(node.Attribute("value"), ctx.Expression)
@@ -790,6 +837,9 @@ func renderApexCommandButton(node *MarkupNode, ctx *RenderContext) (string, erro
 		label = "Submit"
 	}
 	attrs := ` type="submit"`
+	if node.HasAttribute("rerender") {
+		attrs = ` type="button"`
+	}
 	if isTruthyExpression(node.Attribute("disabled"), ctx) {
 		attrs += ` disabled="disabled"`
 	}
@@ -799,8 +849,12 @@ func renderApexCommandButton(node *MarkupNode, ctx *RenderContext) (string, erro
 	script, marker, selectHook := repeatedCommandSubmission(node, ctx)
 	attrs += marker
 	attrs += ` value="` + html.EscapeString(label) + `" data-action="` + html.EscapeString(action) + `"`
-	if rerender := strings.TrimSpace(node.Attribute("rerender")); rerender != "" {
-		hook := selectHook + VisualforceAjaxSubmitHookWithStatus(action, rerender, strings.TrimSpace(node.Attribute("status")))
+	if node.HasAttribute("rerender") {
+		hook, err := visualforceAjaxEventHook(node, ctx, "onclick")
+		if err != nil {
+			return "", err
+		}
+		hook = selectHook + hook
 		return script + `<input` + attrs + ` onclick="` + html.EscapeString(hook) + `" />`, nil
 	}
 	hook := selectHook + `if(this.form&&this.form.elements['` + ViewStateActionFieldName() + `']){this.form.elements['` + ViewStateActionFieldName() + `'].value=` + jsStringLiteral(action) + `;}`
@@ -817,8 +871,12 @@ func renderApexCommandLink(node *MarkupNode, ctx *RenderContext) (string, error)
 		label = action
 	}
 	script, marker, selectHook := repeatedCommandSubmission(node, ctx)
-	if rerender := strings.TrimSpace(node.Attribute("rerender")); rerender != "" {
-		hook := selectHook + VisualforceAjaxLinkHookWithStatus(action, rerender, strings.TrimSpace(node.Attribute("status")))
+	if node.HasAttribute("rerender") {
+		hook, err := visualforceAjaxEventHook(node, ctx, "onclick")
+		if err != nil {
+			return "", err
+		}
+		hook = selectHook + hook
 		return script + `<a` + componentIDAttr(node, ctx) + marker + ` href="#" onclick="` + html.EscapeString(hook) + `">` + html.EscapeString(label) + `</a>`, nil
 	}
 	hook := selectHook + `var f=this.closest('form')||document.forms[0];if(f&&f.elements['` + ViewStateActionFieldName() + `']){f.elements['` + ViewStateActionFieldName() + `'].value=` + jsStringLiteral(action) + `;f.submit();}return false;`
@@ -1221,15 +1279,14 @@ func renderApexActionSupport(node *MarkupNode, ctx *RenderContext) (string, erro
 		return "", err
 	}
 	target := strings.TrimSpace(node.Attribute("rerender"))
-	if target == "" {
-		return children, nil
-	}
-	action := strings.TrimSpace(node.Attribute("action"))
 	event := strings.TrimSpace(node.Attribute("event"))
 	if event == "" {
 		event = "change"
 	}
-	hook := VisualforceAjaxLinkHookWithStatus(action, target, strings.TrimSpace(node.Attribute("status")))
+	hook, err := visualforceAjaxEventHook(node, ctx, "onsubmit")
+	if err != nil {
+		return "", err
+	}
 	return `<span class="actionSupport" data-event="` + html.EscapeString(event) + `" data-rerender="` + html.EscapeString(target) + `" ` + html.EscapeString(visualforceEventAttributeName(event)) + `="` + html.EscapeString(hook) + `">` + children + `</span>`, nil
 }
 
@@ -1251,13 +1308,15 @@ func renderApexActionFunction(node *MarkupNode, ctx *RenderContext) (string, err
 	}
 	action := strings.TrimSpace(node.Attribute("action"))
 	rerender := strings.TrimSpace(node.Attribute("rerender"))
-	status := strings.TrimSpace(node.Attribute("status"))
 	params, err := visualforceAjaxParams(node, ctx)
 	if err != nil {
 		return "", err
 	}
-	hook := VisualforceAjaxFunctionCall(action, rerender, status, params)
-	return `<script data-action="` + html.EscapeString(action) + `" data-rerender="` + html.EscapeString(rerender) + `">function ` + html.EscapeString(name) + `(` + html.EscapeString(VisualforceAjaxFunctionArgs(params)) + `){` + hook + `}</script>`, nil
+	hook, err := visualforceAjaxFunctionHook(node, ctx, params)
+	if err != nil {
+		return "", err
+	}
+	return `<script id="` + html.EscapeString(visualforceComponentClientID(node, ctx)) + `" data-action="` + html.EscapeString(action) + `" data-rerender="` + html.EscapeString(rerender) + `">function ` + html.EscapeString(name) + `(` + html.EscapeString(VisualforceAjaxFunctionArgs(params)) + `){` + hook + `}</script>`, nil
 }
 
 func renderApexActionRegion(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -1297,16 +1356,38 @@ func renderApexActionStatus(node *MarkupNode, ctx *RenderContext) (string, error
 			return "", err
 		}
 	}
-	return `<span class="actionStatus" data-status="` + html.EscapeString(statusID) + `"><span class="actionStatusStart" hidden="hidden">` + start + `</span><span class="actionStatusStop">` + stop + `</span></span>`, nil
+	callbacks := ""
+	for _, attribute := range []string{"onstart", "onstop"} {
+		if node.HasAttribute(attribute) {
+			code, err := RenderExpressionTemplate(node.Attribute(attribute), ctx.Expression)
+			if err != nil {
+				return "", err
+			}
+			callbacks += ` data-vf-` + attribute + `="` + html.EscapeString(code) + `"`
+		}
+	}
+	return `<span class="actionStatus" data-status="` + html.EscapeString(statusID) + `"` + callbacks + `><span class="actionStatusStart" hidden="hidden">` + start + `</span><span class="actionStatusStop">` + stop + `</span></span>`, nil
 }
 
-func renderApexActionPoller(node *MarkupNode, _ *RenderContext) (string, error) {
-	interval := normalizePollerInterval(node.Attribute("interval"))
-	enabled := strings.TrimSpace(node.Attribute("enabled"))
-	if enabled == "" {
-		enabled = "true"
+func renderApexActionPoller(node *MarkupNode, ctx *RenderContext) (string, error) {
+	rawInterval, err := RenderExpressionTemplate(node.Attribute("interval"), ctx.Expression)
+	if err != nil {
+		return "", err
 	}
-	return `<span class="actionPoller" data-action="` + html.EscapeString(node.Attribute("action")) + `" data-rerender="` + html.EscapeString(node.Attribute("rerender")) + `" data-interval="` + html.EscapeString(interval) + `" data-enabled="` + html.EscapeString(strings.ToLower(enabled)) + `"></span>`, nil
+	interval := normalizePollerInterval(rawInterval)
+	enabled := "true"
+	if node.HasAttribute("enabled") {
+		enabled = "false"
+		if isTruthyExpression(node.Attribute("enabled"), ctx) {
+			enabled = "true"
+		}
+	}
+	options, err := visualforceAjaxComponentOptions(node, ctx, nil, "")
+	if err != nil {
+		return "", err
+	}
+	id := visualforceComponentClientID(node, ctx)
+	return `<span class="actionPoller" id="` + html.EscapeString(id) + `" data-vf-poller="true" data-action="` + html.EscapeString(node.Attribute("action")) + `" data-rerender="` + html.EscapeString(node.Attribute("rerender")) + `" data-interval="` + html.EscapeString(interval) + `" data-enabled="` + enabled + `"></span><script>window.GLADEVF.poller(` + ajaxScriptStringLiteral(id) + `,` + options + `);</script>`, nil
 }
 
 func renderApexVariable(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -1733,7 +1814,7 @@ func applyComponentAssignTo(machine *vm.VM, controller *vm.Value, attrs []Attrib
 		if !ok {
 			return fmt.Errorf("component attribute %s assignTo %s does not name a readable and writable controller property", attr.Name, target)
 		}
-		if strings.TrimSpace(attr.Type) != "" && !componentBindingTypesEqual(attr.Type, targetType) {
+		if strings.TrimSpace(attr.Type) != "" && !componentBindingTypesAssignable(attr.Type, targetType) {
 			return fmt.Errorf("component attribute %s type %s does not match controller property %s type %s", attr.Name, attr.Type, target, targetType)
 		}
 		*controller, err = machine.AssignInstanceProperty(*controller, target, value)

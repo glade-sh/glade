@@ -9,6 +9,7 @@ import (
 type objectDMLPolicy struct {
 	beforeDMLDerivedFields    func(*VM, *storage.Record)
 	storedDMLDerivedFields    func(*VM, *storage.Record)
+	storedInsertDerivedFields func(*VM, *storage.Record) error
 	transientDMLDerivedFields []string
 	defaultRecordTypeID       func(storage.ObjectDefinition, storage.Record) storage.ID
 }
@@ -21,7 +22,18 @@ func dmlPolicyForObject(objectName string) *objectDMLPolicy {
 		return &opportunityDMLPolicy
 	case strings.EqualFold(objectName, "Account"):
 		return &accountDMLPolicy
+	case strings.EqualFold(objectName, "Knowledge__kav"):
+		return &knowledgeArticleDMLPolicy
 	default:
 		return nil
 	}
+}
+
+func hasStoredInsertDerivedFields(records []storage.Record) bool {
+	for _, record := range records {
+		if policy := dmlPolicyForObject(record.Object); policy != nil && policy.storedInsertDerivedFields != nil {
+			return true
+		}
+	}
+	return false
 }

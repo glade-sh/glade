@@ -337,6 +337,8 @@ type anonymousIndexIdentity struct {
 	objects               anonymousSliceIdentity[schema.Object]
 	visualforcePageNames  anonymousSliceIdentity[string]
 	visualforcePagesKnown bool
+	customLabelNames      anonymousSliceIdentity[string]
+	customLabelsKnown     bool
 	orgShapeFeatures      anonymousSliceIdentity[string]
 	customMetadataRecords anonymousSliceIdentity[schema.CustomMetadataRecord]
 	codeIntelSymbols      anonymousSliceIdentity[packageartifact.CodeIntelSymbol]
@@ -369,6 +371,8 @@ func anonymousSetupKeyFor(index typesys.Index, apiVersion string) (anonymousSetu
 		objects:               newAnonymousSliceIdentity(index.Objects),
 		visualforcePageNames:  newAnonymousSliceIdentity(index.VisualforcePageNames),
 		visualforcePagesKnown: index.VisualforcePagesKnown,
+		customLabelNames:      newAnonymousSliceIdentity(index.CustomLabelNames),
+		customLabelsKnown:     index.CustomLabelsKnown,
 		orgShapeFeatures:      newAnonymousSliceIdentity(index.OrgShapeFeatures),
 		customMetadataRecords: newAnonymousSliceIdentity(index.CustomMetadataRecords),
 		codeIntelSymbols:      newAnonymousSliceIdentity(index.CodeIntelSymbols),

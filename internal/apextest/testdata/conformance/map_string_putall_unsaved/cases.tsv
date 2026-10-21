@@ -1,0 +1,9 @@
+case	shape	observation
+account-single	String-keyed putAll with one unsaved Account	acceptance, size, value, literal-null lookup and iterated-key lookup
+account-duplicate	String-keyed putAll with two unsaved Accounts	duplicate missing-Id behavior
+account-mixed	String-keyed putAll with saved and unsaved Accounts	saved Id lookup and missing-Id value retention
+account-constructor	String-keyed constructor with unsaved Account	rejection distinguished from putAll
+account-saved-constructor	String-keyed constructor with saved Account	Id-key control
+contact-time	String-keyed putAll with unsaved ContactPointEmail and Time field	key selection does not depend on arbitrary scalar or internal record fields
+id-control	Id-keyed putAll with unsaved Account	comparison with retained native Id-key behavior
+literal-null	ordinary String-keyed put with literal null	literal-null lookup control

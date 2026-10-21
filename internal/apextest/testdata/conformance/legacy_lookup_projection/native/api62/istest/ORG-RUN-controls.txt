@@ -1,0 +1,10 @@
+Existing owned legacy omission packet; check-only deployment; test transactions rollback.
+org=scratch-org
+queryApi=24.0; writerApi=39.0; readerApi=40.0; entryApi=62.0; transportApi=62.0; route=@IsTest
+rows=A01L,A10L
+start=2026-10-15T08:17:52Z
+deployId=0AfEc00000p1Z9dKAE
+status=Failed
+checkOnly=True
+terminal=True
+end=2026-10-15T08:18:03Z

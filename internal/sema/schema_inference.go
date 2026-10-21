@@ -241,6 +241,10 @@ func (ctx *semaProjectReferencedSchemaContext) schemaObjectIndex(name string, cr
 	if !create || !semaProjectReferencedSchemaObjectLikeName(name) {
 		return 0, false
 	}
+	// Local custom metadata types must come from metadata, not Apex references.
+	if semaHasAPISuffixFold(name, "__mdt") && !semaIsExternalManagedPackageAPIName(ctx.namespace, name) {
+		return 0, false
+	}
 	ctx.objects = append(ctx.objects, schema.Object{Name: name, Partial: true})
 	idx := len(ctx.objects) - 1
 	ctx.indexObject(idx)
@@ -255,8 +259,15 @@ func (ctx *semaProjectReferencedSchemaContext) markObjectInferenceAllowed(name s
 }
 
 func (ctx *semaProjectReferencedSchemaContext) allowsFieldInference(objectName string) bool {
+	if strings.EqualFold(objectName, "AuthSession") {
+		return false
+	}
 	if semaIsExternalManagedPackageAPIName(ctx.namespace, objectName) {
 		return true
+	}
+	if semaHasAPISuffixFold(objectName, "__mdt") {
+		idx, ok := ctx.schemaObjectIndex(objectName, false)
+		return ok && ctx.objects[idx].Partial
 	}
 	if ctx.inferenceAllowedObjectKeys[semaProjectReferencedSchemaNameKey(objectName)] {
 		return true

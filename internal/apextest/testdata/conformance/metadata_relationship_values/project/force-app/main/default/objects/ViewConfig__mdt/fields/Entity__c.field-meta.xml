@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Entity__c</fullName><fieldManageability>DeveloperControlled</fieldManageability><label>Entity</label><referenceTo>EntityDefinition</referenceTo><relationshipLabel>View Configs</relationshipLabel><relationshipName>ViewConfigs</relationshipName><type>MetadataRelationship</type></CustomField>

@@ -1,0 +1,634 @@
+{
+  "basis": "Source inspection plus the coordinator-supplied before-run log at capture-revision-052092806716732758986236638677289107264245409054938100177461887995604720401802. The worker ran no Go execution, build, test, probe or capture. Root-cause proposals remain source-derived.",
+  "base": "capture-revision-100674082189950676909464270273097705397729225196210387419024790090144103579119",
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "nativeObservations": 414,
+  "assertionCells": {
+    "exact": 396,
+    "partial": 6,
+    "carried": 12
+  },
+  "predictedFailingCells": 282,
+  "groups": [
+    {
+      "cause": "Dotted semi-join operands and missing native ID/reference diagnostics",
+      "rows": [
+        "C157SJ_009",
+        "C157SJ_010",
+        "C157SJ_011",
+        "C157SJ_012",
+        "C157SJ_015",
+        "C157SJ_016",
+        "C157SJ_017",
+        "C157SJ_018",
+        "C157SJ_019",
+        "C157SJ_020",
+        "C157SJ_021",
+        "C157SJ_022",
+        "C157SJ_027",
+        "C157SJ_028",
+        "C157SJ_029",
+        "C157SJ_030"
+      ],
+      "cells": 96,
+      "locations": [
+        "internal/soql/soql.go:369",
+        "internal/soql/soql.go:401",
+        "internal/sema/sema_checks.go:1277",
+        "internal/sema/sema_checks.go:1322"
+      ],
+      "prediction": "Accepted object-qualified operands reach an unconditional dotted-field rejection (009-012,015-018,027-028). Wrong qualifiers and scalar operands disagree in diagnostic text; inline 022 lacks an ID/reference semantic check. Inline 030 retains a relationship diagnostic with different framing.",
+      "proposal": "Resolve only a captured current-object or root-alias qualifier before checking the operand type; preserve wrong-qualifier rejection twins. Share reference validation with inline semantics and expose the captured route-specific diagnostic.",
+      "implementation": {
+        "behaviorChanges": [
+          {
+            "change": "Accept current-object-qualified reference operands, including anti-join, root-alias plus object qualifier, case folding, and custom lookup.",
+            "rows": [
+              "C157SJ_009",
+              "C157SJ_010",
+              "C157SJ_011",
+              "C157SJ_012",
+              "C157SJ_015",
+              "C157SJ_016",
+              "C157SJ_017",
+              "C157SJ_018",
+              "C157SJ_027",
+              "C157SJ_028"
+            ]
+          },
+          {
+            "change": "Preserve one-hop relationship/scalar rejection, with native runtime and route-specific compiler diagnostics.",
+            "rows": [
+              "C157SJ_019",
+              "C157SJ_020",
+              "C157SJ_021",
+              "C157SJ_022",
+              "C157SJ_029",
+              "C157SJ_030"
+            ]
+          }
+        ],
+        "unchangedNeighbors": [
+          "C157SJ_007",
+          "C157SJ_008",
+          "C157SJ_013",
+          "C157SJ_014",
+          "C157SJ_023",
+          "C157SJ_024",
+          "C157SJ_025",
+          "C157SJ_026"
+        ],
+        "check": "Source trace only on both routes at 62/67/68; fixture sources/answers unchanged. Read-only excerpt calculation matches both routes for 020/030. Existing reference-target overlap and unknown-column/deeper-path handling remain unchanged. Coordinator must run conformance."
+      }
+    },
+    {
+      "cause": "Global OR detection ignores the Boolean position of a semi-join",
+      "rows": [
+        "C157SJ_033",
+        "C157SJ_034",
+        "C157SJ_035",
+        "C157SJ_036",
+        "C157SJ_037",
+        "C157SJ_038",
+        "C157SJ_039",
+        "C157SJ_040",
+        "C157SJ_041",
+        "C157SJ_042",
+        "C157SJ_043",
+        "C157SJ_044",
+        "C157SJ_045",
+        "C157SJ_046",
+        "C157SJ_051",
+        "C157SJ_052",
+        "C157SJ_065",
+        "C157SJ_066",
+        "C157SJ_067",
+        "C157SJ_068"
+      ],
+      "cells": 120,
+      "locations": [
+        "internal/soql/parser.go:776",
+        "internal/soql/parser.go:805",
+        "internal/soql/parser.go:2295",
+        "internal/sema/sema_checks.go:1040"
+      ],
+      "prediction": "Accepted scalar OR siblings (033-036,041-044,065-068) are rejected. Top-level OR rejections (037-040,051-052) have different messages. The parenthesized AND semi-join (045-046) is rejected for its unrelated scalar OR instead of its nested placement.",
+      "proposal": "Validate semi-join ancestry and preserved Parenthesized/SourceAnd shape. Permit the captured scalar OR siblings; retain top-level OR and nested-WHERE rejection twins with native text. Do not change uncaptured NOT placement.",
+      "implementation": {
+        "behaviorChanges": [
+          {
+            "change": "Permit scalar OR siblings of top-level IN/NOT IN semi-joins, including nested scalar AND/OR and outer child/window queries.",
+            "rows": [
+              "C157SJ_033",
+              "C157SJ_034",
+              "C157SJ_035",
+              "C157SJ_036",
+              "C157SJ_041",
+              "C157SJ_042",
+              "C157SJ_043",
+              "C157SJ_044",
+              "C157SJ_065",
+              "C157SJ_066",
+              "C157SJ_067",
+              "C157SJ_068"
+            ]
+          },
+          {
+            "change": "Preserve direct/parenthesized OR ancestry and parenthesized-AND semi-join rejection, with native messages on both routes.",
+            "rows": [
+              "C157SJ_037",
+              "C157SJ_038",
+              "C157SJ_039",
+              "C157SJ_040",
+              "C157SJ_045",
+              "C157SJ_046",
+              "C157SJ_051",
+              "C157SJ_052"
+            ]
+          }
+        ],
+        "unchangedNeighbors": [
+          "C157SJ_001",
+          "C157SJ_003",
+          "C157SJ_005",
+          "C157SJ_006",
+          "C157SJ_031",
+          "C157SJ_032",
+          "C157SJ_049",
+          "C157SJ_050"
+        ],
+        "check": "Read-only trace of Condition.Or ancestry and Parenthesized/SourceAnd at 62/67/68, both routes. Negated semi-join collection is unchanged: 047/048 stay carried, and ungrouped NOT has no new rule. No Go execution.",
+        "dependentRows": [
+          "C157SJ_034",
+          "C157SJ_036",
+          "C157SJ_042",
+          "C157SJ_044",
+          "C157SJ_066",
+          "C157SJ_068"
+        ],
+        "dependencyReason": "inline SOQL binds are resolved by a source text regex so string owns later comma-declared bName/o bind collection; these 36 cells expose that earlier masked blocker after OR acceptance."
+      }
+    },
+    {
+      "cause": "Child-query joins are prohibited globally; nesting/count use generic diagnostics",
+      "rows": [
+        "C157SJ_053",
+        "C157SJ_054",
+        "C157SJ_055",
+        "C157SJ_056",
+        "C157SJ_057",
+        "C157SJ_058"
+      ],
+      "cells": 36,
+      "locations": [
+        "internal/soql/parser.go:781",
+        "internal/soql/parser.go:797",
+        "internal/soql/parser.go:859"
+      ],
+      "prediction": "The captured child-query joins 055-056 are rejected despite native success. Three-join 053-054 and nested-join 057-058 rejections disagree in native diagnostic text.",
+      "proposal": "Allow only the captured child relationship query context and apply normal resolved child-object reference checks. Keep the two-join limit and nesting prohibition; project their captured native messages.",
+      "implementation": {
+        "behaviorChanges": [
+          {
+            "change": "Accept a single child ID projection with a direct positive semi-join selecting parent IDs; resolve/validate child reference metadata before executing the join.",
+            "rows": [
+              "C157SJ_055",
+              "C157SJ_056"
+            ]
+          },
+          {
+            "change": "Preserve three-positive-join and one-level nested-positive-join rejection with captured runtime/compiler messages.",
+            "rows": [
+              "C157SJ_053",
+              "C157SJ_054",
+              "C157SJ_057",
+              "C157SJ_058"
+            ]
+          }
+        ],
+        "unchangedNeighbors": [
+          "C157SJ_031",
+          "C157SJ_032",
+          "C157SJ_049",
+          "C157SJ_050",
+          "C157SJ_051",
+          "C157SJ_052",
+          "C157SJ_059",
+          "C157SJ_060",
+          "C157SJ_061",
+          "C157SJ_062",
+          "C157SJ_063",
+          "C157SJ_064",
+          "C157SJ_065",
+          "C157SJ_066"
+        ],
+        "check": "Both routes and 62/67/68 source traces; read-only 058 compiler excerpt/column calculation matches both native routes. Other child projection/window/nested shapes, mixed anti-join counts and deeper nesting retain previous rejection boundaries. No Go execution."
+      }
+    },
+    {
+      "cause": "Inline ORDER/LIMIT grammar recovery differs from dynamic messages",
+      "rows": [
+        "C157SJ_060",
+        "C157SJ_062",
+        "C157SJ_064"
+      ],
+      "cells": 18,
+      "locations": [
+        "internal/soql/parser.go:862",
+        "internal/sema/sema_checks.go:1040",
+        "internal/sema/sema_checks.go:268"
+      ],
+      "prediction": "Dynamic 059/061/063 already select the captured missing-value QueryException message. Inline 060/062/064 instead take parser or assignment-target recovery, not the captured Missing close-parenthesis diagnostic.",
+      "proposal": "Keep dynamic errors unchanged and add a captured inline diagnostic projection for these exact semi-join ORDER/LIMIT shapes.",
+      "implementation": {
+        "behaviorChanges": [
+          {
+            "change": "Inline direct ID-filtered semi-join LIMIT 1, LIMIT 1 OFFSET 1 and single ascending ORDER BY use captured Missing close-parenthesis diagnostics instead of assignment-target recovery.",
+            "rows": [
+              "C157SJ_060",
+              "C157SJ_062",
+              "C157SJ_064"
+            ]
+          }
+        ],
+        "unchangedNeighbors": [
+          "C157SJ_049",
+          "C157SJ_050",
+          "C157SJ_055",
+          "C157SJ_056",
+          "C157SJ_057",
+          "C157SJ_058",
+          "C157SJ_059",
+          "C157SJ_061",
+          "C157SJ_063",
+          "C157SJ_065",
+          "C157SJ_066",
+          "C157SJ_067",
+          "C157SJ_068"
+        ],
+        "check": "Native primary compiler messages checked at 62/67/68, both routes. Dynamic 059/061/063 retain the same QueryError message/type and underlying parser error. Outer LIMIT/OFFSET rows use no semi-join window marker. Uncaptured FOR, other LIMIT values, descending/multiple ordering and other filters retain old recovery. No Go execution."
+      }
+    },
+    {
+      "cause": "Inline bind declaration discovery omits later comma-separated declarators",
+      "rows": [
+        "C157SJ_002",
+        "C157SJ_004"
+      ],
+      "cells": 12,
+      "locations": [
+        "internal/sema/sema_checks.go:460",
+        "internal/sema/sema_checks.go:559",
+        "internal/sema/sema_checks.go:678",
+        "internal/sema/sema_checks.go:799",
+        "internal/sema/sema_checks.go:820"
+      ],
+      "prediction": "Both routes at 62/67/68 reject :bName despite its declaration in the same try block before the query. Captured Apex line 2 declares String aName, bName and cName in one statement. semaBindingDeclaration matches only String aName; later declarators do not repeat the type. Both anonymous bindingsAt and named semaMethodBindingScope use that regex. inlineQueryBindDiagnostics consequently emits GLADESEMA_QUERY_BIND Variable does not exist: bName. The coordinator before-run confirms all 12 cells.",
+      "exportCheck": "Anonymous Apex and named classes for both rows match the packet byte for byte; source hashes match. There is no missing or renamed bind and no export change is needed.",
+      "proposal": "Use the existing body declaration/scope model, or enumerate every declarator with its shared declared type and lexical lifetime. Preserve scope and undeclared-variable rejection boundaries; capture missing boundary twins before a product fix. This is in the same inline-bind declaration discovery path as the bind lexical family.",
+      "implementation": {
+        "status": "dependency; untouched",
+        "owner": "inline SOQL binds are resolved by a source text regex so string",
+        "rows": [
+          "C157SJ_002",
+          "C157SJ_004"
+        ],
+        "cells": 12
+      }
+    }
+  ],
+  "clusters": [
+    {
+      "cluster": "transport",
+      "cells": 6,
+      "predictedFailingCells": 0,
+      "carriedCells": 0,
+      "selector": "CGO_ENABLED=1 go test -run '^TestSemiJoinTransportOrgConformance$' ./internal/apextest",
+      "beforeRunFailingCells": 0,
+      "expectedAfter": {
+        "exactPassingCells": 0,
+        "partialCells": 6,
+        "carriedCells": 0,
+        "dependentFailingCells": 0,
+        "exactPassingCellsWithBindFix": 0
+      }
+    },
+    {
+      "cluster": "control",
+      "cells": 36,
+      "predictedFailingCells": 12,
+      "carriedCells": 0,
+      "selector": "CGO_ENABLED=1 go test -run '^TestSemiJoinControlOrgConformance$' ./internal/apextest",
+      "beforeRunFailingCells": 12,
+      "expectedAfter": {
+        "exactPassingCells": 24,
+        "partialCells": 0,
+        "carriedCells": 0,
+        "dependentFailingCells": 12,
+        "exactPassingCellsWithBindFix": 36
+      }
+    },
+    {
+      "cluster": "qualifier",
+      "cells": 108,
+      "predictedFailingCells": 72,
+      "carriedCells": 0,
+      "selector": "CGO_ENABLED=1 go test -run '^TestSemiJoinQualifierOrgConformance$' ./internal/apextest",
+      "beforeRunFailingCells": 72,
+      "expectedAfter": {
+        "exactPassingCells": 108,
+        "partialCells": 0,
+        "carriedCells": 0,
+        "dependentFailingCells": 0,
+        "exactPassingCellsWithBindFix": 108
+      }
+    },
+    {
+      "cluster": "custom",
+      "cells": 36,
+      "predictedFailingCells": 24,
+      "carriedCells": 0,
+      "selector": "CGO_ENABLED=1 go test -run '^TestSemiJoinCustomOrgConformance$' ./internal/apextest",
+      "beforeRunFailingCells": 24,
+      "expectedAfter": {
+        "exactPassingCells": 36,
+        "partialCells": 0,
+        "carriedCells": 0,
+        "dependentFailingCells": 0,
+        "exactPassingCellsWithBindFix": 36
+      }
+    },
+    {
+      "cluster": "boolean",
+      "cells": 108,
+      "predictedFailingCells": 84,
+      "carriedCells": 12,
+      "selector": "CGO_ENABLED=1 go test -run '^TestSemiJoinBooleanOrgConformance$' ./internal/apextest",
+      "beforeRunFailingCells": 84,
+      "expectedAfter": {
+        "exactPassingCells": 72,
+        "partialCells": 0,
+        "carriedCells": 12,
+        "dependentFailingCells": 24,
+        "exactPassingCellsWithBindFix": 96
+      }
+    },
+    {
+      "cluster": "multiple",
+      "cells": 36,
+      "predictedFailingCells": 24,
+      "carriedCells": 0,
+      "selector": "CGO_ENABLED=1 go test -run '^TestSemiJoinMultipleOrgConformance$' ./internal/apextest",
+      "beforeRunFailingCells": 24,
+      "expectedAfter": {
+        "exactPassingCells": 36,
+        "partialCells": 0,
+        "carriedCells": 0,
+        "dependentFailingCells": 0,
+        "exactPassingCellsWithBindFix": 36
+      }
+    },
+    {
+      "cluster": "subquery",
+      "cells": 60,
+      "predictedFailingCells": 42,
+      "carriedCells": 0,
+      "selector": "CGO_ENABLED=1 go test -run '^TestSemiJoinSubqueryOrgConformance$' ./internal/apextest",
+      "beforeRunFailingCells": 42,
+      "expectedAfter": {
+        "exactPassingCells": 60,
+        "partialCells": 0,
+        "carriedCells": 0,
+        "dependentFailingCells": 0,
+        "exactPassingCellsWithBindFix": 60
+      }
+    },
+    {
+      "cluster": "window",
+      "cells": 24,
+      "predictedFailingCells": 24,
+      "carriedCells": 0,
+      "selector": "CGO_ENABLED=1 go test -run '^TestSemiJoinWindowOrgConformance$' ./internal/apextest",
+      "beforeRunFailingCells": 24,
+      "expectedAfter": {
+        "exactPassingCells": 12,
+        "partialCells": 0,
+        "carriedCells": 0,
+        "dependentFailingCells": 12,
+        "exactPassingCellsWithBindFix": 24
+      }
+    }
+  ],
+  "unverified": [
+    "Four root causes are implemented in separate commits. All after expectations require coordinator validation; no worker Go execution occurred.",
+    "C157SJ_047/048 need a scalar NOT control before any semi-join attribution; all 12 cells are carried.",
+    "C157SJ_000 native baseline counts are retained as evidence but excluded from equality; six marker/phase controls are partial checks.",
+    "No API drift between the supplied 62/67/68 answers. API 59 was not captured by this ticket and no API-68-only behavior is claimed.",
+    "Ungrouped NOT x AND y is absent and has no asserted behavior.",
+    "Scratch-org deletion verification is requested by capture-completion.json and was not performed by this worker.",
+    "The same comma declaration also supplies cName, and Integer l=1,o=1 supplies o. Later inline queries can expose additional bind diagnostics after their earlier semi-join parse/contract blocker is fixed; no extra cells are added for overlapping causes."
+  ],
+  "beforeRun": {
+    "head": "capture-revision-052092806716732758986236638677289107264245409054938100177461887995604720401802",
+    "logSha256": "32e0afeeaf9b8e7606809687f60534c03b371aadc5f5679f5a943d6d7016407d",
+    "failingLeafCells": 282,
+    "failingLeafCellsByCluster": {
+      "transport": 0,
+      "control": 12,
+      "qualifier": 72,
+      "custom": 24,
+      "boolean": 84,
+      "multiple": 24,
+      "subquery": 42,
+      "window": 24
+    },
+    "comparison": "The observed failing-cell set equals the original 270 predicted cells plus the 12 C157SJ_002/004 cells."
+  },
+  "afterExpectation": {
+    "basis": "Source-derived after expectations; coordinator validation required. Original captures and before-run remain unchanged.",
+    "ownRootCauseCells": 270,
+    "newlyExposedDependencyCells": 36,
+    "remainingFailureCellsBeforeBindFix": 48,
+    "remainingDependencyRows": [
+      "native row",
+      "native row",
+      "native row",
+      "native row",
+      "native row",
+      "native row",
+      "native row",
+      "native row"
+    ],
+    "dependencyOwner": "inline SOQL binds are resolved by a source text regex so string",
+    "exactPassingCellsBeforeBindFix": 348,
+    "partialTransportCells": 6,
+    "carriedCells": 12,
+    "exactPassingCellsAfterBindFix": 396,
+    "validationFollowupTargetCells": 10,
+    "reportedResidualCellsBeforeFollowups": 58
+  },
+  "validationFollowups": [
+    {
+      "cause": "Named standard-object metadata is partial, so the original guard skipped semi-join operand validation.",
+      "reportedFailureCells": 6,
+      "rows": [
+        "C157SJ_020",
+        "C157SJ_022"
+      ],
+      "routes": [
+        "isTest"
+      ],
+      "apis": [
+        "62.0",
+        "67.0",
+        "68.0"
+      ],
+      "change": "Use the existing complete standard-field provider only for known standard operands/relationships when the named index is partial; do not broaden unknown custom/partial field rejection.",
+      "unchangedNeighbors": [
+        "C157SJ_007",
+        "C157SJ_008",
+        "C157SJ_009",
+        "C157SJ_010",
+        "C157SJ_011",
+        "C157SJ_012",
+        "C157SJ_013",
+        "C157SJ_014",
+        "C157SJ_015",
+        "C157SJ_016",
+        "C157SJ_017",
+        "C157SJ_018",
+        "C157SJ_023",
+        "C157SJ_024",
+        "C157SJ_025",
+        "C157SJ_026",
+        "C157SJ_027",
+        "C157SJ_028"
+      ],
+      "check": "Source trace only. Named and anonymous calls share checkSOQLCondition; only the hasFieldMetadata gate differed. Compile text/route formatting unchanged. All listed neighbors remain reference/Id operands and compile."
+    },
+    {
+      "cause": "API 67/68 dynamic semi-join relationship rejection must precede ordinary missing-leaf column validation.",
+      "reportedFailureCells": 4,
+      "rows": [
+        "C157SJ_019"
+      ],
+      "routes": [
+        "anonymous",
+        "isTest"
+      ],
+      "apis": [
+        "67.0",
+        "68.0"
+      ],
+      "change": "Before field/security validation, use existing VM sourceExecutionPolicy APIVersion to project the captured relationship-depth QueryException for source API >=67. Only positive IN selecting Id with a single known non-polymorphic parent relationship and missing leaf qualifies.",
+      "unchangedNeighbors": [
+        "C157SJ_007",
+        "C157SJ_009",
+        "C157SJ_011",
+        "C157SJ_013",
+        "C157SJ_015",
+        "C157SJ_017",
+        "C157SJ_019@62.0",
+        "C157SJ_020",
+        "C157SJ_021",
+        "C157SJ_022",
+        "C157SJ_025",
+        "C157SJ_027",
+        "C157SJ_029",
+        "C157SJ_030"
+      ],
+      "check": "Source trace: source API >=67 enables SecureDefaults USER_MODE, whose enforceSOQLSecurity relationship-column validation precedes soql.Execute. Below 67 the existing default SYSTEM_MODE skips that check. Named/anonymous execution binds source API to currentMethod, read by currentSourceExecutionPolicy. API <=62 and unbisected 63-66 keep the existing path; no new global or org-version mutation.",
+      "evidenceDiscrepancy": "The desk describes native 62/67/68 drift and ten residual cells, also saying twelve. The checked-in fixture and original native TSVs instead expect identical relationship-depth text at 62/67/68, and the original before-log shows a Glade validation-order mismatch at 67/68. Preserve fixtures and lower-API runtime behavior; reconciliation/D7 bisect remains with the desk.",
+      "unverified": [
+        "No after-run by this worker. The two root causes target six named compile cells and four modern runtime cells (ten total).",
+        "D7 bisect 63-66 pending; those versions and <=62 receive no new early runtime rule. API 59 absent.",
+        "The desk native-drift description differs from the supplied packet; no fixture expectation was changed."
+      ]
+    },
+    {
+      "cause": "A31 unparenthesized AND branch under OR has syntax-error precedence over the direct semi-join OR contract.",
+      "rows": [
+        "A31:R160"
+      ],
+      "cells": 6,
+      "testApis": [
+        "62.0",
+        "67.0",
+        "68.0"
+      ],
+      "testRoutes": [
+        "anonymous",
+        "isTest"
+      ],
+      "a31Shape": "WHERE Id IN :sids AND Id IN (SELECT AccountId FROM Contact WHERE Id IN :cids) OR Name='Gamma'",
+      "familyShapes": {
+        "C157SJ_037/038": "WHERE semi-join OR scalar; direct outer OR operands.",
+        "C157SJ_039/040": "WHERE (semi-join OR scalar); parentheses surround the entire OR, not an AND branch.",
+        "C157SJ_051/052": "WHERE semi-join OR semi-join; the right subquery contains its own AND filter, not an outer AND branch."
+      },
+      "change": "Track authored SourceAnd without Parenthesized along the OR ancestry. Restore existing unexpectedToken OR recovery only when that ungrouped AND branch contains the semi-join; direct OR operands keep the captured semi-join OR text. Do not descend into a join subquery as part of outer OR ancestry.",
+      "familyUnchangedNeighbors": [
+        "native row",
+        "native row",
+        "native row",
+        "native row",
+        "native row",
+        "native row",
+        "native row",
+        "native row",
+        "native row",
+        "native row",
+        "native row",
+        "native row",
+        "native row",
+        "native row",
+        "native row",
+        "native row"
+      ],
+      "a31UnchangedNeighbors": [
+        {
+          "id": "R155",
+          "expected": "2"
+        },
+        {
+          "id": "R156",
+          "expected": "5"
+        },
+        {
+          "id": "R157",
+          "expected": "0"
+        },
+        {
+          "id": "R158",
+          "expected": "5"
+        },
+        {
+          "id": "R159",
+          "expected": "EXC|System.QueryException|The inner and outer selects should not be on the same object type"
+        },
+        {
+          "id": "R161",
+          "expected": "EXC|System.QueryException|missing value at 'ORDER'"
+        },
+        {
+          "id": "R162",
+          "expected": "EXC|System.QueryException|missing value at 'LIMIT'"
+        }
+      ],
+      "a31SemiJoinOrRows": [
+        "R160"
+      ],
+      "check": "Read-only source comparison and parser flag trace. A31 R155-158 have outer AND without OR, R159 keeps self-join rejection, R161/R162 keep inner ORDER/LIMIT rejection. The supplied broad-gate log reports only R160 failing in this family. No captures or fixture answers changed; no Go execution.",
+      "evidenceBoundary": "The API-68 A31 named route is an anonymous-backed local assertion in the existing harness; this follow-up does not claim an additional native named capture.",
+      "expectation": "R160 six local conformance cells restored; family clusters unchanged (standalone 348 exact + 6 partial, 48 inline SOQL binds are resolved by a source text regex so string-dependent failures and 12 carries; merged with the bind fix, 396 exact + 6 partial and 12 carries)."
+    }
+  ]
+}

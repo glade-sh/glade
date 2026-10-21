@@ -1,0 +1,1 @@
+@IsTest private class MetadataOwner62CTRLPOS { @IsTest static void observed(){Object value=17;System.assert(false,'METADATA_OWNER|CTRL_POS|'+JSON.serialize(value));} }

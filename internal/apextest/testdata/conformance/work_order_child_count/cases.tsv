@@ -1,0 +1,8 @@
+case	shape
+empty	new parent before child insert
+inserted	two persisted children
+otherParent	untouched parent
+deleted	one child in recycle bin
+undeleted	child restored
+rollbackOld	child mutation savepoint rollback
+rollbackNew	other parent after savepoint rollback

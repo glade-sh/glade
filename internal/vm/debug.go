@@ -176,7 +176,10 @@ func cloneValue(value Value) Value {
 }
 
 func cloneValueWithSeen(value Value, seen map[uint64]bool) Value {
+	value = value.currentMapKeySet()
 	out := value
+	out.mapKeySetSource = nil
+	out.mapKeySetHashes = nil
 	switch value.Kind {
 	case ValueObject, ValueList, ValueSet, ValueMap:
 		if value.Ref != 0 {
@@ -237,9 +240,6 @@ func cloneValueWithSeen(value Value, seen map[uint64]bool) Value {
 func preserveRepeatedCloneReference(value Value) bool {
 	if value.Kind != ValueObject {
 		return false
-	}
-	if strings.EqualFold(value.Type, "framework_ApexMocks") {
-		return true
 	}
 	if _, ok := value.Fields["__gladeStubProvider"]; ok {
 		return true

@@ -1,0 +1,13 @@
+source_api	case	observation
+62.0	direct_edit_share	{"storedName":"changed","updateSucceeded":true,"visibleCount":1}
+62.0	json_loose_date	{"errorType":"System.JSONException","errorMessage":"Invalid format: \"2024-2-29 00:00:00\" is malformed at \" 00:00:00\""}
+62.0	stub_static_factory	{"value":"mock"}
+62.0	stub_static_factory_async	{"names":["mock"]}
+62.0	stub_map_values_list_sobject	{"argumentType":"List<SObject>","callbackCount":1}
+62.0	stub_platform_type_rejection	{"callbackCount":0,"errorType":"System.TypeException","errorMessage":"Test.createStub() can only be invoked on user defined types."}
+67.0	direct_edit_share	{"storedName":"changed","updateSucceeded":true,"visibleCount":1}
+67.0	json_loose_date	{"errorType":"System.JSONException","errorMessage":"Invalid format: \"2024-2-29 00:00:00\" is malformed at \" 00:00:00\""}
+67.0	stub_static_factory	{"value":"mock"}
+67.0	stub_static_factory_async	{"names":["mock"]}
+67.0	stub_map_values_list_sobject	{"argumentType":"List<SObject>","callbackCount":1}
+67.0	stub_platform_type_rejection	{"callbackCount":0,"errorType":"System.TypeException","errorMessage":"Test.createStub() can only be invoked on user defined types."}

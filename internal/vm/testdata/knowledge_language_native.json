@@ -1,0 +1,39 @@
+{
+  "scope": "Knowledge-enabled scratch org, Knowledge user, Language create-time field policy. Terminal assertions carry observations and are not passing native tests.",
+  "observations": [
+    {
+      "api": "62.0",
+      "terminal": "observation_assertion",
+      "componentErrors": 0,
+      "testErrors": 1,
+      "receiptSHA256": "074006f630c94248c9e0f2c6d91f0bb14911b648aa739e55fa9eaa156cb498b6",
+      "observed": {
+        "titleUpdate": "returned",
+        "sameLanguageUpdate": "returned",
+        "language": "en_US",
+        "inserted": true,
+        "updateable": false,
+        "createable": true,
+        "knowledgeUser": true
+      },
+      "ownedSource": "@IsTest private class OwnedKnowledgeLanguageTest {\n @IsTest static void observe() {\n  Map<String,Object> seen=new Map<String,Object>();\n  User principal=[SELECT Id,UserPermissionsKnowledgeUser FROM User WHERE Id=:UserInfo.getUserId()];\n  try{principal.UserPermissionsKnowledgeUser=true;update principal;seen.put('knowledgeUser',true);}catch(Exception e){seen.put('knowledgeUserError',e.getTypeName());}\n  System.runAs(principal){\n   seen.put('createable',Knowledge__kav.Language.getDescribe().isCreateable());seen.put('updateable',Knowledge__kav.Language.getDescribe().isUpdateable());\n   Knowledge__kav article=new Knowledge__kav(Title='Owned Knowledge',UrlName='owned-knowledge-probe',Language='en_US');\n   try {\n    Database.insert(article,AccessLevel.SYSTEM_MODE);seen.put('inserted',article.Id!=null);\n    Knowledge__kav loaded=[SELECT Language,Title FROM Knowledge__kav WHERE Id=:article.Id WITH SYSTEM_MODE];seen.put('language',loaded.Language);\n    try{Database.update(new Knowledge__kav(Id=article.Id,Language='en_US'),AccessLevel.SYSTEM_MODE);seen.put('sameLanguageUpdate','returned');}catch(DmlException e){seen.put('sameLanguageUpdate',String.valueOf(e.getDmlStatusCode(0)));}\n    try{Database.update(new Knowledge__kav(Id=article.Id,Title='Changed Owned Knowledge'),AccessLevel.SYSTEM_MODE);seen.put('titleUpdate','returned');}catch(DmlException e){seen.put('titleUpdate',String.valueOf(e.getDmlStatusCode(0)));}\n   }catch(DmlException e){seen.put('insertError',String.valueOf(e.getDmlStatusCode(0)));seen.put('insertMessage',e.getDmlMessage(0));}\n  }\n  System.assert(false,'OWNED_KNOWLEDGE|'+JSON.serialize(seen));\n }\n}"
+    },
+    {
+      "api": "67.0",
+      "terminal": "observation_assertion",
+      "componentErrors": 0,
+      "testErrors": 1,
+      "receiptSHA256": "7c84fafdce2f7c90a98ccc90c31ff9ef538b0e3e8c080fd059846d073ccdbd4d",
+      "observed": {
+        "titleUpdate": "returned",
+        "sameLanguageUpdate": "returned",
+        "language": "en_US",
+        "inserted": true,
+        "updateable": false,
+        "createable": true,
+        "knowledgeUser": true
+      },
+      "ownedSource": "@IsTest private class OwnedKnowledgeLanguageTest {\n @IsTest static void observe() {\n  Map<String,Object> seen=new Map<String,Object>();\n  User principal=[SELECT Id,UserPermissionsKnowledgeUser FROM User WHERE Id=:UserInfo.getUserId()];\n  try{principal.UserPermissionsKnowledgeUser=true;update principal;seen.put('knowledgeUser',true);}catch(Exception e){seen.put('knowledgeUserError',e.getTypeName());}\n  System.runAs(principal){\n   seen.put('createable',Knowledge__kav.Language.getDescribe().isCreateable());seen.put('updateable',Knowledge__kav.Language.getDescribe().isUpdateable());\n   Knowledge__kav article=new Knowledge__kav(Title='Owned Knowledge',UrlName='owned-knowledge-probe',Language='en_US');\n   try {\n    Database.insert(article,AccessLevel.SYSTEM_MODE);seen.put('inserted',article.Id!=null);\n    Knowledge__kav loaded=[SELECT Language,Title FROM Knowledge__kav WHERE Id=:article.Id WITH SYSTEM_MODE];seen.put('language',loaded.Language);\n    try{Database.update(new Knowledge__kav(Id=article.Id,Language='en_US'),AccessLevel.SYSTEM_MODE);seen.put('sameLanguageUpdate','returned');}catch(DmlException e){seen.put('sameLanguageUpdate',String.valueOf(e.getDmlStatusCode(0)));}\n    try{Database.update(new Knowledge__kav(Id=article.Id,Title='Changed Owned Knowledge'),AccessLevel.SYSTEM_MODE);seen.put('titleUpdate','returned');}catch(DmlException e){seen.put('titleUpdate',String.valueOf(e.getDmlStatusCode(0)));}\n   }catch(DmlException e){seen.put('insertError',String.valueOf(e.getDmlStatusCode(0)));seen.put('insertMessage',e.getDmlMessage(0));}\n  }\n  System.assert(false,'OWNED_KNOWLEDGE|'+JSON.serialize(seen));\n }\n}"
+    }
+  ]
+}

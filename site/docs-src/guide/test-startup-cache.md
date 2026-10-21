@@ -71,7 +71,7 @@ On each run whose effective policy allows restored-runtime disk reuse (unless
 `--no-cache` or a running test server handles the request), Glade reads
 `startup.meta.json` and checks **freshness**:
 
-- Cache format version matches (currently **10**), along with manifest schema,
+- Cache format version matches (currently **14**), along with manifest schema,
   platform ABI, and test-runtime ABI.
 - Project root and the canonical project digest match. The digest covers API
   version, namespace and remaps, package directories, managed dependencies,
@@ -125,3 +125,18 @@ reuse, and does not auto-connect to a test server.
 
 See the repository doc `docs/TEST_STARTUP_CACHE.md` for the full manifest rules
 and serve/watch behavior.
+
+## Upgrading a test server
+
+The persistent test server uses daemon protocol **3**. Stop a server started by
+an older binary before upgrading, then restart it with the new binary:
+
+```bash
+glade test daemon stop --project .
+glade test serve --project .
+```
+
+If the new client reports a protocol mismatch, stop the old foreground server
+with Ctrl-C (or use its original binary's stop command), then start the new
+server. A newer client's stop command may only remove stale socket/PID files
+when it cannot speak the old protocol; that does not prove the old process exited.

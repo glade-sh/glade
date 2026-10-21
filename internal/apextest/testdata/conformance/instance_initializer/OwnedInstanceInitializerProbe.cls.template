@@ -1,0 +1,38 @@
+@IsTest private class OwnedInstanceInitializerProbe {
+ private class UpperFinal {
+  public final Integer OFFSET=3;
+  public final Integer SCALE=7;
+  public final Integer VALUE=(OFFSET+SCALE)*SCALE/OFFSET;
+ }
+ private class LowerFinal {
+  public final Integer offset=3;
+  public final Integer scale=7;
+  public final Integer value=(offset+scale)*scale/offset;
+ }
+ private class UpperMutable {
+  public Integer OFFSET=3;
+  public Integer SCALE=7;
+  public Integer VALUE=(OFFSET+SCALE)*SCALE/OFFSET;
+ }
+ private class ForwardRead {
+  public Integer value=readLater();
+  public Integer later=4;
+  private Integer readLater(){return later+1;}
+ }
+ private class ConstructorRead {
+  public final Integer OFFSET=3;
+  public final Integer SCALE=7;
+  public Integer value;
+  public ConstructorRead(){value=OFFSET+SCALE;}
+ }
+ private static Map<String,Object> observe(String shape){
+  Map<String,Object> out=new Map<String,Object>{'shape'=>shape};
+  try {
+   if(shape=='upper-final'){UpperFinal x=new UpperFinal();out.put('first',x.OFFSET);out.put('second',x.SCALE);out.put('value',x.VALUE);}
+   if(shape=='lower-final'){LowerFinal x=new LowerFinal();out.put('first',x.offset);out.put('second',x.scale);out.put('value',x.value);}
+   if(shape=='upper-mutable'){UpperMutable x=new UpperMutable();out.put('first',x.OFFSET);out.put('second',x.SCALE);out.put('value',x.VALUE);}
+   if(shape=='forward'){ForwardRead x=new ForwardRead();out.put('value',x.value);}
+   if(shape=='constructor'){ConstructorRead x=new ConstructorRead();out.put('first',x.OFFSET);out.put('second',x.SCALE);out.put('value',x.value);}
+  }catch(Exception e){out.put('error',e instanceof NullPointerException?'NullPointerException':'other');}
+  return out;
+ }

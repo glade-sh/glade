@@ -266,7 +266,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	for _, objectName := range []string{"Organization", "UserRole", "User", "UserLogin", "Profile", "UserLicense", "Network", "PermissionSet", "PermissionSetAssignment", "ObjectPermissions", "RecordType"} {
 		want := 1
 		if objectName == "Profile" {
-			want = 8
+			want = 10
 		}
 		if objectName == "User" {
 			want = 2
@@ -278,13 +278,13 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 			want = 1
 		}
 		if objectName == "PermissionSet" {
-			want = 10
+			want = 11
 		}
 		if objectName == "ObjectPermissions" {
 			want = 6
 		}
 		if objectName == "UserLicense" {
-			want = 2
+			want = 4
 		}
 		if objectName == "RecordType" {
 			want = 0
@@ -315,7 +315,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 			t.Fatalf("describe-only Master was seeded as a record for %s", objectName)
 		}
 	}
-	if len(org.Objects["User"].Records) != 2 || len(org.Objects["UserLogin"].Records) != 2 || len(org.Objects["Profile"].Records) != 8 || len(org.Objects["UserLicense"].Records) != 2 {
+	if len(org.Objects["User"].Records) != 2 || len(org.Objects["UserLogin"].Records) != 2 || len(org.Objects["Profile"].Records) != 10 || len(org.Objects["UserLicense"].Records) != 4 {
 		t.Fatalf("platform records = %#v", InspectOrg("", org))
 	}
 	if _, ok := findRecordByStringField(org.Objects["Profile"].Records, "Name", "Customer Community Guest User"); !ok {
@@ -324,19 +324,37 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if profile, ok := findRecordByStringField(org.Objects["Profile"].Records, "Name", "Customer Community Login User"); !ok || profile.Fields["UserType"].String != "CspLitePortal" {
 		t.Fatalf("community login profile = %#v, %v", profile, ok)
 	}
-	user, ok := org.Objects["User"].Records["005000000000001"]
+	user, ok := org.Objects["User"].Records[DefaultUserID]
 	if !ok {
 		t.Fatalf("missing deterministic user: %#v", org.Objects["User"].Records)
 	}
-	if user.Fields["UserRoleId"].ID != "00E000000000001" || user.Fields["LocaleSidKey"].String != "en_US" || user.Fields["TimeZoneSidKey"].String != "UTC" {
+	if user.Fields["UserRoleId"].ID != "00E000000000001" || user.Fields["LocaleSidKey"].String != "en_US" || user.Fields["TimeZoneSidKey"].String != "America/Los_Angeles" {
 		t.Fatalf("user fields = %#v", user.Fields)
 	}
-	automatedProcessUser, ok := org.Objects["User"].Records["005000000000002"]
+	if org.Objects["Organization"].Records["00D000000000mH2"].Fields["TimeZoneSidKey"].String != "America/Los_Angeles" {
+		t.Fatal("deterministic Organization zone differs from the captured running-user zone")
+	}
+	if _, ok := org.Objects["User"].Records["005000000000002"]; ok {
+		t.Fatal("seeded user occupies a zero-padded fabricated User Id")
+	}
+	automatedProcessUser, ok := org.Objects["User"].Records[defaultAutomatedProcessUserID]
 	if !ok || automatedProcessUser.Fields["Name"].String != "Automated Process" || automatedProcessUser.Fields["UserType"].String != "AutomatedProcess" {
 		t.Fatalf("automated process user = %#v, %v", automatedProcessUser, ok)
 	}
-	if !automatedProcessUser.Fields["IsActive"].Boolean || automatedProcessUser.Fields["ProfileId"].ID != "00e000000000005" {
+	if !automatedProcessUser.Fields["IsActive"].Boolean || automatedProcessUser.Fields["ProfileId"].ID != "00e000000000009" {
 		t.Fatalf("automated process user active/profile fields = %#v", automatedProcessUser.Fields)
+	}
+	if got := org.IDSequences["Profile"]; got != 12 {
+		t.Fatalf("profile seed sequence = %d, want 12", got)
+	}
+	automatedProfileID := automatedProcessUser.Fields["ProfileId"].ID
+	if profile, ok := org.Objects["Profile"].Records[automatedProfileID]; ok {
+		t.Fatalf("automated process identity exposed an unobserved profile: %#v", profile)
+	}
+	for _, permissionSet := range org.Objects["PermissionSet"].Records {
+		if permissionSet.Fields["IsOwnedByProfile"].Boolean && permissionSet.Fields["ProfileId"].ID == automatedProfileID {
+			t.Fatalf("unexpected automated process profile-owned permission set: %#v", permissionSet)
+		}
 	}
 	if license, ok := org.Objects["UserLicense"].Records["100000000000001"]; !ok || license.Fields["LicenseDefinitionKey"].String != "SFDC" {
 		t.Fatalf("salesforce license = %#v, %v", license, ok)
@@ -364,7 +382,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if org.Objects["ContentVersion"].Definition.Fields["ContentDocumentId"].Required {
 		t.Fatalf("ContentVersion.ContentDocumentId should be optional for first-version inserts")
 	}
-	orgRecord := org.Objects["Organization"].Records["00D000000000001"]
+	orgRecord := org.Objects["Organization"].Records["00D000000000mH2"]
 	if orgRecord.Fields["IsSandbox"].Kind != ValueBoolean || !orgRecord.Fields["IsSandbox"].Boolean {
 		t.Fatalf("organization fields = %#v", orgRecord.Fields)
 	}
@@ -393,7 +411,7 @@ func TestEnsureDeterministicPlatformDataHonorsConfiguredOrgID(t *testing.T) {
 	if _, ok := org.Objects["Organization"].Records[ID(org.OrgID)]; !ok {
 		t.Fatalf("missing configured organization record: %#v", org.Objects["Organization"].Records)
 	}
-	if _, ok := org.Objects["Organization"].Records["00D000000000001"]; ok {
+	if _, ok := org.Objects["Organization"].Records["00D000000000mH2"]; ok {
 		t.Fatalf("default organization record should not be added when org ID is configured")
 	}
 }
@@ -657,5 +675,36 @@ func TestApplyFixtureRejectsInvalidOrgDomainBeforeMutation(t *testing.T) {
 	if org.OrgID != "original-org" || org.APIVersion != "65.0" ||
 		org.Namespace != "original" || org.DomainURL != "https://stored.example.test" {
 		t.Fatalf("invalid fixture mutated org metadata: %#v", org)
+	}
+}
+
+// Existing/imported identities remain authoritative over deterministic defaults.
+func TestEnsureDeterministicPlatformDataPreservesAutomatedProcessProfile(t *testing.T) {
+	org := NewOrgState()
+	org.IDSequences = map[string]uint64{"Profile": 42}
+	org.Objects["User"] = ObjectState{Records: map[ID]Record{
+		"005000000000002": {ID: "005000000000002", Object: "User", Fields: map[string]Value{
+			"ProfileId": IDValue("00e000000000005"), "UserType": StringValue("AutomatedProcess"),
+		}},
+	}}
+	org.Objects["Profile"] = ObjectState{Records: map[ID]Record{
+		"00e000000000009": {ID: "00e000000000009", Object: "Profile", Fields: map[string]Value{
+			"Name": StringValue("Imported Profile"), "UserLicenseId": IDValue("100000000000999"),
+		}},
+	}}
+	EnsureDeterministicPlatformData(&org)
+	EnsureDeterministicPlatformData(&org)
+	if got := org.Objects["User"].Records["005000000000002"].Fields["ProfileId"].ID; got != "00e000000000005" {
+		t.Fatalf("existing automated process profile binding overwritten: %s", got)
+	}
+	if _, seeded := org.Objects["User"].Records[defaultAutomatedProcessUserID]; seeded {
+		t.Fatal("reseeding created a second automated process user")
+	}
+	if got := org.IDSequences["Profile"]; got != 42 {
+		t.Fatalf("imported profile sequence overwritten: %d", got)
+	}
+	profile := org.Objects["Profile"].Records["00e000000000009"]
+	if profile.Fields["Name"].String != "Imported Profile" || profile.Fields["UserLicenseId"].ID != "100000000000999" {
+		t.Fatalf("imported profile fields overwritten: %#v", profile.Fields)
 	}
 }

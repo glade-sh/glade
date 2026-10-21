@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>ObservationText__c</fullName><label>Observation Text</label><length>80</length><type>Text</type></CustomField>

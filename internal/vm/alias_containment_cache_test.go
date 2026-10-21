@@ -253,52 +253,6 @@ func TestAliasContainmentCacheInvalidatesAfterSObjectFormulaRefresh(t *testing.T
 	}
 }
 
-func TestAliasContainmentCacheInvalidatesTypedRootsAfterUnitOfWorkRegistration(t *testing.T) {
-	machine := New(nil)
-	unitOfWork, err := machine.constructFrameworkSObjectUnitOfWork(
-		[]Value{List(sObjectTypeToken("Account"))},
-		nil,
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	record := Object("Account")
-	listRoot := testTypedList("List<Object>", unitOfWork)
-	mapRoot := typedMap("Map<String,Object>")
-	rootKey := mapKey(String("unitOfWork"))
-	mapRoot.Map[rootKey] = unitOfWork
-	mapRoot.MapKeys[rootKey] = String("unitOfWork")
-	mapRoot.MapOrder = []string{rootKey}
-	machine.Globals["listRoot"] = listRoot
-	machine.Globals["mapRoot"] = mapRoot
-
-	previous := snapshotAlias(record)
-	for name, root := range machine.Globals {
-		if machine.valueContainsAliasRefCached(root, previous, make(map[uint64]bool)) {
-			t.Fatalf("%s unexpectedly contained record before registration", name)
-		}
-	}
-	if _, handled, err := machine.callFrameworkSObjectUnitOfWorkMember(unitOfWork, "registerNew", []Value{record}, &Result{}); err != nil {
-		t.Fatal(err)
-	} else if !handled {
-		t.Fatal("framework_SObjectUnitOfWork.registerNew was not handled")
-	}
-
-	updated := record
-	updated.Fields = cloneValueMapForContainmentTest(record.Fields)
-	updated.Fields["Name"] = String("updated")
-	machine.propagateAliasSnapshotToScope(machine.Globals, previous, updated)
-
-	gotList := registeredUnitOfWorkRecord(machine.Globals["listRoot"].List[0], "m_newListByType", "Account")
-	if gotList.Fields["Name"].Text != "updated" {
-		t.Fatalf("List<Object> registered record = %#v, want propagated update", gotList)
-	}
-	gotMap := registeredUnitOfWorkRecord(machine.Globals["mapRoot"].Map[rootKey], "m_newListByType", "Account")
-	if gotMap.Fields["Name"].Text != "updated" {
-		t.Fatalf("Map<String,Object> registered record = %#v, want propagated update", gotMap)
-	}
-}
-
 func TestAliasContainmentCacheBoundsDistinctPairsWithoutMutation(t *testing.T) {
 	if testing.Short() {
 		t.Skip("infrastructure test; full suite runs in acceptance lanes")
@@ -368,15 +322,6 @@ func BenchmarkAliasContainmentNegativeWithTenPercentMutation(b *testing.B) {
 			}
 		}
 	})
-}
-
-func registeredUnitOfWorkRecord(unitOfWork Value, fieldName, objectName string) Value {
-	bucket := unitOfWork.Fields[fieldName]
-	records := bucket.Map[mapKey(String(objectName))]
-	if len(records.List) == 0 {
-		return Null
-	}
-	return records.List[0]
 }
 
 func testTypedList(typeName string, values ...Value) Value {

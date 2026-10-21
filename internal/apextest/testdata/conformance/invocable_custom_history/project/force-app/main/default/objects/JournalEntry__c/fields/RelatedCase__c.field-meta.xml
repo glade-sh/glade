@@ -1,0 +1,4 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>RelatedCase__c</fullName><deleteConstraint>SetNull</deleteConstraint><label>Related Case</label>
+    <referenceTo>Case</referenceTo><relationshipLabel>Journal Entries</relationshipLabel><relationshipName>JournalEntries</relationshipName><type>Lookup</type>
+</CustomField>

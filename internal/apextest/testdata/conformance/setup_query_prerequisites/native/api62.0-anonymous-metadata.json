@@ -1,0 +1,5 @@
+{
+  "compiled": true,
+  "success": false,
+  "exceptionMessage": "System.AssertException: Assertion Failed: OBSERVED|metadata|{\"missingGroupMessage\":\"List has no rows for assignment to SObject\",\"missingGroupException\":\"System.QueryException\",\"absentGroup\":0,\"presentPermissionSet\":1,\"presentGroup\":1}"
+}

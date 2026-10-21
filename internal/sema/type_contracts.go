@@ -268,10 +268,14 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 			case "*", "/", "%", "-":
 				if left != "" && right != "" && !semaDateDayArithmetic(current.Operator, left, right) && (!isSemaNumericType(left) || !isSemaNumericType(right)) {
 					appendDiagnostic("arithmetic operator requires numeric operands")
+					if current.Operator == "-" {
+						diagnostics[len(diagnostics)-1].NativeMessage = dateOperandDiagnosticMessage(left)
+					}
 				}
 			case "+":
 				if left != "" && right != "" && !semaDateDayArithmetic(current.Operator, left, right) && !isSemaNumericType(left) && !isSemaNumericType(right) && !strings.EqualFold(left, "String") && !strings.EqualFold(right, "String") {
 					appendDiagnostic("operator + requires numeric or String operands")
+					diagnostics[len(diagnostics)-1].NativeMessage = dateOperandDiagnosticMessage(left)
 				}
 			case "&", "|", "^":
 				booleanPair := strings.EqualFold(left, "Boolean") && strings.EqualFold(right, "Boolean")
@@ -330,14 +334,23 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 			}
 			if strings.HasPrefix(current.Callee, "__cast:") && len(current.Args) == 1 {
 				target := strings.TrimPrefix(current.Callee, "__cast:")
+				if detail := semaGenericInterfaceCastTypeError(target, model); detail != "" {
+					appendDiagnostic(detail)
+				}
 				value := a.inferIRExprType(current.Args[0], scope, model, typ.Name)
-				if value != "" && !runtimeCompatible(target, value) {
+				if value != "" && !runtimeCompatible(target, value) && !semaParameterizedInterfaceCastCompatible(typ.Name, target, value, model) && !semaIteratorCastCompatible(target, value) && !semaListSObjectDirectQueryCast(target, value, current, model) {
 					if message, reports := semaReportsCastMessage(target, value, model); reports {
 						diagnostics = append(diagnostics, semaReportsDiagnostic(typ, "GLADESEMA019", message, bodyOffset+pos, bodyOffset+pos+1, source))
+					} else if message := semaListSObjectCastMessage(target, value, model); message != "" {
+						appendDiagnostic("cast is incompatible with its operand")
+						diagnostics[len(diagnostics)-1].NativeMessage = message
 					} else {
 						appendDiagnostic("cast is incompatible with its operand")
 						if target == "Integer" && value == "String" && !semaProjectTypeShadowsPlatform(model, target) && !semaProjectTypeShadowsPlatform(model, value) {
 							diagnostics[len(diagnostics)-1].NativeMessage = "Incompatible types since an instance of String is never an instance of Integer"
+							if receiverDependencyLiteralCastControl(typ, current.Args[0], model) {
+								diagnostics[len(diagnostics)-1].Code = "receiver_expression_literal_cast"
+							}
 						}
 					}
 				}
@@ -379,6 +392,13 @@ func semaOrderablePrimitivePair(left, right string) bool {
 func semaDateDayArithmetic(operator, left, right string) bool {
 	if operator != "+" && operator != "-" {
 		return false
+	}
+	// Fractional-day captures at API 62/66/67/68, both routes, accept Datetime
+	// +/- Decimal (including literals) and Double. Date fractional operands and
+	// Long operands retain their existing boundary.
+	if strings.EqualFold(left, "Datetime") &&
+		(strings.EqualFold(right, "Double") || strings.EqualFold(right, "Decimal")) {
+		return true
 	}
 	return (strings.EqualFold(left, "Date") || strings.EqualFold(left, "Datetime")) &&
 		strings.EqualFold(right, "Integer")
@@ -512,4 +532,25 @@ func typeContractPropertyHasAccessor(member typesys.MemberSymbol, kind string) b
 		}
 	}
 	return false
+}
+
+// semaIteratorCastCompatible reports whether a cast between two typed
+// Iterators compiles. Native H1XC9-A@62.0/67.0: (Iterator<Integer>) of an
+// Iterator<String> local compiles and runs; the run-time check names only
+// System.Iterator (H1XC8-A). Assignment between them stays rejected (M1 I101).
+func semaIteratorCastCompatible(target, value string) bool {
+	targetBase, targetArgs := semaGenericBaseAndArgs(semaCanonicalPlatformAlias(target))
+	valueBase, valueArgs := semaGenericBaseAndArgs(semaCanonicalPlatformAlias(value))
+	return len(targetArgs) == 1 && len(valueArgs) == 1 && sameSemaSignatureType(targetBase, "Iterator") && sameSemaSignatureType(valueBase, "Iterator")
+}
+
+func dateOperandDiagnosticMessage(left string) string {
+	switch {
+	case strings.EqualFold(left, "Date"):
+		return "Date expressions must use Integer or Long"
+	case strings.EqualFold(left, "Datetime"):
+		return "Date/time expressions must use Integer or Double or Decimal"
+	default:
+		return ""
+	}
 }

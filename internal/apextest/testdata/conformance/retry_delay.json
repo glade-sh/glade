@@ -1,0 +1,392 @@
+{
+  "schemaVersion": 1,
+  "fixtures": {
+    "62.0": {
+      "files": {
+        "enqueue-chain.apex": "RetryDelayProbe.start('anon62-chain','chain');\n",
+        "enqueue-integerZero.apex": "RetryDelayProbe.start('anon62-integerZero','integerZero');\n",
+        "enqueue-noOptions.apex": "System.enqueueJob(new RetryDelayProbe.Leaf('anon62-noOptions'));\n",
+        "enqueue-optionNull.apex": "RetryDelayProbe.start('anon62-optionNull','optionNull');\n",
+        "enqueue-optionZero.apex": "RetryDelayProbe.start('anon62-optionZero','optionZero');\n",
+        "force-app/main/default/classes/RetryDelayBareObservationTest.cls": "@IsTest private class RetryDelayBareObservationTest {\n @IsTest static void noOptions(){Test.startTest();System.enqueueJob(new RetryDelayProbe.Leaf('named-noOptions'));Test.stopTest();System.assert(false,'NATIVE_RETRY_DELAY|'+JSON.serialize(RetryDelayProbe.report('named-noOptions')));}\n}\n",
+        "force-app/main/default/classes/RetryDelayBareObservationTest.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/RetryDelayObservationTest.cls": "@IsTest private class RetryDelayObservationTest {\n private static void run(String mode){String label='named-'+mode;Test.startTest();RetryDelayProbe.start(label,mode);Test.stopTest();System.assert(false,'NATIVE_RETRY_DELAY|'+JSON.serialize(RetryDelayProbe.report(label)));}\n @IsTest static void chain(){run('chain');}\n @IsTest static void optionZero(){run('optionZero');}\n @IsTest static void integerZero(){run('integerZero');}\n @IsTest static void optionNull(){run('optionNull');}\n}\n",
+        "force-app/main/default/classes/RetryDelayObservationTest.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/RetryDelayProbe.cls": "public class RetryDelayProbe {\n public static void mark(String label,String stage){\n  Object delay;try{delay=System.AsyncInfo.getMinimumQueueableDelayInMinutes();}catch(Exception e){delay=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()};}\n  insert new Account(Name='delay-probe-'+label+'-'+stage,Description=JSON.serialize(delay));\n }\n public class Work implements Queueable,Finalizer {\n  String label;Integer phase;AsyncOptions baton;\n  public Work(String label,Integer phase,AsyncOptions baton){this.label=label;this.phase=phase;this.baton=baton;}\n  public void execute(QueueableContext c){mark(label,'body'+phase);System.attachFinalizer(this);}\n  public void execute(FinalizerContext c){\n   mark(label,'finalizer'+phase);\n   if(phase==0){AsyncOptions retry=new AsyncOptions();retry.MaximumQueueableStackDepth=8;retry.MinimumQueueableDelayInMinutes=2;AsyncOptions clean=new AsyncOptions();clean.MaximumQueueableStackDepth=8;System.enqueueJob(new Work(label,1,clean),retry);}\n   else if(phase==1)System.enqueueJob(new Work(label,2,baton),baton);\n  }\n }\n public class Leaf implements Queueable {String label;public Leaf(String label){this.label=label;}public void execute(QueueableContext c){mark(label,'body');}}\n public static void start(String label,String mode){\n  AsyncOptions o=new AsyncOptions();o.MaximumQueueableStackDepth=5;\n  if(mode=='chain')System.enqueueJob(new Work(label,0,o),o);\n  else if(mode=='optionZero'){o.MinimumQueueableDelayInMinutes=0;System.enqueueJob(new Leaf(label),o);}\n  else if(mode=='optionNull'){o.MinimumQueueableDelayInMinutes=null;System.enqueueJob(new Leaf(label),o);}\n  else if(mode=='integerZero')System.enqueueJob(new Leaf(label),0);\n }\n public static Map<String,Object> report(String label){String prefix='delay-probe-'+label+'-';String pattern=prefix+'%';Map<String,Object> r=new Map<String,Object>();for(Account row:[SELECT Name,Description FROM Account WHERE Name LIKE :pattern])r.put(row.Name.substring(prefix.length()),JSON.deserializeUntyped(row.Description));return r;}\n}\n",
+        "force-app/main/default/classes/RetryDelayProbe.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "readback-chain.apex": "System.debug('NATIVE_RETRY_DELAY|'+JSON.serialize(RetryDelayProbe.report('anon62-chain')));\n",
+        "readback-integerZero.apex": "System.debug('NATIVE_RETRY_DELAY|'+JSON.serialize(RetryDelayProbe.report('anon62-integerZero')));\n",
+        "readback-noOptions.apex": "System.debug('NATIVE_RETRY_DELAY|'+JSON.serialize(RetryDelayProbe.report('anon62-noOptions')));\n",
+        "readback-optionNull.apex": "System.debug('NATIVE_RETRY_DELAY|'+JSON.serialize(RetryDelayProbe.report('anon62-optionNull')));\n",
+        "readback-optionZero.apex": "System.debug('NATIVE_RETRY_DELAY|'+JSON.serialize(RetryDelayProbe.report('anon62-optionZero')));\n",
+        "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n"
+      },
+      "sha256": {
+        "enqueue-chain.apex": "c6324b1a8289b3aeb47e4249e6e84b7ae2d4bfd1d0b92c81fcdc60eb3458ec5e",
+        "enqueue-integerZero.apex": "495fbab370b11f4909903e1ec6b95acaf4940c933d903c0490f49279b0689a2d",
+        "enqueue-noOptions.apex": "52117f7b0ab23f07af2bf77e17b62c2f43e7194f1d6c20dc7330ac0f9b6635fa",
+        "enqueue-optionNull.apex": "5c2fb676d5ef9e0388f2617bbaf39a41e790f0c115c249745386fdc14e247585",
+        "enqueue-optionZero.apex": "e86eb7bf9539cc02f1986324d92c66124c43ac0a00e99463e659dab1a19e86f7",
+        "force-app/main/default/classes/RetryDelayBareObservationTest.cls": "359f140cc142d4b7b1e9d9cfb0c1d46ec9062ddaef2218fd4e78cc2eec941d45",
+        "force-app/main/default/classes/RetryDelayBareObservationTest.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "force-app/main/default/classes/RetryDelayObservationTest.cls": "8f51c0fbf0c94c093a990ce8d79e0fbcca1d86df7bf8e6383ba2a947358cfecb",
+        "force-app/main/default/classes/RetryDelayObservationTest.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "force-app/main/default/classes/RetryDelayProbe.cls": "57c357f600e7212d6a7fda41d0785d9b0db7e031611cf701059a8b99799d2890",
+        "force-app/main/default/classes/RetryDelayProbe.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "readback-chain.apex": "7dcf53e384bf6311dfacc474b6ae676c5d350f6746cff7d28923ea2a4d831f0b",
+        "readback-integerZero.apex": "a706a93d3e37153e60fb023e786ef67e69856633f80b759996f69b63d566fe59",
+        "readback-noOptions.apex": "a15b62d887fe2abb601c4eac4c347e65cc2f4052f3dec9ca915b4ba820fc450c",
+        "readback-optionNull.apex": "faec0732d990cbc5f31c9a1c6a6eb2dbb27e086f159e9afacde9ef49b62ab604",
+        "readback-optionZero.apex": "649c3ff16d1daf32409b4d8be0665efd3739af9feddd2004247d211e86668b85",
+        "sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+      }
+    },
+    "67.0": {
+      "files": {
+        "enqueue-chain.apex": "RetryDelayProbe.start('anon67-chain','chain');\n",
+        "enqueue-integerZero.apex": "RetryDelayProbe.start('anon67-integerZero','integerZero');\n",
+        "enqueue-noOptions.apex": "System.enqueueJob(new RetryDelayProbe.Leaf('anon67-noOptions'));\n",
+        "enqueue-optionNull.apex": "RetryDelayProbe.start('anon67-optionNull','optionNull');\n",
+        "enqueue-optionZero.apex": "RetryDelayProbe.start('anon67-optionZero','optionZero');\n",
+        "force-app/main/default/classes/RetryDelayBareObservationTest.cls": "@IsTest private class RetryDelayBareObservationTest {\n @IsTest static void noOptions(){Test.startTest();System.enqueueJob(new RetryDelayProbe.Leaf('named-noOptions'));Test.stopTest();System.assert(false,'NATIVE_RETRY_DELAY|'+JSON.serialize(RetryDelayProbe.report('named-noOptions')));}\n}\n",
+        "force-app/main/default/classes/RetryDelayBareObservationTest.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/RetryDelayObservationTest.cls": "@IsTest private class RetryDelayObservationTest {\n private static void run(String mode){String label='named-'+mode;Test.startTest();RetryDelayProbe.start(label,mode);Test.stopTest();System.assert(false,'NATIVE_RETRY_DELAY|'+JSON.serialize(RetryDelayProbe.report(label)));}\n @IsTest static void chain(){run('chain');}\n @IsTest static void optionZero(){run('optionZero');}\n @IsTest static void integerZero(){run('integerZero');}\n @IsTest static void optionNull(){run('optionNull');}\n}\n",
+        "force-app/main/default/classes/RetryDelayObservationTest.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/RetryDelayProbe.cls": "public class RetryDelayProbe {\n public static void mark(String label,String stage){\n  Object delay;try{delay=System.AsyncInfo.getMinimumQueueableDelayInMinutes();}catch(Exception e){delay=new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()};}\n  insert new Account(Name='delay-probe-'+label+'-'+stage,Description=JSON.serialize(delay));\n }\n public class Work implements Queueable,Finalizer {\n  String label;Integer phase;AsyncOptions baton;\n  public Work(String label,Integer phase,AsyncOptions baton){this.label=label;this.phase=phase;this.baton=baton;}\n  public void execute(QueueableContext c){mark(label,'body'+phase);System.attachFinalizer(this);}\n  public void execute(FinalizerContext c){\n   mark(label,'finalizer'+phase);\n   if(phase==0){AsyncOptions retry=new AsyncOptions();retry.MaximumQueueableStackDepth=8;retry.MinimumQueueableDelayInMinutes=2;AsyncOptions clean=new AsyncOptions();clean.MaximumQueueableStackDepth=8;System.enqueueJob(new Work(label,1,clean),retry);}\n   else if(phase==1)System.enqueueJob(new Work(label,2,baton),baton);\n  }\n }\n public class Leaf implements Queueable {String label;public Leaf(String label){this.label=label;}public void execute(QueueableContext c){mark(label,'body');}}\n public static void start(String label,String mode){\n  AsyncOptions o=new AsyncOptions();o.MaximumQueueableStackDepth=5;\n  if(mode=='chain')System.enqueueJob(new Work(label,0,o),o);\n  else if(mode=='optionZero'){o.MinimumQueueableDelayInMinutes=0;System.enqueueJob(new Leaf(label),o);}\n  else if(mode=='optionNull'){o.MinimumQueueableDelayInMinutes=null;System.enqueueJob(new Leaf(label),o);}\n  else if(mode=='integerZero')System.enqueueJob(new Leaf(label),0);\n }\n public static Map<String,Object> report(String label){String prefix='delay-probe-'+label+'-';String pattern=prefix+'%';Map<String,Object> r=new Map<String,Object>();for(Account row:[SELECT Name,Description FROM Account WHERE Name LIKE :pattern])r.put(row.Name.substring(prefix.length()),JSON.deserializeUntyped(row.Description));return r;}\n}\n",
+        "force-app/main/default/classes/RetryDelayProbe.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "readback-chain.apex": "System.debug('NATIVE_RETRY_DELAY|'+JSON.serialize(RetryDelayProbe.report('anon67-chain')));\n",
+        "readback-integerZero.apex": "System.debug('NATIVE_RETRY_DELAY|'+JSON.serialize(RetryDelayProbe.report('anon67-integerZero')));\n",
+        "readback-noOptions.apex": "System.debug('NATIVE_RETRY_DELAY|'+JSON.serialize(RetryDelayProbe.report('anon67-noOptions')));\n",
+        "readback-optionNull.apex": "System.debug('NATIVE_RETRY_DELAY|'+JSON.serialize(RetryDelayProbe.report('anon67-optionNull')));\n",
+        "readback-optionZero.apex": "System.debug('NATIVE_RETRY_DELAY|'+JSON.serialize(RetryDelayProbe.report('anon67-optionZero')));\n",
+        "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n"
+      },
+      "sha256": {
+        "enqueue-chain.apex": "86554e8daef9929a84c5f8ba00f728c9fff8a06dc1e352919ec3756b93157429",
+        "enqueue-integerZero.apex": "0bcad70ef5a7fd7ee2187889c7256874bb4cc108e4d643b97a6f724ce79d55b6",
+        "enqueue-noOptions.apex": "772a8bcc18c638c8ae228842a5ca2419edbe46baab530d7e1cbff3923da4f8e5",
+        "enqueue-optionNull.apex": "4b55aaa632b2ccb5c8e652949e4b3a30075d816e4fd0c82d8638854c617a56ea",
+        "enqueue-optionZero.apex": "f9fff8060752ddc5a99fa88a82ad4b14fd3f64c29f6474492b5b69f2e9f345df",
+        "force-app/main/default/classes/RetryDelayBareObservationTest.cls": "359f140cc142d4b7b1e9d9cfb0c1d46ec9062ddaef2218fd4e78cc2eec941d45",
+        "force-app/main/default/classes/RetryDelayBareObservationTest.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "force-app/main/default/classes/RetryDelayObservationTest.cls": "8f51c0fbf0c94c093a990ce8d79e0fbcca1d86df7bf8e6383ba2a947358cfecb",
+        "force-app/main/default/classes/RetryDelayObservationTest.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "force-app/main/default/classes/RetryDelayProbe.cls": "57c357f600e7212d6a7fda41d0785d9b0db7e031611cf701059a8b99799d2890",
+        "force-app/main/default/classes/RetryDelayProbe.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "readback-chain.apex": "a7ee182be8b90f84e714a130a30b4de72885e318a112f678855fcb2e441b80ce",
+        "readback-integerZero.apex": "1b727b3405688a4e1b401e47c7d1e0089927995ae2870c62467056544a542982",
+        "readback-noOptions.apex": "4831eaea00724bf3bcc5259694338c77ec273dc69d283dcf3834661390eb47df",
+        "readback-optionNull.apex": "223a25cef825912298a5c8bfbdece4ab6d6216bb7dd407052b7f9985fb9be36d",
+        "readback-optionZero.apex": "8c92e7d768a280b36f45311e2e682a8b6239c5e30abb11ef9b604fc68a05efbe",
+        "sfdx-project.json": "2bc58206d0b9c401181c61264ca1a7084dff5c8afdec3c0d7edeea86a65d9484"
+      }
+    }
+  },
+  "cells": [
+    {
+      "id": "DELAY_62_ANONYMOUS_chain",
+      "api": "62.0",
+      "context": "anonymous",
+      "case": "chain",
+      "class": "RetryDelayObservationTest",
+      "fixture": "62.0",
+      "receipt": "api62-chain-readback-7.json",
+      "receiptSHA256": "2e0e9a6c590969bea2ccf2a5e57293f1970a3ce8b21a6b001ee41dccaaf4b5b6",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body0": null,
+        "body1": 2,
+        "finalizer2": null,
+        "finalizer0": null,
+        "body2": null,
+        "finalizer1": 2
+      }
+    },
+    {
+      "id": "DELAY_62_ANONYMOUS_optionZero",
+      "api": "62.0",
+      "context": "anonymous",
+      "case": "optionZero",
+      "class": "RetryDelayObservationTest",
+      "fixture": "62.0",
+      "receipt": "api62-optionZero-readback-0.json",
+      "receiptSHA256": "5336a98ef9b97292de3edad610c205b123e545bbe1e4c77995f375c4ed2b3518",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body": 0
+      }
+    },
+    {
+      "id": "DELAY_62_ANONYMOUS_integerZero",
+      "api": "62.0",
+      "context": "anonymous",
+      "case": "integerZero",
+      "class": "RetryDelayObservationTest",
+      "fixture": "62.0",
+      "receipt": "api62-integerZero-readback-0.json",
+      "receiptSHA256": "2865b56d9f45c7a48a3cb829851e83e7a199e3a877543d6ab062a2c06d5f6498",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body": 0
+      }
+    },
+    {
+      "id": "DELAY_62_ANONYMOUS_optionNull",
+      "api": "62.0",
+      "context": "anonymous",
+      "case": "optionNull",
+      "class": "RetryDelayObservationTest",
+      "fixture": "62.0",
+      "receipt": "api62-optionNull-readback-0.json",
+      "receiptSHA256": "4cd0e68b69fb5915b13cdb27ea36d199dad6849fa63b76e4c9330675d5f4d497",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body": null
+      }
+    },
+    {
+      "id": "DELAY_62_ANONYMOUS_noOptions",
+      "api": "62.0",
+      "context": "anonymous",
+      "case": "noOptions",
+      "class": "RetryDelayBareObservationTest",
+      "fixture": "62.0",
+      "receipt": "api62-noOptions-readback-0.json",
+      "receiptSHA256": "aa671325592e705347266c6def3ccfbc436819da1155c678dda7dfcf05251711",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body": null
+      }
+    },
+    {
+      "id": "DELAY_62_ISTEST_chain",
+      "api": "62.0",
+      "context": "istest",
+      "case": "chain",
+      "class": "RetryDelayObservationTest",
+      "fixture": "62.0",
+      "receipt": "api62-istest.json",
+      "receiptSHA256": "ac803b48154a86046b44d5332ecf5158fde12d4f2601c48be1f483c735568293",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "finalizer2": null,
+        "body2": null,
+        "finalizer1": 2,
+        "body1": 2,
+        "finalizer0": null,
+        "body0": null
+      }
+    },
+    {
+      "id": "DELAY_62_ISTEST_optionZero",
+      "api": "62.0",
+      "context": "istest",
+      "case": "optionZero",
+      "class": "RetryDelayObservationTest",
+      "fixture": "62.0",
+      "receipt": "api62-istest.json",
+      "receiptSHA256": "ac803b48154a86046b44d5332ecf5158fde12d4f2601c48be1f483c735568293",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body": 0
+      }
+    },
+    {
+      "id": "DELAY_62_ISTEST_integerZero",
+      "api": "62.0",
+      "context": "istest",
+      "case": "integerZero",
+      "class": "RetryDelayObservationTest",
+      "fixture": "62.0",
+      "receipt": "api62-istest.json",
+      "receiptSHA256": "ac803b48154a86046b44d5332ecf5158fde12d4f2601c48be1f483c735568293",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body": 0
+      }
+    },
+    {
+      "id": "DELAY_62_ISTEST_optionNull",
+      "api": "62.0",
+      "context": "istest",
+      "case": "optionNull",
+      "class": "RetryDelayObservationTest",
+      "fixture": "62.0",
+      "receipt": "api62-istest.json",
+      "receiptSHA256": "ac803b48154a86046b44d5332ecf5158fde12d4f2601c48be1f483c735568293",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body": null
+      }
+    },
+    {
+      "id": "DELAY_62_ISTEST_noOptions",
+      "api": "62.0",
+      "context": "istest",
+      "case": "noOptions",
+      "class": "RetryDelayBareObservationTest",
+      "fixture": "62.0",
+      "receipt": "api62-bare-istest.json",
+      "receiptSHA256": "ea10fd3c87575b17e0d3ad3283f1bee7ec19d524d2a17c5c4cb25ba167e8e53d",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body": null
+      }
+    },
+    {
+      "id": "DELAY_67_ANONYMOUS_chain",
+      "api": "67.0",
+      "context": "anonymous",
+      "case": "chain",
+      "class": "RetryDelayObservationTest",
+      "fixture": "67.0",
+      "receipt": "api67-chain-readback-7.json",
+      "receiptSHA256": "7932e8f8e72996b14093c9854c73e09f66f9579b62ac8fb52b6048aa23c7cb34",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "finalizer2": null,
+        "body2": null,
+        "finalizer1": 2,
+        "body1": 2,
+        "body0": null,
+        "finalizer0": null
+      }
+    },
+    {
+      "id": "DELAY_67_ANONYMOUS_optionZero",
+      "api": "67.0",
+      "context": "anonymous",
+      "case": "optionZero",
+      "class": "RetryDelayObservationTest",
+      "fixture": "67.0",
+      "receipt": "api67-optionZero-readback-0.json",
+      "receiptSHA256": "e5dffddc84eb6eb55d8c295667f05da6699729dddaaa4fbd23048a2e25539cd1",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body": 0
+      }
+    },
+    {
+      "id": "DELAY_67_ANONYMOUS_integerZero",
+      "api": "67.0",
+      "context": "anonymous",
+      "case": "integerZero",
+      "class": "RetryDelayObservationTest",
+      "fixture": "67.0",
+      "receipt": "api67-integerZero-readback-0.json",
+      "receiptSHA256": "ccc42681f594ebd0e46474f3eb7d55388a11ce1e7fab9e2079c309491e63c0df",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body": 0
+      }
+    },
+    {
+      "id": "DELAY_67_ANONYMOUS_optionNull",
+      "api": "67.0",
+      "context": "anonymous",
+      "case": "optionNull",
+      "class": "RetryDelayObservationTest",
+      "fixture": "67.0",
+      "receipt": "api67-optionNull-readback-0.json",
+      "receiptSHA256": "d96120e89832221ba7986c740dec7d7ae3a36997ddc6cda0811daeaab1015324",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body": null
+      }
+    },
+    {
+      "id": "DELAY_67_ANONYMOUS_noOptions",
+      "api": "67.0",
+      "context": "anonymous",
+      "case": "noOptions",
+      "class": "RetryDelayBareObservationTest",
+      "fixture": "67.0",
+      "receipt": "api67-noOptions-readback-0.json",
+      "receiptSHA256": "9514eab8dafa7521ca7b6ec859eea4caaf726f6e8f99e688e96ea8ed8fa4ae92",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body": null
+      }
+    },
+    {
+      "id": "DELAY_67_ISTEST_chain",
+      "api": "67.0",
+      "context": "istest",
+      "case": "chain",
+      "class": "RetryDelayObservationTest",
+      "fixture": "67.0",
+      "receipt": "api67-istest.json",
+      "receiptSHA256": "cb79c9daf183f2c6c96a8777d5c586ac02d1ffd61ac1c8d9bd260ba6461269c2",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "finalizer2": null,
+        "body2": null,
+        "finalizer1": 2,
+        "body1": 2,
+        "finalizer0": null,
+        "body0": null
+      }
+    },
+    {
+      "id": "DELAY_67_ISTEST_optionZero",
+      "api": "67.0",
+      "context": "istest",
+      "case": "optionZero",
+      "class": "RetryDelayObservationTest",
+      "fixture": "67.0",
+      "receipt": "api67-istest.json",
+      "receiptSHA256": "cb79c9daf183f2c6c96a8777d5c586ac02d1ffd61ac1c8d9bd260ba6461269c2",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body": 0
+      }
+    },
+    {
+      "id": "DELAY_67_ISTEST_integerZero",
+      "api": "67.0",
+      "context": "istest",
+      "case": "integerZero",
+      "class": "RetryDelayObservationTest",
+      "fixture": "67.0",
+      "receipt": "api67-istest.json",
+      "receiptSHA256": "cb79c9daf183f2c6c96a8777d5c586ac02d1ffd61ac1c8d9bd260ba6461269c2",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body": 0
+      }
+    },
+    {
+      "id": "DELAY_67_ISTEST_optionNull",
+      "api": "67.0",
+      "context": "istest",
+      "case": "optionNull",
+      "class": "RetryDelayObservationTest",
+      "fixture": "67.0",
+      "receipt": "api67-istest.json",
+      "receiptSHA256": "cb79c9daf183f2c6c96a8777d5c586ac02d1ffd61ac1c8d9bd260ba6461269c2",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body": null
+      }
+    },
+    {
+      "id": "DELAY_67_ISTEST_noOptions",
+      "api": "67.0",
+      "context": "istest",
+      "case": "noOptions",
+      "class": "RetryDelayBareObservationTest",
+      "fixture": "67.0",
+      "receipt": "api67-bare-istest.json",
+      "receiptSHA256": "f45edf33d0d17ff4627f594ecf6fa7b49492eb21e7b09a9fa091b37a13d16a63",
+      "orgIDHash": "ca28ab5790fc60a4ae7b6b0531c8086502660c22eec3b2da21038ae50d7b9847",
+      "native": {
+        "body": null
+      }
+    }
+  ],
+  "carries": [
+    "API68, namespaces and first-cap introduction in a Queueable body remain unobserved.",
+    "Platform-event ordering remains unobserved; no event ordering is asserted."
+  ],
+  "anonymousReplay": "Drain once, retain the real two-minute retry delay, then advance only the explicit deterministic scheduler clock by two minutes before readback."
+}

@@ -12,11 +12,18 @@ import (
 )
 
 func callStringMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	return callStringMemberWithASCII(receiver, method, args, false)
+}
+
+func callStringMemberWithASCII(receiver Value, method string, args []Value, ascii bool) (Value, bool, error) {
 	method = canonicalStringMemberMethod(method)
 	switch method {
 	case "length":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.length expects 0 arguments")
+		}
+		if ascii {
+			return Int(int64(len(receiver.Text))), true, nil
 		}
 		return Int(int64(apexStringLength(receiver.Text))), true, nil
 	case "contains":
@@ -221,6 +228,9 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if err != nil {
 			return Null, true, err
 		}
+		if ascii {
+			return Int(int64(stringIndexOfASCII(receiver.Text, needle, start))), true, nil
+		}
 		if len(args) == 2 {
 			return Int(int64(stringIndexOfUTF16(receiver.Text, needle, start))), true, nil
 		}
@@ -416,11 +426,17 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		}
 		return Int(int64(compareApexStrings(receiver.Text, other))), true, nil
 	case "substring":
-		return substring(receiver.Text, args)
+		return substringWithASCII(receiver.Text, args, ascii)
 	case "charAt":
 		index, err := stringIntArg("String.charAt", args)
 		if err != nil {
 			return Null, true, err
+		}
+		if ascii {
+			if index < 0 || index >= len(receiver.Text) {
+				return Null, true, newExceptionError("StringException", "Specified index is invalid.")
+			}
+			return Int(int64(receiver.Text[index])), true, nil
 		}
 		units := apexStringUTF16Units(receiver.Text)
 		if index < 0 || index >= len(units) {
@@ -722,6 +738,9 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if len(args) == 1 && args[0].Kind == ValueInt {
 			if args[0].Int < 0 {
 				return String(""), true, nil
+			}
+			if err := stringRepeatLengthError(receiver.Text, args[0].Int); err != nil {
+				return Null, true, err
 			}
 			return String(strings.Repeat(receiver.Text, int(args[0].Int))), true, nil
 		}

@@ -1,0 +1,13 @@
+source_api	method	observation
+62.0	listNameOtherUser	{"cachedName":"EveningRoute","matches":true,"name":"EveningRoute","rows":1}
+62.0	orgFalseSecondUser	{"reader":{"instanceValue":false,"orgValue":false,"queryValue":false,"rows":1,"selectedOrg":true},"writer":{"instanceValue":false,"orgValue":false,"queryValue":false,"rows":1,"selectedOrg":true}}
+62.0	orgRoundTrip	{"off":{"instanceValue":false,"orgValue":false,"queryValue":false,"rows":1,"selectedOrg":true},"reader":{"instanceValue":true,"orgValue":true,"queryValue":true,"rows":1,"selectedOrg":true}}
+62.0	userOverrideWins	{"reader":{"instanceValue":true,"orgValue":false,"queryValue":true,"rows":2,"selectedOrg":false}}
+62.0	withSharedHierarchy	{"instanceValue":false,"orgValue":false,"shared":{"orgOwner":true,"rows":1,"value":false},"unshared":{"orgOwner":true,"rows":1,"value":false}}
+62.0	withSharedList	{"cachedName":"SharedEvening","shared":{"name":"SharedEvening","rows":1},"unshared":{"name":"SharedEvening","rows":1}}
+67.0	listNameOtherUser	{"cachedName":"EveningRoute","matches":true,"name":"EveningRoute","rows":1}
+67.0	orgFalseSecondUser	{"reader":{"instanceValue":false,"orgValue":false,"queryValue":false,"rows":1,"selectedOrg":true},"writer":{"instanceValue":false,"orgValue":false,"queryValue":false,"rows":1,"selectedOrg":true}}
+67.0	orgRoundTrip	{"off":{"instanceValue":false,"orgValue":false,"queryValue":false,"rows":1,"selectedOrg":true},"reader":{"instanceValue":true,"orgValue":true,"queryValue":true,"rows":1,"selectedOrg":true}}
+67.0	userOverrideWins	{"reader":{"instanceValue":true,"orgValue":false,"queryValue":true,"rows":2,"selectedOrg":false}}
+67.0	withSharedHierarchy	{"instanceValue":false,"orgValue":false,"shared":{"orgOwner":true,"rows":1,"value":false},"unshared":{"orgOwner":true,"rows":1,"value":false}}
+67.0	withSharedList	{"cachedName":"SharedEvening","shared":{"name":"SharedEvening","rows":1},"unshared":{"name":"SharedEvening","rows":1}}

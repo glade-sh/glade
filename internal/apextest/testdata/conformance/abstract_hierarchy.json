@@ -1,0 +1,1653 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 13,
+  "nativeObservationCount": 78,
+  "rows": [
+    {
+      "id": "AB_CHAIN",
+      "route": "anonymous",
+      "classes": {
+        "ProbeBase": "public abstract class ProbeBase { public abstract void execute(); }",
+        "ProbeMid": "public abstract class ProbeMid extends ProbeBase { public abstract override void execute(); }",
+        "ProbeLeaf": "public class ProbeLeaf extends ProbeMid { public override void execute() {} }"
+      },
+      "tests": [],
+      "sourceSha256": {
+        "class:ProbeBase": "84c130acc0c94072826f276cdd778e2134a18220520938c1acd39c70e8c74a1e",
+        "class:ProbeMid": "da4980252867b1dcce2d54e1f4d006d7692bb464b88a18b709d6e860b37e2212",
+        "class:ProbeLeaf": "c4085af941f2954feee5a26fba474ad94fbb25a65758ad2853a12c8de5049305",
+        "anonymous": "f4739cf374bee66726342cebe724d0d6a7336b0c8e6cf97ac9fbbf34cc5af999"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{ProbeBase subject=new ProbeLeaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|AB_CHAIN|'+captureJson);"
+    },
+    {
+      "id": "AB_CHAIN",
+      "route": "isTest",
+      "classes": {
+        "ProbeBase": "public abstract class ProbeBase { public abstract void execute(); }",
+        "ProbeMid": "public abstract class ProbeMid extends ProbeBase { public abstract override void execute(); }",
+        "ProbeLeaf": "public class ProbeLeaf extends ProbeMid { public override void execute() {} }",
+        "ObsABCHAINTest": "@IsTest private class ObsABCHAINTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{ProbeBase subject=new ProbeLeaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>556){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|AB_CHAIN|'+captureJson);} }"
+      },
+      "tests": [
+        "ObsABCHAINTest"
+      ],
+      "sourceSha256": {
+        "class:ProbeBase": "84c130acc0c94072826f276cdd778e2134a18220520938c1acd39c70e8c74a1e",
+        "class:ProbeMid": "da4980252867b1dcce2d54e1f4d006d7692bb464b88a18b709d6e860b37e2212",
+        "class:ProbeLeaf": "c4085af941f2954feee5a26fba474ad94fbb25a65758ad2853a12c8de5049305",
+        "class:ObsABCHAINTest": "c15145407ac41a345ca9247a3117b9ef9579ea15d4133235e2ba7123549aa187"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "AB_NO_OVERRIDE",
+      "route": "anonymous",
+      "classes": {
+        "Hierarchy1Base": "public abstract class Hierarchy1Base { public abstract void execute(); }",
+        "Hierarchy1Mid": "public abstract class Hierarchy1Mid extends Hierarchy1Base { public abstract void execute(); }",
+        "Hierarchy1Leaf": "public class Hierarchy1Leaf extends Hierarchy1Mid { public override void execute() {} }"
+      },
+      "tests": [],
+      "sourceSha256": {
+        "class:Hierarchy1Base": "32677e3a135b9b57be5a44dbf5a9472aba49eb58bfe0ad8a40e2c9938325ccff",
+        "class:Hierarchy1Mid": "466b14ee9574b1463541b48a3d778c139ddeeea3b49c088513fce2bbccc8beea",
+        "class:Hierarchy1Leaf": "08c1ff989174fc71e750f95c73ae09f7e4d1fe3d73cf5caa26dd04d2fc894309",
+        "anonymous": "bd3d22fbbe351fcc6e21fe58c2cb1b1592291a4b32665e3c7dcf44bfeae78a48"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy1Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy1Mid : Method must use the override keyword: void Hierarchy1Mid.execute()",
+              "column": 83
+            },
+            {
+              "name": "Hierarchy1Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Method must use the override keyword: void Hierarchy1Mid.execute()",
+              "column": 83
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        },
+        "67.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy1Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy1Mid : Method must use the override keyword: void Hierarchy1Mid.execute()",
+              "column": 83
+            },
+            {
+              "name": "Hierarchy1Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Method must use the override keyword: void Hierarchy1Mid.execute()",
+              "column": 83
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        },
+        "68.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy1Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy1Mid : Method must use the override keyword: void Hierarchy1Mid.execute()",
+              "column": 83
+            },
+            {
+              "name": "Hierarchy1Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Method must use the override keyword: void Hierarchy1Mid.execute()",
+              "column": 83
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        }
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy1Base subject=new Hierarchy1Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|AB_NO_OVERRIDE|'+captureJson);"
+    },
+    {
+      "id": "AB_NO_OVERRIDE",
+      "route": "isTest",
+      "classes": {
+        "Hierarchy1Base": "public abstract class Hierarchy1Base { public abstract void execute(); }",
+        "Hierarchy1Mid": "public abstract class Hierarchy1Mid extends Hierarchy1Base { public abstract void execute(); }",
+        "Hierarchy1Leaf": "public class Hierarchy1Leaf extends Hierarchy1Mid { public override void execute() {} }",
+        "ObsABNOOVERRIDETest": "@IsTest private class ObsABNOOVERRIDETest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy1Base subject=new Hierarchy1Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>550){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|AB_NO_OVERRIDE|'+captureJson);} }"
+      },
+      "tests": [
+        "ObsABNOOVERRIDETest"
+      ],
+      "sourceSha256": {
+        "class:Hierarchy1Base": "32677e3a135b9b57be5a44dbf5a9472aba49eb58bfe0ad8a40e2c9938325ccff",
+        "class:Hierarchy1Mid": "466b14ee9574b1463541b48a3d778c139ddeeea3b49c088513fce2bbccc8beea",
+        "class:Hierarchy1Leaf": "08c1ff989174fc71e750f95c73ae09f7e4d1fe3d73cf5caa26dd04d2fc894309",
+        "class:ObsABNOOVERRIDETest": "f9fe5ebb0a56abbef36b5305cd029e3fb5ca9713e3d6c574da8b31739d13f232"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy1Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy1Mid : Method must use the override keyword: void Hierarchy1Mid.execute()",
+              "column": 83
+            },
+            {
+              "name": "Hierarchy1Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Method must use the override keyword: void Hierarchy1Mid.execute()",
+              "column": 83
+            },
+            {
+              "name": "ObsABNOOVERRIDETest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy1Leaf : Dependent class is invalid and needs recompilation:\n Class Hierarchy1Mid : Method must use the override keyword: void Hierarchy1Mid.execute()",
+              "column": 83
+            }
+          ]
+        },
+        "67.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy1Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy1Mid : Method must use the override keyword: void Hierarchy1Mid.execute()",
+              "column": 83
+            },
+            {
+              "name": "Hierarchy1Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Method must use the override keyword: void Hierarchy1Mid.execute()",
+              "column": 83
+            },
+            {
+              "name": "ObsABNOOVERRIDETest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy1Leaf : Dependent class is invalid and needs recompilation:\n Class Hierarchy1Mid : Method must use the override keyword: void Hierarchy1Mid.execute()",
+              "column": 83
+            }
+          ]
+        },
+        "68.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy1Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy1Mid : Method must use the override keyword: void Hierarchy1Mid.execute()",
+              "column": 83
+            },
+            {
+              "name": "Hierarchy1Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Method must use the override keyword: void Hierarchy1Mid.execute()",
+              "column": 83
+            },
+            {
+              "name": "ObsABNOOVERRIDETest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy1Leaf : Dependent class is invalid and needs recompilation:\n Class Hierarchy1Mid : Method must use the override keyword: void Hierarchy1Mid.execute()",
+              "column": 83
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "AB_RETURN",
+      "route": "anonymous",
+      "classes": {
+        "Hierarchy2Base": "public abstract class Hierarchy2Base { public abstract void execute(); }",
+        "Hierarchy2Mid": "public abstract class Hierarchy2Mid extends Hierarchy2Base { public abstract override Integer execute(); }",
+        "Hierarchy2Leaf": "public class Hierarchy2Leaf extends Hierarchy2Mid { public override Integer execute() { return 1; } }"
+      },
+      "tests": [],
+      "sourceSha256": {
+        "class:Hierarchy2Base": "8e4e283ddc21025e8545228b42f751d4631609726ae6792bacf24ff8f4ff5183",
+        "class:Hierarchy2Mid": "028903e32f78a447bf6040838b5c426ee1e3d9bf854089b2d610fc80a4f4ef9c",
+        "class:Hierarchy2Leaf": "7603aca7843979ed202d64a3862eb3f6c60577460a54c09d6eea4721961e31b9",
+        "anonymous": "424d87d0c212f652ae763bae679f2e0dd048a93b77f9e4008c170b3abb00f864"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy2Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy2Mid : Method return types clash: Integer vs void from the type Hierarchy2Mid",
+              "column": 95
+            },
+            {
+              "name": "Hierarchy2Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Method return types clash: Integer vs void from the type Hierarchy2Mid",
+              "column": 95
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        },
+        "67.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy2Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy2Mid : Method return types clash: Integer vs void from the type Hierarchy2Mid",
+              "column": 95
+            },
+            {
+              "name": "Hierarchy2Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Method return types clash: Integer vs void from the type Hierarchy2Mid",
+              "column": 95
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        },
+        "68.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy2Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy2Mid : Method return types clash: Integer vs void from the type Hierarchy2Mid",
+              "column": 95
+            },
+            {
+              "name": "Hierarchy2Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Method return types clash: Integer vs void from the type Hierarchy2Mid",
+              "column": 95
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        }
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy2Base subject=new Hierarchy2Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|AB_RETURN|'+captureJson);"
+    },
+    {
+      "id": "AB_RETURN",
+      "route": "isTest",
+      "classes": {
+        "Hierarchy2Base": "public abstract class Hierarchy2Base { public abstract void execute(); }",
+        "Hierarchy2Mid": "public abstract class Hierarchy2Mid extends Hierarchy2Base { public abstract override Integer execute(); }",
+        "Hierarchy2Leaf": "public class Hierarchy2Leaf extends Hierarchy2Mid { public override Integer execute() { return 1; } }",
+        "ObsABRETURNTest": "@IsTest private class ObsABRETURNTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy2Base subject=new Hierarchy2Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|AB_RETURN|'+captureJson);} }"
+      },
+      "tests": [
+        "ObsABRETURNTest"
+      ],
+      "sourceSha256": {
+        "class:Hierarchy2Base": "8e4e283ddc21025e8545228b42f751d4631609726ae6792bacf24ff8f4ff5183",
+        "class:Hierarchy2Mid": "028903e32f78a447bf6040838b5c426ee1e3d9bf854089b2d610fc80a4f4ef9c",
+        "class:Hierarchy2Leaf": "7603aca7843979ed202d64a3862eb3f6c60577460a54c09d6eea4721961e31b9",
+        "class:ObsABRETURNTest": "ebc5c1f52990a181e74bff3b99518f944ef5c84f723fee5a855cdc05edc0076e"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy2Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy2Mid : Method return types clash: Integer vs void from the type Hierarchy2Mid",
+              "column": 95
+            },
+            {
+              "name": "Hierarchy2Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Method return types clash: Integer vs void from the type Hierarchy2Mid",
+              "column": 95
+            },
+            {
+              "name": "ObsABRETURNTest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy2Leaf : Dependent class is invalid and needs recompilation:\n Class Hierarchy2Mid : Method return types clash: Integer vs void from the type Hierarchy2Mid",
+              "column": 95
+            }
+          ]
+        },
+        "67.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy2Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy2Mid : Method return types clash: Integer vs void from the type Hierarchy2Mid",
+              "column": 95
+            },
+            {
+              "name": "Hierarchy2Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Method return types clash: Integer vs void from the type Hierarchy2Mid",
+              "column": 95
+            },
+            {
+              "name": "ObsABRETURNTest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy2Leaf : Dependent class is invalid and needs recompilation:\n Class Hierarchy2Mid : Method return types clash: Integer vs void from the type Hierarchy2Mid",
+              "column": 95
+            }
+          ]
+        },
+        "68.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy2Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy2Mid : Method return types clash: Integer vs void from the type Hierarchy2Mid",
+              "column": 95
+            },
+            {
+              "name": "Hierarchy2Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Method return types clash: Integer vs void from the type Hierarchy2Mid",
+              "column": 95
+            },
+            {
+              "name": "ObsABRETURNTest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy2Leaf : Dependent class is invalid and needs recompilation:\n Class Hierarchy2Mid : Method return types clash: Integer vs void from the type Hierarchy2Mid",
+              "column": 95
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "AB_MISSING_METHOD",
+      "route": "anonymous",
+      "classes": {
+        "Hierarchy3Base": "public abstract class Hierarchy3Base { public abstract void execute(); }",
+        "Hierarchy3Mid": "public abstract class Hierarchy3Mid extends Hierarchy3Base {}",
+        "Hierarchy3Leaf": "public class Hierarchy3Leaf extends Hierarchy3Mid { public override void execute() {} }"
+      },
+      "tests": [],
+      "sourceSha256": {
+        "class:Hierarchy3Base": "6bed9325286c03359c821c5fceea7d08604bb9488e1e6a2c722267f8f7672f65",
+        "class:Hierarchy3Mid": "aec345f7d5eaf050b0a333e581a3a5469b6134ca6af3e1434f8a40188340e18e",
+        "class:Hierarchy3Leaf": "14cd1e1b785ca6cda6c6801768789a67a38d843a60cc86ab66a0453a5478cc0f",
+        "anonymous": "cc4d5ea9246a1e73a53797002a146b667895c577b37dcbae68fc76d2dde3361b"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy3Base subject=new Hierarchy3Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|AB_MISSING_METHOD|'+captureJson);"
+    },
+    {
+      "id": "AB_MISSING_METHOD",
+      "route": "isTest",
+      "classes": {
+        "Hierarchy3Base": "public abstract class Hierarchy3Base { public abstract void execute(); }",
+        "Hierarchy3Mid": "public abstract class Hierarchy3Mid extends Hierarchy3Base {}",
+        "Hierarchy3Leaf": "public class Hierarchy3Leaf extends Hierarchy3Mid { public override void execute() {} }",
+        "ObsABMISSINGMETHODTest": "@IsTest private class ObsABMISSINGMETHODTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy3Base subject=new Hierarchy3Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>547){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|AB_MISSING_METHOD|'+captureJson);} }"
+      },
+      "tests": [
+        "ObsABMISSINGMETHODTest"
+      ],
+      "sourceSha256": {
+        "class:Hierarchy3Base": "6bed9325286c03359c821c5fceea7d08604bb9488e1e6a2c722267f8f7672f65",
+        "class:Hierarchy3Mid": "aec345f7d5eaf050b0a333e581a3a5469b6134ca6af3e1434f8a40188340e18e",
+        "class:Hierarchy3Leaf": "14cd1e1b785ca6cda6c6801768789a67a38d843a60cc86ab66a0453a5478cc0f",
+        "class:ObsABMISSINGMETHODTest": "c856f6b2b579118f0b5883956f2311f8f5f7d6a6866987447947d71b10ec3e29"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "AB_CONCRETE_MISSING",
+      "route": "anonymous",
+      "classes": {
+        "Hierarchy4Base": "public abstract class Hierarchy4Base { public abstract void execute(); }",
+        "Hierarchy4Mid": "public abstract class Hierarchy4Mid extends Hierarchy4Base { public abstract override void execute(); }",
+        "Hierarchy4Leaf": "public class Hierarchy4Leaf extends Hierarchy4Mid {}"
+      },
+      "tests": [],
+      "sourceSha256": {
+        "class:Hierarchy4Base": "49c8775ab687f32b7ecf92582583fc068bc6874302ac996d18e35e99634dd7e0",
+        "class:Hierarchy4Mid": "95da08cf0994cb597027c229ed9777fba926cdd65615c071a7aa4484750aac25",
+        "class:Hierarchy4Leaf": "bc71e5a44eeb4919c9bda8d5d3534cc357a98640ca3955e573a63cafb823d5a9",
+        "anonymous": "8d7e76ee1d6a095b251c9ee40ba797245f7cb1f9ccde546b6642f5801b688af7"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy4Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Class Hierarchy4Leaf must implement the abstract method: void Hierarchy4Mid.execute()",
+              "column": 92
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        },
+        "67.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy4Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Class Hierarchy4Leaf must implement the abstract method: void Hierarchy4Mid.execute()",
+              "column": 92
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        },
+        "68.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy4Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Class Hierarchy4Leaf must implement the abstract method: void Hierarchy4Mid.execute()",
+              "column": 92
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        }
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy4Base subject=new Hierarchy4Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|AB_CONCRETE_MISSING|'+captureJson);"
+    },
+    {
+      "id": "AB_CONCRETE_MISSING",
+      "route": "isTest",
+      "classes": {
+        "Hierarchy4Base": "public abstract class Hierarchy4Base { public abstract void execute(); }",
+        "Hierarchy4Mid": "public abstract class Hierarchy4Mid extends Hierarchy4Base { public abstract override void execute(); }",
+        "Hierarchy4Leaf": "public class Hierarchy4Leaf extends Hierarchy4Mid {}",
+        "ObsABCONCRETEMISSINGTest": "@IsTest private class ObsABCONCRETEMISSINGTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy4Base subject=new Hierarchy4Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>545){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|AB_CONCRETE_MISSING|'+captureJson);} }"
+      },
+      "tests": [
+        "ObsABCONCRETEMISSINGTest"
+      ],
+      "sourceSha256": {
+        "class:Hierarchy4Base": "49c8775ab687f32b7ecf92582583fc068bc6874302ac996d18e35e99634dd7e0",
+        "class:Hierarchy4Mid": "95da08cf0994cb597027c229ed9777fba926cdd65615c071a7aa4484750aac25",
+        "class:Hierarchy4Leaf": "bc71e5a44eeb4919c9bda8d5d3534cc357a98640ca3955e573a63cafb823d5a9",
+        "class:ObsABCONCRETEMISSINGTest": "bce7c004dc2c9bfd6876d8ab53fd0109bc3aa063d39a661ac66b069b6f7a7cbd"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy4Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Class Hierarchy4Leaf must implement the abstract method: void Hierarchy4Mid.execute()",
+              "column": 92
+            },
+            {
+              "name": "ObsABCONCRETEMISSINGTest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy4Leaf : Class Hierarchy4Leaf must implement the abstract method: void Hierarchy4Mid.execute()",
+              "column": 92
+            }
+          ]
+        },
+        "67.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy4Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Class Hierarchy4Leaf must implement the abstract method: void Hierarchy4Mid.execute()",
+              "column": 92
+            },
+            {
+              "name": "ObsABCONCRETEMISSINGTest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy4Leaf : Class Hierarchy4Leaf must implement the abstract method: void Hierarchy4Mid.execute()",
+              "column": 92
+            }
+          ]
+        },
+        "68.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy4Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Class Hierarchy4Leaf must implement the abstract method: void Hierarchy4Mid.execute()",
+              "column": 92
+            },
+            {
+              "name": "ObsABCONCRETEMISSINGTest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy4Leaf : Class Hierarchy4Leaf must implement the abstract method: void Hierarchy4Mid.execute()",
+              "column": 92
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "AB_DEPTH",
+      "route": "anonymous",
+      "classes": {
+        "Hierarchy5Base": "public abstract class Hierarchy5Base { public abstract void execute(); }",
+        "Hierarchy5Mid": "public abstract class Hierarchy5Mid extends Hierarchy5Base { public abstract override void execute(); }",
+        "Hierarchy5Leaf": "public class Hierarchy5Leaf extends Hierarchy5Deep { public override void execute() {} }",
+        "Hierarchy5Deep": "public abstract class Hierarchy5Deep extends Hierarchy5Mid { public abstract override void execute(); }"
+      },
+      "tests": [],
+      "sourceSha256": {
+        "class:Hierarchy5Base": "3907e473dbbbdb949dbf1f7d52c07048cdafed40e3f50ffabefb6797aabdc4cb",
+        "class:Hierarchy5Mid": "6f5eb11bcf6402f4fae6efdf21bb977caee9f8380256b3288de8568deec83700",
+        "class:Hierarchy5Leaf": "0465fbbbec59be845ef5273aaae95f0b78ec942f864e3783054db64a0a2ffb04",
+        "class:Hierarchy5Deep": "83e7a3778482c0cc942df4d14386a019baa4d8fccca69efb4f6885b487fc531f",
+        "anonymous": "0d3d4d51f6f4a37067b5489fd9ff78297e35053a983932b204693609c47e10df"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy5Base subject=new Hierarchy5Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|AB_DEPTH|'+captureJson);"
+    },
+    {
+      "id": "AB_DEPTH",
+      "route": "isTest",
+      "classes": {
+        "Hierarchy5Base": "public abstract class Hierarchy5Base { public abstract void execute(); }",
+        "Hierarchy5Mid": "public abstract class Hierarchy5Mid extends Hierarchy5Base { public abstract override void execute(); }",
+        "Hierarchy5Leaf": "public class Hierarchy5Leaf extends Hierarchy5Deep { public override void execute() {} }",
+        "Hierarchy5Deep": "public abstract class Hierarchy5Deep extends Hierarchy5Mid { public abstract override void execute(); }",
+        "ObsABDEPTHTest": "@IsTest private class ObsABDEPTHTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy5Base subject=new Hierarchy5Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>556){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|AB_DEPTH|'+captureJson);} }"
+      },
+      "tests": [
+        "ObsABDEPTHTest"
+      ],
+      "sourceSha256": {
+        "class:Hierarchy5Base": "3907e473dbbbdb949dbf1f7d52c07048cdafed40e3f50ffabefb6797aabdc4cb",
+        "class:Hierarchy5Mid": "6f5eb11bcf6402f4fae6efdf21bb977caee9f8380256b3288de8568deec83700",
+        "class:Hierarchy5Leaf": "0465fbbbec59be845ef5273aaae95f0b78ec942f864e3783054db64a0a2ffb04",
+        "class:Hierarchy5Deep": "83e7a3778482c0cc942df4d14386a019baa4d8fccca69efb4f6885b487fc531f",
+        "class:ObsABDEPTHTest": "4f752326f916ac2ebc266d4cf1bd1333db9292ec3a5bc128bcd4862687f66cc9"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "AB_INTERFACE",
+      "route": "anonymous",
+      "classes": {
+        "Hierarchy6Base": "public abstract class Hierarchy6Base implements Hierarchy6Action { public abstract void execute(); }",
+        "Hierarchy6Mid": "public abstract class Hierarchy6Mid extends Hierarchy6Base { public abstract override void execute(); }",
+        "Hierarchy6Leaf": "public class Hierarchy6Leaf extends Hierarchy6Mid { public override void execute() {} }",
+        "Hierarchy6Action": "public interface Hierarchy6Action { void execute(); }"
+      },
+      "tests": [],
+      "sourceSha256": {
+        "class:Hierarchy6Base": "362c1eb49c11449d75e842539502ad5007a286756f725c3610a62674d05638a6",
+        "class:Hierarchy6Mid": "661ac5d7a2af0cbf392a887cb46c56224927ff57434ec1a72a1822745bb1a210",
+        "class:Hierarchy6Leaf": "86c6143b5663e83bb73e4d206ca1126ad1ffad2e6291327aef2f1532590a9a91",
+        "class:Hierarchy6Action": "074b87a284d8b2b2980c15b664cb7d90a32c03bf90b37bddd5732bb2ab0162f3",
+        "anonymous": "5d0e462ba15efe61d04faf064db46857a13d58aedaf4083289ca6cf7196a4029"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy6Base subject=new Hierarchy6Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|AB_INTERFACE|'+captureJson);"
+    },
+    {
+      "id": "AB_INTERFACE",
+      "route": "isTest",
+      "classes": {
+        "Hierarchy6Base": "public abstract class Hierarchy6Base implements Hierarchy6Action { public abstract void execute(); }",
+        "Hierarchy6Mid": "public abstract class Hierarchy6Mid extends Hierarchy6Base { public abstract override void execute(); }",
+        "Hierarchy6Leaf": "public class Hierarchy6Leaf extends Hierarchy6Mid { public override void execute() {} }",
+        "Hierarchy6Action": "public interface Hierarchy6Action { void execute(); }",
+        "ObsABINTERFACETest": "@IsTest private class ObsABINTERFACETest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy6Base subject=new Hierarchy6Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>552){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|AB_INTERFACE|'+captureJson);} }"
+      },
+      "tests": [
+        "ObsABINTERFACETest"
+      ],
+      "sourceSha256": {
+        "class:Hierarchy6Base": "362c1eb49c11449d75e842539502ad5007a286756f725c3610a62674d05638a6",
+        "class:Hierarchy6Mid": "661ac5d7a2af0cbf392a887cb46c56224927ff57434ec1a72a1822745bb1a210",
+        "class:Hierarchy6Leaf": "86c6143b5663e83bb73e4d206ca1126ad1ffad2e6291327aef2f1532590a9a91",
+        "class:Hierarchy6Action": "074b87a284d8b2b2980c15b664cb7d90a32c03bf90b37bddd5732bb2ab0162f3",
+        "class:ObsABINTERFACETest": "37bab3efba8db6b41c3bccf62f3e33b42e1f398a5756940140c619d6b5d43482"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "AB_VIRTUAL",
+      "route": "anonymous",
+      "classes": {
+        "Hierarchy7Base": "public virtual class Hierarchy7Base { public virtual void execute() {} }",
+        "Hierarchy7Mid": "public abstract class Hierarchy7Mid extends Hierarchy7Base { public abstract override void execute(); }",
+        "Hierarchy7Leaf": "public class Hierarchy7Leaf extends Hierarchy7Mid { public override void execute() {} }"
+      },
+      "tests": [],
+      "sourceSha256": {
+        "class:Hierarchy7Base": "ff3c61c83f2e85b3bafcc58273bb94998cd2da2a4e4967bcc182ed8cf34223b9",
+        "class:Hierarchy7Mid": "f9f86ee5b07feb5de106c224ef78f6ffdf12bd8521ecefe4df31bd5d1fafab03",
+        "class:Hierarchy7Leaf": "976c8baee63423edc44c0a7c08db9bd6a06bcdf60288dd5e620a830410895ad5",
+        "anonymous": "09d138e9cf36a1837e21ebba69faa8ec3734efccb5874a69eb25a388aa010f19"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy7Base subject=new Hierarchy7Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|AB_VIRTUAL|'+captureJson);"
+    },
+    {
+      "id": "AB_VIRTUAL",
+      "route": "isTest",
+      "classes": {
+        "Hierarchy7Base": "public virtual class Hierarchy7Base { public virtual void execute() {} }",
+        "Hierarchy7Mid": "public abstract class Hierarchy7Mid extends Hierarchy7Base { public abstract override void execute(); }",
+        "Hierarchy7Leaf": "public class Hierarchy7Leaf extends Hierarchy7Mid { public override void execute() {} }",
+        "ObsABVIRTUALTest": "@IsTest private class ObsABVIRTUALTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy7Base subject=new Hierarchy7Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>554){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|AB_VIRTUAL|'+captureJson);} }"
+      },
+      "tests": [
+        "ObsABVIRTUALTest"
+      ],
+      "sourceSha256": {
+        "class:Hierarchy7Base": "ff3c61c83f2e85b3bafcc58273bb94998cd2da2a4e4967bcc182ed8cf34223b9",
+        "class:Hierarchy7Mid": "f9f86ee5b07feb5de106c224ef78f6ffdf12bd8521ecefe4df31bd5d1fafab03",
+        "class:Hierarchy7Leaf": "976c8baee63423edc44c0a7c08db9bd6a06bcdf60288dd5e620a830410895ad5",
+        "class:ObsABVIRTUALTest": "24080c24ea98a36f0a5083a52b480493d57d7eaad410043f933d3164f30b6952"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "invoked": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "AB_VISIBILITY",
+      "route": "anonymous",
+      "classes": {
+        "Hierarchy8Base": "public abstract class Hierarchy8Base { public abstract void execute(); }",
+        "Hierarchy8Mid": "public abstract class Hierarchy8Mid extends Hierarchy8Base { protected abstract override void execute(); }",
+        "Hierarchy8Leaf": "public class Hierarchy8Leaf extends Hierarchy8Mid { public override void execute() {} }"
+      },
+      "tests": [],
+      "sourceSha256": {
+        "class:Hierarchy8Base": "16814e6e2ce6d203b042b9dfdddfbc781dd1d4cd1ccc76458a97f5fd975dbb05",
+        "class:Hierarchy8Mid": "862bbd98393e2e0e78aefb612269949531ccb2c3634ebeeab8846ad3be6a8603",
+        "class:Hierarchy8Leaf": "a91f6fd1ab0eed92cb1ba60b0d7f0219c5161417abbad8766054bdd781149be0",
+        "anonymous": "87320a1afa20ce23ec4da1ae8cf496b34dcf88ebee8f7fefa56fe7febf8dc29a"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy8Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy8Mid : Cannot reduce the visibility of method: void Hierarchy8Mid.execute()",
+              "column": 95
+            },
+            {
+              "name": "Hierarchy8Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Cannot reduce the visibility of method: void Hierarchy8Mid.execute()",
+              "column": 95
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        },
+        "67.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy8Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy8Mid : Cannot reduce the visibility of method: void Hierarchy8Mid.execute()",
+              "column": 95
+            },
+            {
+              "name": "Hierarchy8Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Cannot reduce the visibility of method: void Hierarchy8Mid.execute()",
+              "column": 95
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        },
+        "68.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy8Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy8Mid : Cannot reduce the visibility of method: void Hierarchy8Mid.execute()",
+              "column": 95
+            },
+            {
+              "name": "Hierarchy8Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Cannot reduce the visibility of method: void Hierarchy8Mid.execute()",
+              "column": 95
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        }
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy8Base subject=new Hierarchy8Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|AB_VISIBILITY|'+captureJson);"
+    },
+    {
+      "id": "AB_VISIBILITY",
+      "route": "isTest",
+      "classes": {
+        "Hierarchy8Base": "public abstract class Hierarchy8Base { public abstract void execute(); }",
+        "Hierarchy8Mid": "public abstract class Hierarchy8Mid extends Hierarchy8Base { protected abstract override void execute(); }",
+        "Hierarchy8Leaf": "public class Hierarchy8Leaf extends Hierarchy8Mid { public override void execute() {} }",
+        "ObsABVISIBILITYTest": "@IsTest private class ObsABVISIBILITYTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy8Base subject=new Hierarchy8Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>551){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|AB_VISIBILITY|'+captureJson);} }"
+      },
+      "tests": [
+        "ObsABVISIBILITYTest"
+      ],
+      "sourceSha256": {
+        "class:Hierarchy8Base": "16814e6e2ce6d203b042b9dfdddfbc781dd1d4cd1ccc76458a97f5fd975dbb05",
+        "class:Hierarchy8Mid": "862bbd98393e2e0e78aefb612269949531ccb2c3634ebeeab8846ad3be6a8603",
+        "class:Hierarchy8Leaf": "a91f6fd1ab0eed92cb1ba60b0d7f0219c5161417abbad8766054bdd781149be0",
+        "class:ObsABVISIBILITYTest": "020cb2b4ffd8cd542b3af7c7299000d648c71bb1f7ec51e4ee972ddcfd1fff54"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy8Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy8Mid : Cannot reduce the visibility of method: void Hierarchy8Mid.execute()",
+              "column": 95
+            },
+            {
+              "name": "Hierarchy8Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Cannot reduce the visibility of method: void Hierarchy8Mid.execute()",
+              "column": 95
+            },
+            {
+              "name": "ObsABVISIBILITYTest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy8Leaf : Dependent class is invalid and needs recompilation:\n Class Hierarchy8Mid : Cannot reduce the visibility of method: void Hierarchy8Mid.execute()",
+              "column": 95
+            }
+          ]
+        },
+        "67.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy8Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy8Mid : Cannot reduce the visibility of method: void Hierarchy8Mid.execute()",
+              "column": 95
+            },
+            {
+              "name": "Hierarchy8Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Cannot reduce the visibility of method: void Hierarchy8Mid.execute()",
+              "column": 95
+            },
+            {
+              "name": "ObsABVISIBILITYTest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy8Leaf : Dependent class is invalid and needs recompilation:\n Class Hierarchy8Mid : Cannot reduce the visibility of method: void Hierarchy8Mid.execute()",
+              "column": 95
+            }
+          ]
+        },
+        "68.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy8Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy8Mid : Cannot reduce the visibility of method: void Hierarchy8Mid.execute()",
+              "column": 95
+            },
+            {
+              "name": "Hierarchy8Mid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Cannot reduce the visibility of method: void Hierarchy8Mid.execute()",
+              "column": 95
+            },
+            {
+              "name": "ObsABVISIBILITYTest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy8Leaf : Dependent class is invalid and needs recompilation:\n Class Hierarchy8Mid : Cannot reduce the visibility of method: void Hierarchy8Mid.execute()",
+              "column": 95
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "AB_CONCRETE_OVERRIDE",
+      "route": "anonymous",
+      "classes": {
+        "Hierarchy9Base": "public abstract class Hierarchy9Base { public abstract void execute(); }",
+        "Hierarchy9Mid": "public virtual class Hierarchy9Mid extends Hierarchy9Base { public override void execute() {} }",
+        "Hierarchy9Leaf": "public class Hierarchy9Leaf extends Hierarchy9Deep { public override void execute() {} }",
+        "Hierarchy9Deep": "public abstract class Hierarchy9Deep extends Hierarchy9Mid { public abstract override void execute(); }"
+      },
+      "tests": [],
+      "sourceSha256": {
+        "class:Hierarchy9Base": "1e8e3bb05ac19a49fc535a9c5e57856e206f3a3e51c3571c4b6c20a91bcce917",
+        "class:Hierarchy9Mid": "2cfaca7568e81a9d3fd575d503880b7cd42ff7f4053d4eda6405629c9ef6d395",
+        "class:Hierarchy9Leaf": "0b8ce9ed69783b577c788f877dfe06984569a4ddde04d5f36696477d7199d0b3",
+        "class:Hierarchy9Deep": "4a793242185bc11aeb119af04097e37f4f07d7da774f045ab27a71a18c9dd63c",
+        "anonymous": "a17406bb251691321e6226b776eb9c7f85cdbce31d77f25263aa7f449eca175f"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy9Deep",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Non-virtual, non-abstract methods cannot be overridden: void Hierarchy9Deep.execute()",
+              "column": 92
+            },
+            {
+              "name": "Hierarchy9Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Non-virtual, non-abstract methods cannot be overridden: void Hierarchy9Leaf.execute()",
+              "column": 75
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        },
+        "67.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy9Deep",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Non-virtual, non-abstract methods cannot be overridden: void Hierarchy9Deep.execute()",
+              "column": 92
+            },
+            {
+              "name": "Hierarchy9Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Non-virtual, non-abstract methods cannot be overridden: void Hierarchy9Leaf.execute()",
+              "column": 75
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        },
+        "68.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy9Deep",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Non-virtual, non-abstract methods cannot be overridden: void Hierarchy9Deep.execute()",
+              "column": 92
+            },
+            {
+              "name": "Hierarchy9Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Non-virtual, non-abstract methods cannot be overridden: void Hierarchy9Leaf.execute()",
+              "column": 75
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        }
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy9Base subject=new Hierarchy9Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|AB_CONCRETE_OVERRIDE|'+captureJson);"
+    },
+    {
+      "id": "AB_CONCRETE_OVERRIDE",
+      "route": "isTest",
+      "classes": {
+        "Hierarchy9Base": "public abstract class Hierarchy9Base { public abstract void execute(); }",
+        "Hierarchy9Mid": "public virtual class Hierarchy9Mid extends Hierarchy9Base { public override void execute() {} }",
+        "Hierarchy9Leaf": "public class Hierarchy9Leaf extends Hierarchy9Deep { public override void execute() {} }",
+        "Hierarchy9Deep": "public abstract class Hierarchy9Deep extends Hierarchy9Mid { public abstract override void execute(); }",
+        "ObsABCONCRETEOVERRIDETest": "@IsTest private class ObsABCONCRETEOVERRIDETest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Hierarchy9Base subject=new Hierarchy9Leaf();subject.execute();payload.put('invoked',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>544){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|AB_CONCRETE_OVERRIDE|'+captureJson);} }"
+      },
+      "tests": [
+        "ObsABCONCRETEOVERRIDETest"
+      ],
+      "sourceSha256": {
+        "class:Hierarchy9Base": "1e8e3bb05ac19a49fc535a9c5e57856e206f3a3e51c3571c4b6c20a91bcce917",
+        "class:Hierarchy9Mid": "2cfaca7568e81a9d3fd575d503880b7cd42ff7f4053d4eda6405629c9ef6d395",
+        "class:Hierarchy9Leaf": "0b8ce9ed69783b577c788f877dfe06984569a4ddde04d5f36696477d7199d0b3",
+        "class:Hierarchy9Deep": "4a793242185bc11aeb119af04097e37f4f07d7da774f045ab27a71a18c9dd63c",
+        "class:ObsABCONCRETEOVERRIDETest": "a9252dad1e24c23baa540106a9465c80123fd8ba68c6ad442688cc3667b5c6c2"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy9Deep",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Non-virtual, non-abstract methods cannot be overridden: void Hierarchy9Deep.execute()",
+              "column": 92
+            },
+            {
+              "name": "Hierarchy9Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Non-virtual, non-abstract methods cannot be overridden: void Hierarchy9Leaf.execute()",
+              "column": 75
+            },
+            {
+              "name": "ObsABCONCRETEOVERRIDETest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy9Leaf : Non-virtual, non-abstract methods cannot be overridden: void Hierarchy9Leaf.execute()",
+              "column": 75
+            }
+          ]
+        },
+        "67.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy9Deep",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Non-virtual, non-abstract methods cannot be overridden: void Hierarchy9Deep.execute()",
+              "column": 92
+            },
+            {
+              "name": "Hierarchy9Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Non-virtual, non-abstract methods cannot be overridden: void Hierarchy9Leaf.execute()",
+              "column": 75
+            },
+            {
+              "name": "ObsABCONCRETEOVERRIDETest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy9Leaf : Non-virtual, non-abstract methods cannot be overridden: void Hierarchy9Leaf.execute()",
+              "column": 75
+            }
+          ]
+        },
+        "68.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "Hierarchy9Deep",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Non-virtual, non-abstract methods cannot be overridden: void Hierarchy9Deep.execute()",
+              "column": 92
+            },
+            {
+              "name": "Hierarchy9Leaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Non-virtual, non-abstract methods cannot be overridden: void Hierarchy9Leaf.execute()",
+              "column": 75
+            },
+            {
+              "name": "ObsABCONCRETEOVERRIDETest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class Hierarchy9Leaf : Non-virtual, non-abstract methods cannot be overridden: void Hierarchy9Leaf.execute()",
+              "column": 75
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "AB_NO_ANCESTOR",
+      "route": "anonymous",
+      "classes": {
+        "AbsentAncestorBase": "public abstract class AbsentAncestorBase { public abstract void execute(); }",
+        "AbsentAncestorMid": "public abstract class AbsentAncestorMid extends AbsentAncestorBase { public abstract override void missing(); }",
+        "AbsentAncestorLeaf": "public class AbsentAncestorLeaf extends AbsentAncestorMid { public override void execute() {} public override void missing() {} }"
+      },
+      "tests": [],
+      "sourceSha256": {
+        "class:AbsentAncestorBase": "b90784c26345e0391af55bc44f140bfaba6af00624405a3d2b636d161893ca76",
+        "class:AbsentAncestorMid": "562359416901fb1d564662a7f3f65c8c3c2a9bb5a3476b7d3bd692fe79758812",
+        "class:AbsentAncestorLeaf": "c78a6d47dd17b06a6147e7143268b9556dbd47655ad237feff9629c6f53b43ad",
+        "anonymous": "5c90f21ff376cb3e8ccf0be71b47407b5044e95f43ab6f03c2a9eab208746141"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "AbsentAncestorLeaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "@Override specified for non-overriding method: void AbsentAncestorLeaf.missing()",
+              "column": 116
+            },
+            {
+              "name": "AbsentAncestorMid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "@Override specified for non-overriding method: void AbsentAncestorMid.missing()",
+              "column": 100
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        },
+        "67.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "AbsentAncestorLeaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "@Override specified for non-overriding method: void AbsentAncestorLeaf.missing()",
+              "column": 116
+            },
+            {
+              "name": "AbsentAncestorMid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "@Override specified for non-overriding method: void AbsentAncestorMid.missing()",
+              "column": 100
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        },
+        "68.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "AbsentAncestorLeaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "@Override specified for non-overriding method: void AbsentAncestorLeaf.missing()",
+              "column": 116
+            },
+            {
+              "name": "AbsentAncestorMid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "@Override specified for non-overriding method: void AbsentAncestorMid.missing()",
+              "column": 100
+            }
+          ],
+          "answer_path": "named-fixture-deploy-before-anonymous"
+        }
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{AbsentAncestorBase subject=new AbsentAncestorLeaf();subject.execute();}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|AB_NO_ANCESTOR|'+captureJson);"
+    },
+    {
+      "id": "AB_NO_ANCESTOR",
+      "route": "isTest",
+      "classes": {
+        "AbsentAncestorBase": "public abstract class AbsentAncestorBase { public abstract void execute(); }",
+        "AbsentAncestorMid": "public abstract class AbsentAncestorMid extends AbsentAncestorBase { public abstract override void missing(); }",
+        "AbsentAncestorLeaf": "public class AbsentAncestorLeaf extends AbsentAncestorMid { public override void execute() {} public override void missing() {} }",
+        "ObsABNOANCESTORTest": "@IsTest private class ObsABNOANCESTORTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{AbsentAncestorBase subject=new AbsentAncestorLeaf();subject.execute();}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>550){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|AB_NO_ANCESTOR|'+captureJson);} }"
+      },
+      "tests": [
+        "ObsABNOANCESTORTest"
+      ],
+      "sourceSha256": {
+        "class:AbsentAncestorBase": "b90784c26345e0391af55bc44f140bfaba6af00624405a3d2b636d161893ca76",
+        "class:AbsentAncestorMid": "562359416901fb1d564662a7f3f65c8c3c2a9bb5a3476b7d3bd692fe79758812",
+        "class:AbsentAncestorLeaf": "c78a6d47dd17b06a6147e7143268b9556dbd47655ad237feff9629c6f53b43ad",
+        "class:ObsABNOANCESTORTest": "4596e5129a5a32ec6b10393b07e1cd79002fd34d8070520cf01aca918f25e5df"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "AbsentAncestorLeaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "@Override specified for non-overriding method: void AbsentAncestorLeaf.missing()",
+              "column": 116
+            },
+            {
+              "name": "AbsentAncestorMid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "@Override specified for non-overriding method: void AbsentAncestorMid.missing()",
+              "column": 100
+            },
+            {
+              "name": "ObsABNOANCESTORTest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class AbsentAncestorLeaf : @Override specified for non-overriding method: void AbsentAncestorLeaf.missing()",
+              "column": 116
+            }
+          ]
+        },
+        "67.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "AbsentAncestorLeaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "@Override specified for non-overriding method: void AbsentAncestorLeaf.missing()",
+              "column": 116
+            },
+            {
+              "name": "AbsentAncestorMid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "@Override specified for non-overriding method: void AbsentAncestorMid.missing()",
+              "column": 100
+            },
+            {
+              "name": "ObsABNOANCESTORTest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class AbsentAncestorLeaf : @Override specified for non-overriding method: void AbsentAncestorLeaf.missing()",
+              "column": 116
+            }
+          ]
+        },
+        "68.0": {
+          "outcome": "compile-rejected",
+          "diagnostics": [
+            {
+              "name": "AbsentAncestorLeaf",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "@Override specified for non-overriding method: void AbsentAncestorLeaf.missing()",
+              "column": 116
+            },
+            {
+              "name": "AbsentAncestorMid",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "@Override specified for non-overriding method: void AbsentAncestorMid.missing()",
+              "column": 100
+            },
+            {
+              "name": "ObsABNOANCESTORTest",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Dependent class is invalid and needs recompilation:\n Class AbsentAncestorLeaf : @Override specified for non-overriding method: void AbsentAncestorLeaf.missing()",
+              "column": 116
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "AB_INNER_PARAM",
+      "route": "anonymous",
+      "classes": {
+        "InnerHierarchyVirtual": "public class InnerHierarchyVirtual { public class Options {} public abstract class Op { public abstract Object execute(Options options); } private abstract class Mid extends Op { public abstract override Object execute(Options opts); } public virtual class Leaf extends Mid { public virtual override Object execute(Options options) { return options; } } }"
+      },
+      "tests": [],
+      "sourceSha256": {
+        "class:InnerHierarchyVirtual": "1f6dc9e860664170f0767ba181bb2dffd578ffc906211c7166069ce6d5a110ab",
+        "anonymous": "3b394c83e4b31b76fdc49f9ecb26cdf96c395168d90a0b388fa9b31e55faa8fc"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "returnedOptions": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "returnedOptions": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "returnedOptions": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{InnerHierarchyVirtual.Options opts=new InnerHierarchyVirtual.Options();InnerHierarchyVirtual.Op op=new InnerHierarchyVirtual.Leaf();Object returned=op.execute(opts);payload.put('returnedOptions',returned==opts);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|AB_INNER_PARAM|'+captureJson);"
+    },
+    {
+      "id": "AB_INNER_PARAM",
+      "route": "isTest",
+      "classes": {
+        "InnerHierarchyVirtual": "public class InnerHierarchyVirtual { public class Options {} public abstract class Op { public abstract Object execute(Options options); } private abstract class Mid extends Op { public abstract override Object execute(Options opts); } public virtual class Leaf extends Mid { public virtual override Object execute(Options options) { return options; } } }",
+        "ObsABINNERPARAMTest": "@IsTest private class ObsABINNERPARAMTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{InnerHierarchyVirtual.Options opts=new InnerHierarchyVirtual.Options();InnerHierarchyVirtual.Op op=new InnerHierarchyVirtual.Leaf();Object returned=op.execute(opts);payload.put('returnedOptions',returned==opts);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>550){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|AB_INNER_PARAM|'+captureJson);} }"
+      },
+      "tests": [
+        "ObsABINNERPARAMTest"
+      ],
+      "sourceSha256": {
+        "class:InnerHierarchyVirtual": "1f6dc9e860664170f0767ba181bb2dffd578ffc906211c7166069ce6d5a110ab",
+        "class:ObsABINNERPARAMTest": "cbc15e27f5ee5bd827db98ab7e7b19dd17cc47d2ac4166a6e5f013c7fff22e15"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "returnedOptions": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "returnedOptions": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "returnedOptions": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    },
+    {
+      "id": "AB_INNER_PARAM_PLAIN",
+      "route": "anonymous",
+      "classes": {
+        "InnerHierarchyPlain": "public class InnerHierarchyPlain { public class Options {} public abstract class Op { public abstract Object execute(Options options); } private abstract class Mid extends Op { public abstract override Object execute(Options opts); } public class Leaf extends Mid { public override Object execute(Options options) { return options; } } }"
+      },
+      "tests": [],
+      "sourceSha256": {
+        "class:InnerHierarchyPlain": "a20616fe8839bac062853420bbbd0237b08fa57eaa2e9545549afe9aa307eb39",
+        "anonymous": "4550af49766b984646fee4adcccda208088a1e4d3bd240ddaba835f5d5859e76"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "returnedOptions": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "returnedOptions": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "returnedOptions": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{InnerHierarchyPlain.Options opts=new InnerHierarchyPlain.Options();InnerHierarchyPlain.Op op=new InnerHierarchyPlain.Leaf();Object returned=op.execute(opts);payload.put('returnedOptions',returned==opts);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);System.assert(false,'C135C_RESULT|AB_INNER_PARAM_PLAIN|'+captureJson);"
+    },
+    {
+      "id": "AB_INNER_PARAM_PLAIN",
+      "route": "isTest",
+      "classes": {
+        "InnerHierarchyPlain": "public class InnerHierarchyPlain { public class Options {} public abstract class Op { public abstract Object execute(Options options); } private abstract class Mid extends Op { public abstract override Object execute(Options opts); } public class Leaf extends Mid { public override Object execute(Options options) { return options; } } }",
+        "ObsABINNERPARAMPLAINTest": "@IsTest private class ObsABINNERPARAMPLAINTest { @IsTest static void observe() {Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{InnerHierarchyPlain.Options opts=new InnerHierarchyPlain.Options();InnerHierarchyPlain.Op op=new InnerHierarchyPlain.Leaf();Object returned=op.execute(opts);payload.put('returnedOptions',returned==opts);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String captureJson=JSON.serialize(payload);if(captureJson.length()>544){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C135C_RESULT|AB_INNER_PARAM_PLAIN|'+captureJson);} }"
+      },
+      "tests": [
+        "ObsABINNERPARAMPLAINTest"
+      ],
+      "sourceSha256": {
+        "class:InnerHierarchyPlain": "a20616fe8839bac062853420bbbd0237b08fa57eaa2e9545549afe9aa307eb39",
+        "class:ObsABINNERPARAMPLAINTest": "710a482182a5d42d11976c9ccc7daa1ed2e43c733aee90df180e8ba1c55df6be"
+      },
+      "expectedByAPI": {
+        "62.0": {
+          "outcome": "runtime",
+          "value": {
+            "returnedOptions": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "67.0": {
+          "outcome": "runtime",
+          "value": {
+            "returnedOptions": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        },
+        "68.0": {
+          "outcome": "runtime",
+          "value": {
+            "returnedOptions": true,
+            "exceptionMessage": null,
+            "exceptionType": null
+          }
+        }
+      }
+    }
+  ]
+}

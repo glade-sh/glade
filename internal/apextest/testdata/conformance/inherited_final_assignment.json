@@ -1,0 +1,828 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 6,
+  "nativeObservationCount": 36,
+  "packetRowsSha256": "bdb07c4592ca774891f1569ddbb47b04d8979873883901e5e60ab5a6c6092167",
+  "nativeJsonSha256": "4ea174bf42c7fcf1cdd34a6b45f2232d1313484f90b0d79926ea759ee2e914e3",
+  "sourceManifestSha256": "af4d7c498b85003536813731611d0195b34454cd55719dd98b0ecdfe18f88b32",
+  "rows": [
+    {
+      "id": "C126FINAL_001",
+      "question": "Enclosing sibling subclass writes inherited private final",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126FINAL_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "c14e9e90d5ee9fc61e5c62347e2e52bd6b22ffb7a38425f90b8349232cc5757a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "668e6ee67650087cdc2c4fd5976310652ef9880bd12dd3f9464c2a70bdbe4ca3",
+            "67.0": "e9746c79f20a4241476703b56608df7d8d8ae5bf3065304e594a24c9d491f9e0",
+            "68.0": "841f361381a33825cdc964e713d4736232ad4d4e8d8278a3232cacf920d58559"
+          },
+          "anonymous": "class C126Scope {public virtual class Base {private final Integer value; public Integer read(){return value;}} public class Child extends Base {public Child(){value=7;}} public Integer observe(){return new Child().read();}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Scope().observe());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126FINAL_001|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126FINAL_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Scope": "1de4c93802a3baca4eac6bcdf63918c611390306dba324dedbfd8200d14a41dc",
+            "class:C126Test": "2cdbf22a7f63ab78dda148b578321c661283c4e2cab33b60ad21bbf5838a2456"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "3d3468d2016d599d5d0df03a3da1479ee944d9e659aab5ba3fd8346e1f3302f0",
+            "67.0": "e027f5842f72ea691577d253fd795e9e9a3d040ab189b614b94b2af0265b80be",
+            "68.0": "888d3f70142f29fe09e43858519c0df6af860ae93232d17c1159887b0206422f"
+          },
+          "classes": {
+            "C126Scope": "public class C126Scope {public virtual class Base {private final Integer value; public Integer read(){return value;}} public class Child extends Base {public Child(){value=7;}} public Integer observe(){return new Child().read();}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Scope().observe());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126FINAL_001|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126FINAL_002",
+      "question": "Inherited protected final constructor assignment",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126FINAL_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "c10a009b6c012d224fc625dd63ae925953e3ec69e04cdf8fb89e679ef1e354da"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "f9f6f056c33467a15f0205c22ee44420ad3beb5a6fae997a64c04e5669a3fa00",
+            "67.0": "8abc22002c6124d04f2a92cd97c7534b005b6a3ef6b6b1c2c2c9a7f050cf231a",
+            "68.0": "4d7212c365b8bd70f443d94790925ce88083af1a64acfa2c48f5bc941d0a21bf"
+          },
+          "anonymous": "class C126Scope {public virtual class Base {protected final Integer value; public Integer read(){return value;}} public class Child extends Base {public Child(){value=7;}} public Integer observe(){return new Child().read();}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Scope().observe());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126FINAL_002|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126FINAL_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Scope": "548ee78bfa26c00c2582ef97bdf6e9d8bdef0561e4ffe7dff85164aefe017d86",
+            "class:C126Test": "419dde062916df0132868e0b7b5bae10ad114131a1892e5cf5e71bf40108e2f0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "f3fa65d7fe6f2c6852f1cc52423c3cf1ab2f9f64274efb5a09fdb5a69b0363f8",
+            "67.0": "3000d3e53f47f73b865fde1b58f636b8e36ab9e7c986b5c7bc510e7451206705",
+            "68.0": "f25013b908a1418c90702a7e1b895a1e81359e8e8a375a188af3937e3e7ee38e"
+          },
+          "classes": {
+            "C126Scope": "public class C126Scope {public virtual class Base {protected final Integer value; public Integer read(){return value;}} public class Child extends Base {public Child(){value=7;}} public Integer observe(){return new Child().read();}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Scope().observe());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126FINAL_002|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126FINAL_003",
+      "question": "Enclosing private access without final",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126FINAL_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "72bfcd9feb89158c5858a839285aba558e95452c3f026069738a71f59ed98c3a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "9e6063e71be8187c61cb42a003c4216b9207ae2925d055913180db55a5302e7a",
+            "67.0": "3e2ddddb9f5452dceb382e4173a5dd3873e1e1a0f5c7aa79fa684f7b93f2f241",
+            "68.0": "3c8b407b6f3dc539d69ffc6cfbb332f0a360d894299f28f86cede8153df38ac1"
+          },
+          "anonymous": "class C126Scope {public virtual class Base {private Integer value; public Integer read(){return value;}} public class Child extends Base {public Child(){value=7;}} public Integer observe(){return new Child().read();}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Scope().observe());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126FINAL_003|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126FINAL_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Scope": "2e20e4ba744b63c2c419f1c3b008c8aaaa601ce58736cacfffbfb2b2e565d3ce",
+            "class:C126Test": "dd46662b3034159d85cce40b78538cf387b86667153d25c852fc512edec5cfd1"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "acbc0360aa892c2ea9f50b466707e868fd03855734d4e63c88a60c9dc55d7159",
+            "67.0": "3af4c2763122cc1105faa904ebbf687f66057487be4f457cd1a590d2bd756a38",
+            "68.0": "43a642410e2a928db65169174d8cfb44e43c9884f35657c3a2d352f3fe9993b3"
+          },
+          "classes": {
+            "C126Scope": "public class C126Scope {public virtual class Base {private Integer value; public Integer read(){return value;}} public class Child extends Base {public Child(){value=7;}} public Integer observe(){return new Child().read();}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Scope().observe());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126FINAL_003|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126FINAL_004",
+      "question": "Inherited already initialized final",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126FINAL_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "ffde913eda452b51555f81293004f8de8de39381ca372907e3607183131bbbac"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Inner types are not allowed to have inner types",
+                "line": 1,
+                "column": 33
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "0b570c78c86a7020b4e94cde053d10b1063f85a020847b6de503c8c688d03f34",
+            "67.0": "e7657aa334bcaa05ef5a1fd1f1f703af140fb5e7664bc42315e08c3ecf88f712",
+            "68.0": "f7ff4b6cc64afb53ee32ee44a7301669fd2bf60f254442770beb0b7fc9ecdc34"
+          },
+          "anonymous": "class C126Scope {public virtual class Base {private final Integer value=1; public Integer read(){return value;}} public class Child extends Base {public Child(){value=7;}} public Integer observe(){return new Child().read();}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Scope().observe());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126FINAL_004|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126FINAL_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Scope": "4e760bf7fdf6ff2281ca9209fe5d9fe43b63b9979f155b44e2f09b37c8fe3c0a",
+            "class:C126Test": "73f2c728c4ef38740f568c24724a010d383c41bc94a7f87cd1fcf661aaae01ed"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "uncaught_test_failure",
+              "testFailures": [
+                {
+                  "cls": "C126Test",
+                  "method": "observe",
+                  "message": "System.FinalException: Final variable has already been initialized",
+                  "exceptionType": "System.FinalException",
+                  "exceptionTypeSource": "returned_message_prefix"
+                }
+              ]
+            },
+            "67.0": {
+              "outcome": "uncaught_test_failure",
+              "testFailures": [
+                {
+                  "cls": "C126Test",
+                  "method": "observe",
+                  "message": "System.FinalException: Final variable has already been initialized",
+                  "exceptionType": "System.FinalException",
+                  "exceptionTypeSource": "returned_message_prefix"
+                }
+              ]
+            },
+            "68.0": {
+              "outcome": "uncaught_test_failure",
+              "testFailures": [
+                {
+                  "cls": "C126Test",
+                  "method": "observe",
+                  "message": "System.FinalException: Final variable has already been initialized",
+                  "exceptionType": "System.FinalException",
+                  "exceptionTypeSource": "returned_message_prefix"
+                }
+              ]
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "f66324c544193fb62bec5e7b6663bb5efa37b43e76ad0a42cfb03508129da271",
+            "67.0": "c1dc492c8af6df7b37810de4aed9918acd915de370a39da92ff3f4469cf46f9f",
+            "68.0": "27319cb527ba0336ca8f2fe49ffc04969f0527e2335d686c6c90594477486d45"
+          },
+          "classes": {
+            "C126Scope": "public class C126Scope {public virtual class Base {private final Integer value=1; public Integer read(){return value;}} public class Child extends Base {public Child(){value=7;}} public Integer observe(){return new Child().read();}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Scope().observe());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126FINAL_004|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126FINAL_005",
+      "question": "Own final initialized by own constructor",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126FINAL_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "92870019ac677494c40a2d1aa953cba63e2701013320bd2042a4cac3bcf4def3"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "0be9c5e1acf577a64c774e16f9d78562716e58c2c2976bf22800b53dbc565a15",
+            "67.0": "b470f82e5f78074b9d1372e69de7c611197af084cfb13967d8f99d06384c9e1f",
+            "68.0": "d0f3dcc09ed88fc9400fad6f88daf32b1632bf9f21189e9a3682c85bbb7ca885"
+          },
+          "anonymous": "class C126Final {private final Integer value;public C126Final(){value=7;} public Integer read(){return value;}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Final().read());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126FINAL_005|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126FINAL_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Final": "b73105b6ef369925f2852b4f6a8b5ec919c1efa5ab98a852ed7dbf4110a22141",
+            "class:C126Test": "93939bad4fb6b94140af7abb110944884df5f1e4d42a72b241481c96d8e6955f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "53d9f0d311a876a6c987d8e192cd98de7c1d98f9beea1854d3d0a3402dc43dc0",
+            "67.0": "12cb4e8e243b25d988903cc09685405e1f2e772ac4ff488c542143f553cc4479",
+            "68.0": "78228a8bf7f7e40b18b3d58ff65fd61957615e5727375f8a37e0cb2d53ca750f"
+          },
+          "classes": {
+            "C126Final": "public class C126Final {private final Integer value;public C126Final(){value=7;} public Integer read(){return value;}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Final().read());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126FINAL_005|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126FINAL_006",
+      "question": "Final write in ordinary method",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126FINAL_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "b86e199c1ec214fdb2f069f122431496a48c230a72382430f33275620cf9686d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Final members can only be assigned in their declaration, init blocks, or constructors: value",
+                "line": 1,
+                "column": 70,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Final members can only be assigned in their declaration, init blocks, or constructors: value",
+                "line": 1,
+                "column": 70,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Final members can only be assigned in their declaration, init blocks, or constructors: value",
+                "line": 1,
+                "column": 70,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Final members can only be assigned in their declaration, init blocks, or constructors: value",
+                "line": 1,
+                "column": 70
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Final members can only be assigned in their declaration, init blocks, or constructors: value",
+                "line": 1,
+                "column": 70
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Final members can only be assigned in their declaration, init blocks, or constructors: value",
+                "line": 1,
+                "column": 70
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "91e22cbd3a46f1ed8f6e6f900d07d15c66009c381466f5b8479e92f13971d8f1",
+            "67.0": "a40bf59f9931dec15c420b41ec73d85689cf9624153b2ddcaee9483781f09c51",
+            "68.0": "f63a0a18e2ec3efcdbcdbb6c2a88028d560acae77a975e67fd1dfc9b2dabd301"
+          },
+          "anonymous": "class C126Final {private final Integer value=1;public Integer read(){value=7;return value;}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Final().read());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126FINAL_006|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126FINAL_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Final": "2279d4a13a8a8afdbc394d1726757582d9e7a2d86664640f7bf4f8fd547034f9",
+            "class:C126Test": "22f8fb2ba8a8592d582e9a28606e2588bdf655b4658cb0113c3140fecab113e4"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Final",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Final members can only be assigned in their declaration, init blocks, or constructors: value"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Dependent class is invalid and needs recompilation:\n Class C126Final : Final members can only be assigned in their declaration, init blocks, or constructors: value"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Final",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Final members can only be assigned in their declaration, init blocks, or constructors: value"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Dependent class is invalid and needs recompilation:\n Class C126Final : Final members can only be assigned in their declaration, init blocks, or constructors: value"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Final",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Final members can only be assigned in their declaration, init blocks, or constructors: value"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Dependent class is invalid and needs recompilation:\n Class C126Final : Final members can only be assigned in their declaration, init blocks, or constructors: value"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Final",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Final members can only be assigned in their declaration, init blocks, or constructors: value"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class C126Final : Final members can only be assigned in their declaration, init blocks, or constructors: value"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Final",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Final members can only be assigned in their declaration, init blocks, or constructors: value"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class C126Final : Final members can only be assigned in their declaration, init blocks, or constructors: value"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Final",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Final members can only be assigned in their declaration, init blocks, or constructors: value"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class C126Final : Final members can only be assigned in their declaration, init blocks, or constructors: value"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "a308709e9ff9698e8cf2128b1ec44c4c9e5bc76548cc99fd551f1b2c8b5d1281",
+            "67.0": "6263ee6a57015c2d7664647b1bce78095d1516c5e67d33d743b32624bffbbd71",
+            "68.0": "037019b750642a9008f83a9fab6ed1552a6c578295b130b4a475849b576967d0"
+          },
+          "classes": {
+            "C126Final": "public class C126Final {private final Integer value=1;public Integer read(){value=7;return value;}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Final().read());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126FINAL_006|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    }
+  ]
+}

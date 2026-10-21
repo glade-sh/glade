@@ -1,0 +1,5 @@
+source_api	class	diagnostic
+62.0	StoredListFirst	Incompatible types in ternary operator: Account, List<Account>
+62.0	StoredListSecond	Incompatible types in ternary operator: List<Account>, Account
+67.0	StoredListFirst	Incompatible types in ternary operator: Account, List<Account>
+67.0	StoredListSecond	Incompatible types in ternary operator: List<Account>, Account

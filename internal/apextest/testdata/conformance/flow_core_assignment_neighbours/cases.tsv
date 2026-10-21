@@ -1,0 +1,21 @@
+case_id	api_version	route	shape
+F14_031	62.0	anonymous	record variable Decimal field subtract literal from non-null value
+F14_031	62.0	istest	record variable Decimal field subtract literal from non-null value
+F14_031	67.0	anonymous	record variable Decimal field subtract literal from non-null value
+F14_031	67.0	istest	record variable Decimal field subtract literal from non-null value
+F14_032	62.0	anonymous	record variable Currency field subtract literal from non-null value
+F14_032	62.0	istest	record variable Currency field subtract literal from non-null value
+F14_032	67.0	anonymous	record variable Currency field subtract literal from non-null value
+F14_032	67.0	istest	record variable Currency field subtract literal from non-null value
+F14_033	62.0	anonymous	record variable Percent field subtract literal from non-null value
+F14_033	62.0	istest	record variable Percent field subtract literal from non-null value
+F14_033	67.0	anonymous	record variable Percent field subtract literal from non-null value
+F14_033	67.0	istest	record variable Percent field subtract literal from non-null value
+F14_034	62.0	anonymous	record variable Decimal field add literal from null value
+F14_034	62.0	istest	record variable Decimal field add literal from null value
+F14_034	67.0	anonymous	record variable Decimal field add literal from null value
+F14_034	67.0	istest	record variable Decimal field add literal from null value
+F14_035	62.0	anonymous	record variable Decimal field subtract literal from null value
+F14_035	62.0	istest	record variable Decimal field subtract literal from null value
+F14_035	67.0	anonymous	record variable Decimal field subtract literal from null value
+F14_035	67.0	istest	record variable Decimal field subtract literal from null value

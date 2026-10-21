@@ -1,0 +1,484 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "top_level",
+  "shapeCount": 5,
+  "nativeObservationCount": 27,
+  "packetRowsSha256": "8c737726ee2d9f757a59656fe1c063b99190b30c1bc5db6d269f837c3041db33",
+  "rows": [
+    {
+      "id": "E23E032",
+      "label": "top-level implicit non-Boolean equals runtime",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "864379207ebf718c613b9c58ca57980f41386038f39b18e79f1d9050400d1168",
+            "class:EqTopResult": "525eb333bb16acfd240d6490036d768db673b61089c38ca14dfc2553c3f4288f",
+            "class:EqTop": "c6f5f3cca34dfd5493eaca149bda6ebfd0d3699828dd4143e5a57a98c7fd8e41",
+            "class:EqTopDependent": "4d87ca5d1536ad1ee4f86af13d35fc954f7b9bb848a491d263b4e9f04e25c111"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqTopResult": "public class EqTopResult {public Integer value=41;}",
+            "EqTop": "public class EqTop {public Integer calls=0;public EqTopResult equals(Object v){calls++;return new EqTopResult();}public EqTopResult eq(Object v){return equals(v);}}",
+            "EqTopDependent": "public class EqTopDependent {public Integer call(Object v){return new EqTop().eq(v).value;}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqTop s=new EqTop();payload.put('returned',s.eq(null).value);payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E032|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqTopResult": "525eb333bb16acfd240d6490036d768db673b61089c38ca14dfc2553c3f4288f",
+            "class:EqTop": "c6f5f3cca34dfd5493eaca149bda6ebfd0d3699828dd4143e5a57a98c7fd8e41",
+            "class:EqTopDependent": "4d87ca5d1536ad1ee4f86af13d35fc954f7b9bb848a491d263b4e9f04e25c111",
+            "class:ObserveE23E032Test": "a47e24ff898c3e36569be15759f66cc5ea36513b6628f8f2dd5f66d1f74c82a7"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqTopResult": "public class EqTopResult {public Integer value=41;}",
+            "EqTop": "public class EqTop {public Integer calls=0;public EqTopResult equals(Object v){calls++;return new EqTopResult();}public EqTopResult eq(Object v){return equals(v);}}",
+            "EqTopDependent": "public class EqTopDependent {public Integer call(Object v){return new EqTop().eq(v).value;}}",
+            "ObserveE23E032Test": "@IsTest private class ObserveE23E032Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqTop s=new EqTop();payload.put('returned',s.eq(null).value);payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E032|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E032Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E033",
+      "label": "top-level explicit non-Boolean equals runtime",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "67d8669d7af8779ba1a945f11fb6556313673010ec15024803be69d69e5280c7",
+            "class:EqTopResult": "525eb333bb16acfd240d6490036d768db673b61089c38ca14dfc2553c3f4288f",
+            "class:EqTop": "312a28fb3a3c99ddd8baed0a1a645e8297ea831990de9e5a5aab28ebc3ec03af",
+            "class:EqTopDependent": "4d87ca5d1536ad1ee4f86af13d35fc954f7b9bb848a491d263b4e9f04e25c111"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqTopResult": "public class EqTopResult {public Integer value=41;}",
+            "EqTop": "public class EqTop {public Integer calls=0;public EqTopResult equals(Object v){calls++;return new EqTopResult();}public EqTopResult eq(Object v){return this.equals(v);}}",
+            "EqTopDependent": "public class EqTopDependent {public Integer call(Object v){return new EqTop().eq(v).value;}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqTop s=new EqTop();payload.put('returned',s.eq(null).value);payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E033|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqTopResult": "525eb333bb16acfd240d6490036d768db673b61089c38ca14dfc2553c3f4288f",
+            "class:EqTop": "312a28fb3a3c99ddd8baed0a1a645e8297ea831990de9e5a5aab28ebc3ec03af",
+            "class:EqTopDependent": "4d87ca5d1536ad1ee4f86af13d35fc954f7b9bb848a491d263b4e9f04e25c111",
+            "class:ObserveE23E033Test": "fef520c7beca20ed375c06f03669c0e51d0abb4a81422d9f7232e0776f32d5af"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqTopResult": "public class EqTopResult {public Integer value=41;}",
+            "EqTop": "public class EqTop {public Integer calls=0;public EqTopResult equals(Object v){calls++;return new EqTopResult();}public EqTopResult eq(Object v){return this.equals(v);}}",
+            "EqTopDependent": "public class EqTopDependent {public Integer call(Object v){return new EqTop().eq(v).value;}}",
+            "ObserveE23E033Test": "@IsTest private class ObserveE23E033Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqTop s=new EqTop();payload.put('returned',s.eq(null).value);payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E033|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E033Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E034",
+      "label": "top-level outside non-Boolean equals runtime",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "ac83aeae89c7e96c14876fcb233200308af68983d16c820f1abc0a848adab9e3",
+            "class:EqTopResult": "525eb333bb16acfd240d6490036d768db673b61089c38ca14dfc2553c3f4288f",
+            "class:EqTop": "c6f5f3cca34dfd5493eaca149bda6ebfd0d3699828dd4143e5a57a98c7fd8e41",
+            "class:EqTopDependent": "4d87ca5d1536ad1ee4f86af13d35fc954f7b9bb848a491d263b4e9f04e25c111"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqTopResult": "public class EqTopResult {public Integer value=41;}",
+            "EqTop": "public class EqTop {public Integer calls=0;public EqTopResult equals(Object v){calls++;return new EqTopResult();}public EqTopResult eq(Object v){return equals(v);}}",
+            "EqTopDependent": "public class EqTopDependent {public Integer call(Object v){return new EqTop().eq(v).value;}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqTop s=new EqTop();payload.put('returned',s.equals(null).value);payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E034|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqTopResult": "525eb333bb16acfd240d6490036d768db673b61089c38ca14dfc2553c3f4288f",
+            "class:EqTop": "c6f5f3cca34dfd5493eaca149bda6ebfd0d3699828dd4143e5a57a98c7fd8e41",
+            "class:EqTopDependent": "4d87ca5d1536ad1ee4f86af13d35fc954f7b9bb848a491d263b4e9f04e25c111",
+            "class:ObserveE23E034Test": "f07463a4ac00bea53aadfa3147b8fba2f6e47f1c532985ed1b02216c8e5f5cca"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqTopResult": "public class EqTopResult {public Integer value=41;}",
+            "EqTop": "public class EqTop {public Integer calls=0;public EqTopResult equals(Object v){calls++;return new EqTopResult();}public EqTopResult eq(Object v){return equals(v);}}",
+            "EqTopDependent": "public class EqTopDependent {public Integer call(Object v){return new EqTop().eq(v).value;}}",
+            "ObserveE23E034Test": "@IsTest private class ObserveE23E034Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqTop s=new EqTop();payload.put('returned',s.equals(null).value);payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E034|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E034Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E035",
+      "label": "top-level dependent non-Boolean equals runtime",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "2f45412755e45aca1baa6be540ddc4c820046a9a0e1d3638cc308cdc149c662a",
+            "class:EqTopResult": "525eb333bb16acfd240d6490036d768db673b61089c38ca14dfc2553c3f4288f",
+            "class:EqTop": "c6f5f3cca34dfd5493eaca149bda6ebfd0d3699828dd4143e5a57a98c7fd8e41",
+            "class:EqTopDependent": "4d87ca5d1536ad1ee4f86af13d35fc954f7b9bb848a491d263b4e9f04e25c111"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqTopResult": "public class EqTopResult {public Integer value=41;}",
+            "EqTop": "public class EqTop {public Integer calls=0;public EqTopResult equals(Object v){calls++;return new EqTopResult();}public EqTopResult eq(Object v){return equals(v);}}",
+            "EqTopDependent": "public class EqTopDependent {public Integer call(Object v){return new EqTop().eq(v).value;}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{payload.put('returned',new EqTopDependent().call(null));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E035|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqTopResult": "525eb333bb16acfd240d6490036d768db673b61089c38ca14dfc2553c3f4288f",
+            "class:EqTop": "c6f5f3cca34dfd5493eaca149bda6ebfd0d3699828dd4143e5a57a98c7fd8e41",
+            "class:EqTopDependent": "4d87ca5d1536ad1ee4f86af13d35fc954f7b9bb848a491d263b4e9f04e25c111",
+            "class:ObserveE23E035Test": "012a6888820e4a84884c69d28fee680ee601c13726fe245dc920b7e21d510684"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqTopResult": "public class EqTopResult {public Integer value=41;}",
+            "EqTop": "public class EqTop {public Integer calls=0;public EqTopResult equals(Object v){calls++;return new EqTopResult();}public EqTopResult eq(Object v){return equals(v);}}",
+            "EqTopDependent": "public class EqTopDependent {public Integer call(Object v){return new EqTop().eq(v).value;}}",
+            "ObserveE23E035Test": "@IsTest private class ObserveE23E035Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{payload.put('returned',new EqTopDependent().call(null));}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E035|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E035Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E036",
+      "label": "anonymous sibling local classes non-Boolean equals",
+      "role": "anonymous-local",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "7ce2431a858d3f47cea07c54fbc961431c30c535db72b7b6b0e174d6c8553009"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"returned\":41}"
+            }
+          },
+          "anonymous": "class LResult {public Integer value=41;} class LSubject {public LResult equals(Object v){return new LResult();}public LResult eq(Object v){return equals(v);}}Map<String,Object> payload=new Map<String,Object>();try{payload.put('returned',new LSubject().eq(null).value);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E036|'+packetJson);"
+        }
+      }
+    }
+  ]
+}

@@ -3,6 +3,7 @@ package vm
 import (
 	"testing"
 
+	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -15,6 +16,11 @@ func TestMetadataLayoutRetrieveBuildsLocalLayoutShape(t *testing.T) {
 			"Status":  {APIName: "Status", Type: storage.FieldPicklist},
 		},
 	}}
+	if err := resource.LoadLayoutMetadata(&org, []string{"layouts/Case-Case Layout.layout-meta.xml"}, func(string) ([]byte, error) {
+		return []byte(`<Layout xmlns="http://soap.sforce.com/2006/04/metadata"><layoutSections><label>Case details</label><style>OneColumn</style><layoutColumns><layoutItems><field>Subject</field><behavior>Required</behavior></layoutItems><layoutItems><field>Status</field><behavior>Edit</behavior></layoutItems></layoutColumns></layoutSections></Layout>`), nil
+	}); err != nil {
+		t.Fatal(err)
+	}
 	machine := New(nil)
 	machine.SetOrg(&org)
 
@@ -36,5 +42,8 @@ func TestMetadataLayoutRetrieveBuildsLocalLayoutShape(t *testing.T) {
 	items := columns.List[0].Fields["layoutItems"]
 	if columns.Kind != ValueList || len(columns.List) != 1 || items.Kind != ValueList || len(items.List) != 2 {
 		t.Fatalf("layout columns/items = %#v", sections)
+	}
+	if got.List[0].Fields["fullName"].Text != "Case-Case Layout" || items.List[0].Fields["field"].Text != "Subject" || items.List[1].Fields["field"].Text != "Status" {
+		t.Fatalf("declared layout order/full name lost: %#v", got)
 	}
 }

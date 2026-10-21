@@ -45,9 +45,19 @@ func valueCollectionAssignmentMessage(target, value string, model *semaTypeMembe
 		return ""
 	}
 	switch value + "->" + target {
-	case "Long->Integer", "Decimal->Integer", "Decimal->Long", "Integer->Boolean", "Boolean->String",
-		"List<Integer>->List<String>", "Set<Integer>->Set<String>", "Map<String,Integer>->Map<String,String>":
+	case "Long->Integer", "Decimal->Integer", "Decimal->Long", "Integer->Boolean", "Boolean->String", "String->Integer",
+		"List<Integer>->List<String>", "Set<Integer>->Set<String>", "Map<String,Integer>->Map<String,String>",
+		// Area M1 S116 and blocker PB07 at API 62 and 67 (S116 on both routes).
+		"Schema.SObjectType->Contact", "Schema.SObjectField->Schema.SObjectType":
 		return "Illegal assignment from " + value + " to " + target
+	}
+	// Area M1 I01/I101/I102/I103 at API 62 and 67, both routes: native text
+	// qualifies the Iterator type.
+	switch strings.TrimPrefix(value, "System.") + "->" + strings.TrimPrefix(target, "System.") {
+	case "Iterator<Integer>->Iterator<Object>", "Iterator<String>->Iterator<Integer>",
+		"Iterator<Integer>->Iterator<Boolean>", "Iterator<Object>->Iterator<Boolean>",
+		"Iterator<Object>->Iterator<Integer>", "Iterator<Integer>->Iterator<String>", "Iterator<SObject>->Iterator<Object>":
+		return "Illegal assignment from System." + strings.TrimPrefix(value, "System.") + " to System." + strings.TrimPrefix(target, "System.")
 	}
 	return ""
 }
@@ -59,4 +69,22 @@ func valueCollectionAssignmentNativeText(message string) bool {
 	}
 	value, target, ok := strings.Cut(pair, " to ")
 	return ok && valueCollectionAssignmentMessage(target, value, nil) != ""
+}
+
+// Assignment checking has already established the incompatible types. Keep
+// specialized captured wording, then format ordinary rejected assignments.
+func assignmentDiagnosticMessage(target, value string, model *semaTypeMemberView) string {
+	if message := valueCollectionAssignmentMessage(target, value, model); message != "" {
+		return message
+	}
+	if target == "" || value == "" || strings.EqualFold(value, "null") {
+		return ""
+	}
+	display := func(name string) string {
+		if strings.EqualFold(name, "Type") && !semaProjectTypeShadowsPlatform(model, name) {
+			return "System.Type"
+		}
+		return name
+	}
+	return "Illegal assignment from " + display(value) + " to " + display(target)
 }

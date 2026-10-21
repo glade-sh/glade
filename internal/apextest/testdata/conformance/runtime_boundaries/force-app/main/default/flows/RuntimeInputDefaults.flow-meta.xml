@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>InitializeInput</name><label>Initialize input</label><locationX>0</locationX><locationY>0</locationY>
+        <actionName>RuntimeInputAction</actionName><actionType>apex</actionType><flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters><name>accountId</name><value><elementReference>accountId</elementReference></value></inputParameters>
+        <inputParameters><name>mode</name><value><stringValue>override</stringValue></value></inputParameters>
+        <nameSegment>RuntimeInputAction</nameSegment>
+    </actionCalls>
+    <apiVersion>62.0</apiVersion><interviewLabel>Runtime input defaults</interviewLabel><label>Runtime input defaults</label><processType>AutoLaunchedFlow</processType>
+    <start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>InitializeInput</targetReference></connector></start><status>Active</status>
+    <variables><name>accountId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>false</isOutput></variables>
+</Flow>

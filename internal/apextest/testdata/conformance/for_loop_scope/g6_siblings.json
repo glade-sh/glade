@@ -1,0 +1,1652 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "g6_siblings",
+  "shapeCount": 7,
+  "nativeObservationCount": 42,
+  "assertedObservationCount": 42,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C194S037",
+      "label": "Integer sibling standard",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "f456334f9c529c605779a3ba3736de062b3b519d466c96bada16e47b248e8a09"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S037",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S037|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S037",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S037|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S037",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S037|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();Integer total=0;for(Integer x=1;total<1;total++){}for(Integer x=1;total<2;total++){}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S037|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S037Test": "f406a40494342466edaa628036e7a0e59ef129b7b6b807c7c4518e26edb45d3f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S037",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S037Test",
+                      "message": "C194S037Test.Scope194MarkerException: C126_RESULT|C194S037|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S037Test.Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S037",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S037Test",
+                      "message": "C194S037Test.Scope194MarkerException: C126_RESULT|C194S037|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S037Test.Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S037",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S037Test",
+                      "message": "C194S037Test.Scope194MarkerException: C126_RESULT|C194S037|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S037Test.Scope194MarkerException"
+            }
+          },
+          "classes": {
+            "C194S037Test": "@IsTest public class C194S037Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();Integer total=0;for(Integer x=1;total<1;total++){}for(Integer x=1;total<2;total++){}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S037|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S037Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S038",
+      "label": "Integer sibling enhanced",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "30b51448dcaf054394c60e86b5938e1d76462267ce0d1ab0844f0816c40cefb9"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S038",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S038|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S038",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S038|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S038",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S038|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();Integer total=0;for(Integer x:new List<Integer>{1}){total++;}for(Integer x:new List<Integer>{1}){total++;}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S038|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S038Test": "e2bcb670bb7d05d92927ca715c3d4b636cf099a38d1b7d6094814c86ad7608a3"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S038",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S038Test",
+                      "message": "C194S038Test.Scope194MarkerException: C126_RESULT|C194S038|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S038Test.Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S038",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S038Test",
+                      "message": "C194S038Test.Scope194MarkerException: C126_RESULT|C194S038|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S038Test.Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S038",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S038Test",
+                      "message": "C194S038Test.Scope194MarkerException: C126_RESULT|C194S038|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S038Test.Scope194MarkerException"
+            }
+          },
+          "classes": {
+            "C194S038Test": "@IsTest public class C194S038Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();Integer total=0;for(Integer x:new List<Integer>{1}){total++;}for(Integer x:new List<Integer>{1}){total++;}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S038|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S038Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S039",
+      "label": "String sibling standard",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "56c392fcab481906346f18f171b8d5f8a70d8a46d15771278e53b299137ab1ed"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S039",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S039|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S039",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S039|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S039",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S039|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();Integer total=0;for(String x='one';total<1;total++){}for(String x='one';total<2;total++){}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S039|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S039Test": "c51637e529cd6de21609fad0847a6d44c8534b8748157b3b4357858c560f6d25"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S039",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S039Test",
+                      "message": "C194S039Test.Scope194MarkerException: C126_RESULT|C194S039|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S039Test.Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S039",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S039Test",
+                      "message": "C194S039Test.Scope194MarkerException: C126_RESULT|C194S039|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S039Test.Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S039",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S039Test",
+                      "message": "C194S039Test.Scope194MarkerException: C126_RESULT|C194S039|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S039Test.Scope194MarkerException"
+            }
+          },
+          "classes": {
+            "C194S039Test": "@IsTest public class C194S039Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();Integer total=0;for(String x='one';total<1;total++){}for(String x='one';total<2;total++){}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S039|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S039Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S040",
+      "label": "String sibling enhanced",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "12b0f8647c71079f1a95a09918c71be2d39a77a8cd1e62639778623985da1d7a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S040",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S040|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S040",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S040|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S040",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S040|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();Integer total=0;for(String x:new List<String>{'one'}){total++;}for(String x:new List<String>{'one'}){total++;}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S040|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S040Test": "581bc697981da5870e343f2ad79419fa1e356e7fecf8e29a44898f7652c2ca1c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S040",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S040Test",
+                      "message": "C194S040Test.Scope194MarkerException: C126_RESULT|C194S040|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S040Test.Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S040",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S040Test",
+                      "message": "C194S040Test.Scope194MarkerException: C126_RESULT|C194S040|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S040Test.Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S040",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S040Test",
+                      "message": "C194S040Test.Scope194MarkerException: C126_RESULT|C194S040|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S040Test.Scope194MarkerException"
+            }
+          },
+          "classes": {
+            "C194S040Test": "@IsTest public class C194S040Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();Integer total=0;for(String x:new List<String>{'one'}){total++;}for(String x:new List<String>{'one'}){total++;}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S040|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S040Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S041",
+      "label": "ScopeBox194 sibling standard",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "79a9b43d1f5164b8069e49953f466e7517b0112bf1062ce17909ad8e4d4e1593"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S041",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S041|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S041",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S041|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S041",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S041|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}public class ScopeBox194 { public Integer value=1; }Map<String,Object> observed=new Map<String,Object>();Integer total=0;for(ScopeBox194 x=new ScopeBox194();total<1;total++){}for(ScopeBox194 x=new ScopeBox194();total<2;total++){}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S041|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S041Test": "299f81c1d8ee7e94f72d4912268d90012d38885d85a301949ed8576d6eb956e4"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S041",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S041Test",
+                      "message": "C194S041Test.Scope194MarkerException: C126_RESULT|C194S041|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S041Test.Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S041",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S041Test",
+                      "message": "C194S041Test.Scope194MarkerException: C126_RESULT|C194S041|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S041Test.Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S041",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S041Test",
+                      "message": "C194S041Test.Scope194MarkerException: C126_RESULT|C194S041|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S041Test.Scope194MarkerException"
+            }
+          },
+          "classes": {
+            "C194S041Test": "@IsTest public class C194S041Test {public class Scope194MarkerException extends Exception {}public class ScopeBox194 { public Integer value=1; }@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();Integer total=0;for(ScopeBox194 x=new ScopeBox194();total<1;total++){}for(ScopeBox194 x=new ScopeBox194();total<2;total++){}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S041|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S041Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S042",
+      "label": "ScopeBox194 sibling enhanced",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "91f63697755ad0dad76450cd610d61172a4241a5524e461ccfe9a5784ab288d5"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S042",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S042|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S042",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S042|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S042",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S042|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}public class ScopeBox194 { public Integer value=1; }Map<String,Object> observed=new Map<String,Object>();Integer total=0;for(ScopeBox194 x:new List<ScopeBox194>{new ScopeBox194()}){total++;}for(ScopeBox194 x:new List<ScopeBox194>{new ScopeBox194()}){total++;}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S042|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S042Test": "62f4d4c33d68d571f43aa81e0b60e20f9c467e2c8fd72d1390e6f4d96f1d28db"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S042",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S042Test",
+                      "message": "C194S042Test.Scope194MarkerException: C126_RESULT|C194S042|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S042Test.Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S042",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S042Test",
+                      "message": "C194S042Test.Scope194MarkerException: C126_RESULT|C194S042|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S042Test.Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S042",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S042Test",
+                      "message": "C194S042Test.Scope194MarkerException: C126_RESULT|C194S042|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S042Test.Scope194MarkerException"
+            }
+          },
+          "classes": {
+            "C194S042Test": "@IsTest public class C194S042Test {public class Scope194MarkerException extends Exception {}public class ScopeBox194 { public Integer value=1; }@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();Integer total=0;for(ScopeBox194 x:new List<ScopeBox194>{new ScopeBox194()}){total++;}for(ScopeBox194 x:new List<ScopeBox194>{new ScopeBox194()}){total++;}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S042|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S042Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S043",
+      "label": "mixed-type sibling standard",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "aff06faf984e4f822c6141c588baea28592545685216958df1687a4a7166d626"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S043",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S043|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S043",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S043|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S043",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S043|{\"iterations\":2}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();Integer total=0;for(Integer x=1;total<1;total++){}for(String x='one';total<2;total++){}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S043|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S043Test": "c144bb49be921a52adf58708719f3c1ecb90704f12cb45d1eb87bd179e0ecb0e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S043",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S043Test",
+                      "message": "C194S043Test.Scope194MarkerException: C126_RESULT|C194S043|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S043Test.Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S043",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S043Test",
+                      "message": "C194S043Test.Scope194MarkerException: C126_RESULT|C194S043|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S043Test.Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S043",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S043Test",
+                      "message": "C194S043Test.Scope194MarkerException: C126_RESULT|C194S043|{\"iterations\":2}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "iterations": 2
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"iterations\":2}",
+              "exceptionType": "C194S043Test.Scope194MarkerException"
+            }
+          },
+          "classes": {
+            "C194S043Test": "@IsTest public class C194S043Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();Integer total=0;for(Integer x=1;total<1;total++){}for(String x='one';total<2;total++){}observed.put('iterations',total);throw new Scope194MarkerException('C126_RESULT|C194S043|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S043Test"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+api=67.0
+context=istest
+rows=10
+native_complete=true
+deployment_success=true
+class_api=67.0
+test_outcome=Passed
+tests_ran=10
+tests_passed=10
+tests_failed=0
+source_sha256:force-app/main/default/classes/ScheduledFlowDmlProbeTest.cls=743dce2bc0ab1db986f5c46f8b06ee871af4fa094fb671d8ae7447ebbdc1e257
+source_sha256:force-app/main/default/classes/ScheduledFlowDmlProbeTest.cls-meta.xml=a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32
+source_sha256:force-app/main/default/flows/Record_Before_Delete.flow-meta.xml=5611a50e1b590239da5aad4925f7d71f86dd37baa284811e7e36ad17a7f1568d
+source_sha256:force-app/main/default/flows/Scheduled_Decision.flow-meta.xml=bcdfdecdca5311c180e546abf33435dae6c9cf5eca8bde4cbcfdc0df665b9a6d
+source_sha256:force-app/main/default/flows/Scheduled_Filtered.flow-meta.xml=cc702baa57b8b0bdd4615d21836202d05f0a8e063c94504110ad4c6b61f97609
+source_sha256:force-app/main/default/flows/Scheduled_Unconditional.flow-meta.xml=4eddd2c471f69cdb9c42bdccfe5055d21f1a55af5ac9f2e0ecfc998925b9c64d
+source_sha256:sfdx-project.json=4532df7a63bf2b0c5d5ca7481737e745246276f2d791143c9a5cfce0426f7781

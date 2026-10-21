@@ -16,7 +16,7 @@ import (
 // JSON deliberately binds the proposed domainUrl without requiring a future Go
 // field. Today's decoder ignores that unknown key; successful decoding does not
 // establish that the canonical origin was installed. Freeze these bytes for red.
-const urlOrgOriginFixtureJSON = `{"orgId":"00D000000000001","apiVersion":"65.0","domainUrl":"https://canonical-org.example.test","objects":{}}`
+const urlOrgOriginFixtureJSON = `{"orgId":"00D000000000mH2","apiVersion":"65.0","domainUrl":"https://canonical-org.example.test","objects":{}}`
 
 func TestExecURLCanonicalOrgOriginAPI67(t *testing.T) {
 	for _, tc := range []struct {

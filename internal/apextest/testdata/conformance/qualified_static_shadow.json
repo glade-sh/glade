@@ -1,0 +1,258 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "nativeObservationCount": 4,
+  "fixtures": {
+    "62.0": {
+      "classes": {
+        "CollectionScopeProbe62": "public class CollectionScopeProbe62 {\n    private static List<Object> storedItems;\n    public static List<Object> items {\n        get {\n            if (storedItems == null) storedItems = new List<Object>();\n            return storedItems;\n        }\n        set { storedItems = value; }\n    }\n    public static String label = 'outer-scalar';\n\n    public class Worker {\n        private final List<Object> items;\n        private final String label;\n        public Worker() {\n            this.items = new List<Object>{'inner-list'};\n            this.label = 'inner-scalar';\n        }\n        public Map<String, Object> direct() {\n            return new Map<String, Object>{\n                'qualifiedList' => JSON.serialize(CollectionScopeProbe62.items),\n                'instanceList' => JSON.serialize(this.items),\n                'qualifiedScalar' => CollectionScopeProbe62.label,\n                'instanceScalar' => this.label\n            };\n        }\n        public Integer build() {\n            List<Object> saved = new List<Object>(CollectionScopeProbe62.items);\n            try {\n                CollectionScopeProbe62.items.addAll(this.items);\n                return CollectionScopeProbe62.items.size();\n            } finally {\n                CollectionScopeProbe62.items.clear();\n                CollectionScopeProbe62.items.addAll(saved);\n            }\n        }\n        public String instanceItems() {\n            return JSON.serialize(this.items);\n        }\n        public Map<String, Object> cleanup(Boolean raiseInside) {\n            Map<String, Object> row = new Map<String, Object>();\n            List<Object> saved = CollectionScopeProbe62.items;\n            try {\n                CollectionScopeProbe62.items = new List<Object>{'temporary-list'};\n                row.put('duringQualifiedList', JSON.serialize(CollectionScopeProbe62.items));\n                row.put('duringInstanceList', JSON.serialize(this.items));\n                if (raiseInside) throw new IllegalArgumentException('owned-cleanup');\n                row.put('caught', false);\n            } catch (IllegalArgumentException error) {\n                row.put('caught', true);\n            } finally {\n                CollectionScopeProbe62.items = saved;\n            }\n            row.put('restoredQualifiedList', JSON.serialize(CollectionScopeProbe62.items));\n            row.put('restoredInstanceList', JSON.serialize(this.items));\n            return row;\n        }\n    }\n\n    public class RenamedWorker {\n        private final List<Object> localItems;\n        private final String localLabel;\n        public RenamedWorker() {\n            this.localItems = new List<Object>{'renamed-inner-list'};\n            this.localLabel = 'renamed-inner-scalar';\n        }\n        public Map<String, Object> direct() {\n            return new Map<String, Object>{\n                'qualifiedList' => JSON.serialize(CollectionScopeProbe62.items),\n                'instanceList' => JSON.serialize(this.localItems),\n                'qualifiedScalar' => CollectionScopeProbe62.label,\n                'instanceScalar' => this.localLabel\n            };\n        }\n    }\n\n    public static String observe() {\n        Map<String, Object> rows = new Map<String, Object>();\n        Worker worker = new Worker();\n        CollectionScopeProbe62.items = new List<Object>{'outer-list'};\n        CollectionScopeProbe62.label = 'outer-scalar';\n        try {\n            rows.put('direct', worker.direct());\n        } catch (Exception error) {\n            rows.put('directError', error.getTypeName() + ': ' + error.getMessage());\n        }\n        CollectionScopeProbe62.items = new List<Object>{'outer-list'};\n        try {\n            rows.put('normalFinally', worker.cleanup(false));\n        } catch (Exception error) {\n            rows.put('normalFinallyError', error.getTypeName() + ': ' + error.getMessage());\n        }\n        CollectionScopeProbe62.items = new List<Object>{'outer-list'};\n        try {\n            rows.put('exceptionFinally', worker.cleanup(true));\n        } catch (Exception error) {\n            rows.put('exceptionFinallyError', error.getTypeName() + ': ' + error.getMessage());\n        }\n        CollectionScopeProbe62.items = new List<Object>{'outer-list'};\n        try {\n            rows.put('renamedControl', new RenamedWorker().direct());\n        } catch (Exception error) {\n            rows.put('renamedControlError', error.getTypeName() + ': ' + error.getMessage());\n        }\n        CollectionScopeProbe62.items = new List<Object>();\n        try {\n            Integer count = worker.build();\n            rows.put('buildEmpty', new Map<String, Object>{\n                'returnedSize' => count,\n                'finalOuter' => JSON.serialize(CollectionScopeProbe62.items),\n                'inner' => worker.instanceItems()\n            });\n        } catch (Exception error) {\n            rows.put('buildEmptyError', error.getTypeName() + ': ' + error.getMessage());\n        }\n        CollectionScopeProbe62.items = new List<Object>{'outer-list'};\n        try {\n            Integer count = worker.build();\n            rows.put('buildSeeded', new Map<String, Object>{\n                'returnedSize' => count,\n                'finalOuter' => JSON.serialize(CollectionScopeProbe62.items),\n                'inner' => worker.instanceItems()\n            });\n        } catch (Exception error) {\n            rows.put('buildSeededError', error.getTypeName() + ': ' + error.getMessage());\n        }\n        rows.put('outerAfter', JSON.serialize(CollectionScopeProbe62.items));\n        return JSON.serialize(rows);\n    }\n}\n",
+        "CollectionScopeProbe62Test": "@IsTest\nprivate class CollectionScopeProbe62Test {\n    @IsTest static void observe() {\n        System.assert(false, 'SCOPE_ROWS|' + CollectionScopeProbe62.observe() + '|SCOPE_END');\n    }\n}\n"
+      },
+      "classMetadata": {
+        "CollectionScopeProbe62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "CollectionScopeProbe62Test": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n"
+      },
+      "sourceSHA256": {
+        "CollectionScopeProbe62": "6ab82e63642ce83bdd478319f301021d380b8ada990747a1d466e257836bde18",
+        "CollectionScopeProbe62Test": "e517ea61da6a2b9f729a270944953e8b303984583ec75b724d6c983bbcbc21bc"
+      },
+      "metadataSHA256": {
+        "CollectionScopeProbe62": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51",
+        "CollectionScopeProbe62Test": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+      },
+      "anonymous": "System.debug(LoggingLevel.ERROR, 'SCOPE_ROWS|' + CollectionScopeProbe62.observe() + '|SCOPE_END');\n",
+      "anonymousSHA256": "a3bc396361d9231db4fc02f3b95868edbba63ceb47284f4aaf30c2a8ad6ddbe0",
+      "testClass": "CollectionScopeProbe62Test"
+    },
+    "67.0": {
+      "classes": {
+        "CollectionScopeProbe67": "public class CollectionScopeProbe67 {\n    private static List<Object> storedItems;\n    public static List<Object> items {\n        get {\n            if (storedItems == null) storedItems = new List<Object>();\n            return storedItems;\n        }\n        set { storedItems = value; }\n    }\n    public static String label = 'outer-scalar';\n\n    public class Worker {\n        private final List<Object> items;\n        private final String label;\n        public Worker() {\n            this.items = new List<Object>{'inner-list'};\n            this.label = 'inner-scalar';\n        }\n        public Map<String, Object> direct() {\n            return new Map<String, Object>{\n                'qualifiedList' => JSON.serialize(CollectionScopeProbe67.items),\n                'instanceList' => JSON.serialize(this.items),\n                'qualifiedScalar' => CollectionScopeProbe67.label,\n                'instanceScalar' => this.label\n            };\n        }\n        public Integer build() {\n            List<Object> saved = new List<Object>(CollectionScopeProbe67.items);\n            try {\n                CollectionScopeProbe67.items.addAll(this.items);\n                return CollectionScopeProbe67.items.size();\n            } finally {\n                CollectionScopeProbe67.items.clear();\n                CollectionScopeProbe67.items.addAll(saved);\n            }\n        }\n        public String instanceItems() {\n            return JSON.serialize(this.items);\n        }\n        public Map<String, Object> cleanup(Boolean raiseInside) {\n            Map<String, Object> row = new Map<String, Object>();\n            List<Object> saved = CollectionScopeProbe67.items;\n            try {\n                CollectionScopeProbe67.items = new List<Object>{'temporary-list'};\n                row.put('duringQualifiedList', JSON.serialize(CollectionScopeProbe67.items));\n                row.put('duringInstanceList', JSON.serialize(this.items));\n                if (raiseInside) throw new IllegalArgumentException('owned-cleanup');\n                row.put('caught', false);\n            } catch (IllegalArgumentException error) {\n                row.put('caught', true);\n            } finally {\n                CollectionScopeProbe67.items = saved;\n            }\n            row.put('restoredQualifiedList', JSON.serialize(CollectionScopeProbe67.items));\n            row.put('restoredInstanceList', JSON.serialize(this.items));\n            return row;\n        }\n    }\n\n    public class RenamedWorker {\n        private final List<Object> localItems;\n        private final String localLabel;\n        public RenamedWorker() {\n            this.localItems = new List<Object>{'renamed-inner-list'};\n            this.localLabel = 'renamed-inner-scalar';\n        }\n        public Map<String, Object> direct() {\n            return new Map<String, Object>{\n                'qualifiedList' => JSON.serialize(CollectionScopeProbe67.items),\n                'instanceList' => JSON.serialize(this.localItems),\n                'qualifiedScalar' => CollectionScopeProbe67.label,\n                'instanceScalar' => this.localLabel\n            };\n        }\n    }\n\n    public static String observe() {\n        Map<String, Object> rows = new Map<String, Object>();\n        Worker worker = new Worker();\n        CollectionScopeProbe67.items = new List<Object>{'outer-list'};\n        CollectionScopeProbe67.label = 'outer-scalar';\n        try {\n            rows.put('direct', worker.direct());\n        } catch (Exception error) {\n            rows.put('directError', error.getTypeName() + ': ' + error.getMessage());\n        }\n        CollectionScopeProbe67.items = new List<Object>{'outer-list'};\n        try {\n            rows.put('normalFinally', worker.cleanup(false));\n        } catch (Exception error) {\n            rows.put('normalFinallyError', error.getTypeName() + ': ' + error.getMessage());\n        }\n        CollectionScopeProbe67.items = new List<Object>{'outer-list'};\n        try {\n            rows.put('exceptionFinally', worker.cleanup(true));\n        } catch (Exception error) {\n            rows.put('exceptionFinallyError', error.getTypeName() + ': ' + error.getMessage());\n        }\n        CollectionScopeProbe67.items = new List<Object>{'outer-list'};\n        try {\n            rows.put('renamedControl', new RenamedWorker().direct());\n        } catch (Exception error) {\n            rows.put('renamedControlError', error.getTypeName() + ': ' + error.getMessage());\n        }\n        CollectionScopeProbe67.items = new List<Object>();\n        try {\n            Integer count = worker.build();\n            rows.put('buildEmpty', new Map<String, Object>{\n                'returnedSize' => count,\n                'finalOuter' => JSON.serialize(CollectionScopeProbe67.items),\n                'inner' => worker.instanceItems()\n            });\n        } catch (Exception error) {\n            rows.put('buildEmptyError', error.getTypeName() + ': ' + error.getMessage());\n        }\n        CollectionScopeProbe67.items = new List<Object>{'outer-list'};\n        try {\n            Integer count = worker.build();\n            rows.put('buildSeeded', new Map<String, Object>{\n                'returnedSize' => count,\n                'finalOuter' => JSON.serialize(CollectionScopeProbe67.items),\n                'inner' => worker.instanceItems()\n            });\n        } catch (Exception error) {\n            rows.put('buildSeededError', error.getTypeName() + ': ' + error.getMessage());\n        }\n        rows.put('outerAfter', JSON.serialize(CollectionScopeProbe67.items));\n        return JSON.serialize(rows);\n    }\n}\n",
+        "CollectionScopeProbe67Test": "@IsTest\nprivate class CollectionScopeProbe67Test {\n    @IsTest static void observe() {\n        System.assert(false, 'SCOPE_ROWS|' + CollectionScopeProbe67.observe() + '|SCOPE_END');\n    }\n}\n"
+      },
+      "classMetadata": {
+        "CollectionScopeProbe67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "CollectionScopeProbe67Test": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n"
+      },
+      "sourceSHA256": {
+        "CollectionScopeProbe67": "37d23d6d820eff7d4d9c2041c5bd33a428a8a69efe7b32da61346f169da7b224",
+        "CollectionScopeProbe67Test": "c93a537a9cc707cf399b53a0d980844806464a251b2a76a0c5c72474a68136f9"
+      },
+      "metadataSHA256": {
+        "CollectionScopeProbe67": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "CollectionScopeProbe67Test": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+      },
+      "anonymous": "System.debug(LoggingLevel.ERROR, 'SCOPE_ROWS|' + CollectionScopeProbe67.observe() + '|SCOPE_END');\n",
+      "anonymousSHA256": "a62dc9581d83af1902de13eb01bd7ed443321153c60ffac848e72fd05a91fffd",
+      "testClass": "CollectionScopeProbe67Test"
+    }
+  },
+  "cells": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "native": {
+        "outerAfter": "[\"outer-list\"]",
+        "buildSeeded": {
+          "inner": "[\"inner-list\"]",
+          "finalOuter": "[\"outer-list\"]",
+          "returnedSize": 2
+        },
+        "buildEmpty": {
+          "inner": "[\"inner-list\"]",
+          "finalOuter": "[]",
+          "returnedSize": 1
+        },
+        "renamedControl": {
+          "instanceScalar": "renamed-inner-scalar",
+          "qualifiedScalar": "outer-scalar",
+          "instanceList": "[\"renamed-inner-list\"]",
+          "qualifiedList": "[\"outer-list\"]"
+        },
+        "exceptionFinally": {
+          "restoredInstanceList": "[\"inner-list\"]",
+          "restoredQualifiedList": "[\"outer-list\"]",
+          "caught": true,
+          "duringInstanceList": "[\"inner-list\"]",
+          "duringQualifiedList": "[\"temporary-list\"]"
+        },
+        "normalFinally": {
+          "restoredInstanceList": "[\"inner-list\"]",
+          "restoredQualifiedList": "[\"outer-list\"]",
+          "caught": false,
+          "duringInstanceList": "[\"inner-list\"]",
+          "duringQualifiedList": "[\"temporary-list\"]"
+        },
+        "direct": {
+          "instanceScalar": "inner-scalar",
+          "qualifiedScalar": "outer-scalar",
+          "instanceList": "[\"inner-list\"]",
+          "qualifiedList": "[\"outer-list\"]"
+        }
+      },
+      "nativeJSONSHA256": "f8aa3f827f268a59b1063338ac0214313126e42e3f3737678a08b41c5bb2c253",
+      "rawSHA256": "81c05788cd9b14639120a96ef7aee842da726e0517b47bb470be365f4d7db758",
+      "deploymentID": "0AfEk00000fydZyKAI",
+      "deploymentSHA256": "f1d43595b9313576ccd3bad7eeb5e819c2a5adb9bab3599cef6f47ec1db175a7",
+      "orgIdSHA256": "333b1946779eb583296d3f2a16a08af1180e089315152703c62acf716248f415",
+      "sourceStatus": "intentional assertion observation"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "native": {
+        "outerAfter": "[\"outer-list\"]",
+        "buildSeeded": {
+          "inner": "[\"inner-list\"]",
+          "finalOuter": "[\"outer-list\"]",
+          "returnedSize": 2
+        },
+        "buildEmpty": {
+          "inner": "[\"inner-list\"]",
+          "finalOuter": "[]",
+          "returnedSize": 1
+        },
+        "renamedControl": {
+          "instanceScalar": "renamed-inner-scalar",
+          "qualifiedScalar": "outer-scalar",
+          "instanceList": "[\"renamed-inner-list\"]",
+          "qualifiedList": "[\"outer-list\"]"
+        },
+        "exceptionFinally": {
+          "restoredInstanceList": "[\"inner-list\"]",
+          "restoredQualifiedList": "[\"outer-list\"]",
+          "caught": true,
+          "duringInstanceList": "[\"inner-list\"]",
+          "duringQualifiedList": "[\"temporary-list\"]"
+        },
+        "normalFinally": {
+          "restoredInstanceList": "[\"inner-list\"]",
+          "restoredQualifiedList": "[\"outer-list\"]",
+          "caught": false,
+          "duringInstanceList": "[\"inner-list\"]",
+          "duringQualifiedList": "[\"temporary-list\"]"
+        },
+        "direct": {
+          "instanceScalar": "inner-scalar",
+          "qualifiedScalar": "outer-scalar",
+          "instanceList": "[\"inner-list\"]",
+          "qualifiedList": "[\"outer-list\"]"
+        }
+      },
+      "nativeJSONSHA256": "f8aa3f827f268a59b1063338ac0214313126e42e3f3737678a08b41c5bb2c253",
+      "rawSHA256": "59250186abaed8e54f630b53d5c2396bd9905e67fae2881e8e7a1b6436543a76",
+      "deploymentID": "0AfEk00000fydZyKAI",
+      "deploymentSHA256": "f1d43595b9313576ccd3bad7eeb5e819c2a5adb9bab3599cef6f47ec1db175a7",
+      "orgIdSHA256": "333b1946779eb583296d3f2a16a08af1180e089315152703c62acf716248f415",
+      "sourceStatus": "success/debug observation"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "native": {
+        "outerAfter": "[\"outer-list\"]",
+        "buildSeeded": {
+          "inner": "[\"inner-list\"]",
+          "finalOuter": "[\"outer-list\"]",
+          "returnedSize": 2
+        },
+        "buildEmpty": {
+          "inner": "[\"inner-list\"]",
+          "finalOuter": "[]",
+          "returnedSize": 1
+        },
+        "renamedControl": {
+          "instanceScalar": "renamed-inner-scalar",
+          "qualifiedScalar": "outer-scalar",
+          "instanceList": "[\"renamed-inner-list\"]",
+          "qualifiedList": "[\"outer-list\"]"
+        },
+        "exceptionFinally": {
+          "restoredInstanceList": "[\"inner-list\"]",
+          "restoredQualifiedList": "[\"outer-list\"]",
+          "caught": true,
+          "duringInstanceList": "[\"inner-list\"]",
+          "duringQualifiedList": "[\"temporary-list\"]"
+        },
+        "normalFinally": {
+          "restoredInstanceList": "[\"inner-list\"]",
+          "restoredQualifiedList": "[\"outer-list\"]",
+          "caught": false,
+          "duringInstanceList": "[\"inner-list\"]",
+          "duringQualifiedList": "[\"temporary-list\"]"
+        },
+        "direct": {
+          "instanceScalar": "inner-scalar",
+          "qualifiedScalar": "outer-scalar",
+          "instanceList": "[\"inner-list\"]",
+          "qualifiedList": "[\"outer-list\"]"
+        }
+      },
+      "nativeJSONSHA256": "f8aa3f827f268a59b1063338ac0214313126e42e3f3737678a08b41c5bb2c253",
+      "rawSHA256": "ceae93ad0505ae09e2e782441a95fdd654991a191dc89ac914a0a11d7b5e4a54",
+      "deploymentID": "0AfEk00000fydZyKAI",
+      "deploymentSHA256": "f1d43595b9313576ccd3bad7eeb5e819c2a5adb9bab3599cef6f47ec1db175a7",
+      "orgIdSHA256": "333b1946779eb583296d3f2a16a08af1180e089315152703c62acf716248f415",
+      "sourceStatus": "intentional assertion observation"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "native": {
+        "outerAfter": "[\"outer-list\"]",
+        "buildSeeded": {
+          "inner": "[\"inner-list\"]",
+          "finalOuter": "[\"outer-list\"]",
+          "returnedSize": 2
+        },
+        "buildEmpty": {
+          "inner": "[\"inner-list\"]",
+          "finalOuter": "[]",
+          "returnedSize": 1
+        },
+        "renamedControl": {
+          "instanceScalar": "renamed-inner-scalar",
+          "qualifiedScalar": "outer-scalar",
+          "instanceList": "[\"renamed-inner-list\"]",
+          "qualifiedList": "[\"outer-list\"]"
+        },
+        "exceptionFinally": {
+          "restoredInstanceList": "[\"inner-list\"]",
+          "restoredQualifiedList": "[\"outer-list\"]",
+          "caught": true,
+          "duringInstanceList": "[\"inner-list\"]",
+          "duringQualifiedList": "[\"temporary-list\"]"
+        },
+        "normalFinally": {
+          "restoredInstanceList": "[\"inner-list\"]",
+          "restoredQualifiedList": "[\"outer-list\"]",
+          "caught": false,
+          "duringInstanceList": "[\"inner-list\"]",
+          "duringQualifiedList": "[\"temporary-list\"]"
+        },
+        "direct": {
+          "instanceScalar": "inner-scalar",
+          "qualifiedScalar": "outer-scalar",
+          "instanceList": "[\"inner-list\"]",
+          "qualifiedList": "[\"outer-list\"]"
+        }
+      },
+      "nativeJSONSHA256": "f8aa3f827f268a59b1063338ac0214313126e42e3f3737678a08b41c5bb2c253",
+      "rawSHA256": "af5b574ef5e46d9d1eb6c73e9c202f3abd8a705637415138bf2943bc86eda9e4",
+      "deploymentID": "0AfEk00000fydZyKAI",
+      "deploymentSHA256": "f1d43595b9313576ccd3bad7eeb5e819c2a5adb9bab3599cef6f47ec1db175a7",
+      "orgIdSHA256": "333b1946779eb583296d3f2a16a08af1180e089315152703c62acf716248f415",
+      "sourceStatus": "success/debug observation"
+    }
+  ],
+  "scope": "Qualified outer static list/property and scalar vs same-name nested instance; exact copy/addAll/return/finally empty/seeded controls. No map-order contract."
+}

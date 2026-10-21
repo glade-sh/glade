@@ -270,6 +270,29 @@ func (vm *VM) autolaunchedFlowRule(name string) (storage.FlowRule, bool) {
 	return storage.FlowRule{}, false
 }
 
+func (vm *VM) flowDeclaration(name string) (storage.FlowRule, bool) {
+	if vm == nil || vm.Org == nil || strings.TrimSpace(name) == "" {
+		return storage.FlowRule{}, false
+	}
+	for _, declaration := range vm.Org.Metadata.FlowDeclarations {
+		if strings.EqualFold(strings.TrimSpace(declaration.Name), strings.TrimSpace(name)) {
+			return declaration, true
+		}
+	}
+	return storage.FlowRule{}, false
+}
+
+func flowInterviewName(receiver Value) string {
+	if name := receiver.Fields["flowName"]; name.Kind == ValueString && name.Text != "" {
+		return name.Text
+	}
+	const prefix = "Flow.Interview."
+	if hasPrefixFold(receiver.Type, prefix) {
+		return receiver.Type[len(prefix):]
+	}
+	return ""
+}
+
 func (vm *VM) flowInterviewInput(receiver Value) (dml.FlowInterviewInput, map[string]Value, error) {
 	input := dml.FlowInterviewInput{
 		Scalars:     make(map[string]storage.Value),
@@ -288,10 +311,7 @@ func (vm *VM) flowInterviewInput(receiver Value) (dml.FlowInterviewInput, map[st
 	if !ok || variables.Kind != ValueMap {
 		return input, opaque, nil
 	}
-	flowName := ""
-	if value, ok := receiver.Fields["flowName"]; ok && value.Kind == ValueString {
-		flowName = value.Text
-	}
+	flowName := flowInterviewName(receiver)
 	declared := make(map[string]storage.FlowVariable)
 	if rule, found := vm.autolaunchedFlowRule(flowName); found {
 		for _, variable := range rule.Variables {
@@ -319,7 +339,7 @@ func (vm *VM) flowInterviewInput(receiver Value) (dml.FlowInterviewInput, map[st
 		recordShape := hasDeclaration && flowInterviewRecordVariable(variable)
 		if value.Kind == ValueList {
 			if hasDeclaration && strings.EqualFold(strings.TrimSpace(variable.DataType), "Apex") {
-				opaque[name] = cloneValuePreserveRefs(value)
+				opaque[name] = vm.cloneValuePreserveRefs(value)
 				continue
 			}
 			if !recordShape && !hasDeclaration {
@@ -351,7 +371,7 @@ func (vm *VM) flowInterviewInput(receiver Value) (dml.FlowInterviewInput, map[st
 			continue
 		}
 		if hasDeclaration && strings.EqualFold(strings.TrimSpace(variable.DataType), "Apex") && value.Kind == ValueObject {
-			opaque[name] = cloneValuePreserveRefs(value)
+			opaque[name] = vm.cloneValuePreserveRefs(value)
 			continue
 		}
 		if value.Kind == ValueObject && (recordShape || vm.isSObjectLikeType(value.Type)) {
@@ -419,6 +439,12 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	// R243/R254 guards are local argument/context failures; no hosted operation
 	// is performed, and other members retain the existing DTO implementation.
 	if strings.EqualFold(receiver.Type, "commercepayments.PaymentsHttp") && strings.EqualFold(method, "send") && len(args) == 1 {
+		// MT01: a registered test mock handles non-null HttpRequest objects,
+		// including a blank request, through the ordinary HTTP mock path.
+		if vm.testContext != nil && vm.testContext.HTTPMock.Kind == ValueObject &&
+			args[0].Kind == ValueObject && args[0].Type == "HttpRequest" {
+			return vm.callPlatformObjectMember(Object("Http"), "send", args, result)
+		}
 		return Null, receiver, false, true, newExceptionError("CalloutException", "Callout without PaymentsContext is not Allowed")
 	}
 	if strings.EqualFold(receiver.Type, "Auth.JWTBearerTokenExchange") && strings.EqualFold(method, "getAccessToken") && len(args) == 0 {
@@ -848,6 +874,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if !builtinExceptionTypeMatches(receiver.Type, "QueryException") && !builtinExceptionTypeMatches(receiver.Type, "InvalidParameterValueException") {
 				return Null, receiver, false, true, newExceptionError("System.TypeException", "Procedure is only valid for System.QueryException")
 			}
+			if inaccessible, ok := receiver.Fields["__inaccessibleFields"]; ok && builtinExceptionTypeMatches(receiver.Type, "QueryException") {
+				return inaccessible, receiver, false, true, nil
+			}
 			return Map(), receiver, false, true, nil
 		case "getCause":
 			if len(args) != 0 {
@@ -934,6 +963,26 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			if stack, ok := receiver.Fields["__stackTrace"]; ok {
 				if stack.Kind == ValueString {
+					// Captures distinguish this unthrown DmlException construction
+					// from the thrown IllegalArgumentException helper. Do not infer
+					// the same rule for other types or deeper call chains.
+					callers := 0
+					thrown := receiver.Fields["__thrown"].Bool
+					switch exceptionTypeName(receiver.Type) {
+					case "DmlException":
+						if !thrown {
+							callers = 2
+						}
+					case "IllegalArgumentException":
+						if thrown {
+							callers = 1
+						}
+					}
+					if receiver.exceptionAnonymousCallerLine > 0 {
+						for i := 0; i < callers; i++ {
+							stack.Text += fmt.Sprintf("\nAnonymousBlock: line %d, column 1", receiver.exceptionAnonymousCallerLine)
+						}
+					}
 					if cause, ok := receiver.Fields["__cause"]; ok && cause.Kind == ValueObject {
 						if causeStack, ok := cause.Fields["__stackTrace"]; ok && causeStack.Kind == ValueString && causeStack.Text != "" {
 							return String(stack.Text + "\nCaused by\n" + causeStack.Text), receiver, false, true, nil
@@ -950,7 +999,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.toString expects 0 arguments", receiver.Type)
 			}
-			return String(exceptionToString(receiver)), receiver, false, true, nil
+			return String(vm.exceptionToString(receiver)), receiver, false, true, nil
 		}
 	}
 	if isIteratorValue(receiver) {
@@ -1183,6 +1232,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return String(versionValueString(receiver)), receiver, false, true, nil
 		}
 	case "InstallContext":
+		method = canonicalStdlibMemberName(method, "organizationId", "previousVersion", "isUpgrade", "isPush", "installerId")
+		if method == "organizationId" {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("InstallContext.organizationId expects 0 arguments")
+			}
+			return platformScalar("Id", vm.orgID()), receiver, false, true, nil
+		}
 		switch method {
 		case "previousVersion":
 			if len(args) != 0 {
@@ -1502,11 +1558,16 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					for name, field := range object.Definition.Fields {
 						if field.Type == storage.FieldBoolean {
 							record.Fields[name] = typedNull("Boolean")
+							if args[0].Kind == ValueNull && hasSuffixFold(object.Definition.APIName, "__c") && !storage.IsCustomSettingDefinition(object.Definition) && strings.EqualFold(strings.TrimSpace(field.DefaultValue), "false") {
+								// The raw null is readable, but an unloaded custom
+								// Checkbox has no populated/serialized presence.
+								markDefaultedSObjectField(&record, name)
+							}
 						}
 					}
 				}
 			}
-			if vm.hasPlatformEventMetadata(objectName) && (len(args) < 2 || args[1].Bool) {
+			if vm.hasPlatformEventMetadata(objectName) && (len(args) == 1 || len(args) == 2 && args[1].Bool) {
 				putVMFieldPath(record, "EventUuid", String(vm.nextDeterministicUUID()))
 			}
 			if len(args) >= 1 && args[0].Kind != ValueNull {
@@ -1521,6 +1582,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 						return Null, receiver, false, true, newExceptionError("SObjectException", "Invalid Id for "+objectName)
 					}
 					record.Fields["Id"] = recordID
+					record.schemaIDConstructor = true
+					markExplicitSObjectField(&record, "Id")
 				} else {
 					if args[1].Bool {
 						available := false
@@ -1552,6 +1615,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 						}
 						if defaultValue, ok := vm.defaultValueForNewSObjectField(object.Definition, record, field); ok {
 							putVMFieldPath(record, name, vmValueFromStorage(defaultValue))
+							rememberSchemaCheckboxEquality(&record, object.Definition, field, defaultValue)
+						} else if args[0].Kind == ValueNull && field.Type == storage.FieldSummary && strings.EqualFold(strings.TrimSpace(field.SummaryOperation), "count") && strings.TrimSpace(field.DefaultValue) == "" {
+							// Native loadDefaults observations initialize COUNT before
+							// insert; ordinary constructors retain their null caller value.
+							putVMFieldPath(record, name, Decimal(0))
+							markDefaultedSObjectField(&record, name)
+						} else if args[0].Kind == ValueNull && field.Type == storage.FieldSummary && strings.EqualFold(strings.TrimSpace(field.SummaryOperation), "sum") && strings.TrimSpace(field.DefaultValue) == "" {
+							// PENDING-ROWS: implicit SUM defaults on the null-record-type,
+							// loadDefaults constructor require a native observation.
+							putVMFieldPath(record, name, Decimal(0))
+							markDefaultedSObjectField(&record, name)
 						} else if strings.EqualFold(field.APIName, "OwnerId") && field.Type == storage.FieldReference && strings.EqualFold(field.RelationshipName, "Owner") {
 							// The standard owner relationship defaults to the execution principal.
 							// Do not infer defaults for arbitrary User lookup fields.
@@ -2483,7 +2557,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			if len(args) == 0 {
 				if method == "toString" {
-					return String(t.UTC().Format("2006-01-02 15:04:05")), receiver, false, true, nil
+					return String(apexDatetimeDisplayText(t)), receiver, false, true, nil
 				}
 				if method == "formatGmt" {
 					return Null, receiver, false, true, fmt.Errorf("Datetime.formatGmt expects pattern String")
@@ -2524,6 +2598,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					}
 				}
 				canonical, parsedOffset, local, label, ok := resolveTimeZoneForInstant(formatTimeZoneID, t)
+				// Owned API 62/67 F01-F06: a Kiritimati user's one-argument
+				// format uses the instant's historical offset, including -10:40
+				// at epoch zero and the 1994 date-line change. Keep factory and
+				// explicit-zone overload admission separate.
+				if !ok && len(args) == 1 && formatTimeZoneID == "Pacific/Kiritimati" {
+					if location, err := time.LoadLocation(formatTimeZoneID); err == nil {
+						local = t.In(location)
+						_, seconds := local.Zone()
+						canonical, parsedOffset, label, ok = formatTimeZoneID, time.Duration(seconds)*time.Second, "LINT", true
+					}
+				}
 				if !ok {
 					return Null, receiver, false, true, newExceptionError("System.StringException", "Invalid timezone")
 				}
@@ -2548,9 +2633,18 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, err
 			}
 			if method == "date" {
-				_, _, local, _, ok := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), t)
+				zoneID := vm.currentUserTimeZoneID()
+				_, _, local, _, ok := resolveTimeZoneForInstant(zoneID, t)
+				// Salesforce supports Kiritimati's local calendar date. Use the
+				// IANA rules, including its historical date-line change,
+				// without extending the modeled construction/display surface.
+				if !ok && zoneID == "Pacific/Kiritimati" {
+					if location, err := time.LoadLocation(zoneID); err == nil {
+						local, ok = t.In(location), true
+					}
+				}
 				if !ok {
-					return Null, receiver, false, true, unsupportedCallError("Datetime.date timezone " + vm.currentUserTimeZoneID())
+					return Null, receiver, false, true, unsupportedCallError("Datetime.date timezone " + zoneID)
 				}
 				t = local
 			} else {
@@ -2882,7 +2976,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.clone expects 0 arguments", receiver.Type)
 			}
-			return cloneDatabaseOptionsObject(receiver), receiver, false, true, nil
+			cloned := cloneDatabaseOptionsObject(receiver)
+			// cloneDatabaseOptionsObject keeps Ref but copies Fields; retain the
+			// legacy repair walk for writes to either backing.
+			if receiver.Ref != 0 && !sameMapIdentity(receiver.Fields, cloned.Fields) {
+				vm.markSplitBackingRef(receiver.Ref)
+			}
+			return cloned, receiver, false, true, nil
 		}
 	case "Database.UpsertResult":
 		switch method {
@@ -3116,6 +3216,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if name.Kind != ValueString {
 				return Bool(true), receiver, false, true, nil
 			}
+			if vm.Org != nil && (method == "isCreateable" || method == "isUpdateable" || method == "isDeletable") {
+				if resolved, ok := storage.ResolveObjectName(*vm.Org, name.Text); ok && storage.IsGeneratedHistoryObject(vm.Org.Objects[resolved].Definition) {
+					return Bool(false), receiver, false, true, nil
+				}
+			}
 			return Bool(vm.currentUserObjectPermission(name.Text, method)), receiver, false, true, nil
 		case "isCustom":
 			if len(args) != 0 {
@@ -3131,6 +3236,18 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		case "isDeprecatedAndHidden", "isFeedEnabled", "isMergeable", "isMruEnabled", "isUndeletable":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.%s expects 0 arguments", method)
+			}
+			if method == "isUndeletable" {
+				user := vm.executionUser
+				if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
+					user = vm.testContext.CurrentUser
+				}
+				if name := receiver.Fields["name"]; name.Kind == ValueString &&
+					vm.profileHasCapturedAccountLicenseRestriction(stringField(user, "ProfileId"), name.Text) {
+					if !vm.currentUserObjectPermission(name.Text, "isDeletable") {
+						return Bool(false), receiver, false, true, nil
+					}
+				}
 			}
 			field := methodDescribeBoolField(method)
 			if value, ok := receiver.Fields[field]; ok && value.Kind == ValueBool {
@@ -3547,7 +3664,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			appendTrace(result, "apex.callout.http", "apex.callout", map[string]any{"operation": "Http.send"})
 			if hasMock {
-				if target, ok := vm.resolveInstanceMethod(vm.testContext.HTTPMock.Type, "respond"); ok {
+				target, ok, ambiguous := vm.resolveRegisteredHTTPMockMethod(request)
+				if ambiguous {
+					return Null, receiver, false, true, vm.ambiguousOverloadError(vm.testContext.HTTPMock.Type+".respond", []Value{request})
+				}
+				if ok {
 					value, err := vm.callMethodWithReceiver(target, vm.testContext.HTTPMock, []Value{request}, &Result{})
 					if err != nil {
 						return Null, receiver, false, true, err
@@ -3772,19 +3893,16 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Flow.Interview.start expects 0 arguments")
 			}
-			flowName := ""
-			if f, ok := receiver.Fields["flowName"]; ok && f.Kind == ValueString {
-				flowName = f.Text
-			}
-			if flowName == "" {
-				const prefix = "Flow.Interview."
-				if strings.HasPrefix(strings.ToLower(receiver.Type), strings.ToLower(prefix)) {
-					flowName = receiver.Type[len(prefix):]
-				}
-			}
+			flowName := flowInterviewName(receiver)
 			rule, found := vm.autolaunchedFlowRule(flowName)
 			if !found {
+				if declaration, ok := vm.flowDeclaration(flowName); ok && strings.EqualFold(declaration.ProcessType, "Flow") {
+					return Null, receiver, false, true, newExceptionError("System.FlowException", "Screen flows require an interactive runtime")
+				}
 				return Null, receiver, false, true, newExceptionError("FlowException", fmt.Sprintf("Flow.Interview.start: flow %q not found", flowName))
+			}
+			if strings.EqualFold(strings.TrimSpace(rule.ProcessType), "RecommendationStrategy") {
+				return Null, receiver, false, true, unsupportedCallError("Flow.Interview.start hosted recommendation strategy engine")
 			}
 			input, opaqueInputs, inputErr := vm.flowInterviewInput(receiver)
 			if inputErr != nil {
@@ -3793,9 +3911,21 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			engine := vm.newDMLEngine(result)
 			output, err := engine.RunAutolaunchedFlowWithOutput(rule, input)
 			if err != nil {
+				if dml.IsFlowRecordUpdateMissingID(err) {
+					return Null, receiver, false, true, newExceptionError("System.FlowException", err.Error())
+				}
 				return Null, receiver, false, true, err
 			}
 			outputs := vm.flowInterviewOutputValue(output)
+			for _, variable := range rule.Variables {
+				name := strings.ToLower(strings.TrimSpace(variable.Name))
+				if !variable.IsInput && variable.IsOutput && variable.IsCollection && strings.EqualFold(variable.DataType, "String") && !output.Assigned[name] {
+					key := mapKey(String(name))
+					if value, exists := outputs.Map[key]; exists && value.Kind == ValueList && len(value.List) == 0 {
+						outputs.Map[key] = Null
+					}
+				}
+			}
 			for name, value := range opaqueInputs {
 				// The storage-backed Flow frame cannot mutate Apex-defined values.
 				// Preserve the exact input object so Apex callers observe the same
@@ -3823,6 +3953,22 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			if started := receiver.Fields["started"]; started.Kind != ValueBool || !started.Bool {
 				return Null, receiver, false, true, newExceptionError("System.FlowException", "Interview not started")
+			}
+			// The Interview reference returns null for a name absent from the
+			// running Flow, even if an extra input/frame value has that name.
+			rule, _ := vm.autolaunchedFlowRule(flowInterviewName(receiver))
+			declared := false
+			for _, variable := range rule.Variables {
+				if strings.EqualFold(variable.Name, args[0].Text) {
+					if !variable.IsInput && !variable.IsOutput && strings.EqualFold(variable.DataType, "SObject") {
+						return Null, receiver, false, true, nil
+					}
+					declared = true
+					break
+				}
+			}
+			if !declared {
+				return Null, receiver, false, true, nil
 			}
 			if outputs, ok := receiver.Fields["outputs"]; ok && outputs.Kind == ValueMap {
 				if value, ok := outputs.Map[mapKey(args[0])]; ok {
@@ -3904,8 +4050,21 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "Continuation":
 		return callContinuationMember(receiver, method, args)
 	case "StaticResourceCalloutMock":
+		if strings.EqualFold(method, "respond") {
+			if vm.hasConfiguredStaticResourceMockBody(receiver) {
+				return vm.callStaticResourceMockResponse(receiver, args)
+			}
+			if vm.testContext != nil && len(args) == 1 && args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "HttpRequest") {
+				if _, missing := vm.missingNamedStaticResourceMock(receiver); missing {
+					return vm.callStaticResourceMockResponse(receiver, args)
+				}
+			}
+		}
 		return callStaticResourceCalloutMockMember(receiver, method, args)
 	case "MultiStaticResourceCalloutMock":
+		if strings.EqualFold(method, "respond") {
+			return vm.callStaticResourceMockResponse(receiver, args)
+		}
 		return callMultiStaticResourceCalloutMockMember(receiver, method, args)
 	case "PageReference":
 		method = canonicalStdlibMemberName(method, "getContent", "getContentAsPDF", "getUrl", "getAnchor", "setAnchor", "setRedirect", "getRedirect", "getRedirectCode", "setRedirectCode", "getParameters", "getHeaders", "getCookies", "setCookies")
@@ -3985,7 +4144,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if value, ok := receiver.Fields["headers"]; ok {
 				return value, receiver, false, true, nil
 			}
-			headers := typedMap("Map<String,String>")
+			headers := pageReferenceHeaders()
 			receiver.Fields["headers"] = headers
 			return headers, receiver, true, true, nil
 		case "getCookies":
@@ -3999,6 +4158,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			receiver.Fields["cookies"] = cookies
 			return cookies, receiver, true, true, nil
 		case "setCookies":
+			// authorization and request context cookies_request_null is an accepted empty write.
+			if len(args) == 1 && args[0].Kind == ValueNull {
+				return Null, receiver, false, true, nil
+			}
 			if len(args) != 1 || args[0].Kind != ValueList {
 				return Null, receiver, false, true, fmt.Errorf("PageReference.setCookies expects List<Cookie>")
 			}
@@ -4025,6 +4188,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				cookies.MapKeys[key] = name
 			}
 			receiver.Fields["cookies"] = cookies
+			receiver.Fields["responseCookies"] = cookies
 			return Null, receiver, true, true, nil
 		}
 	case "Cookie":
@@ -4202,8 +4366,6 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 // only exact LocaleSidKey values are matched. Its 176 Monday and 14 Saturday
 // entries are explicit. The remaining 87 published locales start on Sunday,
 // as do unknown/unlisted keys to preserve the legacy fallback.
-// Pair data: sorted `locale<TAB>EnglishDay<LF>`, UTF-8, final LF,
-// SHA-256 fd7dcf67d93c3bbf2e38f4978aa2746a83035dc0cdda071875587f40b9dc1545.
 // Sources:
 // https://help.salesforce.com/s/articleView?id=sf.admin_supported_date_time_format.htm&language=en_US&type=5
 // https://help.salesforce.com/s/articleView?id=sf.admin_locales_icu.htm&language=en_US&type=5
@@ -4275,6 +4437,11 @@ var salesforceLocaleWeekStarts = map[string]time.Weekday{
 }
 
 func salesforceLocaleFirstWeekday(locale string) time.Weekday {
+	// PENDING-ROWS: only this language-only key is a candidate alias. Keep
+	// the published full-key table and other unknown-locale fallbacks intact.
+	if locale == "pl" {
+		return time.Monday
+	}
 	if weekday, ok := salesforceLocaleWeekStarts[locale]; ok {
 		return weekday
 	}
@@ -4910,11 +5077,19 @@ func (vm *VM) callTypeObjectMember(receiver Value, method string, args []Value, 
 			}
 		}
 		if class, ok := vm.lookupClass(typeName); ok && len(class.Constructors) > 0 {
-			if _, matched, _ := vm.matchConstructor(class, nil); !matched {
+			ctor, matched, _ := vm.matchConstructor(class, nil)
+			// Native protected no-argument constructors are unavailable to
+			// reflection even when the caller is the owner or a subclass.
+			if !matched || strings.EqualFold(ctor.Access, "protected") {
 				return Null, true, newExceptionError("TypeException", typeName+" does not have a no-arg constructor")
 			}
 		}
 		if unsupported, ok := typeNewInstanceUnsupportedBuiltin(typeName); ok {
+			if unsupported == "Integer" && (!registered || class.PlatformType) {
+				if message, observed := vm.integerReflectionConstructorMessage(receiver); observed {
+					return Null, true, newExceptionError("TypeException", message)
+				}
+			}
 			return Null, true, unsupportedCallError("Type.newInstance uninstantiable built-in " + unsupported)
 		}
 		if strings.Contains(typeName, ".") {
@@ -4938,6 +5113,9 @@ func (vm *VM) callTypeObjectMember(receiver Value, method string, args []Value, 
 		}
 		target := typeValueIdentityName(receiver)
 		source := typeValueIdentityName(args[0])
+		if vm.rawListReflectionCandidate(source, target) {
+			return Bool(true), true, nil
+		}
 		return Bool(vm.typeMatches(source, target, make(map[string]bool))), true, nil
 	}
 	return Null, false, nil
@@ -5698,6 +5876,7 @@ func bindPassiveConstructorArgs(object *Value, ctor Method, args []Value) {
 		object.Fields[passiveAccessorFieldName(*object, field)] = arg
 	}
 	initializeReportsConstructor(object, args)
+	initializeAuthResponseConstructor(object, ctor, args)
 }
 
 func bindPassiveMethodArgs(object *Value, method Method, frame map[string]Value) {

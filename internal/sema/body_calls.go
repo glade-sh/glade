@@ -22,6 +22,14 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 			continue
 		}
 		callee := strings.TrimSpace(body[match[2]:match[3]])
+		if match[2] > 0 && body[match[2]-1] == '@' && strings.EqualFold(callee, "SuppressWarnings") {
+			args, ok := callArgumentsAt(body, match[3])
+			if ok && len(args) == 1 {
+				if _, literal := apexStringLiteralValue(args[0].text); literal {
+					continue
+				}
+			}
+		}
 		if skipSemaCall(callee) {
 			// The text fallback needs the same narrow
 			// comparison gate as IR before skipped assertEquals calls exit.
@@ -111,12 +119,22 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 		}
 		if strings.Contains(callee, ".") {
 			if classMethod, ok := semaClassLiteralMethod(callee); ok {
+				if d, rejected := semaStubNamespaceLiteralDiagnostic(typ, callee, len(args), bodyOffset+match[2], bodyOffset+match[3], source, model); rejected {
+					diagnostics = append(diagnostics, d)
+					continue
+				}
 				if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, "Type", classMethod, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model, "instance"); handled {
 					diagnostics = append(diagnostics, platformDiagnostics...)
 				}
 				continue
 			}
 			if receiverExpr, method, ok := splitSemaMethodPath(callee); ok {
+				if scope[normalizeName(receiverExpr)] == "" {
+					if d, rejected := semaCacheLexicalRequestCall(typ, member, receiverExpr, method, callee, len(args), bodyOffset+match[2], bodyOffset+match[3], source, model); rejected {
+						diagnostics = append(diagnostics, d)
+						continue
+					}
+				}
 				if strings.EqualFold(method, "addError") && semaReceiverExprResolvesFieldPath(receiverExpr, scope, model) {
 					continue
 				}
@@ -201,7 +219,8 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 				continue
 			}
 			if receiver == "super" {
-				diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveMemberMethods(model, typ.SuperClass, method), args, haveArgs, "super", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
+				superClass := resolveNestedTypeName(model, semaTypeMembersName(typ), typ.SuperClass)
+				diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveMemberMethods(model, superClass, method), args, haveArgs, "super", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
 				continue
 			}
 			receiverType, ok := scope[normalizeName(receiver)]
@@ -260,6 +279,14 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 
 func semaClassMembersForReceiver(model *semaTypeMemberView, current typesys.TypeSymbol, receiver string) (typeMembers, string, bool) {
 	if members, ok := model.lookup(normalizeName(receiver)); ok {
+		if semaCacheUnrelatedReceiverAlias(model, current, receiver, members) {
+			if model.state != nil && model.state.platform != nil {
+				if platform, found := model.state.platform.lookup(normalizeName("System." + receiver)); found {
+					return platform, platform.name, true
+				}
+			}
+			return typeMembers{}, "", false
+		}
 		if !semaPlatformReceiverSpellingMatches(receiver, members) {
 			return typeMembers{}, "", false
 		}
@@ -339,7 +366,7 @@ func semaArgType(arg string, scope map[string]string, model *semaTypeMemberView)
 
 func semaSOQLLiteralListType(arg string) string {
 	arg = strings.TrimSpace(arg)
-	if !strings.HasPrefix(arg, "[") || !strings.HasSuffix(arg, "]") {
+	if !strings.HasPrefix(arg, "[") || semaMatchingBracket(arg, 0) != len(arg)-1 {
 		return ""
 	}
 	queryText := strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(arg, "["), "]"))
@@ -514,7 +541,7 @@ func resolveMemberMethodsSeen(model *semaTypeMemberView, typeName, method string
 	}
 	for _, inherited := range resolveMemberMethodsSeen(model, members.superClass, method, seen) {
 		signature := methodSignatureKey(inherited.member)
-		if seenSignatures[signature] {
+		if seenSignatures[signature] || (members.kind == apexast.DeclarationClass && semaInterfaceMethodImplementedByObjectOverload(model, inherited, resolved)) {
 			continue
 		}
 		seenSignatures[signature] = true
@@ -523,7 +550,8 @@ func resolveMemberMethodsSeen(model *semaTypeMemberView, typeName, method string
 	for _, iface := range members.interfaces {
 		for _, inherited := range resolveMemberMethodsSeen(model, iface, method, seen) {
 			signature := methodSignatureKey(inherited.member)
-			if seenSignatures[signature] || semaNarrowedBatchableExecuteImplemented(model, iface, inherited, resolved) {
+			if seenSignatures[signature] || semaNarrowedBatchableExecuteImplemented(model, iface, inherited, resolved) ||
+				(members.kind == apexast.DeclarationClass && semaInterfaceMethodImplementedByObjectOverload(model, inherited, resolved)) {
 				continue
 			}
 			seenSignatures[signature] = true
@@ -531,6 +559,42 @@ func resolveMemberMethodsSeen(model *semaTypeMemberView, typeName, method string
 		}
 	}
 	return resolved
+}
+
+// An interface requirement implemented with wider Object parameters does not
+// add an overload to a class receiver. Interface receivers keep the requirement.
+func semaInterfaceMethodImplementedByObjectOverload(model *semaTypeMemberView, required resolvedMember, candidates []resolvedMember) bool {
+	owner, _, ok := semaLookupTypeMembers(model, required.owner)
+	if !ok || owner.kind != apexast.DeclarationInterface {
+		return false
+	}
+	contract := semaNormalizeMemberTypes(model, required.owner, semaCloneMemberSymbol(required.member))
+	for _, candidate := range candidates {
+		method := candidate.member
+		owner, _, ok := semaLookupTypeMembers(model, candidate.owner)
+		if !ok || owner.kind != apexast.DeclarationClass ||
+			hasModifier(method.Modifiers, "static") || hasModifier(method.Modifiers, "abstract") ||
+			(!hasModifier(method.Modifiers, "public") && !hasModifier(method.Modifiers, "global")) ||
+			!strings.EqualFold(method.Name, contract.Name) || len(method.Parameters) != len(contract.Parameters) {
+			continue
+		}
+		method = semaNormalizeMemberTypes(model, candidate.owner, semaCloneMemberSymbol(method))
+		matches, widened := true, false
+		for i, parameter := range method.Parameters {
+			if strings.EqualFold(parameter.Type, contract.Parameters[i].Type) {
+				continue
+			}
+			if !strings.EqualFold(semaCanonicalPlatformAlias(parameter.Type), "Object") {
+				matches = false
+				break
+			}
+			widened = true
+		}
+		if matches && widened {
+			return true
+		}
+	}
+	return false
 }
 
 // Batchable<SObject> permits a concrete schema SObject as its execute scope.
@@ -637,6 +701,11 @@ func constructorDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 
 func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, candidates []resolvedMember, args []semaArg, haveArgs bool, receiverMode string, start, end int, source string, scope map[string]string, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	candidates = preferResolvedMethodsByReceiverMode(candidates, receiverMode)
+	if haveArgs && len(args) == 1 && capturedInlineAccountIteratorText.MatchString(args[0].text) {
+		if d, rejected := capturedInlineAccountIteratorRejection(typ, member, candidates, start, end, source, model); rejected {
+			return []diagnostic.Diagnostic{d}
+		}
+	}
 	var argTypes []string
 	if haveArgs {
 		argTypes = make([]string, len(args))
@@ -648,6 +717,10 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 		}
 	}
 	if len(candidates) == 0 {
+		if typ.SuperClass == "" && !hasModifier(member.Modifiers, "static") && haveArgs &&
+			((strings.EqualFold(callee, "super.hashCode") && len(args) == 0) || (strings.EqualFold(callee, "super.equals") && len(args) == 1)) {
+			return nil
+		}
 		if semaCallMayBelongToMissingSuperclass(model, typ, callee, receiverMode, "") {
 			return nil
 		}
@@ -1003,6 +1076,9 @@ func semaAmbiguousNewListHelper(method string, candidates []resolvedMember, argT
 
 func semaAmbiguousResolvedSameReturnType(candidates []resolvedMember, argTypes []string) bool {
 	if len(candidates) < 2 {
+		return false
+	}
+	if capturedBareNullCollectionAmbiguity(candidates, argTypes) {
 		return false
 	}
 	hasUnknownArg := false
@@ -1467,6 +1543,9 @@ func appendApplicableResolvedMembers(applicable, candidates []resolvedMember, ar
 }
 
 func bestResolvedMemberByArgTypes(candidates []resolvedMember, argTypes []string, model *semaTypeMemberView) (resolvedMember, bool, bool) {
+	if capturedUserClassSetOverloadRejection(candidates, argTypes, model) {
+		return resolvedMember{}, false, false
+	}
 	if len(candidates) == 1 {
 		if memberApplicable(candidates[0].member, argTypes, model) {
 			return candidates[0], true, false
@@ -1968,6 +2047,9 @@ func semaConversionScore(paramType, argType string, model *semaTypeMemberView) i
 	if semaGenericAssignableToType(paramType, argType, model) {
 		return 850
 	}
+	if semaIteratorArgumentCaptured(paramType, argType) {
+		return 850
+	}
 	if isSemaSObjectLike(paramType, model) && strings.EqualFold(normalizeArrayType(argType), "SObject") {
 		return 750
 	}
@@ -2176,6 +2258,105 @@ func semaDynamicQueryResultAssignableTo(paramType string, model *semaTypeMemberV
 	return len(args) == 0 || strings.EqualFold(args[0], "Object") || strings.EqualFold(args[0], "SObject") || strings.EqualFold(args[0], "AggregateResult") || isSemaSObjectLike(args[0], model)
 }
 
+// semaIteratorArgumentCaptured reports whether an Iterator<A> argument is
+// applicable to an Iterator<P> parameter. This is argument applicability only:
+// M1 I01/I101 keep the same assignments compile errors, so
+// semaAssignableToType does not use it. Native pairs (A -> P), API 62.0 and
+// 67.0: Integer, Double and SObject -> Object (PA01, PA03, PA04, PA05, named
+// static calls); Integer -> String (H1SI1 named, H1SI1-A anonymous instance
+// call); Long, Double, Decimal, Boolean -> String (H1XS1-A..H1XS4-A); SObject
+// -> Account (H1SI2, H1SI2-A). iterator_enum_native.json observes String and
+// Schema.SObjectField -> Object for declared iterator arguments to overloaded,
+// static and instance methods at API 62/67/68, anonymous and @IsTest.
+// Other element pairs have no captured row and
+// keep the ordinary signature check.
+var semaIteratorArgumentPairs = [][2]string{
+	{"Integer", "Object"}, {"Double", "Object"}, {"Long", "Object"}, {"SObject", "Object"},
+	{"String", "Object"}, {"Schema.SObjectField", "Object"},
+	{"Account", "Object"}, {"Contact", "Object"},
+	{"Integer", "String"}, {"Long", "String"}, {"Double", "String"}, {"Decimal", "String"}, {"Boolean", "String"},
+	{"SObject", "Account"},
+}
+
+func semaIteratorArgumentCaptured(paramType, argType string) bool {
+	paramBase, paramArgs := semaGenericBaseAndArgs(paramType)
+	argBase, argArgs := semaGenericBaseAndArgs(argType)
+	if len(paramArgs) != 1 || len(argArgs) != 1 || !sameSemaSignatureType(paramBase, "Iterator") || !sameSemaSignatureType(argBase, "Iterator") {
+		return false
+	}
+	for _, pair := range semaIteratorArgumentPairs {
+		if sameSemaSignatureType(argArgs[0], pair[0]) && sameSemaSignatureType(paramArgs[0], pair[1]) {
+			return true
+		}
+	}
+	return false
+}
+
+// semaBatchableIterableScopeCaptured reports whether Database.Batchable<T>
+// implements execute with an Iterable<E> scope. Native (T, E), API 62.0 and
+// 67.0, accepted: Object/Object (PB01, H1K1L, H1K1PC, H1K1P1 System.Iterable,
+// H1K1P2 lowercase), String/String (H1K1M1C), SObject/SObject (H1K1S,
+// H1K1M2C), SObject/Object (H1K1M3); rejected: Object/String (H1K1M1),
+// Object/SObject (H1K1M2). Matching concrete record scopes are also accepted.
+func semaBatchableIterableScopeCaptured(itemType, scopeType string) bool {
+	base, args := semaGenericBaseAndArgs(scopeType)
+	if len(args) != 1 || !sameSemaSignatureType(base, "Iterable") {
+		return false
+	}
+	if sameInheritedSemaParameterType(itemType, args[0]) {
+		return true
+	}
+	for _, pair := range [][2]string{{"Object", "Object"}, {"String", "String"}, {"SObject", "SObject"}, {"SObject", "Object"}} {
+		if sameSemaSignatureType(itemType, pair[0]) && sameSemaSignatureType(args[0], pair[1]) {
+			return true
+		}
+	}
+	return false
+}
+
+// Render the captured start contract and Batchable<Object> execute diagnostics.
+func semaBatchableContractNativeMessage(className, itemType, methodName string) string {
+	if strings.EqualFold(methodName, "start") {
+		return "Class " + className + " must implement the method: System.Iterable<" + itemType + "> Database.Batchable<" + itemType + ">.start(Database.BatchableContext)"
+	}
+	if !strings.EqualFold(methodName, "execute") || !sameSemaSignatureType(itemType, "Object") {
+		return ""
+	}
+	return "Class " + className + " must implement the method: void Database.Batchable<Object>.execute(Database.BatchableContext, List<Object>)"
+}
+
+// Database.QueryLocator converts to Iterable<Object> as a return (PB04, and
+// PB02/PB03 through the ternary), a local initializer (H1K2L, H1K2L-A) and an
+// argument (H1K2G static, H1K2G-A instance), API 62.0 and 67.0.
+func semaQueryLocatorIterableObject(targetType, valueType string) bool {
+	return strings.EqualFold(semaCanonicalPlatformAlias(valueType), "Database.QueryLocator") && sameSemaSignatureType(semaCanonicalPlatformAlias(targetType), "Iterable<Object>")
+}
+
+// Native H1K2T1@62.0/67.0: a QueryLocator is also returned from an
+// Iterable<SObject> method. Locals and arguments of that type have no row.
+func semaQueryLocatorReturnsIterable(returnType, valueType string) bool {
+	return strings.EqualFold(semaCanonicalPlatformAlias(valueType), "Database.QueryLocator") && sameSemaSignatureType(semaCanonicalPlatformAlias(returnType), "Iterable<SObject>")
+}
+
+// Native "Illegal conversion from Database.QueryLocator to System.Iterable<X>"
+// for a QueryLocator returned from an Iterable<X> method, X a concrete SObject,
+// API 62.0 and 67.0: Account (H1K2T2 named, H1XK2-A anonymous) and Contact
+// (H1XK3-A). Iterable<SObject> and Iterable<Object> returns compile (H1K2T1,
+// H1XK1-A, PB04).
+func semaQueryLocatorReturnNativeMessage(returnType, valueType string, model *semaTypeMemberView, directIntegerListIterator ...bool) string {
+	if native := capturedIteratorReturnNativeMessage(returnType, valueType, model, directIntegerListIterator); native != "" {
+		return native
+	}
+	if !strings.EqualFold(semaCanonicalPlatformAlias(valueType), "Database.QueryLocator") {
+		return ""
+	}
+	base, args := semaGenericBaseAndArgs(semaCanonicalPlatformAlias(returnType))
+	if len(args) != 1 || !sameSemaSignatureType(base, "Iterable") || strings.EqualFold(args[0], "SObject") || !isSemaSObjectLike(args[0], model) {
+		return ""
+	}
+	return "Illegal conversion from Database.QueryLocator to System.Iterable<" + args[0] + ">"
+}
+
 func semaPlatformAssignableToType(paramType, argType string, model *semaTypeMemberView) bool {
 	paramBase, paramArgs := semaGenericBaseAndArgs(semaCanonicalPlatformAlias(paramType))
 	argType = semaCanonicalPlatformAlias(argType)
@@ -2192,6 +2373,9 @@ func semaPlatformAssignableToType(paramType, argType string, model *semaTypeMemb
 	if strings.EqualFold(paramType, "ApexPages.Component") && semaVisualforceComponentType(argType) {
 		return true
 	}
+	if semaQueryLocatorIterableObject(paramType, argType) {
+		return true
+	}
 	if !strings.EqualFold(paramBase, "Iterator") || !strings.EqualFold(argType, "Database.QueryLocatorIterator") {
 		return false
 	}
@@ -2204,7 +2388,7 @@ func semaPlatformAssignableToType(paramType, argType string, model *semaTypeMemb
 func semaStandardExceptionType(typeName string) bool {
 	typeName = strings.TrimPrefix(strings.TrimSpace(typeName), "System.")
 	switch normalizeName(typeName) {
-	case "assertionexception", "assertexception", "aurahandledexception", "asyncexception", "bigobjectexception", "calloutexception", "canvasexception", "dmlexception", "emailexception", "externalobjectexception", "fatalcursorexception", "formulavalidationexception", "illegalargumentexception", "illegalstateexception", "invalidheaderexception", "invalidparametervalueexception", "invalidreadonlyuserdmlexception", "jsonexception", "limitexception", "listexception", "mathexception", "noaccessexception", "nodatafoundexception", "nosuchelementexception", "nullpointerexception", "patternsyntaxexception", "queryexception", "requiredfeaturemissingexception", "searchexception", "securityexception", "sobjectexception", "stringexception", "transientcursorexception", "typeexception", "xmlexception":
+	case "assertionexception", "assertexception", "aurahandledexception", "asyncexception", "bigobjectexception", "calloutexception", "canvasexception", "dmlexception", "emailexception", "externalobjectexception", "fatalcursorexception", "formulavalidationexception", "illegalargumentexception", "illegalstateexception", "invalidheaderexception", "invalidparametervalueexception", "invalidreadonlyuserdmlexception", "jsonexception", "limitexception", "listexception", "mathexception", "noaccessexception", "nodatafoundexception", "nosuchelementexception", "nullpointerexception", "patternsyntaxexception", "queryexception", "requiredfeaturemissingexception", "searchexception", "securityexception", "sobjectexception", "stringexception", "transientcursorexception", "typeexception", "unexpectedexception", "xmlexception":
 		return true
 	default:
 		base := shortNestedTypeName(typeName)
@@ -2764,6 +2948,9 @@ func inferSemaArgTypeWithModelUncached(arg string, scope map[string]string, mode
 	if typ := inferSemaBinaryTypeWithModel(arg, scope, model); typ != "" {
 		return typ
 	}
+	if _, _, ok := splitSemaInstanceOf(arg); ok {
+		return "Boolean"
+	}
 	if castType, _, ok := splitSemaCast(arg); ok {
 		if currentType := scope[semaCurrentTypeScopeKey]; currentType != "" {
 			return resolveNestedTypeReference(model, currentType, castType)
@@ -2951,13 +3138,7 @@ func inferSemaBinaryTypeWithModel(arg string, scope map[string]string, model *se
 			return "String"
 		}
 		if isSemaNumericType(leftType) && isSemaNumericType(rightType) {
-			if strings.EqualFold(leftType, "Decimal") || strings.EqualFold(rightType, "Decimal") || strings.EqualFold(leftType, "Double") || strings.EqualFold(rightType, "Double") {
-				return "Decimal"
-			}
-			if strings.EqualFold(leftType, "Long") || strings.EqualFold(rightType, "Long") {
-				return "Long"
-			}
-			return "Integer"
+			return semaNumericResultType(leftType, rightType)
 		}
 	}
 	return ""
@@ -2987,7 +3168,7 @@ func inferSemaDescribeFieldChainType(arg string, scope map[string]string, model 
 }
 
 func inferSemaFieldAccessType(expr string, scope map[string]string, model *semaTypeMemberView) string {
-	if semaLooksLikeLabelReference(expr) {
+	if semaLooksLikeLabelReference(expr) && !semaTextProjectLabelMember(expr, scope, model) {
 		return "String"
 	}
 	if semaLooksLikeCustomShareRowCauseToken(expr, model) {
@@ -3009,6 +3190,11 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model *semaT
 	parts := strings.Split(strings.TrimSpace(expr), ".")
 	if len(parts) < 2 {
 		return ""
+	}
+	// Safe navigation changes null handling, not the declared member type.
+	// A dotted path must resolve the member before its trailing '?' marker.
+	for i, part := range parts {
+		parts[i] = semaTrimSafeNavigationReceiverSuffix(part)
 	}
 	if semaLooksLikeSObjectDescribeFieldResultPath(expr) {
 		return "Schema.DescribeFieldResult"
@@ -3089,6 +3275,26 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model *semaT
 		}
 	}
 	return ""
+}
+
+// semaTextProjectLabelMember reports Label.X naming a static member of a
+// project class Label. That member wins over the custom label (M1 rows at
+// API 62.0 and 67.0, both routes). System.Label.X, and a project class
+// without the member, have no row and stay the custom label.
+func semaTextProjectLabelMember(expr string, scope map[string]string, model *semaTypeMemberView) bool {
+	parts := strings.Split(strings.TrimSpace(expr), ".")
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Label") {
+		return false
+	}
+	if _, scoped := scope[normalizeName(parts[0])]; scoped {
+		return false
+	}
+	target, ok := semaStaticClassFieldPathMemberInContext(model, scope[semaCurrentTypeScopeKey], parts[0], parts[1])
+	if !ok || hasModifier(target.member.Modifiers, semaSyntheticStandardSObjectFieldModifier) {
+		return false
+	}
+	members, found := model.lookup(normalizeName(target.owner))
+	return found && !members.platform && !members.dependency
 }
 
 func semaLooksLikeCustomShareRowCauseToken(expr string, model *semaTypeMemberView) bool {

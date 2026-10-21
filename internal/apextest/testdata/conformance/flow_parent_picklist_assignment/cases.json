@@ -1,0 +1,4 @@
+[
+  {"id": "K01", "shape": "Parent picklist value assigned to declared child record text field"},
+  {"id": "K02", "shape": "Null parent picklist clears declared child record text field"}
+]

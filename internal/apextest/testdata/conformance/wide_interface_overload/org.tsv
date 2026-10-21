@@ -1,0 +1,10 @@
+source_api	method	observation
+62.0	concrete	"{""value"":""Name:DESCENDING:4""}"
+62.0	inherited	"{""value"":""Id:ASCENDING:2""}"
+62.0	throughInterface	"{""value"":""Name:ASCENDING""}"
+67.0	concrete	"{""value"":""Name:DESCENDING:4""}"
+67.0	inherited	"{""value"":""Id:ASCENDING:2""}"
+67.0	throughInterface	"{""value"":""Name:ASCENDING""}"
+68.0	concrete	"{""value"":""Name:DESCENDING:4""}"
+68.0	inherited	"{""value"":""Id:ASCENDING:2""}"
+68.0	throughInterface	"{""value"":""Name:ASCENDING""}"

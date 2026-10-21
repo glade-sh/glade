@@ -9,6 +9,10 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
+// metadataNamespaceFieldDiagnosticCode identifies only the captured named-test
+// DTO field rejection, so source-dependency admission cannot soften it.
+const metadataNamespaceFieldDiagnosticCode = "GLADESEMA_METADATA_NAMESPACE"
+
 // Metadata's generated DTO catalog also contains types that Apex cannot name.
 // Owned type-admission cases and their field/clone counterparts capture this
 // distinction. Check parsed references, never strings or comments in the source.
@@ -30,6 +34,10 @@ func (a *Analyzer) apexMetadataAdmissionDiagnostics(typ typesys.TypeSymbol, prog
 	if !owned {
 		return nil
 	}
+	// C003 was rejected on the named-test route at these three source APIs.
+	// Anonymous admission and other Metadata diagnostics keep their existing code.
+	strictNamespaceField := !scope.anonymous && typ.IsTest && typ.Namespace == "" &&
+		(typ.EffectiveAPIVersion == "62.0" || typ.EffectiveAPIVersion == "67.0" || typ.EffectiveAPIVersion == "68.0")
 	// This check resolves its own locals without mutating the ordinary IR gate.
 	scope = newIRSemaScope(scope.flat())
 	var diagnostics []diagnostic.Diagnostic
@@ -86,6 +94,9 @@ func (a *Analyzer) apexMetadataAdmissionDiagnostics(typ typesys.TypeSymbol, prog
 		if _, found := semaResolveFieldPath(model, receiverType, field); !found {
 			// C015/C016: generated DTOs and enums do not admit arbitrary fields.
 			appendDiagnostic("Variable does not exist: "+field, pos)
+			if strictNamespaceField && strings.EqualFold(receiverType, "Metadata.CustomMetadata") && strings.EqualFold(field, "namespacePrefix") {
+				diagnostics[len(diagnostics)-1].Code = metadataNamespaceFieldDiagnosticCode
+			}
 		}
 	}
 	var expression func(ir.Expr, int)

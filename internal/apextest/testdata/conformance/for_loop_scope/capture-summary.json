@@ -1,0 +1,65 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 79,
+  "nativeObservationCount": 474,
+  "assertedObservationCount": 474,
+  "carriedObservationCount": 0,
+  "carriedCells": [],
+  "completion": {
+    "observations": 474,
+    "accounted_rows": 474,
+    "fixture_error_rows": [],
+    "no_answer_rows": [],
+    "native_complete": true,
+    "status": "COMPLETE",
+    "run": "1",
+    "cleanup_verified": true
+  },
+  "packetRowsSHA256": "4bbc79db319479e5305a572b493f77c3aa3d8b8a88b044b85f73fc61d3c2f9b5",
+  "receipts": [
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "rows": 79,
+      "orgTSVSHA256": "d75ee73e4c674076903119e240020f635d864d3fa5769753ef70caacb67a14be"
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "rows": 79,
+      "orgTSVSHA256": "b22f437f145fcbb2f3b31ef8c9824ab806b2c781a69a59c80afb7f61a98dcce6"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "rows": 79,
+      "orgTSVSHA256": "360bed742cb577ffb543025a54be0635e2f2de9bd1f2205b4f6bd193ec88f208"
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "rows": 79,
+      "orgTSVSHA256": "4b1415d8fa01f4abbe675baadabe3e31aed9db47ab8b15c30d149eb74a3d1a8e"
+    },
+    {
+      "api": "68.0",
+      "route": "anonymous",
+      "rows": 79,
+      "orgTSVSHA256": "5cd1721310150f89f9fe05b8d4a1e550f630017f92189bdce4bf71d27771228b"
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "rows": 79,
+      "orgTSVSHA256": "bb15834bf104251ec9f7fe253fc2e7d9c6494a34d4818de9bf6ec79c45ee042a"
+    }
+  ]
+}

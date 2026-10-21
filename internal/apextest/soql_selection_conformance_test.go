@@ -18,7 +18,14 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Owned Salesforce observations at both API endpoints. CI uses local inputs.
+// Owned Salesforce observations at API 62.0, 67.0 and 68.0. CI uses local inputs.
+// API 68.0 binds the anonymous capture recorded in ceilingOracle: 269 usable
+// answers, four MISSING rows and C010, whose empty COMPILE_ERROR is a
+// transport artifact, not a native rejection. A native uncaught recapture
+// covers all five; R174 equals its stored answer and is asserted, while C010
+// and R207-R209 equal their stored answers and stay carried to A33. Review
+// controls outside the capture are excluded at API 68.0. The API 68.0 @IsTest
+// route runs locally against anonymous answers and counts as legacy.
 func TestSOQLSelectionOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected  string
@@ -30,6 +37,17 @@ func TestSOQLSelectionOrgConformance(t *testing.T) {
 		Prelude      string
 		Cases        []familyCase
 		Remaining    []struct{ ID, Owner, Reason string }
+		Ceiling      struct {
+			APIVersion         string
+			Rows, Observed     int
+			OrgTSVMissing      []string `json:"orgTSVMissing"`
+			TransportArtifacts []string
+			ControlsUnobserved []string
+			UncaughtRecapture  struct {
+				Source, SHA256 string
+				Rows           []string
+			}
+		} `json:"ceilingOracle"`
 	}
 	raw, err := os.ReadFile("testdata/conformance/soql_selection.json")
 	if err != nil {
@@ -41,8 +59,31 @@ func TestSOQLSelectionOrgConformance(t *testing.T) {
 	if len(data.Cases) != 268 || len(data.Remaining) != 17 {
 		t.Fatalf("oracle rows: %d exact-text cases + %d unasserted", len(data.Cases), len(data.Remaining))
 	}
-	if strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle versions: %v", data.APIVersions)
+	}
+	ceiling := data.Ceiling
+	if ceiling.APIVersion != "68.0" || ceiling.Rows != 274 || ceiling.Observed != 269 ||
+		strings.Join(ceiling.OrgTSVMissing, ",") != "R174,R207,R208,R209" ||
+		strings.Join(ceiling.TransportArtifacts, ",") != "C010" || len(ceiling.ControlsUnobserved) != 11 {
+		t.Fatalf("incomplete API68 oracle: %+v", ceiling)
+	}
+	recapture := ceiling.UncaughtRecapture
+	if recapture.Source == "" || len(recapture.SHA256) != 64 || strings.Join(recapture.Rows, ",") != "C010,R174,R207,R208,R209" {
+		t.Fatalf("API68 uncaught recapture: %+v", recapture)
+	}
+	recaptured68 := map[string]bool{}
+	for _, id := range recapture.Rows {
+		recaptured68[id] = true
+	}
+	unobserved68 := map[string]bool{}
+	for _, id := range append(append([]string{}, ceiling.OrgTSVMissing...), ceiling.TransportArtifacts...) {
+		if !recaptured68[id] {
+			unobserved68[id] = true
+		}
+	}
+	for _, id := range ceiling.ControlsUnobserved {
+		unobserved68[id] = true
 	}
 	seen := map[string]bool{}
 	for _, tc := range data.Cases {
@@ -146,9 +187,15 @@ func TestSOQLSelectionOrgConformance(t *testing.T) {
 			// Each method gets isolated runner state; compile the named matrix once.
 			var namedSource strings.Builder
 			namedSource.WriteString("@IsTest private class SOQLSelectionProbe {\n")
+			ceilingAPI := api == ceiling.APIVersion
+			namedKind := "exact"
+			if ceilingAPI {
+				namedKind = "legacy"
+				t.Log("API 68: anonymous capture plus native uncaught recapture of C010, R174 and R207-R209; @IsTest checks retain anonymous-backed local assertions without native named-route capture")
+			}
 			executable := 0
 			for _, tc := range data.Cases {
-				if strings.HasPrefix(tc.Expected, "COMPILE_ERROR") {
+				if strings.HasPrefix(tc.Expected, "COMPILE_ERROR") || ceilingAPI && unobserved68[tc.ID] {
 					continue
 				}
 				executable++
@@ -180,6 +227,10 @@ func TestSOQLSelectionOrgConformance(t *testing.T) {
 				t.Fatalf("named results: %#v, unique %d expected %d: %s", run.Summary(), len(namedResults), executable, firstRunProblem(run))
 			}
 			for _, tc := range data.Cases {
+				if ceilingAPI && unobserved68[tc.ID] {
+					t.Logf("%s API %s native coverage unobserved; excluded from conformance counts", tc.ID, api)
+					continue
+				}
 				t.Run(tc.ID, func(t *testing.T) {
 					counts.run(t, "anonymous", "anonymous", "exact", func(t *testing.T) {
 						source := body(tc)
@@ -212,7 +263,7 @@ func TestSOQLSelectionOrgConformance(t *testing.T) {
 							t.Fatal(err)
 						}
 					})
-					counts.run(t, "isTest", "@IsTest", "exact", func(t *testing.T) {
+					counts.run(t, "isTest", "@IsTest", namedKind, func(t *testing.T) {
 						if strings.HasPrefix(tc.Expected, "COMPILE_ERROR") {
 							className := "SOQLSelectionCompile" + tc.ID
 							source := "@IsTest private class " + className + " {\n@IsTest static void observed(){\n\n\nP pq=new P();\n" + tc.Code + "\n}\n}\n"

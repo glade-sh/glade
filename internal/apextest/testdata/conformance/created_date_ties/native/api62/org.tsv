@@ -1,0 +1,11 @@
+id	value
+explicit_renewal_count	2
+natural_dates_equal	false
+natural_selected_count	2
+natural_selected_original	false
+renewal_only_count	2
+renewal_only_lines	1
+tied_dates_equal	true
+tied_selected_count	0
+tied_selected_original	true
+tied_selected_processed	true

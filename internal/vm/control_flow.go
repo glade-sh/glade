@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/trace"
@@ -52,7 +53,10 @@ func apexConditionBool(value Value, context string) (bool, error) {
 	return false, fmt.Errorf("%s requires Boolean, got %s", context, value.Kind)
 }
 
-func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, error) {
+func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome, err error) {
+	// Recover at the block boundary so executeTry can catch raw JSON failures
+	// from expressions, coercion and overload scoring in its protected body.
+	defer recoverJSONConversionError(&err)
 	if program.APIVersion != "" || program.Trigger {
 		callerMethod := vm.currentMethod
 		callerTrigger := vm.currentTrigger
@@ -71,7 +75,9 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 		if err := vm.incrementCPUBudget(1); err != nil {
 			return execOutcome{}, err
 		}
-		if vm.cpuBudgetUsed%64 == 0 {
+		vm.contextPollCount++
+		if vm.contextPollCount == 64 {
+			vm.contextPollCount = 0
 			if err := vm.ctx.Err(); err != nil {
 				return execOutcome{}, err
 			}
@@ -85,6 +91,9 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 		}
 		switch inst.Op {
 		case ir.OpDeclare:
+			if err := vm.finalCollectionIncrementResultError(inst, result); err != nil {
+				return execOutcome{}, err
+			}
 			value := Null
 			if inst.Expr.Kind != "" {
 				evaluated, err := vm.evalForType(inst.Expr, inst.Type, result)
@@ -101,6 +110,14 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 			value.Static = inst.Type
 			vm.Globals[inst.Name] = value
 			vm.VarTypes[inst.Name] = inst.Type
+			if inst.Final {
+				if vm.finalLocals == nil {
+					vm.finalLocals = make(map[string]bool)
+				}
+				vm.finalLocals[inst.Name] = inst.Expr.Kind != ""
+			} else {
+				delete(vm.finalLocals, inst.Name)
+			}
 		case ir.OpAssign:
 			value, err := vm.evalForAssignment(inst.Name, inst.Expr, result)
 			if err != nil {
@@ -130,7 +147,12 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 				return execOutcome{}, err
 			}
 			return execOutcome{value: value, signal: signalReturn}, nil
-		case ir.OpBlock, ir.OpDeclGroup:
+		case ir.OpBlock:
+			out, err := vm.executeBlockScope(program, inst, result)
+			if err != nil || out.signal != signalNone {
+				return out, err
+			}
+		case ir.OpDeclGroup:
 			out, err := vm.executeProgram(childProgram(program, inst.Then), result)
 			if err != nil || out.signal != signalNone {
 				return out, err
@@ -149,7 +171,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 				branch = inst.Then
 			}
 			if len(branch) > 0 {
-				out, err := vm.executeProgram(childProgram(program, branch), result)
+				out, err := vm.executeBlockScope(program, ir.Instruction{Op: ir.OpIf, Then: branch}, result)
 				if err != nil || out.signal != signalNone {
 					return out, err
 				}
@@ -485,6 +507,70 @@ func childProgram(parent ir.Program, instructions []ir.Instruction) ir.Program {
 	return ir.Program{Instructions: instructions, Source: parent.Source}
 }
 
+// executeBlockScope runs a bare { } block statement. The locals it declares
+// end with it, so a later Contact.Email names the field token again instead
+// of a block-local contact (native H2S1/H2S2 at API 62.0 and 67.0, both
+// routes). A name that was bound before the block gets that binding back.
+// source syntax and version rules F03/F04 also capture if-block shadowing and restoration at API62/68.
+// Try bodies use the same lexical cleanup for their final-local bindings.
+func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result *Result) (execOutcome, error) {
+	type outerBinding struct {
+		value            Value
+		typ              string
+		existed, hadType bool
+		final, hadFinal  bool
+	}
+	outer := make(map[string]outerBinding)
+	var collect func([]ir.Instruction)
+	collect = func(instructions []ir.Instruction) {
+		for _, child := range instructions {
+			switch child.Op {
+			case ir.OpDeclare:
+				if _, seen := outer[child.Name]; !seen && child.Name != "" {
+					value, existed := vm.Globals[child.Name]
+					typ, hadType := vm.VarTypes[child.Name]
+					final, hadFinal := vm.finalLocals[child.Name]
+					outer[child.Name] = outerBinding{value: value, typ: typ, existed: existed, hadType: hadType, final: final, hadFinal: hadFinal}
+				}
+			case ir.OpDeclGroup:
+				collect(child.Then)
+			}
+		}
+	}
+	collect(inst.Then)
+	completed := false
+	defer func() {
+		for name, binding := range outer {
+			// Closed for-body String binds remain available to dynamic SOQL
+			// without keeping the declaration in lexical lookup.
+			closedStringLoop := inst.Op == ir.OpFor && strings.EqualFold(canonicalRuntimePlatformType(vm.VarTypes[name]), "String")
+			if completed && (inst.Op == ir.OpIf || closedStringLoop) && !binding.existed {
+				if value, ok := vm.Globals[name]; ok {
+					vm.rememberClosedSOQLLocal(name, vm.VarTypes[name], value)
+				}
+			}
+			if binding.existed {
+				vm.Globals[name] = binding.value
+			} else {
+				delete(vm.Globals, name)
+			}
+			if binding.hadType {
+				vm.VarTypes[name] = binding.typ
+			} else {
+				delete(vm.VarTypes, name)
+			}
+			if binding.hadFinal {
+				vm.finalLocals[name] = binding.final
+			} else {
+				delete(vm.finalLocals, name)
+			}
+		}
+	}()
+	out, err := vm.executeProgram(childProgram(program, inst.Then), result)
+	completed = err == nil && out.signal == signalNone
+	return out, err
+}
+
 func sourceLineColumn(source string, offset int) (int, int) {
 	if offset < 0 {
 		offset = 0
@@ -516,7 +602,7 @@ func (vm *VM) setCurrentStatement(inst ir.Instruction, source string) {
 		symbol = vm.apexMethodFrameSymbol(vm.currentMethod)
 		file = vm.currentMethod.File
 	}
-	vm.currentStatement = callFrame{Symbol: symbol, File: file, Line: line, Column: column}
+	vm.currentStatement = callFrame{Symbol: symbol, File: file, Line: line, Column: column, statement: true}
 	vm.hasStatement = true
 }
 
@@ -579,9 +665,12 @@ func (vm *VM) apexMethodFrameSymbol(method Method) string {
 }
 
 func (vm *VM) executeWhile(source string, inst ir.Instruction, result *Result) (execOutcome, error) {
-	for iteration := 0; ; iteration++ {
-		if iteration >= maxLoopIterations {
-			return execOutcome{}, fmt.Errorf("while loop exceeded %d iterations", maxLoopIterations)
+	for {
+		if err := vm.ctx.Err(); err != nil {
+			return execOutcome{}, err
+		}
+		if err := vm.incrementCPUBudget(1); err != nil {
+			return execOutcome{}, err
 		}
 		condition, err := vm.eval(inst.Expr, result)
 		if err != nil {
@@ -688,7 +777,7 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 		if !conditionValue {
 			return execOutcome{}, nil
 		}
-		out, err := vm.executeProgram(ir.Program{Instructions: inst.Then, Source: source}, result)
+		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -717,7 +806,7 @@ type collectionTraversalKey struct {
 	ref  uint64
 }
 
-func (vm *VM) beginCollectionTraversal(collection Value) func() {
+func (vm *VM) beginCollectionTraversal(collection Value, enhanced ...bool) func() {
 	if collection.Ref == 0 || (collection.Kind != ValueList && collection.Kind != ValueSet) {
 		return func() {}
 	}
@@ -726,13 +815,55 @@ func (vm *VM) beginCollectionTraversal(collection Value) func() {
 		vm.activeCollectionTraversals = make(map[collectionTraversalKey]int)
 	}
 	vm.activeCollectionTraversals[key]++
+	forEach := len(enhanced) > 0 && enhanced[0]
+	if forEach {
+		if vm.enhancedCollectionTraversals == nil {
+			vm.enhancedCollectionTraversals = make(map[collectionTraversalKey]int)
+		}
+		vm.enhancedCollectionTraversals[key]++
+	}
 	return func() {
+		if forEach {
+			vm.enhancedCollectionTraversals[key]--
+			if vm.enhancedCollectionTraversals[key] == 0 {
+				delete(vm.enhancedCollectionTraversals, key)
+			}
+		}
 		if vm.activeCollectionTraversals[key] <= 1 {
 			delete(vm.activeCollectionTraversals, key)
+			delete(vm.collectionTraversalMutationEpochs, key.ref)
 		} else {
 			vm.activeCollectionTraversals[key]--
 		}
 	}
+}
+
+// Only observed scalar add/remove and List.clear paths defer failure until
+// enhanced traversal continues. Uncaptured iterator mutation paths keep their
+// existing locks.
+func (vm *VM) allowsEnhancedCollectionMutation(collection Value) bool {
+	key := collectionTraversalKey{kind: collection.Kind, ref: collection.Ref}
+	return collection.Ref != 0 && vm.enhancedCollectionTraversals[key] > 0 &&
+		vm.enhancedCollectionTraversals[key] == vm.activeCollectionTraversals[key]
+}
+
+func (vm *VM) noteCollectionTraversalMutation(collection Value) {
+	key := collectionTraversalKey{kind: collection.Kind, ref: collection.Ref}
+	if collection.Ref == 0 || vm.activeCollectionTraversals[key] == 0 {
+		return
+	}
+	if vm.collectionTraversalMutationEpochs == nil {
+		vm.collectionTraversalMutationEpochs = make(map[uint64]uint64)
+	}
+	vm.collectionTraversalMutationEpochs[collection.Ref]++
+}
+
+func (vm *VM) collectionTraversalMutationError(collection Value, epoch uint64) error {
+	if (collection.Kind == ValueList || collection.Kind == ValueSet) && vm.collectionTraversalMutationEpochs[collection.Ref] != epoch {
+		// The native traversal failure bypasses Apex catch clauses.
+		return &RuntimeError{Type: "System.FinalException", Message: "Cannot modify a collection while it is being iterated."}
+	}
+	return nil
 }
 
 func (vm *VM) rejectActiveCollectionAdd(collection Value) error {
@@ -751,6 +882,7 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 	if iterable.Kind == ValueObject {
 		return vm.executeObjectForEach(source, inst, result, iterable)
 	}
+	iterable = iterable.currentMapKeySet()
 	values := iterable.List
 	if iterable.Kind == ValueSet {
 		values = iterable.Set
@@ -766,8 +898,9 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 	if iterable.Kind != ValueList && iterable.Kind != ValueSet {
 		return execOutcome{}, fmt.Errorf("enhanced for requires List or Set, got %s", iterable.Kind)
 	}
-	releaseTraversal := vm.beginCollectionTraversal(iterable)
+	releaseTraversal := vm.beginCollectionTraversal(iterable, true)
 	defer releaseTraversal()
+	removalEpoch := vm.collectionTraversalMutationEpochs[iterable.Ref]
 	if vm.shouldChunkEnhancedForList(inst.Type, iterable) {
 		if len(values) == 0 && inst.Expr.Kind == ir.ExprSOQL {
 			// SF191: a SOQL list-loop enters once with an empty batch.
@@ -792,6 +925,9 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 		}
 	}()
 	for iteration, value := range values {
+		if err := vm.collectionTraversalMutationError(iterable, removalEpoch); err != nil {
+			return execOutcome{}, err
+		}
 		if iteration >= maxLoopIterations {
 			return execOutcome{}, fmt.Errorf("enhanced for loop exceeded %d iterations", maxLoopIterations)
 		}
@@ -801,18 +937,19 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 		}
 		vm.Globals[inst.Name] = coerced
 		vm.VarTypes[inst.Name] = inst.Type
-		out, err := vm.executeProgram(ir.Program{Instructions: inst.Then, Source: source}, result)
+		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
 		switch out.signal {
-		case signalNone:
-		case signalContinue:
-			continue
+		case signalNone, signalContinue:
 		case signalBreak:
 			return execOutcome{}, nil
 		default:
 			return out, nil
+		}
+		if err := vm.collectionTraversalMutationError(iterable, removalEpoch); err != nil {
+			return execOutcome{}, err
 		}
 	}
 	return execOutcome{}, nil
@@ -858,7 +995,7 @@ func chunkValuesForEnhancedFor(loopType string, values []Value, size int) []Valu
 }
 
 func (vm *VM) executeTry(source string, inst ir.Instruction, result *Result) (execOutcome, error) {
-	out, err := vm.executeProgram(ir.Program{Instructions: inst.Then, Source: source}, result)
+	out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 	if err != nil {
 		var thrown *apexThrowError
 		if !errors.As(err, &thrown) {
@@ -949,7 +1086,7 @@ func (vm *VM) executeSwitch(source string, inst ir.Instruction, result *Result) 
 				return out, nil
 			}
 			if switchCaseEnumLiteralMatch(value, expr) {
-				out, err := vm.executeProgram(ir.Program{Instructions: c.Body, Source: source}, result)
+				out, err := vm.executeBlockScope(ir.Program{Source: source}, ir.Instruction{Op: ir.OpBlock, Then: c.Body}, result)
 				if err != nil {
 					return execOutcome{}, err
 				}
@@ -970,7 +1107,7 @@ func (vm *VM) executeSwitch(source string, inst ir.Instruction, result *Result) 
 				if !matches {
 					continue
 				}
-				out, err := vm.executeProgram(ir.Program{Instructions: c.Body, Source: source}, result)
+				out, err := vm.executeBlockScope(ir.Program{Source: source}, ir.Instruction{Op: ir.OpBlock, Then: c.Body}, result)
 				if err != nil {
 					return execOutcome{}, err
 				}
@@ -980,7 +1117,7 @@ func (vm *VM) executeSwitch(source string, inst ir.Instruction, result *Result) 
 				return out, nil
 			}
 			if value.Equal(caseValue) {
-				out, err := vm.executeProgram(ir.Program{Instructions: c.Body, Source: source}, result)
+				out, err := vm.executeBlockScope(ir.Program{Source: source}, ir.Instruction{Op: ir.OpBlock, Then: c.Body}, result)
 				if err != nil {
 					return execOutcome{}, err
 				}
@@ -992,7 +1129,7 @@ func (vm *VM) executeSwitch(source string, inst ir.Instruction, result *Result) 
 		}
 	}
 	if elseCase != nil {
-		out, err := vm.executeProgram(ir.Program{Instructions: elseCase.Body, Source: source}, result)
+		out, err := vm.executeBlockScope(ir.Program{Source: source}, ir.Instruction{Op: ir.OpBlock, Then: elseCase.Body}, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -1058,7 +1195,7 @@ func (vm *VM) executeSwitchBodyWithBinding(source string, body []ir.Instruction,
 			delete(vm.VarTypes, binding)
 		}
 	}()
-	return vm.executeProgram(ir.Program{Instructions: body, Source: source}, result)
+	return vm.executeBlockScope(ir.Program{Source: source}, ir.Instruction{Op: ir.OpBlock, Then: body}, result)
 }
 
 func switchCaseEnumNameMatch(value Value, expr ir.Expr, err error) (bool, bool) {
@@ -1226,6 +1363,26 @@ func (vm *VM) ensureRunAsUserRecord(user *Value) error {
 			fields := strings.Join(required, ", ")
 			return newExceptionError("DmlException", "Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: ["+fields+"]: ["+fields+"]")
 		}
+		// Native row 054 supplies the other required fields but omits the
+		// zone. Reject before allocating an ID or switching the caller. Other
+		// partially specified users retain their existing, uncaptured behavior.
+		completeExceptZone := true
+		for _, field := range required {
+			if field == "TimeZoneSidKey" {
+				continue
+			}
+			_, value, found := objectFieldValue(*user, field)
+			if !found || value.Kind == ValueNull || value.String() == "" {
+				completeExceptZone = false
+				break
+			}
+		}
+		_, zone, hasZone := objectFieldValue(*user, "TimeZoneSidKey")
+		if completeExceptZone && (!hasZone || zone.Kind == ValueNull || zone.String() == "") {
+			return statementDMLException("insert", []dml.Result{{
+				Error: "Required fields are missing: [TimeZoneSidKey]", StatusCode: "REQUIRED_FIELD_MISSING", Fields: []string{"TimeZoneSidKey"},
+			}}, []string{"User"})
+		}
 		prefix := object.Definition.KeyPrefix
 		if prefix == "" {
 			prefix = "005"
@@ -1256,6 +1413,9 @@ func (vm *VM) ensureRunAsUserRecord(user *Value) error {
 		}
 		// Existing users are selected, not updated from unsaved caller fields.
 		record = stored
+		// The principal needs its persisted security fields even when the
+		// caller supplied only an Id projection. Keep the caller's value intact.
+		*user = vm.vmValueFromRecord(stored)
 	} else {
 		// runAs persists a new user without the ordinary insert pipeline.
 		// Store the default so SOQL predicates see the same value as getters.

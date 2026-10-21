@@ -1,0 +1,18 @@
+{
+  "orgName": "Feature Shape Probe",
+  "edition": "Developer",
+  "features": [
+    "StateAndCountryPicklist"
+  ],
+  "settings": {
+    "lightningExperienceSettings": {
+      "enableS1DesktopEnabled": true
+    },
+    "currencySettings": {
+      "enableMultiCurrency": true
+    },
+    "quoteSettings": {
+      "enableQuote": true
+    }
+  }
+}

@@ -345,7 +345,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 		"race-apextest-a:", "race-apextest-b:", "race-apextest-c:", "race-apextest-aggregate:",
 		"CI_RACE_APEXTEST_RUNNER: a", "CI_RACE_APEXTEST_SHARD_INDEXES: 0,3,5,8,11,13", "CI_RACE_APEXTEST_RUNNER: b", "CI_RACE_APEXTEST_SHARD_INDEXES: 4,7,12,15", "CI_RACE_APEXTEST_RUNNER: c", "CI_RACE_APEXTEST_SHARD_INDEXES: 1,2,6,9,10,14",
 		"CI_RACE_HEAD_SHA: ${{ github.sha }}",
-		"if: always() && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')", "scripts/ci-race-apextest-aggregate.sh ci-artifacts/race/apextest-a ci-artifacts/race/apextest-b ci-artifacts/race/apextest-c", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0",
+		"if: always() && needs.plan.outputs.mode == 'full' && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')", "scripts/ci-race-apextest-aggregate.sh ci-artifacts/race/apextest-a ci-artifacts/race/apextest-b ci-artifacts/race/apextest-c", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0",
 	} {
 		if !strings.Contains(workflow, marker) {
 			t.Errorf("race workflow missing %q", marker)
@@ -356,8 +356,8 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 			t.Errorf("race workflow contains forbidden %q", forbidden)
 		}
 	}
-	if !strings.Contains(workflow, "push)\n              mode=full\n              packages=\"$(scripts/ci-race-packages.sh full)\"") {
-		t.Fatal("race workflow must run the exhaustive manifest after every main push")
+	if !strings.Contains(workflow, "schedule|workflow_dispatch)\n              mode=full\n              packages=\"$(scripts/ci-race-packages.sh full)\"") {
+		t.Fatal("race workflow must retain the exhaustive manifest for scheduled and manual runs")
 	}
 	if !strings.Contains(workflow, "group: race-${{ github.run_id }}") || strings.Contains(workflow, "group: race-${{ github.ref") {
 		t.Fatal("race workflow must give every event a unique concurrency group")
@@ -373,9 +373,10 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 	if planIndex < 0 || earlyIndex < 0 || raceIndex < 0 || apexIndex < 0 {
 		t.Fatal("race workflow is missing a required job boundary")
 	}
-	planJob := workflow[planIndex:earlyIndex]
-	earlyJob := workflow[earlyIndex:raceIndex]
-	raceJob := workflow[raceIndex:apexIndex]
+	jobs := workflowJobBlocksText(workflow)
+	planJob := jobs["plan"]
+	earlyJob := jobs["race-early"]
+	raceJob := jobs["race"]
 	if !strings.Contains(earlyJob, "- name: Run early race detector\n        env:\n          GOMAXPROCS: ${{ matrix.package == './internal/gladecli' && '1' || '2' }}\n          PACKAGE: ${{ matrix.package }}") {
 		t.Fatal("race workflow must run the Glade CLI race shards with one Go scheduler thread")
 	}
@@ -797,6 +798,7 @@ func TestCIRacePackageRunnerRejectsUnsafePackageSegmentsAndSlugs(t *testing.T) {
 	}
 	for _, fixture := range tests {
 		t.Run(fixture.name, func(t *testing.T) {
+			t.Parallel()
 			root := t.TempDir()
 			logPath := filepath.Join(root, "calls.log")
 			goCommand := writeRaceFixture(t, "fake-go", "#!/usr/bin/env bash\nexit 0\n")
@@ -953,6 +955,7 @@ func TestCIRacePlaygroundRealPlanUsesFiveOrdinaryShards(t *testing.T) {
 func TestCIRacePackageRunnerGenericHeavyPackagesUseBoundedSequentialExactShards(t *testing.T) {
 	for _, pkg := range []string{"./internal/gladecli", "./internal/server", "./internal/testdaemon"} {
 		t.Run(filepath.Base(pkg), func(t *testing.T) {
+			t.Parallel()
 			root := t.TempDir()
 			logPath := filepath.Join(root, "calls.log")
 			shardCount := 4
@@ -1076,6 +1079,7 @@ func TestCIRacePackageRunnerSentinelMatchesTopology(t *testing.T) {
 		{pkg: "./internal/server", shards: 8},
 	} {
 		t.Run(filepath.Base(fixture.pkg), func(t *testing.T) {
+			t.Parallel()
 			root := t.TempDir()
 			goCommand := writeRaceFixture(t, "fake-go", "#!/usr/bin/env bash\nexit 23\n")
 			resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
@@ -1596,6 +1600,7 @@ func TestCIRacePackageRunnerApextestRejectsBuildAndDirectCorruption(t *testing.T
 	}
 	for _, fixture := range tests {
 		t.Run(fixture.name, func(t *testing.T) {
+			t.Parallel()
 			root := t.TempDir()
 			logPath := filepath.Join(root, "calls.log")
 			testNames := raceApextestTestNames()
@@ -1667,6 +1672,7 @@ set +e
 func TestCIRacePackageRunnerApextestSignalStopsActiveLaneAndRemovesBinary(t *testing.T) {
 	for _, phase := range []string{"discovery", "direct"} {
 		t.Run(phase, func(t *testing.T) {
+			t.Parallel()
 			root := t.TempDir()
 			if err := os.MkdirAll(filepath.Join(root, "internal", "apextest"), 0o700); err != nil {
 				t.Fatal(err)
@@ -1851,6 +1857,7 @@ func TestCIRacePackageRunnerRejectsInvalidEvidence(t *testing.T) {
 	}
 	for name, fixture := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			root := t.TempDir()
 			logPath := filepath.Join(root, "calls.log")
 			discovery := fixture.discovery
@@ -1932,6 +1939,7 @@ func TestCIRacePackageRunnerRejectsInvalidResourceEvidence(t *testing.T) {
 	}
 	for name, evidence := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			root := t.TempDir()
 			goCommand := writeRaceFixture(t, "fake-go", "#!/usr/bin/env bash\nexit 0\n")
 			resource := writeRaceFixture(t, "fake-resource", `#!/usr/bin/env bash
@@ -1964,6 +1972,7 @@ func TestCIRacePackageRunnerPreservesNativeStatusWhenResourceEvidenceIsInvalid(t
 		{name: "shard malformed", pkg: "./internal/playground", slug: "internal-playground", status: 20, resource: "{bad-json}"},
 	} {
 		t.Run(fixture.name, func(t *testing.T) {
+			t.Parallel()
 			root := t.TempDir()
 			goCommand := writeRaceFixture(t, "fake-go", `#!/usr/bin/env bash
 if [[ "$*" == *"-list ."* ]]; then

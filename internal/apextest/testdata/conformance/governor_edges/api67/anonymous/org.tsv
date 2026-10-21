@@ -1,0 +1,8 @@
+id	shape	count	outcome	value
+C300	children	75	success	EDGE|75|300|0|0
+C304	children	76	exception	System.LimitException: Too many SOQL aggregate queries: 301
+Q100	queries	100	success	EDGE|100|0|0|0
+Q101	queries	101	exception	System.LimitException: Too many SOQL queries: 101
+D150	dml	150	success	EDGE|0|0|150|150
+D151	dml	151	exception	System.LimitException: Too many DML statements: 151
+D000	emptyDml	151	success	EDGE|0|0|0|0

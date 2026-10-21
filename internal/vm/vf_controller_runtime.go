@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 )
 
@@ -103,11 +104,21 @@ func apexPagesSerializationError(err error) error {
 	return jsonDeserializeException("%s", err.Error())
 }
 
-// Re-encode existing query values with the same form encoding used after a
-// parameter-map mutation. Keep their original order, multiplicity and presence
-// of '='; decoding a space or Unicode value does not reorder unrelated keys.
+// Page URLs order parameter names case-insensitively, retaining their text and
+// form encoding. Keep repeated values and the presence of '=' intact.
 func canonicalPageReferenceQuery(query string) string {
 	parts := strings.Split(query, "&")
+	slices.SortStableFunc(parts, func(left, right string) int {
+		left, _, _ = strings.Cut(left, "=")
+		right, _, _ = strings.Cut(right, "=")
+		if decoded, err := url.QueryUnescape(left); err == nil {
+			left = decoded
+		}
+		if decoded, err := url.QueryUnescape(right); err == nil {
+			right = decoded
+		}
+		return strings.Compare(strings.ToLower(left), strings.ToLower(right))
+	})
 	for i, part := range parts {
 		key, value, assigned := strings.Cut(part, "=")
 		decodedKey, keyErr := url.QueryUnescape(key)
@@ -120,5 +131,5 @@ func canonicalPageReferenceQuery(query string) string {
 			parts[i] += "=" + url.QueryEscape(decodedValue)
 		}
 	}
-	return strings.Join(parts, "&")
+	return strings.ReplaceAll(strings.Join(parts, "&"), "%2A", "*")
 }

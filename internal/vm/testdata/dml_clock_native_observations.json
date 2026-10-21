@@ -1,0 +1,77 @@
+{
+  "scope": "Source61 completed two inserts then checkpoint and one update then now. Asserts no audit timestamps in future and creation timestamp preservation. Native absolute millisecond values retained, not replayed as fixed expected values; no claim about minimum elapsed time, update strictness, system timestamp advancement per DML, clock rollback, or other APIs.",
+  "helperSource": "public class AuditClockProbe {\n public static Map<String,Object> run() {\n  Savepoint marker=Database.setSavepoint();\n  Account first=new Account(Name='Synthetic first'); insert first;\n  Account second=new Account(Name='Synthetic second'); insert second;\n  Datetime checkpoint=Datetime.now();\n  Integer futureBefore=[SELECT count() FROM Account WHERE LastModifiedDate > :checkpoint];\n  Account original=[SELECT CreatedDate,LastModifiedDate FROM Account WHERE Id=:first.Id];\n  first.Name='Synthetic changed'; update first;\n  Datetime afterUpdate=Datetime.now();\n  Account changed=[SELECT CreatedDate,LastModifiedDate FROM Account WHERE Id=:first.Id];\n  Integer futureAfter=[SELECT count() FROM Account WHERE LastModifiedDate > :afterUpdate];\n  Map<String,Object> result=new Map<String,Object>{'futureAfterInserts'=>futureBefore,'futureAfterUpdate'=>futureAfter,'createdPreserved'=>original.CreatedDate==changed.CreatedDate,'createdNotFuture'=>changed.CreatedDate<=afterUpdate,'modifiedNotFuture'=>changed.LastModifiedDate<=afterUpdate,'createdMillis'=>original.CreatedDate.getTime(),'modifiedMillis'=>changed.LastModifiedDate.getTime(),'checkpointMillis'=>checkpoint.getTime(),'afterUpdateMillis'=>afterUpdate.getTime()};\n  Database.rollback(marker);return result;\n }\n}\n",
+  "helperSourceSha256": "6e0f1de673b5440fc01da4b9363df7c0e9a2b91de189246504a9ef26cf534c62",
+  "replaySource": "\n  Savepoint marker=Database.setSavepoint();\n  Account first=new Account(Name='Synthetic first'); insert first;\n  Account second=new Account(Name='Synthetic second'); insert second;\n  Datetime checkpoint=Datetime.now();\n  Integer futureBefore=[SELECT count() FROM Account WHERE LastModifiedDate > :checkpoint];\n  Account original=[SELECT CreatedDate,LastModifiedDate FROM Account WHERE Id=:first.Id];\n  first.Name='Synthetic changed'; update first;\n  Datetime afterUpdate=Datetime.now();\n  Account changed=[SELECT CreatedDate,LastModifiedDate FROM Account WHERE Id=:first.Id];\n  Integer futureAfter=[SELECT count() FROM Account WHERE LastModifiedDate > :afterUpdate];\n  Map<String,Object> result=new Map<String,Object>{'futureAfterInserts'=>futureBefore,'futureAfterUpdate'=>futureAfter,'createdPreserved'=>original.CreatedDate==changed.CreatedDate,'createdNotFuture'=>changed.CreatedDate<=afterUpdate,'modifiedNotFuture'=>changed.LastModifiedDate<=afterUpdate,'createdMillis'=>original.CreatedDate.getTime(),'modifiedMillis'=>changed.LastModifiedDate.getTime(),'checkpointMillis'=>checkpoint.getTime(),'afterUpdateMillis'=>afterUpdate.getTime()};\n  Database.rollback(marker);",
+  "replaySourceSha256": "2bcdf52daaffb25fe40195762348f7cc7ff0a7e746f3eed63e9df681d99444f8",
+  "rows": [
+    {
+      "context": "istest",
+      "sourceApi": "61.0",
+      "transportApi": "67.0",
+      "deploymentId": "0AfE200000r0W1NKAU",
+      "deploymentStatus": "Succeeded",
+      "orgIdSha256": "04a58dd26a83c1ec339870c9385318efaa66874b9cbd1c01a7a7855820655dc4",
+      "helperMetadataSha256": "6b398a48cac611870f1cfdd5b252f5585bd3bee5ca998f8da5e9df434601166b",
+      "observerSource": "@IsTest private class AuditClockObservation { @IsTest static void observe(){System.assert(false,'AUDIT_CLOCK_RESULT|'+JSON.serialize(AuditClockProbe.run()));}}\n",
+      "observerSourceSha256": "df774ca595e3d8d50b2b54e635fde55ff45c28cf0c5029e105f23c437bf15f9a",
+      "rawResponseSha256": "a1e9eb06dc555a98979827874543dfcf01c6dcd466fee1f03c2a575d5871c535",
+      "answerJSON": "[\n  {\n    \"afterUpdateMillis\": 1792074471099,\n    \"checkpointMillis\": 1792074471036,\n    \"modifiedMillis\": 1792074471000,\n    \"createdMillis\": 1792074470000,\n    \"modifiedNotFuture\": true,\n    \"createdNotFuture\": true,\n    \"createdPreserved\": true,\n    \"futureAfterUpdate\": 0,\n    \"futureAfterInserts\": 0\n  }\n]\n",
+      "answerSha256": "303e49c6ba8c9a86667894e490bb0faac2b65960a4fa020b3cdfffbd24b390c3",
+      "observed": {
+        "afterUpdateMillis": 1792074471099,
+        "checkpointMillis": 1792074471036,
+        "modifiedMillis": 1792074471000,
+        "createdMillis": 1792074470000,
+        "modifiedNotFuture": true,
+        "createdNotFuture": true,
+        "createdPreserved": true,
+        "futureAfterUpdate": 0,
+        "futureAfterInserts": 0
+      },
+      "expected": {
+        "futureAfterInserts": 0,
+        "futureAfterUpdate": 0,
+        "createdPreserved": true,
+        "createdNotFuture": true,
+        "modifiedNotFuture": true
+      },
+      "command": "HOME=\"$SCRATCH_HOME\" SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --tests AuditClockObservation --api-version 67.0 --target-org scratch-org --wait 10 --result-format json --json",
+      "exitCode": 100
+    },
+    {
+      "context": "anonymous",
+      "sourceApi": "61.0",
+      "transportApi": "61.0",
+      "deploymentId": "0AfE200000r0W1NKAU",
+      "deploymentStatus": "Succeeded",
+      "orgIdSha256": "04a58dd26a83c1ec339870c9385318efaa66874b9cbd1c01a7a7855820655dc4",
+      "helperMetadataSha256": "6b398a48cac611870f1cfdd5b252f5585bd3bee5ca998f8da5e9df434601166b",
+      "observerSource": "System.debug('AUDIT_CLOCK_RESULT|'+JSON.serialize(AuditClockProbe.run()));\n",
+      "observerSourceSha256": "7364f96f0eaebb2c962d5c41e54567e8625307fd2ea19db720a3fac37e0180d9",
+      "rawResponseSha256": "bb98f0875917bdc7b0d3a01d0e5aa222f47befc3b64f96350dfc139fe47772a5",
+      "answerJSON": "[\n  {\n    \"afterUpdateMillis\": 1792074479604,\n    \"checkpointMillis\": 1792074479571,\n    \"modifiedMillis\": 1792074479000,\n    \"createdMillis\": 1792074479000,\n    \"modifiedNotFuture\": true,\n    \"createdNotFuture\": true,\n    \"createdPreserved\": true,\n    \"futureAfterUpdate\": 0,\n    \"futureAfterInserts\": 0\n  }\n]\n",
+      "answerSha256": "7ab7897aee7eb72aafd81fae6fd809307a0bad55e788e066bd8e6f561c6798ac",
+      "observed": {
+        "afterUpdateMillis": 1792074479604,
+        "checkpointMillis": 1792074479571,
+        "modifiedMillis": 1792074479000,
+        "createdMillis": 1792074479000,
+        "modifiedNotFuture": true,
+        "createdNotFuture": true,
+        "createdPreserved": true,
+        "futureAfterUpdate": 0,
+        "futureAfterInserts": 0
+      },
+      "expected": {
+        "futureAfterInserts": 0,
+        "futureAfterUpdate": 0,
+        "createdPreserved": true,
+        "createdNotFuture": true,
+        "modifiedNotFuture": true
+      },
+      "command": "HOME=\"$SCRATCH_HOME\" SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --file native-capture --api-version 61.0 --target-org scratch-org --json",
+      "exitCode": 0
+    }
+  ]
+}

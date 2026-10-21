@@ -195,9 +195,9 @@ test("release notes record final v0.2.12 validation", () => {
   assert.match(candidateText, /https:\/\/github\.com\/glade-sh\/glade\/blob\/v0\.2\.12\/docs\/KNOWN_GAPS\.md/);
 });
 
-test("launch docs identify the published v0.2.15 release and retain historical notes", () => {
-  const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
-  assert.ok(unreleased, "release notes should contain an Unreleased section");
+test("launch docs identify v0.3.0 and retain historical release notes", () => {
+  const unreleased = releaseNotes.match(/^## (?:Unreleased|v\d+\.\d+\.\d+)[ \t]*\r?\n([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
+  assert.ok(unreleased, "release notes should contain a current release section");
   const unreleasedText = unreleased[1].replace(/\s+/g, " ");
   assert.match(unreleasedText, /playground --example refinement-service --once/);
   assert.match(unreleasedText, /JSON schema advances to `1\.1`/);
@@ -231,7 +231,7 @@ test("launch docs identify the published v0.2.15 release and retain historical n
   for (const page of [repoReadme, quickstart, examples]) {
     const pageText = page.replace(/\s+/g, " ");
     assert.match(pageText, /first shipped in (?:\*\*)?v0\.2\.14/);
-    assert.match(pageText, /v0\.2\.15 stable release/);
+    assert.match(pageText, /v0\.3\.0 release/);
     assert.doesNotMatch(pageText, /v0\.2\.14 release candidate|published v0\.2\.13/);
   }
   assert.doesNotMatch(plugins, /licensing decision pending/i);
@@ -247,7 +247,7 @@ test("launch docs identify the published v0.2.15 release and retain historical n
   }
 
   for (const ciPage of [ciArtifacts, helpCiSetup, helpProjectSetupScript]) {
-    assert.match(ciPage, /GLADE_VERSION=v0\.2\.15/);
+    assert.match(ciPage, /GLADE_VERSION=v0\.3\.0/);
     assert.doesNotMatch(ciPage, /GLADE_VERSION=v0\.2\.13/);
   }
 
@@ -256,6 +256,11 @@ test("launch docs identify the published v0.2.15 release and retain historical n
 });
 
 test("release docs publish the sealed private-corpus assurance snapshot", () => {
+  const notice = privateCorpusAssuranceExplorer.match(/<aside data-historical-notice>[\s\S]*?<\/aside>/)?.[0];
+  assert.ok(notice, "the historical explorer must identify its release scope");
+  assert.match(notice, /Historical report/);
+  assert.match(notice, /v0\.2\.11\/v0\.2\.12/);
+  assert.match(notice, /not v0\.3\.0 qualification evidence/);
   const assuranceJSON = privateCorpusAssuranceExplorer.match(/<script id="assurance-data" type="application\/json">([\s\S]*?)<\/script>/)?.[1];
   assert.ok(assuranceJSON, "the styled explorer must embed the redacted evidence payload");
   const assuranceSha256 = createHash("sha256").update(assuranceJSON).digest("hex");

@@ -1,0 +1,408 @@
+{
+  "apiVersion": "65.0",
+  "runtimeAPIVersion": "68.0",
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 6,
+  "nativeObservationCount": 12,
+  "source": {
+    "id": "generated-owner-envelope-source",
+    "classes": {
+      "OwnedOwnerGenerated65": "public class OwnedOwnerGenerated65 {public static Map<String,Object> observe(String kind){String payload;\n  if(kind=='USER_ID15_URL18')payload='{\"attributes\":{\"type\":\"Case\"},\"Id\":\"500000000000017\",\"OwnerId\":\"005000000000017\",\"Subject\":\"Owned envelope\",\"Owner\":{\"FirstName\":\"Owned\",\"Id\":\"005000000000017\",\"attributes\":{\"type\":\"User\",\"url\":\"/services/data/v68.0/sobjects/User/005000000000017AAA\"}}}';\n  else if(kind=='USER_ID18_URL18')payload='{\"attributes\":{\"type\":\"Case\"},\"Id\":\"500000000000017\",\"OwnerId\":\"005000000000017\",\"Subject\":\"Owned envelope\",\"Owner\":{\"FirstName\":\"Owned\",\"Id\":\"005000000000017AAA\",\"attributes\":{\"type\":\"User\",\"url\":\"/services/data/v68.0/sobjects/User/005000000000017AAA\"}}}';\n  else if(kind=='NAME_ID15_URL18')payload='{\"attributes\":{\"type\":\"Case\"},\"Id\":\"500000000000017\",\"OwnerId\":\"005000000000017\",\"Subject\":\"Owned envelope\",\"Owner\":{\"Id\":\"005000000000017\",\"FirstName\":\"Owned\",\"attributes\":{\"type\":\"Name\",\"url\":\"/services/data/v68.0/sobjects/User/005000000000017AAA\"}}}';\n  else if(kind=='NAME_ID18_URL18')payload='{\"attributes\":{\"type\":\"Case\"},\"Id\":\"500000000000017\",\"OwnerId\":\"005000000000017\",\"Subject\":\"Owned envelope\",\"Owner\":{\"Id\":\"005000000000017AAA\",\"FirstName\":\"Owned\",\"attributes\":{\"type\":\"Name\",\"url\":\"/services/data/v68.0/sobjects/User/005000000000017AAA\"}}}';\n  else if(kind=='NAME_TYPE_ID15_URL18')payload='{\"attributes\":{\"type\":\"Case\"},\"Id\":\"500000000000017\",\"OwnerId\":\"005000000000017\",\"Subject\":\"Owned envelope\",\"Owner\":{\"Id\":\"005000000000017\",\"FirstName\":\"Owned\",\"Type\":\"User\",\"attributes\":{\"type\":\"Name\",\"url\":\"/services/data/v68.0/sobjects/User/005000000000017AAA\"}}}';\n  else if(kind=='NAME_TYPE_ID18_URL18')payload='{\"attributes\":{\"type\":\"Case\"},\"Id\":\"500000000000017\",\"OwnerId\":\"005000000000017\",\"Subject\":\"Owned envelope\",\"Owner\":{\"Id\":\"005000000000017AAA\",\"FirstName\":\"Owned\",\"Type\":\"User\",\"attributes\":{\"type\":\"Name\",\"url\":\"/services/data/v68.0/sobjects/User/005000000000017AAA\"}}}';\n  else return new Map<String,Object>{'fixtureError'=>'unknown-row','row'=>kind};\n  Map<String,Object> o=new Map<String,Object>{'row'=>kind,'phase'=>'deserialize'};\n  try {\n   Case record=(Case)JSON.deserialize(payload,Case.class);\n   o.put('phase','deserialized');\n   o.put('caseIdMatches',record.Id==Id.valueOf('500000000000017'));\n   o.put('ownerReferenceMatches',record.OwnerId==Id.valueOf('005000000000017'));\n   SObject owner=record.getSObject('Owner');\n   o.put('ownerNull',owner==null);\n   if(owner!=null){\n    try{o.put('ownerSObjectType',String.valueOf(owner.getSObjectType()));}catch(Exception e){o.put('ownerSObjectTypeException',new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()});}\n    try{Object ownerKey=owner.get('Id');o.put('ownerIdNull',ownerKey==null);o.put('ownerIdMatches',ownerKey==Id.valueOf('005000000000017'));}catch(Exception e){o.put('ownerIdException',new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()});}\n    try{o.put('firstName',owner.get('FirstName'));}catch(Exception e){o.put('firstError',new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()});}\n    try{o.put('typeField',owner.get('Type'));}catch(Exception e){o.put('typeError',new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()});}\n   }\n   try{Map<String,Object> roundtrip=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(record));o.put('ownerJSON',roundtrip.get('Owner'));}catch(Exception e){o.put('serializedOwnerException',new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()});}\n   o.put('phase','complete');\n  }catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\n  return o;\n }\n}",
+      "OwnedOwnerGenerated65Test": "@IsTest private class OwnedOwnerGenerated65Test{@IsTest static void observe1(){System.assert(false,'NATIVE_RESULT|USER_ID15_URL18|'+JSON.serialize(OwnedOwnerGenerated65.observe('USER_ID15_URL18')));}@IsTest static void observe2(){System.assert(false,'NATIVE_RESULT|USER_ID18_URL18|'+JSON.serialize(OwnedOwnerGenerated65.observe('USER_ID18_URL18')));}@IsTest static void observe3(){System.assert(false,'NATIVE_RESULT|NAME_ID15_URL18|'+JSON.serialize(OwnedOwnerGenerated65.observe('NAME_ID15_URL18')));}@IsTest static void observe4(){System.assert(false,'NATIVE_RESULT|NAME_ID18_URL18|'+JSON.serialize(OwnedOwnerGenerated65.observe('NAME_ID18_URL18')));}@IsTest static void observe5(){System.assert(false,'NATIVE_RESULT|NAME_TYPE_ID15_URL18|'+JSON.serialize(OwnedOwnerGenerated65.observe('NAME_TYPE_ID15_URL18')));}@IsTest static void observe6(){System.assert(false,'NATIVE_RESULT|NAME_TYPE_ID18_URL18|'+JSON.serialize(OwnedOwnerGenerated65.observe('NAME_TYPE_ID18_URL18')));}}"
+    },
+    "tests": [
+      "OwnedOwnerGenerated65Test"
+    ],
+    "runtimeAPIVersion": "68.0",
+    "stage": "observed",
+    "sourceSha256": {
+      "class:OwnedOwnerGenerated65": "45f526d8786fda33e2ebb67af26d0c00858d4cd162f7bdb6d2f67acc7566918a",
+      "class:OwnedOwnerGenerated65Test": "96d3090cb42f3499a422fb880dfbd9492603d349757e8eaa97527695f6ac4b1d"
+    }
+  },
+  "nativeFilesSha256": {
+    "org.tsv": "58dbf6ee11644192ed3124e9cba54522ce7c6959b50bae0129499931451683c8",
+    "ORG-RUN.txt": "2e72f6609445a367a0742b09943d4cf6b6d68422b68cab97f89698e98ff4fc54",
+    "cases.json": "a8a55115cc50a0af96ad993d9c12b8465b5376b9a2f5d79e62e9cd21514339d7",
+    "deploy65.json": "b6632f5fe27fc04a1195e6b638a7aac4408f785e6a00279c2c9d9474bdf5505f",
+    "isTest65.json": "a2c73f3e5368bc12a32934be18f139dc215f24f3908a07f10b05cdf02b10739a",
+    "api65/force-app/main/default/classes/OwnedOwnerGenerated65.cls-meta.xml": "0347267b36e4cd542616bb80997ae7c7634cf64ed063b5bd68dd2493c8fca3ea",
+    "api65/force-app/main/default/classes/OwnedOwnerGenerated65Test.cls-meta.xml": "0347267b36e4cd542616bb80997ae7c7634cf64ed063b5bd68dd2493c8fca3ea"
+  },
+  "rows": [
+    {
+      "id": "USER_ID15_URL18",
+      "testMethod": "observe1",
+      "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|USER_ID15_URL18|'+JSON.serialize(OwnedOwnerGenerated65.observe('USER_ID15_URL18')));",
+      "sourceSha256": "d4830075fff20a7ef53619492fac1426349a863a359549c6f8982af41d030cfc",
+      "expectedByRoute": {
+        "anonymous": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017",
+              "attributes": {
+                "type": "User",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "User",
+            "phase": "complete",
+            "row": "USER_ID15_URL18",
+            "typeError": {
+              "message": "Invalid field Type for User",
+              "type": "System.SObjectException"
+            }
+          }
+        },
+        "isTest": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017",
+              "attributes": {
+                "type": "User",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "User",
+            "phase": "complete",
+            "row": "USER_ID15_URL18",
+            "typeError": {
+              "message": "Invalid field Type for User",
+              "type": "System.SObjectException"
+            }
+          }
+        }
+      },
+      "evidenceSha256ByRoute": {
+        "anonymous": "79fce5ce8a415ab9ae678833a55572d44ae97a89e8195c0ac17a92481711da2e",
+        "isTest": "a2c73f3e5368bc12a32934be18f139dc215f24f3908a07f10b05cdf02b10739a"
+      }
+    },
+    {
+      "id": "USER_ID18_URL18",
+      "testMethod": "observe2",
+      "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|USER_ID18_URL18|'+JSON.serialize(OwnedOwnerGenerated65.observe('USER_ID18_URL18')));",
+      "sourceSha256": "fe97e9d0fdd05a84f44b0dec3cedf3983e145702dab4cba4958e5c39afa3519d",
+      "expectedByRoute": {
+        "anonymous": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017AAA",
+              "attributes": {
+                "type": "User",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017AAA"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "User",
+            "phase": "complete",
+            "row": "USER_ID18_URL18",
+            "typeError": {
+              "message": "Invalid field Type for User",
+              "type": "System.SObjectException"
+            }
+          }
+        },
+        "isTest": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017AAA",
+              "attributes": {
+                "type": "User",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017AAA"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "User",
+            "phase": "complete",
+            "row": "USER_ID18_URL18",
+            "typeError": {
+              "message": "Invalid field Type for User",
+              "type": "System.SObjectException"
+            }
+          }
+        }
+      },
+      "evidenceSha256ByRoute": {
+        "anonymous": "aea01760ab84bc420254bc2c8ec1efc02c7fb6d667fab0a3c66a49c48731ca0e",
+        "isTest": "a2c73f3e5368bc12a32934be18f139dc215f24f3908a07f10b05cdf02b10739a"
+      }
+    },
+    {
+      "id": "NAME_ID15_URL18",
+      "testMethod": "observe3",
+      "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|NAME_ID15_URL18|'+JSON.serialize(OwnedOwnerGenerated65.observe('NAME_ID15_URL18')));",
+      "sourceSha256": "67c73aad3d2b3885b465b016a65ef27279aab266c36e839da87f95300997c0e1",
+      "expectedByRoute": {
+        "anonymous": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017",
+              "attributes": {
+                "type": "Name",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "Name",
+            "phase": "complete",
+            "row": "NAME_ID15_URL18",
+            "typeField": null
+          }
+        },
+        "isTest": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017",
+              "attributes": {
+                "type": "Name",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "Name",
+            "phase": "complete",
+            "row": "NAME_ID15_URL18",
+            "typeField": null
+          }
+        }
+      },
+      "evidenceSha256ByRoute": {
+        "anonymous": "f7f37553720241f77e654e0235504849b35837027400385a6605dbc6db277256",
+        "isTest": "a2c73f3e5368bc12a32934be18f139dc215f24f3908a07f10b05cdf02b10739a"
+      }
+    },
+    {
+      "id": "NAME_ID18_URL18",
+      "testMethod": "observe4",
+      "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|NAME_ID18_URL18|'+JSON.serialize(OwnedOwnerGenerated65.observe('NAME_ID18_URL18')));",
+      "sourceSha256": "612058f779b848533298ebc3c3528fc394892fdf4d2cf50d59fc33ca1c044ff4",
+      "expectedByRoute": {
+        "anonymous": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017AAA",
+              "attributes": {
+                "type": "Name",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017AAA"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "Name",
+            "phase": "complete",
+            "row": "NAME_ID18_URL18",
+            "typeField": null
+          }
+        },
+        "isTest": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017AAA",
+              "attributes": {
+                "type": "Name",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017AAA"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "Name",
+            "phase": "complete",
+            "row": "NAME_ID18_URL18",
+            "typeField": null
+          }
+        }
+      },
+      "evidenceSha256ByRoute": {
+        "anonymous": "7175881806489a34cf58e3dd1e7e9352f4f0faa69cf9e6b462c9cb9f945c781e",
+        "isTest": "a2c73f3e5368bc12a32934be18f139dc215f24f3908a07f10b05cdf02b10739a"
+      }
+    },
+    {
+      "id": "NAME_TYPE_ID15_URL18",
+      "testMethod": "observe5",
+      "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|NAME_TYPE_ID15_URL18|'+JSON.serialize(OwnedOwnerGenerated65.observe('NAME_TYPE_ID15_URL18')));",
+      "sourceSha256": "f736e27552d1b1c448840a61b275a0dcc0472ebc242f6b70e56c32549e70571d",
+      "expectedByRoute": {
+        "anonymous": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017",
+              "Type": "User",
+              "attributes": {
+                "type": "Name",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "Name",
+            "phase": "complete",
+            "row": "NAME_TYPE_ID15_URL18",
+            "typeField": "User"
+          }
+        },
+        "isTest": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017",
+              "Type": "User",
+              "attributes": {
+                "type": "Name",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "Name",
+            "phase": "complete",
+            "row": "NAME_TYPE_ID15_URL18",
+            "typeField": "User"
+          }
+        }
+      },
+      "evidenceSha256ByRoute": {
+        "anonymous": "ac866ea6acd36af4e00abc6bb7e3378057b338c965c5471bf1b693955d88b9b6",
+        "isTest": "a2c73f3e5368bc12a32934be18f139dc215f24f3908a07f10b05cdf02b10739a"
+      }
+    },
+    {
+      "id": "NAME_TYPE_ID18_URL18",
+      "testMethod": "observe6",
+      "anonymous": "System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|NAME_TYPE_ID18_URL18|'+JSON.serialize(OwnedOwnerGenerated65.observe('NAME_TYPE_ID18_URL18')));",
+      "sourceSha256": "f57e763bdc329b6b0dbf472d8f3f399ccebf323179e197be22694b47903aa333",
+      "expectedByRoute": {
+        "anonymous": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017AAA",
+              "Type": "User",
+              "attributes": {
+                "type": "Name",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017AAA"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "Name",
+            "phase": "complete",
+            "row": "NAME_TYPE_ID18_URL18",
+            "typeField": "User"
+          }
+        },
+        "isTest": {
+          "outcome": "runtime",
+          "value": {
+            "caseIdMatches": true,
+            "firstName": "Owned",
+            "ownerIdMatches": true,
+            "ownerIdNull": false,
+            "ownerJSON": {
+              "FirstName": "Owned",
+              "Id": "005000000000017AAA",
+              "Type": "User",
+              "attributes": {
+                "type": "Name",
+                "url": "/services/data/v68.0/sobjects/User/005000000000017AAA"
+              }
+            },
+            "ownerNull": false,
+            "ownerReferenceMatches": true,
+            "ownerSObjectType": "Name",
+            "phase": "complete",
+            "row": "NAME_TYPE_ID18_URL18",
+            "typeField": "User"
+          }
+        }
+      },
+      "evidenceSha256ByRoute": {
+        "anonymous": "6de6e879e0b937c879ae5197edf359ad3b53eeb10d7edc68d7b56bd41e9d2d26",
+        "isTest": "a2c73f3e5368bc12a32934be18f139dc215f24f3908a07f10b05cdf02b10739a"
+      }
+    }
+  ],
+  "carries": [
+    {
+      "scope": "other source APIs, strict JSON, relationships, object IDs and generated attributes",
+      "reason": "Only ordinary source API65 Case.Owner envelopes for User IDs15/18 with the captured REST68 URL18 and FirstName/optionalType shapes were observed. Other independent native controls remain unchanged.",
+      "nativeValue": null
+    }
+  ]
+}

@@ -21,7 +21,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Owned observations at both source API endpoints, including the configured
+// Owned observations at API 62, 67, and 68, including the configured
 // partition records and builder classes. Neither route needs an org connection.
 func TestPlatformCacheOrgConformance(t *testing.T) {
 	type familyCase struct {
@@ -50,7 +50,7 @@ func TestPlatformCacheOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 295 || len(data.Controls) != 21 || len(data.MetadataControls) != 1 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 295 || len(data.Controls) != 21 || len(data.MetadataControls) != 1 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle rows/versions: %d + %d %v", len(data.Cases), len(data.Controls), data.APIVersions)
 	}
 	rows := append(append([]familyCase{}, data.Cases...), data.Controls...)
@@ -204,14 +204,22 @@ func TestPlatformCacheOrgConformance(t *testing.T) {
 
 			anonymousRunner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			var namedSource strings.Builder
-			namedSource.WriteString("@IsTest(SeeAllData=true) private class PlatformCacheProbe {\n")
+			// PCT007 captures a SeeAllData=true rejection. These older value
+			// rows use isolated tests; their native evidence is anonymous.
+			namedSource.WriteString("@IsTest private class PlatformCacheProbe {\n")
 			accepted := 0
 			for _, tc := range rows {
 				if strings.HasPrefix(tc.Expected, "COMPILE_ERROR\t") {
 					continue
 				}
 				accepted++
-				fmt.Fprintf(&namedSource, "@IsTest static void observed%s(){\n%s\n}\n", tc.ID, body(tc))
+				namedCase := tc
+				// PCA001/PCA003 (both native test launchers, 62/67/68)
+				// replace the former inference from anonymous availability.
+				if tc.ID == "R027" || tc.ID == "C030" {
+					namedCase.Expected = "false"
+				}
+				fmt.Fprintf(&namedSource, "@IsTest static void observed%s(){\n%s\n}\n", tc.ID, body(namedCase))
 			}
 			namedSource.WriteString("}\n")
 			namedPath := filepath.Join(root, "PlatformCacheProbe.cls")

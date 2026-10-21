@@ -29,7 +29,7 @@ func TestDataWeaveLocationAndMissingInstallation(t *testing.T) {
 	t.Setenv("GLADE_HOME", filepath.Join(base, "home"))
 	check(filepath.Join(base, "home"))
 	status := DataWeaveStatus()
-	if status.OK || !strings.Contains(status.Detail, "--java-home") {
+	if status.OK || !strings.Contains(status.Detail, "DataWeave is unsupported") || strings.Contains(status.Detail, "glade toolchain install") {
 		t.Fatalf("status=%+v", status)
 	}
 	if _, err := DataWeaveRuntime(); err == nil {

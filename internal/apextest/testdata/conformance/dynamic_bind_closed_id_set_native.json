@@ -1,0 +1,521 @@
+{
+  "rowCount": 40,
+  "scalarCells": 80,
+  "matchedRows": 40,
+  "carriedRows": 0,
+  "expectedMethods": 5,
+  "carriedIDs": {},
+  "orgIDSHA256": "02d280f8bec8d006782e1c5a67ee314578b3237cbb4fcb6f53e24b483171852d",
+  "orgTSVSHA256": "e96f76bdb3c8829a5dbc8fa37f3c674299f727c0ca071f6a64ab5e5941222aaf",
+  "orgRunSHA256": "b21d66174f07173aba193ded790d7fe25db060e0d0f42cc2defa914bf5b26d16",
+  "testClass": "OwnedClosedIdSetTest",
+  "projectAPI": "62.0",
+  "projectSource": "{\"sourceApiVersion\":\"62.0\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}\n",
+  "projectSourceSHA256": "c498cd6a2814b21c447d6e99066bf8646aed3c79a83a9dbe16360d4739126c1e",
+  "sources": {
+    "OwnedClosedIdSetObserver": "public class OwnedClosedIdSetObserver {\n public static String observe(String row){\n  Map<String,Object> result=new Map<String,Object>();Savepoint mark=Database.setSavepoint();\n  try{\n   Account seed=new Account(Name='Owned Closed Bind Target');insert seed;String query;\n   if(row=='CB01'||row=='CB04'){\n    if(query==null){Set<Id> selected=new Set<Id>{seed.Id};query='SELECT COUNT() FROM Account WHERE Id IN :selected';}\n    result.put('count',row=='CB04'?helper(query):Database.countQuery(query));\n   }else if(row=='CB02'){\n    Set<Id> selected=new Set<Id>{seed.Id};query='SELECT COUNT() FROM Account WHERE Id IN :selected';result.put('count',Database.countQuery(query));\n   }else if(row=='CB03'){\n    if(query==null){String wanted='Owned Closed Bind Target';query='SELECT COUNT() FROM Account WHERE Name = :wanted';}\n    result.put('count',Database.countQuery(query));\n   }else{\n    Integer count;\n    if(query==null){Set<Id> selected=new Set<Id>{seed.Id};query='SELECT COUNT() FROM Account WHERE Id IN :selected';count=Database.countQuery(query);}\n    result.put('count',count);\n   }\n   result.put('outcome','returned');\n  }catch(Exception issue){result.put('outcome','threw');result.put('type',issue.getTypeName());}\n  finally{Database.rollback(mark);}\n  return JSON.serialize(result);\n }\n private static Integer helper(String query){return Database.countQuery(query);}\n}\n",
+    "OwnedClosedIdSetTest": "@IsTest private class OwnedClosedIdSetTest {\n @IsTest static void cb01(){System.assert(false,'STORE_BOUNDARY|CB01|'+OwnedClosedIdSetObserver.observe('CB01'));}\n @IsTest static void cb02(){System.assert(false,'STORE_BOUNDARY|CB02|'+OwnedClosedIdSetObserver.observe('CB02'));}\n @IsTest static void cb03(){System.assert(false,'STORE_BOUNDARY|CB03|'+OwnedClosedIdSetObserver.observe('CB03'));}\n @IsTest static void cb04(){System.assert(false,'STORE_BOUNDARY|CB04|'+OwnedClosedIdSetObserver.observe('CB04'));}\n @IsTest static void cb05(){System.assert(false,'STORE_BOUNDARY|CB05|'+OwnedClosedIdSetObserver.observe('CB05'));}\n}\n"
+  },
+  "sourceSHA256": {
+    "OwnedClosedIdSetObserver": "7e93eb68de2185d4ef39c1d5288481dd845ebe5631ef27dc3f4c748ea34cc627",
+    "OwnedClosedIdSetTest": "0c643a922356c056b1e030d6ab480558fa0c71f04b996dc0e4c7c60828438b62"
+  },
+  "anonymousSource": "System.debug('STORE_BOUNDARY|WS01|'+OwnedStoreBoundaryObserver.observe('WS01'));\nSystem.debug('STORE_BOUNDARY|BP02|'+OwnedStoreBoundaryObserver.observe('BP02'));\nSystem.debug('STORE_BOUNDARY|CB01|'+OwnedClosedIdSetObserver.observe('CB01'));\nSystem.debug('STORE_BOUNDARY|CB02|'+OwnedClosedIdSetObserver.observe('CB02'));\nSystem.debug('STORE_BOUNDARY|CB03|'+OwnedClosedIdSetObserver.observe('CB03'));\nSystem.debug('STORE_BOUNDARY|CB04|'+OwnedClosedIdSetObserver.observe('CB04'));\nSystem.debug('STORE_BOUNDARY|CB05|'+OwnedClosedIdSetObserver.observe('CB05'));\n",
+  "anonymousSourceSHA256": "629ae63e405abc9bc378a97d6fcf44a28406396bd3f669dab811cf536c3fbadd",
+  "orgContext": {
+    "requestedEdition": "Developer",
+    "featuresRequested": [],
+    "settingsChanged": false,
+    "otherFeatureContext": "UNCAPTURED"
+  },
+  "captures": [
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>60.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "f7ea5c546ce40b12d915d6cb01c581debce5f111e65f8c004a5e74794c0cf6c5",
+      "deploymentID": "0Afgw000000OB3zCAG",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "a830bc2a9907b8212537cb4d2c330d3cfe3ecdd6f472132cec66eca6a5a26eb3"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "deploymentID": "0Afgw000000ODMuCAO",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "00b1224d3051d8eaf722291fa2112e38787f26db46ad704dba818684352cf408"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "deploymentID": "0Afgw000000OFFdCAO",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "469959a7e0d4013ca6d59e2c3e060001d9eb026209278080cb6c68883440892d"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "deploymentID": "0Afgw000000O8SiCAK",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "5af2f9ccd52c6572e8b920d8d17b17cfd7838f8e9a2def655cdf3dc8c0f00d3e"
+    }
+  ],
+  "rows": [
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "route": "istest",
+      "id": "CB01",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "86975094475f85c41bb718313ef574baa0cdd4948db7e55e0c6fa54335ac1835"
+    },
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "route": "istest",
+      "id": "CB02",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "86975094475f85c41bb718313ef574baa0cdd4948db7e55e0c6fa54335ac1835"
+    },
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "route": "istest",
+      "id": "CB03",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "86975094475f85c41bb718313ef574baa0cdd4948db7e55e0c6fa54335ac1835"
+    },
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "route": "istest",
+      "id": "CB04",
+      "native": {
+        "type": "System.QueryException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "86975094475f85c41bb718313ef574baa0cdd4948db7e55e0c6fa54335ac1835"
+    },
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "route": "istest",
+      "id": "CB05",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "86975094475f85c41bb718313ef574baa0cdd4948db7e55e0c6fa54335ac1835"
+    },
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "route": "anonymous",
+      "id": "CB01",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "b1f60d635856fa1905785fc789e516ff44fef504b19af5c23709b029c143e3d4"
+    },
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "route": "anonymous",
+      "id": "CB02",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "b1f60d635856fa1905785fc789e516ff44fef504b19af5c23709b029c143e3d4"
+    },
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "route": "anonymous",
+      "id": "CB03",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "b1f60d635856fa1905785fc789e516ff44fef504b19af5c23709b029c143e3d4"
+    },
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "route": "anonymous",
+      "id": "CB04",
+      "native": {
+        "type": "System.QueryException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "b1f60d635856fa1905785fc789e516ff44fef504b19af5c23709b029c143e3d4"
+    },
+    {
+      "api": "60.0",
+      "transportAPI": "60.0",
+      "route": "anonymous",
+      "id": "CB05",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "b1f60d635856fa1905785fc789e516ff44fef504b19af5c23709b029c143e3d4"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "CB01",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "8e71fe13b28989b91d2f8c520f9b8855d64d19faa6856c9bbb9907d9ebed45ef"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "CB02",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "8e71fe13b28989b91d2f8c520f9b8855d64d19faa6856c9bbb9907d9ebed45ef"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "CB03",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "8e71fe13b28989b91d2f8c520f9b8855d64d19faa6856c9bbb9907d9ebed45ef"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "CB04",
+      "native": {
+        "type": "System.QueryException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "8e71fe13b28989b91d2f8c520f9b8855d64d19faa6856c9bbb9907d9ebed45ef"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "CB05",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "8e71fe13b28989b91d2f8c520f9b8855d64d19faa6856c9bbb9907d9ebed45ef"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "CB01",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "cb0bf4e57590479237626ae3786f793095a0b0e3df1d5e74b0c42e60e2e350fd"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "CB02",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "cb0bf4e57590479237626ae3786f793095a0b0e3df1d5e74b0c42e60e2e350fd"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "CB03",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "cb0bf4e57590479237626ae3786f793095a0b0e3df1d5e74b0c42e60e2e350fd"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "CB04",
+      "native": {
+        "type": "System.QueryException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "cb0bf4e57590479237626ae3786f793095a0b0e3df1d5e74b0c42e60e2e350fd"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "CB05",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "cb0bf4e57590479237626ae3786f793095a0b0e3df1d5e74b0c42e60e2e350fd"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "CB01",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "a53a3985135a23838b538927bbca42b2de7472fb5cadd61e902a7a28c7a3d3f5"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "CB02",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "a53a3985135a23838b538927bbca42b2de7472fb5cadd61e902a7a28c7a3d3f5"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "CB03",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "a53a3985135a23838b538927bbca42b2de7472fb5cadd61e902a7a28c7a3d3f5"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "CB04",
+      "native": {
+        "type": "System.QueryException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "a53a3985135a23838b538927bbca42b2de7472fb5cadd61e902a7a28c7a3d3f5"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "CB05",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "a53a3985135a23838b538927bbca42b2de7472fb5cadd61e902a7a28c7a3d3f5"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "CB01",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "3fc0f8726c36536a0c48ec01b4568ff2ebd767f53e6eef896305dcd23f3ab0f6"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "CB02",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "3fc0f8726c36536a0c48ec01b4568ff2ebd767f53e6eef896305dcd23f3ab0f6"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "CB03",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "3fc0f8726c36536a0c48ec01b4568ff2ebd767f53e6eef896305dcd23f3ab0f6"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "CB04",
+      "native": {
+        "type": "System.QueryException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "3fc0f8726c36536a0c48ec01b4568ff2ebd767f53e6eef896305dcd23f3ab0f6"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "CB05",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "3fc0f8726c36536a0c48ec01b4568ff2ebd767f53e6eef896305dcd23f3ab0f6"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "CB01",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "e86bff797374d5aef7f6b05b2e425702bb136474636159caff24233a8bef8bcc"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "CB02",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "e86bff797374d5aef7f6b05b2e425702bb136474636159caff24233a8bef8bcc"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "CB03",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "e86bff797374d5aef7f6b05b2e425702bb136474636159caff24233a8bef8bcc"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "CB04",
+      "native": {
+        "type": "System.QueryException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "e86bff797374d5aef7f6b05b2e425702bb136474636159caff24233a8bef8bcc"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "CB05",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "e86bff797374d5aef7f6b05b2e425702bb136474636159caff24233a8bef8bcc"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "CB01",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "0f89c20237a6686cbbb0720ed910e042094825e037345b85d55a0144e7bdd1f2"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "CB02",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "0f89c20237a6686cbbb0720ed910e042094825e037345b85d55a0144e7bdd1f2"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "CB03",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "0f89c20237a6686cbbb0720ed910e042094825e037345b85d55a0144e7bdd1f2"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "CB04",
+      "native": {
+        "type": "System.QueryException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "0f89c20237a6686cbbb0720ed910e042094825e037345b85d55a0144e7bdd1f2"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "CB05",
+      "native": {
+        "outcome": "returned",
+        "count": 1
+      },
+      "receiptSHA256": "0f89c20237a6686cbbb0720ed910e042094825e037345b85d55a0144e7bdd1f2"
+    }
+  ],
+  "projection": "Exact independently replayed observation line/method. BP01 exists only in named test context; no anonymous builtin observation invented. Closed-set rows use per-call rollback and a cross-method negative. WS01 is an explicit observed-absence carry, not a metadata fix.",
+  "uncaptured": [
+    "Other org feature/license contexts, namespace/package contexts and APIs remain unobserved.",
+    "No Commerce field types, writability, defaults or providers are inferred from WebStore absence.",
+    "Other departed local types, null sets, loop/try blocks and lexical expressions are outside the new Set<Id> scope."
+  ]
+}

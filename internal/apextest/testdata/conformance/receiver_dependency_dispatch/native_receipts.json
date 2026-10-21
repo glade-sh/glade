@@ -1,0 +1,516 @@
+{
+  "sourceRowsSHA256": "b46b3dd4995e8556ac9cc9aa116d884289d326d26d3fae45cfd686f41bc0a935",
+  "sourceManifestSHA256": "801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174",
+  "captures": [
+    {
+      "priority": "p0",
+      "api": "62.0",
+      "completion": {
+        "planned_observations": 30,
+        "recorded": 30,
+        "observations": 30,
+        "non_answers": 0,
+        "uncaptured": 0,
+        "outcomes": {
+          "runtime": 26,
+          "compile-rejected": 2,
+          "uncaught_anonymous": 1,
+          "uncaught_test_failure": 1
+        },
+        "accounted": true,
+        "complete": true,
+        "fully_observed": true,
+        "controls": {
+          "62.0@anonymous": true,
+          "62.0@istest": true
+        },
+        "priority": "p0",
+        "api": "62.0",
+        "apis": [
+          "62.0"
+        ],
+        "control_apis": [
+          "62.0"
+        ],
+        "routes": [
+          "anonymous",
+          "istest"
+        ],
+        "source_manifest_sha256": "801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174",
+        "setup_and_cleanup_notes": 0,
+        "control_rechecks": 0,
+        "requires_verified_scratch_deletion": true
+      },
+      "routes": {
+        "anonymous": {
+          "orgTSVSHA256": "2cef219fd4b67e1c44d7299f711459b2d7236bb087b2ab87c321f114b6b1540e",
+          "run": "started_at=2026-10-13T14:42:57.854543+00:00\napi=62.0\nroute=anonymous\nrows_expected=15\nrows_recorded=15\ncontrols_passed=True\nanswers=15\nnon_answers=0\noutcomes={\"compile-rejected\": 1, \"runtime\": 13, \"uncaught_anonymous\": 1}\nsource_manifest_sha256=801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174\nanswer_source=native Salesforce; fresh non-namespaced scratch subscriber with the gladens001 managed beta installed\npackage_class_apis=BuilderBase/Builder/Item/Data/Util/Caller 62.0; N1Api67 67.0; N1Api68 68.0\nrelease_drift=API59 same-release controls and version rows plus 62/67/68\n",
+          "orgRunSHA256": "510769c06ee8ec53649caec5d5112f1a0591cf43995f3b72a36bd11532db433f"
+        },
+        "istest": {
+          "orgTSVSHA256": "ac82aa46a732bc4831b5aa8e08e87081316954124747c395e9b3c005a71709cd",
+          "run": "started_at=2026-10-13T14:42:57.854543+00:00\napi=62.0\nroute=istest\nrows_expected=15\nrows_recorded=15\ncontrols_passed=True\nanswers=15\nnon_answers=0\noutcomes={\"compile-rejected\": 1, \"runtime\": 13, \"uncaught_test_failure\": 1}\nsource_manifest_sha256=801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174\nanswer_source=native Salesforce; fresh non-namespaced scratch subscriber with the gladens001 managed beta installed\npackage_class_apis=BuilderBase/Builder/Item/Data/Util/Caller 62.0; N1Api67 67.0; N1Api68 68.0\nrelease_drift=API59 same-release controls and version rows plus 62/67/68\n",
+          "orgRunSHA256": "79e98e774642eeee5387b71199fccf8f47cd58058a5000b6fc9b9cb093822cdf"
+        }
+      },
+      "packageBeta": {
+        "packageId": "033bm000000y0htAAA",
+        "packageName": "Glade Test1",
+        "namespace": "gladens001",
+        "versionId": "04tbm000000otKfAAI",
+        "releaseState": "Beta",
+        "versionName": "CORPUSE10-20261012-beta-01",
+        "versionNumber": "1.0.0"
+      },
+      "install": {
+        "Id": "0Hfgw0000006GWjCAM",
+        "Status": "SUCCESS",
+        "SubscriberPackageVersionId": null
+      },
+      "packageBetaSHA256": "88ac2e603bf67c2319b2788100472f6c50c45e471c2394857644fb11a5e1e8ca",
+      "installSHA256": "f89bdd78fdc02dc221ab5f1fa0bf41030efe1a361a028ba4fc0ad0c969cd2b7d",
+      "completionSHA256": "a47dfd8294426599d73e98d2070a9b0311fba66ebf01301bab30489d3763a85a"
+    },
+    {
+      "priority": "p0",
+      "api": "67.0",
+      "completion": {
+        "planned_observations": 30,
+        "recorded": 30,
+        "observations": 30,
+        "non_answers": 0,
+        "uncaptured": 0,
+        "outcomes": {
+          "runtime": 26,
+          "compile-rejected": 2,
+          "uncaught_anonymous": 1,
+          "uncaught_test_failure": 1
+        },
+        "accounted": true,
+        "complete": true,
+        "fully_observed": true,
+        "controls": {
+          "67.0@anonymous": true,
+          "67.0@istest": true
+        },
+        "priority": "p0",
+        "api": "67.0",
+        "apis": [
+          "67.0"
+        ],
+        "control_apis": [
+          "67.0"
+        ],
+        "routes": [
+          "anonymous",
+          "istest"
+        ],
+        "source_manifest_sha256": "801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174",
+        "setup_and_cleanup_notes": 0,
+        "control_rechecks": 0,
+        "requires_verified_scratch_deletion": true
+      },
+      "routes": {
+        "anonymous": {
+          "orgTSVSHA256": "2cef219fd4b67e1c44d7299f711459b2d7236bb087b2ab87c321f114b6b1540e",
+          "run": "started_at=2026-10-13T14:44:30.177697+00:00\napi=67.0\nroute=anonymous\nrows_expected=15\nrows_recorded=15\ncontrols_passed=True\nanswers=15\nnon_answers=0\noutcomes={\"compile-rejected\": 1, \"runtime\": 13, \"uncaught_anonymous\": 1}\nsource_manifest_sha256=801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174\nanswer_source=native Salesforce; fresh non-namespaced scratch subscriber with the gladens001 managed beta installed\npackage_class_apis=BuilderBase/Builder/Item/Data/Util/Caller 62.0; N1Api67 67.0; N1Api68 68.0\nrelease_drift=API59 same-release controls and version rows plus 62/67/68\n",
+          "orgRunSHA256": "316dc84207e47d786a24c9910a85a89113b2d80a8350db86cd2eddb40d08fbb4"
+        },
+        "istest": {
+          "orgTSVSHA256": "ac82aa46a732bc4831b5aa8e08e87081316954124747c395e9b3c005a71709cd",
+          "run": "started_at=2026-10-13T14:44:30.177697+00:00\napi=67.0\nroute=istest\nrows_expected=15\nrows_recorded=15\ncontrols_passed=True\nanswers=15\nnon_answers=0\noutcomes={\"compile-rejected\": 1, \"runtime\": 13, \"uncaught_test_failure\": 1}\nsource_manifest_sha256=801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174\nanswer_source=native Salesforce; fresh non-namespaced scratch subscriber with the gladens001 managed beta installed\npackage_class_apis=BuilderBase/Builder/Item/Data/Util/Caller 62.0; N1Api67 67.0; N1Api68 68.0\nrelease_drift=API59 same-release controls and version rows plus 62/67/68\n",
+          "orgRunSHA256": "62d8fc4c94b21cc96d4637e5138144d6444e2d1c18151db61da2df231d6a7a5e"
+        }
+      },
+      "packageBeta": {
+        "packageId": "033bm000000y0htAAA",
+        "packageName": "Glade Test1",
+        "namespace": "gladens001",
+        "versionId": "04tbm000000otKfAAI",
+        "releaseState": "Beta",
+        "versionName": "CORPUSE10-20261012-beta-01",
+        "versionNumber": "1.0.0"
+      },
+      "install": {
+        "Id": "0HfRt000006fUWXKA2",
+        "Status": "SUCCESS",
+        "SubscriberPackageVersionId": null
+      },
+      "packageBetaSHA256": "88ac2e603bf67c2319b2788100472f6c50c45e471c2394857644fb11a5e1e8ca",
+      "installSHA256": "340d2630bc71741949ff11a13bbb2080171de49c6c0611d7485cfe0922f1a408",
+      "completionSHA256": "649dfe7e7706e42fe0a1933f17ac19aca08ecf80c6219feab60c797f01d565ae"
+    },
+    {
+      "priority": "p0",
+      "api": "68.0",
+      "completion": {
+        "planned_observations": 30,
+        "recorded": 30,
+        "observations": 30,
+        "non_answers": 0,
+        "uncaptured": 0,
+        "outcomes": {
+          "runtime": 26,
+          "compile-rejected": 2,
+          "uncaught_anonymous": 1,
+          "uncaught_test_failure": 1
+        },
+        "accounted": true,
+        "complete": true,
+        "fully_observed": true,
+        "controls": {
+          "68.0@anonymous": true,
+          "68.0@istest": true
+        },
+        "priority": "p0",
+        "api": "68.0",
+        "apis": [
+          "68.0"
+        ],
+        "control_apis": [
+          "68.0"
+        ],
+        "routes": [
+          "anonymous",
+          "istest"
+        ],
+        "source_manifest_sha256": "801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174",
+        "setup_and_cleanup_notes": 0,
+        "control_rechecks": 0,
+        "requires_verified_scratch_deletion": true
+      },
+      "routes": {
+        "anonymous": {
+          "orgTSVSHA256": "2cef219fd4b67e1c44d7299f711459b2d7236bb087b2ab87c321f114b6b1540e",
+          "run": "started_at=2026-10-13T14:51:32.717540+00:00\napi=68.0\nroute=anonymous\nrows_expected=15\nrows_recorded=15\ncontrols_passed=True\nanswers=15\nnon_answers=0\noutcomes={\"compile-rejected\": 1, \"runtime\": 13, \"uncaught_anonymous\": 1}\nsource_manifest_sha256=801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174\nanswer_source=native Salesforce; fresh non-namespaced scratch subscriber with the gladens001 managed beta installed\npackage_class_apis=BuilderBase/Builder/Item/Data/Util/Caller 62.0; N1Api67 67.0; N1Api68 68.0\nrelease_drift=API59 same-release controls and version rows plus 62/67/68\n",
+          "orgRunSHA256": "1e8f5007f3344e6221327b7e793bd4646ee8f5aba6f2f1994e57b8a406734db8"
+        },
+        "istest": {
+          "orgTSVSHA256": "ac82aa46a732bc4831b5aa8e08e87081316954124747c395e9b3c005a71709cd",
+          "run": "started_at=2026-10-13T14:51:32.717540+00:00\napi=68.0\nroute=istest\nrows_expected=15\nrows_recorded=15\ncontrols_passed=True\nanswers=15\nnon_answers=0\noutcomes={\"compile-rejected\": 1, \"runtime\": 13, \"uncaught_test_failure\": 1}\nsource_manifest_sha256=801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174\nanswer_source=native Salesforce; fresh non-namespaced scratch subscriber with the gladens001 managed beta installed\npackage_class_apis=BuilderBase/Builder/Item/Data/Util/Caller 62.0; N1Api67 67.0; N1Api68 68.0\nrelease_drift=API59 same-release controls and version rows plus 62/67/68\n",
+          "orgRunSHA256": "67ca08b5783ac951ff20c69704b69453a2c9bc6751a73911fed31e57c8bcc56b"
+        }
+      },
+      "packageBeta": {
+        "packageId": "033bm000000y0htAAA",
+        "packageName": "Glade Test1",
+        "namespace": "gladens001",
+        "versionId": "04tbm000000otKfAAI",
+        "releaseState": "Beta",
+        "versionName": "CORPUSE10-20261012-beta-01",
+        "versionNumber": "1.0.0"
+      },
+      "install": {
+        "Id": "0HfVA000002Y8mn0AC",
+        "Status": "SUCCESS",
+        "SubscriberPackageVersionId": null
+      },
+      "packageBetaSHA256": "88ac2e603bf67c2319b2788100472f6c50c45e471c2394857644fb11a5e1e8ca",
+      "installSHA256": "e83b0e4df23a966b7148805c0518eb733613f705801e30ddc60777d8643ef0d7",
+      "completionSHA256": "45a225588079048f0514e4625791161b1b0ad0715e8665c718f3f42de4ec2d6c"
+    },
+    {
+      "priority": "p1",
+      "api": "62.0",
+      "completion": {
+        "planned_observations": 75,
+        "recorded": 75,
+        "observations": 75,
+        "non_answers": 0,
+        "uncaptured": 0,
+        "outcomes": {
+          "runtime": 43,
+          "compile-rejected": 30,
+          "uncaught_anonymous": 1,
+          "uncaught_test_failure": 1
+        },
+        "accounted": true,
+        "complete": true,
+        "fully_observed": true,
+        "controls": {
+          "62.0@anonymous": true,
+          "62.0@istest": true
+        },
+        "priority": "p1",
+        "api": "62.0",
+        "apis": [
+          "62.0"
+        ],
+        "control_apis": [
+          "62.0"
+        ],
+        "routes": [
+          "anonymous",
+          "istest"
+        ],
+        "source_manifest_sha256": "801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174",
+        "setup_and_cleanup_notes": 0,
+        "control_rechecks": 0,
+        "requires_verified_scratch_deletion": true
+      },
+      "routes": {
+        "anonymous": {
+          "orgTSVSHA256": "f9a76a099f31227174be20230aadef1c0a4941fbc819b8f5b48907c0c22ad916",
+          "run": "started_at=2026-10-13T14:50:47.610715+00:00\napi=62.0\nroute=anonymous\nrows_expected=33\nrows_recorded=33\ncontrols_passed=True\nanswers=33\nnon_answers=0\noutcomes={\"compile-rejected\": 14, \"runtime\": 18, \"uncaught_anonymous\": 1}\nsource_manifest_sha256=801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174\nanswer_source=native Salesforce; fresh non-namespaced scratch subscriber with the gladens001 managed beta installed\npackage_class_apis=BuilderBase/Builder/Item/Data/Util/Caller 62.0; N1Api67 67.0; N1Api68 68.0\nrelease_drift=API59 same-release controls and version rows plus 62/67/68\n",
+          "orgRunSHA256": "8d2946ec9b655085996ba8147004a182c518302582913e385061aa6e1b83499e"
+        },
+        "istest": {
+          "orgTSVSHA256": "ee24f4281c02afa434f6a19a9832a1924388cb09e62db364834089004c00d359",
+          "run": "started_at=2026-10-13T14:50:47.610715+00:00\napi=62.0\nroute=istest\nrows_expected=42\nrows_recorded=42\ncontrols_passed=True\nanswers=42\nnon_answers=0\noutcomes={\"compile-rejected\": 16, \"runtime\": 25, \"uncaught_test_failure\": 1}\nsource_manifest_sha256=801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174\nanswer_source=native Salesforce; fresh non-namespaced scratch subscriber with the gladens001 managed beta installed\npackage_class_apis=BuilderBase/Builder/Item/Data/Util/Caller 62.0; N1Api67 67.0; N1Api68 68.0\nrelease_drift=API59 same-release controls and version rows plus 62/67/68\n",
+          "orgRunSHA256": "3cc946853729bfcc53c8c46f37db6b0d3fae37b4fc84fae426f519183006e4ab"
+        }
+      },
+      "packageBeta": {
+        "packageId": "033bm000000y0htAAA",
+        "packageName": "Glade Test1",
+        "namespace": "gladens001",
+        "versionId": "04tbm000000otKfAAI",
+        "releaseState": "Beta",
+        "versionName": "CORPUSE10-20261012-beta-01",
+        "versionNumber": "1.0.0"
+      },
+      "install": {
+        "Id": "0HfjZ0000006peCSAQ",
+        "Status": "SUCCESS",
+        "SubscriberPackageVersionId": null
+      },
+      "packageBetaSHA256": "88ac2e603bf67c2319b2788100472f6c50c45e471c2394857644fb11a5e1e8ca",
+      "installSHA256": "4218f28f477e9caac766662ca7ebed47df376c5c6fbbbb83e3da3509a0baebd6",
+      "completionSHA256": "db83ddb32e195cfccaf6202c80d5f480689a834daca45093468072ebf0f66193"
+    },
+    {
+      "priority": "p1",
+      "api": "59.0",
+      "completion": {
+        "planned_observations": 12,
+        "recorded": 12,
+        "observations": 12,
+        "non_answers": 0,
+        "uncaptured": 0,
+        "outcomes": {
+          "runtime": 8,
+          "compile-rejected": 2,
+          "uncaught_anonymous": 1,
+          "uncaught_test_failure": 1
+        },
+        "accounted": true,
+        "complete": true,
+        "fully_observed": true,
+        "controls": {
+          "59.0@anonymous": true,
+          "59.0@istest": true
+        },
+        "priority": "p1",
+        "api": "59.0",
+        "apis": [
+          "59.0"
+        ],
+        "control_apis": [
+          "59.0"
+        ],
+        "routes": [
+          "anonymous",
+          "istest"
+        ],
+        "source_manifest_sha256": "801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174",
+        "setup_and_cleanup_notes": 0,
+        "control_rechecks": 0,
+        "requires_verified_scratch_deletion": true
+      },
+      "routes": {
+        "anonymous": {
+          "orgTSVSHA256": "162fc9fb347d143794db6285edecc484f6d2429d23f891bd9b7cb1e6db600b8f",
+          "run": "started_at=2026-10-13T15:08:35.154962+00:00\napi=59.0\nroute=anonymous\nrows_expected=5\nrows_recorded=5\ncontrols_passed=True\nanswers=5\nnon_answers=0\noutcomes={\"compile-rejected\": 1, \"runtime\": 3, \"uncaught_anonymous\": 1}\nsource_manifest_sha256=801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174\nanswer_source=native Salesforce; fresh non-namespaced scratch subscriber with the gladens001 managed beta installed\npackage_class_apis=BuilderBase/Builder/Item/Data/Util/Caller 62.0; N1Api67 67.0; N1Api68 68.0\nrelease_drift=API59 same-release controls and version rows plus 62/67/68\n",
+          "orgRunSHA256": "d8de676e1b4f4da4e14667dae256c35b9a6453fe890c3da619b5b5cd91ec2bb9"
+        },
+        "istest": {
+          "orgTSVSHA256": "a23ee5ece2894c35f2279ccb9310df8cae11b5e17907dc1fb592d25d0a3e4f7e",
+          "run": "started_at=2026-10-13T15:08:35.154962+00:00\napi=59.0\nroute=istest\nrows_expected=7\nrows_recorded=7\ncontrols_passed=True\nanswers=7\nnon_answers=0\noutcomes={\"compile-rejected\": 1, \"runtime\": 5, \"uncaught_test_failure\": 1}\nsource_manifest_sha256=801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174\nanswer_source=native Salesforce; fresh non-namespaced scratch subscriber with the gladens001 managed beta installed\npackage_class_apis=BuilderBase/Builder/Item/Data/Util/Caller 62.0; N1Api67 67.0; N1Api68 68.0\nrelease_drift=API59 same-release controls and version rows plus 62/67/68\n",
+          "orgRunSHA256": "4745b9cf82c49ca6a59a5ce3d97859c079360cea99f89d51579e327bdec50bb0"
+        }
+      },
+      "packageBeta": {
+        "packageId": "033bm000000y0htAAA",
+        "packageName": "Glade Test1",
+        "namespace": "gladens001",
+        "versionId": "04tbm000000otKfAAI",
+        "releaseState": "Beta",
+        "versionName": "CORPUSE10-20261012-beta-01",
+        "versionNumber": "1.0.0"
+      },
+      "install": {
+        "Id": "0Hfhs00000082hNCAQ",
+        "Status": "SUCCESS",
+        "SubscriberPackageVersionId": null
+      },
+      "packageBetaSHA256": "88ac2e603bf67c2319b2788100472f6c50c45e471c2394857644fb11a5e1e8ca",
+      "installSHA256": "1601f64afdb6398e7ebd4aaaca3dd06a49df611c30d43054d5033fe3126f1e0f",
+      "completionSHA256": "41570620a5c04e004b6d2c8ccba06ac2fbc63cb4de0cd7c27e94c286760897b9"
+    },
+    {
+      "priority": "p1",
+      "api": "68.0",
+      "completion": {
+        "planned_observations": 75,
+        "recorded": 75,
+        "observations": 75,
+        "non_answers": 0,
+        "uncaptured": 0,
+        "outcomes": {
+          "runtime": 43,
+          "compile-rejected": 30,
+          "uncaught_anonymous": 1,
+          "uncaught_test_failure": 1
+        },
+        "accounted": true,
+        "complete": true,
+        "fully_observed": true,
+        "controls": {
+          "68.0@anonymous": true,
+          "68.0@istest": true
+        },
+        "priority": "p1",
+        "api": "68.0",
+        "apis": [
+          "68.0"
+        ],
+        "control_apis": [
+          "68.0"
+        ],
+        "routes": [
+          "anonymous",
+          "istest"
+        ],
+        "source_manifest_sha256": "801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174",
+        "setup_and_cleanup_notes": 0,
+        "control_rechecks": 0,
+        "requires_verified_scratch_deletion": true
+      },
+      "routes": {
+        "anonymous": {
+          "orgTSVSHA256": "f9a76a099f31227174be20230aadef1c0a4941fbc819b8f5b48907c0c22ad916",
+          "run": "started_at=2026-10-13T15:01:40.296779+00:00\napi=68.0\nroute=anonymous\nrows_expected=33\nrows_recorded=33\ncontrols_passed=True\nanswers=33\nnon_answers=0\noutcomes={\"compile-rejected\": 14, \"runtime\": 18, \"uncaught_anonymous\": 1}\nsource_manifest_sha256=801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174\nanswer_source=native Salesforce; fresh non-namespaced scratch subscriber with the gladens001 managed beta installed\npackage_class_apis=BuilderBase/Builder/Item/Data/Util/Caller 62.0; N1Api67 67.0; N1Api68 68.0\nrelease_drift=API59 same-release controls and version rows plus 62/67/68\n",
+          "orgRunSHA256": "ee4f754f88d9d30c376188acc4efe0b1fc4fc3529629e63c19a3ce62cf8985af"
+        },
+        "istest": {
+          "orgTSVSHA256": "ee24f4281c02afa434f6a19a9832a1924388cb09e62db364834089004c00d359",
+          "run": "started_at=2026-10-13T15:01:40.296779+00:00\napi=68.0\nroute=istest\nrows_expected=42\nrows_recorded=42\ncontrols_passed=True\nanswers=42\nnon_answers=0\noutcomes={\"compile-rejected\": 16, \"runtime\": 25, \"uncaught_test_failure\": 1}\nsource_manifest_sha256=801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174\nanswer_source=native Salesforce; fresh non-namespaced scratch subscriber with the gladens001 managed beta installed\npackage_class_apis=BuilderBase/Builder/Item/Data/Util/Caller 62.0; N1Api67 67.0; N1Api68 68.0\nrelease_drift=API59 same-release controls and version rows plus 62/67/68\n",
+          "orgRunSHA256": "4d5484f05ec35ff3e30de61334d8b7f4c9a5429b84d80ad97cf8f74dcd1228e6"
+        }
+      },
+      "packageBeta": {
+        "packageId": "033bm000000y0htAAA",
+        "packageName": "Glade Test1",
+        "namespace": "gladens001",
+        "versionId": "04tbm000000otKfAAI",
+        "releaseState": "Beta",
+        "versionName": "CORPUSE10-20261012-beta-01",
+        "versionNumber": "1.0.0"
+      },
+      "install": {
+        "Id": "0HfRt000006fS8AKAU",
+        "Status": "SUCCESS",
+        "SubscriberPackageVersionId": null
+      },
+      "packageBetaSHA256": "88ac2e603bf67c2319b2788100472f6c50c45e471c2394857644fb11a5e1e8ca",
+      "installSHA256": "26c7253b6a2c3a9c733b340c714eccc54c71bd2214a61e16431fce3c2aa49f68",
+      "completionSHA256": "752b1a0b870f1c56a8bb104b9fedc353ec5b5325e5fefed3abf10fc9c9b733ca"
+    },
+    {
+      "priority": "p1",
+      "api": "67.0",
+      "completion": {
+        "planned_observations": 75,
+        "recorded": 75,
+        "observations": 75,
+        "non_answers": 0,
+        "uncaptured": 0,
+        "outcomes": {
+          "runtime": 43,
+          "compile-rejected": 30,
+          "uncaught_anonymous": 1,
+          "uncaught_test_failure": 1
+        },
+        "accounted": true,
+        "complete": true,
+        "fully_observed": true,
+        "controls": {
+          "67.0@anonymous": true,
+          "67.0@istest": true
+        },
+        "priority": "p1",
+        "api": "67.0",
+        "apis": [
+          "67.0"
+        ],
+        "control_apis": [
+          "67.0"
+        ],
+        "routes": [
+          "anonymous",
+          "istest"
+        ],
+        "source_manifest_sha256": "801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174",
+        "setup_and_cleanup_notes": 0,
+        "control_rechecks": 0,
+        "requires_verified_scratch_deletion": true
+      },
+      "completionSHA256": "4b0f3c26bcc2e6a3b7663c20ff26e5859ef4d9b5b9ea0c9f47449c16f88bfeb0",
+      "routes": {
+        "anonymous": {
+          "orgTSVSHA256": "f9a76a099f31227174be20230aadef1c0a4941fbc819b8f5b48907c0c22ad916",
+          "orgRunSHA256": "5cf114679aca207ff6b165daecea5bce01a33cae876467daa398fd31063088fe",
+          "run": "started_at=2026-10-13T15:14:24.300151+00:00\napi=67.0\nroute=anonymous\nrows_expected=33\nrows_recorded=33\ncontrols_passed=True\nanswers=33\nnon_answers=0\noutcomes={\"compile-rejected\": 14, \"runtime\": 18, \"uncaught_anonymous\": 1}\nsource_manifest_sha256=801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174\nanswer_source=native Salesforce; fresh non-namespaced scratch subscriber with the gladens001 managed beta installed\npackage_class_apis=BuilderBase/Builder/Item/Data/Util/Caller 62.0; N1Api67 67.0; N1Api68 68.0\nrelease_drift=API59 same-release controls and version rows plus 62/67/68\n"
+        },
+        "istest": {
+          "orgTSVSHA256": "ee24f4281c02afa434f6a19a9832a1924388cb09e62db364834089004c00d359",
+          "orgRunSHA256": "1c3588fbc39fe94a745b336de658c2341d074ed538505a69f369bacc8b41a6be",
+          "run": "started_at=2026-10-13T15:14:24.300151+00:00\napi=67.0\nroute=istest\nrows_expected=42\nrows_recorded=42\ncontrols_passed=True\nanswers=42\nnon_answers=0\noutcomes={\"compile-rejected\": 16, \"runtime\": 25, \"uncaught_test_failure\": 1}\nsource_manifest_sha256=801f8bb222e8500a23c2a7de332347ac15c2d02e63f9349ae06c9762e5d41174\nanswer_source=native Salesforce; fresh non-namespaced scratch subscriber with the gladens001 managed beta installed\npackage_class_apis=BuilderBase/Builder/Item/Data/Util/Caller 62.0; N1Api67 67.0; N1Api68 68.0\nrelease_drift=API59 same-release controls and version rows plus 62/67/68\n"
+        }
+      },
+      "packageBeta": {
+        "packageId": "033bm000000y0htAAA",
+        "packageName": "Glade Test1",
+        "namespace": "gladens001",
+        "versionId": "04tbm000000otKfAAI",
+        "releaseState": "Beta",
+        "versionName": "CORPUSE10-20261012-beta-01",
+        "versionNumber": "1.0.0"
+      },
+      "packageBetaSHA256": "88ac2e603bf67c2319b2788100472f6c50c45e471c2394857644fb11a5e1e8ca",
+      "install": {
+        "Id": "0HfcU000003Xbn4SAC",
+        "Status": "SUCCESS",
+        "SubscriberPackageVersionId": null
+      },
+      "installSHA256": "5dda5581831a2d9281e16c5048a025683e1f495e4ae701ed7e5d3d82d862f1e6"
+    }
+  ],
+  "comparison": {
+    "uniqueCells": 303,
+    "62vs67": {
+      "compared": 97,
+      "differences": 0
+    },
+    "62vs68": {
+      "compared": 97,
+      "differences": 0
+    },
+    "67vs68": {
+      "compared": 97,
+      "differences": 0
+    },
+    "59vs62": {
+      "compared": 12,
+      "differences": 0
+    },
+    "59vs67": {
+      "compared": 12,
+      "differences": 0
+    },
+    "59vs68": {
+      "compared": 12,
+      "differences": 0
+    }
+  }
+}

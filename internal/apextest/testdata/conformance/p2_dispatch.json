@@ -1,0 +1,143 @@
+{
+ "family": "p2-dispatch",
+ "provenance": "Captured on scratch org glade-v031-p2 (Dev Hub scratch-org), API 62.0, 67.0 and 68.0, anonymous Apex calling deployed classes. Identical at all three versions. Synthetic classes only.",
+ "rows": [
+  {
+   "id": "S1-interface-object-overload",
+   "note": "A class implementing Builder.orderBy(String) with orderBy(Object) returning the class type: chained calls on the class type bind the class methods, not the interface declarations.",
+   "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+   ],
+   "classes": {
+    "PQBase": "public abstract class PQBase implements Builder {\n    public enum SortO { ASCX, DESCX }\n    public interface Part { Boolean isEmpty(); }\n    public interface Crit { }\n    public interface Builder {\n        Builder orderBy(String f);\n        Builder orderBy(String f, SortO s);\n        Builder lim(Integer n);\n    }\n    public virtual class Cond implements Crit {\n        private String text;\n        public Cond(String t) { text = t; }\n        public virtual override String toString() { return text; }\n    }\n    public virtual class Junction extends Cond {\n        protected final List<Crit> conditions = new List<Crit>();\n        public Junction() { super(''); }\n        public Junction add(Crit c) { conditions.add(c); return this; }\n        public void clear() { conditions.clear(); }\n        public Boolean isEmpty() { return conditions.isEmpty(); }\n        public virtual override String toString() { return conditions.size() + ' conds'; }\n    }\n    protected virtual List<Part> build() { return new List<Part>(); }\n    public virtual String render() {\n        String s = '';\n        for (Part p : build()) {\n            if (p.isEmpty()) { continue; }\n            s += p.toString();\n        }\n        return s;\n    }\n    public static List<String> strs(Iterable<Object> items) {\n        List<String> r = new List<String>();\n        for (Object o : items) { r.add(String.valueOf(o)); }\n        return r;\n    }\n}\n",
+    "PQSql": "public virtual class PQSql extends PQBase implements Builder {\n    public interface Builder extends PQBase.Builder {\n        PQBase.Builder join(String t);\n    }\n    public class Args { public Integer n = 1; }\n    public virtual class DriverBase {\n        public virtual String run(Args a) { return 'base' + a.n; }\n    }\n    public interface IDrv { String go(Args a); }\n    public Integer argsNum() { return 3; }\n    protected final WhereClause whereClause = new WhereClause();\n    private Integer l = 0;\n    private String ord = '';\n    public PQSql orderBy(Object e) { ord += '' + e; return this; }\n    public PQSql orderBy(Object e, PQBase.SortO s) { ord += e + ':' + s; return this; }\n    public PQSql lim(Integer n) { l = n; return this; }\n    public PQSql join(String t) { return this; }\n    public PQSql addCond(PQBase.Crit c) { whereClause.add(c); return this; }\n    public PQSql wherex(PQBase.Crit c) { whereClause.clear(); whereClause.add(c); return this; }\n    protected override List<PQBase.Part> build() { return new List<PQBase.Part>{ whereClause }; }\n    public override String toString() { return 'ORD ' + ord + ' L' + l; }\n    private class WhereClause extends Junction implements PQBase.Part {\n        public override String toString() { return 'WHERE ' + super.toString(); }\n    }\n    public class JoinHelper {\n        private final List<Object> elems = new List<Object>{ 1, 'b' };\n        public override String toString() { return 'X ' + String.join(PQBase.strs(elems), ', '); }\n    }\n}\n",
+    "P2T": "@IsTest\nprivate class P2T {\n    private class TQ extends PQSql { }\n    @IsTest static void t() {\n        PQSql q = new TQ().orderBy('Name', PQBase.SortO.DESCX).lim(10);\n        Assert.areEqual('ORD Name:DESCX L10', q.toString());\n    }\n}\n"
+   },
+   "test": "P2T.t",
+   "native": "ORD Name:DESCX L10",
+   "nativeCapture": "scratch org 2026-10-18, API 62.0/67.0/68.0"
+  },
+  {
+   "id": "S2-outer-static-in-string-join",
+   "note": "String.join over an enclosing class's static helper, called from an inner class with an inner-class field argument.",
+   "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+   ],
+   "classes": {
+    "PQOuter": "public class PQOuter {\n    private static List<String> toStrs(Iterable<Object> items) {\n        List<String> r = new List<String>();\n        for (Object o : items) { r.add(String.valueOf(o)); }\n        return r;\n    }\n    public class Part {\n        private final List<Object> elems = new List<Object>{ 1, 'b' };\n        public override String toString() { return 'X ' + String.join(toStrs(elems), ', '); }\n    }\n    public static String go() { return new Part().toString(); }\n}\n",
+    "P2T": "@IsTest\nprivate class P2T {\n    @IsTest static void t() {\n        Assert.areEqual('X 1, b', PQOuter.go());\n    }\n}\n"
+   },
+   "test": "P2T.t",
+   "native": "X 1, b",
+   "nativeCapture": "scratch org 2026-10-18"
+  },
+  {
+   "id": "S3-inherited-outer-type-in-override",
+   "note": "An unqualified type named in an override signature resolves among the inner types of the superclass's enclosing class.",
+   "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+   ],
+   "classes": {
+    "PQBase": "public abstract class PQBase implements Builder {\n    public enum SortO { ASCX, DESCX }\n    public interface Part { Boolean isEmpty(); }\n    public interface Crit { }\n    public interface Builder {\n        Builder orderBy(String f);\n        Builder orderBy(String f, SortO s);\n        Builder lim(Integer n);\n    }\n    public virtual class Cond implements Crit {\n        private String text;\n        public Cond(String t) { text = t; }\n        public virtual override String toString() { return text; }\n    }\n    public virtual class Junction extends Cond {\n        protected final List<Crit> conditions = new List<Crit>();\n        public Junction() { super(''); }\n        public Junction add(Crit c) { conditions.add(c); return this; }\n        public void clear() { conditions.clear(); }\n        public Boolean isEmpty() { return conditions.isEmpty(); }\n        public virtual override String toString() { return conditions.size() + ' conds'; }\n    }\n    protected virtual List<Part> build() { return new List<Part>(); }\n    public virtual String render() {\n        String s = '';\n        for (Part p : build()) {\n            if (p.isEmpty()) { continue; }\n            s += p.toString();\n        }\n        return s;\n    }\n    public static List<String> strs(Iterable<Object> items) {\n        List<String> r = new List<String>();\n        for (Object o : items) { r.add(String.valueOf(o)); }\n        return r;\n    }\n}\n",
+    "PQSql": "public virtual class PQSql extends PQBase implements Builder {\n    public interface Builder extends PQBase.Builder {\n        PQBase.Builder join(String t);\n    }\n    public class Args { public Integer n = 1; }\n    public virtual class DriverBase {\n        public virtual String run(Args a) { return 'base' + a.n; }\n    }\n    public interface IDrv { String go(Args a); }\n    public Integer argsNum() { return 3; }\n    protected final WhereClause whereClause = new WhereClause();\n    private Integer l = 0;\n    private String ord = '';\n    public PQSql orderBy(Object e) { ord += '' + e; return this; }\n    public PQSql orderBy(Object e, PQBase.SortO s) { ord += e + ':' + s; return this; }\n    public PQSql lim(Integer n) { l = n; return this; }\n    public PQSql join(String t) { return this; }\n    public PQSql addCond(PQBase.Crit c) { whereClause.add(c); return this; }\n    public PQSql wherex(PQBase.Crit c) { whereClause.clear(); whereClause.add(c); return this; }\n    protected override List<PQBase.Part> build() { return new List<PQBase.Part>{ whereClause }; }\n    public override String toString() { return 'ORD ' + ord + ' L' + l; }\n    private class WhereClause extends Junction implements PQBase.Part {\n        public override String toString() { return 'WHERE ' + super.toString(); }\n    }\n    public class JoinHelper {\n        private final List<Object> elems = new List<Object>{ 1, 'b' };\n        public override String toString() { return 'X ' + String.join(PQBase.strs(elems), ', '); }\n    }\n}\n",
+    "PQTop2": "public virtual class PQTop2 extends PQSql.DriverBase {\n    public override String run(Args a) { Args b = new Args(); return 'top2 ' + a.n + b.n; }\n    public static String go() { return new PQTop2().run(new PQSql.Args()); }\n}\n",
+    "PQTop4": "public class PQTop4 extends PQTop2 {\n    public static String go2() { Args b = new Args(); return 'top4 ' + b.n; }\n}\n",
+    "P2T": "@IsTest\nprivate class P2T {\n    @IsTest static void t() {\n        Assert.areEqual('top2 11', PQTop2.go());\n        Assert.areEqual('top4 1', PQTop4.go2());\n    }\n}\n"
+   },
+   "test": "P2T.t",
+   "native": "top2 11|top4 1",
+   "nativeCapture": "scratch org 2026-10-18"
+  },
+  {
+   "id": "S4-unqualified-inherited-superclass-dispatch",
+   "note": "A private inner class extends an inner type inherited from the enclosing class's superclass by its simple name and implements an interface through the inherited method.",
+   "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+   ],
+   "classes": {
+    "PQBase": "public abstract class PQBase implements Builder {\n    public enum SortO { ASCX, DESCX }\n    public interface Part { Boolean isEmpty(); }\n    public interface Crit { }\n    public interface Builder {\n        Builder orderBy(String f);\n        Builder orderBy(String f, SortO s);\n        Builder lim(Integer n);\n    }\n    public virtual class Cond implements Crit {\n        private String text;\n        public Cond(String t) { text = t; }\n        public virtual override String toString() { return text; }\n    }\n    public virtual class Junction extends Cond {\n        protected final List<Crit> conditions = new List<Crit>();\n        public Junction() { super(''); }\n        public Junction add(Crit c) { conditions.add(c); return this; }\n        public void clear() { conditions.clear(); }\n        public Boolean isEmpty() { return conditions.isEmpty(); }\n        public virtual override String toString() { return conditions.size() + ' conds'; }\n    }\n    protected virtual List<Part> build() { return new List<Part>(); }\n    public virtual String render() {\n        String s = '';\n        for (Part p : build()) {\n            if (p.isEmpty()) { continue; }\n            s += p.toString();\n        }\n        return s;\n    }\n    public static List<String> strs(Iterable<Object> items) {\n        List<String> r = new List<String>();\n        for (Object o : items) { r.add(String.valueOf(o)); }\n        return r;\n    }\n}\n",
+    "PQSql": "public virtual class PQSql extends PQBase implements Builder {\n    public interface Builder extends PQBase.Builder {\n        PQBase.Builder join(String t);\n    }\n    public class Args { public Integer n = 1; }\n    public virtual class DriverBase {\n        public virtual String run(Args a) { return 'base' + a.n; }\n    }\n    public interface IDrv { String go(Args a); }\n    public Integer argsNum() { return 3; }\n    protected final WhereClause whereClause = new WhereClause();\n    private Integer l = 0;\n    private String ord = '';\n    public PQSql orderBy(Object e) { ord += '' + e; return this; }\n    public PQSql orderBy(Object e, PQBase.SortO s) { ord += e + ':' + s; return this; }\n    public PQSql lim(Integer n) { l = n; return this; }\n    public PQSql join(String t) { return this; }\n    public PQSql addCond(PQBase.Crit c) { whereClause.add(c); return this; }\n    public PQSql wherex(PQBase.Crit c) { whereClause.clear(); whereClause.add(c); return this; }\n    protected override List<PQBase.Part> build() { return new List<PQBase.Part>{ whereClause }; }\n    public override String toString() { return 'ORD ' + ord + ' L' + l; }\n    private class WhereClause extends Junction implements PQBase.Part {\n        public override String toString() { return 'WHERE ' + super.toString(); }\n    }\n    public class JoinHelper {\n        private final List<Object> elems = new List<Object>{ 1, 'b' };\n        public override String toString() { return 'X ' + String.join(PQBase.strs(elems), ', '); }\n    }\n}\n",
+    "P2T": "@IsTest\nprivate class P2T {\n    @IsTest static void t() {\n        Assert.areEqual('WHERE 1 conds', new PQSql().addCond(new PQBase.Cond('a')).render());\n        Assert.areEqual('', new PQSql().render());\n    }\n}\n"
+   },
+   "test": "P2T.t",
+   "native": "WHERE 1 conds|(empty)",
+   "nativeCapture": "scratch org 2026-10-18"
+  },
+  {
+   "id": "S6-user-iterable-object-cast-to-sobject",
+   "note": "A user Iterable<Object> cast to Iterable<SObject> succeeds and iterates.",
+   "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+   ],
+   "classes": {
+    "PQIter": "public class PQIter {\n    public class ObjIter implements Iterable<Object> {\n        public Iterator<Object> iterator() { return new List<Object>{ new Account(Name='z') }.iterator(); }\n    }\n    public class SObjIter implements Iterable<SObject> {\n        private final Iterable<SObject> src;\n        public SObjIter(Iterable<SObject> s) { src = s; }\n        public Iterator<SObject> iterator() { return src.iterator(); }\n    }\n    public static String castShape() {\n        Iterable<Object> o = new ObjIter();\n        try {\n            SObjIter s = new SObjIter((Iterable<SObject>) o);\n            Integer n = 0;\n            for (SObject x : s) { n++; }\n            return 'ok ' + n;\n        } catch (Exception e) { return e.getTypeName() + ': ' + e.getMessage(); }\n    }\n}\n",
+    "PQIter2": "public class PQIter2 {\n    public class ObjIter implements Iterable<Object> {\n        public Iterator<Object> iterator() { return new List<Object>{ 'x', 2 }.iterator(); }\n    }\n    public class AccIter implements Iterable<Account> {\n        public Iterator<Account> iterator() { return new List<Account>{ new Account(Name='a') }.iterator(); }\n    }\n    public static String t(Object o, String target) {\n        try {\n            if (target == 'sobj') { Iterable<SObject> x = (Iterable<SObject>) o; return 'ok'; }\n            if (target == 'str') { Iterable<String> x = (Iterable<String>) o; return 'ok'; }\n            if (target == 'int') { Iterable<Integer> x = (Iterable<Integer>) o; return 'ok'; }\n            if (target == 'con') { Iterable<Contact> x = (Iterable<Contact>) o; return 'ok'; }\n            if (target == 'acc') { Iterable<Account> x = (Iterable<Account>) o; return 'ok'; }\n            if (target == 'obj') { Iterable<Object> x = (Iterable<Object>) o; return 'ok'; }\n        } catch (Exception e) { return e.getTypeName() + ':' + e.getMessage(); }\n        return '?';\n    }\n    public static String goClass() {\n        String r = '';\n        for (String tg : new List<String>{'sobj','str','int','con','acc','obj'}) {\n            r += tg + '=' + t(new ObjIter(), tg) + '/' + t(new AccIter(), tg) + ';';\n        }\n        return r;\n    }\n    public static String go() {\n        String r = '';\n        for (String tg : new List<String>{'sobj','str','int','con','acc','obj'}) {\n            r += tg + '=' + t(new ObjIter(), tg) + ' | ' + t(new AccIter(), tg) + ' | ' + t(new List<Object>{1}, tg) + ' | ' + t(new List<Account>(), tg) + '\\n';\n        }\n        return r;\n    }\n}\n",
+    "P2T": "@IsTest\nprivate class P2T {\n    @IsTest static void t() {\n        Assert.areEqual('ok 1', PQIter.castShape());\n        Assert.areEqual('sobj=ok/ok;str=ok/ok;int=ok/ok;con=ok/ok;acc=ok/ok;obj=ok/ok;', PQIter2.goClass());\n    }\n}\n"
+   },
+   "test": "P2T.t",
+   "native": "ok 1",
+   "nativeCapture": "scratch org 2026-10-18"
+  },
+  {
+   "id": "F1-iterable-through-interface-chain",
+   "note": "for-each over an interface that extends an interface that extends Iterable<Object>.",
+   "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+   ],
+   "classes": {
+    "PFMethods": "public class PFMethods {\n    public interface Methods extends Iterable<Object> { Integer size(); }\n    public interface Coll extends PFMethods.Methods { Integer extra(); }\n    public class CollImpl implements Coll {\n        private final List<Object> items;\n        public CollImpl(List<Object> i) { items = i; }\n        public Integer size() { return items.size(); }\n        public Integer extra() { return 1; }\n        public Iterator<Object> iterator() { return items.iterator(); }\n    }\n    public static Coll of(List<Object> i) { return new CollImpl(i); }\n}\n",
+    "PFIter": "public class PFIter {\n    public static String go() {\n        Integer n = 0;\n        for (Object o : PFMethods.of(new List<Object>{ 1, 2, 3 })) { n += (Integer) o; }\n        PFMethods.Coll c = PFMethods.of(new List<Object>{ 4, 5 });\n        for (Object o : c) { n += (Integer) o; }\n        return 'sum ' + n;\n    }\n}\n",
+    "P2T": "@IsTest\nprivate class P2T {\n    @IsTest static void t() {\n        Assert.areEqual('sum 15', PFIter.go());\n    }\n}\n"
+   },
+   "test": "P2T.t",
+   "native": "sum 15",
+   "nativeCapture": "scratch org 2026-10-18"
+  },
+  {
+   "id": "F1-super-hashcode-on-implicit-object",
+   "note": "override Integer hashCode() { return super.hashCode(); } on a class with no superclass.",
+   "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+   ],
+   "classes": {
+    "PFHash": "public class PFHash {\n    private class Req {\n        private final String v;\n        public Req(String v) { this.v = v; }\n        public override Integer hashCode() { return super.hashCode(); }\n        public Boolean equals(Object o) { return o instanceof Req && ((Req) o).v == v; }\n    }\n    public static String go() {\n        Req a = new Req('x');\n        Integer h1 = a.hashCode();\n        Integer h2 = a.hashCode();\n        Set<Object> s = new Set<Object>{ a };\n        return 'h ' + (h1 == h2) + ' ' + s.size() + ' ' + (h1 == System.hashCode(a));\n    }\n}\n",
+    "PFSupE": "public class PFSupE {\n    private class A { public Boolean equals(Object o) { return super.equals(o); } public Integer hashCode() { return 1; } }\n    public static String go() { A a = new A(); A b = new A(); return '' + a.equals(a) + a.equals(b); }\n}\n",
+    "P2T": "@IsTest\nprivate class P2T {\n    @IsTest static void t() {\n        Assert.areEqual('h true 1 true', PFHash.go());\n        Assert.areEqual('truefalse', PFSupE.go());\n    }\n}\n"
+   },
+   "test": "P2T.t",
+   "native": "h true 1 true",
+   "nativeCapture": "scratch org 2026-10-18"
+  },
+  {
+   "id": "F1-class-literal-unknown-member",
+   "note": "X.Unknown.class names X when Unknown is not a static field, property or enum constant.",
+   "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+   ],
+   "classes": {
+    "PFHolder": "public class PFHolder {\n    public static Integer KONST = 1;\n    public Integer inst = 2;\n    public static Integer prop { get; set; }\n    public enum Color { RED }\n    public class Mid { }\n    public static Integer meth() { return 1; }\n    public static String descr(Type t) { return t == null ? 'null' : t.getName(); }\n}\n",
+    "PFLit": "public class PFLit {\n    public static String a() { return PFHolder.descr(PFHolder.Bogus.class); }\n    public static String b() { return PFHolder.descr(PFHolder.Mid.Bogus.class); }\n    public static String c() { return PFHolder.descr(Account.Bogus.class); }\n    public static String d() { return PFHolder.descr(PFHolder.Bogus.Deeper.class); }\n    public static String e() { return PFHolder.descr(PFHolder.meth.class); }\n    public static String f() { return PFHolder.descr(PFHolder.inst.class); }\n    public static String g() { return PFHolder.descr(PFHolder.Color.Bogus.class); }\n}\n",
+    "P2T": "@IsTest\nprivate class P2T {\n    @IsTest static void t() {\n        Assert.areEqual('PFHolder,PFHolder.Mid,PFHolder,PFHolder,PFHolder,PFHolder.Color', PFLit.a() + ',' + PFLit.b() + ',' + PFLit.d() + ',' + PFLit.e() + ',' + PFLit.f() + ',' + PFLit.g());\n    }\n}\n"
+   },
+   "test": "P2T.t",
+   "native": "PFHolder,PFHolder.Mid,PFHolder,PFHolder,PFHolder,PFHolder.Color (Account.Bogus.class is Account natively; not asserted)",
+   "nativeCapture": "scratch org 2026-10-18"
+  }
+ ]
+}

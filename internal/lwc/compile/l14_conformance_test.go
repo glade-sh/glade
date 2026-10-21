@@ -46,12 +46,14 @@ type l14Input struct {
 }
 
 // TestL14SalesforceConformance replays the owned navigation inputs and exact
-// native answers from the API 59/67 navigation capture.
+// native answers from the API 59/67/68 navigation capture.
 // The 28 metadata answers are superseded by one-component native dry-runs:
 // failed batch deployments had reported successes before target validation ran.
+// API 68 captured each of its 72 compiler/metadata rows individually.
 // The original 214 inputs remain: 72 compile/metadata and 142 native browser
-// observations, plus 13 VF-hosted controls/API captured in a second org. Their
-// exact inputs and native answers are exported under testdata/l14_vf_runtime/api{59,67}.
+// observations, plus 13 VF-hosted controls/API captured in a second org and a
+// reviewed API 68 capture. Their exact inputs and native answers are exported
+// under testdata/l14_vf_runtime/api{59,67,68}.
 // No native answer is sent to the browser.
 // Rejections also compare the captured diagnostics.json messages byte for byte,
 // including positions, code frames, order and repeated messages.
@@ -77,7 +79,7 @@ func TestL14SalesforceConformance(t *testing.T) {
 	if err := json.Unmarshal(data, &diagnostics); err != nil {
 		t.Fatal(err)
 	}
-	versions := []string{"59.0", "67.0"}
+	versions := []string{"59.0", "67.0", "68.0"}
 	seen, groups := map[string]bool{}, map[string]bool{}
 	var compileCases, runtimeCases, vfCases []l14Case
 	for _, c := range cases {
@@ -343,7 +345,7 @@ func l14ObserveDOM(t *testing.T, api string, cases []l14Case, dependencyRoot str
 	storage.EnsureDeterministicPlatformData(&org)
 	host := server.NewWithSource(&org, server.SourceMetadata{Project: p})
 	if visualforce {
-		host.VisualforceHTMLUserID = storage.ID("005000000000001")
+		host.VisualforceHTMLUserID = storage.ID(storage.DefaultUserID)
 	}
 	defer host.ResetLightningCache()
 	local := httptest.NewServer(host)

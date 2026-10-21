@@ -417,14 +417,7 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 	if len(parts) == 0 {
 		switch r.Method {
 		case http.MethodGet:
-			writeJSON(w, http.StatusOK, map[string]any{
-				"resources": map[string]string{
-					"composite": "/services/data/" + version + "/composite",
-					"batch":     "/services/data/" + version + "/composite/batch",
-					"sobjects":  "/services/data/" + version + "/composite/sobjects",
-				},
-				"unsupported": []string{"graph", "tree"},
-			})
+			writeJSON(w, http.StatusOK, compositeDiscoveryPayload(version))
 		case http.MethodPost:
 			body, ok := decodeCompositeRequestEnvelope(w, r)
 			if !ok {
@@ -479,6 +472,16 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 		return
 	}
 	writeSalesforceError(w, errUnknownComposite)
+}
+
+func compositeDiscoveryPayload(version string) map[string]string {
+	base := "/services/data/" + version + "/composite"
+	return map[string]string{
+		"batch":    base + "/batch",
+		"graph":    base + "/graph",
+		"sobjects": base + "/sobjects",
+		"tree":     base + "/tree",
+	}
 }
 
 type compositeSubresponse struct {

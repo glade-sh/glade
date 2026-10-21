@@ -8,8 +8,8 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// Partition names and capacity come from the local org's setup records. Cache
-// contents remain VM-local; no hosted cache service is contacted.
+// Partition names and capacity come from the local org's setup records.
+// Values remain VM-local except for supported committed String snapshots.
 func (vm *VM) cachePartitionRecord(name string) (storage.Record, bool) {
 	if vm.Org != nil {
 		for _, record := range vm.Org.Objects["PlatformCachePartition"].Records {
@@ -170,6 +170,11 @@ func (vm *VM) cacheOperationKey(callee string, arg Value, receiverPartition stri
 	if len(key) > 50 {
 		return "", "", newExceptionError("cache.InvalidParamException", fmt.Sprintf("Failed %s operation for key '%s': Invalid key: max key length is 50", cacheScope(callee), arg.Text))
 	}
+	if receiverPartition == "" && len(parts) == 1 {
+		if err := vm.cacheRequireCapturedDefault(callee); err != nil {
+			return "", "", err
+		}
+	}
 	return cachePartitionKey(cachePartitionTypeFromCallee(callee), partition), key, nil
 }
 
@@ -194,6 +199,9 @@ func (vm *VM) cacheHasCapacity(partition string) bool {
 }
 
 func (vm *VM) cachePutValue(callee, partition, key string, args []Value) error {
+	if err := vm.cacheCapturedAsyncSessionAccess(callee, partition, args); err != nil {
+		return err
+	}
 	if args[1].Kind == ValueNull {
 		return newExceptionError("cache.InvalidParamException", "Value cannot be null")
 	}
@@ -205,6 +213,12 @@ func (vm *VM) cachePutValue(callee, partition, key string, args []Value) error {
 		return nil
 	}
 	vm.cachePut(partition, key, args[1], ttl)
+	vm.cacheStageTestSetupString(callee, partition, key, args)
+	if len(args) == 3 && args[2].Kind == ValueInt && ttl == 300 &&
+		(strings.EqualFold(callee, "Cache.Org.put") || strings.EqualFold(callee, "Cache.Session.put")) &&
+		args[0].Kind == ValueString && len(strings.Split(args[0].Text, ".")) == 3 {
+		vm.cacheStageCommittedString(partition, key, vm.platformCache[partition][key], ttl)
+	}
 	if cacheScope(callee) == "Cache.Org" && len(args) == 5 && args[4].Kind == ValueBool {
 		entry := vm.platformCache[partition][key]
 		entry.Immutable = args[4].Bool

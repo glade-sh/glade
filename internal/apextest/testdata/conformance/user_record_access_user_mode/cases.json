@@ -1,0 +1,10 @@
+{
+  "apiVersions": ["62.0", "67.0"],
+  "className": "RecordAccessModeProbe",
+  "methodName": "observe",
+  "sourceFile": "record_access_mode.apex",
+  "cases": [
+    {"id": "implicit_static", "expected": "ok|true|1"},
+    {"id": "explicit_user_mode", "expected": "ok|true|1"}
+  ]
+}

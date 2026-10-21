@@ -36,6 +36,11 @@ type Diagnostic struct {
 	// keeps the richer local explanation for editors and existing consumers.
 	NativeMessage string `json:"nativeMessage,omitempty"`
 	NativeLine    *int   `json:"nativeLine,omitempty"`
+	// RequiredBy names the supertype that declares a method a class must
+	// implement, on a missing-implementation diagnostic. The test compile
+	// gate uses it to tell an error caused by an invalid supertype from the
+	// class's own error.
+	RequiredBy string `json:"requiredBy,omitempty"`
 }
 
 type Report struct {

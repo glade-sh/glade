@@ -1,0 +1,1303 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "source": "Salesforce Apex heap and CPU limit observations at API 62.0, 67.0 and 68.0, identical at each version. HEAP-S runs anonymously and HEAP-ST is the same expression in a test method. HEAP-Q, HEAP-F, HEAP-B and HEAP-SCH read the limits inside a Queueable, an @future method, a Batchable execute and a Schedulable execute run by Test.stopTest. The HEAP-SA/SR twins grow a list of distinct 100,001-character strings to about 8 MB and 12 MB, synchronously on both routes (the E rows end normally); HEAP-QA/QR grow a Queueable to about 20 MB and 30 MB. None of those throws a LimitException. MatchFields rows compare the listed fields of the observation; heap byte counts are the platform's own accounting and are not compared. Native anonymous rows report success or the uncaught exception; test rows report each test failure or pass. The HEAP3 rows, at API 62.0 and 67.0, grow further: a String list is accepted at about 15, 20 and 30 MB synchronously and 40 MB in a Queueable, and throws 'Apex heap size too large: <heap>' on the allocation that first passes about 50 MiB (sync at 60 MB, both routes and ending normally or not; Queueable at 60 and 100 MB). Those throw rows assert in strict mode, since permissive mode never throws a LimitException, and compare the message without its byte count. One large String of 15,000,000 or more characters throws 'String is too long.' instead; those rows are asserted in both modes. Dedicated String allocation observations pin a 10,000,000 UTF-16-unit maximum for repeat without a separator, a catchable StringException for concatenation above that length, and a separator-repeat success at 10,000,001 units. The HEAP4 rows, at API 62.0 and 67.0 on the test route, show Scheduled, Batch and @future execute share that threshold: each accepts about 40 MB and throws on the allocation that first passes about 50 MiB.",
+  "CarriedAPIVersions": {},
+  "Cases": [
+    {
+      "ID": "HEAP-S",
+      "Anonymous": "System.assert(false, 'P|HEAP-S|' + Limits.getLimitHeapSize() + '|' + Limits.getLimitCpuTime());",
+      "Native": {
+        "62.0": {
+          "Exception": "System.AssertException: Assertion Failed: P|HEAP-S|10000000|10000"
+        },
+        "67.0": {
+          "Exception": "System.AssertException: Assertion Failed: P|HEAP-S|10000000|10000"
+        },
+        "68.0": {
+          "Exception": "System.AssertException: Assertion Failed: P|HEAP-S|10000000|10000"
+        }
+      }
+    },
+    {
+      "ID": "HEAP-ST",
+      "Classes": {
+        "BRHeapSyncTest": "@IsTest\nprivate class BRHeapSyncTest {\n    @IsTest\n    static void observe() {\n        System.assert(false, 'P|HEAP-ST|' + Limits.getLimitHeapSize() + '|' + Limits.getLimitCpuTime());\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeapSyncTest"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapSyncTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-ST|10000000|10000"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapSyncTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-ST|10000000|10000"
+            }
+          ]
+        },
+        "68.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapSyncTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-ST|10000000|10000"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP-Q",
+      "Classes": {
+        "BRHeapQueue": "public class BRHeapQueue implements Queueable {\n    public static Integer seen;\n    public void execute(QueueableContext context) {\n        seen = Limits.getLimitHeapSize();\n        insert new Account(Name = 'BRHEAPQ|' + Limits.getLimitHeapSize() + '|' + Limits.getLimitCpuTime());\n    }\n}\n",
+        "BRHeapQueueTest": "@IsTest\nprivate class BRHeapQueueTest {\n    @IsTest\n    static void observe() {\n        Test.startTest();\n        System.enqueueJob(new BRHeapQueue());\n        Test.stopTest();\n        List<Account> rows = [SELECT Name FROM Account WHERE Name LIKE 'BRHEAPQ|%' LIMIT 1];\n        System.assert(false, 'P|HEAP-Q|' + (rows.isEmpty() ? 'none' : rows[0].Name) + '|static=' + BRHeapQueue.seen);\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeapQueueTest"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapQueueTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-Q|BRHEAPQ|25000000|60000|static=25000000"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapQueueTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-Q|BRHEAPQ|25000000|60000|static=25000000"
+            }
+          ]
+        },
+        "68.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapQueueTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-Q|BRHEAPQ|25000000|60000|static=25000000"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP-F",
+      "Classes": {
+        "BRHeapFuture": "public class BRHeapFuture {\n    public static Integer seen;\n    @future\n    public static void run() {\n        seen = Limits.getLimitHeapSize();\n        insert new Account(Name = 'BRHEAPF|' + Limits.getLimitHeapSize() + '|' + Limits.getLimitCpuTime());\n    }\n}\n",
+        "BRHeapFutureTest": "@IsTest\nprivate class BRHeapFutureTest {\n    @IsTest\n    static void observe() {\n        Test.startTest();\n        BRHeapFuture.run();\n        Test.stopTest();\n        List<Account> rows = [SELECT Name FROM Account WHERE Name LIKE 'BRHEAPF|%' LIMIT 1];\n        System.assert(false, 'P|HEAP-F|' + (rows.isEmpty() ? 'none' : rows[0].Name) + '|static=' + BRHeapFuture.seen);\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeapFutureTest"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapFutureTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-F|BRHEAPF|25000000|60000|static=25000000"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapFutureTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-F|BRHEAPF|25000000|60000|static=25000000"
+            }
+          ]
+        },
+        "68.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapFutureTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-F|BRHEAPF|25000000|60000|static=25000000"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP-B",
+      "Classes": {
+        "BRHeapBatch": "public class BRHeapBatch implements Database.Batchable<Integer> {\n    public Iterable<Integer> start(Database.BatchableContext context) {\n        return new List<Integer>{ 1 };\n    }\n    public void execute(Database.BatchableContext context, List<Integer> scope) {\n        insert new Account(Name = 'BRHEAPB|' + Limits.getLimitHeapSize() + '|' + Limits.getLimitCpuTime());\n    }\n    public void finish(Database.BatchableContext context) {}\n}\n",
+        "BRHeapBatchTest": "@IsTest\nprivate class BRHeapBatchTest {\n    @IsTest\n    static void observe() {\n        Test.startTest();\n        Database.executeBatch(new BRHeapBatch());\n        Test.stopTest();\n        List<Account> rows = [SELECT Name FROM Account WHERE Name LIKE 'BRHEAPB|%' LIMIT 1];\n        System.assert(false, 'P|HEAP-B|' + (rows.isEmpty() ? 'none' : rows[0].Name));\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeapBatchTest"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapBatchTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-B|BRHEAPB|25000000|60000"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapBatchTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-B|BRHEAPB|25000000|60000"
+            }
+          ]
+        },
+        "68.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapBatchTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-B|BRHEAPB|25000000|60000"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP-SCH",
+      "Classes": {
+        "BRHeapSch": "public class BRHeapSch implements Schedulable {\n    public static String seen = 'none';\n    public void execute(SchedulableContext context) {\n        seen = '' + Limits.getLimitHeapSize() + '|' + Limits.getLimitCpuTime();\n        insert new Account(Name = 'BRHEAPSCH|' + Limits.getLimitHeapSize() + '|' + Limits.getLimitCpuTime());\n    }\n}\n",
+        "BRHeapSchTest": "@IsTest\nprivate class BRHeapSchTest {\n    @IsTest\n    static void observe() {\n        Test.startTest();\n        System.schedule('BRHeapSch observe', '0 0 0 1 1 ? 2099', new BRHeapSch());\n        Test.stopTest();\n        List<Account> rows = [SELECT Name FROM Account WHERE Name LIKE 'BRHEAPSCH|%' LIMIT 1];\n        System.assert(false, 'P|HEAP-SCH|' + (rows.isEmpty() ? 'none' : rows[0].Name) + '|static=' + BRHeapSch.seen + '|test=' + Limits.getLimitHeapSize() + '|' + Limits.getLimitCpuTime());\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeapSchTest"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapSchTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-SCH|BRHEAPSCH|10000000|10000|static=10000000|10000|test=10000000|10000"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapSchTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-SCH|BRHEAPSCH|10000000|10000|static=10000000|10000|test=10000000|10000"
+            }
+          ]
+        },
+        "68.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapSchTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-SCH|BRHEAPSCH|10000000|10000|static=10000000|10000|test=10000000|10000"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP-SA",
+      "Anonymous": "List<String> parts = new List<String>();\nString chunk = 'x'.repeat(100000);\nInteger i = 0;\nInteger h0 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 8000000 && i < 160) { parts.add(chunk + i); i++; }\nInteger h1 = Limits.getHeapSize();\nInteger n = parts.size();\nInteger h2 = Limits.getHeapSize();\nSystem.assert(false, 'P|HEAP-SA|i=' + i + '|n=' + n + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|overOld=' + (h1 > 6000000) + '|overCap=' + (h1 > 10000000) + '|limit=' + Limits.getLimitHeapSize());\n",
+      "MatchFields": [
+        "i",
+        "n",
+        "overOld",
+        "overCap",
+        "limit"
+      ],
+      "Native": {
+        "62.0": {
+          "Exception": "System.AssertException: Assertion Failed: P|HEAP-SA|i=79|n=79|h0=101019|h1=8001495|h2=8001511|overOld=true|overCap=false|limit=10000000"
+        },
+        "67.0": {
+          "Exception": "System.AssertException: Assertion Failed: P|HEAP-SA|i=79|n=79|h0=101019|h1=8001495|h2=8001511|overOld=true|overCap=false|limit=10000000"
+        },
+        "68.0": {
+          "Exception": "System.AssertException: Assertion Failed: P|HEAP-SA|i=79|n=79|h0=101019|h1=8001495|h2=8001511|overOld=true|overCap=false|limit=10000000"
+        }
+      }
+    },
+    {
+      "ID": "HEAP-SR",
+      "Anonymous": "List<String> parts = new List<String>();\nString chunk = 'x'.repeat(100000);\nInteger i = 0;\nInteger h0 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 12000000 && i < 240) { parts.add(chunk + i); i++; }\nInteger h1 = Limits.getHeapSize();\nInteger n = parts.size();\nInteger h2 = Limits.getHeapSize();\nSystem.assert(false, 'P|HEAP-SR|i=' + i + '|n=' + n + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|overOld=' + (h1 > 6000000) + '|overCap=' + (h1 > 10000000) + '|limit=' + Limits.getLimitHeapSize());\n",
+      "MatchFields": [
+        "i",
+        "n",
+        "overOld",
+        "overCap",
+        "limit"
+      ],
+      "Native": {
+        "62.0": {
+          "Exception": "System.AssertException: Assertion Failed: P|HEAP-SR|i=119|n=119|h0=101019|h1=12001754|h2=12001770|overOld=true|overCap=true|limit=10000000"
+        },
+        "67.0": {
+          "Exception": "System.AssertException: Assertion Failed: P|HEAP-SR|i=119|n=119|h0=101019|h1=12001754|h2=12001770|overOld=true|overCap=true|limit=10000000"
+        },
+        "68.0": {
+          "Exception": "System.AssertException: Assertion Failed: P|HEAP-SR|i=119|n=119|h0=101019|h1=12001754|h2=12001770|overOld=true|overCap=true|limit=10000000"
+        }
+      }
+    },
+    {
+      "ID": "HEAP-SAE",
+      "Anonymous": "List<String> parts = new List<String>();\nString chunk = 'x'.repeat(100000);\nInteger i = 0;\nInteger h0 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 8000000 && i < 160) { parts.add(chunk + i); i++; }\nInteger h1 = Limits.getHeapSize();\nInteger n = parts.size();\nInteger h2 = Limits.getHeapSize();\nSystem.assert(n > 0, 'P|HEAP-SAE|empty|i=' + i);\n",
+      "Native": {
+        "62.0": {
+          "Success": true
+        },
+        "67.0": {
+          "Success": true
+        },
+        "68.0": {
+          "Success": true
+        }
+      }
+    },
+    {
+      "ID": "HEAP-SRE",
+      "Anonymous": "List<String> parts = new List<String>();\nString chunk = 'x'.repeat(100000);\nInteger i = 0;\nInteger h0 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 12000000 && i < 240) { parts.add(chunk + i); i++; }\nInteger h1 = Limits.getHeapSize();\nInteger n = parts.size();\nInteger h2 = Limits.getHeapSize();\nSystem.assert(n > 0, 'P|HEAP-SRE|empty|i=' + i);\n",
+      "Native": {
+        "62.0": {
+          "Success": true
+        },
+        "67.0": {
+          "Success": true
+        },
+        "68.0": {
+          "Success": true
+        }
+      }
+    },
+    {
+      "ID": "HEAP-SAT",
+      "Classes": {
+        "BRHeapSATest": "@IsTest\nprivate class BRHeapSATest {\n    @IsTest\n    static void observe() {\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        Integer h0 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 8000000 && i < 160) { parts.add(chunk + i); i++; }\n        Integer h1 = Limits.getHeapSize();\n        Integer n = parts.size();\n        Integer h2 = Limits.getHeapSize();\n        System.assert(false, 'P|HEAP-SAT|i=' + i + '|n=' + n + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|overOld=' + (h1 > 6000000) + '|overCap=' + (h1 > 10000000) + '|limit=' + Limits.getLimitHeapSize());\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeapSATest"
+      ],
+      "MatchFields": [
+        "i",
+        "n",
+        "overOld",
+        "overCap",
+        "limit"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapSATest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-SAT|i=79|n=79|h0=101023|h1=8001499|h2=8001515|overOld=true|overCap=false|limit=10000000"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapSATest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-SAT|i=79|n=79|h0=101028|h1=8001504|h2=8001520|overOld=true|overCap=false|limit=10000000"
+            }
+          ]
+        },
+        "68.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapSATest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-SAT|i=79|n=79|h0=101028|h1=8001504|h2=8001520|overOld=true|overCap=false|limit=10000000"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP-SRT",
+      "Classes": {
+        "BRHeapSRTest": "@IsTest\nprivate class BRHeapSRTest {\n    @IsTest\n    static void observe() {\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        Integer h0 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 12000000 && i < 240) { parts.add(chunk + i); i++; }\n        Integer h1 = Limits.getHeapSize();\n        Integer n = parts.size();\n        Integer h2 = Limits.getHeapSize();\n        System.assert(false, 'P|HEAP-SRT|i=' + i + '|n=' + n + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|overOld=' + (h1 > 6000000) + '|overCap=' + (h1 > 10000000) + '|limit=' + Limits.getLimitHeapSize());\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeapSRTest"
+      ],
+      "MatchFields": [
+        "i",
+        "n",
+        "overOld",
+        "overCap",
+        "limit"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapSRTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-SRT|i=119|n=119|h0=101023|h1=12001758|h2=12001774|overOld=true|overCap=true|limit=10000000"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapSRTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-SRT|i=119|n=119|h0=101028|h1=12001763|h2=12001779|overOld=true|overCap=true|limit=10000000"
+            }
+          ]
+        },
+        "68.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapSRTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-SRT|i=119|n=119|h0=101028|h1=12001763|h2=12001779|overOld=true|overCap=true|limit=10000000"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP-SAET",
+      "Classes": {
+        "BRHeapSAETest": "@IsTest\nprivate class BRHeapSAETest {\n    @IsTest\n    static void observe() {\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        Integer h0 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 8000000 && i < 160) { parts.add(chunk + i); i++; }\n        Integer h1 = Limits.getHeapSize();\n        Integer n = parts.size();\n        Integer h2 = Limits.getHeapSize();\n        System.assert(n > 0, 'P|HEAP-SAET|empty|i=' + i);\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeapSAETest"
+      ],
+      "Native": {
+        "62.0": {
+          "Passes": [
+            {
+              "Class": "BRHeapSAETest",
+              "Method": "observe"
+            }
+          ]
+        },
+        "67.0": {
+          "Passes": [
+            {
+              "Class": "BRHeapSAETest",
+              "Method": "observe"
+            }
+          ]
+        },
+        "68.0": {
+          "Passes": [
+            {
+              "Class": "BRHeapSAETest",
+              "Method": "observe"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP-SRET",
+      "Classes": {
+        "BRHeapSRETest": "@IsTest\nprivate class BRHeapSRETest {\n    @IsTest\n    static void observe() {\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        Integer h0 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 12000000 && i < 240) { parts.add(chunk + i); i++; }\n        Integer h1 = Limits.getHeapSize();\n        Integer n = parts.size();\n        Integer h2 = Limits.getHeapSize();\n        System.assert(n > 0, 'P|HEAP-SRET|empty|i=' + i);\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeapSRETest"
+      ],
+      "Native": {
+        "62.0": {
+          "Passes": [
+            {
+              "Class": "BRHeapSRETest",
+              "Method": "observe"
+            }
+          ]
+        },
+        "67.0": {
+          "Passes": [
+            {
+              "Class": "BRHeapSRETest",
+              "Method": "observe"
+            }
+          ]
+        },
+        "68.0": {
+          "Passes": [
+            {
+              "Class": "BRHeapSRETest",
+              "Method": "observe"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP-QA",
+      "Classes": {
+        "BRHeapQA": "public class BRHeapQA implements Queueable {\n    public static String stage = 'queued';\n    public static Integer iterations = 0;\n    public static Integer heapSeen;\n    public static Integer heapLoop;\n    public static Integer heapNext;\n    public static Integer limitSeen;\n    public void execute(QueueableContext context) {\n        stage = 'started';\n        limitSeen = Limits.getLimitHeapSize();\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        while (Limits.getHeapSize() < 20000000 && i < 400) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        stage = 'loopDone';\n        heapLoop = Limits.getHeapSize();\n        Integer n = parts.size();\n        heapNext = Limits.getHeapSize();\n        stage = 'end|n=' + n;\n    }\n}\n",
+        "BRHeapQATest": "@IsTest\nprivate class BRHeapQATest {\n    @IsTest\n    static void observe() {\n        Test.startTest();\n        System.enqueueJob(new BRHeapQA());\n        String stopped = 'ok';\n        try {\n            Test.stopTest();\n        } catch (Exception e) {\n            stopped = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n        }\n        System.assert(false, 'P|HEAP-QA|stop=' + stopped + '|stage=' + BRHeapQA.stage + '|i=' + BRHeapQA.iterations + '|heapSeen=' + BRHeapQA.heapSeen + '|h1=' + BRHeapQA.heapLoop + '|h2=' + BRHeapQA.heapNext + '|overCap=' + (BRHeapQA.heapLoop != null && BRHeapQA.heapLoop > 25000000) + '|limit=' + BRHeapQA.limitSeen + '|testHeap=' + Limits.getHeapSize());\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeapQATest"
+      ],
+      "MatchFields": [
+        "stop",
+        "stage",
+        "n",
+        "i",
+        "overCap",
+        "limit"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapQATest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-QA|stop=ok|stage=end|n=199|i=199|heapSeen=20002484|h1=20002485|h2=20002501|overCap=false|limit=25000000|testHeap=1314"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapQATest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-QA|stop=ok|stage=end|n=199|i=199|heapSeen=20002489|h1=20002490|h2=20002506|overCap=false|limit=25000000|testHeap=1319"
+            }
+          ]
+        },
+        "68.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapQATest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-QA|stop=ok|stage=end|n=199|i=199|heapSeen=20002489|h1=20002490|h2=20002506|overCap=false|limit=25000000|testHeap=1319"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP-QR",
+      "Classes": {
+        "BRHeapQR": "public class BRHeapQR implements Queueable {\n    public static String stage = 'queued';\n    public static Integer iterations = 0;\n    public static Integer heapSeen;\n    public static Integer heapLoop;\n    public static Integer heapNext;\n    public static Integer limitSeen;\n    public void execute(QueueableContext context) {\n        stage = 'started';\n        limitSeen = Limits.getLimitHeapSize();\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        while (Limits.getHeapSize() < 30000000 && i < 600) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        stage = 'loopDone';\n        heapLoop = Limits.getHeapSize();\n        Integer n = parts.size();\n        heapNext = Limits.getHeapSize();\n        stage = 'end|n=' + n;\n    }\n}\n",
+        "BRHeapQRTest": "@IsTest\nprivate class BRHeapQRTest {\n    @IsTest\n    static void observe() {\n        Test.startTest();\n        System.enqueueJob(new BRHeapQR());\n        String stopped = 'ok';\n        try {\n            Test.stopTest();\n        } catch (Exception e) {\n            stopped = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n        }\n        System.assert(false, 'P|HEAP-QR|stop=' + stopped + '|stage=' + BRHeapQR.stage + '|i=' + BRHeapQR.iterations + '|heapSeen=' + BRHeapQR.heapSeen + '|h1=' + BRHeapQR.heapLoop + '|h2=' + BRHeapQR.heapNext + '|overCap=' + (BRHeapQR.heapLoop != null && BRHeapQR.heapLoop > 25000000) + '|limit=' + BRHeapQR.limitSeen + '|testHeap=' + Limits.getHeapSize());\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeapQRTest"
+      ],
+      "MatchFields": [
+        "stop",
+        "stage",
+        "n",
+        "i",
+        "overCap",
+        "limit"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapQRTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-QR|stop=ok|stage=end|n=299|i=299|heapSeen=30003184|h1=30003185|h2=30003201|overCap=true|limit=25000000|testHeap=1313"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapQRTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-QR|stop=ok|stage=end|n=299|i=299|heapSeen=30003189|h1=30003190|h2=30003206|overCap=true|limit=25000000|testHeap=1318"
+            }
+          ]
+        },
+        "68.0": {
+          "Failures": [
+            {
+              "Class": "BRHeapQRTest",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP-QR|stop=ok|stage=end|n=299|i=299|heapSeen=30003189|h1=30003190|h2=30003206|overCap=true|limit=25000000|testHeap=1318"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-L15A",
+      "Anonymous": "List<String> parts = new List<String>();\nString chunk = 'x'.repeat(100000);\nInteger i = 0;\nInteger h0 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 10000000 && i < 300) { parts.add(chunk + i); i++; }\nInteger h1 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 15000000 && i < 300) { parts.add(chunk + i); i++; }\nInteger h2 = Limits.getHeapSize();\nInteger cpu = Limits.getCpuTime();\nSystem.assert(false, 'P|HEAP3-L15A|cpu=' + cpu + '|limit=' + Limits.getLimitHeapSize() + '|i=' + i + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2);\n",
+      "MatchFields": [
+        "limit",
+        "i"
+      ],
+      "Native": {
+        "62.0": {
+          "Exception": "System.AssertException: Assertion Failed: P|HEAP3-L15A|cpu=1|limit=10000000|i=149|h0=101022|h1=10001618|h2=15001975"
+        },
+        "67.0": {
+          "Exception": "System.AssertException: Assertion Failed: P|HEAP3-L15A|cpu=1|limit=10000000|i=149|h0=101022|h1=10001618|h2=15001975"
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-L15T",
+      "Classes": {
+        "BRHeap3L15Test": "@IsTest\nprivate class BRHeap3L15Test {\n    @IsTest\n    static void observe() {\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        Integer h0 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 10000000 && i < 300) { parts.add(chunk + i); i++; }\n        Integer h1 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 15000000 && i < 300) { parts.add(chunk + i); i++; }\n        Integer h2 = Limits.getHeapSize();\n        Integer cpu = Limits.getCpuTime();\n        System.assert(false, 'P|HEAP3-L15T|cpu=' + cpu + '|limit=' + Limits.getLimitHeapSize() + '|i=' + i + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2);\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap3L15Test"
+      ],
+      "MatchFields": [
+        "limit",
+        "i"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3L15Test",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP3-L15T|cpu=3|limit=10000000|i=149|h0=101026|h1=10001622|h2=15001979"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3L15Test",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP3-L15T|cpu=2|limit=10000000|i=149|h0=101031|h1=10001627|h2=15001984"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-S15A",
+      "Anonymous": "Integer h0 = Limits.getHeapSize();\nString big;\nString err = 'none';\ntry { big = 'x'.repeat(15000000); } catch (Exception e) { err = e.getTypeName() + ':' + e.getMessage(); }\nInteger h1 = Limits.getHeapSize();\nInteger len = big == null ? -1 : big.length();\nInteger h2 = Limits.getHeapSize();\nString tail = big == null ? '' : big.right(5);\nInteger h3 = Limits.getHeapSize();\nInteger cpu = Limits.getCpuTime();\nSystem.assert(false, 'P|HEAP3-S15A|cpu=' + cpu + '|limit=' + Limits.getLimitHeapSize() + '|err=' + err + '|len=' + len + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|h3=' + h3);\n",
+      "Native": {
+        "62.0": {
+          "Exception": "System.LimitException: String is too long."
+        },
+        "67.0": {
+          "Exception": "System.LimitException: String is too long."
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-S15T",
+      "Classes": {
+        "BRHeap3S15Test": "@IsTest\nprivate class BRHeap3S15Test {\n    @IsTest\n    static void observe() {\n        Integer h0 = Limits.getHeapSize();\n        String big;\n        String err = 'none';\n        try { big = 'x'.repeat(15000000); } catch (Exception e) { err = e.getTypeName() + ':' + e.getMessage(); }\n        Integer h1 = Limits.getHeapSize();\n        Integer len = big == null ? -1 : big.length();\n        Integer h2 = Limits.getHeapSize();\n        String tail = big == null ? '' : big.right(5);\n        Integer h3 = Limits.getHeapSize();\n        Integer cpu = Limits.getCpuTime();\n        System.assert(false, 'P|HEAP3-S15T|cpu=' + cpu + '|limit=' + Limits.getLimitHeapSize() + '|err=' + err + '|len=' + len + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|h3=' + h3);\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap3S15Test"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3S15Test",
+              "Method": "observe",
+              "Message": "System.LimitException: String is too long."
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3S15Test",
+              "Method": "observe",
+              "Message": "System.LimitException: String is too long."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-L20A",
+      "Anonymous": "List<String> parts = new List<String>();\nString chunk = 'x'.repeat(100000);\nInteger i = 0;\nInteger h0 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 10000000 && i < 400) { parts.add(chunk + i); i++; }\nInteger h1 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 15000000 && i < 400) { parts.add(chunk + i); i++; }\nInteger h2 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 20000000 && i < 400) { parts.add(chunk + i); i++; }\nInteger h3 = Limits.getHeapSize();\nInteger cpu = Limits.getCpuTime();\nSystem.assert(false, 'P|HEAP3-L20A|cpu=' + cpu + '|limit=' + Limits.getLimitHeapSize() + '|i=' + i + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|h3=' + h3);\n",
+      "MatchFields": [
+        "limit",
+        "i"
+      ],
+      "Native": {
+        "62.0": {
+          "Exception": "System.AssertException: Assertion Failed: P|HEAP3-L20A|cpu=2|limit=10000000|i=199|h0=101028|h1=10001624|h2=15001981|h3=20002339"
+        },
+        "67.0": {
+          "Exception": "System.AssertException: Assertion Failed: P|HEAP3-L20A|cpu=2|limit=10000000|i=199|h0=101028|h1=10001624|h2=15001981|h3=20002339"
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-L20T",
+      "Classes": {
+        "BRHeap3L20Test": "@IsTest\nprivate class BRHeap3L20Test {\n    @IsTest\n    static void observe() {\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        Integer h0 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 10000000 && i < 400) { parts.add(chunk + i); i++; }\n        Integer h1 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 15000000 && i < 400) { parts.add(chunk + i); i++; }\n        Integer h2 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 20000000 && i < 400) { parts.add(chunk + i); i++; }\n        Integer h3 = Limits.getHeapSize();\n        Integer cpu = Limits.getCpuTime();\n        System.assert(false, 'P|HEAP3-L20T|cpu=' + cpu + '|limit=' + Limits.getLimitHeapSize() + '|i=' + i + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|h3=' + h3);\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap3L20Test"
+      ],
+      "MatchFields": [
+        "limit",
+        "i"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3L20Test",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP3-L20T|cpu=3|limit=10000000|i=199|h0=101032|h1=10001628|h2=15001985|h3=20002343"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3L20Test",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP3-L20T|cpu=3|limit=10000000|i=199|h0=101037|h1=10001633|h2=15001990|h3=20002348"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-S20A",
+      "Anonymous": "Integer h0 = Limits.getHeapSize();\nString big;\nString err = 'none';\ntry { big = 'x'.repeat(20000000); } catch (Exception e) { err = e.getTypeName() + ':' + e.getMessage(); }\nInteger h1 = Limits.getHeapSize();\nInteger len = big == null ? -1 : big.length();\nInteger h2 = Limits.getHeapSize();\nString tail = big == null ? '' : big.right(5);\nInteger h3 = Limits.getHeapSize();\nInteger cpu = Limits.getCpuTime();\nSystem.assert(false, 'P|HEAP3-S20A|cpu=' + cpu + '|limit=' + Limits.getLimitHeapSize() + '|err=' + err + '|len=' + len + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|h3=' + h3);\n",
+      "Native": {
+        "62.0": {
+          "Exception": "System.LimitException: String is too long."
+        },
+        "67.0": {
+          "Exception": "System.LimitException: String is too long."
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-S20T",
+      "Classes": {
+        "BRHeap3S20Test": "@IsTest\nprivate class BRHeap3S20Test {\n    @IsTest\n    static void observe() {\n        Integer h0 = Limits.getHeapSize();\n        String big;\n        String err = 'none';\n        try { big = 'x'.repeat(20000000); } catch (Exception e) { err = e.getTypeName() + ':' + e.getMessage(); }\n        Integer h1 = Limits.getHeapSize();\n        Integer len = big == null ? -1 : big.length();\n        Integer h2 = Limits.getHeapSize();\n        String tail = big == null ? '' : big.right(5);\n        Integer h3 = Limits.getHeapSize();\n        Integer cpu = Limits.getCpuTime();\n        System.assert(false, 'P|HEAP3-S20T|cpu=' + cpu + '|limit=' + Limits.getLimitHeapSize() + '|err=' + err + '|len=' + len + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|h3=' + h3);\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap3S20Test"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3S20Test",
+              "Method": "observe",
+              "Message": "System.LimitException: String is too long."
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3S20Test",
+              "Method": "observe",
+              "Message": "System.LimitException: String is too long."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-L30A",
+      "Anonymous": "List<String> parts = new List<String>();\nString chunk = 'x'.repeat(100000);\nInteger i = 0;\nInteger h0 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 10000000 && i < 600) { parts.add(chunk + i); i++; }\nInteger h1 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 15000000 && i < 600) { parts.add(chunk + i); i++; }\nInteger h2 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 20000000 && i < 600) { parts.add(chunk + i); i++; }\nInteger h3 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 30000000 && i < 600) { parts.add(chunk + i); i++; }\nInteger h4 = Limits.getHeapSize();\nInteger cpu = Limits.getCpuTime();\nSystem.assert(false, 'P|HEAP3-L30A|cpu=' + cpu + '|limit=' + Limits.getLimitHeapSize() + '|i=' + i + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|h3=' + h3 + '|h4=' + h4);\n",
+      "MatchFields": [
+        "limit",
+        "i"
+      ],
+      "Native": {
+        "62.0": {
+          "Exception": "System.AssertException: Assertion Failed: P|HEAP3-L30A|cpu=3|limit=10000000|i=299|h0=101034|h1=10001630|h2=15001987|h3=20002345|h4=30003053"
+        },
+        "67.0": {
+          "Exception": "System.AssertException: Assertion Failed: P|HEAP3-L30A|cpu=3|limit=10000000|i=299|h0=101034|h1=10001630|h2=15001987|h3=20002345|h4=30003053"
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-L30T",
+      "Classes": {
+        "BRHeap3L30Test": "@IsTest\nprivate class BRHeap3L30Test {\n    @IsTest\n    static void observe() {\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        Integer h0 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 10000000 && i < 600) { parts.add(chunk + i); i++; }\n        Integer h1 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 15000000 && i < 600) { parts.add(chunk + i); i++; }\n        Integer h2 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 20000000 && i < 600) { parts.add(chunk + i); i++; }\n        Integer h3 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 30000000 && i < 600) { parts.add(chunk + i); i++; }\n        Integer h4 = Limits.getHeapSize();\n        Integer cpu = Limits.getCpuTime();\n        System.assert(false, 'P|HEAP3-L30T|cpu=' + cpu + '|limit=' + Limits.getLimitHeapSize() + '|i=' + i + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|h3=' + h3 + '|h4=' + h4);\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap3L30Test"
+      ],
+      "MatchFields": [
+        "limit",
+        "i"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3L30Test",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP3-L30T|cpu=4|limit=10000000|i=299|h0=101038|h1=10001634|h2=15001991|h3=20002349|h4=30003057"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3L30Test",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP3-L30T|cpu=5|limit=10000000|i=299|h0=101043|h1=10001639|h2=15001996|h3=20002354|h4=30003062"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-S30A",
+      "Anonymous": "Integer h0 = Limits.getHeapSize();\nString big;\nString err = 'none';\ntry { big = 'x'.repeat(30000000); } catch (Exception e) { err = e.getTypeName() + ':' + e.getMessage(); }\nInteger h1 = Limits.getHeapSize();\nInteger len = big == null ? -1 : big.length();\nInteger h2 = Limits.getHeapSize();\nString tail = big == null ? '' : big.right(5);\nInteger h3 = Limits.getHeapSize();\nInteger cpu = Limits.getCpuTime();\nSystem.assert(false, 'P|HEAP3-S30A|cpu=' + cpu + '|limit=' + Limits.getLimitHeapSize() + '|err=' + err + '|len=' + len + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|h3=' + h3);\n",
+      "Native": {
+        "62.0": {
+          "Exception": "System.LimitException: String is too long."
+        },
+        "67.0": {
+          "Exception": "System.LimitException: String is too long."
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-S30T",
+      "Classes": {
+        "BRHeap3S30Test": "@IsTest\nprivate class BRHeap3S30Test {\n    @IsTest\n    static void observe() {\n        Integer h0 = Limits.getHeapSize();\n        String big;\n        String err = 'none';\n        try { big = 'x'.repeat(30000000); } catch (Exception e) { err = e.getTypeName() + ':' + e.getMessage(); }\n        Integer h1 = Limits.getHeapSize();\n        Integer len = big == null ? -1 : big.length();\n        Integer h2 = Limits.getHeapSize();\n        String tail = big == null ? '' : big.right(5);\n        Integer h3 = Limits.getHeapSize();\n        Integer cpu = Limits.getCpuTime();\n        System.assert(false, 'P|HEAP3-S30T|cpu=' + cpu + '|limit=' + Limits.getLimitHeapSize() + '|err=' + err + '|len=' + len + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|h3=' + h3);\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap3S30Test"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3S30Test",
+              "Method": "observe",
+              "Message": "System.LimitException: String is too long."
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3S30Test",
+              "Method": "observe",
+              "Message": "System.LimitException: String is too long."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-L60A",
+      "Anonymous": "List<String> parts = new List<String>();\nString chunk = 'x'.repeat(100000);\nInteger i = 0;\nInteger h0 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 10000000 && i < 1200) { parts.add(chunk + i); i++; }\nInteger h1 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 15000000 && i < 1200) { parts.add(chunk + i); i++; }\nInteger h2 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 20000000 && i < 1200) { parts.add(chunk + i); i++; }\nInteger h3 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 30000000 && i < 1200) { parts.add(chunk + i); i++; }\nInteger h4 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 45000000 && i < 1200) { parts.add(chunk + i); i++; }\nInteger h5 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 60000000 && i < 1200) { parts.add(chunk + i); i++; }\nInteger h6 = Limits.getHeapSize();\nInteger cpu = Limits.getCpuTime();\nSystem.assert(false, 'P|HEAP3-L60A|cpu=' + cpu + '|limit=' + Limits.getLimitHeapSize() + '|i=' + i + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|h3=' + h3 + '|h4=' + h4 + '|h5=' + h5 + '|h6=' + h6);\n",
+      "Modes": [
+        "strict"
+      ],
+      "Native": {
+        "62.0": {
+          "Exception": "System.LimitException: Apex heap size too large: 52504652"
+        },
+        "67.0": {
+          "Exception": "System.LimitException: Apex heap size too large: 52504652"
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-L60AE",
+      "Anonymous": "List<String> parts = new List<String>();\nString chunk = 'x'.repeat(100000);\nInteger i = 0;\nInteger h0 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 10000000 && i < 1200) { parts.add(chunk + i); i++; }\nInteger h1 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 15000000 && i < 1200) { parts.add(chunk + i); i++; }\nInteger h2 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 20000000 && i < 1200) { parts.add(chunk + i); i++; }\nInteger h3 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 30000000 && i < 1200) { parts.add(chunk + i); i++; }\nInteger h4 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 45000000 && i < 1200) { parts.add(chunk + i); i++; }\nInteger h5 = Limits.getHeapSize();\nwhile (Limits.getHeapSize() < 60000000 && i < 1200) { parts.add(chunk + i); i++; }\nInteger h6 = Limits.getHeapSize();\nInteger cpu = Limits.getCpuTime();\nSystem.assert(cpu >= 0, 'P|HEAP3-L60AE|unreachable');\n",
+      "Modes": [
+        "strict"
+      ],
+      "Native": {
+        "62.0": {
+          "Exception": "System.LimitException: Apex heap size too large: 52504652"
+        },
+        "67.0": {
+          "Exception": "System.LimitException: Apex heap size too large: 52504652"
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-L60T",
+      "Classes": {
+        "BRHeap3L60Test": "@IsTest\nprivate class BRHeap3L60Test {\n    @IsTest\n    static void observe() {\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        Integer h0 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 10000000 && i < 1200) { parts.add(chunk + i); i++; }\n        Integer h1 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 15000000 && i < 1200) { parts.add(chunk + i); i++; }\n        Integer h2 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 20000000 && i < 1200) { parts.add(chunk + i); i++; }\n        Integer h3 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 30000000 && i < 1200) { parts.add(chunk + i); i++; }\n        Integer h4 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 45000000 && i < 1200) { parts.add(chunk + i); i++; }\n        Integer h5 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 60000000 && i < 1200) { parts.add(chunk + i); i++; }\n        Integer h6 = Limits.getHeapSize();\n        Integer cpu = Limits.getCpuTime();\n        System.assert(false, 'P|HEAP3-L60T|cpu=' + cpu + '|limit=' + Limits.getLimitHeapSize() + '|i=' + i + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|h3=' + h3 + '|h4=' + h4 + '|h5=' + h5 + '|h6=' + h6);\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap3L60Test"
+      ],
+      "Modes": [
+        "strict"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3L60Test",
+              "Method": "observe",
+              "Message": "System.LimitException: Apex heap size too large: 52504656"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3L60Test",
+              "Method": "observe",
+              "Message": "System.LimitException: Apex heap size too large: 52504661"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-L60TE",
+      "Classes": {
+        "BRHeap3L60ETest": "@IsTest\nprivate class BRHeap3L60ETest {\n    @IsTest\n    static void observe() {\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        Integer h0 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 10000000 && i < 1200) { parts.add(chunk + i); i++; }\n        Integer h1 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 15000000 && i < 1200) { parts.add(chunk + i); i++; }\n        Integer h2 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 20000000 && i < 1200) { parts.add(chunk + i); i++; }\n        Integer h3 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 30000000 && i < 1200) { parts.add(chunk + i); i++; }\n        Integer h4 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 45000000 && i < 1200) { parts.add(chunk + i); i++; }\n        Integer h5 = Limits.getHeapSize();\n        while (Limits.getHeapSize() < 60000000 && i < 1200) { parts.add(chunk + i); i++; }\n        Integer h6 = Limits.getHeapSize();\n        Integer cpu = Limits.getCpuTime();\n        System.assert(cpu >= 0, 'P|HEAP3-L60TE|unreachable');\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap3L60ETest"
+      ],
+      "Modes": [
+        "strict"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3L60ETest",
+              "Method": "observe",
+              "Message": "System.LimitException: Apex heap size too large: 52504656"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3L60ETest",
+              "Method": "observe",
+              "Message": "System.LimitException: Apex heap size too large: 52504661"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-S60A",
+      "Anonymous": "Integer h0 = Limits.getHeapSize();\nString big;\nString err = 'none';\ntry { big = 'x'.repeat(60000000); } catch (Exception e) { err = e.getTypeName() + ':' + e.getMessage(); }\nInteger h1 = Limits.getHeapSize();\nInteger len = big == null ? -1 : big.length();\nInteger h2 = Limits.getHeapSize();\nString tail = big == null ? '' : big.right(5);\nInteger h3 = Limits.getHeapSize();\nInteger cpu = Limits.getCpuTime();\nSystem.assert(false, 'P|HEAP3-S60A|cpu=' + cpu + '|limit=' + Limits.getLimitHeapSize() + '|err=' + err + '|len=' + len + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|h3=' + h3);\n",
+      "Native": {
+        "62.0": {
+          "Exception": "System.LimitException: String is too long."
+        },
+        "67.0": {
+          "Exception": "System.LimitException: String is too long."
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-S60AE",
+      "Anonymous": "Integer h0 = Limits.getHeapSize();\nString big;\nString err = 'none';\ntry { big = 'x'.repeat(60000000); } catch (Exception e) { err = e.getTypeName() + ':' + e.getMessage(); }\nInteger h1 = Limits.getHeapSize();\nInteger len = big == null ? -1 : big.length();\nInteger h2 = Limits.getHeapSize();\nString tail = big == null ? '' : big.right(5);\nInteger h3 = Limits.getHeapSize();\nInteger cpu = Limits.getCpuTime();\nSystem.assert(cpu >= 0, 'P|HEAP3-S60AE|unreachable');\n",
+      "Native": {
+        "62.0": {
+          "Exception": "System.LimitException: String is too long."
+        },
+        "67.0": {
+          "Exception": "System.LimitException: String is too long."
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-S60T",
+      "Classes": {
+        "BRHeap3S60Test": "@IsTest\nprivate class BRHeap3S60Test {\n    @IsTest\n    static void observe() {\n        Integer h0 = Limits.getHeapSize();\n        String big;\n        String err = 'none';\n        try { big = 'x'.repeat(60000000); } catch (Exception e) { err = e.getTypeName() + ':' + e.getMessage(); }\n        Integer h1 = Limits.getHeapSize();\n        Integer len = big == null ? -1 : big.length();\n        Integer h2 = Limits.getHeapSize();\n        String tail = big == null ? '' : big.right(5);\n        Integer h3 = Limits.getHeapSize();\n        Integer cpu = Limits.getCpuTime();\n        System.assert(false, 'P|HEAP3-S60T|cpu=' + cpu + '|limit=' + Limits.getLimitHeapSize() + '|err=' + err + '|len=' + len + '|h0=' + h0 + '|h1=' + h1 + '|h2=' + h2 + '|h3=' + h3);\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap3S60Test"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3S60Test",
+              "Method": "observe",
+              "Message": "System.LimitException: String is too long."
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3S60Test",
+              "Method": "observe",
+              "Message": "System.LimitException: String is too long."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-S60TE",
+      "Classes": {
+        "BRHeap3S60ETest": "@IsTest\nprivate class BRHeap3S60ETest {\n    @IsTest\n    static void observe() {\n        Integer h0 = Limits.getHeapSize();\n        String big;\n        String err = 'none';\n        try { big = 'x'.repeat(60000000); } catch (Exception e) { err = e.getTypeName() + ':' + e.getMessage(); }\n        Integer h1 = Limits.getHeapSize();\n        Integer len = big == null ? -1 : big.length();\n        Integer h2 = Limits.getHeapSize();\n        String tail = big == null ? '' : big.right(5);\n        Integer h3 = Limits.getHeapSize();\n        Integer cpu = Limits.getCpuTime();\n        System.assert(cpu >= 0, 'P|HEAP3-S60TE|unreachable');\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap3S60ETest"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3S60ETest",
+              "Method": "observe",
+              "Message": "System.LimitException: String is too long."
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3S60ETest",
+              "Method": "observe",
+              "Message": "System.LimitException: String is too long."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-Q40",
+      "Classes": {
+        "BRHeap3Q40": "public class BRHeap3Q40 implements Queueable {\n    public static String stage = 'queued';\n    public static Integer iterations = 0;\n    public static Integer heapSeen;\n    public static Integer cpu;\n    public static Integer h1;\n    public static Integer h2;\n    public static Integer h3;\n    public void execute(QueueableContext context) {\n        stage = 'started';\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        stage = 'grow1';\n        while (Limits.getHeapSize() < 25000000 && i < 800) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h1 = Limits.getHeapSize();\n        stage = 'grow2';\n        while (Limits.getHeapSize() < 30000000 && i < 800) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h2 = Limits.getHeapSize();\n        stage = 'grow3';\n        while (Limits.getHeapSize() < 40000000 && i < 800) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h3 = Limits.getHeapSize();\n        cpu = Limits.getCpuTime();\n        stage = 'end';\n    }\n}\n",
+        "BRHeap3Q40Test": "@IsTest\nprivate class BRHeap3Q40Test {\n    @IsTest\n    static void observe() {\n        Test.startTest();\n        System.enqueueJob(new BRHeap3Q40());\n        String stopped = 'ok';\n        try {\n            Test.stopTest();\n        } catch (Exception e) {\n            stopped = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n        }\n        System.assert(false, 'P|HEAP3-Q40|stop=' + stopped + '|stage=' + BRHeap3Q40.stage + '|i=' + BRHeap3Q40.iterations + '|heapSeen=' + BRHeap3Q40.heapSeen + '|h1=' + BRHeap3Q40.h1 + '|h2=' + BRHeap3Q40.h2 + '|h3=' + BRHeap3Q40.h3 + '|cpu=' + BRHeap3Q40.cpu + '|testHeap=' + Limits.getHeapSize());\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap3Q40Test"
+      ],
+      "MatchFields": [
+        "stop",
+        "stage",
+        "i"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3Q40Test",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP3-Q40|stop=ok|stage=end|i=399|heapSeen=40003890|h1=25002824|h2=30003182|h3=40003890|cpu=9|testHeap=1301"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3Q40Test",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP3-Q40|stop=ok|stage=end|i=399|heapSeen=40003895|h1=25002829|h2=30003187|h3=40003895|cpu=9|testHeap=1306"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-Q60",
+      "Classes": {
+        "BRHeap3Q60": "public class BRHeap3Q60 implements Queueable {\n    public static String stage = 'queued';\n    public static Integer iterations = 0;\n    public static Integer heapSeen;\n    public static Integer cpu;\n    public static Integer h1;\n    public static Integer h2;\n    public static Integer h3;\n    public static Integer h4;\n    public void execute(QueueableContext context) {\n        stage = 'started';\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        stage = 'grow1';\n        while (Limits.getHeapSize() < 25000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h1 = Limits.getHeapSize();\n        stage = 'grow2';\n        while (Limits.getHeapSize() < 30000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h2 = Limits.getHeapSize();\n        stage = 'grow3';\n        while (Limits.getHeapSize() < 40000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h3 = Limits.getHeapSize();\n        stage = 'grow4';\n        while (Limits.getHeapSize() < 60000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h4 = Limits.getHeapSize();\n        cpu = Limits.getCpuTime();\n        stage = 'end';\n    }\n}\n",
+        "BRHeap3Q60Test": "@IsTest\nprivate class BRHeap3Q60Test {\n    @IsTest\n    static void observe() {\n        Test.startTest();\n        System.enqueueJob(new BRHeap3Q60());\n        String stopped = 'ok';\n        try {\n            Test.stopTest();\n        } catch (Exception e) {\n            stopped = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n        }\n        System.assert(false, 'P|HEAP3-Q60|stop=' + stopped + '|stage=' + BRHeap3Q60.stage + '|i=' + BRHeap3Q60.iterations + '|heapSeen=' + BRHeap3Q60.heapSeen + '|h1=' + BRHeap3Q60.h1 + '|h2=' + BRHeap3Q60.h2 + '|h3=' + BRHeap3Q60.h3 + '|h4=' + BRHeap3Q60.h4 + '|cpu=' + BRHeap3Q60.cpu + '|testHeap=' + Limits.getHeapSize());\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap3Q60Test"
+      ],
+      "Modes": [
+        "strict"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3Q60Test",
+              "Method": "observe",
+              "Message": "System.LimitException: Apex heap size too large: 52504770"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3Q60Test",
+              "Method": "observe",
+              "Message": "System.LimitException: Apex heap size too large: 52504775"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP3-Q100",
+      "Classes": {
+        "BRHeap3Q100": "public class BRHeap3Q100 implements Queueable {\n    public static String stage = 'queued';\n    public static Integer iterations = 0;\n    public static Integer heapSeen;\n    public static Integer cpu;\n    public static Integer h1;\n    public static Integer h2;\n    public static Integer h3;\n    public static Integer h4;\n    public static Integer h5;\n    public static Integer h6;\n    public void execute(QueueableContext context) {\n        stage = 'started';\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        stage = 'grow1';\n        while (Limits.getHeapSize() < 25000000 && i < 2000) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h1 = Limits.getHeapSize();\n        stage = 'grow2';\n        while (Limits.getHeapSize() < 30000000 && i < 2000) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h2 = Limits.getHeapSize();\n        stage = 'grow3';\n        while (Limits.getHeapSize() < 40000000 && i < 2000) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h3 = Limits.getHeapSize();\n        stage = 'grow4';\n        while (Limits.getHeapSize() < 60000000 && i < 2000) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h4 = Limits.getHeapSize();\n        stage = 'grow5';\n        while (Limits.getHeapSize() < 80000000 && i < 2000) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h5 = Limits.getHeapSize();\n        stage = 'grow6';\n        while (Limits.getHeapSize() < 100000000 && i < 2000) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h6 = Limits.getHeapSize();\n        cpu = Limits.getCpuTime();\n        stage = 'end';\n    }\n}\n",
+        "BRHeap3Q100Test": "@IsTest\nprivate class BRHeap3Q100Test {\n    @IsTest\n    static void observe() {\n        Test.startTest();\n        System.enqueueJob(new BRHeap3Q100());\n        String stopped = 'ok';\n        try {\n            Test.stopTest();\n        } catch (Exception e) {\n            stopped = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n        }\n        System.assert(false, 'P|HEAP3-Q100|stop=' + stopped + '|stage=' + BRHeap3Q100.stage + '|i=' + BRHeap3Q100.iterations + '|heapSeen=' + BRHeap3Q100.heapSeen + '|h1=' + BRHeap3Q100.h1 + '|h2=' + BRHeap3Q100.h2 + '|h3=' + BRHeap3Q100.h3 + '|h4=' + BRHeap3Q100.h4 + '|h5=' + BRHeap3Q100.h5 + '|h6=' + BRHeap3Q100.h6 + '|cpu=' + BRHeap3Q100.cpu + '|testHeap=' + Limits.getHeapSize());\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap3Q100Test"
+      ],
+      "Modes": [
+        "strict"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3Q100Test",
+              "Method": "observe",
+              "Message": "System.LimitException: Apex heap size too large: 52504770"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap3Q100Test",
+              "Method": "observe",
+              "Message": "System.LimitException: Apex heap size too large: 52504775"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP4-SCH40",
+      "Classes": {
+        "BRHeap4Sch40": "public class BRHeap4Sch40 implements Schedulable {\n    public static String stage = 'queued';\n    public static Integer iterations = 0;\n    public static Integer heapSeen;\n    public static Integer limitSeen;\n    public static Integer cpu;\n    public static Integer h1;\n    public static Integer h2;\n    public static Integer h3;\n    public void execute(SchedulableContext context) {\n        stage = 'started';\n        limitSeen = Limits.getLimitHeapSize();\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        stage = 'grow1';\n        while (Limits.getHeapSize() < 25000000 && i < 800) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h1 = Limits.getHeapSize();\n        stage = 'grow2';\n        while (Limits.getHeapSize() < 30000000 && i < 800) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h2 = Limits.getHeapSize();\n        stage = 'grow3';\n        while (Limits.getHeapSize() < 40000000 && i < 800) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h3 = Limits.getHeapSize();\n        cpu = Limits.getCpuTime();\n        stage = 'end';\n        insert new Account(Name = 'BRHEAP4|HEAP4-SCH40|end|n=' + parts.size());\n    }\n}\n",
+        "BRHeap4Sch40Test": "@IsTest\nprivate class BRHeap4Sch40Test {\n    @IsTest\n    static void observe() {\n        Test.startTest();\n        System.schedule('BRHeap4Sch40 observe', '0 0 0 1 1 ? 2099', new BRHeap4Sch40());\n        String stopped = 'ok';\n        try {\n            Test.stopTest();\n        } catch (Exception e) {\n            stopped = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n        }\n        List<Account> rows = [SELECT Name FROM Account WHERE Name LIKE 'BRHEAP4|%' LIMIT 1];\n        System.assert(false, 'P|HEAP4-SCH40|stop=' + stopped + '|stage=' + BRHeap4Sch40.stage + '|i=' + BRHeap4Sch40.iterations + '|limit=' + BRHeap4Sch40.limitSeen + '|heapSeen=' + BRHeap4Sch40.heapSeen + '|h1=' + BRHeap4Sch40.h1 + '|h2=' + BRHeap4Sch40.h2 + '|h3=' + BRHeap4Sch40.h3 + '|cpu=' + BRHeap4Sch40.cpu + '|record=' + (rows.isEmpty() ? 'none' : rows[0].Name) + '|testHeap=' + Limits.getHeapSize());\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap4Sch40Test"
+      ],
+      "MatchFields": [
+        "stop",
+        "stage",
+        "i",
+        "limit"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap4Sch40Test",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP4-SCH40|stop=ok|stage=end|i=399|limit=10000000|heapSeen=40003900|h1=25002834|h2=30003192|h3=40003900|cpu=10|record=BRHEAP4|HEAP4-SCH40|end|n=399|testHeap=1410"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap4Sch40Test",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP4-SCH40|stop=ok|stage=end|i=399|limit=10000000|heapSeen=40003905|h1=25002839|h2=30003197|h3=40003905|cpu=10|record=BRHEAP4|HEAP4-SCH40|end|n=399|testHeap=1415"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP4-B40",
+      "Classes": {
+        "BRHeap4B40": "public class BRHeap4B40 implements Database.Batchable<Integer> {\n    public static String stage = 'queued';\n    public static Integer iterations = 0;\n    public static Integer heapSeen;\n    public static Integer limitSeen;\n    public static Integer cpu;\n    public static Integer h1;\n    public static Integer h2;\n    public static Integer h3;\n    public Iterable<Integer> start(Database.BatchableContext context) {\n        return new List<Integer>{ 1 };\n    }\n    public void execute(Database.BatchableContext context, List<Integer> scope) {\n        stage = 'started';\n        limitSeen = Limits.getLimitHeapSize();\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        stage = 'grow1';\n        while (Limits.getHeapSize() < 25000000 && i < 800) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h1 = Limits.getHeapSize();\n        stage = 'grow2';\n        while (Limits.getHeapSize() < 30000000 && i < 800) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h2 = Limits.getHeapSize();\n        stage = 'grow3';\n        while (Limits.getHeapSize() < 40000000 && i < 800) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h3 = Limits.getHeapSize();\n        cpu = Limits.getCpuTime();\n        stage = 'end';\n        insert new Account(Name = 'BRHEAP4|HEAP4-B40|end|n=' + parts.size());\n    }\n    public void finish(Database.BatchableContext context) {}\n}\n",
+        "BRHeap4B40Test": "@IsTest\nprivate class BRHeap4B40Test {\n    @IsTest\n    static void observe() {\n        Test.startTest();\n        Id jobId = Database.executeBatch(new BRHeap4B40(), 1);\n        String stopped = 'ok';\n        try {\n            Test.stopTest();\n        } catch (Exception e) {\n            stopped = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n        }\n        List<AsyncApexJob> jobs = [SELECT Status, NumberOfErrors, ExtendedStatus FROM AsyncApexJob WHERE Id = :jobId];\n        String job = jobs.isEmpty() ? 'none' : jobs[0].Status + '/' + jobs[0].NumberOfErrors + '/' + jobs[0].ExtendedStatus;\n        List<Account> rows = [SELECT Name FROM Account WHERE Name LIKE 'BRHEAP4|%' LIMIT 1];\n        System.assert(false, 'P|HEAP4-B40|stop=' + stopped + '|job=' + job + '|stage=' + BRHeap4B40.stage + '|i=' + BRHeap4B40.iterations + '|limit=' + BRHeap4B40.limitSeen + '|heapSeen=' + BRHeap4B40.heapSeen + '|h1=' + BRHeap4B40.h1 + '|h2=' + BRHeap4B40.h2 + '|h3=' + BRHeap4B40.h3 + '|cpu=' + BRHeap4B40.cpu + '|record=' + (rows.isEmpty() ? 'none' : rows[0].Name) + '|testHeap=' + Limits.getHeapSize());\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap4B40Test"
+      ],
+      "MatchFields": [
+        "stop",
+        "job",
+        "stage",
+        "i",
+        "limit"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap4B40Test",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP4-B40|stop=ok|job=Completed/0/null|stage=end|i=399|limit=25000000|heapSeen=40003977|h1=25002911|h2=30003269|h3=40003977|cpu=9|record=BRHEAP4|HEAP4-B40|end|n=399|testHeap=1584"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap4B40Test",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP4-B40|stop=ok|job=Completed/0/null|stage=end|i=399|limit=25000000|heapSeen=40003982|h1=25002916|h2=30003274|h3=40003982|cpu=11|record=BRHEAP4|HEAP4-B40|end|n=399|testHeap=1590"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP4-F40",
+      "Classes": {
+        "BRHeap4F40": "public class BRHeap4F40 {\n    public static String stage = 'queued';\n    public static Integer iterations = 0;\n    public static Integer heapSeen;\n    public static Integer limitSeen;\n    public static Integer cpu;\n    public static Integer h1;\n    public static Integer h2;\n    public static Integer h3;\n    @future\n    public static void run() {\n        stage = 'started';\n        limitSeen = Limits.getLimitHeapSize();\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        stage = 'grow1';\n        while (Limits.getHeapSize() < 25000000 && i < 800) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h1 = Limits.getHeapSize();\n        stage = 'grow2';\n        while (Limits.getHeapSize() < 30000000 && i < 800) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h2 = Limits.getHeapSize();\n        stage = 'grow3';\n        while (Limits.getHeapSize() < 40000000 && i < 800) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h3 = Limits.getHeapSize();\n        cpu = Limits.getCpuTime();\n        stage = 'end';\n        insert new Account(Name = 'BRHEAP4|HEAP4-F40|end|n=' + parts.size());\n    }\n}\n",
+        "BRHeap4F40Test": "@IsTest\nprivate class BRHeap4F40Test {\n    @IsTest\n    static void observe() {\n        Test.startTest();\n        BRHeap4F40.run();\n        String stopped = 'ok';\n        try {\n            Test.stopTest();\n        } catch (Exception e) {\n            stopped = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n        }\n        List<Account> rows = [SELECT Name FROM Account WHERE Name LIKE 'BRHEAP4|%' LIMIT 1];\n        System.assert(false, 'P|HEAP4-F40|stop=' + stopped + '|stage=' + BRHeap4F40.stage + '|i=' + BRHeap4F40.iterations + '|limit=' + BRHeap4F40.limitSeen + '|heapSeen=' + BRHeap4F40.heapSeen + '|h1=' + BRHeap4F40.h1 + '|h2=' + BRHeap4F40.h2 + '|h3=' + BRHeap4F40.h3 + '|cpu=' + BRHeap4F40.cpu + '|record=' + (rows.isEmpty() ? 'none' : rows[0].Name) + '|testHeap=' + Limits.getHeapSize());\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap4F40Test"
+      ],
+      "MatchFields": [
+        "stop",
+        "stage",
+        "i",
+        "limit"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap4F40Test",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP4-F40|stop=ok|stage=end|i=399|limit=25000000|heapSeen=40003875|h1=25002809|h2=30003167|h3=40003875|cpu=9|record=BRHEAP4|HEAP4-F40|end|n=399|testHeap=1396"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap4F40Test",
+              "Method": "observe",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP4-F40|stop=ok|stage=end|i=399|limit=25000000|heapSeen=40003880|h1=25002814|h2=30003172|h3=40003880|cpu=8|record=BRHEAP4|HEAP4-F40|end|n=399|testHeap=1401"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP4-SCH60",
+      "Classes": {
+        "BRHeap4Sch60": "public class BRHeap4Sch60 implements Schedulable {\n    public static String stage = 'queued';\n    public static Integer iterations = 0;\n    public static Integer heapSeen;\n    public static Integer limitSeen;\n    public static Integer cpu;\n    public static Integer h1;\n    public static Integer h2;\n    public static Integer h3;\n    public static Integer h4;\n    public static Integer h5;\n    public void execute(SchedulableContext context) {\n        stage = 'started';\n        limitSeen = Limits.getLimitHeapSize();\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        stage = 'grow1';\n        while (Limits.getHeapSize() < 25000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h1 = Limits.getHeapSize();\n        stage = 'grow2';\n        while (Limits.getHeapSize() < 30000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h2 = Limits.getHeapSize();\n        stage = 'grow3';\n        while (Limits.getHeapSize() < 40000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h3 = Limits.getHeapSize();\n        stage = 'grow4';\n        while (Limits.getHeapSize() < 50000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h4 = Limits.getHeapSize();\n        stage = 'grow5';\n        while (Limits.getHeapSize() < 60000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h5 = Limits.getHeapSize();\n        cpu = Limits.getCpuTime();\n        stage = 'end';\n        insert new Account(Name = 'BRHEAP4|HEAP4-SCH60|end|n=' + parts.size());\n    }\n}\n",
+        "BRHeap4Sch60Test": "@IsTest\nprivate class BRHeap4Sch60Test {\n    @IsTest\n    static void observe() {\n        Test.startTest();\n        System.schedule('BRHeap4Sch60 observe', '0 0 0 1 1 ? 2099', new BRHeap4Sch60());\n        String stopped = 'ok';\n        try {\n            Test.stopTest();\n        } catch (Exception e) {\n            stopped = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n        }\n        List<Account> rows = [SELECT Name FROM Account WHERE Name LIKE 'BRHEAP4|%' LIMIT 1];\n        System.assert(false, 'P|HEAP4-SCH60|stop=' + stopped + '|stage=' + BRHeap4Sch60.stage + '|i=' + BRHeap4Sch60.iterations + '|limit=' + BRHeap4Sch60.limitSeen + '|heapSeen=' + BRHeap4Sch60.heapSeen + '|h1=' + BRHeap4Sch60.h1 + '|h2=' + BRHeap4Sch60.h2 + '|h3=' + BRHeap4Sch60.h3 + '|h4=' + BRHeap4Sch60.h4 + '|h5=' + BRHeap4Sch60.h5 + '|cpu=' + BRHeap4Sch60.cpu + '|record=' + (rows.isEmpty() ? 'none' : rows[0].Name) + '|testHeap=' + Limits.getHeapSize());\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap4Sch60Test"
+      ],
+      "Modes": [
+        "strict"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap4Sch60Test",
+              "Method": "observe",
+              "Message": "System.LimitException: Apex heap size too large: 52504787"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap4Sch60Test",
+              "Method": "observe",
+              "Message": "System.LimitException: Apex heap size too large: 52504792"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP4-B60",
+      "Classes": {
+        "BRHeap4B60": "public class BRHeap4B60 implements Database.Batchable<Integer> {\n    public static String stage = 'queued';\n    public static Integer iterations = 0;\n    public static Integer heapSeen;\n    public static Integer limitSeen;\n    public static Integer cpu;\n    public static Integer h1;\n    public static Integer h2;\n    public static Integer h3;\n    public static Integer h4;\n    public static Integer h5;\n    public Iterable<Integer> start(Database.BatchableContext context) {\n        return new List<Integer>{ 1 };\n    }\n    public void execute(Database.BatchableContext context, List<Integer> scope) {\n        stage = 'started';\n        limitSeen = Limits.getLimitHeapSize();\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        stage = 'grow1';\n        while (Limits.getHeapSize() < 25000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h1 = Limits.getHeapSize();\n        stage = 'grow2';\n        while (Limits.getHeapSize() < 30000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h2 = Limits.getHeapSize();\n        stage = 'grow3';\n        while (Limits.getHeapSize() < 40000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h3 = Limits.getHeapSize();\n        stage = 'grow4';\n        while (Limits.getHeapSize() < 50000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h4 = Limits.getHeapSize();\n        stage = 'grow5';\n        while (Limits.getHeapSize() < 60000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h5 = Limits.getHeapSize();\n        cpu = Limits.getCpuTime();\n        stage = 'end';\n        insert new Account(Name = 'BRHEAP4|HEAP4-B60|end|n=' + parts.size());\n    }\n    public void finish(Database.BatchableContext context) {}\n}\n",
+        "BRHeap4B60Test": "@IsTest\nprivate class BRHeap4B60Test {\n    @IsTest\n    static void observe() {\n        Test.startTest();\n        Id jobId = Database.executeBatch(new BRHeap4B60(), 1);\n        String stopped = 'ok';\n        try {\n            Test.stopTest();\n        } catch (Exception e) {\n            stopped = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n        }\n        List<AsyncApexJob> jobs = [SELECT Status, NumberOfErrors, ExtendedStatus FROM AsyncApexJob WHERE Id = :jobId];\n        String job = jobs.isEmpty() ? 'none' : jobs[0].Status + '/' + jobs[0].NumberOfErrors + '/' + jobs[0].ExtendedStatus;\n        List<Account> rows = [SELECT Name FROM Account WHERE Name LIKE 'BRHEAP4|%' LIMIT 1];\n        System.assert(false, 'P|HEAP4-B60|stop=' + stopped + '|job=' + job + '|stage=' + BRHeap4B60.stage + '|i=' + BRHeap4B60.iterations + '|limit=' + BRHeap4B60.limitSeen + '|heapSeen=' + BRHeap4B60.heapSeen + '|h1=' + BRHeap4B60.h1 + '|h2=' + BRHeap4B60.h2 + '|h3=' + BRHeap4B60.h3 + '|h4=' + BRHeap4B60.h4 + '|h5=' + BRHeap4B60.h5 + '|cpu=' + BRHeap4B60.cpu + '|record=' + (rows.isEmpty() ? 'none' : rows[0].Name) + '|testHeap=' + Limits.getHeapSize());\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap4B60Test"
+      ],
+      "Modes": [
+        "strict"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap4B60Test",
+              "Method": "observe",
+              "Message": "System.LimitException: Apex heap size too large: 52504864"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap4B60Test",
+              "Method": "observe",
+              "Message": "System.LimitException: Apex heap size too large: 52504869"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP4-F60",
+      "Classes": {
+        "BRHeap4F60": "public class BRHeap4F60 {\n    public static String stage = 'queued';\n    public static Integer iterations = 0;\n    public static Integer heapSeen;\n    public static Integer limitSeen;\n    public static Integer cpu;\n    public static Integer h1;\n    public static Integer h2;\n    public static Integer h3;\n    public static Integer h4;\n    public static Integer h5;\n    @future\n    public static void run() {\n        stage = 'started';\n        limitSeen = Limits.getLimitHeapSize();\n        List<String> parts = new List<String>();\n        String chunk = 'x'.repeat(100000);\n        Integer i = 0;\n        stage = 'grow1';\n        while (Limits.getHeapSize() < 25000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h1 = Limits.getHeapSize();\n        stage = 'grow2';\n        while (Limits.getHeapSize() < 30000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h2 = Limits.getHeapSize();\n        stage = 'grow3';\n        while (Limits.getHeapSize() < 40000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h3 = Limits.getHeapSize();\n        stage = 'grow4';\n        while (Limits.getHeapSize() < 50000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h4 = Limits.getHeapSize();\n        stage = 'grow5';\n        while (Limits.getHeapSize() < 60000000 && i < 1200) { parts.add(chunk + i); i++; iterations = i; heapSeen = Limits.getHeapSize(); }\n        h5 = Limits.getHeapSize();\n        cpu = Limits.getCpuTime();\n        stage = 'end';\n        insert new Account(Name = 'BRHEAP4|HEAP4-F60|end|n=' + parts.size());\n    }\n}\n",
+        "BRHeap4F60Test": "@IsTest\nprivate class BRHeap4F60Test {\n    @IsTest\n    static void observe() {\n        Test.startTest();\n        BRHeap4F60.run();\n        String stopped = 'ok';\n        try {\n            Test.stopTest();\n        } catch (Exception e) {\n            stopped = 'EXC|' + e.getTypeName() + '|' + e.getMessage();\n        }\n        List<Account> rows = [SELECT Name FROM Account WHERE Name LIKE 'BRHEAP4|%' LIMIT 1];\n        System.assert(false, 'P|HEAP4-F60|stop=' + stopped + '|stage=' + BRHeap4F60.stage + '|i=' + BRHeap4F60.iterations + '|limit=' + BRHeap4F60.limitSeen + '|heapSeen=' + BRHeap4F60.heapSeen + '|h1=' + BRHeap4F60.h1 + '|h2=' + BRHeap4F60.h2 + '|h3=' + BRHeap4F60.h3 + '|h4=' + BRHeap4F60.h4 + '|h5=' + BRHeap4F60.h5 + '|cpu=' + BRHeap4F60.cpu + '|record=' + (rows.isEmpty() ? 'none' : rows[0].Name) + '|testHeap=' + Limits.getHeapSize());\n    }\n}\n"
+      },
+      "Tests": [
+        "BRHeap4F60Test"
+      ],
+      "Modes": [
+        "strict"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap4F60Test",
+              "Method": "observe",
+              "Message": "System.LimitException: Apex heap size too large: 52504762"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "BRHeap4F60Test",
+              "Method": "observe",
+              "Message": "System.LimitException: Apex heap size too large: 52504767"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

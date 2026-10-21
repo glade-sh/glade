@@ -1,0 +1,2518 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 16,
+  "nativeObservationCount": 96,
+  "packetRowsSha256": "bdb07c4592ca774891f1569ddbb47b04d8979873883901e5e60ab5a6c6092167",
+  "nativeJsonSha256": "4ea174bf42c7fcf1cdd34a6b45f2232d1313484f90b0d79926ea759ee2e914e3",
+  "sourceManifestSha256": "af4d7c498b85003536813731611d0195b34454cd55719dd98b0ecdfe18f88b32",
+  "rows": [
+    {
+      "id": "C126STREAM_001",
+      "question": "Integer iterator to Object parameter",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126STREAM_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "d5954838d1c443fc0d418776483003d7e6493e729835531a55da92b6de31c14f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "59b38a5d02b9eaf4352dd0eb5b6dad3031177e3e2e08fdfa4bdad52e186e8af1",
+            "67.0": "7253a75c1355f943077f9e31fa53e4723afccffb5b620ad9252f371c649db88c",
+            "68.0": "63d9416811535de2d8963d81d38b3e2b4bceab4c5b225f84160aff98a59bd13f"
+          },
+          "anonymous": "class C126Receiver { public Object head(Iterator<Object> x){return x.next();} }\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<Integer> it=new List<Integer>{7}.iterator();o.put('value',new C126Receiver().head(it));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126STREAM_001|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126STREAM_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Receiver": "c4541f4f3ac7250bb1af41d6e4532be951cd1abf58bd4df5875a9991bf0554c8",
+            "class:C126Test": "fccb550062a7aeb773693a3654645bc577e253151941a199e279bcfbbadfd99f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "844cbf7f5baf8119935e91cefb4134f685e3a09b32d0a32c35e5a4c708cbbe2e",
+            "67.0": "f1c6ae97a1c7b3e2a18f28f5808a72b92f87288ab03db60a6abcb9e3196238a7",
+            "68.0": "71e1864d9e9943540e237503d87f1ac31fb660772bbde1e89139625934c29e8e"
+          },
+          "classes": {
+            "C126Receiver": "public class C126Receiver { public Object head(Iterator<Object> x){return x.next();} }",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<Integer> it=new List<Integer>{7}.iterator();o.put('value',new C126Receiver().head(it));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126STREAM_001|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126STREAM_002",
+      "question": "Double iterator to Object parameter",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126STREAM_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "e2c800eb141baed33b257c14953fd9adf005f67baad89867a1307f58dbae4d03"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7.5
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7.5
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7.5
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "fa48be117440924db2cdd10305ca54606731c63f2b57f0cc41b543c0af94c214",
+            "67.0": "f4b2c366344dedf516e4d6917ab6392c010746ec103e9dda4b1bf39f48ca6cf2",
+            "68.0": "815fac8778b940325c37370da3a003c0cc9d19b7d0c00a960899740c4c337639"
+          },
+          "anonymous": "class C126Receiver { public Object head(Iterator<Object> x){return x.next();} }\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<Double> it=new List<Double>{7.5}.iterator();o.put('value',new C126Receiver().head(it));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126STREAM_002|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126STREAM_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Receiver": "c4541f4f3ac7250bb1af41d6e4532be951cd1abf58bd4df5875a9991bf0554c8",
+            "class:C126Test": "959038a3cd9affd5be0ba3214f91fcaf761548606dd1738e70ae89604da594db"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7.5
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7.5
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7.5
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "97ebba7853eef1f6ea3e43f4fcda7a03b3bb5fe73d4a9904698b2e1a939b24d6",
+            "67.0": "7a6e6e6fdd9b0ebdbd0902f7163710a3b28f81c583dfb67263f83b4c66893ded",
+            "68.0": "a844dc60a8086cdb603fbc88df1ddf5de7fcec4df4013b816dbd91499b511483"
+          },
+          "classes": {
+            "C126Receiver": "public class C126Receiver { public Object head(Iterator<Object> x){return x.next();} }",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<Double> it=new List<Double>{7.5}.iterator();o.put('value',new C126Receiver().head(it));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126STREAM_002|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126STREAM_003",
+      "question": "Long iterator to Object parameter",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126STREAM_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "37af59828bdae0c36b63cc8e9f73c9f1daf2f5c80cd4f905bf89729e75be5ffb"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "4be90d744ce02a5ed94921fcb88a1eb60a0f2299081068b3e8f128e4edb6fc13",
+            "67.0": "60eb60f445f287510af984cd9ea1c000cc70989340f14c93d7ccb4abb8001f4f",
+            "68.0": "16be97a835aaf638945d6df0e626e1240c72cba5d8116b8a6ca08540ccc21147"
+          },
+          "anonymous": "class C126Receiver { public Object head(Iterator<Object> x){return x.next();} }\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<Long> it=new List<Long>{7L}.iterator();o.put('value',new C126Receiver().head(it));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126STREAM_003|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126STREAM_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Receiver": "c4541f4f3ac7250bb1af41d6e4532be951cd1abf58bd4df5875a9991bf0554c8",
+            "class:C126Test": "27a252e56a69b01103f3cf1e1fd88ba26c45e93ce52e9d40d885d927280596e2"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "8d9eed027c6aac83350ef9da3bed288e3bc4bf9dd7a11cc1b6f5e08fac82cf29",
+            "67.0": "9a8e6bb335285498142db597c374c69c8faf5782d5bf21776de186b1bae961e0",
+            "68.0": "8f5b6ab068f42ece55c4c3f0332479c9eab9ca31ea72fe214c81d15a66528f6d"
+          },
+          "classes": {
+            "C126Receiver": "public class C126Receiver { public Object head(Iterator<Object> x){return x.next();} }",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<Long> it=new List<Long>{7L}.iterator();o.put('value',new C126Receiver().head(it));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126STREAM_003|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126STREAM_004",
+      "question": "SObject iterator to Object parameter",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126STREAM_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "fbe5026d2b44132c55cfff3828e800d3928494b41edf91d9b0999dd64fe6f23b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": {
+                  "attributes": {
+                    "type": "Account"
+                  },
+                  "Name": "Synthetic"
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": {
+                  "attributes": {
+                    "type": "Account"
+                  },
+                  "Name": "Synthetic"
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": {
+                  "attributes": {
+                    "type": "Account"
+                  },
+                  "Name": "Synthetic"
+                }
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "0aa1b9e5932fae98db51daca1e315e0768fd8c596146cac82375ba0e0816c3d6",
+            "67.0": "ab158b49e543309ea297929857e330f241219b54dfc5e0cbe6c27db553bbf1b6",
+            "68.0": "595fd474170d613beaa7f7341c68df608c2da7183f09755dd39db63931388000"
+          },
+          "anonymous": "class C126Receiver { public Object head(Iterator<Object> x){return x.next();} }\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<SObject> it=new List<SObject>{new Account(Name='Synthetic')}.iterator();o.put('value',new C126Receiver().head(it));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126STREAM_004|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126STREAM_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Receiver": "c4541f4f3ac7250bb1af41d6e4532be951cd1abf58bd4df5875a9991bf0554c8",
+            "class:C126Test": "94e9574745bd6a2595d0c17406dc777b9219412adfbd336d077878dd7505ed99"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": {
+                  "attributes": {
+                    "type": "Account"
+                  },
+                  "Name": "Synthetic"
+                }
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": {
+                  "attributes": {
+                    "type": "Account"
+                  },
+                  "Name": "Synthetic"
+                }
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": {
+                  "attributes": {
+                    "type": "Account"
+                  },
+                  "Name": "Synthetic"
+                }
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "32cb9f1b5ad8d086a8d2d5360d881e279cc81a6e9148bab71e894390c716f980",
+            "67.0": "3ebf3ce5a760e3059302112abec09aee2aaf98c03329a10bf919c14766b86489",
+            "68.0": "bd7693bd86a7ef4ea162c46846d4a6c6952a3ecf46fb1830e97c2bb1da1befa7"
+          },
+          "classes": {
+            "C126Receiver": "public class C126Receiver { public Object head(Iterator<Object> x){return x.next();} }",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<SObject> it=new List<SObject>{new Account(Name='Synthetic')}.iterator();o.put('value',new C126Receiver().head(it));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126STREAM_004|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126STREAM_005",
+      "question": "Integer iterator assigned to Object iterator",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126STREAM_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "1148a6c46f6881a20d73910787b7824314bff52dfb31161738f98a2be3c4d047"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>",
+                "line": 4,
+                "column": 70,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>",
+                "line": 4,
+                "column": 70,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>",
+                "line": 4,
+                "column": 70,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>",
+                "line": 4,
+                "column": 70
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>",
+                "line": 4,
+                "column": 70
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>",
+                "line": 4,
+                "column": 70
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "fbe3c3e33e4099a5a61705b59cc0da1c23b909f33758b61acc2655fd36e72677",
+            "67.0": "014323d50c537a756d19d70ffbe884972279cf2edd3f5e86477427a778899585",
+            "68.0": "252583a0e7386704147a08f6eb147a04b7483e545b682ecd860f5b0f02f24c67"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<Integer> a=new List<Integer>{7}.iterator();Iterator<Object> b=a;o.put('value',b.next());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126STREAM_005|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126STREAM_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "7f60f31dc37466656e0c4c062cdaf664b0da0678614c29ee0caccac28b88e56f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "f6453f7e7ed9d101416ab364000a9ace0a494dda9b7fd8f4c3e6480a3d366119",
+            "67.0": "b9e6639ffb2de6473b8d01c2ab93f9aa8a039dd1c1d6c2b1a0788d27427e84b2",
+            "68.0": "c889e3aab0dbfed920b1ed74412a31919787cabd87e87bf06c7806d4109e7b49"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<Integer> a=new List<Integer>{7}.iterator();Iterator<Object> b=a;o.put('value',b.next());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126STREAM_005|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126STREAM_006",
+      "question": "Object iterator assigned to Integer iterator",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126STREAM_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "1f2966a67037891d3881797ad58d8b609f56f76c4d612aad30184406e8359a5a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal assignment from System.Iterator<Object> to System.Iterator<Integer>",
+                "line": 4,
+                "column": 69,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal assignment from System.Iterator<Object> to System.Iterator<Integer>",
+                "line": 4,
+                "column": 69,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal assignment from System.Iterator<Object> to System.Iterator<Integer>",
+                "line": 4,
+                "column": 69,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Illegal assignment from System.Iterator<Object> to System.Iterator<Integer>",
+                "line": 4,
+                "column": 69
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Illegal assignment from System.Iterator<Object> to System.Iterator<Integer>",
+                "line": 4,
+                "column": 69
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Illegal assignment from System.Iterator<Object> to System.Iterator<Integer>",
+                "line": 4,
+                "column": 69
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "7bc3f85daddb0a7553b8f6141ba02417d52bd91e5496ba78aed312469a443c1f",
+            "67.0": "a457113a834d2f98a3e23545ab631e215446ed3d0423afcd98b67423775846e3",
+            "68.0": "1452610afab629f743172759808925fb8775c19fb826125c9e37a8b2cb407e89"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<Object> a=new List<Object>{7}.iterator();Iterator<Integer> b=a;o.put('value',b.next());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126STREAM_006|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126STREAM_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "f1988514a2308fcea4e1098fce21a72ff44bfeca2edbde1560ee71580810948b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Illegal assignment from System.Iterator<Object> to System.Iterator<Integer>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Illegal assignment from System.Iterator<Object> to System.Iterator<Integer>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Illegal assignment from System.Iterator<Object> to System.Iterator<Integer>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Illegal assignment from System.Iterator<Object> to System.Iterator<Integer>"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Illegal assignment from System.Iterator<Object> to System.Iterator<Integer>"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Illegal assignment from System.Iterator<Object> to System.Iterator<Integer>"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "1d770e0e2c2b4028af98c88153d0e34acf6657aa52aa7c429b469ffd9c330337",
+            "67.0": "1568885e23715e77f3d15607748ab20c3474e18a005f378f5832e572e0c79708",
+            "68.0": "ae316e0dc0df7b3a51eb04cf35f458f9de355cbe521e3e4fa50a91f41135fce0"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<Object> a=new List<Object>{7}.iterator();Iterator<Integer> b=a;o.put('value',b.next());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126STREAM_006|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126STREAM_007",
+      "question": "Integer iterator assigned to String iterator",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126STREAM_007",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "3d7bc76d06925cd7c38f4c9949a53786d65fc680222c36487afd93eba1d99e97"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<String>",
+                "line": 4,
+                "column": 70,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<String>",
+                "line": 4,
+                "column": 70,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<String>",
+                "line": 4,
+                "column": 70,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<String>",
+                "line": 4,
+                "column": 70
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<String>",
+                "line": 4,
+                "column": 70
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<String>",
+                "line": 4,
+                "column": 70
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "079a5e3722cef0996b9d4547f42d80b98a3a13bca81403fe606ff97dc4f436e2",
+            "67.0": "4fb750a8e10229065ba010adba7678ef6b6fe0adf8ad43e2588d8dbabb7efda9",
+            "68.0": "88b2193acf6b7dc276b41372e3c99f445a7086e766eba9a9d9d1bc6d74a8a7b4"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<Integer> a=new List<Integer>{7}.iterator();Iterator<String> b=a;o.put('value',b.next());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126STREAM_007|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126STREAM_007",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "591f58680ceece27d20177feb5f0040ac38ed52ed49671abf6a658c8638a3071"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<String>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<String>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<String>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<String>"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<String>"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<String>"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "5ccd8b0ab807dab52c043e4dcf32ef2055020a4b15a7fd2267f8aeeeccce90f6",
+            "67.0": "a89c238414a59f893a2e80baa70ce32e0641944a879e7b26e8a9899b04dec158",
+            "68.0": "0516616bca3ad2ae5c5c50b4235184423da7f60401b98d6c7106d7154ac202a0"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<Integer> a=new List<Integer>{7}.iterator();Iterator<String> b=a;o.put('value',b.next());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126STREAM_007|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126STREAM_008",
+      "question": "Integer iterator assigned to Integer iterator",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126STREAM_008",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "8217b9f16c1b091e035a5f3b0b749c1c6b9eff33c19bc05ba561933edfe8206e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "9fb5ce36cf5eaab6f49d7d4467d14fae7cf3da903d75320b306c2e96db2e8767",
+            "67.0": "7a75e5fcff8145b3a95ccf4ed8b014fe3fc4bc0251c7ce274520f56238bb894d",
+            "68.0": "a7c8ed467e7057f99f2ade5bc5117affc96d6004a056252e7c346e83729cc4b1"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<Integer> a=new List<Integer>{7}.iterator();Iterator<Integer> b=a;o.put('value',b.next());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126STREAM_008|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126STREAM_008",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "70174885c20477a02227736d01e639fc8dc803ca2571a01441ee262f806b231e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "71b48e9226e1b7c12b748ee7fe248cbf52f55608c9a944d32c3ae3aa664442b1",
+            "67.0": "ff93eb90ab85cefa981421f17be4ec60a31013068acb11ced2d840b37d1369be",
+            "68.0": "03dd0a844d12f58e6c21e91e5d64ad05fb379dfac2a7e146d3f2a7b2e99dfc52"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<Integer> a=new List<Integer>{7}.iterator();Iterator<Integer> b=a;o.put('value',b.next());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126STREAM_008|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126STREAM_009",
+      "question": "SObject iterator assigned to Object iterator",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126STREAM_009",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "90133aff5e376409c7a1224984fae910f3eb689bf8839aecccf26e9f31f0ef2c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal assignment from System.Iterator<SObject> to System.Iterator<Object>",
+                "line": 4,
+                "column": 98,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal assignment from System.Iterator<SObject> to System.Iterator<Object>",
+                "line": 4,
+                "column": 98,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal assignment from System.Iterator<SObject> to System.Iterator<Object>",
+                "line": 4,
+                "column": 98,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Illegal assignment from System.Iterator<SObject> to System.Iterator<Object>",
+                "line": 4,
+                "column": 98
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Illegal assignment from System.Iterator<SObject> to System.Iterator<Object>",
+                "line": 4,
+                "column": 98
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Illegal assignment from System.Iterator<SObject> to System.Iterator<Object>",
+                "line": 4,
+                "column": 98
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "562bb6e86ad7cde1fe3a636349561a300eced887f16f6570a76d532d6685f233",
+            "67.0": "ab366847c345d1974b7de9a2d64892db135b12b1b3a6fbc2a3868d87ff6e9151",
+            "68.0": "518edf46c9f925d8ea5856f1d498c194f66a15246d1cae4be7c3794bf1af07e7"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<SObject> a=new List<SObject>{new Account(Name='Synthetic')}.iterator();Iterator<Object> b=a;o.put('value',b.next());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126STREAM_009|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126STREAM_009",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "7177b1392e2d06f282a7aaf292923f6720a0652da1872f7e8789d01c69dfbe03"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Illegal assignment from System.Iterator<SObject> to System.Iterator<Object>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Illegal assignment from System.Iterator<SObject> to System.Iterator<Object>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Illegal assignment from System.Iterator<SObject> to System.Iterator<Object>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Illegal assignment from System.Iterator<SObject> to System.Iterator<Object>"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Illegal assignment from System.Iterator<SObject> to System.Iterator<Object>"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Illegal assignment from System.Iterator<SObject> to System.Iterator<Object>"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "ff166c60c88d4ee0cb12a7ba202e21a832cc140bc524dde63e020aaf218f5cfc",
+            "67.0": "30aa7d2e94f734e128184c67498ca392513858db48dd66e8f172b3c1d44c4da2",
+            "68.0": "62431c18de3709d8ccc64ddff426b927c810cb244cfde6e860c5d9a8cebcd760"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<SObject> a=new List<SObject>{new Account(Name='Synthetic')}.iterator();Iterator<Object> b=a;o.put('value',b.next());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126STREAM_009|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126STREAM_010",
+      "question": "Integer iterator returned as Object iterator",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126STREAM_010",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "e9a14efd8949156a9bcbb7dc3e197b419305cb2b0723ece7cf7857e7f377eeb6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>",
+                "line": 1,
+                "column": 51,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>",
+                "line": 1,
+                "column": 51,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>",
+                "line": 1,
+                "column": 51,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>",
+                "line": 1,
+                "column": 51
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>",
+                "line": 1,
+                "column": 51
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>",
+                "line": 1,
+                "column": 51
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "47fa238d2948643cd14da08f66f71f890f6a24372f6874e07f606538ee0777e2",
+            "67.0": "64deb296555ef4a38809d6234382998953310f0b08d67f31d630ac87ab8a5be2",
+            "68.0": "d1709d18dc81a4dbee31a0487c473cb25b83e10ecda283b4e1605bbc54d7a56e"
+          },
+          "anonymous": "class C126Return {public Iterator<Object> items(){return new List<Integer>{7}.iterator();}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Return().items().next());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126STREAM_010|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126STREAM_010",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Return": "374997ff7df58192c1cfda41b6834c28ca03ba50733bc5f1b4201bd76473bb84",
+            "class:C126Test": "308b5cdbfff223380371a4b1df1ba356fd4314c74c5150218b22a547f69e99a2"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Return",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Dependent class is invalid and needs recompilation:\n Class C126Return : Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Return",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Dependent class is invalid and needs recompilation:\n Class C126Return : Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Return",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Dependent class is invalid and needs recompilation:\n Class C126Return : Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Return",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class C126Return : Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Return",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class C126Return : Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Return",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class C126Return : Illegal conversion from System.ListIterator<Integer> to System.Iterator<Object>"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "01f19c9227e66743320c3dc7d1a2826edf284b50cf05efab7a805cad7c043b68",
+            "67.0": "c8e1ca62453b3fcb5260935922c42e873c33ae80711c2802b16a073e7a5078df",
+            "68.0": "1c7d97ba92c899730ffc1dd858eac48248fa895d994dd573fffc04414d03df77"
+          },
+          "classes": {
+            "C126Return": "public class C126Return {public Iterator<Object> items(){return new List<Integer>{7}.iterator();}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Return().items().next());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126STREAM_010|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126STREAM_011",
+      "question": "Integer/Object overload selects with Integer iterator",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126STREAM_011",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "636e74a313a1473faf616b0c68fd28d25ae2aadb5d91e3028ba3b97baf261d73"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "b262e7651821c0ee34eb65b685f2d63006cf6f128f17c27ab095c085f6111c2e",
+            "67.0": "5e46e770d7cd226ecc8285acbbe10f7c3e075cdaff9872287a598b11c91a63df",
+            "68.0": "77f4a43480e491f744c85dd7d5b9e8443c00f3d6d212980306d176076d2f95f7"
+          },
+          "anonymous": "class C126Overload {public String pick(Iterator<Integer> x){return 'integer';} public String pick(Iterator<Object> x){return 'object';}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('selected',new C126Overload().pick(new List<Integer>{7}.iterator()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126STREAM_011|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126STREAM_011",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Overload": "b92a4bf72121fe6da9de394e1f74eb8f12a352201c4948e2913f921b012bf4a8",
+            "class:C126Test": "efe246775f0ad794c6e0c312e4244f9f8f1adb5addc88c1817be9419c772b489"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Overload",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Dependent class is invalid and needs recompilation:\n Class C126Overload : Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Overload",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Dependent class is invalid and needs recompilation:\n Class C126Overload : Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Overload",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Dependent class is invalid and needs recompilation:\n Class C126Overload : Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Overload",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class C126Overload : Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Overload",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class C126Overload : Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Overload",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class C126Overload : Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "2d350f5a1a776e0435009a2b2cb918a848bdbc1b7c4d73897c731509f599cbf8",
+            "67.0": "0ec88337dc3cdbef552d818d573695e3d013d7e606c8f577cdafc923f28e1b0e",
+            "68.0": "cef58ff14b9c682cf1d03893353c5ac0886cc803664fee91dd1901ce9c5a978b"
+          },
+          "classes": {
+            "C126Overload": "public class C126Overload {public String pick(Iterator<Integer> x){return 'integer';} public String pick(Iterator<Object> x){return 'object';}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('selected',new C126Overload().pick(new List<Integer>{7}.iterator()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126STREAM_011|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126STREAM_012",
+      "question": "Object iterator overload control",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126STREAM_012",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "67fa6ed9acc887cf1a7427da3d72dadf52e65011956ce9ddb4c0c3e85d10a9d7"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "bdf523af9862ba017e9e8b3571bd6b97aef961a8b53cb4957a26dca2eed01a90",
+            "67.0": "c78a2c75fdb4b2eaa82602e8449b7b538ad4322e89444428566dda00fd777054",
+            "68.0": "6f4196ddfae6ed37a79d175897ebc588272d32a17f309453b1093f1867d4acdb"
+          },
+          "anonymous": "class C126Overload {public String pick(Iterator<Integer> x){return 'integer';} public String pick(Iterator<Object> x){return 'object';}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('selected',new C126Overload().pick(new List<Object>{7}.iterator()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126STREAM_012|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126STREAM_012",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Overload": "b92a4bf72121fe6da9de394e1f74eb8f12a352201c4948e2913f921b012bf4a8",
+            "class:C126Test": "0dc758dd5f4066215908ef1fde8537522a6fa08e61465372fadfa89f27dd1c77"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Overload",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Method does not exist or incorrect signature: void pick(System.ListIterator<Object>) from the type C126Overload"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Overload",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Method does not exist or incorrect signature: void pick(System.ListIterator<Object>) from the type C126Overload"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Overload",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Method does not exist or incorrect signature: void pick(System.ListIterator<Object>) from the type C126Overload"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Overload",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Method does not exist or incorrect signature: void pick(System.ListIterator<Object>) from the type C126Overload"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Overload",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Method does not exist or incorrect signature: void pick(System.ListIterator<Object>) from the type C126Overload"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Overload",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Method does not exist or incorrect signature: void pick(System.ListIterator<Object>) from the type C126Overload"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "cd26b851f38b777fc59f7f661bbec4d3c3cbb34df4a9cf2ed358b6c04795972d",
+            "67.0": "8a91c1e98b2bc37a5dbb6037c70e317eccee1be309eff58b8fa7d8456fbc3fcc",
+            "68.0": "266424de43883b0c5fc9a30c8b21a11f969c583be4aa3f47fd23e2ff02dba8a1"
+          },
+          "classes": {
+            "C126Overload": "public class C126Overload {public String pick(Iterator<Integer> x){return 'integer';} public String pick(Iterator<Object> x){return 'object';}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('selected',new C126Overload().pick(new List<Object>{7}.iterator()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126STREAM_012|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126STREAM_013",
+      "question": "Null overload ambiguity",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126STREAM_013",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "aa463f9112f3e06bbdd481f89ddfb17e24e5e8426f868f7c44ffc11116e108a1"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload",
+                "line": 1,
+                "column": 94
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "7689cefe05673875816972caaefd1e4758da2889b41ba747aaf48bfcd561b24b",
+            "67.0": "a0601d4845e545fe9c50f08c9f650d16f2cc5f03e406007445cb3743dd7c9ad8",
+            "68.0": "447bd84f01884d3496b647b990ba2820ea34914ef75e3bd4844ca831b8d5b5b1"
+          },
+          "anonymous": "class C126Overload {public String pick(Iterator<Integer> x){return 'integer';} public String pick(Iterator<Object> x){return 'object';}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('selected',new C126Overload().pick(null));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126STREAM_013|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126STREAM_013",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Overload": "b92a4bf72121fe6da9de394e1f74eb8f12a352201c4948e2913f921b012bf4a8",
+            "class:C126Test": "21c18d75c833613f6a0dfd54ec91da10c4418ad010d44412f32ea6b65e37cf3c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Overload",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Dependent class is invalid and needs recompilation:\n Class C126Overload : Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Overload",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Dependent class is invalid and needs recompilation:\n Class C126Overload : Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Overload",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Dependent class is invalid and needs recompilation:\n Class C126Overload : Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Overload",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class C126Overload : Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Overload",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class C126Overload : Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Overload",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class C126Overload : Method already defined: pick String C126Overload.pick(System.Iterator<Object>) from the type C126Overload"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "a55a5d53002857d0fe49994130bd724243e6253e3a6a7be933cc7550b51039b4",
+            "67.0": "2b9a7c340b03b744dcec6a372c66cb8828e4bbd4d0a8bd72c6f055a529c90614",
+            "68.0": "318260641e61e7687bc9f4cbd623ee95f1a120560454524a91c7dc8922fb7b7e"
+          },
+          "classes": {
+            "C126Overload": "public class C126Overload {public String pick(Iterator<Integer> x){return 'integer';} public String pick(Iterator<Object> x){return 'object';}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('selected',new C126Overload().pick(null));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126STREAM_013|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126STREAM_014",
+      "question": "Iterable conversion does not establish Iterator conversion",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126STREAM_014",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "df5565d881a1311e546d08f267a013ee2708cde915e0e949830e3bbbaa885334"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "03125ed13246e6e86cbb254231c77d62a37eaa2d31897d973deb47363fb0d18a",
+            "67.0": "4058de88d2a8c7b612faa60dc8a8fd0f6aa309b1b4d324b05b68891617a4d4c6",
+            "68.0": "8e30d3009e8f8e1cf0787615f0b370a884e00b58efb55991a9925add0b6a612e"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nIterable<Integer> a=new List<Integer>{7};Iterable<Object> b=a;o.put('value',b.iterator().next());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126STREAM_014|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126STREAM_014",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "63a872990ef3bcd26c7a3ee49dad492f6924b5b3463a4a85999bdaa9a6a1e185"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "6353bca1b660ae48baa3ba4f9eeb3abeeb7b249ca35ebe604b8ce741d907a0a6",
+            "67.0": "1babf5f370303707147125f34d91299ad69163512897ba7e98c595fbd421f5e1",
+            "68.0": "04837cfc4646947891738b4606ca597c52acd9008c0e1efde089640325a9dba3"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nIterable<Integer> a=new List<Integer>{7};Iterable<Object> b=a;o.put('value',b.iterator().next());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126STREAM_014|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126STREAM_015",
+      "question": "Unrelated iterator parameter",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126STREAM_015",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "2c4f4263b8eb51c711b9d8993886fe2bf3590dfde9c8ffc6350d54c96385699a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method does not exist or incorrect signature: void head(System.ListIterator<Integer>) from the type C126Receiver",
+                "line": 4,
+                "column": 34,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method does not exist or incorrect signature: void head(System.ListIterator<Integer>) from the type C126Receiver",
+                "line": 4,
+                "column": 34,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Method does not exist or incorrect signature: void head(System.ListIterator<Integer>) from the type C126Receiver",
+                "line": 4,
+                "column": 34,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Method does not exist or incorrect signature: void head(System.ListIterator<Integer>) from the type C126Receiver",
+                "line": 4,
+                "column": 34
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Method does not exist or incorrect signature: void head(System.ListIterator<Integer>) from the type C126Receiver",
+                "line": 4,
+                "column": 34
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Method does not exist or incorrect signature: void head(System.ListIterator<Integer>) from the type C126Receiver",
+                "line": 4,
+                "column": 34
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "b34ea09cd4c9499a0d3f00c1fcb1a7acb7a762e77dd94ec05eb79a0422aa8ccf",
+            "67.0": "ba44e26b84e80c081838c8b9a633ecdac22a5c646ba74888280dd3c2dde0d302",
+            "68.0": "c5c4dcb53cabc51f3a3e8b74eb28a19bf9c82c7dc56486e069775ee369e24c87"
+          },
+          "anonymous": "class C126Receiver { public String head(Iterator<String> x){return x.next();} }\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Receiver().head(new List<Integer>{7}.iterator()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126STREAM_015|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126STREAM_015",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Receiver": "bd0d731bd22da6ba35f1346fc09d2a67a0f8faaecac98fbb8e3963739dcf3eb7",
+            "class:C126Test": "5e2e77b6a8a7fe93cf3bc02ebbe67b5e8a1895cff47f27902f6690e6d6638376"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Method does not exist or incorrect signature: void head(System.ListIterator<Integer>) from the type C126Receiver"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Method does not exist or incorrect signature: void head(System.ListIterator<Integer>) from the type C126Receiver"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Method does not exist or incorrect signature: void head(System.ListIterator<Integer>) from the type C126Receiver"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Method does not exist or incorrect signature: void head(System.ListIterator<Integer>) from the type C126Receiver"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Method does not exist or incorrect signature: void head(System.ListIterator<Integer>) from the type C126Receiver"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Method does not exist or incorrect signature: void head(System.ListIterator<Integer>) from the type C126Receiver"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "2b15a209086d3c2ae116d21478c0a42bad15fe7de4d0b1627115975613cdac1f",
+            "67.0": "268ee523b2f43fc13c85b0e6aee8aed82c3712677ebda0b255dc0cca06d2305e",
+            "68.0": "14b1701bb0e3a3a4a59566f1babb0bf75b358fd858edcca3c17f9ceb1d3fa7ad"
+          },
+          "classes": {
+            "C126Receiver": "public class C126Receiver { public String head(Iterator<String> x){return x.next();} }",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\no.put('value',new C126Receiver().head(new List<Integer>{7}.iterator()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126STREAM_015|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126STREAM_016",
+      "question": "Empty concrete iterator widening",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126STREAM_016",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "64ed610577da85c7e4e91517e8c28471bb3c36e9240ce4610889342da3ee66d9"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>",
+                "line": 4,
+                "column": 69,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>",
+                "line": 4,
+                "column": 69,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>",
+                "line": 4,
+                "column": 69,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>",
+                "line": 4,
+                "column": 69
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>",
+                "line": 4,
+                "column": 69
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>",
+                "line": 4,
+                "column": 69
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "4980e9f6f11ac2b1610976c4ae22e56dafa23b178a2d627be0999641d25b3f31",
+            "67.0": "62d97c0f90f1c13b04586d77dbdda03dc7adfbc03a35af52a69d9ba46dc11a54",
+            "68.0": "5ccca46b592d2c43170cca9ef7b14a904036d29c48536ed1ae1b99821f5f96d9"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<Integer> a=new List<Integer>().iterator();Iterator<Object> b=a;o.put('hasNext',b.hasNext());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126STREAM_016|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126STREAM_016",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "6f86813d726fd78e902bc55d7ea56e388a421acc2974938c55a41eb56ac51fb4"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Illegal assignment from System.Iterator<Integer> to System.Iterator<Object>"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "06a5bccda8b556be91694759d55842b946531b5b33b01e24875ebe3d6043f987",
+            "67.0": "aa232d28fc4a51dc5fb862dbb1bdc1fb5f340b775f1c778ea0df4f83eedada69",
+            "68.0": "6cf17a4f274c7ce8e249474d0726fd5e93e5871722d39e0444bf8a5f7f4ad016"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nIterator<Integer> a=new List<Integer>().iterator();Iterator<Object> b=a;o.put('hasNext',b.hasNext());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126STREAM_016|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    }
+  ]
+}

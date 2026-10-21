@@ -17,6 +17,24 @@ const (
 
 const apexCursorFetchCallLimit = 100
 const apexCursorRowLimit = 50_000_000
+const syncAggregateQueryLimit = 300
+
+// Limits.getLimitHeapSize() natively: synchronous Apex (anonymous, test
+// methods and Scheduled Apex execute) and async Apex (Queueable, @future,
+// Batchable execute).
+const syncHeapLimit = 10_000_000
+const asyncHeapLimit = 25_000_000
+
+// nativeHeapThreshold is where Salesforce enforces the heap under both default
+// caps, far above the reported caps, in every context. It accepted about
+// 30 MB sync (HEAP3-L30A/T) and 40 MB in a Queueable, Scheduled, Batch and
+// @future job (HEAP3-Q40, HEAP4-SCH40/rows). It threw "Apex heap size too
+// large: <heap>" on the 100,001-character allocation that crossed it: sync
+// 52504652 (HEAP3-L60A/AE/T/TE), Queueable 52504770 (HEAP3-Q60/Q100), Scheduled
+// 52504787, Batch 52504864 and @future 52504762 (HEAP4-SCH60/rows), each
+// about 100,000 bytes past the previous checkpoint. The threshold lies in
+// (52404652, 52504652]; 50 MiB is an in-bracket choice, not a captured byte.
+const nativeHeapThreshold = 50 * 1024 * 1024
 
 type Limits struct {
 	Queries                  int `json:"queries"`
@@ -66,6 +84,10 @@ type LimitCaps struct {
 	Savepoints          int `json:"savepoints"`
 	SavepointRollbacks  int `json:"savepointRollbacks"`
 	PublishImmediateDML int `json:"publishImmediateDml"`
+	// nativeDefaults marks platform defaults, including their async caps.
+	// SetLimitCaps clears it for complete profile, flag or hosted overrides;
+	// those caps stay explicit even when their values equal native defaults.
+	nativeDefaults bool
 }
 
 type LimitViolation struct {
@@ -80,7 +102,7 @@ func defaultLimitCaps() LimitCaps {
 		QueryRows:           50000,
 		DMLStatements:       150,
 		DMLRows:             10000,
-		HeapSize:            6_000_000,
+		HeapSize:            syncHeapLimit,
 		CPUTimeMS:           10000,
 		Callouts:            100,
 		AsyncJobs:           50,
@@ -95,6 +117,7 @@ func defaultLimitCaps() LimitCaps {
 		Savepoints:          5,
 		SavepointRollbacks:  100,
 		PublishImmediateDML: 150,
+		nativeDefaults:      true,
 	}
 }
 
@@ -105,7 +128,7 @@ func LimitCapsForProfile(name string) (LimitCaps, bool) {
 	case "strict-async":
 		caps := defaultLimitCaps()
 		caps.Queries = 200
-		caps.HeapSize = 12 * 1024 * 1024
+		caps.HeapSize = asyncHeapLimit
 		caps.CPUTimeMS = 60000
 		return caps, true
 	default:
@@ -113,11 +136,40 @@ func LimitCapsForProfile(name string) (LimitCaps, bool) {
 	}
 }
 
+// withScheduledLimitWindow runs Scheduled Apex execute as its own async
+// transaction, but with the caller's heap and CPU caps: natively a
+// Schedulable reports the synchronous heap and CPU limits.
+func (vm *VM) withScheduledLimitWindow(run func() (Value, error)) (Value, error) {
+	heapSize, cpuTimeMS := vm.limitCaps.HeapSize, vm.limitCaps.CPUTimeMS
+	return vm.withAsyncLimitWindow(func() (Value, error) {
+		vm.limitCaps.HeapSize, vm.limitCaps.CPUTimeMS = heapSize, cpuTimeMS
+		return run()
+	})
+}
+
+// heapLimitError is strict mode's heap LimitException, or nil. A profile, flag
+// or hosted cap is local and throws as soon as it is passed. Under a native
+// default cap, passing the reported cap only records a violation; Salesforce
+// throws once the heap first exceeds nativeHeapThreshold, with glade's own
+// heap count in the native message.
+func (vm *VM) heapLimitError(used, cap int) error {
+	if !vm.limitCaps.nativeDefaults {
+		return &RuntimeError{Type: "System.LimitException", Message: fmt.Sprintf("Too many heapSize: %d out of %d", used, cap), Stack: vm.stackFrames()}
+	}
+	if used <= nativeHeapThreshold {
+		return nil
+	}
+	return &RuntimeError{Type: "System.LimitException", Message: fmt.Sprintf("Apex heap size too large: %d", used), Stack: vm.stackFrames()}
+}
+
 func (vm *VM) SetLimitMode(mode LimitMode) {
 	vm.limitMode = mode
 }
 
+// SetLimitCaps installs explicit caps (a profile, flags or a hosted limit).
+// Async entry preserves them, and strict mode enforces their local heap cap.
 func (vm *VM) SetLimitCaps(caps LimitCaps) {
+	caps.nativeDefaults = false
 	vm.limitCaps = caps
 }
 
@@ -136,6 +188,9 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 		return vm.checkLimit(name, vm.limits.Queries, vm.limitCaps.Queries)
 	case "aggregateQueries":
 		vm.limits.AggregateQueries += delta
+		if vm.currentAsyncKind == "" {
+			return vm.checkLimit(name, vm.limits.AggregateQueries, syncAggregateQueryLimit)
+		}
 		return nil
 	case "queryRows":
 		vm.limits.QueryRows += delta
@@ -257,10 +312,24 @@ func (vm *VM) checkLimit(name string, used, cap int) error {
 	if !recorded {
 		vm.limitViolations = append(vm.limitViolations, violation)
 	}
+	if vm.limitMode == LimitModeStrict && name == "heapSize" {
+		return vm.heapLimitError(used, cap)
+	}
 	if vm.limitMode == LimitModeStrict {
+		message := fmt.Sprintf("Too many %s: %d out of %d", name, used, cap)
+		if vm.limitCaps.nativeDefaults && vm.currentAsyncKind == "" {
+			switch name {
+			case "queries":
+				message = fmt.Sprintf("Too many SOQL queries: %d", used)
+			case "aggregateQueries":
+				message = fmt.Sprintf("Too many SOQL aggregate queries: %d", used)
+			case "dmlStatements":
+				message = fmt.Sprintf("Too many DML statements: %d", used)
+			}
+		}
 		return &RuntimeError{
 			Type:    "System.LimitException",
-			Message: fmt.Sprintf("Too many %s: %d out of %d", name, used, cap),
+			Message: message,
 			Stack:   vm.stackFrames(),
 		}
 	}
@@ -319,12 +388,11 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getLimitAsyncJobs", "getLimitAsyncCalls":
 		return Int(int64(vm.limitCaps.AsyncJobs)), true
 	case "getQueueableJobs":
-		queueableJobs := vm.limits.QueueableJobs
-		if vm.testContext != nil && vm.testContext.Draining && vm.currentAsyncKind == "Queueable" && queueableJobs > 0 {
-			queueableJobs--
-		}
-		return Int(int64(queueableJobs)), true
+		return Int(int64(vm.limits.QueueableJobs)), true
 	case "getLimitQueueableJobs":
+		if vm.limitCaps.nativeDefaults && vm.currentAsyncKind == "Queueable" {
+			return Int(1), true
+		}
 		return Int(int64(vm.limitCaps.QueueableJobs)), true
 	case "getFutureCalls":
 		return Int(int64(vm.limits.FutureCalls)), true
@@ -366,7 +434,7 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getFetchCallsOnApexCursor":
 		return Int(int64(vm.limits.FetchCallsOnApexCursor)), true
 	case "getLimitAggregateQueries":
-		return Int(300), true
+		return Int(syncAggregateQueryLimit), true
 	case "getLimitApexCursorRows":
 		return Int(apexCursorRowLimit), true
 	case "getLimitApexPaginationCursorRows":

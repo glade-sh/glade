@@ -1,0 +1,9 @@
+UTC 2026-10-16T00:38:53.988239+00:00
+Ownscratchalias scratch-org, createdfromglade-dev. OrgIDSHA256 ed2a63259685b54221751f21c017c9d87a7d77be13fdfe9ab1fa12344f1b6be0
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf org display --target-org scratch-org --json
+Identityhash matched before delete; display credentials discarded in memory, never exported.
+
+UTC 2026-10-16T00:38:53.988829+00:00
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf org delete scratch --target-org scratch-org --no-prompt --json
+HOME=native-capture SF_USE_GENERIC_UNIX_KEYCHAIN=true sf alias list --json
+Verified scratch-org absent; no credentialoutput.

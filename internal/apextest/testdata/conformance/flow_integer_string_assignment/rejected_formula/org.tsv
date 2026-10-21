@@ -1,0 +1,4 @@
+source_api	status	message
+62.0	compile_error	"field integrity exception: unknown (When the TriggerType field is set to \"RecordBeforeSave\", the $Record.ScalarText__c field isn't supported.)"
+67.0	compile_error	"field integrity exception: unknown (When the TriggerType field is set to \"RecordBeforeSave\", the $Record.ScalarText__c field isn't supported.)"
+68.0	compile_error	"field integrity exception: unknown (When the TriggerType field is set to \"RecordBeforeSave\", the $Record.ScalarText__c field isn't supported.)"

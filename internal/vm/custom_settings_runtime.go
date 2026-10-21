@@ -69,7 +69,15 @@ func (vm *VM) hierarchyCustomSettingOrgDefaults(objectName, kind string) Value {
 	if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, vm.orgID()); found {
 		return vm.readOnlyCustomDataValue(record, kind)
 	}
-	return vm.readOnlyCustomDataDefaultValue(objectName, kind)
+	value := vm.readOnlyCustomDataDefaultValue(objectName, kind)
+	// C02-03/06 serialize missing hierarchy org defaults as attributes only.
+	// Retain existing field-read defaults without materializing them in JSON.
+	for field := range value.Fields {
+		if !isInternalSObjectField(field) {
+			markDefaultedSObjectField(&value, field)
+		}
+	}
+	return value
 }
 
 // getInstance merges non-null fields from organization, profile and user rows;
@@ -79,7 +87,7 @@ func (vm *VM) hierarchyCustomSettingInstance(objectName, kind string, args []Val
 	if ownerID == "" && vm.Org != nil {
 		// R227: use the same offline identity exposed by UserInfo.getUserId
 		// when anonymous execution has no explicit execution user.
-		ownerID = vm.currentUserInfoField("Id", "005000000000001")
+		ownerID = vm.currentUserInfoField("Id", storage.DefaultUserID)
 	}
 	if len(args) == 1 && args[0].Kind != ValueNull {
 		var ok bool
@@ -116,8 +124,19 @@ func (vm *VM) hierarchyCustomSettingInstance(objectName, kind string, args []Val
 		owners = append(owners, ownerID)
 	}
 	merged := storage.Record{Object: objectName, Fields: make(map[string]storage.Value)}
+	organizationInherited := false
+	organizationNameUsesRecordID := false
+	profileInherited := false
 	for _, owner := range owners {
 		if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, owner); found {
+			if storage.IDsEqual(storage.ID(owner), storage.ID(vm.orgID())) {
+				organizationInherited = true
+				name, hasName := record.GetField("Name")
+				id := string(record.ID)
+				organizationNameUsesRecordID = record.HierarchyNameUsesRecordID && hasName && name.Kind == storage.ValueString && storage.ValidateID(record.ID) == nil && name.String == id[:15]
+			} else if strings.HasPrefix(owner, "00e") {
+				profileInherited = true
+			}
 			for name, value := range record.Fields {
 				if value.Kind != storage.ValueNull {
 					merged.Fields[name] = value
@@ -128,8 +147,54 @@ func (vm *VM) hierarchyCustomSettingInstance(objectName, kind string, args []Val
 			}
 		}
 	}
+	empty := len(merged.Fields) == 0
 	merged.Fields["SetupOwnerId"] = storage.IDValue(storage.ID(ownerID))
-	return vm.readOnlyCustomDataValue(merged, kind), nil
+	value := vm.readOnlyCustomDataValue(merged, kind)
+	if !empty && merged.ID == "" && organizationInherited && !profileInherited {
+		// C02-09 at 62/67/68: an instance inherited solely from the
+		// organization has a sparse field set without user-owned row identity
+		// or row audit fields. HNO01 named 62/67/68 preserves an omitted-owner
+		// record-ID Name. Other input shapes retain their existing projection.
+		if !organizationNameUsesRecordID {
+			label := strings.TrimSpace(vm.Org.Objects[objectName].Definition.Label)
+			if label == "" {
+				label = objectName
+			}
+			value.Fields["Name"] = String(label + " (Organization)")
+		}
+		value.Fields["IsDeleted"] = Bool(false)
+		for _, field := range []string{"Name", "IsDeleted", "SetupOwnerId"} {
+			markExplicitSObjectField(&value, field)
+		}
+		for field, fieldValue := range value.Fields {
+			if fieldValue.Kind == ValueNull && !isInternalSObjectField(field) {
+				markDefaultedSObjectField(&value, field)
+			}
+		}
+	}
+	if empty {
+		// The captured empty instance contains only its requested owner.
+		markExplicitSObjectField(&value, "SetupOwnerId")
+		for field := range value.Fields {
+			if !strings.EqualFold(field, "SetupOwnerId") && !isInternalSObjectField(field) {
+				markDefaultedSObjectField(&value, field)
+			}
+		}
+	} else if merged.ID == "" {
+		// C02-09: an inherited instance exposes the requested owner and the
+		// merged fields, without turning schema-read defaults into JSON fields.
+		markExplicitSObjectField(&value, "SetupOwnerId")
+		markExplicitSObjectField(&value, "IsDeleted")
+		for field := range value.Fields {
+			if isInternalSObjectField(field) || strings.EqualFold(field, "IsDeleted") {
+				continue
+			}
+			if _, mergedField := merged.GetField(field); !mergedField {
+				markDefaultedSObjectField(&value, field)
+			}
+		}
+	}
+	return value, nil
 }
 
 func validateCustomSettingOwnerID(ownerID string) error {
@@ -340,12 +405,33 @@ func (vm *VM) customDataGetInstance(objectName string, definition storage.Object
 		if record.System.IsDeleted {
 			continue
 		}
-		if customDataRecordMatches(definition, kind, record, wanted, vm.Org.Namespace) {
+		if vm.customDataGetInstanceRecordMatches(definition, kind, record, wanted) {
 			return record, true, nil
 		}
 	}
 	return storage.Record{}, false, nil
 }
+
+// Unmanaged subscribers and a record's distinct owning namespace look up
+// installed custom metadata by DeveloperName rather than qualified record name.
+// ID lookup and the other caller/type shapes retain their existing behavior.
+func (vm *VM) customDataGetInstanceRecordMatches(definition storage.ObjectDefinition, kind string, record storage.Record, wanted string) bool {
+	typeNamespace, namespaced := namespaceTokenPrefix(definition.APIName)
+	recordNamespace := firstStringField(record, "NamespacePrefix")
+	callerNamespace := vm.currentCallerNamespace()
+	unmanagedSubscriber := vm.Org.Namespace == "" && callerNamespace == "" &&
+		(recordNamespace == "" || recordNamespace == typeNamespace)
+	recordOwner := recordNamespace != "" && recordNamespace != typeNamespace && recordNamespace == callerNamespace
+	if kind == "custom metadata" && namespaced && (unmanagedSubscriber || recordOwner) {
+		if record.ID != "" && validateApexIDShape(wanted) == nil && storage.IDsEqual(record.ID, storage.ID(wanted)) {
+			return true
+		}
+		developerName := firstStringField(record, "DeveloperName")
+		return developerName != "" && developerName == wanted
+	}
+	return customDataRecordMatches(definition, kind, record, wanted, vm.Org.Namespace)
+}
+
 func customSettingRecordHasNoSetupOwner(record storage.Record) bool {
 	value, ok := record.GetField("SetupOwnerId")
 	if !ok || value.Kind == storage.ValueNull {
@@ -451,6 +537,11 @@ func (vm *VM) readOnlyCustomDataValue(record storage.Record, kind string) Value 
 		}
 	}
 	if kind == "custom metadata" {
+		for _, field := range []string{"Id", "SystemModstamp"} {
+			if actual, _, ok := objectFieldValue(value, field); ok {
+				markExplicitSObjectField(&value, actual)
+			}
+		}
 		value.Fields[sobjectReadOnlyField] = String(kind + " records returned by getAll/getInstance are read-only")
 	}
 	return value

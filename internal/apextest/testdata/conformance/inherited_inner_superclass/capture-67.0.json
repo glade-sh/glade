@@ -1,0 +1,57 @@
+{
+  "api": "67.0",
+  "deployment": {
+    "id": "0Afhv000000X1wbCAC",
+    "status": "Succeeded",
+    "success": true,
+    "numberComponentErrors": 0,
+    "numberComponentsDeployed": 15
+  },
+  "captured_at": "2026-10-19T04:27:58.347809+00:00",
+  "anonymous": {
+    "success": true,
+    "compiled": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": {
+      "added": {
+        "value": "1"
+      },
+      "empty": {
+        "value": "true"
+      },
+      "populated": {
+        "value": "false"
+      },
+      "qualified": {
+        "value": "false"
+      }
+    }
+  },
+  "tests": [
+    {
+      "MethodName": "added",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|added|{\"value\":\"1\"}",
+      "StackTrace": "Class.ClauseProbeTest.added: line 2, column 1"
+    },
+    {
+      "MethodName": "empty",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|empty|{\"value\":\"true\"}",
+      "StackTrace": "Class.ClauseProbeTest.empty: line 3, column 1"
+    },
+    {
+      "MethodName": "populated",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|populated|{\"value\":\"false\"}",
+      "StackTrace": "Class.ClauseProbeTest.populated: line 4, column 1"
+    },
+    {
+      "MethodName": "qualified",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|qualified|{\"value\":\"false\"}",
+      "StackTrace": "Class.ClauseProbeTest.qualified: line 5, column 1"
+    }
+  ]
+}

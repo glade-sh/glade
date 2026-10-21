@@ -423,3 +423,29 @@ func TestSchemaGenerationAdvancesOnEveryDefinitionChangePath(t *testing.T) {
 		t.Fatal("nil org generation")
 	}
 }
+
+func TestDefaultOrgIDIsOutsideCounterStyleIDs(t *testing.T) {
+	if len(DefaultOrgID) != 15 || !strings.HasPrefix(DefaultOrgID, "00D") {
+		t.Fatalf("DefaultOrgID = %q, want a 15-character Organization Id", DefaultOrgID)
+	}
+	if got, want := displayOrgID(DefaultOrgID), DefaultOrgID+"EAI"; got != want {
+		t.Fatalf("displayOrgID(DefaultOrgID) = %q, want %q", got, want)
+	}
+	g := NewIDGenerator(map[string]string{"Organization": "00D"})
+	runtime := NewRuntimeIDGenerator(map[string]string{"Organization": "00D"})
+	for counter := 1; counter <= 2000; counter++ {
+		padded := ID(fmt.Sprintf("00D%012d", counter))
+		if IDsEqual(padded, ID(DefaultOrgID)) {
+			t.Fatalf("decimal counter Id %s matches DefaultOrgID", padded)
+		}
+		for _, gen := range []*IDGenerator{&g, &runtime} {
+			id, err := gen.Next("Organization")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if IDsEqual(id, ID(DefaultOrgID)) {
+				t.Fatalf("generated Id %s matches DefaultOrgID", id)
+			}
+		}
+	}
+}

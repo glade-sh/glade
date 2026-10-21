@@ -1,0 +1,25 @@
+source_api	route	case	message
+62.0	isTest	static_field	Invalid type: LiteralShapes.TOKEN
+62.0	anonymous	static_field	Invalid type: LiteralShapes.TOKEN
+62.0	isTest	static_property	Invalid type: LiteralShapes.setting
+62.0	anonymous	static_property	Invalid type: LiteralShapes.setting
+62.0	isTest	enum_constant	Invalid type: LiteralShapes.Color.RED
+62.0	anonymous	enum_constant	Invalid type: LiteralShapes.Color.RED
+62.0	isTest	missing_root	Invalid type: UnregisteredRoot
+62.0	anonymous	missing_root	Invalid type: UnregisteredRoot
+67.0	isTest	static_field	Invalid type: LiteralShapes.TOKEN
+67.0	anonymous	static_field	Invalid type: LiteralShapes.TOKEN
+67.0	isTest	static_property	Invalid type: LiteralShapes.setting
+67.0	anonymous	static_property	Invalid type: LiteralShapes.setting
+67.0	isTest	enum_constant	Invalid type: LiteralShapes.Color.RED
+67.0	anonymous	enum_constant	Invalid type: LiteralShapes.Color.RED
+67.0	isTest	missing_root	Invalid type: UnregisteredRoot
+67.0	anonymous	missing_root	Invalid type: UnregisteredRoot
+68.0	isTest	static_field	Invalid type: LiteralShapes.TOKEN
+68.0	anonymous	static_field	Invalid type: LiteralShapes.TOKEN
+68.0	isTest	static_property	Invalid type: LiteralShapes.setting
+68.0	anonymous	static_property	Invalid type: LiteralShapes.setting
+68.0	isTest	enum_constant	Invalid type: LiteralShapes.Color.RED
+68.0	anonymous	enum_constant	Invalid type: LiteralShapes.Color.RED
+68.0	isTest	missing_root	Invalid type: UnregisteredRoot
+68.0	anonymous	missing_root	Invalid type: UnregisteredRoot

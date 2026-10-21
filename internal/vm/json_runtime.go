@@ -17,10 +17,68 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+const jsonCyclicConversionMessage = "Glade: cyclic object reference cannot be converted to JSON (native behaviour not yet captured)"
+
+// jsonConversionFailure crosses legacy converters and overload scoring whose
+// signatures cannot return an Apex exception. VM execution boundaries recover
+// only this failure and hand its exception to the normal Apex error path.
+type jsonConversionFailure struct{ err error }
+
+func recoverJSONConversionError(err *error) {
+	if recovered := recover(); recovered != nil {
+		failure, ok := recovered.(jsonConversionFailure)
+		if !ok {
+			panic(recovered)
+		}
+		*err = failure.err
+	}
+}
+
 func jsonFromValue(value Value, suppressObjectNulls bool) any {
+	out, err := jsonFromValueChecked(value, suppressObjectNulls)
+	if err != nil {
+		panic(jsonConversionFailure{err: err})
+	}
+	return out
+}
+
+// jsonFromValueChecked returns no partial JSON when the graph contains a cycle.
+// Native behaviour for the cyclic cases is captured on
+// both routes at APIs 59/62/67/68; this boundary is not itself a parity claim.
+// This Glade-specific exception is a safety boundary, not a native parity claim.
+// Legacy display/DTO conversion retains its bounded null cut separately from
+// the captured public JSON.serialize class-cycle boundary.
+func jsonFromValueChecked(value Value, suppressObjectNulls bool) (out any, err error) {
+	defer recoverJSONConversionError(&err)
+	walker := jsonValueWalker{}
+	out = walker.convert(value, suppressObjectNulls)
+	return out, nil
+}
+
+// jsonValueWalker tracks the composite values on the active conversion path.
+// The table is allocated only once a non-empty composite value is entered.
+type jsonValueWalker struct {
+	active map[jsonSerializationIdentity]bool
+}
+
+func (w *jsonValueWalker) convert(value Value, suppressObjectNulls bool) any {
+	value = value.currentMapKeySet()
+	if jsonValueMayRecurse(value) {
+		if identity, ok := jsonSerializationToken(value); ok {
+			if w.active[identity] {
+				panic(jsonConversionFailure{err: newExceptionError("System.JSONException", jsonCyclicConversionMessage)})
+			}
+			if w.active == nil {
+				w.active = make(map[jsonSerializationIdentity]bool)
+			}
+			w.active[identity] = true
+			defer delete(w.active, identity)
+		}
+	}
 	switch value.Kind {
 	case ValueNull:
 		return nil
@@ -38,13 +96,13 @@ func jsonFromValue(value Value, suppressObjectNulls bool) any {
 	case ValueList:
 		out := make([]any, 0, len(value.List))
 		for _, item := range value.List {
-			out = append(out, jsonFromValue(item, suppressObjectNulls))
+			out = append(out, w.convert(item, suppressObjectNulls))
 		}
 		return out
 	case ValueSet:
 		out := make([]any, 0, len(value.Set))
 		for _, item := range value.Set {
-			out = append(out, jsonFromValue(item, suppressObjectNulls))
+			out = append(out, w.convert(item, suppressObjectNulls))
 		}
 		return out
 	case ValueMap:
@@ -56,29 +114,46 @@ func jsonFromValue(value Value, suppressObjectNulls bool) any {
 				if !ok || seen[key] {
 					continue
 				}
-				out = append(out, orderedJSONField{name: jsonMapKeyText(mapStoredKey(value, key)), value: jsonFromValue(item, suppressObjectNulls)})
+				out = append(out, orderedJSONField{name: jsonMapKeyText(mapStoredKey(value, key)), value: w.convert(item, suppressObjectNulls)})
 				seen[key] = true
 			}
 			for _, key := range sortedMapKeys(value.Map) {
 				if seen[key] {
 					continue
 				}
-				out = append(out, orderedJSONField{name: jsonMapKeyText(mapStoredKey(value, key)), value: jsonFromValue(value.Map[key], suppressObjectNulls)})
+				out = append(out, orderedJSONField{name: jsonMapKeyText(mapStoredKey(value, key)), value: w.convert(value.Map[key], suppressObjectNulls)})
 			}
 			return out
 		}
 		out := make(map[string]any, len(value.Map))
 		for key, item := range value.Map {
-			out[jsonMapKeyText(mapStoredKey(value, key))] = jsonFromValue(item, suppressObjectNulls)
+			out[jsonMapKeyText(mapStoredKey(value, key))] = w.convert(item, suppressObjectNulls)
 		}
 		return out
 	case ValueObject:
 		if scalar, ok := jsonPlatformScalarFromValue(value); ok {
 			return scalar
 		}
-		return jsonSObjectFromValue(value, suppressObjectNulls, jsonFromValue, storage.DefaultRESTAPIVersion)
+		return jsonSObjectFromValue(value, suppressObjectNulls, w.convert, storage.DefaultRESTAPIVersion, value.Type)
 	default:
 		return nil
+	}
+}
+
+// jsonValueMayRecurse reports whether converting value can descend into
+// another runtime value. Scalars and empty collections skip cycle tracking.
+func jsonValueMayRecurse(value Value) bool {
+	switch value.Kind {
+	case ValueList:
+		return len(value.List) > 0
+	case ValueSet:
+		return len(value.Set) > 0
+	case ValueMap:
+		return len(value.Map) > 0
+	case ValueObject:
+		return len(value.Fields) > 0
+	default:
+		return false
 	}
 }
 
@@ -128,7 +203,27 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 	return vm.jsonFromValueForSerializeWithActive(value, suppressObjectNulls, nil)
 }
 
+// Public JSON entry points enforce captured source-class cycle errors. The
+// legacy converter also serves display/DTO APIs whose cycle behavior is separate.
+func (vm *VM) jsonFromValueForJSONSerialize(value Value, suppressObjectNulls bool) any {
+	return vm.jsonFromValueForSerializeWithState(value, suppressObjectNulls, &jsonSerializationState{rejectClassCycles: true, rejectUnsupportedTypes: true})
+}
+
+type jsonSerializationState struct {
+	active                 map[jsonSerializationIdentity]bool
+	rejectClassCycles      bool
+	rejectUnsupportedTypes bool
+}
+
 func (vm *VM) jsonFromValueForSerializeWithActive(value Value, suppressObjectNulls bool, active map[jsonSerializationIdentity]bool) any {
+	return vm.jsonFromValueForSerializeWithState(value, suppressObjectNulls, &jsonSerializationState{active: active})
+}
+
+func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNulls bool, state *jsonSerializationState) any {
+	value = value.currentMapKeySet()
+	if encoded, captured := capturedDoubleSingletonJSON(value); captured {
+		return encoded
+	}
 	// Empty collections cannot recurse, so they cannot participate in a cycle.
 	// Preserve the ordered-object representation for maps while avoiding the
 	// reflection and active-table work for these common no-op values.
@@ -150,30 +245,35 @@ func (vm *VM) jsonFromValueForSerializeWithActive(value Value, suppressObjectNul
 		}
 	}
 	if identity, ok := jsonSerializationToken(value); ok {
-		if active[identity] {
+		if state.active[identity] {
+			if state.rejectClassCycles && value.Kind == ValueObject && value.classInstance && value.projectClass {
+				// Owned source-class graphs expose this stable native prefix.
+				// Their object-dump suffix remains a diagnostic-text carry.
+				panic(jsonConversionFailure{err: newExceptionError("System.JSONException", "Cycle detected.")})
+			}
 			// A cyclic Apex object/collection can be constructed through loaded
 			// relationship aliases. Salesforce may surface an internal JSON
 			// failure for that graph, but the local runner must remain usable and
 			// produce a valid JSON value for the surrounding assertion/log path.
 			return nil
 		}
-		if active == nil {
-			active = make(map[jsonSerializationIdentity]bool)
+		if state.active == nil {
+			state.active = make(map[jsonSerializationIdentity]bool)
 		}
-		active[identity] = true
-		defer delete(active, identity)
+		state.active[identity] = true
+		defer delete(state.active, identity)
 	}
 	switch value.Kind {
 	case ValueList:
 		out := make([]any, 0, len(value.List))
 		for _, item := range value.List {
-			out = append(out, vm.jsonFromValueForSerializeWithActive(item, suppressObjectNulls, active))
+			out = append(out, vm.jsonFromValueForSerializeWithState(item, suppressObjectNulls, state))
 		}
 		return out
 	case ValueSet:
 		out := make([]any, 0, len(value.Set))
 		for _, item := range value.Set {
-			out = append(out, vm.jsonFromValueForSerializeWithActive(item, suppressObjectNulls, active))
+			out = append(out, vm.jsonFromValueForSerializeWithState(item, suppressObjectNulls, state))
 		}
 		return out
 	case ValueMap:
@@ -186,23 +286,27 @@ func (vm *VM) jsonFromValueForSerializeWithActive(value Value, suppressObjectNul
 					continue
 				}
 				name := vm.jsonMapKeyText(mapStoredKey(value, key))
-				out = append(out, orderedJSONField{name: name, value: vm.jsonFromValueForSerializeWithActive(item, suppressObjectNulls, active)})
+				out = append(out, orderedJSONField{name: name, value: vm.jsonFromValueForSerializeWithState(item, suppressObjectNulls, state)})
 				seen[key] = true
 			}
 			for _, key := range sortedMapKeys(value.Map) {
 				if seen[key] {
 					continue
 				}
-				out = append(out, orderedJSONField{name: vm.jsonMapKeyText(mapStoredKey(value, key)), value: vm.jsonFromValueForSerializeWithActive(value.Map[key], suppressObjectNulls, active)})
+				out = append(out, orderedJSONField{name: vm.jsonMapKeyText(mapStoredKey(value, key)), value: vm.jsonFromValueForSerializeWithState(value.Map[key], suppressObjectNulls, state)})
 			}
 			return out
 		}
 		out := make(map[string]any, len(value.Map))
 		for key, item := range value.Map {
-			out[vm.jsonMapKeyText(mapStoredKey(value, key))] = vm.jsonFromValueForSerializeWithActive(item, suppressObjectNulls, active)
+			out[vm.jsonMapKeyText(mapStoredKey(value, key))] = vm.jsonFromValueForSerializeWithState(item, suppressObjectNulls, state)
 		}
 		return out
 	case ValueObject:
+		if state.rejectUnsupportedTypes && !value.classInstance && strings.EqualFold(value.Type, "JSONParser") {
+			panic(jsonConversionFailure{err: newExceptionError("System.JSONException", "Type unsupported in JSON: common.apex.json.ApexJsonParser")})
+		}
+		value = vm.picklistEntryJSONView(value, suppressObjectNulls)
 		if strings.EqualFold(value.Type, "Database.QueryLocator") {
 			return &queryLocatorJSONError{}
 		}
@@ -226,17 +330,33 @@ func (vm *VM) jsonFromValueForSerializeWithActive(value Value, suppressObjectNul
 		if scalar, ok := jsonPlatformScalarFromValue(value); ok {
 			return scalar
 		}
+		if serialized, handled := vm.invocableFlowActionJSONValue(value, suppressObjectNulls, state.active); handled {
+			return serialized
+		}
+		if out, captured := vm.stubNamespaceJSON(value); captured {
+			return out
+		}
 		if value.Type == "" || sObjectValueType(value.Type) {
 			version := storage.DefaultRESTAPIVersion
 			if vm != nil && vm.Org != nil {
 				version = vm.Org.APIVersion
 			}
+			urlType := value.Type
+			if value.Type == "Name" && value.Fields[jsonCapturedOwnerProjectionField].Bool {
+				// The observed projection retains Name as its SObject type, while
+				// its REST URL names the concrete object identified by its ID.
+				if id, ok := idValueText(value.Fields["Id"]); ok {
+					if concrete, known := vm.sObjectNameForID(id); known && concrete == "User" {
+						urlType = concrete
+					}
+				}
+			}
 			// Salesforce preserves null SObject fields for JSON.serialize, even
 			// when the overload's Boolean argument is true. That flag only
 			// suppresses nulls on Apex objects and collections.
 			return jsonSObjectFromValue(value, false, func(item Value, suppress bool) any {
-				return vm.jsonFromValueForSerializeWithActive(item, suppress, active)
-			}, version)
+				return vm.jsonFromValueForSerializeWithState(item, suppress, state)
+			}, version, urlType)
 		}
 		base := orderedJSONObject{}
 		seen := map[string]bool{}
@@ -253,7 +373,7 @@ func (vm *VM) jsonFromValueForSerializeWithActive(value Value, suppressObjectNul
 				if field.Getter != nil && !field.Static {
 					getterValue, err := vm.callGetter(vm.getterOwner(owner, field), field, value)
 					if err == nil && !(suppressObjectNulls && getterValue.Kind == ValueNull) {
-						base = append(base, orderedJSONField{name: field.Name, value: vm.jsonFromValueForSerializeWithActive(getterValue, suppressObjectNulls, active)})
+						base = append(base, orderedJSONField{name: field.Name, value: vm.jsonFromValueForSerializeWithState(getterValue, suppressObjectNulls, state)})
 						seen[fieldKey] = true
 					}
 					continue
@@ -269,13 +389,13 @@ func (vm *VM) jsonFromValueForSerializeWithActive(value Value, suppressObjectNul
 			if isInternalSObjectField(actualName) || (suppressObjectNulls && item.Kind == ValueNull) {
 				continue
 			}
-			base = append(base, orderedJSONField{name: actualName, value: vm.jsonFromValueForSerializeWithActive(item, suppressObjectNulls, active)})
+			base = append(base, orderedJSONField{name: actualName, value: vm.jsonFromValueForSerializeWithState(item, suppressObjectNulls, state)})
 			seen[strings.ToLower(actualName)] = true
 		}
 		var extras []string
 		for field := range value.Fields {
 			fieldKey := strings.ToLower(field)
-			if isInternalSObjectField(field) || seen[fieldKey] {
+			if isInheritedInstanceFieldStorage(field) || isInternalSObjectField(field) || seen[fieldKey] {
 				continue
 			}
 			if classField, _, ok := vm.lookupField(value.Type, field); ok && jsonFieldIsTransient(classField) {
@@ -289,7 +409,7 @@ func (vm *VM) jsonFromValueForSerializeWithActive(value Value, suppressObjectNul
 			if suppressObjectNulls && item.Kind == ValueNull {
 				continue
 			}
-			base = append(base, orderedJSONField{name: field, value: vm.jsonFromValueForSerializeWithActive(item, suppressObjectNulls, active)})
+			base = append(base, orderedJSONField{name: field, value: vm.jsonFromValueForSerializeWithState(item, suppressObjectNulls, state)})
 			seen[strings.ToLower(field)] = true
 		}
 		for _, field := range vm.jsonSerializableGetterFields(value.Type) {
@@ -304,8 +424,13 @@ func (vm *VM) jsonFromValueForSerializeWithActive(value Value, suppressObjectNul
 			if err != nil || (suppressObjectNulls && getterValue.Kind == ValueNull) {
 				continue
 			}
-			base = append(base, orderedJSONField{name: name, value: vm.jsonFromValueForSerializeWithActive(getterValue, suppressObjectNulls, active)})
+			base = append(base, orderedJSONField{name: name, value: vm.jsonFromValueForSerializeWithState(getterValue, suppressObjectNulls, state)})
 			seen[strings.ToLower(name)] = true
+		}
+		if !seen["urls"] {
+			if urls, ok := vm.describeJSONURLs(value); ok {
+				base = append(base, orderedJSONField{name: "urls", value: urls})
+			}
 		}
 		return base
 	default:
@@ -372,6 +497,16 @@ func formatSalesforcePrettyJSON(data []byte) string {
 		switch b {
 		case '"':
 			inString = true
+			out.WriteByte(b)
+		case '}', ']':
+			// Native pretty output separates empty delimiters, including nested
+			// values. String contents are handled above and remain unchanged.
+			if out.Len() > 0 {
+				previous := out.Bytes()[out.Len()-1]
+				if b == '}' && previous == '{' || b == ']' && previous == '[' {
+					out.WriteByte(' ')
+				}
+			}
 			out.WriteByte(b)
 		case ':':
 			if out.Len() > 0 && out.Bytes()[out.Len()-1] != ' ' {
@@ -579,14 +714,18 @@ func jsonMarshalNoEscapeIndent(value any, prefix, indent string) ([]byte, error)
 	return data, nil
 }
 
-func jsonSObjectFromValue(value Value, suppressObjectNulls bool, convert func(Value, bool) any, apiVersion string) any {
+func jsonSObjectFromValue(value Value, suppressObjectNulls bool, convert func(Value, bool) any, apiVersion, urlType string) any {
 	out := orderedJSONObject{}
 	if value.Type != "" {
 		attributes := map[string]any{"type": value.Type}
 		if id, ok := value.Fields["Id"]; ok && !strings.Contains(value.Type, ".") {
 			version, err := storage.ResolveRESTAPIVersion(apiVersion)
 			if idText, ok := idValueText(id); err == nil && ok && idText != "" {
-				attributes["url"] = "/services/data/v" + version + "/sobjects/" + value.Type + "/" + displayIDText(idText)
+				urlID := displayIDText(idText)
+				if value.Fields[jsonCapturedOwnerProjectionField].Bool && len(idText) == 15 {
+					urlID = idText
+				}
+				attributes["url"] = "/services/data/v" + version + "/sobjects/" + urlType + "/" + urlID
 			}
 		}
 		out = append(out, orderedJSONField{name: "attributes", value: attributes})
@@ -621,7 +760,7 @@ func jsonSObjectFieldNames(value Value) []string {
 	regular := make([]string, 0, len(value.Fields))
 	system := make([]string, 0, 8)
 	for field, item := range value.Fields {
-		if isInternalSObjectField(field) || isDefaultedSObjectField(value, field) {
+		if isInternalSObjectField(field) || isPicklistJSONValidForField(value, field) || isDefaultedSObjectField(value, field) {
 			continue
 		}
 		if isImplicitFalseIsDeleted(value, field, item) {
@@ -629,6 +768,13 @@ func jsonSObjectFieldNames(value Value) []string {
 		}
 		if isImplicitGeneratedSystemField(value, field) {
 			continue
+		}
+		// DML bookkeeping may materialize OwnerId without adding it to the
+		// caller's field projection. Explicit and selected owners stay visible.
+		if field == "OwnerId" && !isExplicitSObjectField(value, field) {
+			if selected, ok := value.Fields[sobjectQueriedFieldsField]; ok && selected.Kind == ValueMap && !jsonSObjectSelectedField(value, field) {
+				continue
+			}
 		}
 		if jsonGeneratedSystemField(field) {
 			system = append(system, field)
@@ -711,24 +857,26 @@ func isImplicitGeneratedSystemField(value Value, field string) bool {
 	if !jsonGeneratedSystemField(field) {
 		return false
 	}
-	for _, explicit := range explicitSObjectFieldNames(value) {
-		if explicit == field {
-			return false
-		}
+	// Explicit-field keys are normalized; use their shared lookup rather
+	// than comparing those keys to the canonical mixed-case field name.
+	return !isExplicitSObjectField(value, field) &&
+		(dmlAccessibleSObject(value) || !jsonSObjectSelectedField(value, field))
+}
+
+func jsonSObjectSelectedField(value Value, field string) bool {
+	selected, ok := value.Fields[sobjectQueriedFieldsField]
+	if !ok || selected.Kind != ValueMap {
+		return false
 	}
-	return true
+	flag := selected.Map[mapKey(String(strings.ToLower(field)))]
+	return flag.Kind == ValueBool && flag.Bool
 }
 
 func isImplicitFalseIsDeleted(value Value, field string, item Value) bool {
 	if field != "IsDeleted" || item.Kind != ValueBool || item.Bool {
 		return false
 	}
-	for _, explicit := range explicitSObjectFieldNames(value) {
-		if explicit == "IsDeleted" {
-			return false
-		}
-	}
-	return true
+	return !isExplicitSObjectField(value, field)
 }
 
 func orderedJSONMapKeys(value Value) []string {
@@ -1348,9 +1496,8 @@ func normalizeJSONDeserializeError(err error) error {
 		return err
 	}
 	// Salesforce capitalizes the malformed-object-key diagnostic surfaced by
-	// JSON.deserialize (the LogService corpus contract asserts this exact
-	// prefix). Keep the existing lower-case spelling for the other parser
-	// errors, whose local and Salesforce contracts are already covered.
+	// JSON.deserialize. Keep the existing lower-case spelling for the other
+	// parser errors, whose local and Salesforce contracts are already covered.
 	if strings.Contains(message, "after object key") {
 		return fmt.Errorf("Malformed JSON: %s", message)
 	}
@@ -1501,10 +1648,43 @@ func (vm *VM) jsonRootSObjectPayload(typeName string, raw any) any {
 	return wrapped
 }
 
+// Owned native API62/67/68 rows cover these positioned List<String> inputs.
+// Other targets and token kinds retain their existing diagnostic boundary.
+func jsonStringListInputError(typeName string, raw any, input jsonTypedInput) error {
+	if !strings.EqualFold(typeName, "List<String>") || input.source == "" {
+		return jsonTypeMappingError(typeName, raw)
+	}
+	if input.root {
+		if _, text := raw.(string); text {
+			return jsonDeserializeException("Malformed JSON: Expected '[' at the beginning of List/Set")
+		}
+		return jsonTypeMappingError(typeName, raw)
+	}
+	found := ""
+	switch value := raw.(type) {
+	case string:
+		found = "\"" + value + "\""
+	case orderedJSONObject, map[string]any:
+		found = "{"
+	case json.Number:
+		found = "null"
+	default:
+		return jsonTypeMappingError(typeName, raw)
+	}
+	line, column := jsonInputPosition(input.source, input.start)
+	return jsonDeserializeException("Expected List<String> but found %s at [line:%d, column:%d]", found, line, column)
+}
+
 func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, error) {
 	input, positioned := raw.(jsonTypedInput)
+	if err := vm.jsonRootDatetimeNullError(typeName, input); err != nil {
+		return Null, err
+	}
 	if positioned {
 		raw = input.value
+	}
+	if err := vm.jsonRootDateNullError(typeName, input); err != nil {
+		return Null, err
 	}
 	if value, ok, err := typedScalarFromJSON(typeName, raw); ok || err != nil {
 		if input.root && err == nil {
@@ -1529,13 +1709,16 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 	if strings.EqualFold(typeName, "Database.Cursor") {
 		return vm.databaseCursorFromJSON(raw, strict)
 	}
+	if value, handled, err := vm.invocableFlowResultFromJSON(typeName, raw, input, strict); handled {
+		return value, err
+	}
 	if collectionBase(typeName) == "List" {
 		items, ok := raw.([]any)
 		if !ok {
 			if records, recordsOK := jsonQueryResultRecords(raw); recordsOK {
 				items = records
 			} else {
-				return Null, jsonTypeMappingError(typeName, raw)
+				return Null, jsonStringListInputError(typeName, raw, input)
 			}
 		}
 		elementType, _ := collectionElementType(typeName)
@@ -1655,9 +1838,9 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		return Null, err
 	}
 	if input.root {
-		// The constructor path already tracks escapes. Register only the fresh
-		// fallback allocation, before a property setter can publish this root.
-		if class, registered := vm.lookupClass(typeName); !registered || !classHasZeroArgConstructor(class) {
+		// Platform construction already tracks escapes. Source DTOs allocate
+		// without construction, before a property setter can publish this root.
+		if class, registered := vm.lookupClass(typeName); !registered || !class.PlatformType || !classHasZeroArgConstructor(class) {
 			vm.rememberLocalOnlyObject(obj)
 		}
 	}
@@ -1667,17 +1850,23 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 	typedObjectIsSObject := !obj.classInstance && vm.isSObjectLikeType(typeName)
 	if typedObjectIsSObject {
 		vm.markJSONDeserializedSObjectFields(&obj, typeName)
+		if strings.EqualFold(typeName, "User") {
+			vm.initializeSObjectSchemaDefaults(&obj, typeName)
+		}
 	}
 	fields, ok := jsonObjectMap(raw)
 	if !ok {
 		return Null, jsonTypeMappingError(typeName, raw)
 	}
-	if strict {
+	if strict || vm.isPlatformJSONHeader(typeName) {
 		if err := vm.jsonStrictObjectFieldsError(typeName, raw); err != nil {
 			return Null, err
 		}
 	}
 	_, platformDTO := platformJSONDTOFields(typeName)
+	if strings.EqualFold(typeName, "EventBus.ChangeEventHeader") && !vm.isPlatformJSONHeader(typeName) {
+		platformDTO = false
+	}
 	ignoreUnknownClassFields := !strict && registeredClass && !typedObjectIsSObject && !platformDTO
 	objectFields := make([]orderedJSONField, 0, len(fields))
 	if typedObjectIsSObject {
@@ -1694,7 +1883,17 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 	}
 	for _, inputField := range objectFields {
 		key, item := inputField.name, inputField.value
-		if key == "attributes" {
+		if input.root {
+			if handled, err := vm.skipJSONHeaderNullField(typeName, key, item); handled || err != nil {
+				if err != nil {
+					return Null, err
+				}
+				continue
+			}
+		}
+		// Source-class members bind normally, including a declared attributes
+		// field. Preserve the metadata skip for records and platform targets.
+		if key == "attributes" && !obj.classInstance {
 			continue
 		}
 		if jsonSObjectEmptyCanonicalIDShadowedByLowercase(fields, key) {
@@ -1731,7 +1930,10 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		}
 		if typedObjectIsSObject {
 			if relationshipType, ok := vm.jsonSObjectParentRelationshipType(typeName, key); ok {
-				value, err := vm.jsonSObjectParentValueFromJSON(relationshipType, key, item, strict)
+				value, handled, err := vm.capturedOwnerValueFromJSON(typeName, key, item, strict)
+				if !handled {
+					value, err = vm.jsonSObjectParentValueFromJSON(typeName, relationshipType, key, item, strict)
+				}
 				if err != nil {
 					return Null, err
 				}
@@ -1814,7 +2016,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			obj.Fields[fieldName] = value
 			continue
 		}
-		if fieldType, ok := platformJSONDTOFieldType(typeName, key); ok {
+		if fieldType, ok := platformJSONDTOFieldType(typeName, key); ok && platformDTO {
 			var value Value
 			var err error
 			// Salesforce treats LeadConvertResult Id fields as opaque values
@@ -1875,7 +2077,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			vm.registerSObjectAliasField(obj, actualKey, obj.Fields[actualKey])
 		}
 	}
-	vm.hydrateParentLookupFields(obj)
+	vm.hydrateJSONParentLookupFields(obj)
 	return obj, nil
 }
 
@@ -1966,17 +2168,64 @@ func (vm *VM) jsonTypedObjectFieldPriority(typeName, key string) int {
 
 func (vm *VM) jsonObjectBaseValue(typeName string) (Value, error) {
 	if class, ok := vm.lookupClass(typeName); ok && classHasZeroArgConstructor(class) {
-		value, err := vm.constructValue(typeName, nil, nil, resultForLookup())
-		if err != nil {
+		if class.PlatformType {
+			value, err := vm.constructValue(typeName, nil, nil, resultForLookup())
+			if err != nil {
+				return Null, err
+			}
+			if value.Kind == ValueObject {
+				vm.initializeJSONHeaderDefaults(&value, typeName)
+				return value, nil
+			}
+		} else if err := vm.ensureClassInitialized(typeName); err != nil {
 			return Null, err
 		}
-		if value.Kind == ValueObject {
-			return value, nil
-		}
 	}
+	// Native source DTO deserialization bypasses constructors and instance
+	// initializers, including ones that throw. Declared fields start at null.
 	obj := Object(typeName)
 	vm.initializeFields(&obj, typeName)
+	if strings.EqualFold(typeName, "Invocable.Action.Result") {
+		// The captured row and RDTO01/02: omitted Result properties are null,
+		// including invocationParameters when outputParameters is supplied.
+		fields, _ := platformJSONDTOFields(typeName)
+		for name := range fields {
+			obj.Fields[name] = Null
+		}
+	}
+	vm.initializeJSONHeaderDefaults(&obj, typeName)
 	return obj, nil
+}
+
+func (vm *VM) isPlatformJSONHeader(typeName string) bool {
+	if !strings.EqualFold(typeName, "EventBus.ChangeEventHeader") {
+		return false
+	}
+	class, registered := vm.lookupClass(typeName)
+	return !registered || class.PlatformType
+}
+
+// Named source-62/67/68 JSON observations initialize omitted header numbers and
+// lists, unlike ordinary user DTO fields. Keep these defaults on JSON only;
+// constructing a header and namespaced contexts were not observed.
+func (vm *VM) initializeJSONHeaderDefaults(value *Value, typeName string) {
+	if !vm.isPlatformJSONHeader(typeName) {
+		return
+	}
+	fields, _ := platformJSONDTOFields(typeName)
+	for name, fieldType := range fields {
+		initial := Null
+		switch fieldType {
+		case "Integer":
+			initial = Int(0)
+		case "Long":
+			initial = longIntValue(0)
+		case "List<String>":
+			initial = List()
+			initial.Type = fieldType
+		}
+		value.Fields[name] = initial
+	}
 }
 
 func (vm *VM) applySObjectMetadataDefaults(record *Value) {
@@ -2072,10 +2321,16 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 	// may supply field initialization, but cannot turn the record into its instance.
 	obj.classInstance = false
 	vm.markJSONDeserializedSObjectFields(&obj, typeName)
+	if strings.EqualFold(typeName, "User") {
+		vm.initializeSObjectSchemaDefaults(&obj, typeName)
+	}
 	objectFields, _ := jsonSObjectFieldsInTextualOrder(raw)
 	for _, field := range objectFields {
 		key, item := field.name, field.value
 		if key == "attributes" {
+			continue
+		}
+		if !strict && vm.qualifiedTextFormulaJSONShadowsLocal(typeName, key, fields) {
 			continue
 		}
 		if jsonSObjectEmptyCanonicalIDShadowedByLowercase(fields, key) {
@@ -2102,7 +2357,10 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 			}
 		}
 		if relationshipType, ok := vm.jsonSObjectParentRelationshipType(typeName, key); ok {
-			value, err := vm.jsonSObjectParentValueFromJSON(relationshipType, key, item, strict)
+			value, handled, err := vm.capturedOwnerValueFromJSON(typeName, key, item, strict)
+			if !handled {
+				value, err = vm.jsonSObjectParentValueFromJSON(typeName, relationshipType, key, item, strict)
+			}
 			if err != nil {
 				return Null, err
 			}
@@ -2150,7 +2408,7 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 		obj.Fields[key] = valueFromJSON(item)
 		vm.registerSObjectAliasField(obj, key, obj.Fields[key])
 	}
-	vm.hydrateParentLookupFields(obj)
+	vm.hydrateJSONParentLookupFields(obj)
 	return obj, nil
 }
 
@@ -2250,13 +2508,18 @@ func (vm *VM) typedSObjectFieldValueFromJSON(fieldType string, raw any, strict b
 	return platformScalar("Blob", text), nil
 }
 
-func (vm *VM) jsonSObjectParentValueFromJSON(typeName, fieldName string, raw any, strict bool) (Value, error) {
+func (vm *VM) jsonSObjectParentValueFromJSON(containingType, typeName, fieldName string, raw any, strict bool) (Value, error) {
 	if raw == nil {
 		return Null, nil
 	}
 	fields, nested := jsonObjectFields(raw)
 	if !nested {
 		return Null, jsonDeserializeException("The value provided for foreign key reference %s is not a nested SObject", fieldName)
+	}
+	if !strict && vm.jsonOwnerNameProjection(containingType, fieldName, raw) {
+		// A Name envelope retains the common parent schema, including explicit
+		// null fields absent from the concrete User or Group target.
+		typeName = "Name"
 	}
 	allowed := vm.jsonAllowedFields(typeName)
 	// R390-R393: report the first unknown string field in input order.
@@ -2279,7 +2542,90 @@ func (vm *VM) jsonSObjectParentValueFromJSON(typeName, fieldName string, raw any
 	return vm.typedValueFromJSON(typeName, jsonTypedInput{value: raw, sObjectRecord: true}, strict)
 }
 
+func (vm *VM) jsonOwnerNameProjection(containingType, relationship string, raw any) bool {
+	if vm == nil || vm.Org == nil || vm.Org.Namespace != "" || vm.currentMethod.Namespace != "" || containingType != "Case" || relationship != "Owner" {
+		return false
+	}
+	version := vm.currentMethod.APIVersion
+	if version == "" {
+		version = vm.Org.APIVersion
+	}
+	if !apexversion.AtLeast(version, 62) || apexversion.AtLeast(version, 69) {
+		return false
+	}
+	fields, ok := jsonObjectMap(raw)
+	if !ok {
+		return false
+	}
+	attributes, ok := jsonObjectMap(fields["attributes"])
+	if !ok || attributes["type"] != "Name" {
+		return false
+	}
+	target, ok := fields["Type"].(string)
+	if !ok || (target != "User" && target != "Group") {
+		return false
+	}
+	id, ok := fields["Id"].(string)
+	if !ok || validateApexID(id) != nil {
+		return false
+	}
+	idType, known := vm.sObjectNameForID(id)
+	if !known || idType != target {
+		return false
+	}
+	relation, known := vm.parentRelationshipMetadata(containingType, relationship)
+	return known && relation.Polymorphic && relationReferencesObject(relation, target)
+}
+
+// Native source62/66/67 observes non-strict object-valued class fields here.
+// Nulls, scalar tokens, roots and strict deserialization retain their own paths.
+func (vm *VM) jsonAbstractObjectFieldError(fieldType string, raw any, strict bool) error {
+	if strict {
+		return nil
+	}
+	if _, object := jsonObjectMap(raw); !object {
+		return nil
+	}
+	typeName := vm.resolveJSONTypeName(fieldType)
+	if class, known := vm.lookupClass(typeName); known {
+		if class.IsInterface || (class.IsAbstract && !class.PlatformType) {
+			name := class.Name
+			if class.PlatformType {
+				if qualified, system := typeExceptionSystemTypeName(name); system {
+					name = qualified
+				}
+			}
+			return newExceptionError("System.TypeException", "Cannot deserialize JSON as abstract type: "+name)
+		}
+		return nil
+	}
+	if platform, known := generatedPlatformTypes()[strings.ToLower(typeName)]; known && platform.Kind == apexast.DeclarationInterface {
+		name := platform.Name
+		if qualified, system := typeExceptionSystemTypeName(name); system {
+			name = qualified
+		}
+		return newExceptionError("System.TypeException", "Cannot deserialize JSON as abstract type: "+name)
+	}
+	return nil
+}
+
 func (vm *VM) typedApexFieldValueFromJSON(fieldType string, field orderedJSONField, strict bool) (Value, error) {
+	if err := vm.jsonAbstractObjectFieldError(fieldType, field.value, strict); err != nil {
+		return Null, err
+	}
+	// N01/N09 capture the declared view of JSON-null user-class List fields
+	// and automatic properties; the captured row covers ordinary declared fields.
+	// Other JSON nulls keep their existing conversion, including root
+	// collections and SObject fields.
+	if field.value == nil && collectionBase(fieldType) == "List" && !strings.HasSuffix(strings.TrimSpace(fieldType), "[]") {
+		if element, closed := collectionElementType(fieldType); closed {
+			if class, known := vm.lookupClass(element); known && !class.PlatformType && !class.IsInterface && !class.IsAbstract && len(class.EnumValues) == 0 && !vm.isSObjectLikeType(element) {
+				value := Null
+				value.Type, value.Static = fieldType, fieldType
+				return value, nil
+			}
+		}
+	}
 	// R042-R044/R046 and I001-I009: Integer class fields use the scalar token's
 	// exact text. Root scalars and SObject fields retain their own conversions.
 	if canonicalJSONScalarType(fieldType) == "Integer" {
@@ -2800,7 +3146,8 @@ func (vm *VM) buildJSONSObjectChildRelationshipTypeIndex(parentObject string) ma
 			matchesByName[alias] = appendUniqueStringFold(matchesByName[alias], childName)
 		}
 	}
-	for childName, childState := range vm.Org.Objects {
+	children := vm.jsonChildRelationshipCandidates(parentObject)
+	for childName, childState := range children {
 		childRelationshipName := ""
 		for _, relation := range childState.Definition.Relations {
 			if !relationshipTargetsObject(relation, parentObject) {
@@ -2813,7 +3160,7 @@ func (vm *VM) buildJSONSObjectChildRelationshipTypeIndex(parentObject string) ma
 			addMatch(childRelationshipName, childName)
 		}
 	}
-	for childName, childState := range vm.Org.Objects {
+	for childName, childState := range children {
 		for _, field := range childState.Definition.Fields {
 			if field.Type != storage.FieldReference || len(field.ReferenceTo) == 0 {
 				continue
@@ -2833,6 +3180,76 @@ func (vm *VM) buildJSONSObjectChildRelationshipTypeIndex(parentObject string) ma
 		}
 	}
 	return index
+}
+
+// Only template orgs promise frozen definitions. Mutable host orgs keep the
+// original scan so an uncached parent can see schema added between lookups.
+func (vm *VM) jsonChildRelationshipCandidates(parentObject string) map[string]storage.ObjectState {
+	if vm.Org.RuntimeSchemaStamp == "" {
+		return vm.Org.Objects
+	}
+	if vm.jsonChildRelTypeCache == nil {
+		vm.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
+	}
+	cache := vm.jsonChildRelTypeCache
+	cache.candidatesOnce.Do(func() {
+		cache.childCandidates = make(map[string][]string)
+		for childName, child := range vm.Org.Objects {
+			parents := make(map[string]bool)
+			add := func(parent string) {
+				for _, key := range jsonRelationshipParentCandidateKeys(parent) {
+					parents[key] = true
+				}
+			}
+			for _, relation := range child.Definition.Relations {
+				for _, parent := range relation.ParentObjects {
+					add(parent)
+				}
+			}
+			for _, field := range child.Definition.Fields {
+				if field.Type != storage.FieldReference {
+					continue
+				}
+				for _, parent := range field.ReferenceTo {
+					add(parent)
+				}
+			}
+			for parent := range parents {
+				cache.childCandidates[parent] = append(cache.childCandidates[parent], childName)
+			}
+		}
+	})
+	children := make(map[string]storage.ObjectState)
+	for _, key := range jsonRelationshipParentCandidateKeys(parentObject) {
+		for _, child := range cache.childCandidates[key] {
+			children[child] = vm.Org.Objects[child]
+		}
+	}
+	return children
+}
+
+// Include both namespace reductions used by relationshipTargetsObject. The
+// original predicate still filters candidates, preserving polymorphic aliases.
+func jsonRelationshipParentCandidateKeys(name string) []string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil
+	}
+	keys := []string{strings.ToLower(name)}
+	for _, alias := range []string{stripAnyNamespaceToken(name), stripStandardObjectNamespaceToken(name)} {
+		key := strings.ToLower(alias)
+		found := false
+		for _, existing := range keys {
+			if existing == key {
+				found = true
+				break
+			}
+		}
+		if !found {
+			keys = append(keys, key)
+		}
+	}
+	return keys
 }
 
 func jsonRelationshipNameLookupKeys(namespace, name string) []string {
@@ -2984,6 +3401,26 @@ func platformJSONDTOFields(typeName string) (map[string]string, bool) {
 		"updatedRelatedIds": "List<Id>",
 	}
 	switch {
+	case strings.EqualFold(typeName, "Invocable.Action.Result"):
+		// RDTO01/02: a JSON-created Result retains its empty output map,
+		// success flag and typed errors. The captured rows still reject
+		// populated Object-valued maps before this DTO field mapping.
+		return map[string]string{
+			"success":              "Boolean",
+			"outputParameters":     "Map<String,Object>",
+			"invocationParameters": "Map<String,Object>",
+			"errors":               "List<Invocable.Action.Error>",
+			"action":               "Invocable.Action",
+		}, true
+	case strings.EqualFold(typeName, "Invocable.Action.Error"):
+		// RDTO02 covers standalone and Result-contained Error hydration.
+		return map[string]string{"code": "String", "message": "String"}, true
+	case strings.EqualFold(typeName, "EventBus.ChangeEventHeader"):
+		return map[string]string{
+			"entityName": "String", "changeType": "String", "changeOrigin": "String", "transactionKey": "String",
+			"sequenceNumber": "Integer", "commitTimestamp": "Long", "commitUser": "String", "commitNumber": "Long",
+			"recordIds": "List<String>", "changedFields": "List<String>", "nulledFields": "List<String>", "diffFields": "List<String>",
+		}, true
 	case strings.EqualFold(typeName, "Database.SaveResult"),
 		strings.EqualFold(typeName, "Database.DeleteResult"),
 		strings.EqualFold(typeName, "Database.UndeleteResult"),
@@ -3153,9 +3590,9 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 		if !ok {
 			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
-		value, err := parseDateText(text)
+		value, err := parseJSONDateText(text)
 		if err != nil {
-			return Null, true, jsonDeserializeException("JSON.deserialize cannot parse Date %q", text)
+			return Null, true, jsonDeserializeException("%s", jsonDateDeserializeErrorMessage(text))
 		}
 		return platformScalar("Date", value.Format("2006-01-02")), true, nil
 	case "Datetime":
@@ -3214,9 +3651,11 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 // jsonChildRelTypeLookupCache memoizes (typeName, relationshipName) -> child
 // type lookups inside one runtime clone.
 type jsonChildRelTypeLookupCache struct {
-	mu            sync.RWMutex
-	entries       map[string]jsonRelationshipTypeLookup
-	parentIndexes map[string]map[string]jsonRelationshipTypeLookup
+	mu              sync.RWMutex
+	entries         map[string]jsonRelationshipTypeLookup
+	parentIndexes   map[string]map[string]jsonRelationshipTypeLookup
+	candidatesOnce  sync.Once
+	childCandidates map[string][]string
 }
 
 func newJSONChildRelTypeLookupCache() *jsonChildRelTypeLookupCache {
@@ -3384,6 +3823,14 @@ func (vm *VM) jsonAllowedFields(typeName string) map[string]struct{} {
 		"OwnerId":          {},
 		"IsDeleted":        {},
 	}
+	if vm.isPlatformJSONHeader(typeName) {
+		allowed = map[string]struct{}{}
+		fields, _ := platformJSONDTOFields(typeName)
+		for name := range fields {
+			allowed[name] = struct{}{}
+		}
+		return allowed
+	}
 	if vm.Org != nil {
 		if objectName, ok := vm.resolveObjectName(typeName); ok {
 			object := vm.Org.Objects[objectName]
@@ -3445,6 +3892,10 @@ func (vm *VM) jsonStrictObjectFieldsError(typeName string, raw any) error {
 		}
 		if vm.isSObjectLikeType(typeName) {
 			return jsonDeserializeException("No such column '%s' on sobject of type %s", field.name, typeName)
+		}
+		if vm.isPlatformJSONHeader(typeName) {
+			line, column := jsonInputPosition(field.source, field.end)
+			return jsonDeserializeException("Unrecognized field %q at [line:%d, column:%d]", field.name, line, column)
 		}
 		return jsonDeserializeException("Unknown field: %s.%s", typeName, field.name)
 	}
@@ -3516,4 +3967,46 @@ func jsonDeserializeScalarLocation(source string, decoded any, err error) error 
 	}
 	line, column := jsonNumericInputPosition(source, int(decoder.InputOffset()))
 	return jsonDeserializeException("Numeric value (%s) out of range of int at [line:%d, column:%d]", number, line, column)
+}
+
+func (vm *VM) hydrateJSONParentLookupFields(value Value) {
+	if vm != nil && vm.Org != nil && strings.EqualFold(value.Type, "User") && !value.classInstance {
+		if object, ok := vm.Org.Objects["User"]; ok {
+			loadedParent := false
+			for _, relation := range object.Definition.Relations {
+				for _, alias := range vm.parentRelationshipValueAliases(value.Type, relation.ParentRelationship) {
+					if _, exists := value.Fields[alias]; exists {
+						loadedParent = true
+					}
+				}
+			}
+			if !loadedParent {
+				return
+			}
+		}
+	}
+	vm.hydrateParentLookupFields(value)
+}
+
+// Native owner-side Account formula rows retain the qualified alias regardless
+// of the two aliases' text order. Ordinary fields and duplicate identical keys
+// continue through the existing textual-order mapper.
+func (vm *VM) qualifiedTextFormulaJSONShadowsLocal(typeName, key string, fields map[string]any) bool {
+	if vm.Org == nil || vm.Org.Namespace == "" || !strings.EqualFold(vm.currentCallerNamespace(), vm.Org.Namespace) || isCustomObjectLikeName(typeName) {
+		return false
+	}
+	_, field, ok := vm.sObjectFieldDefinition(typeName, key)
+	if !ok || !isTextFormulaField(field) {
+		return false
+	}
+	prefix, qualified := namespaceTokenPrefix(field.APIName)
+	if !qualified || !strings.EqualFold(prefix, vm.Org.Namespace) || !strings.EqualFold(key, storage.StripNamespaceToken(vm.Org.Namespace, field.APIName)) {
+		return false
+	}
+	for inputKey := range fields {
+		if strings.EqualFold(inputKey, field.APIName) {
+			return true
+		}
+	}
+	return false
 }

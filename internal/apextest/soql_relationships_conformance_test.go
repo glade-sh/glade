@@ -18,7 +18,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Owned Salesforce observations at both API endpoints. CI uses local inputs.
+// Owned Salesforce observations at API 62/67/68. CI uses local inputs.
 func TestSOQLRelationshipsOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected  string
@@ -43,7 +43,7 @@ func TestSOQLRelationshipsOrgConformance(t *testing.T) {
 	if len(data.Cases) != 255 || len(data.Remaining) != 0 {
 		t.Fatalf("oracle rows: %d exact-text cases + %d unasserted", len(data.Cases), len(data.Remaining))
 	}
-	if strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle versions: %v", data.APIVersions)
 	}
 	seen := map[string]bool{}

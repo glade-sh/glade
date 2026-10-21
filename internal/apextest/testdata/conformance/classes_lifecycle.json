@@ -1,9 +1,10 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
-  "oracle": "Owned class lifecycle observations at API 62.0 and 67.0, including namespace, identifier and static-property controls. Named and static-property controls use the Tooling compiler.",
+  "oracle": "Owned class lifecycle observations at API 62.0 and 67.0, including namespace, identifier and static-property controls, plus API 68.0 anonymous cases (C003, R153 and controls M001-M006 from an API 68 anonymous recapture). Named and static-property controls use the Tooling compiler.",
   "anonymousDeclarations": {
     "CLInit": "class CLInit {\n public String trace='field';\n public String second=mark('second');\n public Integer amount;\n public String text;\n public List<String> items=new List<String>();\n public String mark(String s){trace+='>'+s;return s;}\n public CLInit(){this(7);trace+='>default';}\n public CLInit(Integer n){amount=n;trace+='>integer';}\n public CLInit(String s){text=s;trace+='>string';}\n public CLInit(Integer n,String s){this(n);text=s;trace+='>pair';}\n public CLInit(CLInit other){amount=other.amount;items=other.items;trace+='>copy';}\n public String choose(Integer n){return 'integer:'+String.valueOf(n);}\n public String choose(String s){return 'string:'+s;}\n public CLInit self(){return this;}\n}",
     "CLBase": "class CLBase {\n public String trace='base-field';\n public Integer value=2;\n protected String protectedValue='protected';\n private String secret='secret';\n public CLBase(){trace+='>base-default';}\n public CLBase(Integer n){value=n;trace+='>base-arg';}\n public virtual String tag(){return 'base';}\n public virtual Integer measure(){return value;}\n public String dispatch(){return tag();}\n public String readSecret(){return secret;}\n}",

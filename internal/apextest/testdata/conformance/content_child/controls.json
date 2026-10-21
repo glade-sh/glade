@@ -1,0 +1,454 @@
+{
+  "cluster": "controls",
+  "shapeCount": 4,
+  "nativeObservationCount": 24,
+  "rows": [
+    {
+      "id": "CTRL_POS",
+      "routes": {
+        "anonymous": {
+          "62.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CTRL_POS|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "4c850d725df6b0fbc80a1125bdca9859387bcd94bfd22dd2c5b7bd78706f6494"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CTRL_POS|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "4c850d725df6b0fbc80a1125bdca9859387bcd94bfd22dd2c5b7bd78706f6494"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CTRL_POS|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "4c850d725df6b0fbc80a1125bdca9859387bcd94bfd22dd2c5b7bd78706f6494"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "outcome": "runtime"
+          }
+        },
+        "istest": {
+          "62.0": {
+            "classes": {
+              "CdlObserveCTRLPOSTest": "@IsTest private class CdlObserveCTRLPOSTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>557){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CTRL_POS|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCTRLPOSTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCTRLPOSTest": "02b666af39f8dcbe89a7d0602b7082fa50e2f46b5c34eaa59be15710d0bd1205"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "classes": {
+              "CdlObserveCTRLPOSTest": "@IsTest private class CdlObserveCTRLPOSTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>557){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CTRL_POS|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCTRLPOSTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCTRLPOSTest": "02b666af39f8dcbe89a7d0602b7082fa50e2f46b5c34eaa59be15710d0bd1205"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "classes": {
+              "CdlObserveCTRLPOSTest": "@IsTest private class CdlObserveCTRLPOSTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>557){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CTRL_POS|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCTRLPOSTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCTRLPOSTest": "02b666af39f8dcbe89a7d0602b7082fa50e2f46b5c34eaa59be15710d0bd1205"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "outcome": "runtime"
+          }
+        }
+      }
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "routes": {
+        "anonymous": {
+          "62.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{try{Integer z=0;Integer value=1/z;}catch(Exception e){payload.put('caught',e.getTypeName());payload.put('message',e.getMessage());}}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CTRL_CAUGHT|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "d8aca7abb8d73d0ee8b2559f90b9844cab1f730aa7ddb5d2a61f8efaf67344ef"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "message": "Divide by 0",
+                "caught": "System.MathException"
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{try{Integer z=0;Integer value=1/z;}catch(Exception e){payload.put('caught',e.getTypeName());payload.put('message',e.getMessage());}}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CTRL_CAUGHT|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "d8aca7abb8d73d0ee8b2559f90b9844cab1f730aa7ddb5d2a61f8efaf67344ef"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "message": "Divide by 0",
+                "caught": "System.MathException"
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{try{Integer z=0;Integer value=1/z;}catch(Exception e){payload.put('caught',e.getTypeName());payload.put('message',e.getMessage());}}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CTRL_CAUGHT|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "d8aca7abb8d73d0ee8b2559f90b9844cab1f730aa7ddb5d2a61f8efaf67344ef"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "message": "Divide by 0",
+                "caught": "System.MathException"
+              }
+            },
+            "outcome": "runtime"
+          }
+        },
+        "istest": {
+          "62.0": {
+            "classes": {
+              "CdlObserveCTRLCAUGHTTest": "@IsTest private class CdlObserveCTRLCAUGHTTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{try{Integer z=0;Integer value=1/z;}catch(Exception e){payload.put('caught',e.getTypeName());payload.put('message',e.getMessage());}}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>554){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CTRL_CAUGHT|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCTRLCAUGHTTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCTRLCAUGHTTest": "f883c2ff06e6d696c073e538cf5f5b3ee2d49356da1508f06d72e2fb3f59e775"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "message": "Divide by 0",
+                "caught": "System.MathException"
+              }
+            },
+            "outcome": "runtime"
+          },
+          "67.0": {
+            "classes": {
+              "CdlObserveCTRLCAUGHTTest": "@IsTest private class CdlObserveCTRLCAUGHTTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{try{Integer z=0;Integer value=1/z;}catch(Exception e){payload.put('caught',e.getTypeName());payload.put('message',e.getMessage());}}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>554){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CTRL_CAUGHT|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCTRLCAUGHTTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCTRLCAUGHTTest": "f883c2ff06e6d696c073e538cf5f5b3ee2d49356da1508f06d72e2fb3f59e775"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "message": "Divide by 0",
+                "caught": "System.MathException"
+              }
+            },
+            "outcome": "runtime"
+          },
+          "68.0": {
+            "classes": {
+              "CdlObserveCTRLCAUGHTTest": "@IsTest private class CdlObserveCTRLCAUGHTTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{try{Integer z=0;Integer value=1/z;}catch(Exception e){payload.put('caught',e.getTypeName());payload.put('message',e.getMessage());}}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>554){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CTRL_CAUGHT|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCTRLCAUGHTTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCTRLCAUGHTTest": "f883c2ff06e6d696c073e538cf5f5b3ee2d49356da1508f06d72e2fb3f59e775"
+            },
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "message": "Divide by 0",
+                "caught": "System.MathException"
+              }
+            },
+            "outcome": "runtime"
+          }
+        }
+      }
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "routes": {
+        "anonymous": {
+          "62.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();Integer z=0;Integer value=1/z;",
+            "sourceSha256": {
+              "anonymous": "f1d5c4cd8ddf04655546e17a9413b59f388d373d2e884c88b673f6c7e9563b43"
+            },
+            "native": {
+              "outcome": "uncaught_anonymous",
+              "exceptionMessage": "System.MathException: Divide by 0",
+              "exceptionType": "System.MathException"
+            },
+            "outcome": "uncaught",
+            "exceptionType": "System.MathException",
+            "message": "Divide by 0"
+          },
+          "67.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();Integer z=0;Integer value=1/z;",
+            "sourceSha256": {
+              "anonymous": "f1d5c4cd8ddf04655546e17a9413b59f388d373d2e884c88b673f6c7e9563b43"
+            },
+            "native": {
+              "outcome": "uncaught_anonymous",
+              "exceptionMessage": "System.MathException: Divide by 0",
+              "exceptionType": "System.MathException"
+            },
+            "outcome": "uncaught",
+            "exceptionType": "System.MathException",
+            "message": "Divide by 0"
+          },
+          "68.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();Integer z=0;Integer value=1/z;",
+            "sourceSha256": {
+              "anonymous": "f1d5c4cd8ddf04655546e17a9413b59f388d373d2e884c88b673f6c7e9563b43"
+            },
+            "native": {
+              "outcome": "uncaught_anonymous",
+              "exceptionMessage": "System.MathException: Divide by 0",
+              "exceptionType": "System.MathException"
+            },
+            "outcome": "uncaught",
+            "exceptionType": "System.MathException",
+            "message": "Divide by 0"
+          }
+        },
+        "istest": {
+          "62.0": {
+            "classes": {
+              "CdlObserveCTRLUNCAUGHTTest": "@IsTest private class CdlObserveCTRLUNCAUGHTTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();Integer z=0;Integer value=1/z;}}"
+            },
+            "tests": [
+              "CdlObserveCTRLUNCAUGHTTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCTRLUNCAUGHTTest": "f128b577cb03e33dfee0904ea1ae3658ba92602e132d6eb839a974ec6fb5e57e"
+            },
+            "native": {
+              "outcome": "uncaught_test_failure",
+              "exceptionMessage": "System.MathException: Divide by 0",
+              "exceptionType": "System.MathException"
+            },
+            "outcome": "uncaught",
+            "exceptionType": "System.MathException",
+            "message": "Divide by 0"
+          },
+          "67.0": {
+            "classes": {
+              "CdlObserveCTRLUNCAUGHTTest": "@IsTest private class CdlObserveCTRLUNCAUGHTTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();Integer z=0;Integer value=1/z;}}"
+            },
+            "tests": [
+              "CdlObserveCTRLUNCAUGHTTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCTRLUNCAUGHTTest": "f128b577cb03e33dfee0904ea1ae3658ba92602e132d6eb839a974ec6fb5e57e"
+            },
+            "native": {
+              "outcome": "uncaught_test_failure",
+              "exceptionMessage": "System.MathException: Divide by 0",
+              "exceptionType": "System.MathException"
+            },
+            "outcome": "uncaught",
+            "exceptionType": "System.MathException",
+            "message": "Divide by 0"
+          },
+          "68.0": {
+            "classes": {
+              "CdlObserveCTRLUNCAUGHTTest": "@IsTest private class CdlObserveCTRLUNCAUGHTTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();Integer z=0;Integer value=1/z;}}"
+            },
+            "tests": [
+              "CdlObserveCTRLUNCAUGHTTest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCTRLUNCAUGHTTest": "f128b577cb03e33dfee0904ea1ae3658ba92602e132d6eb839a974ec6fb5e57e"
+            },
+            "native": {
+              "outcome": "uncaught_test_failure",
+              "exceptionMessage": "System.MathException: Divide by 0",
+              "exceptionType": "System.MathException"
+            },
+            "outcome": "uncaught",
+            "exceptionType": "System.MathException",
+            "message": "Divide by 0"
+          }
+        }
+      }
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "routes": {
+        "anonymous": {
+          "62.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{Integer value='synthetic wrong type';}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CTRL_COMPILE|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "ba741819f17eaab4b90b57f3670f4cf268beb6832b72052d3e9bfc469a78b81b"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "Illegal assignment from String to Integer",
+                "line": 1,
+                "column": 88
+              }
+            },
+            "outcome": "reject",
+            "primary": "Illegal assignment from String to Integer"
+          },
+          "67.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{Integer value='synthetic wrong type';}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CTRL_COMPILE|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "ba741819f17eaab4b90b57f3670f4cf268beb6832b72052d3e9bfc469a78b81b"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "Illegal assignment from String to Integer",
+                "line": 1,
+                "column": 88
+              }
+            },
+            "outcome": "reject",
+            "primary": "Illegal assignment from String to Integer"
+          },
+          "68.0": {
+            "anonymous": "String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{Integer value='synthetic wrong type';}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|CTRL_COMPILE|'+captureJson);",
+            "sourceSha256": {
+              "anonymous": "ba741819f17eaab4b90b57f3670f4cf268beb6832b72052d3e9bfc469a78b81b"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compileProblem": "Illegal assignment from String to Integer",
+                "line": 1,
+                "column": 88
+              }
+            },
+            "outcome": "reject",
+            "primary": "Illegal assignment from String to Integer"
+          }
+        },
+        "istest": {
+          "62.0": {
+            "classes": {
+              "CdlObserveCTRLCOMPILETest": "@IsTest private class CdlObserveCTRLCOMPILETest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{Integer value='synthetic wrong type';}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>553){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CTRL_COMPILE|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCTRLCOMPILETest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCTRLCOMPILETest": "8e94de68249c71dc60f61b443c0ab5cc4fbfe4a12a956373aca2b64a4a7b8d28"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "name": "CdlObserveCTRLCOMPILETest",
+                  "type": "ApexClass",
+                  "line": 1,
+                  "problem": "Illegal assignment from String to Integer"
+                }
+              ]
+            },
+            "outcome": "reject",
+            "primary": "Illegal assignment from String to Integer"
+          },
+          "67.0": {
+            "classes": {
+              "CdlObserveCTRLCOMPILETest": "@IsTest private class CdlObserveCTRLCOMPILETest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{Integer value='synthetic wrong type';}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>553){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CTRL_COMPILE|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCTRLCOMPILETest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCTRLCOMPILETest": "8e94de68249c71dc60f61b443c0ab5cc4fbfe4a12a956373aca2b64a4a7b8d28"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "name": "CdlObserveCTRLCOMPILETest",
+                  "type": "ApexClass",
+                  "line": 1,
+                  "problem": "Illegal assignment from String to Integer"
+                }
+              ]
+            },
+            "outcome": "reject",
+            "primary": "Illegal assignment from String to Integer"
+          },
+          "68.0": {
+            "classes": {
+              "CdlObserveCTRLCOMPILETest": "@IsTest private class CdlObserveCTRLCOMPILETest{@IsTest static void observe(){String phase='fixture';Map<String,Object> payload=new Map<String,Object>();try{Integer value='synthetic wrong type';}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());if(phase=='fixture' && false){payload.put('fixtureError',true);}}String captureJson=JSON.serialize(payload);if(captureJson.length()>553){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}System.assert(false,'C126_RESULT|CTRL_COMPILE|'+captureJson);}}"
+            },
+            "tests": [
+              "CdlObserveCTRLCOMPILETest"
+            ],
+            "sourceSha256": {
+              "class:CdlObserveCTRLCOMPILETest": "8e94de68249c71dc60f61b443c0ab5cc4fbfe4a12a956373aca2b64a4a7b8d28"
+            },
+            "native": {
+              "outcome": "compile-rejected",
+              "diagnostics": [
+                {
+                  "name": "CdlObserveCTRLCOMPILETest",
+                  "type": "ApexClass",
+                  "line": 1,
+                  "problem": "Illegal assignment from String to Integer"
+                }
+              ]
+            },
+            "outcome": "reject",
+            "primary": "Illegal assignment from String to Integer"
+          }
+        }
+      }
+    }
+  ]
+}

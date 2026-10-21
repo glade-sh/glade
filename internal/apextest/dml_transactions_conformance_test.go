@@ -19,7 +19,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Owned observations and DML list/textarea/upsert controls captured at API 62 and 67.
+// Owned observations and DML list/textarea/upsert controls captured at API 62/67/68.
 // Every captured observation is asserted as exact text (or raw null).
 func TestDMLTransactionsOrgConformance(t *testing.T) {
 	type familyCase struct {
@@ -28,12 +28,17 @@ func TestDMLTransactionsOrgConformance(t *testing.T) {
 		NativeLine          int
 	}
 	var data struct {
-		APIVersions  []string `json:"apiVersions"`
-		Declarations map[string]string
-		Prelude      string
-		Schema       gladeschema.Schema `json:"schema"`
-		Cases        []familyCase
-		Remaining    []struct{ ID, Owner, Reason string }
+		APIVersions             []string `json:"apiVersions"`
+		Declarations            map[string]string
+		Prelude                 string
+		Schema                  gladeschema.Schema `json:"schema"`
+		Cases                   []familyCase
+		Remaining               []struct{ ID, Owner, Reason string }
+		API68OverrideProvenance string
+		API68Overrides          map[string]struct {
+			Expected   string
+			NativeLine int
+		}
 	}
 	raw, err := os.ReadFile("testdata/conformance/dml_transactions.json")
 	if err != nil {
@@ -42,7 +47,7 @@ func TestDMLTransactionsOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 297 || len(data.Remaining) != 0 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 297 || len(data.Remaining) != 0 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle: %d asserted + %d carried at %v", len(data.Cases), len(data.Remaining), data.APIVersions)
 	}
 	seen := map[string]bool{}
@@ -51,6 +56,14 @@ func TestDMLTransactionsOrgConformance(t *testing.T) {
 			t.Fatalf("invalid asserted row: %#v", tc)
 		}
 		seen[tc.ID] = true
+	}
+	if len(data.API68Overrides) != 11 || data.API68OverrideProvenance == "" {
+		t.Fatalf("API 68 source-coordinate overrides: %d; provenance %q", len(data.API68Overrides), data.API68OverrideProvenance)
+	}
+	for id, override := range data.API68Overrides {
+		if !seen[id] || override.NativeLine <= 0 || override.Expected == "" {
+			t.Fatalf("invalid API 68 source-coordinate override: %s %#v", id, override)
+		}
 	}
 	for _, row := range data.Remaining {
 		if row.ID == "" || seen[row.ID] || row.Owner == "" || row.Owner == "A36" || row.Reason == "" {
@@ -117,6 +130,19 @@ func TestDMLTransactionsOrgConformance(t *testing.T) {
 	}
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
+			// Select raw native diagnostics before either route pads rejected source.
+			cases := append([]familyCase(nil), data.Cases...)
+			for i := range cases {
+				if api == "68.0" {
+					if override, ok := data.API68Overrides[cases[i].ID]; ok {
+						cases[i].Expected = override.Expected
+						cases[i].NativeLine = override.NativeLine
+					}
+				}
+				if cases[i].NativeLine > 0 && !strings.HasPrefix(cases[i].Expected, fmt.Sprintf("COMPILE_ERROR\tline %d: ", cases[i].NativeLine)) {
+					t.Fatalf("native line disagrees with diagnostic for %s at API %s", cases[i].ID, api)
+				}
+			}
 			counts := newConformanceCounts()
 			defer counts.Log(t, "DML transactions", api, "")
 			root := t.TempDir()
@@ -156,7 +182,7 @@ func TestDMLTransactionsOrgConformance(t *testing.T) {
 			var namedSource strings.Builder
 			namedSource.WriteString("@IsTest private class DMLTransactionsProbe {\n")
 			executable := 0
-			for _, tc := range data.Cases {
+			for _, tc := range cases {
 				if tc.NativeLine > 0 {
 					continue
 				}
@@ -191,7 +217,7 @@ func TestDMLTransactionsOrgConformance(t *testing.T) {
 				}
 				namedByID[id] = tc
 			}
-			for _, tc := range data.Cases {
+			for _, tc := range cases {
 				t.Run(tc.ID, func(t *testing.T) {
 					counts.Run(t, "anonymous", tc.ID, "anonymous", func(t *testing.T) {
 						source := body(tc)

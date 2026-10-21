@@ -1,0 +1,2 @@
+method	question
+visibility	Does CRUD-only access reveal admin-owned Private setup records through an omitted-sharing test entry, compared with an explicit without-sharing helper?

@@ -1,0 +1,1778 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "no_partition",
+  "cellCount": 84,
+  "observedCount": 84,
+  "assertedCount": 84,
+  "carriedCount": 0,
+  "cells": [
+    {
+      "id": "PCN001",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN001|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "d18ba79456c7df0d9e995cfbaae313bc537f97319e55f6a7c06096ebd485ae93"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN002",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('local.PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN002|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "33513a092fe38aedb885ab376b8d2957e3147d91e8333194ca33fa05a551bfe2"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN003",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Session.getPartition('local.PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN003|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "6ec02f50bfd8de3dab74f670bf96678664a5170408554d98a1d5b1ed8fc490e4"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|Invalid partition: partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|Invalid partition: partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN004",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN004|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "9c5b6666705a6cd8c86ebb5c4954b4da7aa3f1fea1a95b2215790705d5648eca"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN005",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { Cache.Org.put('PcKPCN005', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN005'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN005|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "9d5b9d91a75952ad32bcc4135bf0fa7c1ff4a3ee07fe70f79fa60e0a4c6b6c63"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN006",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { Cache.Session.put('PcKPCN006', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('PcKPCN006'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN006|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "b0e66d474ddadd305594480e15894a2aa0bbab6829df3aafab6bcd04046cb1c1"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN007",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.get('PcKPCN007')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN007'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN007|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "c96059ad7252f1e1f3c1b903c057e54bb5f20bcbe833f3565b7d2ddc98ad7058"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN008",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.contains('PcKPCN008')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN008'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN008|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "df09cee158b23d47eddcb5e460fd816167d9446ba8b5df06ef621a9828e68b15"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009a",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getCapacity()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN009a|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "5c3274085e5d00e11e75843e236ebf6f99559d72ec1c4c4133d832e92d8fb8e1"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009b",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN009b|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "cb7fb8eb22cedfc701c763fd08276b5829447a7aefead66f82759193742ebdd2"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009c",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getKeys()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN009c|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "ec910bb628af0ff59d4f73932e19510293f05fc24add7e98f2c443c87c1fccd3"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN010",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { Cache.Org.put('local.PcAlt.PcKPCN010', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCN010'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN010|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "e700598344f41efbb1bd92c470e59f43bfe15b29000c5257e2c712dea66f3f2d"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN011",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { try { Cache.OrgPartition p = Cache.Org.getPartition('PcAlt'); r = String.valueOf(p.getCapacity()); } catch (Cache.Org.OrgCacheException e) { r = 'caught'; } } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN011|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "a24f244c9422bf3963d317462a94236c52e3990b61f339775daef77c85295237"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "caught"
+      },
+      "value": "caught"
+    },
+    {
+      "id": "PCN012",
+      "api": "62.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { try { if (Cache.Session.isAvailable()) { Cache.SessionPartition p = Cache.Session.getPartition('PcAlt'); r = String.valueOf(p.getCapacity()); } else { r = 'unavailable'; } } catch (Cache.Session.SessionCacheException e) { r = 'caught'; } } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN012|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "8e719683924e15c8f85818a2584930f8de61703e6d615510c0860f0dba89b758"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "caught"
+      },
+      "value": "caught"
+    },
+    {
+      "id": "PCN001",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN001A62Test": "@IsTest private class PcPCN001A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN001|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN001A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN001A62Test": "585d205667ca32c6776615d88d5fdcb3475b4558e61405096e3b820605f782d6"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN002",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN002A62Test": "@IsTest private class PcPCN002A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('local.PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN002|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN002A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN002A62Test": "8e0ca824e97bc4a7880d6fd64b09c902c12f08f7d4fbb0f9e0484f606d641d87"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN003",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN003A62Test": "@IsTest private class PcPCN003A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Session.getPartition('local.PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN003|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN003A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN003A62Test": "a3de8b1a16aa74908bacdcb667fece11aab00557f9d9efe265df53a99509cf47"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|Invalid partition: partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|Invalid partition: partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN004",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN004A62Test": "@IsTest private class PcPCN004A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN004|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN004A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN004A62Test": "31506bdb9f1d0c30539b344420acc3051a3a28e0be5c6154aa075f4717491c51"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN005",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN005A62Test": "@IsTest private class PcPCN005A62Test { @IsTest static void observe(){String r; try { Cache.Org.put('PcKPCN005', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN005'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN005|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN005A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN005A62Test": "3c69a5d673d1da215d486dd947752541c50f484c83bf24d901bcba1c1188148e"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN006",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN006A62Test": "@IsTest private class PcPCN006A62Test { @IsTest static void observe(){String r; try { Cache.Session.put('PcKPCN006', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('PcKPCN006'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN006|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN006A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN006A62Test": "65f1c325d9d7be394dea8b655f8a300c814989c081b87fbc0bc9ea87eb09a44f"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN007",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN007A62Test": "@IsTest private class PcPCN007A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.get('PcKPCN007')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN007'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN007|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN007A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN007A62Test": "3b729babcfbc0a2224c5d1e4ad0361d36461337a37779a82efab901e1d81d2f5"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN008",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN008A62Test": "@IsTest private class PcPCN008A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.contains('PcKPCN008')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN008'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN008|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN008A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN008A62Test": "ce777972d1ab6e024f9fac85961bceb1ffca9bae59254e5ab04b4b3fedcef635"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009a",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN009aA62Test": "@IsTest private class PcPCN009aA62Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getCapacity()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN009a|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN009aA62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN009aA62Test": "5daa7c7c324ae26af6ac06c76e0b4d2213640275b9c777354b90e5b281f1b1fb"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009b",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN009bA62Test": "@IsTest private class PcPCN009bA62Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN009b|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN009bA62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN009bA62Test": "6cb22f66fa32bd956e50afea8ebe29283c1e2f95ef98a34cfccc022b6922ca8d"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009c",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN009cA62Test": "@IsTest private class PcPCN009cA62Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getKeys()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN009c|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN009cA62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN009cA62Test": "4d2892510056017d8107d9d0d8a3a15a4e1b5b4311c74e625c441df5de2167af"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN010",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN010A62Test": "@IsTest private class PcPCN010A62Test { @IsTest static void observe(){String r; try { Cache.Org.put('local.PcAlt.PcKPCN010', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCN010'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN010|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN010A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN010A62Test": "4b4bb1a25bb9ce72481dc25567db249ae3583de0689bc5a2773e0a16b72fa97a"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN011",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN011A62Test": "@IsTest private class PcPCN011A62Test { @IsTest static void observe(){String r; try { try { Cache.OrgPartition p = Cache.Org.getPartition('PcAlt'); r = String.valueOf(p.getCapacity()); } catch (Cache.Org.OrgCacheException e) { r = 'caught'; } } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN011|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN011A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN011A62Test": "91dbd651126d6cfa2f90eecf937843e9948ca0b706311925af957fb5bf9f200c"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "caught"
+      },
+      "value": "caught"
+    },
+    {
+      "id": "PCN012",
+      "api": "62.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN012A62Test": "@IsTest private class PcPCN012A62Test { @IsTest static void observe(){String r; try { try { if (Cache.Session.isAvailable()) { Cache.SessionPartition p = Cache.Session.getPartition('PcAlt'); r = String.valueOf(p.getCapacity()); } else { r = 'unavailable'; } } catch (Cache.Session.SessionCacheException e) { r = 'caught'; } } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN012|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN012A62Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN012A62Test": "2175a84faf04000032c246618ac050c1264bbd3030bdd018ec1dba33367e1d72"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "caught"
+      },
+      "value": "caught"
+    },
+    {
+      "id": "PCN001",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN001|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "d18ba79456c7df0d9e995cfbaae313bc537f97319e55f6a7c06096ebd485ae93"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN002",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('local.PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN002|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "33513a092fe38aedb885ab376b8d2957e3147d91e8333194ca33fa05a551bfe2"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN003",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Session.getPartition('local.PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN003|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "6ec02f50bfd8de3dab74f670bf96678664a5170408554d98a1d5b1ed8fc490e4"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|Invalid partition: partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|Invalid partition: partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN004",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN004|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "9c5b6666705a6cd8c86ebb5c4954b4da7aa3f1fea1a95b2215790705d5648eca"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN005",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { Cache.Org.put('PcKPCN005', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN005'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN005|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "9d5b9d91a75952ad32bcc4135bf0fa7c1ff4a3ee07fe70f79fa60e0a4c6b6c63"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN006",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { Cache.Session.put('PcKPCN006', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('PcKPCN006'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN006|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "b0e66d474ddadd305594480e15894a2aa0bbab6829df3aafab6bcd04046cb1c1"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN007",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.get('PcKPCN007')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN007'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN007|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "c96059ad7252f1e1f3c1b903c057e54bb5f20bcbe833f3565b7d2ddc98ad7058"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN008",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.contains('PcKPCN008')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN008'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN008|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "df09cee158b23d47eddcb5e460fd816167d9446ba8b5df06ef621a9828e68b15"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009a",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getCapacity()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN009a|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "5c3274085e5d00e11e75843e236ebf6f99559d72ec1c4c4133d832e92d8fb8e1"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009b",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN009b|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "cb7fb8eb22cedfc701c763fd08276b5829447a7aefead66f82759193742ebdd2"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009c",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getKeys()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN009c|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "ec910bb628af0ff59d4f73932e19510293f05fc24add7e98f2c443c87c1fccd3"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN010",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { Cache.Org.put('local.PcAlt.PcKPCN010', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCN010'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN010|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "e700598344f41efbb1bd92c470e59f43bfe15b29000c5257e2c712dea66f3f2d"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN011",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { try { Cache.OrgPartition p = Cache.Org.getPartition('PcAlt'); r = String.valueOf(p.getCapacity()); } catch (Cache.Org.OrgCacheException e) { r = 'caught'; } } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN011|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "a24f244c9422bf3963d317462a94236c52e3990b61f339775daef77c85295237"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "caught"
+      },
+      "value": "caught"
+    },
+    {
+      "id": "PCN012",
+      "api": "67.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { try { if (Cache.Session.isAvailable()) { Cache.SessionPartition p = Cache.Session.getPartition('PcAlt'); r = String.valueOf(p.getCapacity()); } else { r = 'unavailable'; } } catch (Cache.Session.SessionCacheException e) { r = 'caught'; } } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN012|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "8e719683924e15c8f85818a2584930f8de61703e6d615510c0860f0dba89b758"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "caught"
+      },
+      "value": "caught"
+    },
+    {
+      "id": "PCN001",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN001A67Test": "@IsTest private class PcPCN001A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN001|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN001A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN001A67Test": "5b88107d3ee93be98a47cd96dc569a45c9aa6bc51e2153df069651144d6982fe"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN002",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN002A67Test": "@IsTest private class PcPCN002A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('local.PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN002|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN002A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN002A67Test": "e3b924d9bb7a093da7d04c4645085fc7c0ea53d58549401387117c6aadb01d26"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN003",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN003A67Test": "@IsTest private class PcPCN003A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Session.getPartition('local.PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN003|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN003A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN003A67Test": "6409095657ed0ec92f0ae3a63457cd348e823dd0b5acf092f39dde8e405928db"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|Invalid partition: partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|Invalid partition: partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN004",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN004A67Test": "@IsTest private class PcPCN004A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN004|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN004A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN004A67Test": "08856f29b48b90b356ebc05376f27214ecc860cf409e394250c121a2295171aa"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN005",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN005A67Test": "@IsTest private class PcPCN005A67Test { @IsTest static void observe(){String r; try { Cache.Org.put('PcKPCN005', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN005'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN005|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN005A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN005A67Test": "adbebf50209ed31e088bf33042419518ddfc2f63a768afcecb5d5c685e81fb95"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN006",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN006A67Test": "@IsTest private class PcPCN006A67Test { @IsTest static void observe(){String r; try { Cache.Session.put('PcKPCN006', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('PcKPCN006'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN006|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN006A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN006A67Test": "e6beee39dbe3388deed6c72b904950dc99b655a84be9d88ec927c4ead6ce3349"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN007",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN007A67Test": "@IsTest private class PcPCN007A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.get('PcKPCN007')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN007'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN007|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN007A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN007A67Test": "65ba687815cdecb258a23f0a7d08d043ffcd5a92d9fba57ef93c71452e794d52"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN008",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN008A67Test": "@IsTest private class PcPCN008A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.contains('PcKPCN008')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN008'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN008|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN008A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN008A67Test": "88684ec214a5a8f305e49cabf6889dae1538d7457c30f48f917a2a4dc3ed48d3"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009a",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN009aA67Test": "@IsTest private class PcPCN009aA67Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getCapacity()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN009a|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN009aA67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN009aA67Test": "9012f20d55b67f5c6a93f364c4111e719298fb03124a456eacd5c2d9ccd029d9"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009b",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN009bA67Test": "@IsTest private class PcPCN009bA67Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN009b|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN009bA67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN009bA67Test": "18f40080f83a5fd3b6eb23d022e73ecf25593e74243dacc4b8f76d8abda0704e"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009c",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN009cA67Test": "@IsTest private class PcPCN009cA67Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getKeys()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN009c|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN009cA67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN009cA67Test": "03ff39e73856c12ebb44793c6da21596d9660fcddc0539466fb1a78f6ce9513f"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN010",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN010A67Test": "@IsTest private class PcPCN010A67Test { @IsTest static void observe(){String r; try { Cache.Org.put('local.PcAlt.PcKPCN010', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCN010'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN010|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN010A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN010A67Test": "b9a65904bafe7ffaac0ffd9ae4ba80d6eb84969d109cf9e41620b20a0101742b"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN011",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN011A67Test": "@IsTest private class PcPCN011A67Test { @IsTest static void observe(){String r; try { try { Cache.OrgPartition p = Cache.Org.getPartition('PcAlt'); r = String.valueOf(p.getCapacity()); } catch (Cache.Org.OrgCacheException e) { r = 'caught'; } } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN011|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN011A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN011A67Test": "91bd7765bff38f5a423b9dbc9e821e6419d2f3adcffe9eafa6928a393e4d8fe8"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "caught"
+      },
+      "value": "caught"
+    },
+    {
+      "id": "PCN012",
+      "api": "67.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN012A67Test": "@IsTest private class PcPCN012A67Test { @IsTest static void observe(){String r; try { try { if (Cache.Session.isAvailable()) { Cache.SessionPartition p = Cache.Session.getPartition('PcAlt'); r = String.valueOf(p.getCapacity()); } else { r = 'unavailable'; } } catch (Cache.Session.SessionCacheException e) { r = 'caught'; } } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN012|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN012A67Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN012A67Test": "4d474f0653ae1db0534d25d00c9fde521e7d8142364ff962d8e5fa27ae168f0a"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "caught"
+      },
+      "value": "caught"
+    },
+    {
+      "id": "PCN001",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN001|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "d18ba79456c7df0d9e995cfbaae313bc537f97319e55f6a7c06096ebd485ae93"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN002",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('local.PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN002|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "33513a092fe38aedb885ab376b8d2957e3147d91e8333194ca33fa05a551bfe2"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN003",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Session.getPartition('local.PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN003|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "6ec02f50bfd8de3dab74f670bf96678664a5170408554d98a1d5b1ed8fc490e4"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|Invalid partition: partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|Invalid partition: partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN004",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN004|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "9c5b6666705a6cd8c86ebb5c4954b4da7aa3f1fea1a95b2215790705d5648eca"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN005",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { Cache.Org.put('PcKPCN005', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN005'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN005|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "9d5b9d91a75952ad32bcc4135bf0fa7c1ff4a3ee07fe70f79fa60e0a4c6b6c63"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN006",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { Cache.Session.put('PcKPCN006', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('PcKPCN006'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN006|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "b0e66d474ddadd305594480e15894a2aa0bbab6829df3aafab6bcd04046cb1c1"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN007",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.get('PcKPCN007')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN007'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN007|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "c96059ad7252f1e1f3c1b903c057e54bb5f20bcbe833f3565b7d2ddc98ad7058"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN008",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.contains('PcKPCN008')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN008'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN008|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "df09cee158b23d47eddcb5e460fd816167d9446ba8b5df06ef621a9828e68b15"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009a",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getCapacity()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN009a|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "5c3274085e5d00e11e75843e236ebf6f99559d72ec1c4c4133d832e92d8fb8e1"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009b",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN009b|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "cb7fb8eb22cedfc701c763fd08276b5829447a7aefead66f82759193742ebdd2"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009c",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { r = String.valueOf(Cache.Org.getKeys()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN009c|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "ec910bb628af0ff59d4f73932e19510293f05fc24add7e98f2c443c87c1fccd3"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN010",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { Cache.Org.put('local.PcAlt.PcKPCN010', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCN010'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN010|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "e700598344f41efbb1bd92c470e59f43bfe15b29000c5257e2c712dea66f3f2d"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN011",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { try { Cache.OrgPartition p = Cache.Org.getPartition('PcAlt'); r = String.valueOf(p.getCapacity()); } catch (Cache.Org.OrgCacheException e) { r = 'caught'; } } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN011|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "a24f244c9422bf3963d317462a94236c52e3990b61f339775daef77c85295237"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "caught"
+      },
+      "value": "caught"
+    },
+    {
+      "id": "PCN012",
+      "api": "68.0",
+      "route": "anon",
+      "launcher": "execute-anonymous",
+      "source": {
+        "anonymous": "String r; try { try { if (Cache.Session.isAvailable()) { Cache.SessionPartition p = Cache.Session.getPartition('PcAlt'); r = String.valueOf(p.getCapacity()); } else { r = 'unavailable'; } } catch (Cache.Session.SessionCacheException e) { r = 'caught'; } } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE25_RESULT|PCN012|'+pcWire);",
+        "classes": {}
+      },
+      "sourceSHA256": {
+        "anonymous": "8e719683924e15c8f85818a2584930f8de61703e6d615510c0860f0dba89b758"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "caught"
+      },
+      "value": "caught"
+    },
+    {
+      "id": "PCN001",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN001A68Test": "@IsTest private class PcPCN001A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Session.isAvailable()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN001|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN001A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN001A68Test": "54ec656e55c454289b00fe10103f41c6b00ddb0de9f9f13b78fdf41a6b3d897a"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN002",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN002A68Test": "@IsTest private class PcPCN002A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('local.PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN002|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN002A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN002A68Test": "f310163c21f525f1f258105f1b079f0799d622df0eef69dfe3aa8b313fe281d7"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN003",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN003A68Test": "@IsTest private class PcPCN003A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Session.getPartition('local.PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN003|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN003A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN003A68Test": "1d4ec539c06901357273f8c37d25bba7b6dc1bf1d857df84bab218bbd4063b00"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|Invalid partition: partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|Invalid partition: partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN004",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN004A68Test": "@IsTest private class PcPCN004A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getPartition('PcAlt') != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN004|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN004A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN004A68Test": "a50df7ab729c6208812ee6edabbc2d18d7c5f368ee18d0bbfdd16ac6598de1f7"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN005",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN005A68Test": "@IsTest private class PcPCN005A68Test { @IsTest static void observe(){String r; try { Cache.Org.put('PcKPCN005', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN005'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN005|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN005A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN005A68Test": "050a9d092b7f0d31324a6e38a5a4413c10af30f9671e3151ac8496bebd927431"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN006",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN006A68Test": "@IsTest private class PcPCN006A68Test { @IsTest static void observe(){String r; try { Cache.Session.put('PcKPCN006', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('PcKPCN006'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN006|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN006A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN006A68Test": "f8484ce6cdf3d3abe89aafecc2e2e59b121c3c4e79f9601cb6f71b126c810a37"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Session.SessionCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN007",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN007A68Test": "@IsTest private class PcPCN007A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.get('PcKPCN007')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN007'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN007|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN007A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN007A68Test": "adb31d5cd1f41b7a8eec390f5464c79614c1b4ab34b6528e488d5c75a7836cef"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN008",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN008A68Test": "@IsTest private class PcPCN008A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.contains('PcKPCN008')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('PcKPCN008'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN008|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN008A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN008A68Test": "d545c80820745ce5fb30482ca346c0d7e48d5f1adc45c753fee7e0da441413c8"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009a",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN009aA68Test": "@IsTest private class PcPCN009aA68Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getCapacity()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN009a|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN009aA68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN009aA68Test": "421c5dcb3eb60106ea91e7e84df00040b16f0e93ed7cc59e01a63127c5d9442d"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009b",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN009bA68Test": "@IsTest private class PcPCN009bA68Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getName()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN009b|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN009bA68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN009bA68Test": "01a5718f7249779c51bb4f73b35b753d2ec2e33848154e20875c078bd4044e8f"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN009c",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN009cA68Test": "@IsTest private class PcPCN009cA68Test { @IsTest static void observe(){String r; try { r = String.valueOf(Cache.Org.getKeys()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN009c|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN009cA68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN009cA68Test": "dc8ce5ed400ea42c15b45a87676757f577082c0ba22fe821b9ecf44c2c7ab1b9"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|A default partition was not found.  To cache without partition reference, designate a partition as default."
+    },
+    {
+      "id": "PCN010",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN010A68Test": "@IsTest private class PcPCN010A68Test { @IsTest static void observe(){String r; try { Cache.Org.put('local.PcAlt.PcKPCN010', 1); r = 'ok'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCN010'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN010|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN010A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN010A68Test": "f01994e79b6997e5328471e0ac84c3a5b9c87c3ccce0e0f5dd82d07e912571f0"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+      },
+      "value": "EXC|cache.Org.OrgCacheException|Invalid partition - partition 'local.PcAlt' does not exist."
+    },
+    {
+      "id": "PCN011",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN011A68Test": "@IsTest private class PcPCN011A68Test { @IsTest static void observe(){String r; try { try { Cache.OrgPartition p = Cache.Org.getPartition('PcAlt'); r = String.valueOf(p.getCapacity()); } catch (Cache.Org.OrgCacheException e) { r = 'caught'; } } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN011|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN011A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN011A68Test": "38f6617a8457ed040f5af6e5cc4a81ae82c632c2521a859a524b7314b0ef9745"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "caught"
+      },
+      "value": "caught"
+    },
+    {
+      "id": "PCN012",
+      "api": "68.0",
+      "route": "istest",
+      "launcher": "deploy-checkonly",
+      "source": {
+        "classes": {
+          "PcPCN012A68Test": "@IsTest private class PcPCN012A68Test { @IsTest static void observe(){String r; try { try { if (Cache.Session.isAvailable()) { Cache.SessionPartition p = Cache.Session.getPartition('PcAlt'); r = String.valueOf(p.getCapacity()); } else { r = 'unavailable'; } } catch (Cache.Session.SessionCacheException e) { r = 'caught'; } } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>580){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE25_RESULT|PCN012|'+pcWire);} }"
+        },
+        "tests": [
+          "PcPCN012A68Test"
+        ]
+      },
+      "sourceSHA256": {
+        "class:PcPCN012A68Test": "60430eccc0cf721c626cf68a1322b38a27da39f1927b383440d23393fc13e3af"
+      },
+      "outcome": "value",
+      "native": {
+        "outcome": "value",
+        "value": "caught"
+      },
+      "value": "caught"
+    }
+  ]
+}

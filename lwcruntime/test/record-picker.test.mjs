@@ -3,7 +3,7 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import test from "node:test";
-import { chromium } from "playwright";
+import { chromium } from "./shared-playwright.mjs";
 import { repoRoot, requireLWCToolchain } from "./helpers.mjs";
 import { l19RuntimeImports, serveL19RuntimeModule } from "./l19-runtime-modules.mjs";
 

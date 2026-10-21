@@ -1,0 +1,666 @@
+{
+  "group": "creation",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "shapeCount": 3,
+  "nativeObservationCount": 18,
+  "recoveredObservationCount": 4,
+  "notes": [
+    "Synthetic source-only project metadata, helper classes and triggers use the ordinary project loader.",
+    "Both independently captured routes compare complete reassembled payloads; named chunk envelopes are transport only.",
+    "Same-release APIs62/67/68; API59 has no rows.",
+    "API67/68 SOAP guide anchors compare by stable message parts; no org URL is produced or compared.",
+    "Rejected global-null metadata compares loader rejection plus the accepted modern runtime twin."
+  ],
+  "rows": [
+    {
+      "id": "C187CREATE_001",
+      "label": "valid Account created in Flow; synthetic trigger counters",
+      "config": {
+        "flow": "CreateGood",
+        "rejectCreated": false
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62CreateObserver.createRun('E32BA62CreateGood',false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_001|'+encoded);",
+              "operationSHA256": "c95bb49e7a8b046dfc92296f19019ee2d90be1273288582091f847e8f21eab7e",
+              "captureSourceSHA256": {
+                "anonymous": "c95bb49e7a8b046dfc92296f19019ee2d90be1273288582091f847e8f21eab7e"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [
+                    [
+                      "same",
+                      "E32 Flow Created",
+                      "E32 created",
+                      null
+                    ]
+                  ],
+                  "flowFired": true,
+                  "databaseCount": 1,
+                  "createdAfter": 1,
+                  "createdBefore": 1,
+                  "fired": true,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus",
+                    "fired"
+                  ],
+                  "errors": [],
+                  "isSuccess": true,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62CreateObserver.createRun('E32BA62CreateGood',false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_001|'+encoded);",
+              "operationSHA256": "c95bb49e7a8b046dfc92296f19019ee2d90be1273288582091f847e8f21eab7e",
+              "captureSourceSHA256": {
+                "E32BA62C187CREATE001": "7d59a712788e54bdd8ba7108f21d7a90db69a92496620501e4b8692e6cd0bcae"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [
+                    [
+                      "same",
+                      "E32 Flow Created",
+                      "E32 created",
+                      null
+                    ]
+                  ],
+                  "flowFired": true,
+                  "databaseCount": 1,
+                  "createdAfter": 1,
+                  "createdBefore": 1,
+                  "fired": true,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus",
+                    "fired"
+                  ],
+                  "errors": [],
+                  "isSuccess": true,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67CreateObserver.createRun('E32BA67CreateGood',false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_001|'+encoded);",
+              "operationSHA256": "c0ab91fb14ca1ba62cae8948136e5ac3fd5006e06cafc36bfc026012d12ca44a",
+              "captureSourceSHA256": {
+                "anonymous": "c0ab91fb14ca1ba62cae8948136e5ac3fd5006e06cafc36bfc026012d12ca44a"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [
+                    [
+                      "same",
+                      "E32 Flow Created",
+                      "E32 created",
+                      null
+                    ]
+                  ],
+                  "flowFired": true,
+                  "databaseCount": 1,
+                  "createdAfter": 1,
+                  "createdBefore": 1,
+                  "fired": true,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus",
+                    "fired"
+                  ],
+                  "errors": [],
+                  "isSuccess": true,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67CreateObserver.createRun('E32BA67CreateGood',false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_001|'+encoded);",
+              "operationSHA256": "c0ab91fb14ca1ba62cae8948136e5ac3fd5006e06cafc36bfc026012d12ca44a",
+              "captureSourceSHA256": {
+                "E32BA67C187CREATE001": "699a8217c805bf0fcef29f6be431f954c1831749e740ff02fec221a902101dc4"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [
+                    [
+                      "same",
+                      "E32 Flow Created",
+                      "E32 created",
+                      null
+                    ]
+                  ],
+                  "flowFired": true,
+                  "databaseCount": 1,
+                  "createdAfter": 1,
+                  "createdBefore": 1,
+                  "fired": true,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus",
+                    "fired"
+                  ],
+                  "errors": [],
+                  "isSuccess": true,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68CreateObserver.createRun('E32BA68CreateGood',false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_001|'+encoded);",
+              "operationSHA256": "87400fbab1c84f0c03affe4a6bbc736f6abac2a30d4452cdc8ca216a6f070cb8",
+              "captureSourceSHA256": {
+                "anonymous": "87400fbab1c84f0c03affe4a6bbc736f6abac2a30d4452cdc8ca216a6f070cb8"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [
+                    [
+                      "same",
+                      "E32 Flow Created",
+                      "E32 created",
+                      null
+                    ]
+                  ],
+                  "flowFired": true,
+                  "databaseCount": 1,
+                  "createdAfter": 1,
+                  "createdBefore": 1,
+                  "fired": true,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus",
+                    "fired"
+                  ],
+                  "errors": [],
+                  "isSuccess": true,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68CreateObserver.createRun('E32BA68CreateGood',false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_001|'+encoded);",
+              "operationSHA256": "87400fbab1c84f0c03affe4a6bbc736f6abac2a30d4452cdc8ca216a6f070cb8",
+              "captureSourceSHA256": {
+                "E32BA68C187CREATE001": "bda1e3a856cc3ca1aa54271bba37ae3a2088a30b6acc865a5445754a63a0f898"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [
+                    [
+                      "same",
+                      "E32 Flow Created",
+                      "E32 created",
+                      null
+                    ]
+                  ],
+                  "flowFired": true,
+                  "databaseCount": 1,
+                  "createdAfter": 1,
+                  "createdBefore": 1,
+                  "fired": true,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus",
+                    "fired"
+                  ],
+                  "errors": [],
+                  "isSuccess": true,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187CREATE_002",
+      "label": "Flow-created Account rejected by caller trigger addError",
+      "config": {
+        "flow": "CreateGood",
+        "rejectCreated": true
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62CreateObserver.createRun('E32BA62CreateGood',true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_002|'+encoded);",
+              "operationSHA256": "488e7ca43ffbddbdb60856366dd5d71ef10ea4003f7cc2dc96ab1e152e5e9d34",
+              "captureSourceSHA256": {
+                "anonymous": "488e7ca43ffbddbdb60856366dd5d71ef10ea4003f7cc2dc96ab1e152e5e9d34"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [],
+                  "flowFired": true,
+                  "databaseCount": 0,
+                  "createdAfter": 0,
+                  "createdBefore": 1,
+                  "fired": false,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus"
+                  ],
+                  "errors": [
+                    [
+                      "FIELD_CUSTOM_VALIDATION_EXCEPTION",
+                      "This error occurred when the flow tried to create records: FIELD_CUSTOM_VALIDATION_EXCEPTION: Synthetic Flow-created record rejected. You can look up ExceptionCode values in the SOAP API Developer Guide."
+                    ]
+                  ],
+                  "isSuccess": false,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62CreateObserver.createRun('E32BA62CreateGood',true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_002|'+encoded);",
+              "operationSHA256": "488e7ca43ffbddbdb60856366dd5d71ef10ea4003f7cc2dc96ab1e152e5e9d34",
+              "captureSourceSHA256": {
+                "E32BA62C187CREATE002": "9bbd20388923ff56a7830c2b100e54a6482791f1b680506e7e1a0aaf2764d68e"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [],
+                  "flowFired": true,
+                  "databaseCount": 0,
+                  "createdAfter": 0,
+                  "createdBefore": 1,
+                  "fired": false,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus"
+                  ],
+                  "errors": [
+                    [
+                      "FIELD_CUSTOM_VALIDATION_EXCEPTION",
+                      "This error occurred when the flow tried to create records: FIELD_CUSTOM_VALIDATION_EXCEPTION: Synthetic Flow-created record rejected. You can look up ExceptionCode values in the SOAP API Developer Guide."
+                    ]
+                  ],
+                  "isSuccess": false,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67CreateObserver.createRun('E32BA67CreateGood',true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_002|'+encoded);",
+              "operationSHA256": "d2343a666f024a5d5318da80133e2659fe1cc1cf184fc9d923ed38722181e74f",
+              "captureSourceSHA256": {
+                "anonymous": "d2343a666f024a5d5318da80133e2659fe1cc1cf184fc9d923ed38722181e74f"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [],
+                  "flowFired": true,
+                  "databaseCount": 0,
+                  "createdAfter": 0,
+                  "createdBefore": 1,
+                  "fired": false,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus"
+                  ],
+                  "errors": [
+                    [
+                      "FIELD_CUSTOM_VALIDATION_EXCEPTION",
+                      "This error occurred when the flow tried to create records: FIELD_CUSTOM_VALIDATION_EXCEPTION: Synthetic Flow-created record rejected. You can look up ExceptionCode values in the <a href='[host]'>SOAP API Developer Guide<[redacted-path]>."
+                    ]
+                  ],
+                  "isSuccess": false,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67CreateObserver.createRun('E32BA67CreateGood',true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_002|'+encoded);",
+              "operationSHA256": "d2343a666f024a5d5318da80133e2659fe1cc1cf184fc9d923ed38722181e74f",
+              "captureSourceSHA256": {
+                "E32BA67C187CREATE002": "196b7cd14e06121f11d6eefc6075f9ffa686d610411ec0cc61124fba75e69df5"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [],
+                  "flowFired": true,
+                  "databaseCount": 0,
+                  "createdAfter": 0,
+                  "createdBefore": 1,
+                  "fired": false,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus"
+                  ],
+                  "errors": [
+                    [
+                      "FIELD_CUSTOM_VALIDATION_EXCEPTION",
+                      "This error occurred when the flow tried to create records: FIELD_CUSTOM_VALIDATION_EXCEPTION: Synthetic Flow-created record rejected. You can look up ExceptionCode values in the <a href='[host]'>SOAP API Developer Guide</a>."
+                    ]
+                  ],
+                  "isSuccess": false,
+                  "resultCount": 1
+                }
+              },
+              "admission": "recovered",
+              "note": "recovered: original named chunks reassembled after exact closing-anchor repair; original whole-payload hash verified"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68CreateObserver.createRun('E32BA68CreateGood',true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_002|'+encoded);",
+              "operationSHA256": "01d19b8eae4c4945454c56b352c64d57b23e99175e60173cbab795dfba3846ed",
+              "captureSourceSHA256": {
+                "anonymous": "01d19b8eae4c4945454c56b352c64d57b23e99175e60173cbab795dfba3846ed"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [],
+                  "flowFired": true,
+                  "databaseCount": 0,
+                  "createdAfter": 0,
+                  "createdBefore": 1,
+                  "fired": false,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus"
+                  ],
+                  "errors": [
+                    [
+                      "FIELD_CUSTOM_VALIDATION_EXCEPTION",
+                      "This error occurred when the flow tried to create records: FIELD_CUSTOM_VALIDATION_EXCEPTION: Synthetic Flow-created record rejected. You can look up ExceptionCode values in the <a href='[host]'>SOAP API Developer Guide<[redacted-path]>."
+                    ]
+                  ],
+                  "isSuccess": false,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68CreateObserver.createRun('E32BA68CreateGood',true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_002|'+encoded);",
+              "operationSHA256": "01d19b8eae4c4945454c56b352c64d57b23e99175e60173cbab795dfba3846ed",
+              "captureSourceSHA256": {
+                "E32BA68C187CREATE002": "059b9878ca0dca5008f401967f2bffb069ec19079e7c66e346964e69eb1abd3c"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [],
+                  "flowFired": true,
+                  "databaseCount": 0,
+                  "createdAfter": 0,
+                  "createdBefore": 1,
+                  "fired": false,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus"
+                  ],
+                  "errors": [
+                    [
+                      "FIELD_CUSTOM_VALIDATION_EXCEPTION",
+                      "This error occurred when the flow tried to create records: FIELD_CUSTOM_VALIDATION_EXCEPTION: Synthetic Flow-created record rejected. You can look up ExceptionCode values in the <a href='[host]'>SOAP API Developer Guide</a>."
+                    ]
+                  ],
+                  "isSuccess": false,
+                  "resultCount": 1
+                }
+              },
+              "admission": "recovered",
+              "note": "recovered: original named chunks reassembled after exact closing-anchor repair; original whole-payload hash verified"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187CREATE_003",
+      "label": "Name-required Create Records fault twin; observe trigger counters",
+      "config": {
+        "flow": "CreateMissingName",
+        "rejectCreated": false
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62CreateObserver.createRun('E32BA62CreateMissingName',false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_003|'+encoded);",
+              "operationSHA256": "dab3a69be435c80835f6e0afe0772c0b1013c82c995d25e7916953bce5f7310d",
+              "captureSourceSHA256": {
+                "anonymous": "dab3a69be435c80835f6e0afe0772c0b1013c82c995d25e7916953bce5f7310d"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [],
+                  "flowFired": true,
+                  "databaseCount": 0,
+                  "createdAfter": 0,
+                  "createdBefore": 1,
+                  "fired": false,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus"
+                  ],
+                  "errors": [
+                    [
+                      "REQUIRED_FIELD_MISSING",
+                      "This error occurred when the flow tried to create records: REQUIRED_FIELD_MISSING: Required fields are missing: [Name]. You can look up ExceptionCode values in the SOAP API Developer Guide."
+                    ]
+                  ],
+                  "isSuccess": false,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62CreateObserver.createRun('E32BA62CreateMissingName',false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_003|'+encoded);",
+              "operationSHA256": "dab3a69be435c80835f6e0afe0772c0b1013c82c995d25e7916953bce5f7310d",
+              "captureSourceSHA256": {
+                "E32BA62C187CREATE003": "7b9c026e71e61e1b0a9365e0edae0049fcf768204e12e4eb30f5e76bbfe715c4"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [],
+                  "flowFired": true,
+                  "databaseCount": 0,
+                  "createdAfter": 0,
+                  "createdBefore": 1,
+                  "fired": false,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus"
+                  ],
+                  "errors": [
+                    [
+                      "REQUIRED_FIELD_MISSING",
+                      "This error occurred when the flow tried to create records: REQUIRED_FIELD_MISSING: Required fields are missing: [Name]. You can look up ExceptionCode values in the SOAP API Developer Guide."
+                    ]
+                  ],
+                  "isSuccess": false,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67CreateObserver.createRun('E32BA67CreateMissingName',false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_003|'+encoded);",
+              "operationSHA256": "866fb56046c4c1357a95645c4eaaaa3affbcd4a3c4210013ba032247a956c876",
+              "captureSourceSHA256": {
+                "anonymous": "866fb56046c4c1357a95645c4eaaaa3affbcd4a3c4210013ba032247a956c876"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [],
+                  "flowFired": true,
+                  "databaseCount": 0,
+                  "createdAfter": 0,
+                  "createdBefore": 1,
+                  "fired": false,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus"
+                  ],
+                  "errors": [
+                    [
+                      "REQUIRED_FIELD_MISSING",
+                      "This error occurred when the flow tried to create records: REQUIRED_FIELD_MISSING: Required fields are missing: [Name]. You can look up ExceptionCode values in the <a href='[host]'>SOAP API Developer Guide<[redacted-path]>."
+                    ]
+                  ],
+                  "isSuccess": false,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67CreateObserver.createRun('E32BA67CreateMissingName',false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_003|'+encoded);",
+              "operationSHA256": "866fb56046c4c1357a95645c4eaaaa3affbcd4a3c4210013ba032247a956c876",
+              "captureSourceSHA256": {
+                "E32BA67C187CREATE003": "238cac974258220b6321b63e9977a5f7e57062463c7ec2af913e112b7a6f7f49"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [],
+                  "flowFired": true,
+                  "databaseCount": 0,
+                  "createdAfter": 0,
+                  "createdBefore": 1,
+                  "fired": false,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus"
+                  ],
+                  "errors": [
+                    [
+                      "REQUIRED_FIELD_MISSING",
+                      "This error occurred when the flow tried to create records: REQUIRED_FIELD_MISSING: Required fields are missing: [Name]. You can look up ExceptionCode values in the <a href='[host]'>SOAP API Developer Guide</a>."
+                    ]
+                  ],
+                  "isSuccess": false,
+                  "resultCount": 1
+                }
+              },
+              "admission": "recovered",
+              "note": "recovered: original named chunks reassembled after exact closing-anchor repair; original whole-payload hash verified"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68CreateObserver.createRun('E32BA68CreateMissingName',false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_003|'+encoded);",
+              "operationSHA256": "ccd27e03bf469ed1882c591b5d5b6b6c1389ee023dcb99e8cdbc3b12e033f9ea",
+              "captureSourceSHA256": {
+                "anonymous": "ccd27e03bf469ed1882c591b5d5b6b6c1389ee023dcb99e8cdbc3b12e033f9ea"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [],
+                  "flowFired": true,
+                  "databaseCount": 0,
+                  "createdAfter": 0,
+                  "createdBefore": 1,
+                  "fired": false,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus"
+                  ],
+                  "errors": [
+                    [
+                      "REQUIRED_FIELD_MISSING",
+                      "This error occurred when the flow tried to create records: REQUIRED_FIELD_MISSING: Required fields are missing: [Name]. You can look up ExceptionCode values in the <a href='[host]'>SOAP API Developer Guide<[redacted-path]>."
+                    ]
+                  ],
+                  "isSuccess": false,
+                  "resultCount": 1
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68CreateObserver.createRun('E32BA68CreateMissingName',false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CREATE_003|'+encoded);",
+              "operationSHA256": "ccd27e03bf469ed1882c591b5d5b6b6c1389ee023dcb99e8cdbc3b12e033f9ea",
+              "captureSourceSHA256": {
+                "E32BA68C187CREATE003": "fec9af6321fda0b4b4d1747cae643c45787e5ac461778f854dd46f9924fc1abd"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "database": [],
+                  "flowFired": true,
+                  "databaseCount": 0,
+                  "createdAfter": 0,
+                  "createdBefore": 1,
+                  "fired": false,
+                  "outputKeys": [
+                    "Flow__InterviewGuid",
+                    "Flow__InterviewStatus"
+                  ],
+                  "errors": [
+                    [
+                      "REQUIRED_FIELD_MISSING",
+                      "This error occurred when the flow tried to create records: REQUIRED_FIELD_MISSING: Required fields are missing: [Name]. You can look up ExceptionCode values in the <a href='[host]'>SOAP API Developer Guide</a>."
+                    ]
+                  ],
+                  "isSuccess": false,
+                  "resultCount": 1
+                }
+              },
+              "admission": "recovered",
+              "note": "recovered: original named chunks reassembled after exact closing-anchor repair; original whole-payload hash verified"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "packetRowsSha256": "6edc188a971c658826bfe359ca7bc4d16fac5572e12ff09e157e59ecf4e5c1b4",
+  "files": {
+    "classes/DetailReader.cls": "public with sharing class DetailReader {\n  public static String observe(List<Id> ids) {\n    Id pub=ids[0], priv=ids[1];\n    return 'publicMaster='+[SELECT Id FROM PublicMaster__c WHERE Id=:pub WITH SYSTEM_MODE].size()\n      +';publicDetail='+[SELECT Id FROM PublicDetail__c WHERE Master__c=:pub WITH SYSTEM_MODE].size()\n      +';privateMaster='+[SELECT Id FROM PrivateMaster__c WHERE Id=:priv WITH SYSTEM_MODE].size()\n      +';privateDetail='+[SELECT Id FROM PrivateDetail__c WHERE Master__c=:priv WITH SYSTEM_MODE].size()\n      +';withoutSharing='+DetailSeed.privateCount(priv);\n  }\n}\n",
+    "classes/DetailSeed.cls": "public without sharing class DetailSeed {\n  public static List<Id> seed() {\n    PublicMaster__c pub = new PublicMaster__c(Name='Public'); insert as system pub;\n    PrivateMaster__c priv = new PrivateMaster__c(Name='Private'); insert as system priv;\n    insert as system new PublicDetail__c(Name='Public detail', Master__c=pub.Id);\n    insert as system new PrivateDetail__c(Name='Private detail', Master__c=priv.Id, PublicLink__c=pub.Id);\n    return new List<Id>{pub.Id, priv.Id};\n  }\n  public static Integer privateCount(Id id) {\n    return [SELECT Id FROM PrivateDetail__c WHERE Master__c=:id WITH SYSTEM_MODE].size();\n  }\n}\n",
+    "classes/DetailVisibilityTest.cls": "@IsTest private with sharing class DetailVisibilityTest {\n  @IsTest static void observe() {\n    Id profileId=[SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1].Id;\n    User reader=new User(ProfileId=profileId, Alias='reader', LastName='Reader',\n      Email='reader@example.invalid', Username='reader.'+UserInfo.getOrganizationId()+'.detail@example.invalid',\n      EmailEncodingKey='UTF-8', LanguageLocaleKey='en_US', LocaleSidKey='en_US', TimeZoneSidKey='America/Los_Angeles');\n    System.runAs(new User(Id=UserInfo.getUserId())) { insert as system reader; }\n    List<Id> ids;\n    System.runAs(new User(Id=UserInfo.getUserId())) { ids=DetailSeed.seed(); }\n    System.runAs(reader) { System.assert(false,'DETAIL_CELL|'+DetailReader.observe(ids)); }\n  }\n}\n",
+    "objects/PrivateDetail__c/PrivateDetail__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>PrivateDetail</label><pluralLabel>PrivateDetails</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><sharingModel>ControlledByParent</sharingModel></CustomObject>\n",
+    "objects/PrivateDetail__c/fields/Master__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Master__c</fullName><label>Master</label><type>MasterDetail</type><referenceTo>PrivateMaster__c</referenceTo><relationshipLabel>Details</relationshipLabel><relationshipName>Details</relationshipName><relationshipOrder>0</relationshipOrder><reparentableMasterDetail>false</reparentableMasterDetail><writeRequiresMasterRead>false</writeRequiresMasterRead></CustomField>\n",
+    "objects/PrivateDetail__c/fields/PublicLink__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>PublicLink__c</fullName><label>Public link</label><type>Lookup</type><referenceTo>PublicMaster__c</referenceTo><relationshipLabel>Linked details</relationshipLabel><relationshipName>LinkedDetails</relationshipName><deleteConstraint>SetNull</deleteConstraint><required>false</required></CustomField>\n",
+    "objects/PrivateMaster__c/PrivateMaster__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>PrivateMaster</label><pluralLabel>PrivateMasters</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><sharingModel>Private</sharingModel></CustomObject>\n",
+    "objects/PublicDetail__c/PublicDetail__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>PublicDetail</label><pluralLabel>PublicDetails</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><sharingModel>ControlledByParent</sharingModel></CustomObject>\n",
+    "objects/PublicDetail__c/fields/Master__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Master__c</fullName><label>Master</label><type>MasterDetail</type><referenceTo>PublicMaster__c</referenceTo><relationshipLabel>Details</relationshipLabel><relationshipName>Details</relationshipName><relationshipOrder>0</relationshipOrder><reparentableMasterDetail>false</reparentableMasterDetail><writeRequiresMasterRead>false</writeRequiresMasterRead></CustomField>\n",
+    "objects/PublicMaster__c/PublicMaster__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>PublicMaster</label><pluralLabel>PublicMasters</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><sharingModel>ReadWrite</sharingModel></CustomObject>\n"
+  },
+  "anonymous": "Savepoint mark=Database.setSavepoint();\nList<Id> ids=DetailSeed.seed();\nString result=DetailReader.observe(ids);\nDatabase.rollback(mark);\nSystem.assert(false,'DETAIL_CELL|'+result);\n",
+  "observations": [
+    {
+      "apiVersion": "62.0",
+      "context": "anonymous",
+      "outcome": "runtime",
+      "value": "publicMaster=1;publicDetail=1;privateMaster=1;privateDetail=1;withoutSharing=1"
+    },
+    {
+      "apiVersion": "62.0",
+      "context": "isTest",
+      "outcome": "runtime",
+      "value": "publicMaster=1;publicDetail=1;privateMaster=0;privateDetail=0;withoutSharing=1"
+    },
+    {
+      "apiVersion": "67.0",
+      "context": "anonymous",
+      "outcome": "runtime",
+      "value": "publicMaster=1;publicDetail=1;privateMaster=1;privateDetail=1;withoutSharing=1"
+    },
+    {
+      "apiVersion": "67.0",
+      "context": "isTest",
+      "outcome": "runtime",
+      "value": "publicMaster=1;publicDetail=1;privateMaster=0;privateDetail=0;withoutSharing=1"
+    },
+    {
+      "apiVersion": "68.0",
+      "context": "anonymous",
+      "outcome": "runtime",
+      "value": "publicMaster=1;publicDetail=1;privateMaster=1;privateDetail=1;withoutSharing=1"
+    },
+    {
+      "apiVersion": "68.0",
+      "context": "isTest",
+      "outcome": "runtime",
+      "value": "publicMaster=1;publicDetail=1;privateMaster=0;privateDetail=0;withoutSharing=1"
+    }
+  ],
+  "evidence": [
+    "https://architect.salesforce.com/docs/architect/reference-diagrams/guide/data-model-notation",
+    "https://help.salesforce.com/s/articleView?id=admin_sharing.htm&language=en_US&type=5"
+  ],
+  "boundary": "Only direct single-master public-read inheritance is observed. Anonymous is the owner/admin; named tests use an unrelated Standard User. Private parent, unrelated public lookup, and without-sharing controls are preserved. Multi-master and chained/record-specific parent sharing are outside this capture."
+}

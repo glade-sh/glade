@@ -135,7 +135,7 @@ func TestVisualforceFieldPresentationContractFamily(t *testing.T) {
 		return matches[0]
 	}
 	t.Run("metadata_label_inside_section", func(t *testing.T) {
-		section := byID(t, "j_id0:f:fields")
+		section := byID(t, "j_id0:f:j_id1:fields")
 		if !strings.Contains(fieldPresentationText(section), metadataLabel) {
 			t.Errorf("VF155.3: section lacks metadata label %q", metadataLabel)
 		}
@@ -143,56 +143,73 @@ func TestVisualforceFieldPresentationContractFamily(t *testing.T) {
 		if len(labels) != 3 {
 			t.Fatalf("expected metadata and two explicit labels only, got %d", len(labels))
 		}
-		if fieldPresentationAttr(labels[0], "for") != "j_id0:f:nameField" || fieldPresentationText(labels[0]) != metadataLabel {
+		if fieldPresentationAttr(labels[0], "for") != "j_id0:f:j_id1:fields:nameField" || fieldPresentationText(labels[0]) != metadataLabel {
 			t.Error("metadata label does not preserve its text and named input association")
 		}
-		if fieldPresentationAttr(labels[1], "for") != "j_id0:f:customLabel" || fieldPresentationText(labels[1]) != "Custom & caption" {
+		// V09 label_section_literal_runtime preserves the numeric XML ampersand
+		// reference in a literal caption; formula captions keep their Apex text.
+		if fieldPresentationAttr(labels[1], "for") != "j_id0:f:j_id1:fields:customLabel" || fieldPresentationText(labels[1]) != "Custom &#38; caption" {
 			t.Error("explicit label did not override metadata or preserve its input association")
 		}
-		if fieldPresentationAttr(labels[2], "for") != "j_id0:f:exprLabel" || fieldPresentationText(labels[2]) != accountName {
+		if fieldPresentationAttr(labels[2], "for") != "j_id0:f:j_id1:fields:exprLabel" || fieldPresentationText(labels[2]) != accountName {
 			t.Error("expression label did not override metadata with the evaluated value")
 		}
 		if len(fieldPresentationNodes(section, func(n *nethtml.Node) bool {
-			return n.Data == "label" && fieldPresentationAttr(n, "for") == "j_id0:f:emptyLabel"
+			return n.Data == "label" && fieldPresentationAttr(n, "for") == "j_id0:f:j_id1:fields:emptyLabel"
 		})) != 0 {
 			t.Error("label-empty input unexpectedly displayed a metadata label")
 		}
-		if len(fieldPresentationNodes(section, func(n *nethtml.Node) bool { return fieldPresentationAttr(n, "id") == "j_id0:f:hiddenName" })) != 0 {
+		if len(fieldPresentationNodes(section, func(n *nethtml.Node) bool { return fieldPresentationAttr(n, "id") == "j_id0:f:j_id1:fields:hiddenName" })) != 0 {
 			t.Error("rendered=false input unexpectedly appeared")
 		}
 	})
-	t.Run("null_label_expression_is_error", func(t *testing.T) {
+	// V09 label_section_null_runtime and label_form_null_runtime: a raw-null
+	// label suppresses the caption without rejecting or hiding the field.
+	requireVisibleNameInput := func(t *testing.T, markup string) {
+		t.Helper()
+		doc, err := nethtml.Parse(strings.NewReader(markup))
+		if err != nil {
+			t.Fatal(err)
+		}
+		inputs := fieldPresentationNodes(doc, func(n *nethtml.Node) bool {
+			return n.Data == "input" && fieldPresentationAttr(n, "type") != "hidden" && fieldPresentationAttr(n, "name") == "Account.Name" && fieldPresentationAttr(n, "value") == accountName
+		})
+		if len(inputs) != 1 {
+			t.Fatalf("null label must retain its visible field and value, got %d", len(inputs))
+		}
+	}
+	t.Run("null_label_expression_suppresses_caption", func(t *testing.T) {
 		machine := vm.New(nil)
 		machine.SetOrg(&org)
 		authorizeFieldRenderingFixture(t, &org, machine, "Website", "OwnerId", "Description")
 		result, err := RenderPage(PageRenderRequest{Project: p, VFIndex: idx, Org: &org,
 			Machine: machine, PageName: nullPageName, PageURL: "/apex/" + nullPageName + "?id=" + string(accountID)})
-		if err == nil || result.Error == nil ||
-			!strings.Contains(result.Error.Message, "inputField label") || !strings.Contains(result.Error.Message, "null") {
-			t.Fatalf("expected source-required null-label error; err=%v renderError=%v", err, result.Error)
+		if err != nil || result.Error != nil || strings.Contains(result.HTML, "<label") {
+			t.Fatalf("null label must suppress its caption; err=%v renderError=%v", err, result.Error)
 		}
+		requireVisibleNameInput(t, result.HTML)
 	})
 	t.Run("section_item_suppresses_field_label", func(t *testing.T) {
 		labels := fieldPresentationNodes(doc, func(n *nethtml.Node) bool {
-			return n.Data == "label" && fieldPresentationAttr(n, "for") == "j_id0:f:sectionItemLabel"
+			return n.Data == "label" && fieldPresentationAttr(n, "for") == "j_id0:f:j_id1:fields:sectionItemLabel"
 		})
 		if len(labels) != 0 {
 			t.Fatal("pageBlockSectionItem unexpectedly emitted its child inputField label")
 		}
 	})
-	t.Run("null_label_outside_section_is_error", func(t *testing.T) {
+	t.Run("null_label_outside_section_suppresses_caption", func(t *testing.T) {
 		machine := vm.New(nil)
 		machine.SetOrg(&org)
 		authorizeFieldRenderingFixture(t, &org, machine, "Website", "OwnerId", "Description")
 		result, err := RenderPage(PageRenderRequest{Project: p, VFIndex: idx, Org: &org,
 			Machine: machine, PageName: outsideNullPageName, PageURL: "/apex/" + outsideNullPageName + "?id=" + string(accountID)})
-		if err == nil || result.Error == nil ||
-			!strings.Contains(result.Error.Message, "inputField label") || !strings.Contains(result.Error.Message, "null") {
-			t.Fatalf("expected source-required outside-section null-label error; err=%v renderError=%v", err, result.Error)
+		if err != nil || result.Error != nil || strings.Contains(result.HTML, "<label") {
+			t.Fatalf("null label must suppress its caption; err=%v renderError=%v", err, result.Error)
 		}
+		requireVisibleNameInput(t, result.HTML)
 	})
 	for _, tc := range []struct{ name, id, text string }{
-		{"url_link", "j_id0:f:website", website},
+		{"url_link", "j_id0:f:j_id1:fields:website", website},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			field := byID(t, tc.id)
@@ -221,7 +238,7 @@ func TestVisualforceFieldPresentationContractFamily(t *testing.T) {
 		})
 	}
 	t.Run("lookup_has_authorized_local_link", func(t *testing.T) {
-		field := byID(t, "j_id0:f:owner")
+		field := byID(t, "j_id0:f:j_id1:fields:owner")
 		if got := fieldPresentationText(field); got != ownerName {
 			t.Errorf("lookup text=%q, want %q", got, ownerName)
 		}
@@ -229,7 +246,9 @@ func TestVisualforceFieldPresentationContractFamily(t *testing.T) {
 		if len(links) != 1 {
 			t.Fatalf("lookup links=%d, want one authorized local destination", len(links))
 		}
-		if got, want := fieldPresentationAttr(links[0], "href"), "/record/User/"+string(ownerID); got != want {
+		// V09 lookup_standard_owner_runtime captures the native /<Id> href;
+		// destination response behavior remains owned by V14.
+		if got, want := fieldPresentationAttr(links[0], "href"), "/"+string(ownerID); got != want {
 			t.Errorf("lookup href=%q, want %q", got, want)
 		}
 		if got := fieldPresentationText(links[0]); got != ownerName {
@@ -237,7 +256,7 @@ func TestVisualforceFieldPresentationContractFamily(t *testing.T) {
 		}
 	})
 	t.Run("plain_value_escaping", func(t *testing.T) {
-		plain := byID(t, "j_id0:f:plain")
+		plain := byID(t, "j_id0:f:j_id1:fields:plain")
 		if got := fieldPresentationText(plain); got != plainValue {
 			t.Errorf("plain text=%q, want %q", got, plainValue)
 		}
@@ -249,7 +268,7 @@ func TestVisualforceFieldPresentationContractFamily(t *testing.T) {
 		if got := fieldPresentationText(byID(t, "j_id0:f:controllerValue")); got != accountName {
 			t.Errorf("standard-controller value=%q, want %q", got, accountName)
 		}
-		if got := fieldPresentationAttr(byID(t, "j_id0:f:nameField"), "value"); got != accountName {
+		if got := fieldPresentationAttr(byID(t, "j_id0:f:j_id1:fields:nameField"), "value"); got != accountName {
 			t.Errorf("input value=%q, want %q", got, accountName)
 		}
 		// The two unnamed input IDs are an existing, separate behavior. This
@@ -257,7 +276,7 @@ func TestVisualforceFieldPresentationContractFamily(t *testing.T) {
 		inputIDs := func(tree *nethtml.Node) []string {
 			var ids []string
 			for _, n := range fieldPresentationNodes(tree, func(n *nethtml.Node) bool {
-				return n.Data == "input" && fieldPresentationAttr(n, "id") == "j_id0:f:nameField"
+				return n.Data == "input" && fieldPresentationAttr(n, "id") == "j_id0:f:j_id1:fields:nameField"
 			}) {
 				ids = append(ids, fieldPresentationAttr(n, "id"))
 			}
@@ -292,7 +311,7 @@ func TestVisualforceFieldPresentationContractFamily(t *testing.T) {
 			{"backslash", `https://example.test\@other.test/`, false},
 		} {
 			record.Fields["Website"] = storage.StringValue(tc.value)
-			fields := fieldPresentationNodes(render(t), func(n *nethtml.Node) bool { return fieldPresentationAttr(n, "id") == "j_id0:f:website" })
+			fields := fieldPresentationNodes(render(t), func(n *nethtml.Node) bool { return fieldPresentationAttr(n, "id") == "j_id0:f:j_id1:fields:website" })
 			if len(fields) != 1 {
 				t.Fatalf("%s: missing named URL output", tc.name)
 			}

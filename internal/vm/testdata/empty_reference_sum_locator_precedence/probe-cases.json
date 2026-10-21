@@ -1,0 +1,123 @@
+{
+  "nativeStatus": "pending",
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "contexts": [
+    "anonymous",
+    "istest"
+  ],
+  "pendingCellCount": 72,
+  "rows": [
+    {
+      "id": "missing-string-criterion",
+      "anonymous": "missing-string-criterion.apex",
+      "istestClass": "LocatorPrecedence1Probe",
+      "query": "SELECT AccountId,SUM(Amount) total FROM Opportunity WHERE AccountId IN :keys AND MissingCriterion = 'Synthetic' GROUP BY AccountId",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "construction"
+    },
+    {
+      "id": "valid-noneligible",
+      "anonymous": "valid-noneligible.apex",
+      "istestClass": "LocatorPrecedence2Probe",
+      "query": "SELECT AccountId,SUM(Amount) total FROM Opportunity WHERE AccountId IN :keys AND StageName = 'Prospecting' GROUP BY AccountId",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "construction"
+    },
+    {
+      "id": "eligible-empty-create",
+      "anonymous": "eligible-empty-create.apex",
+      "istestClass": "LocatorPrecedence3Probe",
+      "query": "SELECT AccountId,SUM(Amount) total FROM Opportunity WHERE AccountId IN :keys AND Amount > 200 GROUP BY AccountId",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "construction"
+    },
+    {
+      "id": "eligible-empty-iterate",
+      "anonymous": "eligible-empty-iterate.apex",
+      "istestClass": "LocatorPrecedence4Probe",
+      "query": "SELECT AccountId,SUM(Amount) total FROM Opportunity WHERE AccountId IN :keys AND Amount > 200 GROUP BY AccountId",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "iteration"
+    },
+    {
+      "id": "nonempty-missing",
+      "anonymous": "nonempty-missing.apex",
+      "istestClass": "LocatorPrecedence5Probe",
+      "query": "SELECT AccountId,SUM(Amount) total FROM Opportunity WHERE AccountId IN :keys AND MissingCriterion = 'Synthetic' GROUP BY AccountId",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "construction"
+    },
+    {
+      "id": "list-missing",
+      "anonymous": "list-missing.apex",
+      "istestClass": "LocatorPrecedence6Probe",
+      "query": "SELECT AccountId,SUM(Amount) total FROM Opportunity WHERE AccountId IN :keys AND MissingCriterion = 'Synthetic' GROUP BY AccountId",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "construction"
+    },
+    {
+      "id": "numeric-missing",
+      "anonymous": "numeric-missing.apex",
+      "istestClass": "LocatorPrecedence7Probe",
+      "query": "SELECT AccountId,SUM(Amount) total FROM Opportunity WHERE AccountId IN :keys AND MissingCriterion > 200 GROUP BY AccountId",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "construction"
+    },
+    {
+      "id": "malformed-literal",
+      "anonymous": "malformed-literal.apex",
+      "istestClass": "LocatorPrecedence8Probe",
+      "query": "SELECT AccountId,SUM(Amount) total FROM Opportunity WHERE AccountId IN :keys AND Amount > 'invalid' GROUP BY AccountId",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "construction"
+    },
+    {
+      "id": "malformed-syntax",
+      "anonymous": "malformed-syntax.apex",
+      "istestClass": "LocatorPrecedence9Probe",
+      "query": "SELECT AccountId,SUM(Amount) total FROM Opportunity WHERE AccountId IN :keys AND Amount > GROUP BY AccountId",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "construction"
+    },
+    {
+      "id": "ordinary-missing",
+      "anonymous": "ordinary-missing.apex",
+      "istestClass": "LocatorPrecedence10Probe",
+      "query": "SELECT Id FROM Opportunity WHERE AccountId IN :keys AND MissingCriterion = 'Synthetic'",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "construction"
+    },
+    {
+      "id": "cursor-missing",
+      "anonymous": "cursor-missing.apex",
+      "istestClass": "LocatorPrecedence11Probe",
+      "query": "SELECT AccountId,SUM(Amount) total FROM Opportunity WHERE AccountId IN :keys AND MissingCriterion = 'Synthetic' GROUP BY AccountId",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "construction"
+    },
+    {
+      "id": "matching-count",
+      "anonymous": "matching-count.apex",
+      "istestClass": "LocatorPrecedence12Probe",
+      "query": "SELECT NumberOfEmployees,COUNT(Id) n FROM Account WHERE Id IN :keys GROUP BY NumberOfEmployees",
+      "nativeExpected": null,
+      "nativeStatus": "pending",
+      "stage": "construction"
+    }
+  ]
+}

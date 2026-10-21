@@ -2190,5 +2190,24 @@
     "transport": "exception",
     "capturedAt": "2026-10-04T23:58:29.139925+00:00",
     "route": "anonymous"
+  },
+  "ceilingOracle": {
+    "apiVersion": "68.0",
+    "orgRowsPath": "native-capture",
+    "orgRowsSHA256": "07d37ec841a176fa37f7d4e5551e380d697355e377bb0ca3474df945940c7121",
+    "preservationPaths": {
+      "Z01-Z04": "native-capture",
+      "X01-X07": "native-capture",
+      "Y01-Y02": "native-capture"
+    },
+    "preservationSHA256": {
+      "Z01-Z04": "91ea5bb97d97f21932c45470f5ad7be4cedad65920a9a75f8c55abf4a2a763fb",
+      "X01-X07": "94500154cc3b119159c370ad69fa227e4fa9e3bd151c6c2689ec58e98003483d",
+      "Y01-Y02": "74cad6b20a33c8a5ff2537c60e4b30942790bad6d1d18180fab1d1e1e0b24284"
+    },
+    "rows": 300,
+    "preservationRows": 13,
+    "missingResults": 0,
+    "route": "anonymous"
   }
 }

@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "source": "Owned scratch observations; source/project/transport APIs match. Named observation uses intentional assertion transport.",
+  "fixtures": {
+    "62.0": {
+      "files": {
+        "force-app/main/default/classes/SignatureFailureProbe.cls": "public class SignatureFailureProbe {\n public class Work implements Queueable { public void execute(QueueableContext c) {} }\n public static Map<String,Object> observe(){\n  Map<String,Object> r=new Map<String,Object>();\n  AsyncOptions same=new AsyncOptions();\n  same.DuplicateSignature=new System.QueueableDuplicateSignature.Builder().addString('signature-observation').build();\n  r.put('firstAccepted',System.enqueueJob(new Work(),same)!=null);\n  try { System.enqueueJob(new Work(),same); r.put('duplicateAccepted',true); }\n  catch(Exception e) { r.put('duplicateAccepted',false);r.put('type',e.getTypeName());r.put('message',e.getMessage()); }\n  AsyncOptions distinct=new AsyncOptions();\n  distinct.DuplicateSignature=new System.QueueableDuplicateSignature.Builder().addString('signature-control').build();\n  r.put('distinctAccepted',System.enqueueJob(new Work(),distinct)!=null);\n  r.put('unsignedAccepted',System.enqueueJob(new Work())!=null);\n  return r;\n }\n}\n",
+        "force-app/main/default/classes/SignatureFailureProbe.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/SignatureFailureProbeTest.cls": "@IsTest private class SignatureFailureProbeTest { @IsTest static void observe(){Test.startTest();Map<String,Object> r=SignatureFailureProbe.observe();Test.stopTest();System.assert(false,'NATIVE_SIGNATURE|'+JSON.serialize(r));} }\n",
+        "force-app/main/default/classes/SignatureFailureProbeTest.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "observe.apex": "System.debug('NATIVE_SIGNATURE|'+JSON.serialize(SignatureFailureProbe.observe()));\n",
+        "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n"
+      },
+      "sha256": {
+        "force-app/main/default/classes/SignatureFailureProbe.cls": "5e54c89607308c85a982fc7c4b90e46380fd1ae14da5e745745ec6d4a656c69d",
+        "force-app/main/default/classes/SignatureFailureProbe.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "force-app/main/default/classes/SignatureFailureProbeTest.cls": "4242c34592a934114081592cc0e29cf151dda473be04fd6e1f144831128c782c",
+        "force-app/main/default/classes/SignatureFailureProbeTest.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "observe.apex": "e6c54fcc477833b2693bd83c92b90e3055f33438e24fa41dceab5bea1ea99447",
+        "sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+      }
+    },
+    "66.0": {
+      "files": {
+        "force-app/main/default/classes/SignatureFailureProbe.cls": "public class SignatureFailureProbe {\n public class Work implements Queueable { public void execute(QueueableContext c) {} }\n public static Map<String,Object> observe(){\n  Map<String,Object> r=new Map<String,Object>();\n  AsyncOptions same=new AsyncOptions();\n  same.DuplicateSignature=new System.QueueableDuplicateSignature.Builder().addString('signature-observation').build();\n  r.put('firstAccepted',System.enqueueJob(new Work(),same)!=null);\n  try { System.enqueueJob(new Work(),same); r.put('duplicateAccepted',true); }\n  catch(Exception e) { r.put('duplicateAccepted',false);r.put('type',e.getTypeName());r.put('message',e.getMessage()); }\n  AsyncOptions distinct=new AsyncOptions();\n  distinct.DuplicateSignature=new System.QueueableDuplicateSignature.Builder().addString('signature-control').build();\n  r.put('distinctAccepted',System.enqueueJob(new Work(),distinct)!=null);\n  r.put('unsignedAccepted',System.enqueueJob(new Work())!=null);\n  return r;\n }\n}\n",
+        "force-app/main/default/classes/SignatureFailureProbe.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>66.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/SignatureFailureProbeTest.cls": "@IsTest private class SignatureFailureProbeTest { @IsTest static void observe(){Test.startTest();Map<String,Object> r=SignatureFailureProbe.observe();Test.stopTest();System.assert(false,'NATIVE_SIGNATURE|'+JSON.serialize(r));} }\n",
+        "force-app/main/default/classes/SignatureFailureProbeTest.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>66.0</apiVersion><status>Active</status></ApexClass>\n",
+        "observe.apex": "System.debug('NATIVE_SIGNATURE|'+JSON.serialize(SignatureFailureProbe.observe()));\n",
+        "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"66.0\"\n}\n"
+      },
+      "sha256": {
+        "force-app/main/default/classes/SignatureFailureProbe.cls": "5e54c89607308c85a982fc7c4b90e46380fd1ae14da5e745745ec6d4a656c69d",
+        "force-app/main/default/classes/SignatureFailureProbe.cls-meta.xml": "6e7e3ea4968d9baea543af6e7732d975c9e968c47ed5132fd136108646187c02",
+        "force-app/main/default/classes/SignatureFailureProbeTest.cls": "4242c34592a934114081592cc0e29cf151dda473be04fd6e1f144831128c782c",
+        "force-app/main/default/classes/SignatureFailureProbeTest.cls-meta.xml": "6e7e3ea4968d9baea543af6e7732d975c9e968c47ed5132fd136108646187c02",
+        "observe.apex": "e6c54fcc477833b2693bd83c92b90e3055f33438e24fa41dceab5bea1ea99447",
+        "sfdx-project.json": "b15fda053c888e1b85f4b6633e6b3fb625e12f6e2b06c1432b24314e59c35b86"
+      }
+    },
+    "67.0": {
+      "files": {
+        "force-app/main/default/classes/SignatureFailureProbe.cls": "public class SignatureFailureProbe {\n public class Work implements Queueable { public void execute(QueueableContext c) {} }\n public static Map<String,Object> observe(){\n  Map<String,Object> r=new Map<String,Object>();\n  AsyncOptions same=new AsyncOptions();\n  same.DuplicateSignature=new System.QueueableDuplicateSignature.Builder().addString('signature-observation').build();\n  r.put('firstAccepted',System.enqueueJob(new Work(),same)!=null);\n  try { System.enqueueJob(new Work(),same); r.put('duplicateAccepted',true); }\n  catch(Exception e) { r.put('duplicateAccepted',false);r.put('type',e.getTypeName());r.put('message',e.getMessage()); }\n  AsyncOptions distinct=new AsyncOptions();\n  distinct.DuplicateSignature=new System.QueueableDuplicateSignature.Builder().addString('signature-control').build();\n  r.put('distinctAccepted',System.enqueueJob(new Work(),distinct)!=null);\n  r.put('unsignedAccepted',System.enqueueJob(new Work())!=null);\n  return r;\n }\n}\n",
+        "force-app/main/default/classes/SignatureFailureProbe.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/SignatureFailureProbeTest.cls": "@IsTest private class SignatureFailureProbeTest { @IsTest static void observe(){Test.startTest();Map<String,Object> r=SignatureFailureProbe.observe();Test.stopTest();System.assert(false,'NATIVE_SIGNATURE|'+JSON.serialize(r));} }\n",
+        "force-app/main/default/classes/SignatureFailureProbeTest.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "observe.apex": "System.debug('NATIVE_SIGNATURE|'+JSON.serialize(SignatureFailureProbe.observe()));\n",
+        "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n"
+      },
+      "sha256": {
+        "force-app/main/default/classes/SignatureFailureProbe.cls": "5e54c89607308c85a982fc7c4b90e46380fd1ae14da5e745745ec6d4a656c69d",
+        "force-app/main/default/classes/SignatureFailureProbe.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "force-app/main/default/classes/SignatureFailureProbeTest.cls": "4242c34592a934114081592cc0e29cf151dda473be04fd6e1f144831128c782c",
+        "force-app/main/default/classes/SignatureFailureProbeTest.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "observe.apex": "e6c54fcc477833b2693bd83c92b90e3055f33438e24fa41dceab5bea1ea99447",
+        "sfdx-project.json": "2bc58206d0b9c401181c61264ca1a7084dff5c8afdec3c0d7edeea86a65d9484"
+      }
+    }
+  },
+  "cells": [
+    {
+      "id": "SIGFAIL_62_ANONYMOUS",
+      "api": "62.0",
+      "context": "anonymous",
+      "fixture": "62.0",
+      "receipt": "api62-anonymous.json",
+      "receiptSHA256": "a8d7e2c45c5c98fb9bc900cc43a8953f404963ef174ab1d3a4c3f83ec5738095",
+      "orgIDHash": "7651eff288cb9d56797c8896ae21a358802ffa8ef7d3a3497425e421937948f1",
+      "native": {
+        "unsignedAccepted": true,
+        "distinctAccepted": true,
+        "message": "Attempt to enqueue job with duplicate queueable signature",
+        "type": "System.DuplicateMessageException",
+        "duplicateAccepted": false,
+        "firstAccepted": true
+      }
+    },
+    {
+      "id": "SIGFAIL_62_ISTEST",
+      "api": "62.0",
+      "context": "istest",
+      "fixture": "62.0",
+      "receipt": "api62-istest.json",
+      "receiptSHA256": "6002e88c28447a62be4d10ef4af3709dd766bfcb0518a63e204d73f3309d12f8",
+      "orgIDHash": "7651eff288cb9d56797c8896ae21a358802ffa8ef7d3a3497425e421937948f1",
+      "native": {
+        "unsignedAccepted": true,
+        "distinctAccepted": true,
+        "message": "Attempt to enqueue job with duplicate queueable signature",
+        "type": "System.DuplicateMessageException",
+        "duplicateAccepted": false,
+        "firstAccepted": true
+      }
+    },
+    {
+      "id": "SIGFAIL_66_ANONYMOUS",
+      "api": "66.0",
+      "context": "anonymous",
+      "fixture": "66.0",
+      "receipt": "api66-anonymous.json",
+      "receiptSHA256": "95934cc1db9a102b088a3ef3bc811859099f5ea87d4e63053c2e24004e45176d",
+      "orgIDHash": "7651eff288cb9d56797c8896ae21a358802ffa8ef7d3a3497425e421937948f1",
+      "native": {
+        "unsignedAccepted": true,
+        "distinctAccepted": true,
+        "message": "Attempt to enqueue job with duplicate queueable signature",
+        "type": "System.DuplicateMessageException",
+        "duplicateAccepted": false,
+        "firstAccepted": true
+      }
+    },
+    {
+      "id": "SIGFAIL_66_ISTEST",
+      "api": "66.0",
+      "context": "istest",
+      "fixture": "66.0",
+      "receipt": "api66-istest.json",
+      "receiptSHA256": "be0858c639db126cd3fbe7ffb079c728ccbc23a0527b61489c348e96505cf584",
+      "orgIDHash": "7651eff288cb9d56797c8896ae21a358802ffa8ef7d3a3497425e421937948f1",
+      "native": {
+        "unsignedAccepted": true,
+        "distinctAccepted": true,
+        "message": "Attempt to enqueue job with duplicate queueable signature",
+        "type": "System.DuplicateMessageException",
+        "duplicateAccepted": false,
+        "firstAccepted": true
+      }
+    },
+    {
+      "id": "SIGFAIL_67_ANONYMOUS",
+      "api": "67.0",
+      "context": "anonymous",
+      "fixture": "67.0",
+      "receipt": "api67-anonymous.json",
+      "receiptSHA256": "c12f565dc67ac83f2cdf860c054c3fa2e9c1119cb9242126e47ce7d6cca98ae1",
+      "orgIDHash": "7651eff288cb9d56797c8896ae21a358802ffa8ef7d3a3497425e421937948f1",
+      "native": {
+        "unsignedAccepted": true,
+        "distinctAccepted": true,
+        "message": "Attempt to enqueue job with duplicate queueable signature",
+        "type": "System.DuplicateMessageException",
+        "duplicateAccepted": false,
+        "firstAccepted": true
+      }
+    },
+    {
+      "id": "SIGFAIL_67_ISTEST",
+      "api": "67.0",
+      "context": "istest",
+      "fixture": "67.0",
+      "receipt": "api67-istest.json",
+      "receiptSHA256": "70e5a5aecb8888478bcb9a5408f84db263801517ca9898e461482f69e8bcc00b",
+      "orgIDHash": "7651eff288cb9d56797c8896ae21a358802ffa8ef7d3a3497425e421937948f1",
+      "native": {
+        "unsignedAccepted": true,
+        "distinctAccepted": true,
+        "message": "Attempt to enqueue job with duplicate queueable signature",
+        "type": "System.DuplicateMessageException",
+        "duplicateAccepted": false,
+        "firstAccepted": true
+      }
+    }
+  ],
+  "carries": [
+    "API68 and namespaced variants unobserved.",
+    "First-cap/depth and CD139 event-order semantics are outside this probe.",
+    "Builder creation uses the qualified System type; failed unqualified constructor deploy retained in raw packet, no constructor semantic change."
+  ]
+}

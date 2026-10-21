@@ -1,0 +1,48 @@
+{
+  "api": "62.0",
+  "deployment": {
+    "id": "0Afhv000000WuogCAC",
+    "status": "Succeeded",
+    "success": true,
+    "numberComponentErrors": 0,
+    "numberComponentsDeployed": 15
+  },
+  "captured_at": "2026-10-19T04:27:07.950854+00:00",
+  "anonymous": {
+    "success": true,
+    "compiled": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": {
+      "concrete": {
+        "value": "Name:DESCENDING:4"
+      },
+      "inherited": {
+        "value": "Id:ASCENDING:2"
+      },
+      "throughInterface": {
+        "value": "Name:ASCENDING"
+      }
+    }
+  },
+  "tests": [
+    {
+      "MethodName": "concrete",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|concrete|{\"value\":\"Name:DESCENDING:4\"}",
+      "StackTrace": "Class.PlanProbeTest.concrete: line 2, column 1"
+    },
+    {
+      "MethodName": "inherited",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|inherited|{\"value\":\"Id:ASCENDING:2\"}",
+      "StackTrace": "Class.PlanProbeTest.inherited: line 3, column 1"
+    },
+    {
+      "MethodName": "throughInterface",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|throughInterface|{\"value\":\"Name:ASCENDING\"}",
+      "StackTrace": "Class.PlanProbeTest.throughInterface: line 4, column 1"
+    }
+  ]
+}

@@ -21,6 +21,29 @@ var (
 	generatedPlatformMethodIndexOnce sync.Once
 )
 
+var (
+	systemNamespaceClassNamesOnce sync.Once
+	systemNamespaceClassNames     map[string]string
+)
+
+// systemNamespaceClassName is the canonical spelling of a System-namespace
+// class or interface other than a primitive, Object, SObject or a collection.
+func systemNamespaceClassName(name string) (string, bool) {
+	systemNamespaceClassNamesOnce.Do(func() {
+		systemNamespaceClassNames = make(map[string]string)
+		for _, typeName := range typesys.StandardSystemNamespaceTypeNames() {
+			systemNamespaceClassNames[strings.ToLower(typeName)] = typeName
+		}
+		for _, excluded := range []string{"blob", "boolean", "date", "datetime", "decimal", "double", "id", "integer", "long", "object", "sobject", "string", "time", "list", "set", "map", "void"} {
+			delete(systemNamespaceClassNames, excluded)
+		}
+		// Native NS352B/NS385D: the URL class reads System.Url in cast text.
+		systemNamespaceClassNames["url"] = "Url"
+	})
+	canonical, ok := systemNamespaceClassNames[strings.ToLower(strings.TrimSpace(name))]
+	return canonical, ok
+}
+
 func CommonSObjectTypeNames() []string {
 	commonSObjectTypeNamesOnce.Do(func() {
 		commonSObjectTypeNames = buildCommonSObjectTypeNames()
@@ -230,6 +253,13 @@ func buildCommonSObjectTypeNames() []string {
 	return names
 }
 func platformScalar(typeName, value string) Value {
+	// Time values from storage and JSON may carry the wire suffix Z. Keep
+	// the same clock representation as constructors for equality and ordering.
+	if typeName == "Time" {
+		if normalized, err := parseTimeText(value); err == nil {
+			value = normalized
+		}
+	}
 	out := Object(typeName)
 	out.Fields["value"] = String(value)
 	return out

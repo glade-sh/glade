@@ -10,8 +10,8 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
-// Reject snapshots built before deterministic TaskStatus metadata was seeded.
-const dapCacheVersion = 7
+// Require path-aware Flow target references and reject expanded paths.
+const dapCacheVersion = 10
 
 func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
 	root, err := filepath.Abs(projectRoot)

@@ -19,7 +19,6 @@ function buttonIconClassMap(variant, size) {
   return {
     "slds-button": true,
     "slds-button_icon": true,
-    "slds-button_icon-bare": isBare,
     "slds-button_icon-container": normalizedVariant === "container",
     "slds-button_icon-border": normalizedVariant === "border",
     "slds-button_icon-border-filled": normalizedVariant === "border-filled",

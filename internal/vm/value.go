@@ -3,6 +3,7 @@ package vm
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/big"
 	"sort"
 	"strconv"
@@ -11,6 +12,10 @@ import (
 )
 
 type Value struct {
+	// C10: a recovered Number(18,0) Double token read rejects boxed Long casts.
+	// Keep this authority local to that captured read, not arbitrary Doubles.
+	scaleZeroNumberTokenDouble bool
+
 	// Loaded SOQL reference authority cannot be authored by Apex JSON fields.
 	loadedReferenceSnapshot *sobjectLoadedReferenceSnapshot
 
@@ -21,6 +26,14 @@ type Value struct {
 	// Resolved class-instance provenance includes dependency classes and stays
 	// separate from project-only display ownership. Schema records leave it false.
 	classInstance bool
+	// Only source literals that establish lexical class identity authorize JSON
+	// to use it. Keep this provenance outside serializable token fields.
+	lexicalClassLiteral bool
+	// Retained only for the captured single-helper exception text boundary.
+	exceptionAnonymousCallerLine int
+	// Keep the observed String-constructor display separate from runtime faults,
+	// cause constructors and default exception construction.
+	exceptionMessageConstructor bool
 
 	Kind          ValueKind `json:"kind"`
 	Int           int64     `json:"int,omitempty"`
@@ -34,8 +47,20 @@ type Value struct {
 	ExplicitScale bool      `json:"-"`
 	// Native list membership retains backing values until materialized in an ordinary list.
 	nativeListMembership bool
+	// Explicit List<SObject> allocations are distinct from framework lists
+	// whose Runtime is also generic.
+	genericSObjectList bool
+	// Retain constructor provenance so the captured newSObject(Id) fix does
+	// not change unobserved ordinary-constructor twins.
+	schemaIDConstructor bool
 	// Set history belongs to this collection, not to its mutable elements.
 	setInsertionHashes []setInsertionHash
+	mapKeySetSource    *mapKeySetBacking
+	mapKeySetHashes    *mapKeySetHashCache
+
+	// List-based map insertion retains an unsaved record under a null Id key
+	// that can be retrieved through keySet, but not through a literal null.
+	sobjectListNullMapKey bool
 
 	nativeListElement bool
 	Fields            map[string]Value `json:"fields,omitempty"`
@@ -63,6 +88,7 @@ const (
 var Null = Value{Kind: ValueNull}
 
 func (v Value) MarshalJSON() ([]byte, error) {
+	v = v.currentMapKeySet()
 	type jsonValue Value
 	if !strings.EqualFold(v.Type, "AccessLevel") {
 		return json.Marshal(jsonValue(v))
@@ -378,6 +404,10 @@ func objectFieldsString(v Value, seen map[uint64]bool) (string, bool) {
 	if v.Kind != ValueObject || (len(v.Fields) == 0 && !v.projectClass) {
 		return "", false
 	}
+	// A stub proxy never shows the VM's provider bookkeeping fields (NS312B).
+	if _, ok := stubProxyTypeName(v); ok {
+		return v.String(), true
+	}
 	if text, ok := automationDTOString(v, seen); ok {
 		return text, true
 	}
@@ -395,18 +425,43 @@ func objectFieldsString(v Value, seen map[uint64]bool) (string, bool) {
 		defer delete(seen, v.Ref)
 	}
 	keys := make([]string, 0, len(v.Fields))
+	isSObject := sObjectValueType(v.Type)
 	for key := range v.Fields {
+		if isInheritedInstanceFieldStorage(key) || isPicklistJSONValidForField(v, key) {
+			continue
+		}
 		// R243: Object text includes populated fields, without implicit
 		// SObject defaults or the VM's field-tracking metadata.
-		if sObjectValueType(v.Type) && (isInternalSObjectField(key) || isDefaultedSObjectField(v, key)) {
+		if isLexicalInstanceFieldStorage(key) || isSObject && (isInternalSObjectField(key) || isDefaultedSObjectField(v, key) || !sObjectEqualityFieldVisible(v, key)) {
 			continue
 		}
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
+	if selected, queried := v.Fields[sobjectQueriedFieldsField]; isSObject && queried && len(selected.MapOrder) > 0 {
+		order := make(map[string]int, len(selected.MapOrder))
+		for i, encoded := range selected.MapOrder {
+			order[mapStoredKey(selected, encoded).String()] = i
+		}
+		sort.SliceStable(keys, func(i, j int) bool {
+			left, leftSelected := order[strings.ToLower(keys[i])]
+			right, rightSelected := order[strings.ToLower(keys[j])]
+			if leftSelected != rightSelected {
+				return leftSelected
+			}
+			return leftSelected && left < right
+		})
+	}
 	parts := make([]string, 0, len(keys))
 	for _, key := range keys {
-		parts = append(parts, key+"="+valueStringWithSeen(v.Fields[key], seen))
+		field := v.Fields[key]
+		var text string
+		if isSObject && field.Kind == ValueObject && strings.EqualFold(field.Type, "Id") {
+			text = field.String()
+		} else {
+			text = valueStringWithSeen(field, seen)
+		}
+		parts = append(parts, key+"="+text)
 	}
 	if v.projectClass {
 		return fmt.Sprintf("%s:[%s]", v.Type, strings.Join(parts, ", ")), true
@@ -524,6 +579,7 @@ func databaseDTOObjectIsDefault(v Value) bool {
 }
 
 func valueStringWithSeen(v Value, seen map[uint64]bool) string {
+	v = v.currentMapKeySet()
 	switch v.Kind {
 	case ValueList:
 		parts := make([]string, 0, len(v.List))
@@ -603,6 +659,7 @@ func (v Value) Equal(other Value) bool {
 }
 
 func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
+	v, other = v.currentMapKeySet(), other.currentMapKeySet()
 	if v.Ref != 0 && other.Ref != 0 {
 		if v.Ref == other.Ref && v.Kind == ValueObject && other.Kind == ValueObject {
 			return true
@@ -756,6 +813,10 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 }
 
 func numericDecimalValuesEqual(left, right Value) bool {
+	if isFloatBackedDecimal(left) && isFloatBackedDecimal(right) && math.IsNaN(left.Decimal) && math.IsNaN(right.Decimal) {
+		return true
+	}
+
 	leftRat, leftOK := valueDecimalRat(left)
 	rightRat, rightOK := valueDecimalRat(right)
 	if leftOK && rightOK {
@@ -857,11 +918,16 @@ func sObjectValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
 	return true
 }
 
-// Equality and hashing use the same field projection: implicit defaults are
-// absent, while explicitly assigned nulls remain present.
+// Equality and hashing use the same field projection. Captured Schema
+// Checkbox presence is separate from assignment; explicit nulls remain present.
 func sObjectEqualityFieldIncluded(owner Value, field string, value Value) bool {
+	// A cleared record identity is absent from the value projection. Keep the
+	// explicit field itself available to DML/JSON and retain ordinary nulls.
+	if strings.EqualFold(field, "Id") && value.Kind == ValueNull {
+		return false
+	}
 	return !isInternalSObjectField(field) && sObjectEqualityFieldVisible(owner, field) &&
-		!sObjectMissingFieldEqualsImplicitDefault(owner, field, value)
+		(schemaLoadedCheckboxEqualityField(owner, field, value) || !sObjectMissingFieldEqualsImplicitDefault(owner, field, value))
 }
 
 // System fields hydrated for runtime bookkeeping do not widen an SObject's
@@ -882,6 +948,9 @@ func sObjectEqualityFieldVisible(owner Value, field string) bool {
 }
 
 func listElementValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
+	if isNumeric(left) && isNumeric(right) && !strings.EqualFold(runtimeValueTypeName(left), runtimeValueTypeName(right)) {
+		return false
+	}
 	return left.equal(right, seen)
 }
 
@@ -932,6 +1001,12 @@ func sObjectMissingFieldEqualsImplicitDefault(owner Value, field string, value V
 				return false
 			}
 		}
+	}
+	// User JSON allocations retain only supplied fields. Keep constructor
+	// defaults out of the same value/hash projection, without hiding explicit
+	// assignments or selected values. Other default boundaries need captures.
+	if strings.EqualFold(owner.Type, "User") && isDefaultedSObjectField(owner, field) {
+		return true
 	}
 	switch value.Kind {
 	case ValueNull:
@@ -1148,6 +1223,9 @@ func platformScalarObject(typeName string) bool {
 }
 
 func mapKey(v Value) string {
+	if v.Kind == ValueNull && v.sobjectListNullMapKey {
+		return "null:sobject-list-id"
+	}
 	if v.Kind == ValueObject && strings.EqualFold(v.Type, "Schema.SObjectType") {
 		if objectName, ok := v.Fields["object"]; ok && objectName.Kind == ValueString {
 			return string(v.Kind) + ":" + v.Type + ":" + schemaTokenObjectKey(objectName.Text)
@@ -1399,18 +1477,27 @@ func valuesString(values []Value) string {
 }
 
 func apexCollectionString(value Value) string {
+	value = value.currentMapKeySet()
 	parts := make([]string, 0)
 	switch value.Kind {
 	case ValueList:
 		parts = make([]string, 0, len(value.List))
 		for _, item := range value.List {
-			parts = append(parts, item.String())
+			parts = append(parts, collectionElementDisplayText(item))
 		}
 		return "(" + strings.Join(parts, ", ") + ")"
 	case ValueSet:
 		parts = make([]string, 0, len(value.Set))
+		elementType, typed := collectionElementType(value.Type)
 		for _, item := range value.Set {
-			parts = append(parts, item.String())
+			// Preserve stored Id payloads; the captured scalar String view is
+			// expanded only in this typed Set projection. Nested text rows are
+			// still pending, so ordinary String/Object sets retain their path.
+			if typed && strings.EqualFold(canonicalApexScalarType(elementType), "Id") && item.Kind == ValueString && strings.EqualFold(item.Type, "Id") {
+				parts = append(parts, displayIDText(item.Text))
+				continue
+			}
+			parts = append(parts, collectionElementDisplayText(item))
 		}
 		return "{" + strings.Join(parts, ", ") + "}"
 	case ValueMap:
@@ -1418,6 +1505,15 @@ func apexCollectionString(value Value) string {
 	default:
 		return value.String()
 	}
+}
+
+// Match the scalar Id rendering used by VM List/Set display when a collection
+// is nested in Map text, without treating ordinary Id-shaped Strings as Ids.
+func collectionElementDisplayText(value Value) string {
+	if text, ok := typedIDValueText(value); ok {
+		return displayIDText(text)
+	}
+	return value.String()
 }
 
 func mapString(value Value) string {

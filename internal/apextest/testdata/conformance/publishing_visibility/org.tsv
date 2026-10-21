@@ -1,0 +1,19 @@
+api	route	id	terminal	line	message
+62.0	anonymous	null	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+62.0	isTest	null	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+62.0	anonymous	missing	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+62.0	isTest	missing	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+62.0	anonymous	caught-null	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+62.0	isTest	caught-null	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+67.0	anonymous	null	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+67.0	isTest	null	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+67.0	anonymous	missing	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+67.0	isTest	missing	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+67.0	anonymous	caught-null	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+67.0	isTest	caught-null	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+68.0	anonymous	null	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+68.0	isTest	null	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+68.0	anonymous	missing	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+68.0	isTest	missing	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+68.0	anonymous	caught-null	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService
+68.0	isTest	caught-null	COMPILE_ERROR	12	Type is not visible: KbManagement.PublishingService

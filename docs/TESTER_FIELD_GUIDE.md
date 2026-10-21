@@ -134,6 +134,21 @@ affected-test selection, optional trace summary, and public or global API
 surface warnings. It does not execute tests. Run the focused and affected
 tests separately and retain their results with the report.
 
+## Upgrading a test server
+
+The persistent test server uses daemon protocol **3**. Stop a server started by
+an older binary before upgrading, then restart it with the new binary:
+
+```bash
+glade test daemon stop --project .
+glade test serve --project .
+```
+
+If the new client reports a protocol mismatch, stop the old foreground server
+with Ctrl-C (or use its original binary's stop command), then start the new
+server. A newer client's stop command may only remove stale socket/PID files
+when it cannot speak the old protocol; that does not prove the old process exited.
+
 ## CI Pattern
 
 Start with the canonical [advisory pilot](https://glade.sh/guide/ci-artifacts#advisory-pilot).

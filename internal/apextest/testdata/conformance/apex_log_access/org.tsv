@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"apexLogCrud":[true,false,false,false],"apexLogStatusAccess":[true,false,false],"contactCreateGuardControl":"allowed","contactCrudControl":[true,true,true,true],"contactLastNameAccessControl":[true,true,true],"createGuard":"object","updateGuard":"object"}
+62.0	isTest	{"apexLogCrud":[true,false,false,false],"apexLogStatusAccess":[true,false,false],"contactCreateGuardControl":"allowed","contactCrudControl":[true,true,true,true],"contactLastNameAccessControl":[true,true,true],"createGuard":"object","updateGuard":"object"}
+67.0	anonymous	{"apexLogCrud":[true,false,false,false],"apexLogStatusAccess":[true,false,false],"contactCreateGuardControl":"allowed","contactCrudControl":[true,true,true,true],"contactLastNameAccessControl":[true,true,true],"createGuard":"object","updateGuard":"object"}
+67.0	isTest	{"apexLogCrud":[true,false,false,false],"apexLogStatusAccess":[true,false,false],"contactCreateGuardControl":"allowed","contactCrudControl":[true,true,true,true],"contactLastNameAccessControl":[true,true,true],"createGuard":"object","updateGuard":"object"}

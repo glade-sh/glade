@@ -1,0 +1,3 @@
+shape	question
+self_delete	Can before-update helpers delete their active record through partial or statement DML?
+self_update	Can before-update helpers recursively update their active record through partial DML?

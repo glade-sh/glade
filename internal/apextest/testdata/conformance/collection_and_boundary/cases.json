@@ -1,0 +1,35 @@
+[
+  {
+    "methods": [
+      "key_view",
+      "key_alias"
+    ],
+    "shape": "Key-set bulk removal and a retained live view with detached clone"
+  },
+  {
+    "methods": [
+      "xml_timing",
+      "xml_constructor"
+    ],
+    "shape": "Malformed XML raises while advancing the reader"
+  },
+  {
+    "methods": [
+      "invalid_target",
+      "notification_shape"
+    ],
+    "shape": "Notification sends return in named tests despite invalid payloads"
+  },
+  {
+    "methods": [
+      "custom_key_history"
+    ],
+    "shape": "Map writes refresh retained custom-key hashes; clear empties the view"
+  },
+  {
+    "methods": [
+      "key_consumers"
+    ],
+    "shape": "Retained keys bind current query members and hash as a current snapshot"
+  }
+]

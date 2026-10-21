@@ -1,0 +1,12 @@
+Pending namespace coverage
+
+Repeat the 12-reader x 10-mode matrix with readers compiled inside an owning
+namespace, and the cross-class query/writer/reader matrix across namespace
+boundaries. Retain the reader APIs and modes in this fixture. Capture the
+native observations at API 62 and 67 before removing the runtime namespace
+exclusion. An unnamespaced reader of a namespaced record is a separate cell.
+
+Other unprobed variants: omitted checkbox/formula fields, collection deepClone,
+trigger-context values, parent projections, subquery rows, JSON allocations and
+Visualforce/LWC reads. Current guards preserve trigger/parent/subquery behavior;
+these matrices do not establish parity for those variants.

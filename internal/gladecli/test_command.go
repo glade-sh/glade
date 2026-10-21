@@ -141,7 +141,6 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	changedSince := ""
 	parallelMethods := true
 	parallelismOverride := 0
-	testTimeout := 5 * time.Minute
 	gcAggressive := false
 	lastFailed := false
 	wizard := false
@@ -309,16 +308,11 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 		parallelismOverride = parsedParallelism
 	}
-	if parsed.String("test-timeout") != "" {
-		parsedTimeout, err := time.ParseDuration(parsed.String("test-timeout"))
-		if err != nil {
-			return testreport.Run{}, fmt.Errorf("--test-timeout: %w", err)
-		}
-		if parsedTimeout < 0 {
-			return testreport.Run{}, errors.New("--test-timeout must be non-negative")
-		}
-		testTimeout = parsedTimeout
+	testTimeout, timeoutSource, err := resolveTestTimeout(parsed.String("test-timeout"), len(parsed.Strings("test-timeout")) > 0)
+	if err != nil {
+		return testreport.Run{}, err
 	}
+	timeoutOpts := testTimeoutOptions(testTimeout, timeoutSource)
 	gcAggressive = parsed.Bool("gc-aggressive")
 	cpuProfilePath = parsed.String("cpu-profile")
 	memProfilePath = parsed.String("mem-profile")
@@ -396,7 +390,13 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		if writeClassShardsDir != "" {
 			return testreport.Run{}, errors.New("--read-only cannot be combined with --write-class-shards")
 		}
+		if err := ctx.Err(); err != nil {
+			return testreport.Run{}, err
+		}
 		readOnlyProject, err := project.Load(root)
+		if err := ctx.Err(); err != nil {
+			return testreport.Run{}, err
+		}
 		if err != nil {
 			return testreport.Run{}, fmt.Errorf("load project for --read-only: %w", err)
 		}
@@ -567,7 +567,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		TraceAll:              tracePath != "",
 		SlowTestThresholdMS:   slowTestThresholdMS,
 		ParallelMethods:       parallelMethods,
-		TimeoutMS:             testTimeout.Milliseconds(),
+		TimeoutMS:             timeoutOpts.TimeoutMS,
+		TimeoutSource:         timeoutOpts.TimeoutSource,
 		NoDiskCache:           noCache,
 		PerfCounters:          perfEnabled,
 	}
@@ -742,7 +743,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		perfRunStarted = time.Now()
 	}
 	perfExecution.ExecutionMode = "local"
-	generation, err := loadTestIndexWithPerfPhases(root, perfEnabled)
+	generation, err := loadTestIndexWithPerfPhasesContext(ctx, root, perfEnabled)
 	if err != nil {
 		return testreport.Run{}, err
 	}
@@ -756,6 +757,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if progressReporter != nil && len(index.Project.Root) > 0 {
 		progressReporter.warn("startup cache: " + testStartupCacheStatus(index.Project.Root))
 		progressReporter.warn("one-shot cache: " + testOneShotCacheStatus(index.Project.Root, testOpts))
+		for _, message := range automationWarningMessages(index.Project.Root, projectAutomationDiagnostics(loadedProject)) {
+			progressReporter.warn(message)
+		}
 		if root != index.Project.Root && root == "." {
 			root = "."
 		}
@@ -939,14 +943,32 @@ type testBuildGeneration struct {
 }
 
 func loadTestIndexWithPerfPhases(root string, enabled bool) (testBuildGeneration, error) {
+	return loadTestIndexWithPerfPhasesContext(context.Background(), root, enabled)
+}
+
+// Loading remains synchronous. Honor cancellation between phases without
+// leaving an abandoned parser or index builder running after the command exits.
+func loadTestIndexWithPerfPhasesContext(ctx context.Context, root string, enabled bool) (testBuildGeneration, error) {
+	if err := ctx.Err(); err != nil {
+		return testBuildGeneration{}, err
+	}
 	if !enabled {
 		p, err := project.Load(root)
+		if err := ctx.Err(); err != nil {
+			return testBuildGeneration{}, err
+		}
 		if err != nil {
 			return testBuildGeneration{}, err
 		}
 		s, schemaErr := gladeschema.LoadProject(p)
+		if err := ctx.Err(); err != nil {
+			return testBuildGeneration{}, err
+		}
 		if schemaErr != nil {
 			index, artifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
+			if err := ctx.Err(); err != nil {
+				return testBuildGeneration{}, err
+			}
 			index.Diagnostics = append(index.Diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
 				Code:     "GLADESCHEMA001",
@@ -955,22 +977,34 @@ func loadTestIndexWithPerfPhases(root string, enabled bool) (testBuildGeneration
 			return testBuildGeneration{Project: p, Index: index, Artifacts: artifacts}, nil
 		}
 		index, artifacts := typesys.BuildWithArtifacts(p, s)
+		if err := ctx.Err(); err != nil {
+			return testBuildGeneration{}, err
+		}
 		return testBuildGeneration{Project: p, Index: index, Artifacts: artifacts}, nil
 	}
 	var phases apextest.PreRunPhaseDurations
 	started := time.Now()
 	p, err := project.Load(root)
 	phases.ProjectLoad = time.Since(started)
+	if err := ctx.Err(); err != nil {
+		return testBuildGeneration{Phases: phases}, err
+	}
 	if err != nil {
 		return testBuildGeneration{Phases: phases}, err
 	}
 	started = time.Now()
 	s, schemaErr := gladeschema.LoadProject(p)
 	phases.SchemaLoad = time.Since(started)
+	if err := ctx.Err(); err != nil {
+		return testBuildGeneration{Phases: phases}, err
+	}
 	started = time.Now()
 	if schemaErr != nil {
 		index, artifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
 		phases.IndexBuild = time.Since(started)
+		if err := ctx.Err(); err != nil {
+			return testBuildGeneration{Phases: phases}, err
+		}
 		index.Diagnostics = append(index.Diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
 			Code:     "GLADESCHEMA001",
@@ -980,6 +1014,9 @@ func loadTestIndexWithPerfPhases(root string, enabled bool) (testBuildGeneration
 	}
 	index, artifacts := typesys.BuildWithArtifacts(p, s)
 	phases.IndexBuild = time.Since(started)
+	if err := ctx.Err(); err != nil {
+		return testBuildGeneration{Phases: phases}, err
+	}
 	return testBuildGeneration{Project: p, Index: index, Artifacts: artifacts, Phases: phases}, nil
 }
 
@@ -1153,7 +1190,7 @@ func preRunPerfSnapshot(phases apextest.PreRunPhaseDurations) apextest.PerfCount
 
 func writeTestJSONEnvelope(w io.Writer, result testreport.Run, junitPath string) error {
 	summary := result.Summary()
-	ok := summary.Failed == 0 && summary.Errors == 0
+	ok := summary.OK()
 	artifacts := []any{}
 	if strings.TrimSpace(junitPath) != "" {
 		artifacts = append(artifacts, map[string]string{"kind": "junit", "path": junitPath})
@@ -1171,11 +1208,11 @@ func writeTestJSONEnvelope(w io.Writer, result testreport.Run, junitPath string)
 }
 
 func testStatusForSummary(summary testreport.Summary) string {
+	if !summary.OK() {
+		return "failed"
+	}
 	if summary.Total == 0 {
 		return "empty"
-	}
-	if summary.Failed > 0 || summary.Errors > 0 {
-		return "failed"
 	}
 	if summary.Skipped > 0 {
 		return "partial"
@@ -1691,7 +1728,7 @@ Common flags:
   --parallel-methods        Run test methods in parallel (default).
   --no-parallel-methods     Force serial method execution within a class.
   --parallelism <n>         Worker count (default: GOMAXPROCS).
-  --test-timeout <dur>      Per-test timeout (default 5m, e.g. 30s, 2m).
+  --test-timeout <dur>      Per-test wall-clock cap; overrides GLADE_TEST_TIMEOUT (default 10m; 0 disables).
   --runtime-rest-api-version <version>
                            Test org REST context (default 65.0); does not change source API versions.
   --gc-aggressive           Reduce heap growth on memory-constrained hosts.
@@ -1720,15 +1757,18 @@ type cliTestProgressReporter struct {
 	failed      int
 	errors      int
 	setupErrors int
-	active      string
-	phase       string
-	immediate   cliui.Event
-	mu          sync.Mutex
-	renderMu    sync.Mutex
-	finished    bool
-	events      chan apextest.TestProgress
-	closeOnce   sync.Once
-	wg          sync.WaitGroup
+	// compileFailed records a compile phase that reported errors, including
+	// classes the dependency-scoped gate excluded without a selected test.
+	compileFailed bool
+	active        string
+	phase         string
+	immediate     cliui.Event
+	mu            sync.Mutex
+	renderMu      sync.Mutex
+	finished      bool
+	events        chan apextest.TestProgress
+	closeOnce     sync.Once
+	wg            sync.WaitGroup
 }
 
 const progressEventBuffer = 8192
@@ -1878,6 +1918,9 @@ func (r *cliTestProgressReporter) apply(progress apextest.TestProgress) bool {
 		return true
 	case "compile_done":
 		r.active = ""
+		if progress.Status == "fail" {
+			r.compileFailed = true
+		}
 		duration := fmt.Sprintf(" %dms", progress.DurationMS)
 		if progress.DurationMS <= 0 {
 			duration = ""
@@ -2025,7 +2068,7 @@ func (r *cliTestProgressReporter) finish() {
 		return
 	}
 	r.finished = true
-	ok := r.failed == 0 && r.errors == 0 && r.setupErrors == 0
+	ok := r.failed == 0 && r.errors == 0 && r.setupErrors == 0 && !r.compileFailed
 	current := r.done
 	if r.total > 0 && current < r.total {
 		current = r.total
@@ -2145,7 +2188,7 @@ func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpu
 	}
 	absRoot, _ := filepath.Abs(root)
 	summary := result.Summary()
-	ok := summary.Failed == 0 && summary.Errors == 0
+	ok := summary.OK()
 	phases := counters.Phases
 	discoverMS := phases.DiscoverNS / int64(time.Millisecond)
 	compileMS := (phases.SemanticGateNS + phases.ProjectCompileNS + phases.TestCompileNS) / int64(time.Millisecond)

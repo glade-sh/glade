@@ -1,0 +1,6 @@
+case	shape	observation
+constructor	construct map from one unsaved record	constructor rejects missing Id
+single	putAll one unsaved record	one value retained under an iterable null key distinct from literal null lookup
+duplicate	putAll two unsaved records	last unsaved value replaces the first
+mixed	putAll identified and unsaved records	identified key and unsaved value both retained
+direct	put literal null key	literal null lookup remains accessible

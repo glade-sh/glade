@@ -30,6 +30,7 @@ const (
 	metaNamespace                = "namespace"
 	metaOrgDomainURL             = "domainUrl"
 	metaOrgMetadata              = "glade.org.metadata"
+	metaOrgFeatures              = "glade.org.features"
 	metaProjectRoot              = "glade.project.root"
 	metaProjectSchemaFingerprint = "glade.project.schemaFingerprint"
 	metaProjectSourceAPIVersion  = "glade.project.sourceApiVersion"
@@ -127,6 +128,10 @@ func (s *SQLiteStore) Load() (OrgState, error) {
 				return OrgState{}, fmt.Errorf("storage: load org domainUrl: %w", err)
 			}
 			org.DomainURL = domainURL
+		case metaOrgFeatures:
+			if err := json.Unmarshal([]byte(value), &org.Features); err != nil {
+				return OrgState{}, fmt.Errorf("storage: decode org features: %w", err)
+			}
 		case metaOrgMetadata:
 			if err := json.Unmarshal([]byte(value), &org.Metadata); err != nil {
 				return OrgState{}, fmt.Errorf("storage: decode org metadata: %w", err)
@@ -201,6 +206,7 @@ func (s *SQLiteStore) Load() (OrgState, error) {
 	if err := seqRows.Err(); err != nil {
 		return OrgState{}, err
 	}
+	org.ensureFeatureProfile()
 	RebuildIndexes(&org)
 	return org, nil
 }
@@ -223,6 +229,11 @@ func (s *SQLiteStore) Save(org OrgState) error {
 	setMetaValue(meta, metaNamespace, org.Namespace)
 	setMetaValue(meta, metaOrgDomainURL, domainURL)
 	setMetaValue(meta, metaOrgMetadata, string(metadata))
+	features, err := json.Marshal(org.Features)
+	if err != nil {
+		return err
+	}
+	setMetaValue(meta, metaOrgFeatures, string(features))
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err

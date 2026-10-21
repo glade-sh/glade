@@ -1,0 +1,630 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 8,
+  "nativeObservationCount": 48,
+  "packetRowsSha256": "4cb4caa03cdcf4f8305ca3f694092cd4b004d61823a43d893acbb9ade81cdde0",
+  "rows": [
+    {
+      "id": "C125C06_001",
+      "expected": {
+        "outcome": "runtime",
+        "value": "null"
+      },
+      "question": "List-setting SetupOwnerId assignment and read",
+      "role": "positive",
+      "routes": {
+        "anonymous": {
+          "id": "C125C06_001A",
+          "anonymous": "String obs; try {CAC125C06001List__c x=new CAC125C06001List__c(Name='row'); x.SetupOwnerId=null; obs=String.valueOf(x.SetupOwnerId);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C06_001A|'+obs);",
+          "setupObjects": {
+            "CAC125C06001List__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingsType>List</customSettingsType><label>CAC125C06001 List</label><visibility>Public</visibility></CustomObject>"
+          },
+          "sourceSha256": {
+            "anonymous": "e68bc2a4c61d421e4831ecdca365859ac667ec95fecd188d7068fb4f94370fbf",
+            "setupObject:CAC125C06001List__c": "47f26687fbf195ff219ed1c403534384138e9a378e608db34d0092409fa51045"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C06_001T",
+          "classes": {
+            "CAC125C06001Test": "@IsTest private class CAC125C06001Test {@IsTest static void observe(){String obs; try {CAC125C06001List__c x=new CAC125C06001List__c(Name='row'); x.SetupOwnerId=null; obs=String.valueOf(x.SetupOwnerId);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C06_001T|'+obs);}}"
+          },
+          "objects": {
+            "CAC125C06001List__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingsType>List</customSettingsType><label>CAC125C06001 List</label><visibility>Public</visibility></CustomObject>"
+          },
+          "tests": [
+            "CAC125C06001Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C06001Test": "1cb42698fbcac07f826d5c76c2adbe3797e1539d9995e815aa3d50ba1d0ea085",
+            "object:CAC125C06001List__c": "47f26687fbf195ff219ed1c403534384138e9a378e608db34d0092409fa51045"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C06_002",
+      "expected": {
+        "outcome": "runtime",
+        "value": "SetupOwnerId"
+      },
+      "question": "List-setting SetupOwnerId static field token",
+      "role": "positive",
+      "routes": {
+        "anonymous": {
+          "id": "C125C06_002A",
+          "anonymous": "String obs; try {obs=String.valueOf(CAC125C06002List__c.SetupOwnerId);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C06_002A|'+obs);",
+          "setupObjects": {
+            "CAC125C06002List__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingsType>List</customSettingsType><label>CAC125C06002 List</label><visibility>Public</visibility></CustomObject>"
+          },
+          "sourceSha256": {
+            "anonymous": "ad7692fd44591c85de6cb5317e729cf2f160f7c4d7af7734ab3b8ebe2c790fcd",
+            "setupObject:CAC125C06002List__c": "e3770022d9c16da7fd151d87c0a47449b49984ea2da8cf7b70dae99f66a3fad4"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C06_002T",
+          "classes": {
+            "CAC125C06002Test": "@IsTest private class CAC125C06002Test {@IsTest static void observe(){String obs; try {obs=String.valueOf(CAC125C06002List__c.SetupOwnerId);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C06_002T|'+obs);}}"
+          },
+          "objects": {
+            "CAC125C06002List__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingsType>List</customSettingsType><label>CAC125C06002 List</label><visibility>Public</visibility></CustomObject>"
+          },
+          "tests": [
+            "CAC125C06002Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C06002Test": "8d3cae767f5143be437ad73994ea23894eec0830cd430d9bcc72bd19cf02a1af",
+            "object:CAC125C06002List__c": "e3770022d9c16da7fd151d87c0a47449b49984ea2da8cf7b70dae99f66a3fad4"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C06_003",
+      "expected": {
+        "outcome": "runtime",
+        "value": "true"
+      },
+      "question": "List-setting field map exposes real token shape",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C125C06_003A",
+          "anonymous": "String obs; try {obs=String.valueOf(CAC125C06003List__c.SObjectType.getDescribe().fields.getMap().containsKey('SetupOwnerId'));} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C06_003A|'+obs);",
+          "setupObjects": {
+            "CAC125C06003List__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingsType>List</customSettingsType><label>CAC125C06003 List</label><visibility>Public</visibility></CustomObject>"
+          },
+          "sourceSha256": {
+            "anonymous": "9c3615b8cf28c1ec4091e70d915f7eed654a9ea0d10284450f4ae836d17cacbc",
+            "setupObject:CAC125C06003List__c": "21622eabe61bd1aecbb91e09b472ec972c1d4a45d89f6944496aa9699ba1617d"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C06_003T",
+          "classes": {
+            "CAC125C06003Test": "@IsTest private class CAC125C06003Test {@IsTest static void observe(){String obs; try {obs=String.valueOf(CAC125C06003List__c.SObjectType.getDescribe().fields.getMap().containsKey('SetupOwnerId'));} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C06_003T|'+obs);}}"
+          },
+          "objects": {
+            "CAC125C06003List__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingsType>List</customSettingsType><label>CAC125C06003 List</label><visibility>Public</visibility></CustomObject>"
+          },
+          "tests": [
+            "CAC125C06003Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C06003Test": "1283a9bdad2f4ffece5ec8add9027a97500f60f8ed7020293cae208008fb6b3d",
+            "object:CAC125C06003List__c": "21622eabe61bd1aecbb91e09b472ec972c1d4a45d89f6944496aa9699ba1617d"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C06_004",
+      "expected": {
+        "outcome": "reject"
+      },
+      "question": "List-setting absent field-token rejection",
+      "role": "rejection",
+      "routes": {
+        "anonymous": {
+          "id": "C125C06_004A",
+          "anonymous": "String obs; try {obs=String.valueOf(CAC125C06004List__c.AbsentField__c);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C06_004A|'+obs);",
+          "setupObjects": {
+            "CAC125C06004List__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingsType>List</customSettingsType><label>CAC125C06004 List</label><visibility>Public</visibility></CustomObject>"
+          },
+          "sourceSha256": {
+            "anonymous": "82c830785099b40c9b049e47b8ce161ca5958e03ac2661919ee86552a6c0b283",
+            "setupObject:CAC125C06004List__c": "308f2d66807825dfac2b80da41f69e2882b7640703dd1cd47c772f38fcf9edfa"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "problem": "Variable does not exist: AbsentField__c"
+            }
+          ]
+        },
+        "isTest": {
+          "id": "C125C06_004T",
+          "classes": {
+            "CAC125C06004Test": "@IsTest private class CAC125C06004Test {@IsTest static void observe(){String obs; try {obs=String.valueOf(CAC125C06004List__c.AbsentField__c);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C06_004T|'+obs);}}"
+          },
+          "objects": {
+            "CAC125C06004List__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingsType>List</customSettingsType><label>CAC125C06004 List</label><visibility>Public</visibility></CustomObject>"
+          },
+          "tests": [
+            "CAC125C06004Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C06004Test": "ec9f406399f72c424e80cdaa64bfc021ba3f16cefc1853df3a60f6e089308ccc",
+            "object:CAC125C06004List__c": "308f2d66807825dfac2b80da41f69e2882b7640703dd1cd47c772f38fcf9edfa"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "line": 1,
+              "name": "CAC125C06004Test",
+              "problem": "Variable does not exist: AbsentField__c",
+              "type": "ApexClass"
+            }
+          ]
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C06_005",
+      "expected": {
+        "outcome": "runtime",
+        "value": "null;SetupOwnerId"
+      },
+      "question": "Hierarchy-setting SetupOwnerId field control",
+      "role": "positive",
+      "routes": {
+        "anonymous": {
+          "id": "C125C06_005A",
+          "anonymous": "String obs; try {CAC125C06005Hierarchy__c x=new CAC125C06005Hierarchy__c(); x.SetupOwnerId=null; obs=String.valueOf(x.SetupOwnerId)+';'+String.valueOf(CAC125C06005Hierarchy__c.SetupOwnerId);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C06_005A|'+obs);",
+          "setupObjects": {
+            "CAC125C06005Hierarchy__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingsType>Hierarchy</customSettingsType><label>CAC125C06005 Hierarchy</label><visibility>Public</visibility></CustomObject>"
+          },
+          "sourceSha256": {
+            "anonymous": "e6dad9a81a18e3b2670e3f8d71491f820b3c06b18258253d867588c392a11002",
+            "setupObject:CAC125C06005Hierarchy__c": "2bfe48588ff1fd12d0d42fa62281891d5fcd54d92ca1e935c1cd7dd9ac0caf34"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C06_005T",
+          "classes": {
+            "CAC125C06005Test": "@IsTest private class CAC125C06005Test {@IsTest static void observe(){String obs; try {CAC125C06005Hierarchy__c x=new CAC125C06005Hierarchy__c(); x.SetupOwnerId=null; obs=String.valueOf(x.SetupOwnerId)+';'+String.valueOf(CAC125C06005Hierarchy__c.SetupOwnerId);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C06_005T|'+obs);}}"
+          },
+          "objects": {
+            "CAC125C06005Hierarchy__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingsType>Hierarchy</customSettingsType><label>CAC125C06005 Hierarchy</label><visibility>Public</visibility></CustomObject>"
+          },
+          "tests": [
+            "CAC125C06005Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C06005Test": "3e1516f21ea6f01415908d05cd3446b37f1b063f1ba16e77b08aab2a2b358284",
+            "object:CAC125C06005Hierarchy__c": "2bfe48588ff1fd12d0d42fa62281891d5fcd54d92ca1e935c1cd7dd9ac0caf34"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C06_006",
+      "expected": {
+        "outcome": "reject"
+      },
+      "question": "Ordinary custom object must not acquire SetupOwnerId",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C125C06_006A",
+          "anonymous": "String obs; try {obs=String.valueOf(CAC125C06006Regular__c.SetupOwnerId);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C06_006A|'+obs);",
+          "setupObjects": {
+            "CAC125C06006Regular__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>CAC125C06006 Regular</label><pluralLabel>Options</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><sharingModel>ReadWrite</sharingModel></CustomObject>"
+          },
+          "sourceSha256": {
+            "anonymous": "0f6cae72715498c38e4122878680cb5899ea456e4e3ba0c2203c616c39937eb1",
+            "setupObject:CAC125C06006Regular__c": "ce0577c62e21e2a33874131c40cd677c818582aed87b5ad1224a2dac3f7f8255"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "problem": "Variable does not exist: SetupOwnerId"
+            }
+          ]
+        },
+        "isTest": {
+          "id": "C125C06_006T",
+          "classes": {
+            "CAC125C06006Test": "@IsTest private class CAC125C06006Test {@IsTest static void observe(){String obs; try {obs=String.valueOf(CAC125C06006Regular__c.SetupOwnerId);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C06_006T|'+obs);}}"
+          },
+          "objects": {
+            "CAC125C06006Regular__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>CAC125C06006 Regular</label><pluralLabel>Options</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><sharingModel>ReadWrite</sharingModel></CustomObject>"
+          },
+          "tests": [
+            "CAC125C06006Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C06006Test": "bf3d9a1886dedb1325c868390fd0c4f6b5e6c2a94c750f7338f34ed66ad45d8a",
+            "object:CAC125C06006Regular__c": "ce0577c62e21e2a33874131c40cd677c818582aed87b5ad1224a2dac3f7f8255"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "line": 1,
+              "name": "CAC125C06006Test",
+              "problem": "Variable does not exist: SetupOwnerId",
+              "type": "ApexClass"
+            }
+          ]
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C06_007",
+      "expected": {
+        "outcome": "reject"
+      },
+      "question": "List-setting wrong SetupOwnerId assignment type",
+      "role": "rejection",
+      "routes": {
+        "anonymous": {
+          "id": "C125C06_007A",
+          "anonymous": "String obs; try {CAC125C06007List__c x=new CAC125C06007List__c(); x.SetupOwnerId=new Account(); obs='compiled';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C06_007A|'+obs);",
+          "setupObjects": {
+            "CAC125C06007List__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingsType>List</customSettingsType><label>CAC125C06007 List</label><visibility>Public</visibility></CustomObject>"
+          },
+          "sourceSha256": {
+            "anonymous": "e56f957146ba22440df30974a111b3e57e97ee475d1df8cdb3e968c13ab3bebe",
+            "setupObject:CAC125C06007List__c": "bf7c9a927a05284caa1084edb3f33045f53d9636faf46d9b3f3cf3e00504af35"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "problem": "Illegal assignment from Account to Id"
+            }
+          ]
+        },
+        "isTest": {
+          "id": "C125C06_007T",
+          "classes": {
+            "CAC125C06007Test": "@IsTest private class CAC125C06007Test {@IsTest static void observe(){String obs; try {CAC125C06007List__c x=new CAC125C06007List__c(); x.SetupOwnerId=new Account(); obs='compiled';} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C06_007T|'+obs);}}"
+          },
+          "objects": {
+            "CAC125C06007List__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingsType>List</customSettingsType><label>CAC125C06007 List</label><visibility>Public</visibility></CustomObject>"
+          },
+          "tests": [
+            "CAC125C06007Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C06007Test": "2f006f3d04e5b055a5a20bf682dc4987a5b937be5d151a1d2ddd72648486970c",
+            "object:CAC125C06007List__c": "bf7c9a927a05284caa1084edb3f33045f53d9636faf46d9b3f3cf3e00504af35"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "line": 1,
+              "name": "CAC125C06007Test",
+              "problem": "Illegal assignment from Account to Id",
+              "type": "ApexClass"
+            }
+          ]
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125C06_008",
+      "expected": {
+        "outcome": "runtime",
+        "value": "Name;Id"
+      },
+      "question": "List-setting Name and Id tokens remain available",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C125C06_008A",
+          "anonymous": "String obs; try {obs=String.valueOf(CAC125C06008List__c.Name)+';'+String.valueOf(CAC125C06008List__c.Id);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C06_008A|'+obs);",
+          "setupObjects": {
+            "CAC125C06008List__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingsType>List</customSettingsType><label>CAC125C06008 List</label><visibility>Public</visibility></CustomObject>"
+          },
+          "sourceSha256": {
+            "anonymous": "a2275734ee391d00e6370e4025111e82a45791300b551bb68c6d314b992b510a",
+            "setupObject:CAC125C06008List__c": "cb7b1e8eaa08f368e92faa56e62fb2ee2e7358659a07f344bc5f842db5d74008"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125C06_008T",
+          "classes": {
+            "CAC125C06008Test": "@IsTest private class CAC125C06008Test {@IsTest static void observe(){String obs; try {obs=String.valueOf(CAC125C06008List__c.Name)+';'+String.valueOf(CAC125C06008List__c.Id);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125C06_008T|'+obs);}}"
+          },
+          "objects": {
+            "CAC125C06008List__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingsType>List</customSettingsType><label>CAC125C06008 List</label><visibility>Public</visibility></CustomObject>"
+          },
+          "tests": [
+            "CAC125C06008Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125C06008Test": "3c1f0e63613b4ba9a153ebc09a28aa1059d94e7c7d226d01e93efbbed0ee026e",
+            "object:CAC125C06008List__c": "cb7b1e8eaa08f368e92faa56e62fb2ee2e7358659a07f344bc5f842db5d74008"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9819a6613fdd30005fbe46cf861a57d7b113870cd69e9407fdb2c3d131ed824f"
+          }
+        }
+      }
+    }
+  ],
+  "diagnosticContract": "Exact primary native text asserted on each rejected route; full deployment diagnostic arrays preserved, cascades are evidence only",
+  "provenance": "Synthetic source; independent anonymous and check-only named observations. Named native.json artifact excluded; TSV and setup evidence authoritative.",
+  "staticAnalysis": {
+    "baseline": "capture-revision-100674082189950676909464270273097705397729225196210387419024790090144103579119",
+    "executed": false,
+    "predictionBasis": "Code reading only; semantic and diagnostic-only differences counted separately, both routes/all APIs",
+    "predictedSemanticMismatchShapes": [
+      "C125C06_001",
+      "C125C06_004",
+      "C125C06_006"
+    ],
+    "predictedPrimaryDiagnosticMismatchShapes": [
+      "C125C06_007"
+    ],
+    "predictedAssertedMismatches": 24,
+    "codeReferences": [
+      "internal/sema/sobject_field_provider.go:494",
+      "internal/sema/body_ir.go:4305",
+      "internal/sema/body_ir.go:4438",
+      "internal/vm/lookup_assign.go:1517",
+      "internal/vm/lookup_assign.go:1725",
+      "internal/sobject/sobject.go:261"
+    ],
+    "proposedChange": "Expose SetupOwnerId for explicit List custom settings in the field provider. Check static tokens against authoritative known schema before generic token acceptance; preserve partial/dependency-schema policy and ordinary-object rejection.",
+    "limits": "Static token and runtime describe rows002/003 likely already match. Do not infer fields from names or change incomplete-schema policy from these complete metadata rows."
+  }
+}

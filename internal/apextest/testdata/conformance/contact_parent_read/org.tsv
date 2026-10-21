@@ -1,0 +1,7 @@
+source_api	route	observation
+62.0	anonymous	{"bound":2,"boundCount":2,"children":2,"count":2,"groupCount":2,"groups":1,"plain":2,"system":2}
+62.0	isTest	{"bound":2,"boundCount":2,"children":2,"count":2,"groupCount":2,"groups":1,"plain":2,"system":2}
+67.0	anonymous	{"bound":2,"boundCount":2,"children":2,"count":2,"groupCount":2,"groups":1,"plain":2,"system":2}
+67.0	isTest	{"bound":2,"boundCount":2,"children":2,"count":2,"groupCount":2,"groups":1,"plain":2,"system":2}
+68.0	anonymous	{"bound":2,"boundCount":2,"children":2,"count":2,"groupCount":2,"groups":1,"plain":2,"system":2}
+68.0	isTest	{"bound":2,"boundCount":2,"children":2,"count":2,"groupCount":2,"groups":1,"plain":2,"system":2}

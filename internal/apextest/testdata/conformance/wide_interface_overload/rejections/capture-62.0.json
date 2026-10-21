@@ -1,0 +1,28 @@
+{
+  "api": "62.0",
+  "checkOnly": true,
+  "status": "Failed",
+  "id": "0Afhv000000WtxUCAS",
+  "failures": [
+    {
+      "changed": false,
+      "columnNumber": 85,
+      "componentType": "ApexClass",
+      "created": false,
+      "createdDate": "2026-10-19T04:30:54.000Z",
+      "deleted": false,
+      "fileName": "classes/NarrowPlanProbe.cls",
+      "fullName": "NarrowPlanProbe",
+      "lineNumber": 1,
+      "problem": "Illegal conversion from PlanBase.Writer to TextPlan",
+      "problemType": "Error",
+      "success": false
+    }
+  ],
+  "anonymous": {
+    "compiled": false,
+    "success": false,
+    "compileProblem": "Illegal assignment from PlanBase.Writer to TextPlan",
+    "exceptionMessage": ""
+  }
+}

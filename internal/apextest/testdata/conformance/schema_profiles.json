@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "declarations": {
     "SP": "public class SP {\n    public Schema.SObjectType typ(String name) { return Schema.getGlobalDescribe().get(name); }\n    public String field(String obj, String name) {\n        Schema.SObjectField f=typ(obj).getDescribe().fields.getMap().get(name);\n        if(f==null) return 'absent';\n        Schema.DescribeFieldResult d=f.getDescribe();\n        return d.getName()+'|'+d.getType()+'|length='+d.getLength()\n          +'|precision='+d.getPrecision()+'|scale='+d.getScale()\n          +'|null='+d.isNillable()+'|defaulted='+d.isDefaultedOnCreate();\n    }\n    public String compound(String obj, String name) {\n        Schema.SObjectField f=typ(obj).getDescribe().fields.getMap().get(name);\n        if(f==null) return 'absent';\n        Schema.DescribeFieldResult d=f.getDescribe();\n        return d.getName()+'|'+d.getType()+'|parent='+d.getCompoundFieldName()\n          +'|create='+d.isCreateable()+'|update='+d.isUpdateable();\n    }\n}"
@@ -1791,5 +1792,26 @@
   "ticketRows": {},
   "carriedRows": {
     "sobject_values_cases.py:C001": "C012"
+  },
+  "ceilingOracle": {
+    "apiVersion": "68.0",
+    "route": "anonymous",
+    "rows": 283,
+    "observed": 282,
+    "missing": [
+      "R261"
+    ],
+    "orgTSV": "native-capture",
+    "orgRowsSHA256": "735ed9966526a33495efb0e6569ff5825f9abd8479b66f587eed4031b19be2f9",
+    "uncaughtRecapture": {
+      "route": "anonymous",
+      "rows": [
+        "R261"
+      ],
+      "result": "R261 compiled, success=false, uncaught System.FinalException: Record is read-only; equals the stored expected answer.",
+      "source": "native-capture",
+      "sha256": "7094d729dfb3c868b810c4b000f3693d2a24b38d6ed47582ecd7c9c98bd91b20"
+    },
+    "namedRoute": "No native @IsTest named-route capture exists at API 68.0; the @IsTest checks run locally against the anonymous answers and count as legacy."
   }
 }

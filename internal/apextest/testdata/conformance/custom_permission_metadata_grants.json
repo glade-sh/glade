@@ -1,0 +1,26 @@
+{
+  "evidence": "Documented plain custom-permission access settings and assignment query, not a native capture.",
+  "sources": [
+    "https://help.salesforce.com/s/articleView?id=platform.admin_troubleshoot_queries.htm&language=en_US&type=5",
+    "https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/object_reference.pdf"
+  ],
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "testClass": "OwnedPermissionGrantProbe",
+  "methodCount": 4,
+  "source": "@IsTest private class OwnedPermissionGrantProbe {\n @IsTest static void enabledGrantIsQueryable() {\n  Id parentId = [SELECT Id FROM PermissionSet WHERE Name='OwnedReader'].Id;\n  Id permissionId = [SELECT Id FROM CustomPermission WHERE DeveloperName='OwnedView'].Id;\n  List<SetupEntityAccess> grants = [SELECT ParentId,SetupEntityId,SetupEntityType FROM SetupEntityAccess WHERE ParentId=:parentId AND SetupEntityId=:permissionId];\n  Assert.areEqual(1,grants.size(),'Declared enabled permission has one junction');\n  Assert.areEqual(parentId,grants[0].ParentId);\n  Assert.areEqual(permissionId,grants[0].SetupEntityId);\n  Assert.areEqual('CustomPermission',grants[0].SetupEntityType);\n }\n @IsTest static void disabledAndUnassignedControls() {\n  Id parentId = [SELECT Id FROM PermissionSet WHERE Name='OwnedReader'].Id;\n  Id permissionId = [SELECT Id FROM CustomPermission WHERE DeveloperName='OwnedEdit'].Id;\n  Assert.areEqual(0,[SELECT COUNT() FROM SetupEntityAccess WHERE ParentId=:parentId AND SetupEntityId=:permissionId]);\n  Assert.areEqual(0,[SELECT COUNT() FROM PermissionSetAssignment WHERE PermissionSetId=:parentId]);\n  Assert.isFalse(FeatureManagement.checkPermission('OwnedView'));\n }\n @IsTest static void assignmentLifecycleControl() {\n  Id parentId = [SELECT Id FROM PermissionSet WHERE Name='OwnedReader'].Id;\n  PermissionSetAssignment assignment = new PermissionSetAssignment(AssigneeId=UserInfo.getUserId(),PermissionSetId=parentId);\n  insert assignment;\n  System.runAs(new User(Id=UserInfo.getUserId())) {\n   Assert.isTrue(FeatureManagement.checkPermission('OwnedView'),'Assigned metadata permission is enabled');\n   Assert.isFalse(FeatureManagement.checkPermission('OwnedEdit'));\n   delete assignment;\n   Assert.areEqual(0,[SELECT COUNT() FROM PermissionSetAssignment WHERE PermissionSetId=:parentId]);\n  }\n }\n @IsTest static void assignedPermissionMatchesGrantQuery() {\n  Id parentId = [SELECT Id FROM PermissionSet WHERE Name='OwnedReader'].Id;\n  Id permissionId = [SELECT Id FROM CustomPermission WHERE DeveloperName='OwnedView'].Id;\n  insert new PermissionSetAssignment(AssigneeId=UserInfo.getUserId(),PermissionSetId=parentId);\n  Id userId = UserInfo.getUserId();\n  List<PermissionSetAssignment> assignments = [SELECT PermissionSetId FROM PermissionSetAssignment WHERE AssigneeId=:userId AND PermissionSetId IN (SELECT ParentId FROM SetupEntityAccess WHERE SetupEntityId=:permissionId)];\n  Assert.areEqual(1,assignments.size(),'Assigned permission and junction query agree');\n  Assert.areEqual(parentId,assignments[0].PermissionSetId);\n }\n}\n",
+  "files": {
+    "customPermissions/OwnedView.customPermission-meta.xml": "<CustomPermission xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Owned View</label><isLicensed>false</isLicensed></CustomPermission>",
+    "customPermissions/OwnedEdit.customPermission-meta.xml": "<CustomPermission xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Owned Edit</label><isLicensed>false</isLicensed></CustomPermission>",
+    "permissionsets/OwnedReader.permissionset-meta.xml": "<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Owned Reader</label><customPermissions><enabled>true</enabled><name>OwnedView</name></customPermissions><customPermissions><enabled>false</enabled><name>OwnedEdit</name></customPermissions></PermissionSet>"
+  },
+  "boundaries": [
+    "No namespace or package projection inferred.",
+    "No undeclared permissions, user assignments, profile grants or sharing policy inferred.",
+    "Metadata update/removal synchronization is outside this initial-import fixture.",
+    "FeatureManagement uses the assignment then same-user runAs shape in owned TestCustomPermissionAPI63Proof. Refresh timing after deleting an assignment inside that runAs is UNKNOWN (local remains true); no native refresh value is asserted."
+  ]
+}

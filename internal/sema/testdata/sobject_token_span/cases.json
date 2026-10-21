@@ -1,0 +1,12 @@
+[
+  {
+    "id": "receiver_case",
+    "body": "Contact contact = new Contact(LastName = 'x');\nBoolean same = contact.SObjectType ==\n Contact.SObjectType;\nSystem.debug(same);\n",
+    "expression": "Contact.SObjectType"
+  },
+  {
+    "id": "receiver_and_member_case",
+    "body": "Contact contact = new Contact(LastName = 'x');\nBoolean same = contact.sobjecttype ==\n Contact.SObjectType;\nSystem.debug(same);\n",
+    "expression": "Contact.SObjectType"
+  }
+]

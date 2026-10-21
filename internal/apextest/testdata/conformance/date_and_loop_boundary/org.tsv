@@ -1,0 +1,13 @@
+source_api	method	observation
+62.0	dateLiteral	"{""gmt"":""2020-01-02 00:00:00""}"
+62.0	dateVariable	"{""gmt"":""2020-01-02 00:00:00""}"
+62.0	datetimeControl	"{""gmt"":""2020-01-02 03:04:05""}"
+62.0	loopAbove	"{""count"":1000001}"
+62.0	loopBelow	"{""count"":200}"
+62.0	timeAdvance	"{""advanced"":true,""bounded"":true}"
+67.0	dateLiteral	"{""gmt"":""2020-01-02 00:00:00""}"
+67.0	dateVariable	"{""gmt"":""2020-01-02 00:00:00""}"
+67.0	datetimeControl	"{""gmt"":""2020-01-02 03:04:05""}"
+67.0	loopAbove	"{""count"":1000001}"
+67.0	loopBelow	"{""count"":200}"
+67.0	timeAdvance	"{""advanced"":true,""bounded"":true}"

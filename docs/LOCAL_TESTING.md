@@ -43,6 +43,50 @@ a different effective source version. The checked Apex window is `65.0`,
 silently promoted into that window. A local pass does not prove deployment,
 org permissions, hosted services, or production parity.
 
+## Permission-Gated Tests
+
+When a project has no profile metadata, Glade keeps its local running test user
+permissive for custom-object CRUD and field-level security. Salesforce's
+Standard User can have no access to a new custom object. Native restricted-user
+captures show false describe permissions, denied user-mode DML, and an API 67
+plain-DML denial without grants; the captured API 62 plain insert succeeds.
+
+Three captured differences are documented in the configuration guide: the
+permissive no-profile default, `Name` retained by local
+`Security.stripInaccessible(CREATABLE)`, and the API 67 plain `COUNT()` error
+type (`System.QueryException` locally, `System.SecurityException` natively).
+See [configuration](CONFIG.md#test-user-permissions) for assigning permission
+sets and modeling a restricted user.
+
+If project setup requires assigning a permission set before tests, include its
+metadata and add its API name to `glade.yml`:
+
+```yaml
+test:
+  permissionSets: [Synthetic_Access]
+  permissionSetGroups: []
+```
+
+For example, a secret-storage service can require a custom permission before
+returning a stored value, while an invocation service can use the same check
+to enable a feature:
+
+```apex
+if (!FeatureManagement.checkPermission('Synthetic_View')) {
+    throw new SecurityException('Synthetic view permission required');
+}
+```
+
+`Synthetic_Access.permissionset-meta.xml` must grant `Synthetic_View`, and
+`Synthetic_View.customPermission-meta.xml` must declare it. Assignment is ready
+before class initialization and `@TestSetup`, with the same effective grants
+in every isolated test. No per-test assignment boilerplate is needed.
+`System.runAs(other)` still requires assignments for that other user.
+
+Use `test.permissionSetGroups: [Synthetic_Group]` for an unmuted group whose
+metadata lists the desired permission sets. See [configuration](CONFIG.md#test-user-permissions)
+for metadata requirements and error behavior.
+
 ## Run LWCs Locally
 
 Release installs include the local LWC toolchain. Verify it first:
@@ -263,6 +307,51 @@ glade test --project . --class RefinementServiceTest --json
 glade test --project . --class RefinementServiceTest --method testRefinesFileRow --json
 ```
 
+A compile error blocks only the classes it reaches. A class with a compile
+error, and every class that references it directly or through other classes,
+is excluded. Their tests report `compile_error`. A dependent class reports the
+Salesforce message `Dependent class is invalid and needs recompilation`, which
+names the class it references, and the line of the root class's error. A class
+with errors of its own reports only those, even when it also references,
+implements, or extends an invalid class. A class whose only errors are methods
+it must implement for an invalid interface or superclass is a dependent of
+that type. References bind as
+Apex binds them: a local variable, parameter, field, method, inner class, or
+a setter's implicit `value` with the same name as a class is not a reference,
+a reference inside a SOQL or SOSL bind expression is, and names compare
+without case. `Type.forName` and other string literals are not
+references. All other tests run.
+
+The console, JUnit, GitHub annotation, and HTML reports list the excluded
+classes. JSON lists them by name under `excludedClasses` with `className`,
+`file`, `line`, `dependsOn`, `root`, and `message`; a root class with more than
+one error also lists each in `problems`. The command exits with code `1` while
+any class is excluded, even when every test that ran passed. A compile error
+that cannot be attributed to a class or trigger, or a class metadata error such
+as an unsupported `apiVersion` in a `-meta.xml` file, keeps the whole project
+from running. A trigger that references an invalid class is excluded alongside
+that class and its dependents; unrelated tests still run. Missing package
+dependencies are scoped to classes that statically reference the missing
+namespace and their dependents when Glade can attribute the diagnostic.
+Unattributed dependency errors retain the whole-project fallback.
+
+## Running user and limits
+
+The default local running user uses `America/Los_Angeles`. Local Datetime
+construction, date components, and `format()` follow the current user's time
+zone; GMT methods keep GMT semantics. Set `TimeZoneSidKey` explicitly on users
+you insert for `System.runAs` rather than relying on a default.
+
+The checked Winter '27 `Limits.getLimitHeapSize()` values are 10,000,000 bytes
+for synchronous Apex (including tests and Scheduled Apex) and 25,000,000 for
+Queueable, future, and Batchable execution. Local heap usage is an approximation;
+these reported caps do not establish exact hosted allocation accounting.
+
+During `Test.stopTest()`, ordinary Apex exceptions from platform-event
+subscribers do not fail the enclosing test. Writes made before the exception
+remain visible. Retry/checkpoint handling and internal VM errors have separate
+paths; this rule does not suppress every asynchronous failure.
+
 ## Capture Local Run Telemetry
 
 `glade check` and local `glade test` runs can write CPU and heap profiles. A
@@ -366,8 +455,42 @@ glade test --project . \
 An unfiltered, unsharded run maintains `.glade/test-durations.json`. Duration
 history balances later shards; the assignment is deterministic for the same
 selected classes, shard count, and history. `--write-class-shards` writes
-`shard-NNN.txt` files and exits without running tests. Use `--test-timeout 2m`
-to override the five-minute per-test default. On a memory-constrained host,
+`shard-NNN.txt` files and exits without running tests.
+
+The per-test wall-clock cap defaults to **10 minutes** and also applies to
+`@TestSetup`. Choose a Go duration such as `90s` or `15m` with
+`GLADE_TEST_TIMEOUT`; `--test-timeout` takes precedence over the environment,
+then the default. Invalid or negative settings are errors. `0` disables the
+per-test cap. This policy also applies to daemon, watch, and `glade dev`
+test/watch runs. CPU and governor limits are independent and unchanged.
+Timeout failures name the applied setting and explain how to raise or disable it.
+The VM checks cancellation every 64 Apex statements. A long native operation
+(such as a SOQL/DML scan, JSON conversion, regex or sort) can run beyond the
+cap before reaching the next cancellation check.
+The cap starts when a test or `@TestSetup` begins; it is not a project-loading
+or `glade check` deadline. Disabling it still preserves caller cancellation.
+
+SIGINT and SIGTERM request cooperative cancellation. An executing test reports
+cancellation through the normal test summary. Check and test startup honor
+cancellation between loading phases; a synchronous load, parse, or semantic
+analysis already in progress must finish before that boundary is reached.
+After cancellation is requested, default signal handling is restored so a later
+signal can terminate the process.
+
+Keep an explicit cap in CI:
+
+```bash
+glade test --test-timeout 2m
+```
+
+For a longer local run or to disable the cap:
+
+```bash
+GLADE_TEST_TIMEOUT=15m glade test
+GLADE_TEST_TIMEOUT=0 glade test
+```
+
+On a memory-constrained host,
 `--gc-aggressive` reduces heap growth at the cost of more frequent garbage
 collection.
 

@@ -1,0 +1,2094 @@
+{
+  "nativeObservationCount": 0,
+  "uncapturedObservationCount": 348,
+  "observations": [
+    {
+      "id": "C169GI_001",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_002",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_003",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_004",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_005",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_006",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_007",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_008",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_009",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_010",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_011",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_012",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_013",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_014",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_015",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_016",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_017",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_018",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_019",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_020",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_021",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_022",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_023",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_024",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_025",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_026",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_027",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_028",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_029",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_030",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_031",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_032",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_033",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_034",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_035",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_036",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_037",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_038",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_039",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_040",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_041",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_042",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_043",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_044",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_045",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_046",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_047",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_048",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_049",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_050",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_051",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_052",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_053",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_054",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_055",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_056",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_057",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_058",
+      "route": "anonymous",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_001",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_002",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_003",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_004",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_005",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_006",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_007",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_008",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_009",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_010",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_011",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_012",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_013",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_014",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_015",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_016",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_017",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_018",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_019",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_020",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_021",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_022",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_023",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_024",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_025",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_026",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_027",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_028",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_029",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_030",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_031",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_032",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_033",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_034",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_035",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_036",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_037",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_038",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_039",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_040",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_041",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_042",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_043",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_044",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_045",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_046",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_047",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_048",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_049",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_050",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_051",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_052",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_053",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_054",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_055",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_056",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_057",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_058",
+      "route": "istest",
+      "api": "62.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_001",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_002",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_003",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_004",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_005",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_006",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_007",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_008",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_009",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_010",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_011",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_012",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_013",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_014",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_015",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_016",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_017",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_018",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_019",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_020",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_021",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_022",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_023",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_024",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_025",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_026",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_027",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_028",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_029",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_030",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_031",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_032",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_033",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_034",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_035",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_036",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_037",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_038",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_039",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_040",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_041",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_042",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_043",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_044",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_045",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_046",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_047",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_048",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_049",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_050",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_051",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_052",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_053",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_054",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_055",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_056",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_057",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_058",
+      "route": "anonymous",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_001",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_002",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_003",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_004",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_005",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_006",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_007",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_008",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_009",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_010",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_011",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_012",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_013",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_014",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_015",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_016",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_017",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_018",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_019",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_020",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_021",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_022",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_023",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_024",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_025",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_026",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_027",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_028",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_029",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_030",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_031",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_032",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_033",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_034",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_035",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_036",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_037",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_038",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_039",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_040",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_041",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_042",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_043",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_044",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_045",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_046",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_047",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_048",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_049",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_050",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_051",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_052",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_053",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_054",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_055",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_056",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_057",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_058",
+      "route": "istest",
+      "api": "67.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_001",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_002",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_003",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_004",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_005",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_006",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_007",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_008",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_009",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_010",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_011",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_012",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_013",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_014",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_015",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_016",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_017",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_018",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_019",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_020",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_021",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_022",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_023",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_024",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_025",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_026",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_027",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_028",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_029",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_030",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_031",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_032",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_033",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_034",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_035",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_036",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_037",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_038",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_039",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_040",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_041",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_042",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_043",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_044",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_045",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_046",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_047",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_048",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_049",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_050",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_051",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_052",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_053",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_054",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_055",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_056",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_057",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_058",
+      "route": "anonymous",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_001",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_002",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_003",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_004",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_005",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_006",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_007",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_008",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_009",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_010",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_011",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_012",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_013",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_014",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_015",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_016",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_017",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_018",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_019",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_020",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_021",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_022",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_023",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_024",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_025",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_026",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_027",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_028",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_029",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_030",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_031",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_032",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_033",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_034",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_035",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_036",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_037",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_038",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_039",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_040",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_041",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_042",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_043",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_044",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_045",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_046",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_047",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_048",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_049",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_050",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_051",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_052",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_053",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_054",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_055",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_056",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_057",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    },
+    {
+      "id": "C169GI_058",
+      "route": "istest",
+      "api": "68.0",
+      "reason": "GI_HELPERS_UNAVAILABLE"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "api": "68.0",
+  "deployment": {
+    "id": "0Afhv000000WzhuCAC",
+    "status": "Succeeded",
+    "success": true,
+    "numberComponentErrors": 0,
+    "numberComponentsDeployed": 19
+  },
+  "captured_at": "2026-10-19T04:29:46.080599+00:00",
+  "anonymous": {
+    "success": true,
+    "compiled": true,
+    "compileProblem": "",
+    "exceptionMessage": "",
+    "observations": {
+      "postfix": {
+        "value": "System.QueryException:unexpected token: 'Name NOT LIKE'"
+      },
+      "lowercase": {
+        "value": "System.QueryException:unexpected token: 'Name not like'"
+      },
+      "prefix": {
+        "value": "accepted"
+      },
+      "notIn": {
+        "value": "accepted"
+      }
+    }
+  },
+  "tests": [
+    {
+      "MethodName": "lowercase",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|lowercase|{\"value\":\"System.QueryException:unexpected token: 'Name not like'\"}",
+      "StackTrace": "Class.QueryOperatorProbeTest.lowercase: line 3, column 1"
+    },
+    {
+      "MethodName": "notIn",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|notIn|{\"value\":\"accepted\"}",
+      "StackTrace": "Class.QueryOperatorProbeTest.notIn: line 5, column 1"
+    },
+    {
+      "MethodName": "postfix",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|postfix|{\"value\":\"System.QueryException:unexpected token: 'Name NOT LIKE'\"}",
+      "StackTrace": "Class.QueryOperatorProbeTest.postfix: line 2, column 1"
+    },
+    {
+      "MethodName": "prefix",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|prefix|{\"value\":\"accepted\"}",
+      "StackTrace": "Class.QueryOperatorProbeTest.prefix: line 4, column 1"
+    }
+  ]
+}

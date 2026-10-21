@@ -5204,7 +5204,9 @@ User u = new User(
 );
 insert u;
 System.runAs(u) {
-	System.assert(RecordType.SObjectType.getDescribe().isAccessible(), 'RecordType should be readable metadata');
+	// RecordType.SObjectType is RecordType's SobjectType field token (native
+	// H1XT8-A), so the object describe comes from a record's type token.
+	System.assert(new RecordType().getSObjectType().getDescribe().isAccessible(), 'RecordType should be readable metadata');
 	System.assert(Filter__mdt.SObjectType.getDescribe().isAccessible(), 'custom metadata should be readable');
 }
 `)
@@ -5224,6 +5226,41 @@ System.runAs(u) {
 	}, Records: map[storage.ID]storage.Record{}}
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// Native H1XT8-A (62.0 and 67.0): an unshadowed RecordType.SObjectType is the
+// SobjectType field token, even as a call receiver. A local named RecordType
+// still wins, as Apex scoping requires (H1XT12-A shadows the same way), so its
+// SObjectType field keeps the type token it holds.
+func TestExecRecordTypeSObjectTypeFieldTokenYieldsToLocal(t *testing.T) {
+	program, err := CompileAnonymous(`
+String unshadowed = RecordType.SObjectType.getDescribe().getName();
+Holder RecordType = new Holder();
+RecordType.SObjectType = Schema.getGlobalDescribe().get('RecordType');
+Object raw = RecordType.SObjectType;
+System.assertEquals('SobjectType', unshadowed);
+System.assert(raw instanceof Schema.SObjectType, 'local field value');
+System.assert(!(raw instanceof Schema.SObjectField), 'not rewritten to the field token');
+System.assertEquals('RecordType', RecordType.SObjectType.getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "Holder",
+		Fields: map[string]Field{
+			"SObjectType": {Name: "SObjectType", Type: "Schema.SObjectType"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -6712,9 +6749,20 @@ func TestStorageValueFromVMForFieldPreservesEmptyStringText(t *testing.T) {
 
 func TestExecHierarchyCustomSettingInsertGetsOrgDefaults(t *testing.T) {
 	program, err := CompileAnonymous(`
-insert new TemplateSettings__c();
+TemplateSettings__c supplied = new TemplateSettings__c();
+insert supplied;
+System.assertEquals(null, supplied.Name);
+System.assertEquals(null, supplied.SetupOwnerId);
+String expectedName = String.valueOf(supplied.Id).substring(0,15);
+TemplateSettings__c stored = [SELECT Name, SetupOwnerId FROM TemplateSettings__c WHERE Id=:supplied.Id];
+System.assertEquals(expectedName, stored.Name);
+System.assertEquals(UserInfo.getOrganizationId(), stored.SetupOwnerId);
+TemplateSettings__c defaults = TemplateSettings__c.getOrgDefaults();
+System.assertEquals(expectedName, defaults.Name);
+System.assertEquals(UserInfo.getOrganizationId(), defaults.SetupOwnerId);
 TemplateSettings__c settings = TemplateSettings__c.getInstance();
-System.assertEquals('00D000000000001', settings.Name);
+System.assertEquals(expectedName, settings.Name);
+System.assertEquals(UserInfo.getUserId(), settings.SetupOwnerId);
 System.assertEquals('resetcss', settings.DefaultCSS__c);
 `)
 	if err != nil {
@@ -6725,6 +6773,7 @@ System.assertEquals('resetcss', settings.DefaultCSS__c);
 	org.Objects["TemplateSettings__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName:   "TemplateSettings__c",
+			Label:     "Owner name preference",
 			KeyPrefix: "a00",
 			Metadata: map[string]string{
 				"kind":               "customSetting",
@@ -6733,6 +6782,7 @@ System.assertEquals('resetcss', settings.DefaultCSS__c);
 			Fields: map[string]storage.Field{
 				"Id":            {APIName: "Id", Type: storage.FieldID},
 				"Name":          {APIName: "Name", Type: storage.FieldString},
+				"SetupOwnerId":  {APIName: "SetupOwnerId", Type: storage.FieldReference},
 				"DefaultCSS__c": {APIName: "DefaultCSS__c", Type: storage.FieldString, DefaultValue: "'resetcss'"},
 			},
 		},
@@ -7398,7 +7448,7 @@ System.assertEquals(null, widget.get('recordtypeid'));
 	machine := New(nil)
 	org := storage.NewOrgState()
 	org.Namespace = "samplepkg"
-	org.Objects["Widget__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__c", Fields: map[string]storage.Field{
+	org.Objects["Widget__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__c", Metadata: map[string]string{"enableActivities": "true"}, RecordTypes: []storage.RecordTypeInfo{{DeveloperName: "Choice"}}, Fields: map[string]storage.Field{
 		"Name": {APIName: "Name", Type: storage.FieldString},
 	}}, Records: map[storage.ID]storage.Record{}}
 	machine.SetOrg(&org)
@@ -11472,6 +11522,7 @@ System.assert(result.isSuccess());
 	}
 
 	org := testDataOrg()
+	org.Features = []string{"ApexUserModeWithPermset"}
 	storage.EnsureDeterministicPlatformData(&org)
 	account := org.Objects["Account"]
 	account.Definition.Fields["ShippingStreet"] = storage.Field{APIName: "ShippingStreet", Type: storage.FieldString}
@@ -11553,6 +11604,7 @@ System.assertEquals(1, systemRows.size());
 	}
 
 	org := testDataOrg()
+	org.Features = []string{"ApexUserModeWithPermset"}
 	storage.EnsureDeterministicPlatformData(&org)
 	account := org.Objects["Account"]
 	account.Definition.Fields["Hidden__c"] = storage.Field{APIName: "Hidden__c", Type: storage.FieldString}
@@ -12986,6 +13038,8 @@ System.assertEquals(7, fresh.SubTotal__c, 'queried parent should read current su
 }
 
 func TestExecSummaryFieldCountsChildRecords(t *testing.T) {
+	// Native API 62/67/68 observations keep the caller COUNT null while
+	// fresh queries observe zero, one, then zero across the child lifecycle.
 	program, err := CompileAnonymous(`
 Account parent = new Account(Name = 'Acme');
 insert parent;
@@ -12993,10 +13047,12 @@ System.assertEquals(null, parent.LineCount__c);
 Account row = [SELECT LineCount__c FROM Account WHERE Id = :parent.Id LIMIT 1];
 System.assertEquals(0, row.LineCount__c);
 insert new WidgetLine__c(Account__c = parent.Id);
+System.assertEquals(null, parent.LineCount__c);
 row = [SELECT LineCount__c FROM Account WHERE Id = :parent.Id LIMIT 1];
 System.assertEquals(1, row.LineCount__c);
 WidgetLine__c line = [SELECT Id FROM WidgetLine__c WHERE Account__c = :parent.Id LIMIT 1];
 delete line;
+System.assertEquals(null, parent.LineCount__c);
 row = [SELECT LineCount__c FROM Account WHERE Id = :parent.Id LIMIT 1];
 System.assertEquals(0, row.LineCount__c);
 `)
@@ -14649,18 +14705,18 @@ insert a;
 System.assertEquals(null, a.CreatedDate);
 System.assertEquals(null, a.LastModifiedDate);
 System.assert(a.SystemModstamp != null);
-System.assertEquals('005000000000001', a.CreatedById);
-System.assertEquals('005000000000001', a.LastModifiedById);
-System.assertEquals('005000000000001', a.OwnerId);
+System.assertEquals(UserInfo.getUserId(), a.CreatedById);
+System.assertEquals(UserInfo.getUserId(), a.LastModifiedById);
+System.assertEquals(UserInfo.getUserId(), a.OwnerId);
 System.assert(!a.IsDeleted);
 a.Name = 'System Fields Updated';
 update a;
 System.assertEquals(null, a.LastModifiedDate);
 Account row = [SELECT Id, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, OwnerId, IsDeleted FROM Account WHERE Id = :a.Id];
 System.assertEquals('2026-05-02 12:00:00', row.CreatedDate.formatGmt('yyyy-MM-dd HH:mm:ss'));
-System.assertEquals('005000000000001', row.CreatedById);
-System.assertEquals('005000000000001', row.LastModifiedById);
-System.assertEquals('005000000000001', row.OwnerId);
+System.assertEquals(UserInfo.getUserId(), row.CreatedById);
+System.assertEquals(UserInfo.getUserId(), row.LastModifiedById);
+System.assertEquals(UserInfo.getUserId(), row.OwnerId);
 System.assert(!row.IsDeleted);
 delete row;
 System.assert(row.IsDeleted);
@@ -17357,440 +17413,6 @@ try {
 	}
 }
 
-func TestFrameworkSObjectDomainAddErrorThroughRecordsBlocksDML(t *testing.T) {
-	constructorProgram, err := CompileAnonymous(`this.objects = records.clone();`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	getRecordsProgram, err := CompileAnonymous(`return (List<SObject>) this.objects;`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	handleProgram, err := CompileAnonymous(`
-for (Account candidate : (List<Account>) getRecords()) {
-	candidate.addError('blocked through domain');
-}
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	triggerProgram, err := CompileAnonymous(`framework_SObjectDomain.triggerHandler(AccountDomain.class);`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	program, err := CompileAnonymous(`
-try {
-	insert new Account(Name = 'Blocked');
-	System.assert(false, 'insert should fail');
-} catch (DmlException ex) {
-	System.assertEquals(1, ex.getNumDml());
-	System.assertEquals('blocked through domain', ex.getDmlMessage(0));
-}
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	machine := New(nil)
-	org := testDataOrg()
-	machine.SetOrg(&org)
-	if err := machine.RegisterClass(Class{
-		Name: "AccountDomain",
-		Fields: map[string]Field{
-			"objects": {Name: "objects", Type: "List<Object>"},
-		},
-		Constructors: []Method{{
-			Name:          "AccountDomain.<init>",
-			ClassName:     "AccountDomain",
-			ReturnType:    "void",
-			IsConstructor: true,
-			Params:        []Param{{Name: "records", Type: "List<SObject>"}},
-			Program:       constructorProgram,
-		}},
-		Methods: map[string]Method{
-			"getRecords":         {Name: "AccountDomain.getRecords", ClassName: "AccountDomain", ReturnType: "List<SObject>", Program: getRecordsProgram},
-			"handleBeforeInsert": {Name: "AccountDomain.handleBeforeInsert", ClassName: "AccountDomain", ReturnType: "void", Program: handleProgram},
-		},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if err := machine.RegisterTrigger(Trigger{
-		Name:      "AccountDomainBeforeInsert",
-		Object:    "Account",
-		Timing:    triggerTimingBefore,
-		Operation: "insert",
-		Program:   triggerProgram,
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestFrameworkSObjectDomainAfterInsertAddErrorThroughRecordsBlocksDML(t *testing.T) {
-	constructorProgram, err := CompileAnonymous(`this.objects = records.clone();`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	getRecordsProgram, err := CompileAnonymous(`return (List<SObject>) this.objects;`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	handleProgram, err := CompileAnonymous(`
-for (Account candidate : (List<Account>) getRecords()) {
-	candidate.addError('blocked through after domain');
-}
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	triggerProgram, err := CompileAnonymous(`framework_SObjectDomain.triggerHandler(AccountDomain.class);`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	program, err := CompileAnonymous(`
-try {
-	insert new Account(Name = 'Blocked');
-	System.assert(false, 'insert should fail');
-} catch (DmlException ex) {
-	System.assertEquals(1, ex.getNumDml());
-	System.assertEquals('blocked through after domain', ex.getDmlMessage(0));
-}
-System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'Blocked']);
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	machine := New(nil)
-	org := testDataOrg()
-	machine.SetOrg(&org)
-	if err := machine.RegisterClass(Class{
-		Name: "AccountDomain",
-		Fields: map[string]Field{
-			"objects": {Name: "objects", Type: "List<Object>"},
-		},
-		Constructors: []Method{{
-			Name:          "AccountDomain.<init>",
-			ClassName:     "AccountDomain",
-			ReturnType:    "void",
-			IsConstructor: true,
-			Params:        []Param{{Name: "records", Type: "List<SObject>"}},
-			Program:       constructorProgram,
-		}},
-		Methods: map[string]Method{
-			"getRecords":        {Name: "AccountDomain.getRecords", ClassName: "AccountDomain", ReturnType: "List<SObject>", Program: getRecordsProgram},
-			"handleAfterInsert": {Name: "AccountDomain.handleAfterInsert", ClassName: "AccountDomain", ReturnType: "void", Program: handleProgram},
-		},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if err := machine.RegisterTrigger(Trigger{
-		Name:      "AccountDomainAfterInsert",
-		Object:    "Account",
-		Timing:    triggerTimingAfter,
-		Operation: "insert",
-		Program:   triggerProgram,
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestFrameworkSObjectDomainTriggerStateReusesBeforeDomain(t *testing.T) {
-	configCtor, err := CompileAnonymous(`TriggerStateEnabled = false;`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	enableProgram, err := CompileAnonymous(`
-TriggerStateEnabled = true;
-return this;
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	baseCtor, err := CompileAnonymous(`
-Records = records.clone();
-Configuration = new DomainConfiguration();
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	domainCtor, err := CompileAnonymous(`
-super(records);
-Configuration.enableTriggerState();
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	beforeProgram, err := CompileAnonymous(`someState = 'blocked through state';`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	afterProgram, err := CompileAnonymous(`
-if (someState != null) {
-	for (Account candidate : (List<Account>) Records) {
-		candidate.addError(someState);
-	}
-}
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	triggerProgram, err := CompileAnonymous(`framework_SObjectDomain.triggerHandler(AccountDomain.class);`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	program, err := CompileAnonymous(`
-try {
-	insert new Account(Name = 'Blocked');
-	System.assert(false, 'insert should fail');
-} catch (DmlException ex) {
-	System.assertEquals(1, ex.getNumDml());
-	System.assertEquals('blocked through state', ex.getDmlMessage(0));
-}
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	machine := New(nil)
-	org := testDataOrg()
-	machine.SetOrg(&org)
-	if err := machine.RegisterClass(Class{
-		Name: "DomainConfiguration",
-		Fields: map[string]Field{
-			"TriggerStateEnabled": {Name: "TriggerStateEnabled", Type: "Boolean"},
-		},
-		Constructors: []Method{{
-			Name:          "DomainConfiguration.<init>",
-			ClassName:     "DomainConfiguration",
-			ReturnType:    "void",
-			IsConstructor: true,
-			Program:       configCtor,
-		}},
-		Methods: map[string]Method{
-			"enableTriggerState": {Name: "DomainConfiguration.enableTriggerState", ClassName: "DomainConfiguration", ReturnType: "DomainConfiguration", Program: enableProgram},
-		},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if err := machine.RegisterClass(Class{
-		Name: "framework_SObjectDomain",
-		Fields: map[string]Field{
-			"Configuration": {Name: "Configuration", Type: "DomainConfiguration"},
-			"Records":       {Name: "Records", Type: "List<SObject>"},
-		},
-		Constructors: []Method{{
-			Name:          "framework_SObjectDomain.<init>",
-			ClassName:     "framework_SObjectDomain",
-			ReturnType:    "void",
-			IsConstructor: true,
-			Params:        []Param{{Name: "records", Type: "List<SObject>"}},
-			Program:       baseCtor,
-		}},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if err := machine.RegisterClass(Class{
-		Name:       "AccountDomain",
-		SuperClass: "framework_SObjectDomain",
-		Fields: map[string]Field{
-			"someState": {Name: "someState", Type: "String"},
-		},
-		Constructors: []Method{{
-			Name:          "AccountDomain.<init>",
-			ClassName:     "AccountDomain",
-			ReturnType:    "void",
-			IsConstructor: true,
-			Params:        []Param{{Name: "records", Type: "List<SObject>"}},
-			Program:       domainCtor,
-		}},
-		Methods: map[string]Method{
-			"onBeforeInsert": {Name: "AccountDomain.onBeforeInsert", ClassName: "AccountDomain", ReturnType: "void", Program: beforeProgram},
-			"onAfterInsert":  {Name: "AccountDomain.onAfterInsert", ClassName: "AccountDomain", ReturnType: "void", Program: afterProgram},
-		},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if err := machine.RegisterTrigger(Trigger{
-		Name:      "AccountDomainInsert",
-		Object:    "Account",
-		Timing:    triggerTimingBefore,
-		Operation: "insert",
-		Program:   triggerProgram,
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if err := machine.RegisterTrigger(Trigger{
-		Name:      "AccountDomainAfterInsert",
-		Object:    "Account",
-		Timing:    triggerTimingAfter,
-		Operation: "insert",
-		Program:   triggerProgram,
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestFflibSObjectDomainMockTriggerStateReusesBeforeDomain(t *testing.T) {
-	configCtor, err := CompileAnonymous(`TriggerStateEnabled = false;`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	enableProgram, err := CompileAnonymous(`
-TriggerStateEnabled = true;
-return this;
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	baseCtor, err := CompileAnonymous(`
-Records = records.clone();
-Configuration = new DomainConfiguration();
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	domainCtor, err := CompileAnonymous(`
-super(records);
-Configuration.enableTriggerState();
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	constructProgram, err := CompileAnonymous(`return new AccountDomain(sObjectList);`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	beforeProgram, err := CompileAnonymous(`
-for (Account candidate : (List<Account>) Records) {
-	someState = 'mock state for ' + candidate.Name;
-}
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	afterProgram, err := CompileAnonymous(`
-if (someState != null) {
-	Probe.count = Probe.count + 1;
-	Probe.message = someState;
-}
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	program, err := CompileAnonymous(`
-fflib_SObjectDomain.triggerHandler(AccountDomainConstructor.class);
-System.assertEquals(1, Probe.count);
-System.assertEquals('mock state for Mocked', Probe.message);
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	machine := New(nil)
-	org := testDataOrg()
-	machine.SetOrg(&org)
-	mockAccount := Object("Account")
-	setExplicitSObjectField(&mockAccount, "Name", String("Mocked"))
-	records := typedList("List<SObject>")
-	records.List = []Value{mockAccount}
-	database := Object("fflib_SObjectDomain.MockDatabase")
-	database.Fields["isInsert"] = Bool(true)
-	database.Fields["records"] = records
-	database.Fields["oldRecords"] = typedMap("Map<Id,SObject>")
-	testFactory := Object("fflib_SObjectDomain.TestFactory")
-	testFactory.Fields["Database"] = database
-	if err := machine.RegisterClass(Class{
-		Name: "DomainConfiguration",
-		Fields: map[string]Field{
-			"TriggerStateEnabled": {Name: "TriggerStateEnabled", Type: "Boolean"},
-		},
-		Constructors: []Method{{
-			Name:          "DomainConfiguration.<init>",
-			ClassName:     "DomainConfiguration",
-			ReturnType:    "void",
-			IsConstructor: true,
-			Program:       configCtor,
-		}},
-		Methods: map[string]Method{
-			"enableTriggerState": {Name: "DomainConfiguration.enableTriggerState", ClassName: "DomainConfiguration", ReturnType: "DomainConfiguration", Program: enableProgram},
-		},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if err := machine.RegisterClass(Class{
-		Name: "fflib_SObjectDomain",
-		Fields: map[string]Field{
-			"Configuration": {Name: "Configuration", Type: "DomainConfiguration"},
-			"Records":       {Name: "Records", Type: "List<SObject>"},
-		},
-		StaticFields: map[string]Field{
-			"Test": {Name: "Test", Type: "fflib_SObjectDomain.TestFactory", Static: true, Value: testFactory},
-		},
-		Constructors: []Method{{
-			Name:          "fflib_SObjectDomain.<init>",
-			ClassName:     "fflib_SObjectDomain",
-			ReturnType:    "void",
-			IsConstructor: true,
-			Params:        []Param{{Name: "records", Type: "List<SObject>"}},
-			Program:       baseCtor,
-		}},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if err := machine.RegisterClass(Class{
-		Name:       "AccountDomain",
-		SuperClass: "fflib_SObjectDomain",
-		Fields: map[string]Field{
-			"someState": {Name: "someState", Type: "String"},
-		},
-		Constructors: []Method{{
-			Name:          "AccountDomain.<init>",
-			ClassName:     "AccountDomain",
-			ReturnType:    "void",
-			IsConstructor: true,
-			Params:        []Param{{Name: "records", Type: "List<Account>"}},
-			Program:       domainCtor,
-		}},
-		Methods: map[string]Method{
-			"onBeforeInsert": {Name: "AccountDomain.onBeforeInsert", ClassName: "AccountDomain", ReturnType: "void", Program: beforeProgram},
-			"onAfterInsert":  {Name: "AccountDomain.onAfterInsert", ClassName: "AccountDomain", ReturnType: "void", Program: afterProgram},
-		},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if err := machine.RegisterClass(Class{
-		Name: "AccountDomainConstructor",
-		Methods: map[string]Method{
-			"construct": {
-				Name:       "AccountDomainConstructor.construct",
-				ClassName:  "AccountDomainConstructor",
-				ReturnType: "fflib_SObjectDomain",
-				Params:     []Param{{Name: "sObjectList", Type: "List<SObject>"}},
-				Program:    constructProgram,
-			},
-		},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if err := machine.RegisterClass(Class{
-		Name: "Probe",
-		StaticFields: map[string]Field{
-			"count":   {Name: "count", Type: "Integer", Static: true, Value: Int(0)},
-			"message": {Name: "message", Type: "String", Static: true},
-		},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestExecMultipleAddErrorsProduceMultipleDatabaseErrors(t *testing.T) {
 	triggerProgram, err := CompileAnonymous(`
 for (Account a : Trigger.new) {
@@ -18687,6 +18309,53 @@ System.assertEquals('Warm', updated.Rating);
 	}
 }
 
+func TestExecBeforeUpdateSObjectPutThroughTriggerNewMapValuesPersistsWithPut(t *testing.T) {
+	runBeforeUpdateSObjectMutationThroughTriggerNewMap(t, "row.put('Rating', 'Warm');")
+}
+
+func TestExecBeforeUpdateSObjectAssignmentThroughTriggerNewMapValuesPersists(t *testing.T) {
+	runBeforeUpdateSObjectMutationThroughTriggerNewMap(t, "row.Rating = 'Warm';")
+}
+
+func runBeforeUpdateSObjectMutationThroughTriggerNewMap(t *testing.T, mutation string) {
+	t.Helper()
+	triggerProgram, err := CompileAnonymous("for (Account row : Trigger.new) {\n" + mutation + "\n" +
+		"System.assertEquals('Warm', Trigger.newMap.get(row.Id).Rating);\n}")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Before');
+insert a;
+Account patch = new Account(Id = a.Id);
+patch.Name = 'After';
+update patch;
+Account updated = [SELECT Rating FROM Account WHERE Id = :a.Id];
+System.assertEquals('Warm', updated.Rating);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeUpdateSObjectMutationThroughNewMap",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "update",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecUndeleteRunsOnlyAfterTrigger(t *testing.T) {
 	beforeTrigger, err := CompileAnonymous(`
 System.assert(false);
@@ -19540,7 +19209,8 @@ System.assertEquals(System.StatusCode.FIELD_INTEGRITY_EXCEPTION, result.getError
 }
 
 func TestExecDatabaseMergeResultMergedRecordIdsForPartialList(t *testing.T) {
-	// A30 J036/J052/J053 compare native enum values rather than Strings.
+	// record_operation_observations/mergePartial records one failed merge
+	// group and preserves the valid duplicate when another duplicate is deleted.
 	program, err := CompileAnonymous(`
 Account master = new Account(Name = 'Master');
 insert master;
@@ -19551,16 +19221,13 @@ insert deletedDuplicate;
 delete deletedDuplicate;
 List<Account> duplicates = new List<Account>{duplicate, deletedDuplicate};
 List<Object> results = Database.merge(master, duplicates, false);
-System.assertEquals(2, results.size());
-Object success = results.get(0);
-Object failure = results.get(1);
-System.assert(success.isSuccess());
-List<Object> mergedIds = success.getMergedRecordIds();
-System.assertEquals(1, mergedIds.size());
-System.assertEquals(duplicate.Id, mergedIds.get(0));
+System.assertEquals(1, results.size());
+Object failure = results.get(0);
 System.assert(!failure.isSuccess());
+System.assertEquals(master.Id, failure.getId());
 System.assertEquals(0, failure.getMergedRecordIds().size());
 System.assertEquals(System.StatusCode.ENTITY_IS_DELETED, failure.getErrors().get(0).getStatusCode());
+System.assertEquals(1, [SELECT Id FROM Account WHERE Id = :duplicate.Id].size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -19885,8 +19552,8 @@ func TestExecHierarchyCustomSettingStaticsUseOrgDefaults(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(true, Hierarchy_Setting__c.getInstance().Enabled__c);
 System.assertEquals(true, Hierarchy_Setting__c.getOrgDefaults().Enabled__c);
-System.assertEquals(true, Hierarchy_Setting__c.getValues('00D000000000001').Enabled__c);
-Id ownerId = '00D000000000001';
+System.assertEquals(true, Hierarchy_Setting__c.getValues('00D000000000mH2').Enabled__c);
+Id ownerId = '00D000000000mH2';
 System.assertEquals(true, Hierarchy_Setting__c.getValues(ownerId).Enabled__c);
 System.assertEquals(null, Hierarchy_Setting__c.getValues('005000000000001').Enabled__c);
 // A24 R228/R235: getValues returns raw null when the requested owner has no row.
@@ -19932,7 +19599,7 @@ try {
 } catch (InvalidParameterValueException e) {
     System.assert('Invalid SetupOwner for Custom Settings: not-an-id'.equals(e.getMessage()));
 }
-System.assertEquals(true, Hierarchy_Setting__c.getValues('005000000000001').Enabled__c);
+System.assertEquals(true, Hierarchy_Setting__c.getValues(UserInfo.getUserId()).Enabled__c);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -19942,7 +19609,7 @@ System.assertEquals(true, Hierarchy_Setting__c.getValues('005000000000001').Enab
 	hierarchy := org.Objects["Hierarchy_Setting__c"]
 	hierarchy.Records = map[storage.ID]storage.Record{
 		"a02000000000002": {ID: "a02000000000002", Object: "Hierarchy_Setting__c", Fields: map[string]storage.Value{
-			"SetupOwnerId": storage.StringValue("005000000000001"),
+			"SetupOwnerId": storage.StringValue(storage.DefaultUserID),
 			"Enabled__c":   storage.BooleanValue(true),
 		}},
 	}
@@ -20116,7 +19783,7 @@ func customDataOrg() storage.OrgState {
 		},
 		Records: map[storage.ID]storage.Record{
 			"a02000000000001": {ID: "a02000000000001", Object: "Hierarchy_Setting__c", Fields: map[string]storage.Value{
-				"SetupOwnerId": storage.StringValue("00D000000000001"),
+				"SetupOwnerId": storage.StringValue("00D000000000mH2"),
 				"Enabled__c":   storage.BooleanValue(true),
 			}},
 		},

@@ -1,0 +1,532 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 6,
+  "nativeObservationCount": 36,
+  "packetRowsSha256": "a5546b2f095dbb79308e8252f8032ee2c3fe2cefea2073d9fa2a160529540fe1",
+  "rows": [
+    {
+      "id": "C115W4_001",
+      "expected": {
+        "outcome": "reject"
+      },
+      "question": "Inner static method declaration; anonymous-local versus named nested",
+      "role": "rejection",
+      "routes": {
+        "anonymous": {
+          "id": "C115W4_001A",
+          "anonymous": "class Inner {public static Integer count(){return 1;}}\nSystem.assert(false,'P|C115W4_001A|compiled');",
+          "sourceSha256": {
+            "anonymous": "aaa23e06d90f17acf407068cd8868c7deff4a79364e835dc65a73ffc918de7af"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "problem": "static can only be used on methods of a top level type"
+            }
+          ]
+        },
+        "isTest": {
+          "id": "C115W4_001T",
+          "classes": {
+            "CAC115W4001": "public class CAC115W4001 {public class Inner {public static Integer count(){return 1;}}}",
+            "CAC115W4001Test": "@IsTest private class CAC115W4001Test {@IsTest static void observe(){System.assert(false,'P|C115W4_001T|compiled');}}"
+          },
+          "tests": [
+            "CAC115W4001Test"
+          ],
+          "sourceSha256": {
+            "class:CAC115W4001": "ac895148aa00a7a42805139201d28883f111e6de835603c0906cc735f779b6be",
+            "class:CAC115W4001Test": "1ff9dd98d86e2f5a2a3439cf5af8902f1badc66e72389cd5900f6c85754d495d"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "line": 1,
+              "name": "CAC115W4001",
+              "problem": "static can only be used on methods of a top level type",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "CAC115W4001",
+              "problem": "Identifier name is reserved: Inner",
+              "type": "ApexClass"
+            }
+          ]
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        }
+      }
+    },
+    {
+      "id": "C115W4_002",
+      "expected": {
+        "outcome": "reject"
+      },
+      "question": "Inner instance method, same count signature",
+      "role": "positive",
+      "routes": {
+        "anonymous": {
+          "id": "C115W4_002A",
+          "anonymous": "String obs; try {obs=String.valueOf(new CAC115W4002.Inner().count());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W4_002A|'+obs);",
+          "setupClasses": {
+            "CAC115W4002": "public class CAC115W4002 {public class Inner {public Integer count(){return 1;}}}"
+          },
+          "sourceSha256": {
+            "anonymous": "c667605aaa9b5e405ead2fc4a3fde1a6392efdf9fce5d4f4af87591a8af533e5",
+            "setupClass:CAC115W4002": "5964e73c8917442d9facb8fcae5e0c034996874ebdf8d26da46e69c30cc87436"
+          },
+          "stage": "setup-rejected",
+          "nativeDiagnostics": [
+            {
+              "name": "CAC115W4002",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Identifier name is reserved: Inner"
+            }
+          ],
+          "nativeSetupRejection": "native rejects the setup class with Identifier name is reserved: Inner"
+        },
+        "isTest": {
+          "id": "C115W4_002T",
+          "classes": {
+            "CAC115W4002Test": "@IsTest private class CAC115W4002Test {@IsTest static void observe(){String obs; try {obs=String.valueOf(new CAC115W4002.Inner().count());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W4_002T|'+obs);}}",
+            "CAC115W4002": "public class CAC115W4002 {public class Inner {public Integer count(){return 1;}}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC115W4002Test"
+          ],
+          "sourceSha256": {
+            "class:CAC115W4002Test": "f87634d4f40fed5aac690e7e4de27b3707b6cd26acb83e315860bd771dc89ff8",
+            "class:CAC115W4002": "5964e73c8917442d9facb8fcae5e0c034996874ebdf8d26da46e69c30cc87436"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "line": 1,
+              "name": "CAC115W4002",
+              "problem": "Identifier name is reserved: Inner",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "CAC115W4002Test",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class CAC115W4002 : Identifier name is reserved: Inner",
+              "type": "ApexClass"
+            }
+          ]
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc",
+            "setupSha256": "2d9c293d68284f901bd68f5da441384ab89baa8c4f966872eb7afd48002615c9"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc",
+            "setupSha256": "2d9c293d68284f901bd68f5da441384ab89baa8c4f966872eb7afd48002615c9"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc",
+            "setupSha256": "2d9c293d68284f901bd68f5da441384ab89baa8c4f966872eb7afd48002615c9"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        }
+      }
+    },
+    {
+      "id": "C115W4_003",
+      "expected": {
+        "outcome": "runtime",
+        "value": "1"
+      },
+      "question": "Named top-level static count invoked by each route",
+      "role": "positive",
+      "routes": {
+        "anonymous": {
+          "id": "C115W4_003A",
+          "anonymous": "String obs; try {obs=String.valueOf(CAC115W4003.count());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W4_003A|'+obs);",
+          "setupClasses": {
+            "CAC115W4003": "public class CAC115W4003 {public static Integer count(){return 1;}}"
+          },
+          "sourceSha256": {
+            "anonymous": "8613562ed347839b901b222ae2628fb2d58464be0e95aeac56e2bb0d736be96d",
+            "setupClass:CAC115W4003": "29f3f52a4e1275387e373808a7af1f54986de64d6912a4cb948f3da6245279e3"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C115W4_003T",
+          "classes": {
+            "CAC115W4003Test": "@IsTest private class CAC115W4003Test {@IsTest static void observe(){String obs; try {obs=String.valueOf(CAC115W4003.count());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W4_003T|'+obs);}}",
+            "CAC115W4003": "public class CAC115W4003 {public static Integer count(){return 1;}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC115W4003Test"
+          ],
+          "sourceSha256": {
+            "class:CAC115W4003Test": "ae361377fe1d0d5fad64e2daf2d38be4c51e62351cdccfd5f0f8e4ccdba07211",
+            "class:CAC115W4003": "29f3f52a4e1275387e373808a7af1f54986de64d6912a4cb948f3da6245279e3"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        }
+      }
+    },
+    {
+      "id": "C115W4_004",
+      "expected": {
+        "outcome": "reject"
+      },
+      "question": "Inner instance method called through an outer instance",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C115W4_004A",
+          "anonymous": "String obs; try {obs=String.valueOf(new CAC115W4004().call());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W4_004A|'+obs);",
+          "setupClasses": {
+            "CAC115W4004": "public class CAC115W4004 {public Integer call(){return new Inner().count();} public class Inner {public Integer count(){return 1;}}}"
+          },
+          "sourceSha256": {
+            "anonymous": "eef0b71ad6f1e055071d354d1704668794cb53d6fd1e77a63e505aa6b1cd4b8d",
+            "setupClass:CAC115W4004": "4059b4182c90b6682c792fa7e8c7552d02a4785126bf56ada642b17c6c254090"
+          },
+          "stage": "setup-rejected",
+          "nativeDiagnostics": [
+            {
+              "name": "CAC115W4004",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Identifier name is reserved: Inner"
+            }
+          ],
+          "nativeSetupRejection": "native rejects the setup class with Identifier name is reserved: Inner"
+        },
+        "isTest": {
+          "id": "C115W4_004T",
+          "classes": {
+            "CAC115W4004Test": "@IsTest private class CAC115W4004Test {@IsTest static void observe(){String obs; try {obs=String.valueOf(new CAC115W4004().call());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W4_004T|'+obs);}}",
+            "CAC115W4004": "public class CAC115W4004 {public Integer call(){return new Inner().count();} public class Inner {public Integer count(){return 1;}}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC115W4004Test"
+          ],
+          "sourceSha256": {
+            "class:CAC115W4004Test": "5e7d0c49ef5546dcd16c3faffe2385f09a1e6cbbfd8dad5ca509ea5ef6ca449e",
+            "class:CAC115W4004": "4059b4182c90b6682c792fa7e8c7552d02a4785126bf56ada642b17c6c254090"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "line": 1,
+              "name": "CAC115W4004",
+              "problem": "Identifier name is reserved: Inner",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "CAC115W4004Test",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class CAC115W4004 : Identifier name is reserved: Inner",
+              "type": "ApexClass"
+            }
+          ]
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc",
+            "setupSha256": "fd082a2ec88517fd4d502810bf0598bfcf8cccf39a04ed1413e93a69f6e4765a"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc",
+            "setupSha256": "fd082a2ec88517fd4d502810bf0598bfcf8cccf39a04ed1413e93a69f6e4765a"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc",
+            "setupSha256": "fd082a2ec88517fd4d502810bf0598bfcf8cccf39a04ed1413e93a69f6e4765a"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        }
+      }
+    },
+    {
+      "id": "C115W4_005",
+      "expected": {
+        "outcome": "reject"
+      },
+      "question": "Inner static field is a separate restriction, not a method claim",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C115W4_005A",
+          "anonymous": "class Inner {public static Integer n=1;}\nSystem.assert(false,'P|C115W4_005A|compiled');",
+          "sourceSha256": {
+            "anonymous": "08be5fcab6d3c5ceaaf514593222a827e8ca85a7ddd8d6c40767c8e15e20722c"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "problem": "static can only be used on fields of a top level type"
+            }
+          ]
+        },
+        "isTest": {
+          "id": "C115W4_005T",
+          "classes": {
+            "CAC115W4005": "public class CAC115W4005 {public class Inner {public static Integer n=1;}}",
+            "CAC115W4005Test": "@IsTest private class CAC115W4005Test {@IsTest static void observe(){System.assert(false,'P|C115W4_005T|compiled');}}"
+          },
+          "tests": [
+            "CAC115W4005Test"
+          ],
+          "sourceSha256": {
+            "class:CAC115W4005": "9bb3ecd6beb20723bd0f2d5ccdbc10485c3665145fc725f53d6c444d33693cdf",
+            "class:CAC115W4005Test": "3d82ce27db0c213ea503a8fa73f592f916146e0177ea0d156a7b57d0cf464bd4"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "line": 1,
+              "name": "CAC115W4005",
+              "problem": "static can only be used on fields of a top level type",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "CAC115W4005",
+              "problem": "Identifier name is reserved: Inner",
+              "type": "ApexClass"
+            }
+          ]
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        }
+      }
+    },
+    {
+      "id": "C115W4_006",
+      "expected": {
+        "outcome": "reject"
+      },
+      "question": "Inner instance field preserves nearby legal member shape",
+      "role": "positive",
+      "routes": {
+        "anonymous": {
+          "id": "C115W4_006A",
+          "anonymous": "String obs; try {obs=String.valueOf(new CAC115W4006.Inner().n);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W4_006A|'+obs);",
+          "setupClasses": {
+            "CAC115W4006": "public class CAC115W4006 {public class Inner {public Integer n=1;}}"
+          },
+          "sourceSha256": {
+            "anonymous": "3d24661181a41c6577b4bd738ead8a4a416cfc1e5d302ef1a4395af97877a767",
+            "setupClass:CAC115W4006": "7026ae0de32a89e6bce3ffcdca2a708173c44e732a897c150e15407b6b0acaa0"
+          },
+          "stage": "setup-rejected",
+          "nativeDiagnostics": [
+            {
+              "name": "CAC115W4006",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Identifier name is reserved: Inner"
+            }
+          ],
+          "nativeSetupRejection": "native rejects the setup class with Identifier name is reserved: Inner"
+        },
+        "isTest": {
+          "id": "C115W4_006T",
+          "classes": {
+            "CAC115W4006Test": "@IsTest private class CAC115W4006Test {@IsTest static void observe(){String obs; try {obs=String.valueOf(new CAC115W4006.Inner().n);} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C115W4_006T|'+obs);}}",
+            "CAC115W4006": "public class CAC115W4006 {public class Inner {public Integer n=1;}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC115W4006Test"
+          ],
+          "sourceSha256": {
+            "class:CAC115W4006Test": "b6a7aa66f9c4373f03c95b5885a43ceace51ee7dc6a141fa4738fe448fc22e3e",
+            "class:CAC115W4006": "7026ae0de32a89e6bce3ffcdca2a708173c44e732a897c150e15407b6b0acaa0"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "line": 1,
+              "name": "CAC115W4006",
+              "problem": "Identifier name is reserved: Inner",
+              "type": "ApexClass"
+            },
+            {
+              "line": 1,
+              "name": "CAC115W4006Test",
+              "problem": "Dependent class is invalid and needs recompilation:\n Class CAC115W4006 : Identifier name is reserved: Inner",
+              "type": "ApexClass"
+            }
+          ]
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc",
+            "setupSha256": "0386c4cece54be794d67304a9207dacdcdf94cf342985ee593010b01afe4a4a6"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc",
+            "setupSha256": "0386c4cece54be794d67304a9207dacdcdf94cf342985ee593010b01afe4a4a6"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc",
+            "setupSha256": "0386c4cece54be794d67304a9207dacdcdf94cf342985ee593010b01afe4a4a6"
+          },
+          "isTest": {
+            "tsvSha256": "9608e820ab6639163189989d940cf8c55df7d8db537cc72d3559a5ff0298e1bc"
+          }
+        }
+      }
+    }
+  ],
+  "diagnosticContract": "Exact primary native text asserted on each rejected route; full deployment diagnostic arrays preserved, cascades are evidence only",
+  "provenance": "Synthetic source; independent anonymous and check-only named observations. Named native.json artifact excluded; TSV and setup evidence authoritative.",
+  "staticAnalysis": {
+    "baseline": "capture-revision-100674082189950676909464270273097705397729225196210387419024790090144103579119",
+    "executed": false,
+    "predictionBasis": "Code reading only; semantic and diagnostic-only differences counted separately, both routes/all APIs",
+    "predictedSemanticMismatchShapes": [],
+    "predictedPrimaryDiagnosticMismatchShapes": [
+      "C115W4_001",
+      "C115W4_005"
+    ],
+    "predictedAssertedMismatches": 12,
+    "codeReferences": [
+      "internal/sema/declaration_contracts.go:151",
+      "internal/sema/declaration_contracts.go:203",
+      "internal/sema/anonymous_declarations.go:35",
+      "internal/sema/annotation_placement.go:392",
+      "third_party/glade-apex-parser/reserved_identifiers.go:40"
+    ],
+    "proposedChange": "No acceptance change. Align static-member diagnostic text/priority before the competing reserved-identifier error only for captured shapes. a recorded revision is a test-only regression using a legal nested name at API62/67.",
+    "limits": "Rows002/004/006 reject reserved Inner, not the intended instance-member behavior. Neutral nested-name native recapture required for legal controls. Named cascade diagnostics are preserved but not individually asserted."
+  }
+}

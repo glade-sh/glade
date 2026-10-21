@@ -1,0 +1,1717 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "final-variable-rejection",
+  "shapeCount": 14,
+  "nativeObservationCount": 84,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C166PF_075",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final Long n=1;n++;r=String.valueOf(n);System.assert(false,'C126_RESULT|C166PF_075|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "af1af1bdc5bc5a938fe6ad2449db098dada8e9ceeed36d83fb351738e9b97c0b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe075": "@IsTest private class C166Observe075{@IsTest static void observe(){String r;final Long n=1;n++;r=String.valueOf(n);System.assert(false,'C126_RESULT|C166PF_075|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe075"
+          ],
+          "sourceSha256": {
+            "class:C166Observe075": "0acc59b30dbc1493abd991fb6ea53ff117e6839037d675df8c134794e18dd39a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe075",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe075",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe075",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_076",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final Long n=1;--n;r=String.valueOf(n);System.assert(false,'C126_RESULT|C166PF_076|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "4ab524d25fb8476e56ab9451f728fa38023dbcc51ac2e0c5377605e45edbbaff"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe076": "@IsTest private class C166Observe076{@IsTest static void observe(){String r;final Long n=1;--n;r=String.valueOf(n);System.assert(false,'C126_RESULT|C166PF_076|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe076"
+          ],
+          "sourceSha256": {
+            "class:C166Observe076": "4ac9c094207dfe25cd1bf93af1d5fad3e2da4ed4933d9d420016b46b5e329ec6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe076",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe076",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe076",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_077",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final Double n=1;++n;r=String.valueOf(n);System.assert(false,'C126_RESULT|C166PF_077|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "01522969aa76705bb5a88539aeb669b4468493d0b387b9f6b1e28af95207bd65"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe077": "@IsTest private class C166Observe077{@IsTest static void observe(){String r;final Double n=1;++n;r=String.valueOf(n);System.assert(false,'C126_RESULT|C166PF_077|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe077"
+          ],
+          "sourceSha256": {
+            "class:C166Observe077": "a816522b425f418d5d99c18bd138f7a0b3885882480de83723485042b1acc6cd"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe077",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe077",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe077",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_078",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final Double n=1;n--;r=String.valueOf(n);System.assert(false,'C126_RESULT|C166PF_078|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "8488f938206c51740793ee7cb8e537aee30b0df2b33f36338d6861f6406742aa"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe078": "@IsTest private class C166Observe078{@IsTest static void observe(){String r;final Double n=1;n--;r=String.valueOf(n);System.assert(false,'C126_RESULT|C166PF_078|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe078"
+          ],
+          "sourceSha256": {
+            "class:C166Observe078": "8d90d7ae529dd44fb9099b4c78adfcb2b69007265e7291f90866ebb8413105c2"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe078",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe078",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe078",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_079",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final Decimal n=1;n++;r=String.valueOf(n);System.assert(false,'C126_RESULT|C166PF_079|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "0439da457bc738e39831e1d5df2967eeb0473b533f687dd891b7938f398773cf"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe079": "@IsTest private class C166Observe079{@IsTest static void observe(){String r;final Decimal n=1;n++;r=String.valueOf(n);System.assert(false,'C126_RESULT|C166PF_079|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe079"
+          ],
+          "sourceSha256": {
+            "class:C166Observe079": "b59048e608401b3d1e19a63814bc2bfcb3ce329ba9ac2d65800a51d6d4accc62"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe079",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe079",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe079",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_080",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final Decimal n=1;--n;r=String.valueOf(n);System.assert(false,'C126_RESULT|C166PF_080|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "a443ec5039e2eb00d5f07595e47ea23ce22b7a995564225bc9cbe8b55e6df29d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe080": "@IsTest private class C166Observe080{@IsTest static void observe(){String r;final Decimal n=1;--n;r=String.valueOf(n);System.assert(false,'C126_RESULT|C166PF_080|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe080"
+          ],
+          "sourceSha256": {
+            "class:C166Observe080": "f5c735a6aca6e959451c750ae16f3ce81a6a7b86cf9e5ea8cc29e63244d014a0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe080",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe080",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe080",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_081",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Integer> a=new List<Integer>{1};a=new List<Integer>{1};r=String.valueOf(a);System.assert(false,'C126_RESULT|C166PF_081|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "c24f85897690aecc4380664cd7034a85a7c5859528b5e812cf479a474d3ae277"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe081": "@IsTest private class C166Observe081{@IsTest static void observe(){String r;final List<Integer> a=new List<Integer>{1};a=new List<Integer>{1};r=String.valueOf(a);System.assert(false,'C126_RESULT|C166PF_081|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe081"
+          ],
+          "sourceSha256": {
+            "class:C166Observe081": "12976cb267d28d6fe99193d8b120904cf8b46b891b5b5bc0cff3b7e69b890e69"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe081",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe081",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe081",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_082",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final Integer[] a=new Integer[]{1};a=new Integer[]{1};r=String.valueOf(a);System.assert(false,'C126_RESULT|C166PF_082|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "4f11b5852804a633b200a3ee21179a2855a86d81881dfee50b5a365b168d2068"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe082": "@IsTest private class C166Observe082{@IsTest static void observe(){String r;final Integer[] a=new Integer[]{1};a=new Integer[]{1};r=String.valueOf(a);System.assert(false,'C126_RESULT|C166PF_082|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe082"
+          ],
+          "sourceSha256": {
+            "class:C166Observe082": "627db4df1bb1d43a10c06d124f47640ee8047608e474b97134c9c6922c8dee93"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe082",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe082",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe082",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_083",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final Map<String,Account> a=new Map<String,Account>{'k'=>new Account(NumberOfEmployees=1)};a=new Map<String,Account>{'k'=>new Account(NumberOfEmployees=1)};r=String.valueOf(a);System.assert(false,'C126_RESULT|C166PF_083|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "8a954a5af2043e39d6bfbe32a827a0b36b2fbf09cff952221f452b09e3399132"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe083": "@IsTest private class C166Observe083{@IsTest static void observe(){String r;final Map<String,Account> a=new Map<String,Account>{'k'=>new Account(NumberOfEmployees=1)};a=new Map<String,Account>{'k'=>new Account(NumberOfEmployees=1)};r=String.valueOf(a);System.assert(false,'C126_RESULT|C166PF_083|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe083"
+          ],
+          "sourceSha256": {
+            "class:C166Observe083": "89dc94605dbf029535f39aa37decb635d4170bc76e6cff0874e9848b2ed84bb5"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe083",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe083",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe083",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_084",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "public class C166Value {public Integer value=1;}\nString r;final Map<String,C166Value> a=new Map<String,C166Value>{'k'=>new C166Value()};a=new Map<String,C166Value>{'k'=>new C166Value()};r=String.valueOf(a);System.assert(false,'C126_RESULT|C166PF_084|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "aa170feaef06d5942b8a6efe4338543b0999bcf1ab411ee7cf2c3fd466d31e86"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.FinalException: Final variable has already been initialized",
+                "exceptionType": "System.FinalException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Value": "public class C166Value {public Integer value=1;}",
+            "C166Observe084": "@IsTest private class C166Observe084{@IsTest static void observe(){String r;final Map<String,C166Value> a=new Map<String,C166Value>{'k'=>new C166Value()};a=new Map<String,C166Value>{'k'=>new C166Value()};r=String.valueOf(a);System.assert(false,'C126_RESULT|C166PF_084|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe084"
+          ],
+          "sourceSha256": {
+            "class:C166Value": "bca0caaa85af962b181ac91fe3ec11f3c93fab2f139a7079080669ba3e23266d",
+            "class:C166Observe084": "5414b0e05f530ca04df5489326ae6e754a9ede596687593001485ebe3b55c16a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe084",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe084",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe084",
+                    "method": "observe",
+                    "message": "System.FinalException: Final variable has already been initialized",
+                    "exceptionType": "System.FinalException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.FinalException",
+              "message": "Final variable has already been initialized"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_085",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Integer> a=new List<Integer>{1};a++;r=String.valueOf(a);System.assert(false,'C126_RESULT|C166PF_085|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "1962cac725d1b5c8dd1067644a46820880436b54b2e2fbbf767e406e3dce8d0e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>",
+                  "line": 2,
+                  "column": 54,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>",
+                  "line": 2,
+                  "column": 54,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>",
+                  "line": 2,
+                  "column": 54,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe085": "@IsTest private class C166Observe085{@IsTest static void observe(){String r;final List<Integer> a=new List<Integer>{1};a++;r=String.valueOf(a);System.assert(false,'C126_RESULT|C166PF_085|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe085"
+          ],
+          "sourceSha256": {
+            "class:C166Observe085": "280e74e8e7f329e578b30c68fcbdd80657f181c9e01c3f74c6435233f1806993"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe085",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe085",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe085",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_086",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Integer> a=new List<Integer>{1};++a;r=String.valueOf(a);System.assert(false,'C126_RESULT|C166PF_086|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "63c1caafafb4bb3eb6e58ad421bc3ce3eae91e82f8ba982ee85ab347d23fa164"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary prefix increment can only be applied to numeric expressions: List<Integer>",
+                  "line": 2,
+                  "column": 53,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix increment can only be applied to numeric expressions: List<Integer>"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary prefix increment can only be applied to numeric expressions: List<Integer>",
+                  "line": 2,
+                  "column": 53,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix increment can only be applied to numeric expressions: List<Integer>"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary prefix increment can only be applied to numeric expressions: List<Integer>",
+                  "line": 2,
+                  "column": 53,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix increment can only be applied to numeric expressions: List<Integer>"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe086": "@IsTest private class C166Observe086{@IsTest static void observe(){String r;final List<Integer> a=new List<Integer>{1};++a;r=String.valueOf(a);System.assert(false,'C126_RESULT|C166PF_086|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe086"
+          ],
+          "sourceSha256": {
+            "class:C166Observe086": "63d59921751c20bef91f56c63a6b31f78100c3908db9ee689468d1eebf1c8f24"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe086",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary prefix increment can only be applied to numeric expressions: List<Integer>"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix increment can only be applied to numeric expressions: List<Integer>"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe086",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary prefix increment can only be applied to numeric expressions: List<Integer>"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix increment can only be applied to numeric expressions: List<Integer>"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe086",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary prefix increment can only be applied to numeric expressions: List<Integer>"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix increment can only be applied to numeric expressions: List<Integer>"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_087",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Integer> a=new List<Integer>{1};a--;r=String.valueOf(a);System.assert(false,'C126_RESULT|C166PF_087|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "30aaba03a246ba498558c992b14146a8d69ec8368b2ae28c435a2b0d91d62a89"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>",
+                  "line": 2,
+                  "column": 54,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>",
+                  "line": 2,
+                  "column": 54,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>",
+                  "line": 2,
+                  "column": 54,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe087": "@IsTest private class C166Observe087{@IsTest static void observe(){String r;final List<Integer> a=new List<Integer>{1};a--;r=String.valueOf(a);System.assert(false,'C126_RESULT|C166PF_087|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe087"
+          ],
+          "sourceSha256": {
+            "class:C166Observe087": "92fcca8ae5a3c93537ed8092412dba475ff4bb829daa3b37ac53926da28bf5f6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe087",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe087",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe087",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: List<Integer>"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_088",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Integer> a=new List<Integer>{1};--a;r=String.valueOf(a);System.assert(false,'C126_RESULT|C166PF_088|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "086c421b5b1ead8836cc34792af19207f453066302c1123d2f0d8674b70a1fd4"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary prefix decrement can only be applied to numeric expressions: List<Integer>",
+                  "line": 2,
+                  "column": 53,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix decrement can only be applied to numeric expressions: List<Integer>"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary prefix decrement can only be applied to numeric expressions: List<Integer>",
+                  "line": 2,
+                  "column": 53,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix decrement can only be applied to numeric expressions: List<Integer>"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary prefix decrement can only be applied to numeric expressions: List<Integer>",
+                  "line": 2,
+                  "column": 53,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix decrement can only be applied to numeric expressions: List<Integer>"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe088": "@IsTest private class C166Observe088{@IsTest static void observe(){String r;final List<Integer> a=new List<Integer>{1};--a;r=String.valueOf(a);System.assert(false,'C126_RESULT|C166PF_088|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe088"
+          ],
+          "sourceSha256": {
+            "class:C166Observe088": "195dd9da95430d040e22217c8f4441bb0d22e39a851b2fea320bbd5413b20083"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe088",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary prefix decrement can only be applied to numeric expressions: List<Integer>"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix decrement can only be applied to numeric expressions: List<Integer>"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe088",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary prefix decrement can only be applied to numeric expressions: List<Integer>"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix decrement can only be applied to numeric expressions: List<Integer>"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe088",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary prefix decrement can only be applied to numeric expressions: List<Integer>"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix decrement can only be applied to numeric expressions: List<Integer>"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    }
+  ]
+}

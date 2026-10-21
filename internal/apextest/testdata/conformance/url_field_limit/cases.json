@@ -1,0 +1,18 @@
+[
+  {
+    "method": "hierarchy255",
+    "shape": "Hierarchy custom setting URL with no declared length, 255 ASCII characters, Database.upsert in SYSTEM_MODE"
+  },
+  {
+    "method": "hierarchy256",
+    "shape": "Hierarchy custom setting URL with no declared length, 256 ASCII characters, Database.upsert in SYSTEM_MODE"
+  },
+  {
+    "method": "record255",
+    "shape": "Regular custom object URL with no declared length, 255 ASCII characters, Database.upsert in SYSTEM_MODE"
+  },
+  {
+    "method": "record256",
+    "shape": "Regular custom object URL with no declared length, 256 ASCII characters, Database.upsert in SYSTEM_MODE"
+  }
+]

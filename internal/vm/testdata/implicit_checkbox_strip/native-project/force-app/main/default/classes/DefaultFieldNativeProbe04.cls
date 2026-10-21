@@ -1,0 +1,1 @@
+@IsTest private class DefaultFieldNativeProbe04 { @IsTest static void observe(){System.assert(false,'FLS_DEFAULT|FLS-DEF-04|'+JSON.serialize(DefaultFieldNativeObservation.read('FLS-DEF-04')));} }

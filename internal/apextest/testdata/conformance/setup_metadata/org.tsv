@@ -1,0 +1,7 @@
+source_api	method	observation
+62.0	businessHours	{"mondayEnd":"17:00:00.000Z","mondayStart":"09:00:00.000Z","zone":"GMT","default":true,"active":true,"name":"Grove Weekdays","count":1}
+62.0	duplicateRule	{"object":"Contact","active":true,"label":"Grove Email Check","name":"Grove_Email_Check","count":1}
+62.0	personDuplicateRule	{"subtype":"PersonAccount","object":"Account","active":true,"label":"Grove Person Email Check","name":"Grove_PersonEmail_Check","count":1}
+67.0	businessHours	{"mondayEnd":"17:00:00.000Z","mondayStart":"09:00:00.000Z","zone":"GMT","default":true,"active":true,"name":"Grove Weekdays","count":1}
+67.0	duplicateRule	{"object":"Contact","active":true,"label":"Grove Email Check","name":"Grove_Email_Check","count":1}
+67.0	personDuplicateRule	{"subtype":"PersonAccount","object":"Account","active":true,"label":"Grove Person Email Check","name":"Grove_PersonEmail_Check","count":1}

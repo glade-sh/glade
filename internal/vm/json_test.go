@@ -1069,8 +1069,7 @@ Object missing = JSON.deserialize('null', String.class);
 System.assertEquals(null, missing);
 Date dateValue = JSON.deserialize('"2024-02-29"', Date.class);
 System.assertEquals(Date.newInstance(2024, 2, 29), dateValue);
-Date looseDateValue = JSON.deserialize('"2024-2-29 00:00:00"', Date.class);
-System.assertEquals(Date.newInstance(2024, 2, 29), looseDateValue);
+// A date payload with a trailing time component is rejected by Salesforce; the native row lives in TestNativeUnitRegressionRows.
 Datetime whenValue = JSON.deserialize('"2024-02-29T12:34:56Z"', Datetime.class);
 System.assertEquals(Datetime.newInstance(2024, 2, 29, 12, 34, 56), whenValue);
 Time timeValue = JSON.deserialize('"05:06:07"', Time.class);

@@ -1,0 +1,1100 @@
+{
+  "captureDate": "2026-10-15",
+  "captureMode": "check-only Metadata API deployment with @TestSetup observation and 32 hash-bound assertion chunks; no persistent metadata",
+  "cells": [
+    {
+      "api": "62.0",
+      "checkOnly": true,
+      "chunkCount": 32,
+      "deploymentId": "0AfEc00000p0sflKAA",
+      "expectedNative": {
+        "callerAfterDml": {
+          "Name": null,
+          "SetupOwnerId": null,
+          "nameEqualsOrganizationString": null,
+          "nameEqualsOwnerString": null,
+          "nameEqualsProfileString": null,
+          "nameEqualsUserString": null,
+          "ownerIsOrganization": null,
+          "ownerIsProfile": null,
+          "ownerIsUser": null,
+          "present": true
+        },
+        "context": {
+          "organizationId": "[ORG_ID]",
+          "profileId": "[PROFILE_ID]",
+          "userId": "[USER_ID]"
+        },
+        "dml": {
+          "errors": [],
+          "success": true
+        },
+        "input": {
+          "Name": null,
+          "SetupOwnerId": null,
+          "nameEqualsOrganizationString": null,
+          "nameEqualsOwnerString": null,
+          "nameEqualsProfileString": null,
+          "nameEqualsUserString": null,
+          "ownerIsOrganization": null,
+          "ownerIsProfile": null,
+          "ownerIsUser": null,
+          "present": true
+        },
+        "insertedId": "[RECORD_ID18]",
+        "instance": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[USER_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": false,
+          "ownerIsUser": true,
+          "present": true
+        },
+        "instanceOrganization": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "instanceProfile": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[PROFILE_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": true,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "instanceUser": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[USER_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": false,
+          "ownerIsUser": true,
+          "present": true
+        },
+        "label": "Owner name preference",
+        "nameMode": "omitted",
+        "nameWasSupplied": false,
+        "orgDefaults": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "ownerMode": "omitted",
+        "ownerWasSupplied": false,
+        "soql": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "stage": "complete"
+      },
+      "fixture": "HNO01-api62-id",
+      "id": "HNO01",
+      "orgRunSHA256": "9b5155695e76d6fa880468ae7b488a17f2c9f090301d9d4b5d5e37423894604f",
+      "orgTSVSHA256": "2ae6cc2ebbccd5e85c2d3e54cb70cb6dbed944e5c55688ae25b1b1cdc1ad630c",
+      "projectedNativeSHA256": "9c4348fdb5e3fd6af459269e59180dd36fb3388c340f3ad71efe9ab950090ace",
+      "rawAnswerSHA256": "3afbb11f0cb5557d5d87da06fa13e946748bd794984fc9e6f59f2715fad1239a",
+      "rawPayloadSHA256": "296a744b374ac1a2ab1c26a57ed4d439e320f19d728dad7c2ab17d045f0c649e",
+      "route": "istest",
+      "runtimeCarry": "Current local defaults and inherited projection lose the omitted-owner naming distinction; exported native observation is not a passing local conformance claim.",
+      "stage": "runtime",
+      "status": "Failed",
+      "transportAPI": "62.0"
+    },
+    {
+      "api": "62.0",
+      "expectedNative": null,
+      "id": "HNO01",
+      "reason": "No anonymous execution of the new object: check-only deployment rolls back metadata. Named observations are not anonymous observations.",
+      "route": "anonymous",
+      "stage": "pending"
+    },
+    {
+      "api": "62.0",
+      "checkOnly": true,
+      "chunkCount": 32,
+      "deploymentId": "0AfEc00000p0sSrKAI",
+      "expectedNative": {
+        "callerAfterDml": {
+          "Name": null,
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": null,
+          "nameEqualsOwnerString": null,
+          "nameEqualsProfileString": null,
+          "nameEqualsUserString": null,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "context": {
+          "organizationId": "[ORG_ID]",
+          "profileId": "[PROFILE_ID]",
+          "userId": "[USER_ID]"
+        },
+        "dml": {
+          "errors": [],
+          "success": true
+        },
+        "input": {
+          "Name": null,
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": null,
+          "nameEqualsOwnerString": null,
+          "nameEqualsProfileString": null,
+          "nameEqualsUserString": null,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "instance": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[USER_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": false,
+          "ownerIsUser": true,
+          "present": true
+        },
+        "instanceOrganization": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "instanceProfile": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[PROFILE_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": true,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "instanceUser": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[USER_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": false,
+          "ownerIsUser": true,
+          "present": true
+        },
+        "label": "Owner name preference",
+        "nameMode": "omitted",
+        "nameWasSupplied": false,
+        "orgDefaults": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "ownerMode": "organization",
+        "ownerWasSupplied": true,
+        "soql": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "stage": "complete"
+      },
+      "fixture": "HNO02-api62",
+      "id": "HNO02",
+      "orgRunSHA256": "2f535897b2c234c525cb4f3f7b8e70105a2e4b64458ce7e815ead97cfa49026c",
+      "orgTSVSHA256": "0cd7ffa4dbf333f69072990ac9fa6f92d384bf52a2540bf7569c3733bfef7176",
+      "projectedNativeSHA256": "f9e46b0fbcfa32d6caa0708ba202d84c275812a03b4ac28c3d488bfa80ac2656",
+      "rawAnswerSHA256": "a12988d3c793677c98ea64f099d16812471ea94df7366fb11884257261b1f8e7",
+      "rawPayloadSHA256": "fda5c3a6d79961809961bf5e994fc13eb8d69981f7b11bdb3ec64f5f6a84ee18",
+      "route": "istest",
+      "stage": "runtime",
+      "status": "Failed",
+      "transportAPI": "62.0"
+    },
+    {
+      "api": "62.0",
+      "expectedNative": null,
+      "id": "HNO02",
+      "reason": "No anonymous execution of the new object: check-only deployment rolls back metadata. Named observations are not anonymous observations.",
+      "route": "anonymous",
+      "stage": "pending"
+    },
+    {
+      "api": "62.0",
+      "checkOnly": true,
+      "dependentApexFailureCount": 20,
+      "deploymentId": "0AfEc00000p0sKoKAI",
+      "expectedNative": {
+        "componentType": "CustomObject",
+        "problem": "Must specify a non-empty label for the CustomObject",
+        "runtimeObserved": false
+      },
+      "fixture": "HNO04-api62",
+      "id": "HNO04",
+      "orgRunSHA256": "558140a2de8c8b0582ee603af12e6c036a80ce9cd0a5a3cb03933a358bf8c8cc",
+      "orgTSVSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "projectedNativeSHA256": "a63db22bcbc8e50b918230d192b1d52cbc0f1ccbe0fff5f40d808e598f9860ce",
+      "rawAnswerSHA256": "c9f891853b4ce380803d33b7b99491be6da4078ab04286da806ac004d7201b83",
+      "route": "istest",
+      "stage": "metadata-rejection",
+      "status": "Failed",
+      "transportAPI": "62.0"
+    },
+    {
+      "api": "62.0",
+      "expectedNative": null,
+      "id": "HNO04",
+      "reason": "No anonymous execution of the new object: check-only deployment rolls back metadata. Named observations are not anonymous observations.",
+      "route": "anonymous",
+      "stage": "pending"
+    },
+    {
+      "api": "67.0",
+      "checkOnly": true,
+      "chunkCount": 32,
+      "deploymentId": "0AfEc00000p0shNKAQ",
+      "expectedNative": {
+        "callerAfterDml": {
+          "Name": null,
+          "SetupOwnerId": null,
+          "nameEqualsOrganizationString": null,
+          "nameEqualsOwnerString": null,
+          "nameEqualsProfileString": null,
+          "nameEqualsUserString": null,
+          "ownerIsOrganization": null,
+          "ownerIsProfile": null,
+          "ownerIsUser": null,
+          "present": true
+        },
+        "context": {
+          "organizationId": "[ORG_ID]",
+          "profileId": "[PROFILE_ID]",
+          "userId": "[USER_ID]"
+        },
+        "dml": {
+          "errors": [],
+          "success": true
+        },
+        "input": {
+          "Name": null,
+          "SetupOwnerId": null,
+          "nameEqualsOrganizationString": null,
+          "nameEqualsOwnerString": null,
+          "nameEqualsProfileString": null,
+          "nameEqualsUserString": null,
+          "ownerIsOrganization": null,
+          "ownerIsProfile": null,
+          "ownerIsUser": null,
+          "present": true
+        },
+        "insertedId": "[RECORD_ID18]",
+        "instance": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[USER_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": false,
+          "ownerIsUser": true,
+          "present": true
+        },
+        "instanceOrganization": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "instanceProfile": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[PROFILE_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": true,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "instanceUser": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[USER_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": false,
+          "ownerIsUser": true,
+          "present": true
+        },
+        "label": "Owner name preference",
+        "nameMode": "omitted",
+        "nameWasSupplied": false,
+        "orgDefaults": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "ownerMode": "omitted",
+        "ownerWasSupplied": false,
+        "soql": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "stage": "complete"
+      },
+      "fixture": "HNO01-api67",
+      "id": "HNO01",
+      "orgRunSHA256": "5f74ea0319c4fe7ba1eccf41b163706ec8129c1ca1bd037c0db64011997bfb73",
+      "orgTSVSHA256": "6015bc8d133b9e478c11c51be3cfb1e034f4db146dfcdceb657c856f622d33f1",
+      "projectedNativeSHA256": "9c4348fdb5e3fd6af459269e59180dd36fb3388c340f3ad71efe9ab950090ace",
+      "rawAnswerSHA256": "a22b5a6124cd7d4067aac449d0d7d9e82c15716ae6261bac391e35edb60521af",
+      "rawPayloadSHA256": "bee3ad2a39980865e5e4b8bbe5487b9ec53b246cdd23c1652d2c5628da98fed8",
+      "route": "istest",
+      "runtimeCarry": "Current local defaults and inherited projection lose the omitted-owner naming distinction; exported native observation is not a passing local conformance claim.",
+      "stage": "runtime",
+      "status": "Failed",
+      "transportAPI": "67.0"
+    },
+    {
+      "api": "67.0",
+      "expectedNative": null,
+      "id": "HNO01",
+      "reason": "No anonymous execution of the new object: check-only deployment rolls back metadata. Named observations are not anonymous observations.",
+      "route": "anonymous",
+      "stage": "pending"
+    },
+    {
+      "api": "67.0",
+      "checkOnly": true,
+      "chunkCount": 32,
+      "deploymentId": "0AfEc00000p0sizKAA",
+      "expectedNative": {
+        "callerAfterDml": {
+          "Name": null,
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": null,
+          "nameEqualsOwnerString": null,
+          "nameEqualsProfileString": null,
+          "nameEqualsUserString": null,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "context": {
+          "organizationId": "[ORG_ID]",
+          "profileId": "[PROFILE_ID]",
+          "userId": "[USER_ID]"
+        },
+        "dml": {
+          "errors": [],
+          "success": true
+        },
+        "input": {
+          "Name": null,
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": null,
+          "nameEqualsOwnerString": null,
+          "nameEqualsProfileString": null,
+          "nameEqualsUserString": null,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "insertedId": "[RECORD_ID18]",
+        "instance": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[USER_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": false,
+          "ownerIsUser": true,
+          "present": true
+        },
+        "instanceOrganization": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "instanceProfile": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[PROFILE_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": true,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "instanceUser": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[USER_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": false,
+          "ownerIsUser": true,
+          "present": true
+        },
+        "label": "Owner name preference",
+        "nameMode": "omitted",
+        "nameWasSupplied": false,
+        "orgDefaults": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "ownerMode": "organization",
+        "ownerWasSupplied": true,
+        "soql": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "stage": "complete"
+      },
+      "fixture": "HNO02-api67",
+      "id": "HNO02",
+      "orgRunSHA256": "c7ccd6cb28c067b2c23530969449a709809a8997d73ee1c0dfcee65a9e6fd853",
+      "orgTSVSHA256": "b3bc1006baf701f51938b037fb45ef776ef8781030eb2b4d2e738fb7233caca3",
+      "projectedNativeSHA256": "ce49f01f39dad86e90d918f465cead8a2e391c1e3def683af28b74bc81ee8d29",
+      "rawAnswerSHA256": "9da3a9cb2ccf4f781449a07dd46ffd99406077264cffacb3f1c4b91699204439",
+      "rawPayloadSHA256": "432d0a348e57d800cafeb2fa52e633f73072b5d0092c07a0acdced4a98f50759",
+      "route": "istest",
+      "stage": "runtime",
+      "status": "Failed",
+      "transportAPI": "67.0"
+    },
+    {
+      "api": "67.0",
+      "expectedNative": null,
+      "id": "HNO02",
+      "reason": "No anonymous execution of the new object: check-only deployment rolls back metadata. Named observations are not anonymous observations.",
+      "route": "anonymous",
+      "stage": "pending"
+    },
+    {
+      "api": "67.0",
+      "checkOnly": true,
+      "dependentApexFailureCount": 20,
+      "deploymentId": "0AfEc00000p0skbKAA",
+      "expectedNative": {
+        "componentType": "CustomObject",
+        "problem": "Must specify a non-empty label for the CustomObject",
+        "runtimeObserved": false
+      },
+      "fixture": "HNO04-api67",
+      "id": "HNO04",
+      "orgRunSHA256": "8e0586f77ec9ab0d47a83a11ade73a043d67affe18f1cd561207b6c5f3ade859",
+      "orgTSVSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "projectedNativeSHA256": "a63db22bcbc8e50b918230d192b1d52cbc0f1ccbe0fff5f40d808e598f9860ce",
+      "rawAnswerSHA256": "3b1414904dece9340b6cb6411aa40c6c98ead6beaeb03140e586ac5e9a4203e2",
+      "route": "istest",
+      "stage": "metadata-rejection",
+      "status": "Failed",
+      "transportAPI": "67.0"
+    },
+    {
+      "api": "67.0",
+      "expectedNative": null,
+      "id": "HNO04",
+      "reason": "No anonymous execution of the new object: check-only deployment rolls back metadata. Named observations are not anonymous observations.",
+      "route": "anonymous",
+      "stage": "pending"
+    },
+    {
+      "api": "68.0",
+      "checkOnly": true,
+      "chunkCount": 32,
+      "deploymentId": "0AfEc00000p0smDKAQ",
+      "expectedNative": {
+        "callerAfterDml": {
+          "Name": null,
+          "SetupOwnerId": null,
+          "nameEqualsOrganizationString": null,
+          "nameEqualsOwnerString": null,
+          "nameEqualsProfileString": null,
+          "nameEqualsUserString": null,
+          "ownerIsOrganization": null,
+          "ownerIsProfile": null,
+          "ownerIsUser": null,
+          "present": true
+        },
+        "context": {
+          "organizationId": "[ORG_ID]",
+          "profileId": "[PROFILE_ID]",
+          "userId": "[USER_ID]"
+        },
+        "dml": {
+          "errors": [],
+          "success": true
+        },
+        "input": {
+          "Name": null,
+          "SetupOwnerId": null,
+          "nameEqualsOrganizationString": null,
+          "nameEqualsOwnerString": null,
+          "nameEqualsProfileString": null,
+          "nameEqualsUserString": null,
+          "ownerIsOrganization": null,
+          "ownerIsProfile": null,
+          "ownerIsUser": null,
+          "present": true
+        },
+        "insertedId": "[RECORD_ID18]",
+        "instance": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[USER_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": false,
+          "ownerIsUser": true,
+          "present": true
+        },
+        "instanceOrganization": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "instanceProfile": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[PROFILE_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": true,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "instanceUser": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[USER_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": false,
+          "ownerIsUser": true,
+          "present": true
+        },
+        "label": "Owner name preference",
+        "nameMode": "omitted",
+        "nameWasSupplied": false,
+        "orgDefaults": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "ownerMode": "omitted",
+        "ownerWasSupplied": false,
+        "soql": {
+          "Name": "[RECORD_ID15]",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "stage": "complete"
+      },
+      "fixture": "HNO01-api68",
+      "id": "HNO01",
+      "orgRunSHA256": "1fb3d5128f7f320c49d8f3a57f37a143968e0e1f290d90f0b49fdb956e069764",
+      "orgTSVSHA256": "b99ee20785a5fdece214059f6c3a19dc15f92832338aad6373ee4e66beb4ff20",
+      "projectedNativeSHA256": "9c4348fdb5e3fd6af459269e59180dd36fb3388c340f3ad71efe9ab950090ace",
+      "rawAnswerSHA256": "b03ad433f2beac38fe1f74e892ef93ced3be23623f3a157478a808697038b786",
+      "rawPayloadSHA256": "445c99ce5907c6c4a13e23ac29959e27a2b2a065a8dbee78af7d9e79df60e5d1",
+      "route": "istest",
+      "runtimeCarry": "Current local defaults and inherited projection lose the omitted-owner naming distinction; exported native observation is not a passing local conformance claim.",
+      "stage": "runtime",
+      "status": "Failed",
+      "transportAPI": "68.0"
+    },
+    {
+      "api": "68.0",
+      "expectedNative": null,
+      "id": "HNO01",
+      "reason": "No anonymous execution of the new object: check-only deployment rolls back metadata. Named observations are not anonymous observations.",
+      "route": "anonymous",
+      "stage": "pending"
+    },
+    {
+      "api": "68.0",
+      "checkOnly": true,
+      "chunkCount": 32,
+      "deploymentId": "0AfEc00000p0spRKAQ",
+      "expectedNative": {
+        "callerAfterDml": {
+          "Name": null,
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": null,
+          "nameEqualsOwnerString": null,
+          "nameEqualsProfileString": null,
+          "nameEqualsUserString": null,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "context": {
+          "organizationId": "[ORG_ID]",
+          "profileId": "[PROFILE_ID]",
+          "userId": "[USER_ID]"
+        },
+        "dml": {
+          "errors": [],
+          "success": true
+        },
+        "input": {
+          "Name": null,
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": null,
+          "nameEqualsOwnerString": null,
+          "nameEqualsProfileString": null,
+          "nameEqualsUserString": null,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "insertedId": "[RECORD_ID18]",
+        "instance": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[USER_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": false,
+          "ownerIsUser": true,
+          "present": true
+        },
+        "instanceOrganization": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "instanceProfile": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[PROFILE_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": true,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "instanceUser": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[USER_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": false,
+          "ownerIsProfile": false,
+          "ownerIsUser": true,
+          "present": true
+        },
+        "label": "Owner name preference",
+        "nameMode": "omitted",
+        "nameWasSupplied": false,
+        "orgDefaults": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "ownerMode": "organization",
+        "ownerWasSupplied": true,
+        "soql": {
+          "Name": "Owner name preference (Organization)",
+          "SetupOwnerId": "[ORG_ID]",
+          "nameEqualsOrganizationString": false,
+          "nameEqualsOwnerString": false,
+          "nameEqualsProfileString": false,
+          "nameEqualsUserString": false,
+          "ownerIsOrganization": true,
+          "ownerIsProfile": false,
+          "ownerIsUser": false,
+          "present": true
+        },
+        "stage": "complete"
+      },
+      "fixture": "HNO02-api68",
+      "id": "HNO02",
+      "orgRunSHA256": "34aafe66c2614166b8c6c4debfb04fe7c9f89016bb173bc88b0d3ada6d3bac5d",
+      "orgTSVSHA256": "5be3e6cf1250e2371d376169c81a5e95c9641f09cc8e0285992a05b97e304e95",
+      "projectedNativeSHA256": "ce49f01f39dad86e90d918f465cead8a2e391c1e3def683af28b74bc81ee8d29",
+      "rawAnswerSHA256": "62bce843dc1082316483c7f34251cc5f19e240db926965170ffc33570496daa6",
+      "rawPayloadSHA256": "9612fbdd55329d2899c142cf278c87251743c9836b4a1ec773fc5ef0771013eb",
+      "route": "istest",
+      "stage": "runtime",
+      "status": "Failed",
+      "transportAPI": "68.0"
+    },
+    {
+      "api": "68.0",
+      "expectedNative": null,
+      "id": "HNO02",
+      "reason": "No anonymous execution of the new object: check-only deployment rolls back metadata. Named observations are not anonymous observations.",
+      "route": "anonymous",
+      "stage": "pending"
+    },
+    {
+      "api": "68.0",
+      "checkOnly": true,
+      "dependentApexFailureCount": 20,
+      "deploymentId": "0AfEc00000p0sr3KAA",
+      "expectedNative": {
+        "componentType": "CustomObject",
+        "problem": "Must specify a non-empty label for the CustomObject",
+        "runtimeObserved": false
+      },
+      "fixture": "HNO04-api68",
+      "id": "HNO04",
+      "orgRunSHA256": "1ea18b2923cd9d034c30d7406a058899150321c34ef45210e72323071dc4a578",
+      "orgTSVSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "projectedNativeSHA256": "a63db22bcbc8e50b918230d192b1d52cbc0f1ccbe0fff5f40d808e598f9860ce",
+      "rawAnswerSHA256": "26aa65fa07d86d035d5ac797576f782e67196ae4d0810f327a976f4cd4343835",
+      "route": "istest",
+      "stage": "metadata-rejection",
+      "status": "Failed",
+      "transportAPI": "68.0"
+    },
+    {
+      "api": "68.0",
+      "expectedNative": null,
+      "id": "HNO04",
+      "reason": "No anonymous execution of the new object: check-only deployment rolls back metadata. Named observations are not anonymous observations.",
+      "route": "anonymous",
+      "stage": "pending"
+    }
+  ],
+  "fixtures": {
+    "HNO01-api62-id": {
+      "sha256": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO01.cls": "8606159b640c30ff75e3ec598fac3230b8a5ed5bedf558b190ee53e80e747d39",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO01.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "b2885d1f98a45c7bf55e11466438718a804648c720f7e6313514f49bb238f1c8",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "force-app/main/default/objects/NameOwner62THNO01__c/NameOwner62THNO01__c.object-meta.xml": "e65495cd9f6727ccc70b2ebaf50ed649f7561d949ce7e767c0855c6ca5097525",
+        "sfdx-project.json": "b52c63890c52ce3a8c6541e865403be60c6c0887283bdecd07b09a7bb3de4b3e"
+      },
+      "sources": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO01.cls": "@IsTest private class HierarchyNameOwnerHNO01 { @TestSetup static void seed() {HierarchyNameOwnerObserver.seed('HNO01-62.0-T','omitted','omitted');}\n@IsTest static void part00() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',0));}\n@IsTest static void part01() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',1));}\n@IsTest static void part02() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',2));}\n@IsTest static void part03() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',3));}\n@IsTest static void part04() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',4));}\n@IsTest static void part05() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',5));}\n@IsTest static void part06() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',6));}\n@IsTest static void part07() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',7));}\n@IsTest static void part08() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',8));}\n@IsTest static void part09() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',9));}\n@IsTest static void part10() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',10));}\n@IsTest static void part11() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',11));}\n@IsTest static void part12() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',12));}\n@IsTest static void part13() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',13));}\n@IsTest static void part14() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',14));}\n@IsTest static void part15() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',15));}\n@IsTest static void part16() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',16));}\n@IsTest static void part17() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',17));}\n@IsTest static void part18() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',18));}\n@IsTest static void part19() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',19));}\n@IsTest static void part20() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',20));}\n@IsTest static void part21() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',21));}\n@IsTest static void part22() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',22));}\n@IsTest static void part23() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',23));}\n@IsTest static void part24() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',24));}\n@IsTest static void part25() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',25));}\n@IsTest static void part26() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',26));}\n@IsTest static void part27() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',27));}\n@IsTest static void part28() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',28));}\n@IsTest static void part29() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',29));}\n@IsTest static void part30() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',30));}\n@IsTest static void part31() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-62.0-T',31));}\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO01.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "public class HierarchyNameOwnerObserver {\n    public static void seed(String tag, String ownerMode, String nameMode) {\n        Map<String,Object> payload = measure(ownerMode, nameMode);\n        insert new Account(Name='HNAME '+tag, Description=JSON.serialize(payload));\n    }\n\n    public static String part(String tag, Integer partNumber) {\n        String key = 'HNAME '+tag;\n        List<Account> saved = [SELECT Description FROM Account WHERE Name=:key LIMIT 2];\n        System.assertEquals(1, saved.size(), 'HNAME transport row count');\n        String raw = saved[0].Description;\n        String encoded = EncodingUtil.base64Encode(Blob.valueOf(raw));\n        System.assert(encoded.length() <= 10240, 'HNAME transport overflow');\n        String hash = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', Blob.valueOf(raw)));\n        Integer offset = partNumber*320;\n        String chunk = encoded.length()>offset ? encoded.substring(offset, Math.min(offset+320,encoded.length())) : '';\n        String envelope = JSON.serialize(new Map<String,Object>{'part'=>partNumber,'total'=>32,'hash'=>hash,'chunk'=>chunk});\n        System.assert(envelope.length()+tag.length()+56<=620, 'HNAME envelope overflow');\n        return 'HNAME_RESULT|'+tag+'|'+envelope;\n    }\n\n    public static Map<String,Object> measure(String ownerMode, String nameMode) {\n        Map<String,Object> out = new Map<String,Object>{'ownerMode'=>ownerMode,'nameMode'=>nameMode,'stage'=>'input','context'=>new Map<String,Object>{'organizationId'=>UserInfo.getOrganizationId(),'userId'=>UserInfo.getUserId(),'profileId'=>UserInfo.getProfileId()}};\n        NameOwner62THNO01__c input = new NameOwner62THNO01__c();\n        Id savedId;\n        try {\n            if(ownerMode=='organization') input.SetupOwnerId=UserInfo.getOrganizationId();\n            if(ownerMode=='user') input.SetupOwnerId=UserInfo.getUserId();\n            if(ownerMode=='profile') input.SetupOwnerId=UserInfo.getProfileId();\n            if(nameMode=='explicit') input.Name='Assigned marker';\n            if(nameMode=='null') input.Name=null;\n            if(nameMode=='empty') input.Name='';\n            out.put('input', snapshot(input));\n            out.put('ownerWasSupplied',ownerMode!='omitted');\n            out.put('nameWasSupplied',nameMode!='omitted');\n            out.put('label',NameOwner62THNO01__c.SObjectType.getDescribe().getLabel());\n            out.put('stage','dml');\n            Database.SaveResult result=Database.insert(input,false);\n            List<Object> errors=new List<Object>();\n            for(Database.Error error:result.getErrors()) errors.add(new Map<String,Object>{'status'=>String.valueOf(error.getStatusCode()),'message'=>error.getMessage(),'fields'=>error.getFields()});\n            out.put('dml',new Map<String,Object>{'success'=>result.isSuccess(),'errors'=>errors});\n            savedId=result.getId();\n            out.put('insertedId',savedId);\n            out.put('callerAfterDml',snapshot(input));\n        } catch(Exception error) {\n            out.put('measurementError',fault(error));\n        }\n        for(String view:new List<String>{'soql','orgDefaults','instance','instanceOrganization','instanceUser','instanceProfile'}) {\n            try {\n                NameOwner62THNO01__c record;\n                if(view=='soql' && savedId!=null) record=[SELECT Name,SetupOwnerId FROM NameOwner62THNO01__c WHERE Id=:savedId];\n                if(view=='orgDefaults') record=NameOwner62THNO01__c.getOrgDefaults();\n                if(view=='instance') record=NameOwner62THNO01__c.getInstance();\n                if(view=='instanceOrganization') record=NameOwner62THNO01__c.getInstance(UserInfo.getOrganizationId());\n                if(view=='instanceUser') record=NameOwner62THNO01__c.getInstance(UserInfo.getUserId());\n                if(view=='instanceProfile') record=NameOwner62THNO01__c.getInstance(UserInfo.getProfileId());\n                out.put(view,snapshot(record));\n            } catch(Exception error) {\n                out.put(view,fault(error));\n            }\n        }\n        out.put('stage','complete');\n        return out;\n    }\n\n    private static Map<String,Object> snapshot(NameOwner62THNO01__c record) {\n        Map<String,Object> result=new Map<String,Object>{'present'=>record!=null,'Name'=>null,'SetupOwnerId'=>null,'ownerIsOrganization'=>null,'ownerIsUser'=>null,'ownerIsProfile'=>null,'nameEqualsOwnerString'=>null,'nameEqualsOrganizationString'=>null,'nameEqualsUserString'=>null,'nameEqualsProfileString'=>null};\n        if(record!=null) {\n            String name=record.Name;\n            Id owner=record.SetupOwnerId;\n            result.put('Name',name);\n            result.put('SetupOwnerId',owner);\n            result.put('ownerIsOrganization',owner==null?null:owner==UserInfo.getOrganizationId());\n            result.put('ownerIsUser',owner==null?null:owner==UserInfo.getUserId());\n            result.put('ownerIsProfile',owner==null?null:owner==UserInfo.getProfileId());\n            result.put('nameEqualsOwnerString',name==null || owner==null?null:name.equals(String.valueOf(owner)));\n            result.put('nameEqualsOrganizationString',name==null?null:name.equals(String.valueOf(UserInfo.getOrganizationId())));\n            result.put('nameEqualsUserString',name==null?null:name.equals(String.valueOf(UserInfo.getUserId())));\n            result.put('nameEqualsProfileString',name==null?null:name.equals(String.valueOf(UserInfo.getProfileId())));\n        }\n        return result;\n    }\n\n    private static Map<String,Object> fault(Exception error) {\n        return new Map<String,Object>{'exceptionType'=>error.getTypeName(),'exceptionMessage'=>error.getMessage()};\n    }\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/objects/NameOwner62THNO01__c/NameOwner62THNO01__c.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <label>Owner name preference</label>\n  <customSettingsType>Hierarchy</customSettingsType>\n  <visibility>Public</visibility>\n</CustomObject>\n",
+        "sfdx-project.json": "{\"sourceApiVersion\":\"62.0\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}"
+      }
+    },
+    "HNO01-api67": {
+      "sha256": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO01.cls": "30e204ade1ea633ed92b1cf7a00bb1d935b362577de15c24f498f76731fb3143",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO01.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "4060eca26144099f5223cdd241163dcb5a23eef3744a072c8253d7675a41edd4",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "force-app/main/default/objects/NameOwner67THNO01__c/NameOwner67THNO01__c.object-meta.xml": "e65495cd9f6727ccc70b2ebaf50ed649f7561d949ce7e767c0855c6ca5097525",
+        "sfdx-project.json": "8e8601a5af725c46c00b55b4133479c4b3fba0910a41f4fa4a8c1aafba2954bd"
+      },
+      "sources": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO01.cls": "@IsTest private class HierarchyNameOwnerHNO01 { @TestSetup static void seed() {HierarchyNameOwnerObserver.seed('HNO01-67.0-T','omitted','omitted');}\n@IsTest static void part00() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',0));}\n@IsTest static void part01() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',1));}\n@IsTest static void part02() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',2));}\n@IsTest static void part03() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',3));}\n@IsTest static void part04() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',4));}\n@IsTest static void part05() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',5));}\n@IsTest static void part06() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',6));}\n@IsTest static void part07() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',7));}\n@IsTest static void part08() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',8));}\n@IsTest static void part09() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',9));}\n@IsTest static void part10() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',10));}\n@IsTest static void part11() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',11));}\n@IsTest static void part12() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',12));}\n@IsTest static void part13() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',13));}\n@IsTest static void part14() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',14));}\n@IsTest static void part15() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',15));}\n@IsTest static void part16() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',16));}\n@IsTest static void part17() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',17));}\n@IsTest static void part18() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',18));}\n@IsTest static void part19() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',19));}\n@IsTest static void part20() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',20));}\n@IsTest static void part21() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',21));}\n@IsTest static void part22() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',22));}\n@IsTest static void part23() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',23));}\n@IsTest static void part24() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',24));}\n@IsTest static void part25() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',25));}\n@IsTest static void part26() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',26));}\n@IsTest static void part27() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',27));}\n@IsTest static void part28() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',28));}\n@IsTest static void part29() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',29));}\n@IsTest static void part30() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',30));}\n@IsTest static void part31() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-67.0-T',31));}\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO01.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "public class HierarchyNameOwnerObserver {\n    public static void seed(String tag, String ownerMode, String nameMode) {\n        Map<String,Object> payload = measure(ownerMode, nameMode);\n        insert new Account(Name='HNAME '+tag, Description=JSON.serialize(payload));\n    }\n\n    public static String part(String tag, Integer partNumber) {\n        String key = 'HNAME '+tag;\n        List<Account> saved = [SELECT Description FROM Account WHERE Name=:key LIMIT 2];\n        System.assertEquals(1, saved.size(), 'HNAME transport row count');\n        String raw = saved[0].Description;\n        String encoded = EncodingUtil.base64Encode(Blob.valueOf(raw));\n        System.assert(encoded.length() <= 10240, 'HNAME transport overflow');\n        String hash = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', Blob.valueOf(raw)));\n        Integer offset = partNumber*320;\n        String chunk = encoded.length()>offset ? encoded.substring(offset, Math.min(offset+320,encoded.length())) : '';\n        String envelope = JSON.serialize(new Map<String,Object>{'part'=>partNumber,'total'=>32,'hash'=>hash,'chunk'=>chunk});\n        System.assert(envelope.length()+tag.length()+56<=620, 'HNAME envelope overflow');\n        return 'HNAME_RESULT|'+tag+'|'+envelope;\n    }\n\n    public static Map<String,Object> measure(String ownerMode, String nameMode) {\n        Map<String,Object> out = new Map<String,Object>{'ownerMode'=>ownerMode,'nameMode'=>nameMode,'stage'=>'input','context'=>new Map<String,Object>{'organizationId'=>UserInfo.getOrganizationId(),'userId'=>UserInfo.getUserId(),'profileId'=>UserInfo.getProfileId()}};\n        NameOwner67THNO01__c input = new NameOwner67THNO01__c();\n        Id savedId;\n        try {\n            if(ownerMode=='organization') input.SetupOwnerId=UserInfo.getOrganizationId();\n            if(ownerMode=='user') input.SetupOwnerId=UserInfo.getUserId();\n            if(ownerMode=='profile') input.SetupOwnerId=UserInfo.getProfileId();\n            if(nameMode=='explicit') input.Name='Assigned marker';\n            if(nameMode=='null') input.Name=null;\n            if(nameMode=='empty') input.Name='';\n            out.put('input', snapshot(input));\n            out.put('ownerWasSupplied',ownerMode!='omitted');\n            out.put('nameWasSupplied',nameMode!='omitted');\n            out.put('label',NameOwner67THNO01__c.SObjectType.getDescribe().getLabel());\n            out.put('stage','dml');\n            Database.SaveResult result=Database.insert(input,false);\n            List<Object> errors=new List<Object>();\n            for(Database.Error error:result.getErrors()) errors.add(new Map<String,Object>{'status'=>String.valueOf(error.getStatusCode()),'message'=>error.getMessage(),'fields'=>error.getFields()});\n            out.put('dml',new Map<String,Object>{'success'=>result.isSuccess(),'errors'=>errors});\n            savedId=result.getId();\n            out.put('insertedId',savedId);\n            out.put('callerAfterDml',snapshot(input));\n        } catch(Exception error) {\n            out.put('measurementError',fault(error));\n        }\n        for(String view:new List<String>{'soql','orgDefaults','instance','instanceOrganization','instanceUser','instanceProfile'}) {\n            try {\n                NameOwner67THNO01__c record;\n                if(view=='soql' && savedId!=null) record=[SELECT Name,SetupOwnerId FROM NameOwner67THNO01__c WHERE Id=:savedId];\n                if(view=='orgDefaults') record=NameOwner67THNO01__c.getOrgDefaults();\n                if(view=='instance') record=NameOwner67THNO01__c.getInstance();\n                if(view=='instanceOrganization') record=NameOwner67THNO01__c.getInstance(UserInfo.getOrganizationId());\n                if(view=='instanceUser') record=NameOwner67THNO01__c.getInstance(UserInfo.getUserId());\n                if(view=='instanceProfile') record=NameOwner67THNO01__c.getInstance(UserInfo.getProfileId());\n                out.put(view,snapshot(record));\n            } catch(Exception error) {\n                out.put(view,fault(error));\n            }\n        }\n        out.put('stage','complete');\n        return out;\n    }\n\n    private static Map<String,Object> snapshot(NameOwner67THNO01__c record) {\n        Map<String,Object> result=new Map<String,Object>{'present'=>record!=null,'Name'=>null,'SetupOwnerId'=>null,'ownerIsOrganization'=>null,'ownerIsUser'=>null,'ownerIsProfile'=>null,'nameEqualsOwnerString'=>null,'nameEqualsOrganizationString'=>null,'nameEqualsUserString'=>null,'nameEqualsProfileString'=>null};\n        if(record!=null) {\n            String name=record.Name;\n            Id owner=record.SetupOwnerId;\n            result.put('Name',name);\n            result.put('SetupOwnerId',owner);\n            result.put('ownerIsOrganization',owner==null?null:owner==UserInfo.getOrganizationId());\n            result.put('ownerIsUser',owner==null?null:owner==UserInfo.getUserId());\n            result.put('ownerIsProfile',owner==null?null:owner==UserInfo.getProfileId());\n            result.put('nameEqualsOwnerString',name==null || owner==null?null:name.equals(String.valueOf(owner)));\n            result.put('nameEqualsOrganizationString',name==null?null:name.equals(String.valueOf(UserInfo.getOrganizationId())));\n            result.put('nameEqualsUserString',name==null?null:name.equals(String.valueOf(UserInfo.getUserId())));\n            result.put('nameEqualsProfileString',name==null?null:name.equals(String.valueOf(UserInfo.getProfileId())));\n        }\n        return result;\n    }\n\n    private static Map<String,Object> fault(Exception error) {\n        return new Map<String,Object>{'exceptionType'=>error.getTypeName(),'exceptionMessage'=>error.getMessage()};\n    }\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/objects/NameOwner67THNO01__c/NameOwner67THNO01__c.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <label>Owner name preference</label>\n  <customSettingsType>Hierarchy</customSettingsType>\n  <visibility>Public</visibility>\n</CustomObject>\n",
+        "sfdx-project.json": "{\"sourceApiVersion\":\"67.0\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}"
+      }
+    },
+    "HNO01-api68": {
+      "sha256": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO01.cls": "4943b3501e32093f6eb2194a96bb2a9acbdc9f1fa3ef22277f6a73e1bf231b30",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO01.cls-meta.xml": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "04669a34602ac87be9c92c4602e666bc2612256ec710bbdd98f663e5bd73cb76",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d",
+        "force-app/main/default/objects/NameOwner68THNO01__c/NameOwner68THNO01__c.object-meta.xml": "e65495cd9f6727ccc70b2ebaf50ed649f7561d949ce7e767c0855c6ca5097525",
+        "sfdx-project.json": "7ff5bda2718249a43a089cbcc31c4a80cf2750e8e2c652d075d9e9283241516a"
+      },
+      "sources": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO01.cls": "@IsTest private class HierarchyNameOwnerHNO01 { @TestSetup static void seed() {HierarchyNameOwnerObserver.seed('HNO01-68.0-T','omitted','omitted');}\n@IsTest static void part00() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',0));}\n@IsTest static void part01() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',1));}\n@IsTest static void part02() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',2));}\n@IsTest static void part03() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',3));}\n@IsTest static void part04() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',4));}\n@IsTest static void part05() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',5));}\n@IsTest static void part06() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',6));}\n@IsTest static void part07() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',7));}\n@IsTest static void part08() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',8));}\n@IsTest static void part09() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',9));}\n@IsTest static void part10() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',10));}\n@IsTest static void part11() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',11));}\n@IsTest static void part12() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',12));}\n@IsTest static void part13() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',13));}\n@IsTest static void part14() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',14));}\n@IsTest static void part15() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',15));}\n@IsTest static void part16() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',16));}\n@IsTest static void part17() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',17));}\n@IsTest static void part18() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',18));}\n@IsTest static void part19() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',19));}\n@IsTest static void part20() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',20));}\n@IsTest static void part21() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',21));}\n@IsTest static void part22() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',22));}\n@IsTest static void part23() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',23));}\n@IsTest static void part24() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',24));}\n@IsTest static void part25() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',25));}\n@IsTest static void part26() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',26));}\n@IsTest static void part27() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',27));}\n@IsTest static void part28() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',28));}\n@IsTest static void part29() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',29));}\n@IsTest static void part30() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',30));}\n@IsTest static void part31() {System.assert(false,HierarchyNameOwnerObserver.part('HNO01-68.0-T',31));}\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO01.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "public class HierarchyNameOwnerObserver {\n    public static void seed(String tag, String ownerMode, String nameMode) {\n        Map<String,Object> payload = measure(ownerMode, nameMode);\n        insert new Account(Name='HNAME '+tag, Description=JSON.serialize(payload));\n    }\n\n    public static String part(String tag, Integer partNumber) {\n        String key = 'HNAME '+tag;\n        List<Account> saved = [SELECT Description FROM Account WHERE Name=:key LIMIT 2];\n        System.assertEquals(1, saved.size(), 'HNAME transport row count');\n        String raw = saved[0].Description;\n        String encoded = EncodingUtil.base64Encode(Blob.valueOf(raw));\n        System.assert(encoded.length() <= 10240, 'HNAME transport overflow');\n        String hash = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', Blob.valueOf(raw)));\n        Integer offset = partNumber*320;\n        String chunk = encoded.length()>offset ? encoded.substring(offset, Math.min(offset+320,encoded.length())) : '';\n        String envelope = JSON.serialize(new Map<String,Object>{'part'=>partNumber,'total'=>32,'hash'=>hash,'chunk'=>chunk});\n        System.assert(envelope.length()+tag.length()+56<=620, 'HNAME envelope overflow');\n        return 'HNAME_RESULT|'+tag+'|'+envelope;\n    }\n\n    public static Map<String,Object> measure(String ownerMode, String nameMode) {\n        Map<String,Object> out = new Map<String,Object>{'ownerMode'=>ownerMode,'nameMode'=>nameMode,'stage'=>'input','context'=>new Map<String,Object>{'organizationId'=>UserInfo.getOrganizationId(),'userId'=>UserInfo.getUserId(),'profileId'=>UserInfo.getProfileId()}};\n        NameOwner68THNO01__c input = new NameOwner68THNO01__c();\n        Id savedId;\n        try {\n            if(ownerMode=='organization') input.SetupOwnerId=UserInfo.getOrganizationId();\n            if(ownerMode=='user') input.SetupOwnerId=UserInfo.getUserId();\n            if(ownerMode=='profile') input.SetupOwnerId=UserInfo.getProfileId();\n            if(nameMode=='explicit') input.Name='Assigned marker';\n            if(nameMode=='null') input.Name=null;\n            if(nameMode=='empty') input.Name='';\n            out.put('input', snapshot(input));\n            out.put('ownerWasSupplied',ownerMode!='omitted');\n            out.put('nameWasSupplied',nameMode!='omitted');\n            out.put('label',NameOwner68THNO01__c.SObjectType.getDescribe().getLabel());\n            out.put('stage','dml');\n            Database.SaveResult result=Database.insert(input,false);\n            List<Object> errors=new List<Object>();\n            for(Database.Error error:result.getErrors()) errors.add(new Map<String,Object>{'status'=>String.valueOf(error.getStatusCode()),'message'=>error.getMessage(),'fields'=>error.getFields()});\n            out.put('dml',new Map<String,Object>{'success'=>result.isSuccess(),'errors'=>errors});\n            savedId=result.getId();\n            out.put('insertedId',savedId);\n            out.put('callerAfterDml',snapshot(input));\n        } catch(Exception error) {\n            out.put('measurementError',fault(error));\n        }\n        for(String view:new List<String>{'soql','orgDefaults','instance','instanceOrganization','instanceUser','instanceProfile'}) {\n            try {\n                NameOwner68THNO01__c record;\n                if(view=='soql' && savedId!=null) record=[SELECT Name,SetupOwnerId FROM NameOwner68THNO01__c WHERE Id=:savedId];\n                if(view=='orgDefaults') record=NameOwner68THNO01__c.getOrgDefaults();\n                if(view=='instance') record=NameOwner68THNO01__c.getInstance();\n                if(view=='instanceOrganization') record=NameOwner68THNO01__c.getInstance(UserInfo.getOrganizationId());\n                if(view=='instanceUser') record=NameOwner68THNO01__c.getInstance(UserInfo.getUserId());\n                if(view=='instanceProfile') record=NameOwner68THNO01__c.getInstance(UserInfo.getProfileId());\n                out.put(view,snapshot(record));\n            } catch(Exception error) {\n                out.put(view,fault(error));\n            }\n        }\n        out.put('stage','complete');\n        return out;\n    }\n\n    private static Map<String,Object> snapshot(NameOwner68THNO01__c record) {\n        Map<String,Object> result=new Map<String,Object>{'present'=>record!=null,'Name'=>null,'SetupOwnerId'=>null,'ownerIsOrganization'=>null,'ownerIsUser'=>null,'ownerIsProfile'=>null,'nameEqualsOwnerString'=>null,'nameEqualsOrganizationString'=>null,'nameEqualsUserString'=>null,'nameEqualsProfileString'=>null};\n        if(record!=null) {\n            String name=record.Name;\n            Id owner=record.SetupOwnerId;\n            result.put('Name',name);\n            result.put('SetupOwnerId',owner);\n            result.put('ownerIsOrganization',owner==null?null:owner==UserInfo.getOrganizationId());\n            result.put('ownerIsUser',owner==null?null:owner==UserInfo.getUserId());\n            result.put('ownerIsProfile',owner==null?null:owner==UserInfo.getProfileId());\n            result.put('nameEqualsOwnerString',name==null || owner==null?null:name.equals(String.valueOf(owner)));\n            result.put('nameEqualsOrganizationString',name==null?null:name.equals(String.valueOf(UserInfo.getOrganizationId())));\n            result.put('nameEqualsUserString',name==null?null:name.equals(String.valueOf(UserInfo.getUserId())));\n            result.put('nameEqualsProfileString',name==null?null:name.equals(String.valueOf(UserInfo.getProfileId())));\n        }\n        return result;\n    }\n\n    private static Map<String,Object> fault(Exception error) {\n        return new Map<String,Object>{'exceptionType'=>error.getTypeName(),'exceptionMessage'=>error.getMessage()};\n    }\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/objects/NameOwner68THNO01__c/NameOwner68THNO01__c.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <label>Owner name preference</label>\n  <customSettingsType>Hierarchy</customSettingsType>\n  <visibility>Public</visibility>\n</CustomObject>\n",
+        "sfdx-project.json": "{\"sourceApiVersion\":\"68.0\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}"
+      }
+    },
+    "HNO02-api62": {
+      "sha256": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO02.cls": "ad1ca3a5ddd55c28969b118b088e3809dd24143b7af785664f4281e7652ae59d",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO02.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "d5cff6eaf4eae8c5fa5b717775f713ad9faee62ed61c814f11f4a4928a909277",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "force-app/main/default/objects/NameOwner62THNO02__c/NameOwner62THNO02__c.object-meta.xml": "e65495cd9f6727ccc70b2ebaf50ed649f7561d949ce7e767c0855c6ca5097525",
+        "sfdx-project.json": "b52c63890c52ce3a8c6541e865403be60c6c0887283bdecd07b09a7bb3de4b3e"
+      },
+      "sources": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO02.cls": "@IsTest private class HierarchyNameOwnerHNO02 { @TestSetup static void seed() {HierarchyNameOwnerObserver.seed('HNO02-62.0-T','organization','omitted');}\n@IsTest static void part00() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',0));}\n@IsTest static void part01() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',1));}\n@IsTest static void part02() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',2));}\n@IsTest static void part03() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',3));}\n@IsTest static void part04() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',4));}\n@IsTest static void part05() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',5));}\n@IsTest static void part06() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',6));}\n@IsTest static void part07() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',7));}\n@IsTest static void part08() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',8));}\n@IsTest static void part09() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',9));}\n@IsTest static void part10() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',10));}\n@IsTest static void part11() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',11));}\n@IsTest static void part12() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',12));}\n@IsTest static void part13() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',13));}\n@IsTest static void part14() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',14));}\n@IsTest static void part15() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',15));}\n@IsTest static void part16() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',16));}\n@IsTest static void part17() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',17));}\n@IsTest static void part18() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',18));}\n@IsTest static void part19() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',19));}\n@IsTest static void part20() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',20));}\n@IsTest static void part21() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',21));}\n@IsTest static void part22() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',22));}\n@IsTest static void part23() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',23));}\n@IsTest static void part24() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',24));}\n@IsTest static void part25() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',25));}\n@IsTest static void part26() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',26));}\n@IsTest static void part27() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',27));}\n@IsTest static void part28() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',28));}\n@IsTest static void part29() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',29));}\n@IsTest static void part30() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',30));}\n@IsTest static void part31() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-62.0-T',31));}\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO02.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "public class HierarchyNameOwnerObserver {\n    public static void seed(String tag, String ownerMode, String nameMode) {\n        Map<String,Object> payload = measure(ownerMode, nameMode);\n        insert new Account(Name='HNAME '+tag, Description=JSON.serialize(payload));\n    }\n\n    public static String part(String tag, Integer partNumber) {\n        String key = 'HNAME '+tag;\n        List<Account> saved = [SELECT Description FROM Account WHERE Name=:key LIMIT 2];\n        System.assertEquals(1, saved.size(), 'HNAME transport row count');\n        String raw = saved[0].Description;\n        String encoded = EncodingUtil.base64Encode(Blob.valueOf(raw));\n        System.assert(encoded.length() <= 10240, 'HNAME transport overflow');\n        String hash = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', Blob.valueOf(raw)));\n        Integer offset = partNumber*320;\n        String chunk = encoded.length()>offset ? encoded.substring(offset, Math.min(offset+320,encoded.length())) : '';\n        String envelope = JSON.serialize(new Map<String,Object>{'part'=>partNumber,'total'=>32,'hash'=>hash,'chunk'=>chunk});\n        System.assert(envelope.length()+tag.length()+56<=620, 'HNAME envelope overflow');\n        return 'HNAME_RESULT|'+tag+'|'+envelope;\n    }\n\n    public static Map<String,Object> measure(String ownerMode, String nameMode) {\n        Map<String,Object> out = new Map<String,Object>{'ownerMode'=>ownerMode,'nameMode'=>nameMode,'stage'=>'input','context'=>new Map<String,Object>{'organizationId'=>UserInfo.getOrganizationId(),'userId'=>UserInfo.getUserId(),'profileId'=>UserInfo.getProfileId()}};\n        NameOwner62THNO02__c input = new NameOwner62THNO02__c();\n        Id savedId;\n        try {\n            if(ownerMode=='organization') input.SetupOwnerId=UserInfo.getOrganizationId();\n            if(ownerMode=='user') input.SetupOwnerId=UserInfo.getUserId();\n            if(ownerMode=='profile') input.SetupOwnerId=UserInfo.getProfileId();\n            if(nameMode=='explicit') input.Name='Assigned marker';\n            if(nameMode=='null') input.Name=null;\n            if(nameMode=='empty') input.Name='';\n            out.put('input', snapshot(input));\n            out.put('ownerWasSupplied',ownerMode!='omitted');\n            out.put('nameWasSupplied',nameMode!='omitted');\n            out.put('label',NameOwner62THNO02__c.SObjectType.getDescribe().getLabel());\n            out.put('stage','dml');\n            Database.SaveResult result=Database.insert(input,false);\n            List<Object> errors=new List<Object>();\n            for(Database.Error error:result.getErrors()) errors.add(new Map<String,Object>{'status'=>String.valueOf(error.getStatusCode()),'message'=>error.getMessage(),'fields'=>error.getFields()});\n            out.put('dml',new Map<String,Object>{'success'=>result.isSuccess(),'errors'=>errors});\n            savedId=result.getId();\n            out.put('callerAfterDml',snapshot(input));\n        } catch(Exception error) {\n            out.put('measurementError',fault(error));\n        }\n        for(String view:new List<String>{'soql','orgDefaults','instance','instanceOrganization','instanceUser','instanceProfile'}) {\n            try {\n                NameOwner62THNO02__c record;\n                if(view=='soql' && savedId!=null) record=[SELECT Name,SetupOwnerId FROM NameOwner62THNO02__c WHERE Id=:savedId];\n                if(view=='orgDefaults') record=NameOwner62THNO02__c.getOrgDefaults();\n                if(view=='instance') record=NameOwner62THNO02__c.getInstance();\n                if(view=='instanceOrganization') record=NameOwner62THNO02__c.getInstance(UserInfo.getOrganizationId());\n                if(view=='instanceUser') record=NameOwner62THNO02__c.getInstance(UserInfo.getUserId());\n                if(view=='instanceProfile') record=NameOwner62THNO02__c.getInstance(UserInfo.getProfileId());\n                out.put(view,snapshot(record));\n            } catch(Exception error) {\n                out.put(view,fault(error));\n            }\n        }\n        out.put('stage','complete');\n        return out;\n    }\n\n    private static Map<String,Object> snapshot(NameOwner62THNO02__c record) {\n        Map<String,Object> result=new Map<String,Object>{'present'=>record!=null,'Name'=>null,'SetupOwnerId'=>null,'ownerIsOrganization'=>null,'ownerIsUser'=>null,'ownerIsProfile'=>null,'nameEqualsOwnerString'=>null,'nameEqualsOrganizationString'=>null,'nameEqualsUserString'=>null,'nameEqualsProfileString'=>null};\n        if(record!=null) {\n            String name=record.Name;\n            Id owner=record.SetupOwnerId;\n            result.put('Name',name);\n            result.put('SetupOwnerId',owner);\n            result.put('ownerIsOrganization',owner==null?null:owner==UserInfo.getOrganizationId());\n            result.put('ownerIsUser',owner==null?null:owner==UserInfo.getUserId());\n            result.put('ownerIsProfile',owner==null?null:owner==UserInfo.getProfileId());\n            result.put('nameEqualsOwnerString',name==null || owner==null?null:name.equals(String.valueOf(owner)));\n            result.put('nameEqualsOrganizationString',name==null?null:name.equals(String.valueOf(UserInfo.getOrganizationId())));\n            result.put('nameEqualsUserString',name==null?null:name.equals(String.valueOf(UserInfo.getUserId())));\n            result.put('nameEqualsProfileString',name==null?null:name.equals(String.valueOf(UserInfo.getProfileId())));\n        }\n        return result;\n    }\n\n    private static Map<String,Object> fault(Exception error) {\n        return new Map<String,Object>{'exceptionType'=>error.getTypeName(),'exceptionMessage'=>error.getMessage()};\n    }\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/objects/NameOwner62THNO02__c/NameOwner62THNO02__c.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <label>Owner name preference</label>\n  <customSettingsType>Hierarchy</customSettingsType>\n  <visibility>Public</visibility>\n</CustomObject>\n",
+        "sfdx-project.json": "{\"sourceApiVersion\":\"62.0\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}"
+      }
+    },
+    "HNO02-api67": {
+      "sha256": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO02.cls": "6207989d645de5537ed633a305450f6e673b12d52c40d1e710180e973f4dbea5",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO02.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "121da99ba2ede381cadcfb427f7a7411eb422fb156319ab3446bf1872773a75c",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "force-app/main/default/objects/NameOwner67THNO02__c/NameOwner67THNO02__c.object-meta.xml": "e65495cd9f6727ccc70b2ebaf50ed649f7561d949ce7e767c0855c6ca5097525",
+        "sfdx-project.json": "8e8601a5af725c46c00b55b4133479c4b3fba0910a41f4fa4a8c1aafba2954bd"
+      },
+      "sources": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO02.cls": "@IsTest private class HierarchyNameOwnerHNO02 { @TestSetup static void seed() {HierarchyNameOwnerObserver.seed('HNO02-67.0-T','organization','omitted');}\n@IsTest static void part00() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',0));}\n@IsTest static void part01() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',1));}\n@IsTest static void part02() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',2));}\n@IsTest static void part03() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',3));}\n@IsTest static void part04() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',4));}\n@IsTest static void part05() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',5));}\n@IsTest static void part06() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',6));}\n@IsTest static void part07() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',7));}\n@IsTest static void part08() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',8));}\n@IsTest static void part09() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',9));}\n@IsTest static void part10() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',10));}\n@IsTest static void part11() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',11));}\n@IsTest static void part12() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',12));}\n@IsTest static void part13() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',13));}\n@IsTest static void part14() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',14));}\n@IsTest static void part15() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',15));}\n@IsTest static void part16() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',16));}\n@IsTest static void part17() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',17));}\n@IsTest static void part18() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',18));}\n@IsTest static void part19() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',19));}\n@IsTest static void part20() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',20));}\n@IsTest static void part21() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',21));}\n@IsTest static void part22() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',22));}\n@IsTest static void part23() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',23));}\n@IsTest static void part24() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',24));}\n@IsTest static void part25() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',25));}\n@IsTest static void part26() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',26));}\n@IsTest static void part27() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',27));}\n@IsTest static void part28() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',28));}\n@IsTest static void part29() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',29));}\n@IsTest static void part30() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',30));}\n@IsTest static void part31() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-67.0-T',31));}\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO02.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "public class HierarchyNameOwnerObserver {\n    public static void seed(String tag, String ownerMode, String nameMode) {\n        Map<String,Object> payload = measure(ownerMode, nameMode);\n        insert new Account(Name='HNAME '+tag, Description=JSON.serialize(payload));\n    }\n\n    public static String part(String tag, Integer partNumber) {\n        String key = 'HNAME '+tag;\n        List<Account> saved = [SELECT Description FROM Account WHERE Name=:key LIMIT 2];\n        System.assertEquals(1, saved.size(), 'HNAME transport row count');\n        String raw = saved[0].Description;\n        String encoded = EncodingUtil.base64Encode(Blob.valueOf(raw));\n        System.assert(encoded.length() <= 10240, 'HNAME transport overflow');\n        String hash = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', Blob.valueOf(raw)));\n        Integer offset = partNumber*320;\n        String chunk = encoded.length()>offset ? encoded.substring(offset, Math.min(offset+320,encoded.length())) : '';\n        String envelope = JSON.serialize(new Map<String,Object>{'part'=>partNumber,'total'=>32,'hash'=>hash,'chunk'=>chunk});\n        System.assert(envelope.length()+tag.length()+56<=620, 'HNAME envelope overflow');\n        return 'HNAME_RESULT|'+tag+'|'+envelope;\n    }\n\n    public static Map<String,Object> measure(String ownerMode, String nameMode) {\n        Map<String,Object> out = new Map<String,Object>{'ownerMode'=>ownerMode,'nameMode'=>nameMode,'stage'=>'input','context'=>new Map<String,Object>{'organizationId'=>UserInfo.getOrganizationId(),'userId'=>UserInfo.getUserId(),'profileId'=>UserInfo.getProfileId()}};\n        NameOwner67THNO02__c input = new NameOwner67THNO02__c();\n        Id savedId;\n        try {\n            if(ownerMode=='organization') input.SetupOwnerId=UserInfo.getOrganizationId();\n            if(ownerMode=='user') input.SetupOwnerId=UserInfo.getUserId();\n            if(ownerMode=='profile') input.SetupOwnerId=UserInfo.getProfileId();\n            if(nameMode=='explicit') input.Name='Assigned marker';\n            if(nameMode=='null') input.Name=null;\n            if(nameMode=='empty') input.Name='';\n            out.put('input', snapshot(input));\n            out.put('ownerWasSupplied',ownerMode!='omitted');\n            out.put('nameWasSupplied',nameMode!='omitted');\n            out.put('label',NameOwner67THNO02__c.SObjectType.getDescribe().getLabel());\n            out.put('stage','dml');\n            Database.SaveResult result=Database.insert(input,false);\n            List<Object> errors=new List<Object>();\n            for(Database.Error error:result.getErrors()) errors.add(new Map<String,Object>{'status'=>String.valueOf(error.getStatusCode()),'message'=>error.getMessage(),'fields'=>error.getFields()});\n            out.put('dml',new Map<String,Object>{'success'=>result.isSuccess(),'errors'=>errors});\n            savedId=result.getId();\n            out.put('insertedId',savedId);\n            out.put('callerAfterDml',snapshot(input));\n        } catch(Exception error) {\n            out.put('measurementError',fault(error));\n        }\n        for(String view:new List<String>{'soql','orgDefaults','instance','instanceOrganization','instanceUser','instanceProfile'}) {\n            try {\n                NameOwner67THNO02__c record;\n                if(view=='soql' && savedId!=null) record=[SELECT Name,SetupOwnerId FROM NameOwner67THNO02__c WHERE Id=:savedId];\n                if(view=='orgDefaults') record=NameOwner67THNO02__c.getOrgDefaults();\n                if(view=='instance') record=NameOwner67THNO02__c.getInstance();\n                if(view=='instanceOrganization') record=NameOwner67THNO02__c.getInstance(UserInfo.getOrganizationId());\n                if(view=='instanceUser') record=NameOwner67THNO02__c.getInstance(UserInfo.getUserId());\n                if(view=='instanceProfile') record=NameOwner67THNO02__c.getInstance(UserInfo.getProfileId());\n                out.put(view,snapshot(record));\n            } catch(Exception error) {\n                out.put(view,fault(error));\n            }\n        }\n        out.put('stage','complete');\n        return out;\n    }\n\n    private static Map<String,Object> snapshot(NameOwner67THNO02__c record) {\n        Map<String,Object> result=new Map<String,Object>{'present'=>record!=null,'Name'=>null,'SetupOwnerId'=>null,'ownerIsOrganization'=>null,'ownerIsUser'=>null,'ownerIsProfile'=>null,'nameEqualsOwnerString'=>null,'nameEqualsOrganizationString'=>null,'nameEqualsUserString'=>null,'nameEqualsProfileString'=>null};\n        if(record!=null) {\n            String name=record.Name;\n            Id owner=record.SetupOwnerId;\n            result.put('Name',name);\n            result.put('SetupOwnerId',owner);\n            result.put('ownerIsOrganization',owner==null?null:owner==UserInfo.getOrganizationId());\n            result.put('ownerIsUser',owner==null?null:owner==UserInfo.getUserId());\n            result.put('ownerIsProfile',owner==null?null:owner==UserInfo.getProfileId());\n            result.put('nameEqualsOwnerString',name==null || owner==null?null:name.equals(String.valueOf(owner)));\n            result.put('nameEqualsOrganizationString',name==null?null:name.equals(String.valueOf(UserInfo.getOrganizationId())));\n            result.put('nameEqualsUserString',name==null?null:name.equals(String.valueOf(UserInfo.getUserId())));\n            result.put('nameEqualsProfileString',name==null?null:name.equals(String.valueOf(UserInfo.getProfileId())));\n        }\n        return result;\n    }\n\n    private static Map<String,Object> fault(Exception error) {\n        return new Map<String,Object>{'exceptionType'=>error.getTypeName(),'exceptionMessage'=>error.getMessage()};\n    }\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/objects/NameOwner67THNO02__c/NameOwner67THNO02__c.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <label>Owner name preference</label>\n  <customSettingsType>Hierarchy</customSettingsType>\n  <visibility>Public</visibility>\n</CustomObject>\n",
+        "sfdx-project.json": "{\"sourceApiVersion\":\"67.0\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}"
+      }
+    },
+    "HNO02-api68": {
+      "sha256": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO02.cls": "e97dcc13c29bc748e5e4ab2b3dcd847e945910a1ca81773139b20da2a09d300c",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO02.cls-meta.xml": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "97dfb0e57b5274d3e5d3ae5f42102d2477d29f77c885ab2118458fec206fe2c5",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d",
+        "force-app/main/default/objects/NameOwner68THNO02__c/NameOwner68THNO02__c.object-meta.xml": "e65495cd9f6727ccc70b2ebaf50ed649f7561d949ce7e767c0855c6ca5097525",
+        "sfdx-project.json": "7ff5bda2718249a43a089cbcc31c4a80cf2750e8e2c652d075d9e9283241516a"
+      },
+      "sources": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO02.cls": "@IsTest private class HierarchyNameOwnerHNO02 { @TestSetup static void seed() {HierarchyNameOwnerObserver.seed('HNO02-68.0-T','organization','omitted');}\n@IsTest static void part00() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',0));}\n@IsTest static void part01() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',1));}\n@IsTest static void part02() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',2));}\n@IsTest static void part03() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',3));}\n@IsTest static void part04() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',4));}\n@IsTest static void part05() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',5));}\n@IsTest static void part06() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',6));}\n@IsTest static void part07() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',7));}\n@IsTest static void part08() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',8));}\n@IsTest static void part09() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',9));}\n@IsTest static void part10() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',10));}\n@IsTest static void part11() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',11));}\n@IsTest static void part12() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',12));}\n@IsTest static void part13() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',13));}\n@IsTest static void part14() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',14));}\n@IsTest static void part15() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',15));}\n@IsTest static void part16() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',16));}\n@IsTest static void part17() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',17));}\n@IsTest static void part18() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',18));}\n@IsTest static void part19() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',19));}\n@IsTest static void part20() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',20));}\n@IsTest static void part21() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',21));}\n@IsTest static void part22() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',22));}\n@IsTest static void part23() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',23));}\n@IsTest static void part24() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',24));}\n@IsTest static void part25() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',25));}\n@IsTest static void part26() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',26));}\n@IsTest static void part27() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',27));}\n@IsTest static void part28() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',28));}\n@IsTest static void part29() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',29));}\n@IsTest static void part30() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',30));}\n@IsTest static void part31() {System.assert(false,HierarchyNameOwnerObserver.part('HNO02-68.0-T',31));}\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO02.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "public class HierarchyNameOwnerObserver {\n    public static void seed(String tag, String ownerMode, String nameMode) {\n        Map<String,Object> payload = measure(ownerMode, nameMode);\n        insert new Account(Name='HNAME '+tag, Description=JSON.serialize(payload));\n    }\n\n    public static String part(String tag, Integer partNumber) {\n        String key = 'HNAME '+tag;\n        List<Account> saved = [SELECT Description FROM Account WHERE Name=:key LIMIT 2];\n        System.assertEquals(1, saved.size(), 'HNAME transport row count');\n        String raw = saved[0].Description;\n        String encoded = EncodingUtil.base64Encode(Blob.valueOf(raw));\n        System.assert(encoded.length() <= 10240, 'HNAME transport overflow');\n        String hash = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', Blob.valueOf(raw)));\n        Integer offset = partNumber*320;\n        String chunk = encoded.length()>offset ? encoded.substring(offset, Math.min(offset+320,encoded.length())) : '';\n        String envelope = JSON.serialize(new Map<String,Object>{'part'=>partNumber,'total'=>32,'hash'=>hash,'chunk'=>chunk});\n        System.assert(envelope.length()+tag.length()+56<=620, 'HNAME envelope overflow');\n        return 'HNAME_RESULT|'+tag+'|'+envelope;\n    }\n\n    public static Map<String,Object> measure(String ownerMode, String nameMode) {\n        Map<String,Object> out = new Map<String,Object>{'ownerMode'=>ownerMode,'nameMode'=>nameMode,'stage'=>'input','context'=>new Map<String,Object>{'organizationId'=>UserInfo.getOrganizationId(),'userId'=>UserInfo.getUserId(),'profileId'=>UserInfo.getProfileId()}};\n        NameOwner68THNO02__c input = new NameOwner68THNO02__c();\n        Id savedId;\n        try {\n            if(ownerMode=='organization') input.SetupOwnerId=UserInfo.getOrganizationId();\n            if(ownerMode=='user') input.SetupOwnerId=UserInfo.getUserId();\n            if(ownerMode=='profile') input.SetupOwnerId=UserInfo.getProfileId();\n            if(nameMode=='explicit') input.Name='Assigned marker';\n            if(nameMode=='null') input.Name=null;\n            if(nameMode=='empty') input.Name='';\n            out.put('input', snapshot(input));\n            out.put('ownerWasSupplied',ownerMode!='omitted');\n            out.put('nameWasSupplied',nameMode!='omitted');\n            out.put('label',NameOwner68THNO02__c.SObjectType.getDescribe().getLabel());\n            out.put('stage','dml');\n            Database.SaveResult result=Database.insert(input,false);\n            List<Object> errors=new List<Object>();\n            for(Database.Error error:result.getErrors()) errors.add(new Map<String,Object>{'status'=>String.valueOf(error.getStatusCode()),'message'=>error.getMessage(),'fields'=>error.getFields()});\n            out.put('dml',new Map<String,Object>{'success'=>result.isSuccess(),'errors'=>errors});\n            savedId=result.getId();\n            out.put('insertedId',savedId);\n            out.put('callerAfterDml',snapshot(input));\n        } catch(Exception error) {\n            out.put('measurementError',fault(error));\n        }\n        for(String view:new List<String>{'soql','orgDefaults','instance','instanceOrganization','instanceUser','instanceProfile'}) {\n            try {\n                NameOwner68THNO02__c record;\n                if(view=='soql' && savedId!=null) record=[SELECT Name,SetupOwnerId FROM NameOwner68THNO02__c WHERE Id=:savedId];\n                if(view=='orgDefaults') record=NameOwner68THNO02__c.getOrgDefaults();\n                if(view=='instance') record=NameOwner68THNO02__c.getInstance();\n                if(view=='instanceOrganization') record=NameOwner68THNO02__c.getInstance(UserInfo.getOrganizationId());\n                if(view=='instanceUser') record=NameOwner68THNO02__c.getInstance(UserInfo.getUserId());\n                if(view=='instanceProfile') record=NameOwner68THNO02__c.getInstance(UserInfo.getProfileId());\n                out.put(view,snapshot(record));\n            } catch(Exception error) {\n                out.put(view,fault(error));\n            }\n        }\n        out.put('stage','complete');\n        return out;\n    }\n\n    private static Map<String,Object> snapshot(NameOwner68THNO02__c record) {\n        Map<String,Object> result=new Map<String,Object>{'present'=>record!=null,'Name'=>null,'SetupOwnerId'=>null,'ownerIsOrganization'=>null,'ownerIsUser'=>null,'ownerIsProfile'=>null,'nameEqualsOwnerString'=>null,'nameEqualsOrganizationString'=>null,'nameEqualsUserString'=>null,'nameEqualsProfileString'=>null};\n        if(record!=null) {\n            String name=record.Name;\n            Id owner=record.SetupOwnerId;\n            result.put('Name',name);\n            result.put('SetupOwnerId',owner);\n            result.put('ownerIsOrganization',owner==null?null:owner==UserInfo.getOrganizationId());\n            result.put('ownerIsUser',owner==null?null:owner==UserInfo.getUserId());\n            result.put('ownerIsProfile',owner==null?null:owner==UserInfo.getProfileId());\n            result.put('nameEqualsOwnerString',name==null || owner==null?null:name.equals(String.valueOf(owner)));\n            result.put('nameEqualsOrganizationString',name==null?null:name.equals(String.valueOf(UserInfo.getOrganizationId())));\n            result.put('nameEqualsUserString',name==null?null:name.equals(String.valueOf(UserInfo.getUserId())));\n            result.put('nameEqualsProfileString',name==null?null:name.equals(String.valueOf(UserInfo.getProfileId())));\n        }\n        return result;\n    }\n\n    private static Map<String,Object> fault(Exception error) {\n        return new Map<String,Object>{'exceptionType'=>error.getTypeName(),'exceptionMessage'=>error.getMessage()};\n    }\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/objects/NameOwner68THNO02__c/NameOwner68THNO02__c.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <label>Owner name preference</label>\n  <customSettingsType>Hierarchy</customSettingsType>\n  <visibility>Public</visibility>\n</CustomObject>\n",
+        "sfdx-project.json": "{\"sourceApiVersion\":\"68.0\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}"
+      }
+    },
+    "HNO04-api62": {
+      "sha256": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO04.cls": "71bc256f651296348d0ca6849dd3019687400c18673d47e684d98d18a01a61e0",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO04.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "f690225cba900b352bfeec5f630f7432a339532cfc5daf0469f8c57536b97c42",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "force-app/main/default/objects/NameOwner62THNO04__c/NameOwner62THNO04__c.object-meta.xml": "5dae56d0011d7ec509f2ac4dc052a87face14606f74c5166a9e2cbd07dbdd994",
+        "sfdx-project.json": "b52c63890c52ce3a8c6541e865403be60c6c0887283bdecd07b09a7bb3de4b3e"
+      },
+      "sources": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO04.cls": "@IsTest private class HierarchyNameOwnerHNO04 { @TestSetup static void seed() {HierarchyNameOwnerObserver.seed('HNO04-62.0-T','omitted','omitted');}\n@IsTest static void part00() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',0));}\n@IsTest static void part01() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',1));}\n@IsTest static void part02() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',2));}\n@IsTest static void part03() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',3));}\n@IsTest static void part04() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',4));}\n@IsTest static void part05() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',5));}\n@IsTest static void part06() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',6));}\n@IsTest static void part07() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',7));}\n@IsTest static void part08() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',8));}\n@IsTest static void part09() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',9));}\n@IsTest static void part10() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',10));}\n@IsTest static void part11() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',11));}\n@IsTest static void part12() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',12));}\n@IsTest static void part13() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',13));}\n@IsTest static void part14() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',14));}\n@IsTest static void part15() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',15));}\n@IsTest static void part16() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',16));}\n@IsTest static void part17() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',17));}\n@IsTest static void part18() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',18));}\n@IsTest static void part19() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',19));}\n@IsTest static void part20() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',20));}\n@IsTest static void part21() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',21));}\n@IsTest static void part22() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',22));}\n@IsTest static void part23() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',23));}\n@IsTest static void part24() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',24));}\n@IsTest static void part25() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',25));}\n@IsTest static void part26() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',26));}\n@IsTest static void part27() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',27));}\n@IsTest static void part28() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',28));}\n@IsTest static void part29() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',29));}\n@IsTest static void part30() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',30));}\n@IsTest static void part31() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-62.0-T',31));}\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO04.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "public class HierarchyNameOwnerObserver {\n    public static void seed(String tag, String ownerMode, String nameMode) {\n        Map<String,Object> payload = measure(ownerMode, nameMode);\n        insert new Account(Name='HNAME '+tag, Description=JSON.serialize(payload));\n    }\n\n    public static String part(String tag, Integer partNumber) {\n        String key = 'HNAME '+tag;\n        List<Account> saved = [SELECT Description FROM Account WHERE Name=:key LIMIT 2];\n        System.assertEquals(1, saved.size(), 'HNAME transport row count');\n        String raw = saved[0].Description;\n        String encoded = EncodingUtil.base64Encode(Blob.valueOf(raw));\n        System.assert(encoded.length() <= 10240, 'HNAME transport overflow');\n        String hash = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', Blob.valueOf(raw)));\n        Integer offset = partNumber*320;\n        String chunk = encoded.length()>offset ? encoded.substring(offset, Math.min(offset+320,encoded.length())) : '';\n        String envelope = JSON.serialize(new Map<String,Object>{'part'=>partNumber,'total'=>32,'hash'=>hash,'chunk'=>chunk});\n        System.assert(envelope.length()+tag.length()+56<=620, 'HNAME envelope overflow');\n        return 'HNAME_RESULT|'+tag+'|'+envelope;\n    }\n\n    public static Map<String,Object> measure(String ownerMode, String nameMode) {\n        Map<String,Object> out = new Map<String,Object>{'ownerMode'=>ownerMode,'nameMode'=>nameMode,'stage'=>'input','context'=>new Map<String,Object>{'organizationId'=>UserInfo.getOrganizationId(),'userId'=>UserInfo.getUserId(),'profileId'=>UserInfo.getProfileId()}};\n        NameOwner62THNO04__c input = new NameOwner62THNO04__c();\n        Id savedId;\n        try {\n            if(ownerMode=='organization') input.SetupOwnerId=UserInfo.getOrganizationId();\n            if(ownerMode=='user') input.SetupOwnerId=UserInfo.getUserId();\n            if(ownerMode=='profile') input.SetupOwnerId=UserInfo.getProfileId();\n            if(nameMode=='explicit') input.Name='Assigned marker';\n            if(nameMode=='null') input.Name=null;\n            if(nameMode=='empty') input.Name='';\n            out.put('input', snapshot(input));\n            out.put('ownerWasSupplied',ownerMode!='omitted');\n            out.put('nameWasSupplied',nameMode!='omitted');\n            out.put('label',NameOwner62THNO04__c.SObjectType.getDescribe().getLabel());\n            out.put('stage','dml');\n            Database.SaveResult result=Database.insert(input,false);\n            List<Object> errors=new List<Object>();\n            for(Database.Error error:result.getErrors()) errors.add(new Map<String,Object>{'status'=>String.valueOf(error.getStatusCode()),'message'=>error.getMessage(),'fields'=>error.getFields()});\n            out.put('dml',new Map<String,Object>{'success'=>result.isSuccess(),'errors'=>errors});\n            savedId=result.getId();\n            out.put('callerAfterDml',snapshot(input));\n        } catch(Exception error) {\n            out.put('measurementError',fault(error));\n        }\n        for(String view:new List<String>{'soql','orgDefaults','instance','instanceOrganization','instanceUser','instanceProfile'}) {\n            try {\n                NameOwner62THNO04__c record;\n                if(view=='soql' && savedId!=null) record=[SELECT Name,SetupOwnerId FROM NameOwner62THNO04__c WHERE Id=:savedId];\n                if(view=='orgDefaults') record=NameOwner62THNO04__c.getOrgDefaults();\n                if(view=='instance') record=NameOwner62THNO04__c.getInstance();\n                if(view=='instanceOrganization') record=NameOwner62THNO04__c.getInstance(UserInfo.getOrganizationId());\n                if(view=='instanceUser') record=NameOwner62THNO04__c.getInstance(UserInfo.getUserId());\n                if(view=='instanceProfile') record=NameOwner62THNO04__c.getInstance(UserInfo.getProfileId());\n                out.put(view,snapshot(record));\n            } catch(Exception error) {\n                out.put(view,fault(error));\n            }\n        }\n        out.put('stage','complete');\n        return out;\n    }\n\n    private static Map<String,Object> snapshot(NameOwner62THNO04__c record) {\n        Map<String,Object> result=new Map<String,Object>{'present'=>record!=null,'Name'=>null,'SetupOwnerId'=>null,'ownerIsOrganization'=>null,'ownerIsUser'=>null,'ownerIsProfile'=>null,'nameEqualsOwnerString'=>null,'nameEqualsOrganizationString'=>null,'nameEqualsUserString'=>null,'nameEqualsProfileString'=>null};\n        if(record!=null) {\n            String name=record.Name;\n            Id owner=record.SetupOwnerId;\n            result.put('Name',name);\n            result.put('SetupOwnerId',owner);\n            result.put('ownerIsOrganization',owner==null?null:owner==UserInfo.getOrganizationId());\n            result.put('ownerIsUser',owner==null?null:owner==UserInfo.getUserId());\n            result.put('ownerIsProfile',owner==null?null:owner==UserInfo.getProfileId());\n            result.put('nameEqualsOwnerString',name==null || owner==null?null:name.equals(String.valueOf(owner)));\n            result.put('nameEqualsOrganizationString',name==null?null:name.equals(String.valueOf(UserInfo.getOrganizationId())));\n            result.put('nameEqualsUserString',name==null?null:name.equals(String.valueOf(UserInfo.getUserId())));\n            result.put('nameEqualsProfileString',name==null?null:name.equals(String.valueOf(UserInfo.getProfileId())));\n        }\n        return result;\n    }\n\n    private static Map<String,Object> fault(Exception error) {\n        return new Map<String,Object>{'exceptionType'=>error.getTypeName(),'exceptionMessage'=>error.getMessage()};\n    }\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/objects/NameOwner62THNO04__c/NameOwner62THNO04__c.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n\n  <customSettingsType>Hierarchy</customSettingsType>\n  <visibility>Public</visibility>\n</CustomObject>\n",
+        "sfdx-project.json": "{\"sourceApiVersion\":\"62.0\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}"
+      }
+    },
+    "HNO04-api67": {
+      "sha256": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO04.cls": "15d3b492b83342974974579b211f264ff4e9eef83a85a154c0024aa347df47fe",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO04.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "5ce20b9f60ce3a133dbfd03abdc64f64035bd21df4ffc5dead9b79c83b145db0",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "force-app/main/default/objects/NameOwner67THNO04__c/NameOwner67THNO04__c.object-meta.xml": "5dae56d0011d7ec509f2ac4dc052a87face14606f74c5166a9e2cbd07dbdd994",
+        "sfdx-project.json": "8e8601a5af725c46c00b55b4133479c4b3fba0910a41f4fa4a8c1aafba2954bd"
+      },
+      "sources": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO04.cls": "@IsTest private class HierarchyNameOwnerHNO04 { @TestSetup static void seed() {HierarchyNameOwnerObserver.seed('HNO04-67.0-T','omitted','omitted');}\n@IsTest static void part00() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',0));}\n@IsTest static void part01() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',1));}\n@IsTest static void part02() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',2));}\n@IsTest static void part03() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',3));}\n@IsTest static void part04() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',4));}\n@IsTest static void part05() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',5));}\n@IsTest static void part06() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',6));}\n@IsTest static void part07() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',7));}\n@IsTest static void part08() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',8));}\n@IsTest static void part09() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',9));}\n@IsTest static void part10() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',10));}\n@IsTest static void part11() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',11));}\n@IsTest static void part12() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',12));}\n@IsTest static void part13() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',13));}\n@IsTest static void part14() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',14));}\n@IsTest static void part15() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',15));}\n@IsTest static void part16() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',16));}\n@IsTest static void part17() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',17));}\n@IsTest static void part18() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',18));}\n@IsTest static void part19() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',19));}\n@IsTest static void part20() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',20));}\n@IsTest static void part21() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',21));}\n@IsTest static void part22() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',22));}\n@IsTest static void part23() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',23));}\n@IsTest static void part24() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',24));}\n@IsTest static void part25() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',25));}\n@IsTest static void part26() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',26));}\n@IsTest static void part27() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',27));}\n@IsTest static void part28() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',28));}\n@IsTest static void part29() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',29));}\n@IsTest static void part30() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',30));}\n@IsTest static void part31() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-67.0-T',31));}\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO04.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "public class HierarchyNameOwnerObserver {\n    public static void seed(String tag, String ownerMode, String nameMode) {\n        Map<String,Object> payload = measure(ownerMode, nameMode);\n        insert new Account(Name='HNAME '+tag, Description=JSON.serialize(payload));\n    }\n\n    public static String part(String tag, Integer partNumber) {\n        String key = 'HNAME '+tag;\n        List<Account> saved = [SELECT Description FROM Account WHERE Name=:key LIMIT 2];\n        System.assertEquals(1, saved.size(), 'HNAME transport row count');\n        String raw = saved[0].Description;\n        String encoded = EncodingUtil.base64Encode(Blob.valueOf(raw));\n        System.assert(encoded.length() <= 10240, 'HNAME transport overflow');\n        String hash = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', Blob.valueOf(raw)));\n        Integer offset = partNumber*320;\n        String chunk = encoded.length()>offset ? encoded.substring(offset, Math.min(offset+320,encoded.length())) : '';\n        String envelope = JSON.serialize(new Map<String,Object>{'part'=>partNumber,'total'=>32,'hash'=>hash,'chunk'=>chunk});\n        System.assert(envelope.length()+tag.length()+56<=620, 'HNAME envelope overflow');\n        return 'HNAME_RESULT|'+tag+'|'+envelope;\n    }\n\n    public static Map<String,Object> measure(String ownerMode, String nameMode) {\n        Map<String,Object> out = new Map<String,Object>{'ownerMode'=>ownerMode,'nameMode'=>nameMode,'stage'=>'input','context'=>new Map<String,Object>{'organizationId'=>UserInfo.getOrganizationId(),'userId'=>UserInfo.getUserId(),'profileId'=>UserInfo.getProfileId()}};\n        NameOwner67THNO04__c input = new NameOwner67THNO04__c();\n        Id savedId;\n        try {\n            if(ownerMode=='organization') input.SetupOwnerId=UserInfo.getOrganizationId();\n            if(ownerMode=='user') input.SetupOwnerId=UserInfo.getUserId();\n            if(ownerMode=='profile') input.SetupOwnerId=UserInfo.getProfileId();\n            if(nameMode=='explicit') input.Name='Assigned marker';\n            if(nameMode=='null') input.Name=null;\n            if(nameMode=='empty') input.Name='';\n            out.put('input', snapshot(input));\n            out.put('ownerWasSupplied',ownerMode!='omitted');\n            out.put('nameWasSupplied',nameMode!='omitted');\n            out.put('label',NameOwner67THNO04__c.SObjectType.getDescribe().getLabel());\n            out.put('stage','dml');\n            Database.SaveResult result=Database.insert(input,false);\n            List<Object> errors=new List<Object>();\n            for(Database.Error error:result.getErrors()) errors.add(new Map<String,Object>{'status'=>String.valueOf(error.getStatusCode()),'message'=>error.getMessage(),'fields'=>error.getFields()});\n            out.put('dml',new Map<String,Object>{'success'=>result.isSuccess(),'errors'=>errors});\n            savedId=result.getId();\n            out.put('callerAfterDml',snapshot(input));\n        } catch(Exception error) {\n            out.put('measurementError',fault(error));\n        }\n        for(String view:new List<String>{'soql','orgDefaults','instance','instanceOrganization','instanceUser','instanceProfile'}) {\n            try {\n                NameOwner67THNO04__c record;\n                if(view=='soql' && savedId!=null) record=[SELECT Name,SetupOwnerId FROM NameOwner67THNO04__c WHERE Id=:savedId];\n                if(view=='orgDefaults') record=NameOwner67THNO04__c.getOrgDefaults();\n                if(view=='instance') record=NameOwner67THNO04__c.getInstance();\n                if(view=='instanceOrganization') record=NameOwner67THNO04__c.getInstance(UserInfo.getOrganizationId());\n                if(view=='instanceUser') record=NameOwner67THNO04__c.getInstance(UserInfo.getUserId());\n                if(view=='instanceProfile') record=NameOwner67THNO04__c.getInstance(UserInfo.getProfileId());\n                out.put(view,snapshot(record));\n            } catch(Exception error) {\n                out.put(view,fault(error));\n            }\n        }\n        out.put('stage','complete');\n        return out;\n    }\n\n    private static Map<String,Object> snapshot(NameOwner67THNO04__c record) {\n        Map<String,Object> result=new Map<String,Object>{'present'=>record!=null,'Name'=>null,'SetupOwnerId'=>null,'ownerIsOrganization'=>null,'ownerIsUser'=>null,'ownerIsProfile'=>null,'nameEqualsOwnerString'=>null,'nameEqualsOrganizationString'=>null,'nameEqualsUserString'=>null,'nameEqualsProfileString'=>null};\n        if(record!=null) {\n            String name=record.Name;\n            Id owner=record.SetupOwnerId;\n            result.put('Name',name);\n            result.put('SetupOwnerId',owner);\n            result.put('ownerIsOrganization',owner==null?null:owner==UserInfo.getOrganizationId());\n            result.put('ownerIsUser',owner==null?null:owner==UserInfo.getUserId());\n            result.put('ownerIsProfile',owner==null?null:owner==UserInfo.getProfileId());\n            result.put('nameEqualsOwnerString',name==null || owner==null?null:name.equals(String.valueOf(owner)));\n            result.put('nameEqualsOrganizationString',name==null?null:name.equals(String.valueOf(UserInfo.getOrganizationId())));\n            result.put('nameEqualsUserString',name==null?null:name.equals(String.valueOf(UserInfo.getUserId())));\n            result.put('nameEqualsProfileString',name==null?null:name.equals(String.valueOf(UserInfo.getProfileId())));\n        }\n        return result;\n    }\n\n    private static Map<String,Object> fault(Exception error) {\n        return new Map<String,Object>{'exceptionType'=>error.getTypeName(),'exceptionMessage'=>error.getMessage()};\n    }\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/objects/NameOwner67THNO04__c/NameOwner67THNO04__c.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n\n  <customSettingsType>Hierarchy</customSettingsType>\n  <visibility>Public</visibility>\n</CustomObject>\n",
+        "sfdx-project.json": "{\"sourceApiVersion\":\"67.0\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}"
+      }
+    },
+    "HNO04-api68": {
+      "sha256": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO04.cls": "c267ba21fc0c0d60b8daa02b931b539d15189112e6cbfe66c9a56c05de327ec3",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO04.cls-meta.xml": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "0eb678f8d981994f3c48ddb9646eb0f9489252ab054552ef70c4aeb68bcbe6e6",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d",
+        "force-app/main/default/objects/NameOwner68THNO04__c/NameOwner68THNO04__c.object-meta.xml": "5dae56d0011d7ec509f2ac4dc052a87face14606f74c5166a9e2cbd07dbdd994",
+        "sfdx-project.json": "7ff5bda2718249a43a089cbcc31c4a80cf2750e8e2c652d075d9e9283241516a"
+      },
+      "sources": {
+        "force-app/main/default/classes/HierarchyNameOwnerHNO04.cls": "@IsTest private class HierarchyNameOwnerHNO04 { @TestSetup static void seed() {HierarchyNameOwnerObserver.seed('HNO04-68.0-T','omitted','omitted');}\n@IsTest static void part00() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',0));}\n@IsTest static void part01() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',1));}\n@IsTest static void part02() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',2));}\n@IsTest static void part03() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',3));}\n@IsTest static void part04() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',4));}\n@IsTest static void part05() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',5));}\n@IsTest static void part06() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',6));}\n@IsTest static void part07() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',7));}\n@IsTest static void part08() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',8));}\n@IsTest static void part09() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',9));}\n@IsTest static void part10() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',10));}\n@IsTest static void part11() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',11));}\n@IsTest static void part12() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',12));}\n@IsTest static void part13() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',13));}\n@IsTest static void part14() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',14));}\n@IsTest static void part15() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',15));}\n@IsTest static void part16() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',16));}\n@IsTest static void part17() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',17));}\n@IsTest static void part18() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',18));}\n@IsTest static void part19() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',19));}\n@IsTest static void part20() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',20));}\n@IsTest static void part21() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',21));}\n@IsTest static void part22() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',22));}\n@IsTest static void part23() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',23));}\n@IsTest static void part24() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',24));}\n@IsTest static void part25() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',25));}\n@IsTest static void part26() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',26));}\n@IsTest static void part27() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',27));}\n@IsTest static void part28() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',28));}\n@IsTest static void part29() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',29));}\n@IsTest static void part30() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',30));}\n@IsTest static void part31() {System.assert(false,HierarchyNameOwnerObserver.part('HNO04-68.0-T',31));}\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerHNO04.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls": "public class HierarchyNameOwnerObserver {\n    public static void seed(String tag, String ownerMode, String nameMode) {\n        Map<String,Object> payload = measure(ownerMode, nameMode);\n        insert new Account(Name='HNAME '+tag, Description=JSON.serialize(payload));\n    }\n\n    public static String part(String tag, Integer partNumber) {\n        String key = 'HNAME '+tag;\n        List<Account> saved = [SELECT Description FROM Account WHERE Name=:key LIMIT 2];\n        System.assertEquals(1, saved.size(), 'HNAME transport row count');\n        String raw = saved[0].Description;\n        String encoded = EncodingUtil.base64Encode(Blob.valueOf(raw));\n        System.assert(encoded.length() <= 10240, 'HNAME transport overflow');\n        String hash = EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', Blob.valueOf(raw)));\n        Integer offset = partNumber*320;\n        String chunk = encoded.length()>offset ? encoded.substring(offset, Math.min(offset+320,encoded.length())) : '';\n        String envelope = JSON.serialize(new Map<String,Object>{'part'=>partNumber,'total'=>32,'hash'=>hash,'chunk'=>chunk});\n        System.assert(envelope.length()+tag.length()+56<=620, 'HNAME envelope overflow');\n        return 'HNAME_RESULT|'+tag+'|'+envelope;\n    }\n\n    public static Map<String,Object> measure(String ownerMode, String nameMode) {\n        Map<String,Object> out = new Map<String,Object>{'ownerMode'=>ownerMode,'nameMode'=>nameMode,'stage'=>'input','context'=>new Map<String,Object>{'organizationId'=>UserInfo.getOrganizationId(),'userId'=>UserInfo.getUserId(),'profileId'=>UserInfo.getProfileId()}};\n        NameOwner68THNO04__c input = new NameOwner68THNO04__c();\n        Id savedId;\n        try {\n            if(ownerMode=='organization') input.SetupOwnerId=UserInfo.getOrganizationId();\n            if(ownerMode=='user') input.SetupOwnerId=UserInfo.getUserId();\n            if(ownerMode=='profile') input.SetupOwnerId=UserInfo.getProfileId();\n            if(nameMode=='explicit') input.Name='Assigned marker';\n            if(nameMode=='null') input.Name=null;\n            if(nameMode=='empty') input.Name='';\n            out.put('input', snapshot(input));\n            out.put('ownerWasSupplied',ownerMode!='omitted');\n            out.put('nameWasSupplied',nameMode!='omitted');\n            out.put('label',NameOwner68THNO04__c.SObjectType.getDescribe().getLabel());\n            out.put('stage','dml');\n            Database.SaveResult result=Database.insert(input,false);\n            List<Object> errors=new List<Object>();\n            for(Database.Error error:result.getErrors()) errors.add(new Map<String,Object>{'status'=>String.valueOf(error.getStatusCode()),'message'=>error.getMessage(),'fields'=>error.getFields()});\n            out.put('dml',new Map<String,Object>{'success'=>result.isSuccess(),'errors'=>errors});\n            savedId=result.getId();\n            out.put('callerAfterDml',snapshot(input));\n        } catch(Exception error) {\n            out.put('measurementError',fault(error));\n        }\n        for(String view:new List<String>{'soql','orgDefaults','instance','instanceOrganization','instanceUser','instanceProfile'}) {\n            try {\n                NameOwner68THNO04__c record;\n                if(view=='soql' && savedId!=null) record=[SELECT Name,SetupOwnerId FROM NameOwner68THNO04__c WHERE Id=:savedId];\n                if(view=='orgDefaults') record=NameOwner68THNO04__c.getOrgDefaults();\n                if(view=='instance') record=NameOwner68THNO04__c.getInstance();\n                if(view=='instanceOrganization') record=NameOwner68THNO04__c.getInstance(UserInfo.getOrganizationId());\n                if(view=='instanceUser') record=NameOwner68THNO04__c.getInstance(UserInfo.getUserId());\n                if(view=='instanceProfile') record=NameOwner68THNO04__c.getInstance(UserInfo.getProfileId());\n                out.put(view,snapshot(record));\n            } catch(Exception error) {\n                out.put(view,fault(error));\n            }\n        }\n        out.put('stage','complete');\n        return out;\n    }\n\n    private static Map<String,Object> snapshot(NameOwner68THNO04__c record) {\n        Map<String,Object> result=new Map<String,Object>{'present'=>record!=null,'Name'=>null,'SetupOwnerId'=>null,'ownerIsOrganization'=>null,'ownerIsUser'=>null,'ownerIsProfile'=>null,'nameEqualsOwnerString'=>null,'nameEqualsOrganizationString'=>null,'nameEqualsUserString'=>null,'nameEqualsProfileString'=>null};\n        if(record!=null) {\n            String name=record.Name;\n            Id owner=record.SetupOwnerId;\n            result.put('Name',name);\n            result.put('SetupOwnerId',owner);\n            result.put('ownerIsOrganization',owner==null?null:owner==UserInfo.getOrganizationId());\n            result.put('ownerIsUser',owner==null?null:owner==UserInfo.getUserId());\n            result.put('ownerIsProfile',owner==null?null:owner==UserInfo.getProfileId());\n            result.put('nameEqualsOwnerString',name==null || owner==null?null:name.equals(String.valueOf(owner)));\n            result.put('nameEqualsOrganizationString',name==null?null:name.equals(String.valueOf(UserInfo.getOrganizationId())));\n            result.put('nameEqualsUserString',name==null?null:name.equals(String.valueOf(UserInfo.getUserId())));\n            result.put('nameEqualsProfileString',name==null?null:name.equals(String.valueOf(UserInfo.getProfileId())));\n        }\n        return result;\n    }\n\n    private static Map<String,Object> fault(Exception error) {\n        return new Map<String,Object>{'exceptionType'=>error.getTypeName(),'exceptionMessage'=>error.getMessage()};\n    }\n}\n",
+        "force-app/main/default/classes/HierarchyNameOwnerObserver.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/objects/NameOwner68THNO04__c/NameOwner68THNO04__c.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n\n  <customSettingsType>Hierarchy</customSettingsType>\n  <visibility>Public</visibility>\n</CustomObject>\n",
+        "sfdx-project.json": "{\"sourceApiVersion\":\"68.0\",\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}]}"
+      }
+    }
+  },
+  "identityProjection": "Only context organization/user/profile IDs and inserted record ID (18/15 characters) are replaced by explicit tokens. Name is never replaced by a label or owner inference.",
+  "sourceAPIs": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "status": "KNOWN named core; anonymous and expanded rows remain pending"
+}

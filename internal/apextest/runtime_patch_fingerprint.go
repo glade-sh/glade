@@ -201,6 +201,7 @@ func (writer *runtimePatchFingerprintWriter) method(method vm.Method, depth int)
 	writer.integer(0x0d, int64(method.Column))
 	writer.string(0x0e, method.Unsupported)
 	writer.boolean(0x0f, method.Dependency)
+	writer.string(0x10, method.SourceUnit)
 }
 
 func (writer *runtimePatchFingerprintWriter) params(tag byte, params []vm.Param) {
@@ -364,6 +365,8 @@ func (writer *runtimePatchFingerprintWriter) class(class vm.Class) {
 	writer.boolean(0x11, class.IsInterface)
 	writer.boolean(0x12, class.IsTest)
 	writer.boolean(0x13, class.Dependency)
+	writer.boolean(0x15, class.PlatformType)
+	writer.string(0x16, class.SourceUnit)
 }
 
 func (writer *runtimePatchFingerprintWriter) methodSlice(tag byte, methods []vm.Method) {
@@ -408,6 +411,7 @@ func (writer *runtimePatchFingerprintWriter) field(field vm.Field) {
 	writer.boolean(0x0f, field.HasGetter)
 	writer.integer(0x10, int64(field.InitializerLine))
 	writer.integer(0x11, int64(field.InitializerColumn))
+	writer.string(0x12, field.SourceUnit)
 }
 
 func (writer *runtimePatchFingerprintWriter) methodPointer(tag byte, method *vm.Method) {

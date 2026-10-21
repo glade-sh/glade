@@ -1,0 +1,583 @@
+{
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 4,
+  "nativeObservationCount": 32,
+  "sourcePacketRowsSHA256": "3053ea628c66ebe1c53bb1a6912eaa8de9583308927559faf6e1e8c93365b3cd",
+  "captureManifestSHA256": "121a4c2e0c9f130d0fd9e5341a802bd0f372e2a0dc1328a454bb103e2b405dd8",
+  "productBase": "capture-revision-100674082189950676909464270273097705397729225196210387419024790090144103579119",
+  "nativeComplete": true,
+  "cleanupVerified": true,
+  "captureReceipts": [
+    {
+      "api": "59.0",
+      "route": "anonymous",
+      "rows": 55,
+      "orgTSVSHA256": "781b4ccedadcd0ca3fac9e4cc6cc1a9b7252ea8ef22c3c783a10ae410fbd4c35",
+      "orgRunSHA256": "036fc9fcb34a8cd6450ecaf495c63c53d4fdb9a383e7a7d353e8d2dabec65338",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "59.0",
+      "route": "isTest",
+      "rows": 94,
+      "orgTSVSHA256": "bda9649d8e8909259d77d74ea8d6a5531119be4da8e93d0f78a7ce9827c6ba85",
+      "orgRunSHA256": "9ff5bb097b9e73872b50b7e622816bcd9244929d6f657245d438370d3d53b527",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "rows": 55,
+      "orgTSVSHA256": "4d742e7d3d53d70c8cc50531f9dcaee061e4f06ef0547b61896df7f0c577a0bb",
+      "orgRunSHA256": "aca1bd244908967ad5aecd1a013f388b2dfbbe9a02dd3655d1b13fef2a114d31",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "rows": 94,
+      "orgTSVSHA256": "3e7c66d69491e4628b3ee3721b46ce67c0af7283a8ef78beee5b5224e6be7dad",
+      "orgRunSHA256": "2dec49992a75e9233086cfeaac6cbb0200a4b3c60448fb36370b037cc90a1f89",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "rows": 55,
+      "orgTSVSHA256": "dd8d1d0ce57f90a509a1583aa964bb37cdab6183d5c4da629ddb7c1c46f13747",
+      "orgRunSHA256": "64d9910cebed6e4384822bc31866198b7d72f4c7447830b4efd1b8881d1bef7d",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "rows": 94,
+      "orgTSVSHA256": "b09e8fe10751aa4900ca19466319d783fedef55d3128165d1c110edfafbfd3a1",
+      "orgRunSHA256": "97f3f1ca25ef6c1fe86e938ddd85e510b720eb2e47ce06de04319c356badfebf",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "68.0",
+      "route": "anonymous",
+      "rows": 55,
+      "orgTSVSHA256": "39e36de3b06b7067ed4ff0d34f758c54f6c7f49963914ad85b0d9a36cbd63083",
+      "orgRunSHA256": "66185096968f6326ae17d247a0b8242c10cb34533a813f8ff531eb8e04e2b8a2",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "68.0",
+      "route": "isTest",
+      "rows": 94,
+      "orgTSVSHA256": "8dbcc7b888c8cf9b248e8a1e6ecf2c1a6afbedf6d006bf84ac5f158d89692318",
+      "orgRunSHA256": "a2a3630274ce6b87b3c1ea6e25b862ee42f635b2df13e7a0fb34353838d07755",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    }
+  ],
+  "rows": [
+    {
+      "id": "C186CONTROL_001",
+      "label": "marker",
+      "twin": null,
+      "routes": {
+        "anonymous": {
+          "id": "C186CONTROL_001",
+          "shapeStyle": "control",
+          "routeExclusions": "",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "b2dbd926f36b736e8bc464577aa73c463c4eb5d7a29cee05f058828d35b1971f"
+          },
+          "anonymous": "System.assert(false,'C126_RESULT|C186CONTROL_001|'+JSON.serialize(new Map<String,Object>{'value'=>7}));"
+        },
+        "isTest": {
+          "id": "C186CONTROL_001",
+          "shapeStyle": "control",
+          "routeExclusions": "",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186CONTROL001Test": "d04d88c825b01fee3b888ed22aeaf3eae3046e4fd0eaf99602ce0b1ce9379198"
+          },
+          "classes": {
+            "C186CONTROL001Test": "@IsTest private class C186CONTROL001Test{@IsTest static void observe(){System.assert(false,'C126_RESULT|C186CONTROL_001|'+JSON.serialize(new Map<String,Object>{'value'=>7}));}}"
+          },
+          "tests": [
+            "C186CONTROL001Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C186CONTROL_002",
+      "label": "caught",
+      "twin": null,
+      "routes": {
+        "anonymous": {
+          "id": "C186CONTROL_002",
+          "shapeStyle": "control",
+          "routeExclusions": "",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionType": "System.ListException"
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionType": "System.ListException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionType": "System.ListException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionType": "System.ListException"
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "6edd6230a6b300c1e4f3f35462e01c7bdeb7b2ba2cf5101643dba00208b6ffc7"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>();try{Integer ignored=new List<Integer>()[0];}catch(Exception e){v.put('exceptionType',e.getTypeName());}System.assert(false,'C126_RESULT|C186CONTROL_002|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C186CONTROL_002",
+          "shapeStyle": "control",
+          "routeExclusions": "",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionType": "System.ListException"
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionType": "System.ListException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionType": "System.ListException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionType": "System.ListException"
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186CONTROL002Test": "a932a2bf37414201d675755cd4180ae648714b25e3a1dc64c9cc9e20587390c4"
+          },
+          "classes": {
+            "C186CONTROL002Test": "@IsTest private class C186CONTROL002Test{@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>();try{Integer ignored=new List<Integer>()[0];}catch(Exception e){v.put('exceptionType',e.getTypeName());}System.assert(false,'C126_RESULT|C186CONTROL_002|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C186CONTROL002Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C186CONTROL_003",
+      "label": "uncaught",
+      "twin": null,
+      "routes": {
+        "anonymous": {
+          "id": "C186CONTROL_003",
+          "shapeStyle": "control",
+          "routeExclusions": "",
+          "expectedByAPI": {
+            "59.0": {
+              "exceptionMessage": "System.ListException: List index out of bounds: 0",
+              "exceptionType": "System.ListException",
+              "exceptionTypeSource": "returned_message_prefix",
+              "outcome": "uncaught_anonymous"
+            },
+            "62.0": {
+              "exceptionMessage": "System.ListException: List index out of bounds: 0",
+              "exceptionType": "System.ListException",
+              "exceptionTypeSource": "returned_message_prefix",
+              "outcome": "uncaught_anonymous"
+            },
+            "67.0": {
+              "exceptionMessage": "System.ListException: List index out of bounds: 0",
+              "exceptionType": "System.ListException",
+              "exceptionTypeSource": "returned_message_prefix",
+              "outcome": "uncaught_anonymous"
+            },
+            "68.0": {
+              "exceptionMessage": "System.ListException: List index out of bounds: 0",
+              "exceptionType": "System.ListException",
+              "exceptionTypeSource": "returned_message_prefix",
+              "outcome": "uncaught_anonymous"
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "7ff66a149a5ca7f2d6a892e2a93dd9df932af799369f5d0515dc1438ef5694a3"
+          },
+          "anonymous": "Integer ignored=new List<Integer>()[0];"
+        },
+        "isTest": {
+          "id": "C186CONTROL_003",
+          "shapeStyle": "control",
+          "routeExclusions": "",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "rejected-with-tests",
+              "testFailures": [
+                {
+                  "cls": "C186CONTROL003Test",
+                  "exceptionType": "System.ListException",
+                  "exceptionTypeSource": "returned_message_prefix",
+                  "message": "System.ListException: List index out of bounds: 0",
+                  "method": "observe"
+                }
+              ]
+            },
+            "62.0": {
+              "outcome": "rejected-with-tests",
+              "testFailures": [
+                {
+                  "cls": "C186CONTROL003Test",
+                  "exceptionType": "System.ListException",
+                  "exceptionTypeSource": "returned_message_prefix",
+                  "message": "System.ListException: List index out of bounds: 0",
+                  "method": "observe"
+                }
+              ]
+            },
+            "67.0": {
+              "outcome": "rejected-with-tests",
+              "testFailures": [
+                {
+                  "cls": "C186CONTROL003Test",
+                  "exceptionType": "System.ListException",
+                  "exceptionTypeSource": "returned_message_prefix",
+                  "message": "System.ListException: List index out of bounds: 0",
+                  "method": "observe"
+                }
+              ]
+            },
+            "68.0": {
+              "outcome": "rejected-with-tests",
+              "testFailures": [
+                {
+                  "cls": "C186CONTROL003Test",
+                  "exceptionType": "System.ListException",
+                  "exceptionTypeSource": "returned_message_prefix",
+                  "message": "System.ListException: List index out of bounds: 0",
+                  "method": "observe"
+                }
+              ]
+            }
+          },
+          "sourceSha256": {
+            "class:C186CONTROL003Test": "239a837e11a364e3ef9cfd8833b6da8255d6b5e180639b78350da7e62f6647c7"
+          },
+          "classes": {
+            "C186CONTROL003Test": "@IsTest private class C186CONTROL003Test{@IsTest static void observe(){Integer ignored=new List<Integer>()[0];}}"
+          },
+          "tests": [
+            "C186CONTROL003Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C186CONTROL_004",
+      "label": "compiler",
+      "twin": null,
+      "routes": {
+        "anonymous": {
+          "id": "C186CONTROL_004",
+          "shapeStyle": "control",
+          "routeExclusions": "",
+          "expectedByAPI": {
+            "59.0": {
+              "diagnostics": {
+                "column": 9,
+                "compileProblem": "Illegal assignment from String to Integer",
+                "compiled": false,
+                "exceptionMessage": null,
+                "line": 1,
+                "success": false
+              },
+              "outcome": "compile-rejected"
+            },
+            "62.0": {
+              "diagnostics": {
+                "column": 9,
+                "compileProblem": "Illegal assignment from String to Integer",
+                "compiled": false,
+                "exceptionMessage": null,
+                "line": 1,
+                "success": false
+              },
+              "outcome": "compile-rejected"
+            },
+            "67.0": {
+              "diagnostics": {
+                "column": 9,
+                "compileProblem": "Illegal assignment from String to Integer",
+                "compiled": false,
+                "exceptionMessage": null,
+                "line": 1,
+                "success": false
+              },
+              "outcome": "compile-rejected"
+            },
+            "68.0": {
+              "diagnostics": {
+                "column": 9,
+                "compileProblem": "Illegal assignment from String to Integer",
+                "compiled": false,
+                "exceptionMessage": null,
+                "line": 1,
+                "success": false
+              },
+              "outcome": "compile-rejected"
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "48e3062b2290cbafc1dca463907890ab3e2034db185eb6df24904619231d0a20"
+          },
+          "anonymous": "Integer incompatible='text';",
+          "nativeDiagnosticsByAPI": {
+            "59.0": [
+              "Illegal assignment from String to Integer"
+            ],
+            "62.0": [
+              "Illegal assignment from String to Integer"
+            ],
+            "67.0": [
+              "Illegal assignment from String to Integer"
+            ],
+            "68.0": [
+              "Illegal assignment from String to Integer"
+            ]
+          }
+        },
+        "isTest": {
+          "id": "C186CONTROL_004",
+          "shapeStyle": "control",
+          "routeExclusions": "",
+          "expectedByAPI": {
+            "59.0": {
+              "diagnostics": {
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "line": 1,
+                    "name": "C186CONTROL004Test",
+                    "problem": "Illegal assignment from String to Integer",
+                    "type": "ApexClass"
+                  }
+                ],
+                "componentErrors": 1,
+                "componentWarnings": [],
+                "coverage": [],
+                "done": true,
+                "errorMessage": null,
+                "errorStatusCode": null,
+                "status": "Failed",
+                "success": false,
+                "testErrors": 0,
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "compile-rejected"
+            },
+            "62.0": {
+              "diagnostics": {
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "line": 1,
+                    "name": "C186CONTROL004Test",
+                    "problem": "Illegal assignment from String to Integer",
+                    "type": "ApexClass"
+                  }
+                ],
+                "componentErrors": 1,
+                "componentWarnings": [],
+                "coverage": [],
+                "done": true,
+                "errorMessage": null,
+                "errorStatusCode": null,
+                "status": "Failed",
+                "success": false,
+                "testErrors": 0,
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "compile-rejected"
+            },
+            "67.0": {
+              "diagnostics": {
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "line": 1,
+                    "name": "C186CONTROL004Test",
+                    "problem": "Illegal assignment from String to Integer",
+                    "type": "ApexClass"
+                  }
+                ],
+                "componentErrors": 1,
+                "componentWarnings": [],
+                "coverage": [],
+                "done": true,
+                "errorMessage": null,
+                "errorStatusCode": null,
+                "status": "Failed",
+                "success": false,
+                "testErrors": 0,
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "compile-rejected"
+            },
+            "68.0": {
+              "diagnostics": {
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "line": 1,
+                    "name": "C186CONTROL004Test",
+                    "problem": "Illegal assignment from String to Integer",
+                    "type": "ApexClass"
+                  }
+                ],
+                "componentErrors": 1,
+                "componentWarnings": [],
+                "coverage": [],
+                "done": true,
+                "errorMessage": null,
+                "errorStatusCode": null,
+                "status": "Failed",
+                "success": false,
+                "testErrors": 0,
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "compile-rejected"
+            }
+          },
+          "sourceSha256": {
+            "class:C186CONTROL004Test": "2a8c169329a93ed3c966bd88dd0f875ed42d1c0d4aa5969f4c16b5144f4bb741"
+          },
+          "classes": {
+            "C186CONTROL004Test": "@IsTest private class C186CONTROL004Test{@IsTest static void observe(){Integer incompatible='text';}}"
+          },
+          "tests": [
+            "C186CONTROL004Test"
+          ],
+          "nativeDiagnosticsByAPI": {
+            "59.0": [
+              "Illegal assignment from String to Integer"
+            ],
+            "62.0": [
+              "Illegal assignment from String to Integer"
+            ],
+            "67.0": [
+              "Illegal assignment from String to Integer"
+            ],
+            "68.0": [
+              "Illegal assignment from String to Integer"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

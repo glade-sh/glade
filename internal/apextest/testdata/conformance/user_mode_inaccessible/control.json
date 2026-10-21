@@ -1,0 +1,542 @@
+{
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "control",
+  "shapeCount": 3,
+  "assertedObservationCount": 24,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C185ID_001",
+      "routes": {
+        "anonymous": {
+          "59.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());}System.assert(false,'C126_RESULT|C185ID_001|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "e275a0ee9ec33f7a7a6abf84f0cc1dd9ef9668167868ecb81f931a2de2d229c9"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"value\": 7}"
+          },
+          "62.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());}System.assert(false,'C126_RESULT|C185ID_001|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "e275a0ee9ec33f7a7a6abf84f0cc1dd9ef9668167868ecb81f931a2de2d229c9"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"value\": 7}"
+          },
+          "67.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());}System.assert(false,'C126_RESULT|C185ID_001|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "e275a0ee9ec33f7a7a6abf84f0cc1dd9ef9668167868ecb81f931a2de2d229c9"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"value\": 7}"
+          },
+          "68.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());}System.assert(false,'C126_RESULT|C185ID_001|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "e275a0ee9ec33f7a7a6abf84f0cc1dd9ef9668167868ecb81f931a2de2d229c9"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"value\": 7}"
+          }
+        },
+        "istest": {
+          "59.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID001Test": "@IsTest private without sharing class QueryObserveC185ID001Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());}System.assert(false,'C126_RESULT|C185ID_001|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID001Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID001Test": "550c97941727cc5f58177276c04c8626bc21f12d2ee1ad9f756f35feace94934"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"value\": 7}"
+          },
+          "62.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID001Test": "@IsTest private without sharing class QueryObserveC185ID001Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());}System.assert(false,'C126_RESULT|C185ID_001|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID001Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID001Test": "550c97941727cc5f58177276c04c8626bc21f12d2ee1ad9f756f35feace94934"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"value\": 7}"
+          },
+          "67.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID001Test": "@IsTest private without sharing class QueryObserveC185ID001Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());}System.assert(false,'C126_RESULT|C185ID_001|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID001Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID001Test": "550c97941727cc5f58177276c04c8626bc21f12d2ee1ad9f756f35feace94934"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"value\": 7}"
+          },
+          "68.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID001Test": "@IsTest private without sharing class QueryObserveC185ID001Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());}System.assert(false,'C126_RESULT|C185ID_001|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID001Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID001Test": "550c97941727cc5f58177276c04c8626bc21f12d2ee1ad9f756f35feace94934"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "value": 7
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"value\": 7}"
+          }
+        }
+      }
+    },
+    {
+      "id": "C185ID_002",
+      "routes": {
+        "anonymous": {
+          "59.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{try{List<Integer> empty=new List<Integer>();Integer v=empty[0];}catch(ListException caught){payload.put('exceptionType',caught.getTypeName());}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());}System.assert(false,'C126_RESULT|C185ID_002|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "8d15dfe805c598f4605fa3f87fbf6884e743fddbc514291bb5132cf6af1b6456"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionType": "System.ListException"
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"exceptionType\": \"System.ListException\"}"
+          },
+          "62.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{try{List<Integer> empty=new List<Integer>();Integer v=empty[0];}catch(ListException caught){payload.put('exceptionType',caught.getTypeName());}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());}System.assert(false,'C126_RESULT|C185ID_002|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "8d15dfe805c598f4605fa3f87fbf6884e743fddbc514291bb5132cf6af1b6456"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionType": "System.ListException"
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"exceptionType\": \"System.ListException\"}"
+          },
+          "67.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{try{List<Integer> empty=new List<Integer>();Integer v=empty[0];}catch(ListException caught){payload.put('exceptionType',caught.getTypeName());}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());}System.assert(false,'C126_RESULT|C185ID_002|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "8d15dfe805c598f4605fa3f87fbf6884e743fddbc514291bb5132cf6af1b6456"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionType": "System.ListException"
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"exceptionType\": \"System.ListException\"}"
+          },
+          "68.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{try{List<Integer> empty=new List<Integer>();Integer v=empty[0];}catch(ListException caught){payload.put('exceptionType',caught.getTypeName());}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());}System.assert(false,'C126_RESULT|C185ID_002|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "8d15dfe805c598f4605fa3f87fbf6884e743fddbc514291bb5132cf6af1b6456"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionType": "System.ListException"
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"exceptionType\": \"System.ListException\"}"
+          }
+        },
+        "istest": {
+          "59.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID002Test": "@IsTest private without sharing class QueryObserveC185ID002Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{try{List<Integer> empty=new List<Integer>();Integer v=empty[0];}catch(ListException caught){payload.put('exceptionType',caught.getTypeName());}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());}System.assert(false,'C126_RESULT|C185ID_002|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID002Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID002Test": "cd2cb7c7af214ab2e11abd2ab70cbc91a594eebb5d9624894a53f4e37253793f"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionType": "System.ListException"
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"exceptionType\": \"System.ListException\"}"
+          },
+          "62.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID002Test": "@IsTest private without sharing class QueryObserveC185ID002Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{try{List<Integer> empty=new List<Integer>();Integer v=empty[0];}catch(ListException caught){payload.put('exceptionType',caught.getTypeName());}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());}System.assert(false,'C126_RESULT|C185ID_002|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID002Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID002Test": "cd2cb7c7af214ab2e11abd2ab70cbc91a594eebb5d9624894a53f4e37253793f"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionType": "System.ListException"
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"exceptionType\": \"System.ListException\"}"
+          },
+          "67.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID002Test": "@IsTest private without sharing class QueryObserveC185ID002Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{try{List<Integer> empty=new List<Integer>();Integer v=empty[0];}catch(ListException caught){payload.put('exceptionType',caught.getTypeName());}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());}System.assert(false,'C126_RESULT|C185ID_002|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID002Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID002Test": "cd2cb7c7af214ab2e11abd2ab70cbc91a594eebb5d9624894a53f4e37253793f"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionType": "System.ListException"
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"exceptionType\": \"System.ListException\"}"
+          },
+          "68.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID002Test": "@IsTest private without sharing class QueryObserveC185ID002Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{try{List<Integer> empty=new List<Integer>();Integer v=empty[0];}catch(ListException caught){payload.put('exceptionType',caught.getTypeName());}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());}System.assert(false,'C126_RESULT|C185ID_002|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID002Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID002Test": "cd2cb7c7af214ab2e11abd2ab70cbc91a594eebb5d9624894a53f4e37253793f"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionType": "System.ListException"
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"exceptionType\": \"System.ListException\"}"
+          }
+        }
+      }
+    },
+    {
+      "id": "C185ID_003",
+      "routes": {
+        "anonymous": {
+          "59.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();List<Integer> empty=new List<Integer>();Integer v=empty[0];System.assert(false,'C126_RESULT|C185ID_003|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "858663817a3a8b3cee20460a2c88ef2dd6e5609a8faf0d869a8ed60527d48c3a"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "exceptionMessage": "System.ListException: List index out of bounds: 0",
+              "exceptionType": "System.ListException",
+              "exceptionTypeSource": "returned_message_prefix",
+              "outcome": "uncaught_anonymous"
+            },
+            "outcome": "uncaught",
+            "exceptionType": "System.ListException",
+            "message": "List index out of bounds: 0"
+          },
+          "62.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();List<Integer> empty=new List<Integer>();Integer v=empty[0];System.assert(false,'C126_RESULT|C185ID_003|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "858663817a3a8b3cee20460a2c88ef2dd6e5609a8faf0d869a8ed60527d48c3a"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "exceptionMessage": "System.ListException: List index out of bounds: 0",
+              "exceptionType": "System.ListException",
+              "exceptionTypeSource": "returned_message_prefix",
+              "outcome": "uncaught_anonymous"
+            },
+            "outcome": "uncaught",
+            "exceptionType": "System.ListException",
+            "message": "List index out of bounds: 0"
+          },
+          "67.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();List<Integer> empty=new List<Integer>();Integer v=empty[0];System.assert(false,'C126_RESULT|C185ID_003|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "858663817a3a8b3cee20460a2c88ef2dd6e5609a8faf0d869a8ed60527d48c3a"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "exceptionMessage": "System.ListException: List index out of bounds: 0",
+              "exceptionType": "System.ListException",
+              "exceptionTypeSource": "returned_message_prefix",
+              "outcome": "uncaught_anonymous"
+            },
+            "outcome": "uncaught",
+            "exceptionType": "System.ListException",
+            "message": "List index out of bounds: 0"
+          },
+          "68.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();List<Integer> empty=new List<Integer>();Integer v=empty[0];System.assert(false,'C126_RESULT|C185ID_003|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "858663817a3a8b3cee20460a2c88ef2dd6e5609a8faf0d869a8ed60527d48c3a"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "exceptionMessage": "System.ListException: List index out of bounds: 0",
+              "exceptionType": "System.ListException",
+              "exceptionTypeSource": "returned_message_prefix",
+              "outcome": "uncaught_anonymous"
+            },
+            "outcome": "uncaught",
+            "exceptionType": "System.ListException",
+            "message": "List index out of bounds: 0"
+          }
+        },
+        "istest": {
+          "59.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID003Test": "@IsTest private without sharing class QueryObserveC185ID003Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();List<Integer> empty=new List<Integer>();Integer v=empty[0];System.assert(false,'C126_RESULT|C185ID_003|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID003Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID003Test": "276de5dba9e878e8e8b31ddc7712f77418c678bd7e2d16dd0a92d191c9666d9c"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "rejected-with-tests",
+              "testFailures": [
+                {
+                  "cls": "QueryObserveC185ID003Test",
+                  "exceptionType": "System.ListException",
+                  "exceptionTypeSource": "returned_message_prefix",
+                  "message": "System.ListException: List index out of bounds: 0",
+                  "method": "observe"
+                }
+              ]
+            },
+            "outcome": "uncaught",
+            "exceptionType": "System.ListException",
+            "message": "List index out of bounds: 0"
+          },
+          "62.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID003Test": "@IsTest private without sharing class QueryObserveC185ID003Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();List<Integer> empty=new List<Integer>();Integer v=empty[0];System.assert(false,'C126_RESULT|C185ID_003|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID003Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID003Test": "276de5dba9e878e8e8b31ddc7712f77418c678bd7e2d16dd0a92d191c9666d9c"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "rejected-with-tests",
+              "testFailures": [
+                {
+                  "cls": "QueryObserveC185ID003Test",
+                  "exceptionType": "System.ListException",
+                  "exceptionTypeSource": "returned_message_prefix",
+                  "message": "System.ListException: List index out of bounds: 0",
+                  "method": "observe"
+                }
+              ]
+            },
+            "outcome": "uncaught",
+            "exceptionType": "System.ListException",
+            "message": "List index out of bounds: 0"
+          },
+          "67.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID003Test": "@IsTest private without sharing class QueryObserveC185ID003Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();List<Integer> empty=new List<Integer>();Integer v=empty[0];System.assert(false,'C126_RESULT|C185ID_003|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID003Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID003Test": "276de5dba9e878e8e8b31ddc7712f77418c678bd7e2d16dd0a92d191c9666d9c"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "rejected-with-tests",
+              "testFailures": [
+                {
+                  "cls": "QueryObserveC185ID003Test",
+                  "exceptionType": "System.ListException",
+                  "exceptionTypeSource": "returned_message_prefix",
+                  "message": "System.ListException: List index out of bounds: 0",
+                  "method": "observe"
+                }
+              ]
+            },
+            "outcome": "uncaught",
+            "exceptionType": "System.ListException",
+            "message": "List index out of bounds: 0"
+          },
+          "68.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID003Test": "@IsTest private without sharing class QueryObserveC185ID003Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();List<Integer> empty=new List<Integer>();Integer v=empty[0];System.assert(false,'C126_RESULT|C185ID_003|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID003Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID003Test": "276de5dba9e878e8e8b31ddc7712f77418c678bd7e2d16dd0a92d191c9666d9c"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "rejected-with-tests",
+              "testFailures": [
+                {
+                  "cls": "QueryObserveC185ID003Test",
+                  "exceptionType": "System.ListException",
+                  "exceptionTypeSource": "returned_message_prefix",
+                  "message": "System.ListException: List index out of bounds: 0",
+                  "method": "observe"
+                }
+              ]
+            },
+            "outcome": "uncaught",
+            "exceptionType": "System.ListException",
+            "message": "List index out of bounds: 0"
+          }
+        }
+      }
+    }
+  ],
+  "nativeObservationCount": 24
+}

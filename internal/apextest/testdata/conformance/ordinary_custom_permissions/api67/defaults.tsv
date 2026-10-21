@@ -1,0 +1,10 @@
+api	route	case	checkboxPopulated	checkboxRemoved	nameRemoved
+67.0	istest	create-implicit	false	false	false
+67.0	istest	create-false	true	true	false
+67.0	istest	create-true	true	true	false
+67.0	istest	update-implicit	false	false	false
+67.0	istest	update-false	true	true	false
+67.0	istest	update-true	true	true	false
+67.0	istest	inserted-implicit	false	false	false
+67.0	istest	queried-false	true	true	false
+67.0	istest	cloned-implicit	false	false	false

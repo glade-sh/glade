@@ -1,0 +1,1049 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "control",
+  "shapeCount": 4,
+  "nativeObservationCount": 24,
+  "assertedObservationCount": 24,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C194CONTROL_001",
+      "label": "positive",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "7ec6dca605471353c5580400a9eef31b0a37d9966463709ba744eea02ef9a539"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194CONTROL_001",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194CONTROL_001|{\"value\":7}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194CONTROL_001",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194CONTROL_001|{\"value\":7}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194CONTROL_001",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194CONTROL_001|{\"value\":7}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();observed.put('value',7);throw new Scope194MarkerException('C126_RESULT|C194CONTROL_001|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194CONTROL_001Test": "10ec372e286113ca6eb522c8e7a5dfdc58ed66e854fcc3cb2f88e73721b402d0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194CONTROL_001",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194CONTROL_001Test",
+                      "message": "C194CONTROL_001Test.Scope194MarkerException: C126_RESULT|C194CONTROL_001|{\"value\":7}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}",
+              "exceptionType": "C194CONTROL_001Test.Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194CONTROL_001",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194CONTROL_001Test",
+                      "message": "C194CONTROL_001Test.Scope194MarkerException: C126_RESULT|C194CONTROL_001|{\"value\":7}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}",
+              "exceptionType": "C194CONTROL_001Test.Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194CONTROL_001",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194CONTROL_001Test",
+                      "message": "C194CONTROL_001Test.Scope194MarkerException: C126_RESULT|C194CONTROL_001|{\"value\":7}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}",
+              "exceptionType": "C194CONTROL_001Test.Scope194MarkerException"
+            }
+          },
+          "classes": {
+            "C194CONTROL_001Test": "@IsTest public class C194CONTROL_001Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();observed.put('value',7);throw new Scope194MarkerException('C126_RESULT|C194CONTROL_001|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194CONTROL_001Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194CONTROL_002",
+      "label": "caught-marker",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "1daacef564930f7f78644fd998a49368deb012c45bef34649ae67bb32e86c18e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194CONTROL_002",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194CONTROL_002|{\"exceptionType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "exceptionType": "System.ListException"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"exceptionType\":\"System.ListException\"}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194CONTROL_002",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194CONTROL_002|{\"exceptionType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "exceptionType": "System.ListException"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"exceptionType\":\"System.ListException\"}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194CONTROL_002",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194CONTROL_002|{\"exceptionType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "exceptionType": "System.ListException"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"exceptionType\":\"System.ListException\"}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();try{List<Integer> xs=new List<Integer>();Integer z=xs[0];}catch(Exception err){observed.put('exceptionType',err.getTypeName());}throw new Scope194MarkerException('C126_RESULT|C194CONTROL_002|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194CONTROL_002Test": "c5830436dde1ca26189d817fd084a72906cb690396491a42132086d23ccd40a4"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194CONTROL_002",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194CONTROL_002Test",
+                      "message": "C194CONTROL_002Test.Scope194MarkerException: C126_RESULT|C194CONTROL_002|{\"exceptionType\":\"System.ListException\"}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "exceptionType": "System.ListException"
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"exceptionType\":\"System.ListException\"}",
+              "exceptionType": "C194CONTROL_002Test.Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194CONTROL_002",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194CONTROL_002Test",
+                      "message": "C194CONTROL_002Test.Scope194MarkerException: C126_RESULT|C194CONTROL_002|{\"exceptionType\":\"System.ListException\"}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "exceptionType": "System.ListException"
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"exceptionType\":\"System.ListException\"}",
+              "exceptionType": "C194CONTROL_002Test.Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194CONTROL_002",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194CONTROL_002Test",
+                      "message": "C194CONTROL_002Test.Scope194MarkerException: C126_RESULT|C194CONTROL_002|{\"exceptionType\":\"System.ListException\"}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "exceptionType": "System.ListException"
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"exceptionType\":\"System.ListException\"}",
+              "exceptionType": "C194CONTROL_002Test.Scope194MarkerException"
+            }
+          },
+          "classes": {
+            "C194CONTROL_002Test": "@IsTest public class C194CONTROL_002Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();try{List<Integer> xs=new List<Integer>();Integer z=xs[0];}catch(Exception err){observed.put('exceptionType',err.getTypeName());}throw new Scope194MarkerException('C126_RESULT|C194CONTROL_002|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194CONTROL_002Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194CONTROL_003",
+      "label": "genuine-uncaught",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "de43113fe26d2a2ee38c3166ec4883bf5f7088e0820479252239773168a456bd"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194CONTROL_003",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "System.ListException: List index out of bounds: 0",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "exceptionMessage": "System.ListException: List index out of bounds: 0",
+                  "exceptionType": "System.ListException",
+                  "exceptionTypeSource": "returned_message_prefix",
+                  "outcome": "uncaught_anonymous"
+                },
+                "route": "anonymous",
+                "status": "uncaught_anonymous"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 0"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194CONTROL_003",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "System.ListException: List index out of bounds: 0",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "exceptionMessage": "System.ListException: List index out of bounds: 0",
+                  "exceptionType": "System.ListException",
+                  "exceptionTypeSource": "returned_message_prefix",
+                  "outcome": "uncaught_anonymous"
+                },
+                "route": "anonymous",
+                "status": "uncaught_anonymous"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 0"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194CONTROL_003",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "System.ListException: List index out of bounds: 0",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "exceptionMessage": "System.ListException: List index out of bounds: 0",
+                  "exceptionType": "System.ListException",
+                  "exceptionTypeSource": "returned_message_prefix",
+                  "outcome": "uncaught_anonymous"
+                },
+                "route": "anonymous",
+                "status": "uncaught_anonymous"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 0"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();List<Integer> xs=new List<Integer>();Integer z=xs[0];throw new Scope194MarkerException('C126_RESULT|C194CONTROL_003|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194CONTROL_003Test": "7ec83f6d2b794298094316c7b6b3f823404e0479b3255bf13821cccbb8a82c5c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194CONTROL_003",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194CONTROL_003Test",
+                      "message": "System.ListException: List index out of bounds: 0",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "uncaught_test_failure",
+                  "testFailures": [
+                    {
+                      "cls": "C194CONTROL_003Test",
+                      "exceptionType": "System.ListException",
+                      "exceptionTypeSource": "returned_message_prefix",
+                      "message": "System.ListException: List index out of bounds: 0",
+                      "method": "observe"
+                    }
+                  ]
+                },
+                "route": "istest",
+                "status": "uncaught_test_failure"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 0"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194CONTROL_003",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194CONTROL_003Test",
+                      "message": "System.ListException: List index out of bounds: 0",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "uncaught_test_failure",
+                  "testFailures": [
+                    {
+                      "cls": "C194CONTROL_003Test",
+                      "exceptionType": "System.ListException",
+                      "exceptionTypeSource": "returned_message_prefix",
+                      "message": "System.ListException: List index out of bounds: 0",
+                      "method": "observe"
+                    }
+                  ]
+                },
+                "route": "istest",
+                "status": "uncaught_test_failure"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 0"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194CONTROL_003",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194CONTROL_003Test",
+                      "message": "System.ListException: List index out of bounds: 0",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "uncaught_test_failure",
+                  "testFailures": [
+                    {
+                      "cls": "C194CONTROL_003Test",
+                      "exceptionType": "System.ListException",
+                      "exceptionTypeSource": "returned_message_prefix",
+                      "message": "System.ListException: List index out of bounds: 0",
+                      "method": "observe"
+                    }
+                  ]
+                },
+                "route": "istest",
+                "status": "uncaught_test_failure"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 0"
+            }
+          },
+          "classes": {
+            "C194CONTROL_003Test": "@IsTest public class C194CONTROL_003Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();List<Integer> xs=new List<Integer>();Integer z=xs[0];throw new Scope194MarkerException('C126_RESULT|C194CONTROL_003|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194CONTROL_003Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194CONTROL_004",
+      "label": "compile-rejected",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "faa2fdf0fa94204239ecbc3cb721bff58f66498a1b9157986cf9737c1aa4a91c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194CONTROL_004",
+                "native": {
+                  "column": 131,
+                  "compileProblem": "Duplicate field: x",
+                  "compiled": false,
+                  "exceptionMessage": null,
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "diagnostics": {
+                    "column": 131,
+                    "compileProblem": "Duplicate field: x",
+                    "compiled": false,
+                    "exceptionMessage": null,
+                    "line": 1,
+                    "success": false
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "anonymous",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate field: x"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194CONTROL_004",
+                "native": {
+                  "column": 131,
+                  "compileProblem": "Duplicate field: x",
+                  "compiled": false,
+                  "exceptionMessage": null,
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "diagnostics": {
+                    "column": 131,
+                    "compileProblem": "Duplicate field: x",
+                    "compiled": false,
+                    "exceptionMessage": null,
+                    "line": 1,
+                    "success": false
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "anonymous",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate field: x"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194CONTROL_004",
+                "native": {
+                  "column": 131,
+                  "compileProblem": "Duplicate field: x",
+                  "compiled": false,
+                  "exceptionMessage": null,
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "diagnostics": {
+                    "column": 131,
+                    "compileProblem": "Duplicate field: x",
+                    "compiled": false,
+                    "exceptionMessage": null,
+                    "line": 1,
+                    "success": false
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "anonymous",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate field: x"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();Integer x=1;Integer x=2;throw new Scope194MarkerException('C126_RESULT|C194CONTROL_004|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194CONTROL_004Test": "e0cab8c06c90b204200126423a1547eb5d53e15f33c91882972199469b98b2c8"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194CONTROL_004",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194CONTROL_004Test",
+                      "problem": "Duplicate variable: x",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 1,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194CONTROL_004Test",
+                        "problem": "Duplicate variable: x",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 1,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: x"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194CONTROL_004",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194CONTROL_004Test",
+                      "problem": "Duplicate variable: x",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 1,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194CONTROL_004Test",
+                        "problem": "Duplicate variable: x",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 1,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: x"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194CONTROL_004",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194CONTROL_004Test",
+                      "problem": "Duplicate variable: x",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 1,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194CONTROL_004Test",
+                        "problem": "Duplicate variable: x",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 1,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: x"
+            }
+          },
+          "classes": {
+            "C194CONTROL_004Test": "@IsTest public class C194CONTROL_004Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();Integer x=1;Integer x=2;throw new Scope194MarkerException('C126_RESULT|C194CONTROL_004|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194CONTROL_004Test"
+          ]
+        }
+      }
+    }
+  ]
+}

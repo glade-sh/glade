@@ -42,7 +42,7 @@ type l05Case struct {
 }
 
 // TestL05SalesforceConformance replays owned fixtures against exported native
-// API 59/67 observations. Capture mode produces the before report without
+// API 59/67/68 observations. Capture mode produces the before report without
 // failing on differences. Normal mode asserts matching rows exactly and logs
 // only declared external-owner carries. It never fetches Salesforce or imports
 // glade-tools.
@@ -56,6 +56,7 @@ func TestL05SalesforceConformance(t *testing.T) {
 	if err := json.Unmarshal(data, &cases); err != nil {
 		t.Fatal(err)
 	}
+	versions := []string{"59.0", "67.0", "68.0"}
 	seen, groups := map[string]bool{}, map[string]bool{}
 	var runtimeCases []l05Case
 	var compileIndices []int
@@ -64,7 +65,7 @@ func TestL05SalesforceConformance(t *testing.T) {
 			t.Fatalf("invalid L05 row %q", c.ID)
 		}
 		seen[c.ID], groups[c.Group] = true, true
-		for _, api := range []string{"59.0", "67.0"} {
+		for _, api := range versions {
 			if c.Expected[api] != "COMPILE_OK" && c.Expected[api] != "COMPILE_ERROR" {
 				t.Fatalf("missing native compile answer: %s API %s", c.ID, api)
 			}
@@ -137,7 +138,7 @@ func TestL05SalesforceConformance(t *testing.T) {
 		}
 		return status
 	}
-	for _, api := range []string{"59.0", "67.0"} {
+	for _, api := range versions {
 		compiled := compileConformanceBatch(t, api, len(compileIndices), func(root string, index int) {
 			caseIndex := compileIndices[index]
 			l05WriteBundle(t, root, fmt.Sprintf("familyL05Compile%03d", caseIndex), cases[caseIndex], api)
@@ -232,8 +233,8 @@ func TestL05SalesforceConformance(t *testing.T) {
 		fmt.Fprintf(&report, "API_TOTAL\t%s\t%d/223\nLOCAL_DOM_ROWS\t%s\t%d/128\nAPI_CARRIED\t%s\t%d/223\n", api, apiMatches, api, localDOMRows, api, apiCarried)
 		t.Logf("L05 API %s matches %d/223; local DOM observations %d/128; carried %d/223", api, apiMatches, localDOMRows, apiCarried)
 	}
-	// Native bisection answers are extra diagnostic checks, outside the 446-row
-	// floor/ceiling denominator. No intermediate answer is inferred from endpoints.
+	// Native bisection answers are extra diagnostic checks, outside the 669-row
+	// endpoint denominator. No intermediate answer is inferred from endpoints.
 	gateMatches, gateTotal := 0, 0
 	for index, c := range cases {
 		if c.ID != "c_event_call" {
@@ -258,9 +259,10 @@ func TestL05SalesforceConformance(t *testing.T) {
 			}
 		}
 	}
-	fmt.Fprintf(&report, "TOTAL\t%d/%d\nSOURCE_COMPILE_TOTAL\t%d/190\nDOM_TOTAL\t%d/256\nDIAGNOSTIC_GATE_TOTAL\t%d/%d\n", matches, total, compileMatches, domMatches, gateMatches, gateTotal)
+	compileTotal, domTotal := len(compileIndices)*len(versions), len(runtimeCases)*len(versions)
+	fmt.Fprintf(&report, "TOTAL\t%d/%d\nSOURCE_COMPILE_TOTAL\t%d/%d\nDOM_TOTAL\t%d/%d\nDIAGNOSTIC_GATE_TOTAL\t%d/%d\n", matches, total, compileMatches, compileTotal, domMatches, domTotal, gateMatches, gateTotal)
 	fmt.Fprintf(&report, "CARRIED\t%d/%d\nREJECTION_DIAGNOSTIC_TOTAL\t%d/%d\nREJECTION_DIAGNOSTIC_CARRIED\t%d/%d\n", carried, total, rejectionMatches, rejectionTotal, rejectionCarried, rejectionTotal)
-	t.Logf("L05 matches %d/%d; source compile %d/190; DOM %d/256; diagnostic gates %d/%d; carried %d/%d", matches, total, compileMatches, domMatches, gateMatches, gateTotal, carried, total)
+	t.Logf("L05 matches %d/%d; source compile %d/%d; DOM %d/%d; diagnostic gates %d/%d; carried %d/%d", matches, total, compileMatches, compileTotal, domMatches, domTotal, gateMatches, gateTotal, carried, total)
 	t.Logf("L05 rejection diagnostic matches %d/%d; carried %d/%d", rejectionMatches, rejectionTotal, rejectionCarried, rejectionTotal)
 	if path := os.Getenv("GLADE_L05_REPORT"); path != "" {
 		if err := os.WriteFile(path, []byte(report.String()), 0600); err != nil {

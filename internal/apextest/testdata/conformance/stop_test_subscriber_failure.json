@@ -1,0 +1,708 @@
+{
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "files": {
+    "classes/FailureBatch.cls": "public class FailureBatch implements Database.Batchable<SObject> {\n private String fault;\n public FailureBatch(String value) {fault=value;}\n public Database.QueryLocator start(Database.BatchableContext context) {return Database.getQueryLocator([SELECT Id FROM Account WHERE Name='batch seed']);}\n public void execute(Database.BatchableContext context,List<SObject> scope) {}\n public void finish(Database.BatchableContext context) {FailureProbe.publishOne(fault);}\n}",
+    "classes/FailureBatch.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+    "classes/FailureProbe.cls": "public class FailureProbe {\n public class SubscriberFailureException extends Exception {}\n public static Integer seed=0;\n public static Integer hits=0;\n public static Integer seenSeed=0;\n public static Integer afterThrow=0;\n public static Integer publisherCaught=0;\n public static Integer publisherReturned=0;\n public static Integer stopCaught=0;\n public static Integer stopReturned=0;\n public static Integer count(String phase) {return [SELECT COUNT() FROM Account WHERE Name=:phase];}\n public static void publishOne(String fault) {\n  insert new Account(Name='publisher before');\n  try {EventBus.publish(new FailureSignal__e(Fault__c=fault));publisherReturned++;}\n  catch(Exception error) {publisherCaught++;}\n  insert new Account(Name='publisher after');\n }\n @future public static void publishFuture(String fault) {publishOne(fault);}\n public static void receive(String fault) {\n  hits++;\n  seenSeed=seed;\n  insert new Account(Name='subscriber before');\n  if(fault=='custom') throw new SubscriberFailureException('Owned subscriber failure');\n  if(fault=='null') {Account missing=null;String value=missing.Name;}\n  afterThrow++;\n  insert new Account(Name='subscriber after');\n }\n public static void exercise(String mode,String fault,Boolean catchStop) {\n  seed=7;\n  if(mode=='batch') insert new Account(Name='batch seed');\n  Test.startTest();\n  if(mode=='direct') publishOne(fault);\n  if(mode=='queue') System.enqueueJob(new FailureQueue(fault));\n  if(mode=='future') publishFuture(fault);\n  if(mode=='batch') Database.executeBatch(new FailureBatch(fault),1);\n  if(catchStop) {\n   try {Test.stopTest();stopReturned++;} catch(Exception error) {stopCaught++;}\n  } else {Test.stopTest();stopReturned++;}\n }\n public static Map<String,Integer> observe(String mode,String fault) {\n  exercise(mode,fault,true);\n  return new Map<String,Integer>{\n   'stopThrows'=>stopCaught,'stopReturns'=>stopReturned,\n   'publisherThrows'=>publisherCaught,'publisherReturns'=>publisherReturned,\n   'publisherBeforeWrites'=>count('publisher before'),'publisherAfterWrites'=>count('publisher after'),\n   'subscriberBeforeWrites'=>count('subscriber before'),'subscriberAfterWrites'=>count('subscriber after'),\n   'triggerHits'=>hits,'triggerSeed'=>seenSeed,'afterThrow'=>afterThrow,'testSeed'=>seed};\n }\n}",
+    "classes/FailureProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+    "classes/FailureProbeTest.cls": "@IsTest private class FailureProbeTest {\n@IsTest static void direct_none_plain() {FailureProbe.exercise('direct','none',false);}\n@IsTest static void direct_none_observe() {System.assert(false,'FAILURE|direct_none|'+JSON.serialize(FailureProbe.observe('direct','none')));}\n@IsTest static void direct_null_plain() {FailureProbe.exercise('direct','null',false);}\n@IsTest static void direct_null_observe() {System.assert(false,'FAILURE|direct_null|'+JSON.serialize(FailureProbe.observe('direct','null')));}\n@IsTest static void direct_custom_plain() {FailureProbe.exercise('direct','custom',false);}\n@IsTest static void direct_custom_observe() {System.assert(false,'FAILURE|direct_custom|'+JSON.serialize(FailureProbe.observe('direct','custom')));}\n@IsTest static void queue_none_plain() {FailureProbe.exercise('queue','none',false);}\n@IsTest static void queue_none_observe() {System.assert(false,'FAILURE|queue_none|'+JSON.serialize(FailureProbe.observe('queue','none')));}\n@IsTest static void queue_null_plain() {FailureProbe.exercise('queue','null',false);}\n@IsTest static void queue_null_observe() {System.assert(false,'FAILURE|queue_null|'+JSON.serialize(FailureProbe.observe('queue','null')));}\n@IsTest static void queue_custom_plain() {FailureProbe.exercise('queue','custom',false);}\n@IsTest static void queue_custom_observe() {System.assert(false,'FAILURE|queue_custom|'+JSON.serialize(FailureProbe.observe('queue','custom')));}\n@IsTest static void future_none_plain() {FailureProbe.exercise('future','none',false);}\n@IsTest static void future_none_observe() {System.assert(false,'FAILURE|future_none|'+JSON.serialize(FailureProbe.observe('future','none')));}\n@IsTest static void future_null_plain() {FailureProbe.exercise('future','null',false);}\n@IsTest static void future_null_observe() {System.assert(false,'FAILURE|future_null|'+JSON.serialize(FailureProbe.observe('future','null')));}\n@IsTest static void future_custom_plain() {FailureProbe.exercise('future','custom',false);}\n@IsTest static void future_custom_observe() {System.assert(false,'FAILURE|future_custom|'+JSON.serialize(FailureProbe.observe('future','custom')));}\n@IsTest static void batch_none_plain() {FailureProbe.exercise('batch','none',false);}\n@IsTest static void batch_none_observe() {System.assert(false,'FAILURE|batch_none|'+JSON.serialize(FailureProbe.observe('batch','none')));}\n@IsTest static void batch_null_plain() {FailureProbe.exercise('batch','null',false);}\n@IsTest static void batch_null_observe() {System.assert(false,'FAILURE|batch_null|'+JSON.serialize(FailureProbe.observe('batch','null')));}\n@IsTest static void batch_custom_plain() {FailureProbe.exercise('batch','custom',false);}\n@IsTest static void batch_custom_observe() {System.assert(false,'FAILURE|batch_custom|'+JSON.serialize(FailureProbe.observe('batch','custom')));}\n}",
+    "classes/FailureProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+    "classes/FailureQueue.cls": "public class FailureQueue implements Queueable {\n private String fault;\n public FailureQueue(String value) {fault=value;}\n public void execute(QueueableContext context) {FailureProbe.publishOne(fault);}\n}",
+    "classes/FailureQueue.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+    "objects/FailureSignal__e/FailureSignal__e.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><label>Failure Signal</label><pluralLabel>Failure Signals</pluralLabel><publishBehavior>PublishImmediately</publishBehavior></CustomObject>",
+    "objects/FailureSignal__e/fields/Fault__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Fault__c</fullName><label>Fault</label><length>80</length><type>Text</type></CustomField>",
+    "triggers/FailureSignalTrigger.trigger": "trigger FailureSignalTrigger on FailureSignal__e (after insert) {for(FailureSignal__e signal:Trigger.new) FailureProbe.receive(signal.Fault__c);}",
+    "triggers/FailureSignalTrigger.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexTrigger>"
+  },
+  "oracleSHA256": "65617db6466e43dda22efba6afbe48876ff262bdfb1525deb726747bb2a64592",
+  "rows": [
+    {
+      "api": "62.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_custom"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterThrow": 1,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 1,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_none"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_null"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_custom"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterThrow": 1,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 1,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_none"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_null"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_custom"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterThrow": 1,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 1,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_none"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_null"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_custom"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterThrow": 1,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 1,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_none"
+    },
+    {
+      "api": "62.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_null"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_custom"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterThrow": 1,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 1,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_none"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_null"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_custom"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterThrow": 1,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 1,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_none"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_null"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_custom"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterThrow": 1,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 1,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_none"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_null"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_custom"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterThrow": 1,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 1,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_none"
+    },
+    {
+      "api": "67.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_null"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_custom"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterThrow": 1,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 1,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_none"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "batch_null"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_custom"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterThrow": 1,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 1,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_none"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "direct_null"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_custom"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterThrow": 1,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 1,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_none"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "future_null"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_custom"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterThrow": 1,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 1,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_none"
+    },
+    {
+      "api": "68.0",
+      "counts": {
+        "afterThrow": 0,
+        "publisherAfterWrites": 1,
+        "publisherBeforeWrites": 1,
+        "publisherReturns": 1,
+        "publisherThrows": 0,
+        "stopReturns": 1,
+        "stopThrows": 0,
+        "subscriberAfterWrites": 0,
+        "subscriberBeforeWrites": 1,
+        "testFails": 0,
+        "testSeed": 7,
+        "triggerHits": 1,
+        "triggerSeed": 7
+      },
+      "id": "queue_null"
+    }
+  ]
+}

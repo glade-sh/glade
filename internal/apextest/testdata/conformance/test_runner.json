@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "oracle": {
     "originalRows": 242,
@@ -31,7 +32,8 @@
     "A30RegressionGateway": "public virtual class A30RegressionGateway {public virtual String getPaymentLinesByIds(Set<Id> ids){return 'real';}}\n",
     "A30RegressionChangeEvent": "public virtual class A30RegressionChangeEvent {public virtual String ping(){return 'real';}}\n",
     "A30NestedListDrive62": "public interface A30NestedListDrive62 {\n    List<List<String>> getSpreadsheetData(String id);\n}\n",
-    "A30NestedListDrive67": "public interface A30NestedListDrive67 {\n    List<List<String>> getSpreadsheetData(String id);\n}\n"
+    "A30NestedListDrive67": "public interface A30NestedListDrive67 {\n    List<List<String>> getSpreadsheetData(String id);\n}\n",
+    "A30NestedListDrive68": "public interface A30NestedListDrive68 {\n    List<List<String>> getSpreadsheetData(String id);\n}\n"
   },
   "testHeads": {
     "A30NativeOracle": "@IsTest private class A30NativeOracle {\n @TestSetup static void seed(){\n  insert new Account(Name='setup',AccountNumber='A30-setup');\n  A30State.value=7;\n }\n private class HttpMock implements HttpCalloutMock {\n  public HttpResponse respond(HttpRequest q){HttpResponse a=new HttpResponse(); a.setStatusCode(201); a.setBody(q.getMethod()); a.setHeader('A30','first'); return a;}\n }\n private class OtherHttpMock implements HttpCalloutMock {\n  public HttpResponse respond(HttpRequest q){HttpResponse a=new HttpResponse(); a.setStatusCode(202); a.setBody(q.getMethod()); a.setHeader('A30','second'); return a;}\n }\n private class SoapMock implements WebServiceMock {\n  public void doInvoke(Object stub,Object request,Map<String,Object> response,String endpoint,String action,String requestName,String responseNS,String responseName,String responseType){\n   A30State.SoapResponse a=new A30State.SoapResponse(); a.output='soap-mock'; response.put('response_x',a);\n  }\n }\n private class Provider implements System.StubProvider {\n  public Object handleMethodCall(Object receiver,String method,Type returnType,List<Type> paramTypes,List<String> paramNames,List<Object> args){\n   if(method=='text')return method+'|'+returnType.getName()+'|'+paramTypes[0].getName()+'|'+paramNames[0]+'|'+String.valueOf(args[0]);\n   if(method=='number')return ((Integer)args[0])+10;\n   return null;\n  }\n }\n",
@@ -2963,7 +2965,8 @@
       "ID": "Q112",
       "CodeByAPI": {
         "62.0": "Provider provider=new Provider(); A30NestedListDrive62 drive=(A30NestedListDrive62)Test.createStub(A30NestedListDrive62.class,provider); List<List<String>> rows=drive.GetSpreadsheetData('sheet'); r=provider.observedMethod+'|'+rows[0][0];",
-        "67.0": "Provider provider=new Provider(); A30NestedListDrive67 drive=(A30NestedListDrive67)Test.createStub(A30NestedListDrive67.class,provider); List<List<String>> rows=drive.GetSpreadsheetData('sheet'); r=provider.observedMethod+'|'+rows[0][0];"
+        "67.0": "Provider provider=new Provider(); A30NestedListDrive67 drive=(A30NestedListDrive67)Test.createStub(A30NestedListDrive67.class,provider); List<List<String>> rows=drive.GetSpreadsheetData('sheet'); r=provider.observedMethod+'|'+rows[0][0];",
+        "68.0": "Provider provider=new Provider(); A30NestedListDrive68 drive=(A30NestedListDrive68)Test.createStub(A30NestedListDrive68.class,provider); List<List<String>> rows=drive.GetSpreadsheetData('sheet'); r=provider.observedMethod+'|'+rows[0][0];"
       },
       "Expected": "getSpreadsheetData|nested-value",
       "Class": "A30NestedListControls"
@@ -2972,7 +2975,8 @@
       "ID": "Q113",
       "CodeByAPI": {
         "62.0": "Provider provider=new Provider(); A30NestedListDrive62 drive=(A30NestedListDrive62)Test.createStub(A30NestedListDrive62.class,provider); List<List<String>> rows=drive.getSpreadsheetData('sheet'); r=provider.observedMethod+'|'+rows[0][0];",
-        "67.0": "Provider provider=new Provider(); A30NestedListDrive67 drive=(A30NestedListDrive67)Test.createStub(A30NestedListDrive67.class,provider); List<List<String>> rows=drive.getSpreadsheetData('sheet'); r=provider.observedMethod+'|'+rows[0][0];"
+        "67.0": "Provider provider=new Provider(); A30NestedListDrive67 drive=(A30NestedListDrive67)Test.createStub(A30NestedListDrive67.class,provider); List<List<String>> rows=drive.getSpreadsheetData('sheet'); r=provider.observedMethod+'|'+rows[0][0];",
+        "68.0": "Provider provider=new Provider(); A30NestedListDrive68 drive=(A30NestedListDrive68)Test.createStub(A30NestedListDrive68.class,provider); List<List<String>> rows=drive.getSpreadsheetData('sheet'); r=provider.observedMethod+'|'+rows[0][0];"
       },
       "Expected": "getSpreadsheetData|nested-value",
       "Class": "A30NestedListControls"

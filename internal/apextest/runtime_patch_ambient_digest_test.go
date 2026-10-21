@@ -26,7 +26,7 @@ func TestRuntimePatchAmbientJSONMatchesMarshal(t *testing.T) {
 		Fields: map[string]storage.Value{"Name": storage.StringValue("<a & b> \xff")},
 	}
 	odd := storage.OrgState{
-		OrgID: "00D000000000001", APIVersion: "67.0", Namespace: "ns", DomainURL: "https://example.my.salesforce.com",
+		OrgID: "00D000000000mH2", APIVersion: "67.0", Namespace: "ns", DomainURL: "https://example.my.salesforce.com",
 		Metadata:    storage.MetadataRegistry{Labels: []storage.LabelMetadata{{Name: "objects", Value: `"objects":null`}}},
 		IDSequences: map[string]uint64{"Account": 3},
 		Objects: map[string]storage.ObjectState{

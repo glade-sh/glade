@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Computed__c</fullName><label>Computed</label><type>Number</type><precision>10</precision><scale>0</scale><formula>1 + 2</formula></CustomField>

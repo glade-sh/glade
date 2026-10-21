@@ -19,6 +19,7 @@ var ErrNotFound = errors.New("glade config not found")
 type Config struct {
 	Project ProjectConfig `json:"project"`
 	Org     OrgConfig     `json:"org"`
+	Test    TestConfig    `json:"test"`
 }
 
 type ProjectConfig struct {
@@ -42,6 +43,12 @@ type ManagedPackageDependency struct {
 type PackageShim struct {
 	Namespace  string `json:"namespace"`
 	SourceRoot string `json:"sourceRoot"`
+}
+
+// TestConfig grants project permission metadata to the default test user.
+type TestConfig struct {
+	PermissionSets      []string `json:"permissionSets,omitempty"`
+	PermissionSetGroups []string `json:"permissionSetGroups,omitempty"`
 }
 
 type OrgConfig struct {
@@ -200,6 +207,21 @@ func parseYAMLSubset(src string) (Config, error) {
 				return Config{}, fmt.Errorf("glade.yml:%d: org.domainUrl: %w", lineNo+1, err)
 			}
 			cfg.Org.DomainURL = domainURL
+		case "test.permissionSets", "test.permissionSetGroups":
+			values, err := parseInlineList(value)
+			if err != nil {
+				return Config{}, fmt.Errorf("glade.yml:%d: test.%s: %w", lineNo+1, key, err)
+			}
+			for _, name := range values {
+				if strings.TrimSpace(name) == "" {
+					return Config{}, fmt.Errorf("glade.yml:%d: test.%s: expected a nonempty API name", lineNo+1, key)
+				}
+			}
+			if key == "permissionSets" {
+				cfg.Test.PermissionSets = values
+			} else {
+				cfg.Test.PermissionSetGroups = values
+			}
 		case "org.features":
 			values, err := parseInlineList(value)
 			if err != nil {

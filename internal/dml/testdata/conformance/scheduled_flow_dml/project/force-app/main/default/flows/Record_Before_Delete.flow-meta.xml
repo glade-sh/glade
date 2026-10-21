@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <interviewLabel>Record Before Delete {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Record Before Delete</label>
+    <processType>AutoLaunchedFlow</processType>
+    <recordCreates>
+        <name>Create_Before_Delete_Counter</name><label>Create Before Delete Counter</label><locationX>0</locationX><locationY>0</locationY>
+        <inputAssignments><field>LastName</field><value><stringValue>flow-run-before-delete</stringValue></value></inputAssignments>
+        <inputAssignments><field>AccountId</field><value><elementReference>$Record.Id</elementReference></value></inputAssignments>
+        <object>Contact</object><storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordCreates>
+    <start>
+        <locationX>0</locationX><locationY>0</locationY><object>Account</object>
+        <recordTriggerType>Delete</recordTriggerType><triggerType>RecordBeforeDelete</triggerType>
+        <filterLogic>and</filterLogic>
+        <filters><field>Name</field><operator>EqualTo</operator><value><stringValue>delete-control</stringValue></value></filters>
+        <connector><targetReference>Create_Before_Delete_Counter</targetReference></connector>
+    </start>
+    <status>Active</status>
+</Flow>

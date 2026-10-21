@@ -1,0 +1,365 @@
+{
+  "sourceApis": {
+    "OwnedArgumentTarget34": "34.0",
+    "OwnedScalarGuard37": "37.0",
+    "OwnedArgumentProvider39": "39.0",
+    "ArgumentShapeObservation48": "48.0"
+  },
+  "sourceCallerApi": "48.0",
+  "transportApi": "62.0",
+  "projectApi": "62.0",
+  "route": "isTest",
+  "namespaceContext": "none",
+  "knownRowCount": 6,
+  "pendingCoverage": "Only these named namespace-free source pins and generic SObject/Account record-list elements are observed. Other source/caller versions, anonymous context, other concrete/custom record lists, explicit Schema.SObject targets and package namespace behavior remain unobserved.",
+  "captures": [
+    {
+      "deployment": {
+        "id": "0AfEc00000p1SmUKAU",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 3,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 3
+      },
+      "sources": {
+        "force-app/main/default/classes/ArgumentShapeObservation48.cls": {
+          "source": "@IsTest private class ArgumentShapeObservation48 {\n @IsTest static void SCALAR_CONTROLS() {\n  Map<String,Object> payload=new Map<String,Object>();\n  OwnedArgumentProvider39 provider=new OwnedArgumentProvider39();\n  OwnedArgumentTarget34 target=(OwnedArgumentTarget34)Test.createStub(OwnedArgumentTarget34.class,provider);\n  Account record=new Account(Name='Owned shape');\n  payload.put('scalar',target.inspect(record));\n  payload.put('list',target.inspect(new List<SObject>{record}));\n  payload.put('empty',target.inspect(new List<SObject>()));\n  payload.put('nullValue',target.inspect(null));\n  payload.put('providerCalls',provider.calls.size());\n  List<Integer> arities=new List<Integer>();for(Map<String,Object> row:provider.calls)arities.add((Integer)row.get('arity'));\n  payload.put('arities',arities);\n  System.assertEquals('STUB_ARGUMENT_OBSERVATION',JSON.serialize(payload));\n }\n @IsTest static void WHOLE_LIST() {\n  OwnedArgumentProvider39 provider=new OwnedArgumentProvider39();\n  OwnedArgumentTarget34 target=(OwnedArgumentTarget34)Test.createStub(OwnedArgumentTarget34.class,provider);\n  List<SObject> records=new List<SObject>{new Account(Name='Owned shape')};\n  target.write(records);\n  Map<String,Object> payload=new Map<String,Object>{'calls'=>provider.calls,'originalSize'=>records.size()};\n  System.assertEquals('STUB_ARGUMENT_OBSERVATION',JSON.serialize(payload));\n }\n @IsTest static void PLACEHOLDER_LIST() {\n  OwnedArgumentProvider39 provider=new OwnedArgumentProvider39();\n  OwnedArgumentTarget34 target=(OwnedArgumentTarget34)Test.createStub(OwnedArgumentTarget34.class,provider);\n  target.write(new List<SObject>{null});\n  Map<String,Object> payload=new Map<String,Object>{'calls'=>provider.calls};\n  System.assertEquals('STUB_ARGUMENT_OBSERVATION',JSON.serialize(payload));\n }\n}\n",
+          "sha256": "7cae6142b9fec88973d314774ada23dcf05e538b7c3564f4a8e4d4d944829778"
+        },
+        "force-app/main/default/classes/ArgumentShapeObservation48.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>48.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "e392f47f2faee318dd4db96609c2ba56300c73b530da7a403546dbf0374b6aec"
+        },
+        "force-app/main/default/classes/OwnedArgumentProvider39.cls": {
+          "source": "public class OwnedArgumentProvider39 implements System.StubProvider {\n public List<Map<String,Object>> calls=new List<Map<String,Object>>();\n public Object handleMethodCall(Object receiver,String member,Type resultType,List<Type> parameterTypes,List<String> parameterNames,List<Object> arguments) {\n  Object value=arguments[0];\n  Map<String,Object> row=new Map<String,Object>{'member'=>member,'arity'=>arguments.size(),'declaredType'=>parameterTypes[0].getName(),'nullArgument'=>value==null,'scalarMatch'=>OwnedScalarGuard37.matches(value),'isList'=>value instanceof List<SObject>};\n  if(value instanceof List<SObject>) {\n   List<SObject> records=(List<SObject>)value;row.put('listSize',records.size());\n   if(!records.isEmpty()){row.put('firstNull',records[0]==null);row.put('firstScalarMatch',OwnedScalarGuard37.matches(records[0]));}\n  }\n  calls.add(row);\n  if(member=='inspect')return OwnedScalarGuard37.matches(value);\n  return null;\n }\n}\n",
+          "sha256": "8197e68d5c60666f64bb596f1c98beed30bae97aac3fd25f530ff3b9ede1322c"
+        },
+        "force-app/main/default/classes/OwnedArgumentProvider39.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>39.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "232603e4ad7d501d54e213798a2fea946f6b6ade5c5a3413b28429d5651cd436"
+        },
+        "force-app/main/default/classes/OwnedArgumentTarget34.cls": {
+          "source": "public virtual class OwnedArgumentTarget34 {\n public virtual Boolean inspect(Object value) {return false;}\n public virtual void write(List<SObject> records) {}\n}\n",
+          "sha256": "245e9df2706116552f24dbaa10b03a165cdff00c03d968588923c4afcd2eb219"
+        },
+        "force-app/main/default/classes/OwnedArgumentTarget34.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>34.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "f62f090133cb247c98dda872c767ec7acd0ad3599a9991b763f96163da7cb8ef"
+        },
+        "force-app/main/default/classes/OwnedScalarGuard37.cls": {
+          "source": "public class OwnedScalarGuard37 {\n public static Boolean matches(Object value) {return value!=null && value instanceof SObject;}\n}\n",
+          "sha256": "13547bf6f1a42a7602d48187f199a303e16c490275358b76578b97a1435c07f6"
+        },
+        "force-app/main/default/classes/OwnedScalarGuard37.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>37.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "f4e73465f5ad0f3b00444ebe3a0bc1b30e1e0e703daf29bcd2e18de36fa4baf4"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        }
+      },
+      "metadataUnchanged": true,
+      "rawSha256": {
+        "ORG-RUN.txt": "020dc32eda8e5c2e75268105fad281adb735b5ee8a01a067af68015c97d893ef",
+        "RAW-DIGESTS.json": "b2e1e3096d21d5c5acec8e4f35e07cd0e3d7f39308a727b8e2ee31fcb0ba92e9",
+        "SOURCE-DIGESTS.json": "c186f876ee2911b842173a44d8f64c15072088207abe24c4858fe3354a1531b8",
+        "TRANSPORT-REPAIR.txt": "3210ecf5a0759263f901e3d447ab196313f85b7554edc9aad8bece1e577642ee",
+        "after.command.json": "f229572e1d324f225909dfe6d5873dfe142c67dea3b12efa8fab05516b7c7c2d",
+        "after.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647",
+        "after.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "before.command.json": "f229572e1d324f225909dfe6d5873dfe142c67dea3b12efa8fab05516b7c7c2d",
+        "before.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647",
+        "before.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "deploy.command.json": "db6997864f15b55aa5f50f56675f374acdee62770072047a4f43b3f9e3336f13",
+        "deploy.json": "03776d21ac0a3df123a5f321528a9ef85a738bac7fdd888daba89bc830ce9bc4",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "driver.log": "54d58b87007a3ae2b8406a8d4d6e74bc3afc79dd2d688289a97468e700a18fbb",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "org.tsv": "69462bd75bb6f9d396f848073c3a5c3f9e309c594ac9b03b671bef647ae1cf5c",
+        "owner-inspection.json": "5851317f012f050373613de4ce22b5a86e7ade45d4b52720afb90a00b7f6a127",
+        "selected-rows.json": "1b3b6408af47e7b9f34edbf1cd8628ae7dd8231fc9e7863e2649482d4f480096"
+      },
+      "rows": [
+        {
+          "method": "PLACEHOLDER_LIST",
+          "nativeFailure": {
+            "id": "01pEc00001GpPNdIAN",
+            "message": "System.AssertException: Assertion Failed: Expected: STUB_ARGUMENT_OBSERVATION, Actual: {\"calls\":[{\"firstScalarMatch\":false,\"firstNull\":true,\"listSize\":1,\"isList\":true,\"scalarMatch\":true,\"nullArgument\":false,\"declaredType\":\"List<SObject>\",\"arity\":1,\"member\":\"write\"}]}",
+            "methodName": "PLACEHOLDER_LIST",
+            "name": "ArgumentShapeObservation48",
+            "namespace": null,
+            "packageName": "ArgumentShapeObservation48",
+            "stackTrace": "Class.ArgumentShapeObservation48.PLACEHOLDER_LIST: line 29, column 1",
+            "time": 101,
+            "type": "Class"
+          },
+          "native": {
+            "calls": [
+              {
+                "firstScalarMatch": false,
+                "firstNull": true,
+                "listSize": 1,
+                "isList": true,
+                "scalarMatch": true,
+                "nullArgument": false,
+                "declaredType": "List<SObject>",
+                "arity": 1,
+                "member": "write"
+              }
+            ]
+          }
+        },
+        {
+          "method": "SCALAR_CONTROLS",
+          "nativeFailure": {
+            "id": "01pEc00001GpPNdIAN",
+            "message": "System.AssertException: Assertion Failed: Expected: STUB_ARGUMENT_OBSERVATION, Actual: {\"arities\":[1,1,1,1],\"providerCalls\":4,\"nullValue\":false,\"empty\":true,\"list\":true,\"scalar\":true}",
+            "methodName": "SCALAR_CONTROLS",
+            "name": "ArgumentShapeObservation48",
+            "namespace": null,
+            "packageName": "ArgumentShapeObservation48",
+            "stackTrace": "Class.ArgumentShapeObservation48.SCALAR_CONTROLS: line 14, column 1",
+            "time": 73,
+            "type": "Class"
+          },
+          "native": {
+            "arities": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "providerCalls": 4,
+            "nullValue": false,
+            "empty": true,
+            "list": true,
+            "scalar": true
+          }
+        },
+        {
+          "method": "WHOLE_LIST",
+          "nativeFailure": {
+            "id": "01pEc00001GpPNdIAN",
+            "message": "System.AssertException: Assertion Failed: Expected: STUB_ARGUMENT_OBSERVATION, Actual: {\"originalSize\":1,\"calls\":[{\"firstScalarMatch\":true,\"firstNull\":false,\"listSize\":1,\"isList\":true,\"scalarMatch\":true,\"nullArgument\":false,\"declaredType\":\"List<SObject>\",\"arity\":1,\"member\":\"write\"}]}",
+            "methodName": "WHOLE_LIST",
+            "name": "ArgumentShapeObservation48",
+            "namespace": null,
+            "packageName": "ArgumentShapeObservation48",
+            "stackTrace": "Class.ArgumentShapeObservation48.WHOLE_LIST: line 22, column 1",
+            "time": 82,
+            "type": "Class"
+          },
+          "native": {
+            "originalSize": 1,
+            "calls": [
+              {
+                "firstScalarMatch": true,
+                "firstNull": false,
+                "listSize": 1,
+                "isList": true,
+                "scalarMatch": true,
+                "nullArgument": false,
+                "declaredType": "List<SObject>",
+                "arity": 1,
+                "member": "write"
+              }
+            ]
+          }
+        }
+      ],
+      "context": "generic"
+    },
+    {
+      "context": "account",
+      "deployment": {
+        "id": "0AfEc00000p1uHJKAY",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 3,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 3
+      },
+      "sources": {
+        "force-app/main/default/classes/ArgumentShapeObservation48.cls": {
+          "source": "@IsTest private class ArgumentShapeObservation48 {\n @IsTest static void SCALAR_CONTROLS() {\n  Map<String,Object> payload=new Map<String,Object>();\n  OwnedArgumentProvider39 provider=new OwnedArgumentProvider39();\n  OwnedArgumentTarget34 target=(OwnedArgumentTarget34)Test.createStub(OwnedArgumentTarget34.class,provider);\n  Account record=new Account(Name='Owned shape');\n  payload.put('scalar',target.inspect(record));\n  payload.put('list',target.inspect(new List<Account>{record}));\n  payload.put('empty',target.inspect(new List<Account>()));\n  payload.put('nullValue',target.inspect(null));\n  payload.put('providerCalls',provider.calls.size());\n  List<Integer> arities=new List<Integer>();for(Map<String,Object> row:provider.calls)arities.add((Integer)row.get('arity'));\n  payload.put('arities',arities);\n  System.assertEquals('STUB_ARGUMENT_OBSERVATION',JSON.serialize(payload));\n }\n @IsTest static void WHOLE_LIST() {\n  OwnedArgumentProvider39 provider=new OwnedArgumentProvider39();\n  OwnedArgumentTarget34 target=(OwnedArgumentTarget34)Test.createStub(OwnedArgumentTarget34.class,provider);\n  List<Account> records=new List<Account>{new Account(Name='Owned shape')};\n  target.write(records);\n  Map<String,Object> payload=new Map<String,Object>{'calls'=>provider.calls,'originalSize'=>records.size()};\n  System.assertEquals('STUB_ARGUMENT_OBSERVATION',JSON.serialize(payload));\n }\n @IsTest static void PLACEHOLDER_LIST() {\n  OwnedArgumentProvider39 provider=new OwnedArgumentProvider39();\n  OwnedArgumentTarget34 target=(OwnedArgumentTarget34)Test.createStub(OwnedArgumentTarget34.class,provider);\n  target.write(new List<Account>{null});\n  Map<String,Object> payload=new Map<String,Object>{'calls'=>provider.calls};\n  System.assertEquals('STUB_ARGUMENT_OBSERVATION',JSON.serialize(payload));\n }\n}\n",
+          "sha256": "4c975866154ef8ffc429835d1ecf242261b85b0f26876e263fe92e31cb59c05e"
+        },
+        "force-app/main/default/classes/ArgumentShapeObservation48.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>48.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "e392f47f2faee318dd4db96609c2ba56300c73b530da7a403546dbf0374b6aec"
+        },
+        "force-app/main/default/classes/OwnedArgumentProvider39.cls": {
+          "source": "public class OwnedArgumentProvider39 implements System.StubProvider {\n public List<Map<String,Object>> calls=new List<Map<String,Object>>();\n public Object handleMethodCall(Object receiver,String member,Type resultType,List<Type> parameterTypes,List<String> parameterNames,List<Object> arguments) {\n  Object value=arguments[0];\n  Map<String,Object> row=new Map<String,Object>{'member'=>member,'arity'=>arguments.size(),'declaredType'=>parameterTypes[0].getName(),'nullArgument'=>value==null,'scalarMatch'=>OwnedScalarGuard37.matches(value),'isList'=>value instanceof List<SObject>};\n  if(value instanceof List<SObject>) {\n   List<SObject> records=(List<SObject>)value;row.put('listSize',records.size());\n   try{Date ignored=(Date)value;}catch(TypeException problem){row.put('runtimeLabel',problem.getMessage().substringAfter('Invalid conversion from runtime type ').substringBefore(' to Date'));}\n   if(!records.isEmpty()){row.put('firstNull',records[0]==null);row.put('firstScalarMatch',OwnedScalarGuard37.matches(records[0]));}\n  }\n  calls.add(row);\n  if(member=='inspect')return OwnedScalarGuard37.matches(value);\n  return null;\n }\n}\n",
+          "sha256": "ebd8074fbd7b5367354e3746ea9e7a801223c459f97f9d76c74d9b375c19a431"
+        },
+        "force-app/main/default/classes/OwnedArgumentProvider39.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>39.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "232603e4ad7d501d54e213798a2fea946f6b6ade5c5a3413b28429d5651cd436"
+        },
+        "force-app/main/default/classes/OwnedArgumentTarget34.cls": {
+          "source": "public virtual class OwnedArgumentTarget34 {\n public virtual Boolean inspect(Object value) {return false;}\n public virtual void write(List<SObject> records) {}\n}\n",
+          "sha256": "245e9df2706116552f24dbaa10b03a165cdff00c03d968588923c4afcd2eb219"
+        },
+        "force-app/main/default/classes/OwnedArgumentTarget34.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>34.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "f62f090133cb247c98dda872c767ec7acd0ad3599a9991b763f96163da7cb8ef"
+        },
+        "force-app/main/default/classes/OwnedScalarGuard37.cls": {
+          "source": "public class OwnedScalarGuard37 {\n public static Boolean matches(Object value) {return value!=null && value instanceof SObject;}\n}\n",
+          "sha256": "13547bf6f1a42a7602d48187f199a303e16c490275358b76578b97a1435c07f6"
+        },
+        "force-app/main/default/classes/OwnedScalarGuard37.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>37.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "f4e73465f5ad0f3b00444ebe3a0bc1b30e1e0e703daf29bcd2e18de36fa4baf4"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        }
+      },
+      "metadataUnchanged": true,
+      "rawSha256": {
+        "ORG-RUN.txt": "e795df1732799ed9fdc0f355da945acaf33b52809441dcd02dcbd25cb68c024d",
+        "RAW-DIGESTS.json": "5aa5276d89c732d6e10b36e0ae554e6f89c693c66a87a6b9f9a9e65b7c678b40",
+        "SCOPE.txt": "42103ddba6e4368bf17a1404f70f7957f1c2a9b4a747d553110c378c4131e8f4",
+        "SOURCE-DIGESTS.json": "0132fb0cbee0f71f93c9ba0496500bbc6d08bb8337c586b953dc937d190f8ead",
+        "after.command.json": "f229572e1d324f225909dfe6d5873dfe142c67dea3b12efa8fab05516b7c7c2d",
+        "after.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647",
+        "after.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "before.command.json": "f229572e1d324f225909dfe6d5873dfe142c67dea3b12efa8fab05516b7c7c2d",
+        "before.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647",
+        "before.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "deploy.command.json": "db6997864f15b55aa5f50f56675f374acdee62770072047a4f43b3f9e3336f13",
+        "deploy.json": "eae5f065a441676cb2d2153f20b3b0ed79b78c11183f66cfa45be4e6a9045761",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "driver.log": "79e2c03ccf26678de40b11595a88c4ca73964c59ba269c2b7403091492591725",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "org.tsv": "221032e6c0290b5ebf27bb11522b525978b62b9013de88995ec6f0da1eb28480",
+        "owner-inspection.json": "5851317f012f050373613de4ce22b5a86e7ade45d4b52720afb90a00b7f6a127",
+        "selected-rows.json": "1b3b6408af47e7b9f34edbf1cd8628ae7dd8231fc9e7863e2649482d4f480096"
+      },
+      "rows": [
+        {
+          "method": "PLACEHOLDER_LIST",
+          "nativeFailure": {
+            "id": "01pEc00001GpfxxIAB",
+            "message": "System.AssertException: Assertion Failed: Expected: STUB_ARGUMENT_OBSERVATION, Actual: {\"calls\":[{\"firstScalarMatch\":false,\"firstNull\":true,\"runtimeLabel\":\"List<Account>\",\"listSize\":1,\"isList\":true,\"scalarMatch\":true,\"nullArgument\":false,\"declaredType\":\"List<SObject>\",\"arity\":1,\"member\":\"write\"}]}",
+            "methodName": "PLACEHOLDER_LIST",
+            "name": "ArgumentShapeObservation48",
+            "namespace": null,
+            "packageName": "ArgumentShapeObservation48",
+            "stackTrace": "Class.ArgumentShapeObservation48.PLACEHOLDER_LIST: line 29, column 1",
+            "time": 86,
+            "type": "Class"
+          },
+          "native": {
+            "calls": [
+              {
+                "firstScalarMatch": false,
+                "firstNull": true,
+                "runtimeLabel": "List<Account>",
+                "listSize": 1,
+                "isList": true,
+                "scalarMatch": true,
+                "nullArgument": false,
+                "declaredType": "List<SObject>",
+                "arity": 1,
+                "member": "write"
+              }
+            ]
+          }
+        },
+        {
+          "method": "SCALAR_CONTROLS",
+          "nativeFailure": {
+            "id": "01pEc00001GpfxxIAB",
+            "message": "System.AssertException: Assertion Failed: Expected: STUB_ARGUMENT_OBSERVATION, Actual: {\"arities\":[1,1,1,1],\"providerCalls\":4,\"nullValue\":false,\"empty\":true,\"list\":true,\"scalar\":true}",
+            "methodName": "SCALAR_CONTROLS",
+            "name": "ArgumentShapeObservation48",
+            "namespace": null,
+            "packageName": "ArgumentShapeObservation48",
+            "stackTrace": "Class.ArgumentShapeObservation48.SCALAR_CONTROLS: line 14, column 1",
+            "time": 67,
+            "type": "Class"
+          },
+          "native": {
+            "arities": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "providerCalls": 4,
+            "nullValue": false,
+            "empty": true,
+            "list": true,
+            "scalar": true
+          }
+        },
+        {
+          "method": "WHOLE_LIST",
+          "nativeFailure": {
+            "id": "01pEc00001GpfxxIAB",
+            "message": "System.AssertException: Assertion Failed: Expected: STUB_ARGUMENT_OBSERVATION, Actual: {\"originalSize\":1,\"calls\":[{\"firstScalarMatch\":true,\"firstNull\":false,\"runtimeLabel\":\"List<Account>\",\"listSize\":1,\"isList\":true,\"scalarMatch\":true,\"nullArgument\":false,\"declaredType\":\"List<SObject>\",\"arity\":1,\"member\":\"write\"}]}",
+            "methodName": "WHOLE_LIST",
+            "name": "ArgumentShapeObservation48",
+            "namespace": null,
+            "packageName": "ArgumentShapeObservation48",
+            "stackTrace": "Class.ArgumentShapeObservation48.WHOLE_LIST: line 22, column 1",
+            "time": 66,
+            "type": "Class"
+          },
+          "native": {
+            "originalSize": 1,
+            "calls": [
+              {
+                "firstScalarMatch": true,
+                "firstNull": false,
+                "runtimeLabel": "List<Account>",
+                "listSize": 1,
+                "isList": true,
+                "scalarMatch": true,
+                "nullArgument": false,
+                "declaredType": "List<SObject>",
+                "arity": 1,
+                "member": "write"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "transportRejected": {
+    "deploymentId": "0AfEc00000p1jnJKAQ",
+    "done": true,
+    "checkOnly": true,
+    "metadataUnchanged": true,
+    "reason": "Combined observation envelope exceeded native assertion-message limit; truncated payload is not a semantic answer. Same questions split into three bounded rows.",
+    "rawSha256": {
+      "ORG-RUN.txt": "bae994c8c329387105c7fe2f2ffb2680a454ea55b2dc2024a58a34c880a9e942",
+      "RAW-DIGESTS.json": "7270c8b5d87b3526e798fa58924b09e2972ff547f615b3c82c1c78d2f4461faf",
+      "SOURCE-DIGESTS.json": "99ab4bffe65472f9c33aaeb3eff26009d0d0244699118eb7d27999c5ad2ca1bb",
+      "after.command.json": "f229572e1d324f225909dfe6d5873dfe142c67dea3b12efa8fab05516b7c7c2d",
+      "after.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647",
+      "after.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "before.command.json": "f229572e1d324f225909dfe6d5873dfe142c67dea3b12efa8fab05516b7c7c2d",
+      "before.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647",
+      "before.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "deploy.command.json": "db6997864f15b55aa5f50f56675f374acdee62770072047a4f43b3f9e3336f13",
+      "deploy.json": "e064bfde27f622c2893af66bbcc214748757e8625ba14428beda07b71554fcdc",
+      "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "driver.log": "45e381145a781067dede0c7a2ddcb905985fc57f90ffab2af1e5d6bdb69db487",
+      "errors.json": "7384b998a083bea7c62bf568f63f3ba7d3d27c0e8059c307e01f5a33aadfe4d4",
+      "org.tsv": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "owner-inspection.json": "5851317f012f050373613de4ce22b5a86e7ade45d4b52720afb90a00b7f6a127",
+      "selected-rows.json": "8f1728c0cc5e656faa7b227557beea09a5f048ee47794251ce705df8f5f0c11f"
+    }
+  }
+}

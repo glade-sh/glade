@@ -1,0 +1,96 @@
+{
+  "status": "PENDING-ROWS",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "@IsTest"
+  ],
+  "helpers": {
+    "NullChoiceLab": "public class NullChoiceLab {\n    public class Pebble {}\n    public class Parcel { public List<Pebble> items { get; set; } }\n    public static String inspect(List<String> v) { return 'strings'; }\n    public static String inspect(List<Object> v) { return 'objects'; }\n    public static String inspect(List<Id> v) { return 'ids'; }\n    public static String describe(String v) { return 'text'; }\n    public static String describe(List<Pebble> v) { return 'pebbles'; }\n}\n"
+  },
+  "rows": [
+    {
+      "id": "N01",
+      "apex": "NullChoiceLab.Parcel parcel=(NullChoiceLab.Parcel)JSON.deserialize('{\"items\":null}',NullChoiceLab.Parcel.class); Object observed=new Map<String,Object>{'null'=>parcel.items==null,'label'=>NullChoiceLab.inspect(parcel.items)};",
+      "observe": "Compilation, selected overload label, null predicate, exact exception type/message. N09 additionally observes JSON-key matching without assuming it."
+    },
+    {
+      "id": "N02",
+      "apex": "NullChoiceLab.Parcel parcel=(NullChoiceLab.Parcel)JSON.deserialize('{}',NullChoiceLab.Parcel.class); Object observed=new Map<String,Object>{'null'=>parcel.items==null,'label'=>NullChoiceLab.inspect(parcel.items)};",
+      "observe": "Compilation, selected overload label, null predicate, exact exception type/message. N09 additionally observes JSON-key matching without assuming it."
+    },
+    {
+      "id": "N03",
+      "apex": "NullChoiceLab.Parcel parcel=(NullChoiceLab.Parcel)JSON.deserialize('{\"items\":[]}',NullChoiceLab.Parcel.class); Object observed=new Map<String,Object>{'null'=>parcel.items==null,'label'=>NullChoiceLab.inspect(parcel.items)};",
+      "observe": "Compilation, selected overload label, null predicate, exact exception type/message. N09 additionally observes JSON-key matching without assuming it."
+    },
+    {
+      "id": "N09",
+      "apex": "NullChoiceLab.Parcel parcel=(NullChoiceLab.Parcel)JSON.deserialize('{\"ItEmS\":null}',NullChoiceLab.Parcel.class); Object observed=new Map<String,Object>{'null'=>parcel.items==null,'label'=>NullChoiceLab.inspect(parcel.items)};",
+      "observe": "Compilation, selected overload label, null predicate, exact exception type/message. N09 additionally observes JSON-key matching without assuming it."
+    },
+    {
+      "id": "N01_strict",
+      "apex": "NullChoiceLab.Parcel parcel=(NullChoiceLab.Parcel)JSON.deserializeStrict('{\"items\":null}',NullChoiceLab.Parcel.class); Object observed=NullChoiceLab.inspect(parcel.items);",
+      "observe": "Strict hydration twin; exact selected label or compiler/runtime failure."
+    },
+    {
+      "id": "N01_field",
+      "sourceVariant": "Change Parcel.items from automatic property to public List<Pebble> items; retain all other declarations.",
+      "apex": "NullChoiceLab.Parcel parcel=(NullChoiceLab.Parcel)JSON.deserialize('{\"items\":null}',NullChoiceLab.Parcel.class); Object observed=new Map<String,Object>{'null'=>parcel.items==null,'label'=>NullChoiceLab.inspect(parcel.items)};",
+      "observe": "Ordinary field hydration twin."
+    },
+    {
+      "id": "N04",
+      "apex": "NullChoiceLab.Parcel parcel=new NullChoiceLab.Parcel(); Object observed=NullChoiceLab.inspect(parcel.items);",
+      "observe": "Uninitialized automatic property control."
+    },
+    {
+      "id": "N05",
+      "apex": "NullChoiceLab.Parcel parcel=new NullChoiceLab.Parcel(); parcel.items=null; Object observed=NullChoiceLab.inspect(parcel.items);",
+      "observe": "Ordinary null assignment control."
+    },
+    {
+      "id": "N06",
+      "apex": "List<NullChoiceLab.Pebble> items=null; Object observed=NullChoiceLab.inspect(items);",
+      "observe": "Declared user-list null control; analogous owned C156TN_008/044 rows exist."
+    },
+    {
+      "id": "N08",
+      "apex": "Object observed=NullChoiceLab.inspect(new List<NullChoiceLab.Pebble>{new NullChoiceLab.Pebble()});",
+      "observe": "Non-null user-list control."
+    },
+    {
+      "id": "N10",
+      "apex": "Object observed=NullChoiceLab.inspect(null);",
+      "observe": "Bare null control; retain exact compiler problem, line/column. Do not convert it to a typed temporary."
+    },
+    {
+      "id": "N48",
+      "apex": "List<String> items=null; Object observed=NullChoiceLab.inspect(items);",
+      "observe": "Typed neighboring overload control."
+    },
+    {
+      "id": "N49",
+      "apex": "List<Id> items=null; Object observed=NullChoiceLab.inspect(items);",
+      "observe": "Typed neighboring overload control."
+    },
+    {
+      "id": "N50",
+      "apex": "List<Object> items=null; Object observed=NullChoiceLab.inspect(items);",
+      "observe": "Typed neighboring overload control."
+    },
+    {
+      "id": "N01_setter",
+      "sourceVariant": "Change Parcel to public Boolean setterVisited=false; public List<Pebble> backing; public List<Pebble> items {get{return backing;} set{setterVisited=true; backing=value;}}",
+      "apex": "NullChoiceLab.Parcel parcel=(NullChoiceLab.Parcel)JSON.deserialize('{\"items\":null}',NullChoiceLab.Parcel.class); Object observed=new Map<String,Object>{'setterVisited'=>parcel.setterVisited,'backingNull'=>parcel.backing==null,'label'=>NullChoiceLab.inspect(parcel.items)};",
+      "observe": "Custom setter twin; record whether called and final backing null predicate plus overload label."
+    }
+  ],
+  "evidence": "C156TN_008 in typed_null_tn.json and C156TN_044/045 in typed_null_generic_returns.json establish the declared user-list view. Exact JSON-null hydration is unobserved; candidate expectations are not native evidence.",
+  "transport": "Run each row independently with matching caller/helper metadata and invocation API. Retain compile diagnostics or JSON-encoded observed value and exact exception type/message. Do not hoist an overload argument into a new typed variable."
+}

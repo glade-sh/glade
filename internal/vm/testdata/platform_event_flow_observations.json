@@ -1,0 +1,73 @@
+{
+  "Captures": [
+    {
+      "SourceAPI": "52.0",
+      "Context": "istest",
+      "TransportAPI": "67.0",
+      "OrgIDHash": "53540392fed282c44999eaa19c9c5c8b51655ca846cfd4f327e089e1a4580702",
+      "DeploymentID": "0AfRK00000uoVA20AM",
+      "RawResponseSha256": "dd9eb42963ad2dfe02a1bfbf6b27ab10ee688ed933d0ecede8171516b8dbc3b9",
+      "ObserverSource": "@IsTest\nprivate class PlatformSignal52Test {\n    private static List<String> names() {\n        List<String> result = new List<String>();\n        for(Account output : [SELECT Name FROM Account WHERE Name LIKE 'PFS-%' ORDER BY Name]) result.add(output.Name);\n        return result;\n    }\n    @IsTest static void noEvents() {\n        Test.getEventBus().deliver();\n        System.assert(false, 'PFS-CELL:'+JSON.serialize(new Map<String,Object>{'case'=>'noEvents','names'=>names()}));\n    }\n    @IsTest static void oneEvent() {\n        OwnedSignal__e signal = new OwnedSignal__e(Token__c='PFS-One');\n        Database.SaveResult outcome=Eventbus.publish(signal);\n        Map<String,Object> answer=new Map<String,Object>{'case'=>'oneEvent','published'=>outcome.isSuccess(),'callerToken'=>signal.Token__c,'before'=>names()};\n        Test.getEventBus().deliver();\n        answer.put('after',names());\n        Test.getEventBus().deliver();\n        answer.put('repeat',names());\n        System.assert(false, 'PFS-CELL:'+JSON.serialize(answer));\n    }\n    @IsTest static void mixedEvents() {\n        List<Database.SaveResult> outcomes=Eventbus.publish(new List<OwnedSignal__e>{new OwnedSignal__e(Token__c='PFS-Mixed'),new OwnedSignal__e()});\n        List<Boolean> success=new List<Boolean>();\n        for(Database.SaveResult outcome:outcomes) success.add(outcome.isSuccess());\n        Map<String,Object> answer=new Map<String,Object>{'case'=>'mixedEvents','published'=>success,'before'=>names()};\n        Test.getEventBus().deliver();\n        answer.put('after',names());\n        Test.getEventBus().deliver();\n        answer.put('repeat',names());\n        System.assert(false, 'PFS-CELL:'+JSON.serialize(answer));\n    }\n}\n",
+      "ObserverMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+      "ObserverSourceSha256": "bb18baa7482b4ecda24238c7a6b5772257212b3151acbfed646e0cac9ec6d6cb",
+      "ObserverMetadataSha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4",
+      "AnswerJSON": "[{\"after\":[\"PFS-Empty\",\"PFS-Mixed\"],\"before\":[],\"case\":\"mixedEvents\",\"published\":[true,true],\"repeat\":[\"PFS-Empty\",\"PFS-Mixed\"]},{\"case\":\"noEvents\",\"names\":[]},{\"after\":[\"PFS-One\"],\"before\":[],\"callerToken\":\"PFS-One\",\"case\":\"oneEvent\",\"published\":true,\"repeat\":[\"PFS-One\"]}]",
+      "AnswerSha256": "9dd0d0e585dcd11cced33d431f3fe3699b93c5fd8ab54749c14ae463f1331eee"
+    },
+    {
+      "SourceAPI": "62.0",
+      "Context": "istest",
+      "TransportAPI": "67.0",
+      "OrgIDHash": "53540392fed282c44999eaa19c9c5c8b51655ca846cfd4f327e089e1a4580702",
+      "DeploymentID": "0AfRK00000uoVA20AM",
+      "RawResponseSha256": "647a0ca168a46b4cffc6ab5ae82290ff8b1a9e4eb98051c4db81439cd9ca0cc0",
+      "ObserverSource": "@IsTest\nprivate class PlatformSignal62Test {\n    private static List<String> names() {\n        List<String> result = new List<String>();\n        for(Account output : [SELECT Name FROM Account WHERE Name LIKE 'PFS-%' ORDER BY Name]) result.add(output.Name);\n        return result;\n    }\n    @IsTest static void noEvents() {\n        Test.getEventBus().deliver();\n        System.assert(false, 'PFS-CELL:'+JSON.serialize(new Map<String,Object>{'case'=>'noEvents','names'=>names()}));\n    }\n    @IsTest static void oneEvent() {\n        OwnedSignal__e signal = new OwnedSignal__e(Token__c='PFS-One');\n        Database.SaveResult outcome=Eventbus.publish(signal);\n        Map<String,Object> answer=new Map<String,Object>{'case'=>'oneEvent','published'=>outcome.isSuccess(),'callerToken'=>signal.Token__c,'before'=>names()};\n        Test.getEventBus().deliver();\n        answer.put('after',names());\n        Test.getEventBus().deliver();\n        answer.put('repeat',names());\n        System.assert(false, 'PFS-CELL:'+JSON.serialize(answer));\n    }\n    @IsTest static void mixedEvents() {\n        List<Database.SaveResult> outcomes=Eventbus.publish(new List<OwnedSignal__e>{new OwnedSignal__e(Token__c='PFS-Mixed'),new OwnedSignal__e()});\n        List<Boolean> success=new List<Boolean>();\n        for(Database.SaveResult outcome:outcomes) success.add(outcome.isSuccess());\n        Map<String,Object> answer=new Map<String,Object>{'case'=>'mixedEvents','published'=>success,'before'=>names()};\n        Test.getEventBus().deliver();\n        answer.put('after',names());\n        Test.getEventBus().deliver();\n        answer.put('repeat',names());\n        System.assert(false, 'PFS-CELL:'+JSON.serialize(answer));\n    }\n}\n",
+      "ObserverMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "ObserverSourceSha256": "e3355dca2af220b5f95f13af120e605df7aa7d6e3b21e90230782da7ebc793c0",
+      "ObserverMetadataSha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+      "AnswerJSON": "[{\"after\":[\"PFS-Empty\",\"PFS-Mixed\"],\"before\":[],\"case\":\"mixedEvents\",\"published\":[true,true],\"repeat\":[\"PFS-Empty\",\"PFS-Mixed\"]},{\"case\":\"noEvents\",\"names\":[]},{\"after\":[\"PFS-One\"],\"before\":[],\"callerToken\":\"PFS-One\",\"case\":\"oneEvent\",\"published\":true,\"repeat\":[\"PFS-One\"]}]",
+      "AnswerSha256": "9dd0d0e585dcd11cced33d431f3fe3699b93c5fd8ab54749c14ae463f1331eee"
+    },
+    {
+      "SourceAPI": "67.0",
+      "Context": "istest",
+      "TransportAPI": "67.0",
+      "OrgIDHash": "53540392fed282c44999eaa19c9c5c8b51655ca846cfd4f327e089e1a4580702",
+      "DeploymentID": "0AfRK00000uoVA20AM",
+      "RawResponseSha256": "23c530da3a56b3e13d3beaf3da2656bdbd313955221844aa56c2b28656636116",
+      "ObserverSource": "@IsTest\nprivate class PlatformSignal67Test {\n    private static List<String> names() {\n        List<String> result = new List<String>();\n        for(Account output : [SELECT Name FROM Account WHERE Name LIKE 'PFS-%' ORDER BY Name]) result.add(output.Name);\n        return result;\n    }\n    @IsTest static void noEvents() {\n        Test.getEventBus().deliver();\n        System.assert(false, 'PFS-CELL:'+JSON.serialize(new Map<String,Object>{'case'=>'noEvents','names'=>names()}));\n    }\n    @IsTest static void oneEvent() {\n        OwnedSignal__e signal = new OwnedSignal__e(Token__c='PFS-One');\n        Database.SaveResult outcome=Eventbus.publish(signal);\n        Map<String,Object> answer=new Map<String,Object>{'case'=>'oneEvent','published'=>outcome.isSuccess(),'callerToken'=>signal.Token__c,'before'=>names()};\n        Test.getEventBus().deliver();\n        answer.put('after',names());\n        Test.getEventBus().deliver();\n        answer.put('repeat',names());\n        System.assert(false, 'PFS-CELL:'+JSON.serialize(answer));\n    }\n    @IsTest static void mixedEvents() {\n        List<Database.SaveResult> outcomes=Eventbus.publish(new List<OwnedSignal__e>{new OwnedSignal__e(Token__c='PFS-Mixed'),new OwnedSignal__e()});\n        List<Boolean> success=new List<Boolean>();\n        for(Database.SaveResult outcome:outcomes) success.add(outcome.isSuccess());\n        Map<String,Object> answer=new Map<String,Object>{'case'=>'mixedEvents','published'=>success,'before'=>names()};\n        Test.getEventBus().deliver();\n        answer.put('after',names());\n        Test.getEventBus().deliver();\n        answer.put('repeat',names());\n        System.assert(false, 'PFS-CELL:'+JSON.serialize(answer));\n    }\n}\n",
+      "ObserverMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "ObserverSourceSha256": "1a3b7f28ce838bd0fd1c5615b05fc71116b8ec0943a19ad6c35e521c73965af6",
+      "ObserverMetadataSha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+      "AnswerJSON": "[{\"after\":[\"PFS-Empty\",\"PFS-Mixed\"],\"before\":[],\"case\":\"mixedEvents\",\"published\":[true,true],\"repeat\":[\"PFS-Empty\",\"PFS-Mixed\"]},{\"case\":\"noEvents\",\"names\":[]},{\"after\":[\"PFS-One\"],\"before\":[],\"callerToken\":\"PFS-One\",\"case\":\"oneEvent\",\"published\":true,\"repeat\":[\"PFS-One\"]}]",
+      "AnswerSha256": "9dd0d0e585dcd11cced33d431f3fe3699b93c5fd8ab54749c14ae463f1331eee"
+    }
+  ],
+  "MetadataFiles": [
+    {
+      "Path": "classes/PlatformSignalRecorder.cls",
+      "Source": "public class PlatformSignalRecorder {\n    @InvocableMethod(label='Capture owned signal')\n    public static void capture(List<OwnedSignal__e> signals) {\n        List<Account> outputs = new List<Account>();\n        for (OwnedSignal__e signal : signals) {\n            outputs.add(new Account(Name=signal.Token__c == null ? 'PFS-Empty' : signal.Token__c));\n        }\n        insert outputs;\n    }\n}\n",
+      "Sha256": "1f8ce9b47b3588d4ea09b0c461b06379b4529fdb898de0284bf1a26bf841ab11"
+    },
+    {
+      "Path": "classes/PlatformSignalRecorder.cls-meta.xml",
+      "Source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>52.0</apiVersion><status>Active</status></ApexClass>\n",
+      "Sha256": "c0c1b636f07e79e68635542491c48233c0183db70ff5135415ed5656f4bb4ee4"
+    },
+    {
+      "Path": "flows/OwnedSignalCapture.flow-meta.xml",
+      "Source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n <actionCalls><name>CaptureSignal</name><label>Capture signal</label><locationX>50</locationX><locationY>100</locationY><actionName>PlatformSignalRecorder</actionName><actionType>apex</actionType><flowTransactionModel>CurrentTransaction</flowTransactionModel><inputParameters><name>signals</name><value><elementReference>$Record</elementReference></value></inputParameters></actionCalls>\n <apiVersion>55.0</apiVersion><interviewLabel>Owned signal dispatch</interviewLabel><label>Owned signal dispatch</label><processType>AutoLaunchedFlow</processType>\n <start><locationX>50</locationX><locationY>0</locationY><connector><targetReference>CaptureSignal</targetReference></connector><object>OwnedSignal__e</object><triggerType>PlatformEvent</triggerType></start><status>Active</status>\n</Flow>\n",
+      "Sha256": "64494d4297795794f648247d7a6d7eaf5332114562e0748b080a54d81dbb3b7d"
+    },
+    {
+      "Path": "objects/OwnedSignal__e/OwnedSignal__e.object-meta.xml",
+      "Source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><label>Owned Signal</label><pluralLabel>Owned Signals</pluralLabel><publishBehavior>PublishAfterCommit</publishBehavior></CustomObject>\n",
+      "Sha256": "530139e72916b7443cc9986a30ea028baa7571819b219909a40ade4b862e32ea"
+    },
+    {
+      "Path": "objects/OwnedSignal__e/fields/Token__c.field-meta.xml",
+      "Source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Token__c</fullName><label>Token</label><length>80</length><type>Text</type></CustomField>\n",
+      "Sha256": "fbd32b947bf19a04c69f7b49f74de0fdf9e6fe2bae0797b9c985f511dc3f954c"
+    }
+  ]
+}

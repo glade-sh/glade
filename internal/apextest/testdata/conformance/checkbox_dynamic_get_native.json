@@ -1,0 +1,682 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "routes": [
+    "isTest",
+    "anonymous"
+  ],
+  "namespaceContext": "none",
+  "knownRows": 36,
+  "pendingCoverage": [
+    "Custom checkbox fields and custom metadata/settings are unobserved by this packet.",
+    "Stored, queried, trigger, DML, JSON-deserialized and cloned receiver views are not generalized from fresh constructor observations.",
+    "Source/caller API versions outside 62.0 and 67.0 are not observed by this packet.",
+    "Namespace and mixed helper/caller version contexts are unobserved by this packet."
+  ],
+  "captures": [
+    {
+      "context": "api62",
+      "kind": "named",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "sourceAPI": "62.0",
+      "callerAPI": "62.0",
+      "transportAPI": "62.0",
+      "marker": "CHECKBOX_READ_OBSERVATION ",
+      "rawSHA256": {
+        "org.tsv": "cac90853813c8e2906d5620772b926d0017fb7f7863c9c0310393bc5ebd09a1a",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "2333f8f765e339745d4510019b04af35ef2d6f7b3dec08944a4feaf9d2aa3530",
+        "deploy.command.json": "0e06b097f13caeb08b5ff4a81b6b2e5eb6b85b0563ce0e581ebe582ac06c6a59",
+        "ORG-RUN.txt": "3704bd07f56108d8b5a6a2f8837db55e1e7424e722060d1896fc843e4e25ef63",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "rows": [
+        {
+          "id": "absent",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "absent",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"absent\",\"cast\":null,\"dot\":false,\"tokenGet\":null,\"stringGet\":null}"
+          }
+        },
+        {
+          "id": "absentWithId",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "absentWithId",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"absentWithId\",\"cast\":null,\"dot\":false,\"tokenGet\":null,\"stringGet\":null}"
+          }
+        },
+        {
+          "id": "absentWithParent",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "absentWithParent",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"absentWithParent\",\"cast\":null,\"dot\":false,\"tokenGet\":null,\"stringGet\":null}"
+          }
+        },
+        {
+          "id": "explicitFalse",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "explicitFalse",
+            "cast": false,
+            "dot": false,
+            "tokenGet": false,
+            "stringGet": false
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"explicitFalse\",\"cast\":false,\"dot\":false,\"tokenGet\":false,\"stringGet\":false}"
+          }
+        },
+        {
+          "id": "explicitNullConstructor",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "explicitNullConstructor",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"explicitNullConstructor\",\"cast\":null,\"dot\":false,\"tokenGet\":null,\"stringGet\":null}"
+          }
+        },
+        {
+          "id": "explicitNullPut",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "explicitNullPut",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"explicitNullPut\",\"cast\":null,\"dot\":false,\"tokenGet\":null,\"stringGet\":null}"
+          }
+        },
+        {
+          "id": "explicitTrue",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "explicitTrue",
+            "cast": true,
+            "dot": true,
+            "tokenGet": true,
+            "stringGet": true
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"explicitTrue\",\"cast\":true,\"dot\":true,\"tokenGet\":true,\"stringGet\":true}"
+          }
+        },
+        {
+          "id": "keyCollections",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "keyCollections",
+            "setTrue": true,
+            "setFalse": true,
+            "setNull": true,
+            "trueCount": 1,
+            "falseCount": 1,
+            "nullCount": 1,
+            "setSize": 3,
+            "mapSize": 3
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"keyCollections\",\"setTrue\":true,\"setFalse\":true,\"setNull\":true,\"trueCount\":1,\"falseCount\":1,\"nullCount\":1,\"setSize\":3,\"mapSize\":3}"
+          }
+        },
+        {
+          "id": "userPropertyNull",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "userPropertyNull",
+            "cast": null,
+            "dot": null
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"userPropertyNull\",\"cast\":null,\"dot\":null}"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0AfjZ000000Oa7ESAS",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 9,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 9
+      },
+      "testClass": "CheckboxReadObservation",
+      "sources": {
+        "force-app/main/default/classes/CheckboxReadObservation.cls": {
+          "source": "@IsTest\nprivate class CheckboxReadObservation {\n    private static void emit(String cell, Map<String,Object> row) {\n        row.put('cell', cell);\n        row.put('sourceApi', '62.0');\n        row.put('callerApi', '62.0');\n        System.assertEquals('capture', 'CHECKBOX_READ_OBSERVATION ' + JSON.serialize(row));\n    }\n    @IsTest static void absent() { emit('absent', OwnedCheckboxRead.describe(new Contact())); }\n    @IsTest static void absentWithId() { emit('absentWithId', OwnedCheckboxRead.describe(new Contact(Id='003000000000072', LastName='Owned'))); }\n    @IsTest static void absentWithParent() { emit('absentWithParent', OwnedCheckboxRead.describe(OwnedCheckboxRead.related())); }\n    @IsTest static void explicitNullConstructor() { emit('explicitNullConstructor', OwnedCheckboxRead.describe(new Contact(DoNotCall=null))); }\n    @IsTest static void explicitNullPut() {\n        Contact row = new Contact();\n        row.put('DoNotCall', null);\n        emit('explicitNullPut', OwnedCheckboxRead.describe(row));\n    }\n    @IsTest static void explicitFalse() { emit('explicitFalse', OwnedCheckboxRead.describe(new Contact(DoNotCall=false))); }\n    @IsTest static void explicitTrue() { emit('explicitTrue', OwnedCheckboxRead.describe(new Contact(DoNotCall=true))); }\n    @IsTest static void userPropertyNull() {\n        OwnedCheckboxRead.ValueHolder holder = new OwnedCheckboxRead.ValueHolder();\n        Object value = holder.value;\n        emit('userPropertyNull', new Map<String,Object>{'dot'=>holder.value, 'cast'=>OwnedCheckboxRead.castValue(value)});\n    }\n    @IsTest static void keyCollections() { emit('keyCollections', OwnedCheckboxRead.keys()); }\n}\n",
+          "sha256": "a65f58920871d779de0d3da507bcb95969bf5b11ecb77e7df8e112c7efa89cc9"
+        },
+        "force-app/main/default/classes/CheckboxReadObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+        },
+        "force-app/main/default/classes/OwnedCheckboxRead.cls": {
+          "source": "public class OwnedCheckboxRead {\n    public class ValueHolder { public Boolean value { get; set; } }\n\n    public static Map<String,Object> describe(Contact row) {\n        Map<String,Object> answer = new Map<String,Object>();\n        try { answer.put('stringGet', row.get('DoNotCall')); }\n        catch (Exception ex) { answer.put('stringError', ex.getTypeName() + ': ' + ex.getMessage()); }\n        try { answer.put('tokenGet', row.get(Contact.DoNotCall)); }\n        catch (Exception ex) { answer.put('tokenError', ex.getTypeName() + ': ' + ex.getMessage()); }\n        try { answer.put('dot', row.DoNotCall); }\n        catch (Exception ex) { answer.put('dotError', ex.getTypeName() + ': ' + ex.getMessage()); }\n        try { answer.put('cast', castValue(row.get('DoNotCall'))); }\n        catch (Exception ex) { answer.put('castError', ex.getTypeName() + ': ' + ex.getMessage()); }\n        return answer;\n    }\n\n    public static Boolean castValue(Object value) { return (Boolean)value; }\n\n    public static Contact related() {\n        Account parent = new Account(Id='001000000000071', Name='Owned');\n        Contact row = new Contact(Id='003000000000071', AccountId=parent.Id, LastName='Owned');\n        row.putSObject('Account', parent);\n        return row;\n    }\n\n    public static Map<String,Object> keys() {\n        Map<Boolean,Integer> counts = new Map<Boolean,Integer>();\n        Set<Boolean> keys = new Set<Boolean>();\n        for (Contact row : new List<Contact>{new Contact(DoNotCall=true), new Contact(DoNotCall=false), new Contact()}) {\n            Boolean key = castValue(row.get('DoNotCall'));\n            keys.add(key);\n            counts.put(key, counts.containsKey(key) ? counts.get(key) + 1 : 1);\n        }\n        return new Map<String,Object>{'mapSize'=>counts.size(), 'setSize'=>keys.size(),\n            'nullCount'=>counts.get(null), 'falseCount'=>counts.get(false), 'trueCount'=>counts.get(true),\n            'setNull'=>keys.contains(null), 'setFalse'=>keys.contains(false), 'setTrue'=>keys.contains(true)};\n    }\n}\n",
+          "sha256": "ef9af7e4e69dc8c685e0064d4d2caaa143303359c31cc1b5af3bdf2e65252039"
+        },
+        "force-app/main/default/classes/OwnedCheckboxRead.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "d5ab119c9a2d0ea62bbb91470efa2f454b1ff55a048459461c8c8e9ead175af4"
+        }
+      }
+    },
+    {
+      "context": "anonymous-api62",
+      "kind": "anonymous",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "sourceAPI": "62.0",
+      "callerAPI": "62.0",
+      "transportAPI": "62.0",
+      "marker": "CHECKBOX_READ_OBSERVATION|",
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "de653f0ddb3ed6de70f64be96429c7d08eaafb517edf1afff272c5e1a9477745",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "source.apex": "69d5a5b36107048c3cda2baca4021418753cdadede18c40938ea14be7569e45c",
+        "run.json": "bdad55525ff2124b3390643c116e70ad9f70e76abf2a1055d9fa298e4fb1f95e",
+        "ORG-RUN.txt": "fd62dba32f49c7423a3d49a893f4b31846c1dc5d4590030a4ee1688b8000419c"
+      },
+      "rows": [
+        {
+          "id": "0",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "absent",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          }
+        },
+        {
+          "id": "1",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "absentWithId",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          }
+        },
+        {
+          "id": "2",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "absentWithParent",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          }
+        },
+        {
+          "id": "3",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "explicitNullConstructor",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          }
+        },
+        {
+          "id": "4",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "explicitNullPut",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          }
+        },
+        {
+          "id": "5",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "explicitFalse",
+            "cast": false,
+            "dot": false,
+            "tokenGet": false,
+            "stringGet": false
+          }
+        },
+        {
+          "id": "6",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "explicitTrue",
+            "cast": true,
+            "dot": true,
+            "tokenGet": true,
+            "stringGet": true
+          }
+        },
+        {
+          "id": "7",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "userPropertyNull",
+            "cast": null,
+            "dot": null
+          }
+        },
+        {
+          "id": "8",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "keyCollections",
+            "setTrue": true,
+            "setFalse": true,
+            "setNull": true,
+            "trueCount": 1,
+            "falseCount": 1,
+            "nullCount": 1,
+            "setSize": 3,
+            "mapSize": 3
+          }
+        }
+      ],
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "status": 0
+      },
+      "source": {
+        "source": "class CheckboxProperty { public Boolean value { get; set; } }\nclass CheckboxReadProbe {\n    Boolean castValue(Object value) { return (Boolean)value; }\n    Map<String,Object> describe(Contact row) {\n        Map<String,Object> answer = new Map<String,Object>();\n        try { answer.put('stringGet', row.get('DoNotCall')); }\n        catch (Exception ex) { answer.put('stringError', ex.getTypeName() + ': ' + ex.getMessage()); }\n        try { answer.put('tokenGet', row.get(Contact.DoNotCall)); }\n        catch (Exception ex) { answer.put('tokenError', ex.getTypeName() + ': ' + ex.getMessage()); }\n        try { answer.put('dot', row.DoNotCall); }\n        catch (Exception ex) { answer.put('dotError', ex.getTypeName() + ': ' + ex.getMessage()); }\n        try { answer.put('cast', castValue(row.get('DoNotCall'))); }\n        catch (Exception ex) { answer.put('castError', ex.getTypeName() + ': ' + ex.getMessage()); }\n        return answer;\n    }\n    void emit(String cell, Map<String,Object> row) {\n        row.put('cell', cell);\n        row.put('sourceApi', '62.0');\n        row.put('callerApi', '62.0');\n        System.debug('CHECKBOX_READ_OBSERVATION|' + JSON.serialize(row));\n    }\n    public void observe() {\n        emit('absent', describe(new Contact()));\n        emit('absentWithId', describe(new Contact(Id='003000000000072', LastName='Owned')));\n        Account parent = new Account(Id='001000000000071', Name='Owned');\n        Contact related = new Contact(Id='003000000000071', AccountId=parent.Id, LastName='Owned');\n        related.putSObject('Account', parent);\n        emit('absentWithParent', describe(related));\n        emit('explicitNullConstructor', describe(new Contact(DoNotCall=null)));\n        Contact putNull = new Contact();\n        putNull.put('DoNotCall', null);\n        emit('explicitNullPut', describe(putNull));\n        emit('explicitFalse', describe(new Contact(DoNotCall=false)));\n        emit('explicitTrue', describe(new Contact(DoNotCall=true)));\n        CheckboxProperty holder = new CheckboxProperty();\n        Object value = holder.value;\n        emit('userPropertyNull', new Map<String,Object>{'dot'=>holder.value, 'cast'=>castValue(value)});\n        Map<Boolean,Integer> counts = new Map<Boolean,Integer>();\n        Set<Boolean> keys = new Set<Boolean>();\n        for (Contact row : new List<Contact>{new Contact(DoNotCall=true), new Contact(DoNotCall=false), new Contact()}) {\n            Boolean key = castValue(row.get('DoNotCall'));\n            keys.add(key);\n            counts.put(key, counts.containsKey(key) ? counts.get(key) + 1 : 1);\n        }\n        emit('keyCollections', new Map<String,Object>{'mapSize'=>counts.size(), 'setSize'=>keys.size(),\n            'nullCount'=>counts.get(null), 'falseCount'=>counts.get(false), 'trueCount'=>counts.get(true),\n            'setNull'=>keys.contains(null), 'setFalse'=>keys.contains(false), 'setTrue'=>keys.contains(true)});\n    }\n}\nnew CheckboxReadProbe().observe();\n",
+        "sha256": "69d5a5b36107048c3cda2baca4021418753cdadede18c40938ea14be7569e45c"
+      }
+    },
+    {
+      "context": "api67",
+      "kind": "named",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "sourceAPI": "67.0",
+      "callerAPI": "67.0",
+      "transportAPI": "62.0",
+      "marker": "CHECKBOX_READ_OBSERVATION ",
+      "rawSHA256": {
+        "org.tsv": "90a695541a12df33a5a8d601f8a119105d1f3a92a550b725d04b447300a6341f",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "e748271542f858fc68057f40b388ad99f0c2167c7a6bdeedd925618e86c564b8",
+        "deploy.command.json": "0e06b097f13caeb08b5ff4a81b6b2e5eb6b85b0563ce0e581ebe582ac06c6a59",
+        "ORG-RUN.txt": "05b73a9c8fe60837cc734818b0a34f082133e4c8a9227a02da5dce3fb54d10b9",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "rows": [
+        {
+          "id": "absent",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "absent",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"absent\",\"cast\":null,\"dot\":false,\"tokenGet\":null,\"stringGet\":null}"
+          }
+        },
+        {
+          "id": "absentWithId",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "absentWithId",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"absentWithId\",\"cast\":null,\"dot\":false,\"tokenGet\":null,\"stringGet\":null}"
+          }
+        },
+        {
+          "id": "absentWithParent",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "absentWithParent",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"absentWithParent\",\"cast\":null,\"dot\":false,\"tokenGet\":null,\"stringGet\":null}"
+          }
+        },
+        {
+          "id": "explicitFalse",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "explicitFalse",
+            "cast": false,
+            "dot": false,
+            "tokenGet": false,
+            "stringGet": false
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"explicitFalse\",\"cast\":false,\"dot\":false,\"tokenGet\":false,\"stringGet\":false}"
+          }
+        },
+        {
+          "id": "explicitNullConstructor",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "explicitNullConstructor",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"explicitNullConstructor\",\"cast\":null,\"dot\":false,\"tokenGet\":null,\"stringGet\":null}"
+          }
+        },
+        {
+          "id": "explicitNullPut",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "explicitNullPut",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"explicitNullPut\",\"cast\":null,\"dot\":false,\"tokenGet\":null,\"stringGet\":null}"
+          }
+        },
+        {
+          "id": "explicitTrue",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "explicitTrue",
+            "cast": true,
+            "dot": true,
+            "tokenGet": true,
+            "stringGet": true
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"explicitTrue\",\"cast\":true,\"dot\":true,\"tokenGet\":true,\"stringGet\":true}"
+          }
+        },
+        {
+          "id": "keyCollections",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "keyCollections",
+            "setTrue": true,
+            "setFalse": true,
+            "setNull": true,
+            "trueCount": 1,
+            "falseCount": 1,
+            "nullCount": 1,
+            "setSize": 3,
+            "mapSize": 3
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"keyCollections\",\"setTrue\":true,\"setFalse\":true,\"setNull\":true,\"trueCount\":1,\"falseCount\":1,\"nullCount\":1,\"setSize\":3,\"mapSize\":3}"
+          }
+        },
+        {
+          "id": "userPropertyNull",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "userPropertyNull",
+            "cast": null,
+            "dot": null
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: CHECKBOX_READ_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"userPropertyNull\",\"cast\":null,\"dot\":null}"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0AfjZ000000OWQBSA4",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 9,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 9
+      },
+      "testClass": "CheckboxReadObservation",
+      "sources": {
+        "force-app/main/default/classes/CheckboxReadObservation.cls": {
+          "source": "@IsTest\nprivate class CheckboxReadObservation {\n    private static void emit(String cell, Map<String,Object> row) {\n        row.put('cell', cell);\n        row.put('sourceApi', '67.0');\n        row.put('callerApi', '67.0');\n        System.assertEquals('capture', 'CHECKBOX_READ_OBSERVATION ' + JSON.serialize(row));\n    }\n    @IsTest static void absent() { emit('absent', OwnedCheckboxRead.describe(new Contact())); }\n    @IsTest static void absentWithId() { emit('absentWithId', OwnedCheckboxRead.describe(new Contact(Id='003000000000072', LastName='Owned'))); }\n    @IsTest static void absentWithParent() { emit('absentWithParent', OwnedCheckboxRead.describe(OwnedCheckboxRead.related())); }\n    @IsTest static void explicitNullConstructor() { emit('explicitNullConstructor', OwnedCheckboxRead.describe(new Contact(DoNotCall=null))); }\n    @IsTest static void explicitNullPut() {\n        Contact row = new Contact();\n        row.put('DoNotCall', null);\n        emit('explicitNullPut', OwnedCheckboxRead.describe(row));\n    }\n    @IsTest static void explicitFalse() { emit('explicitFalse', OwnedCheckboxRead.describe(new Contact(DoNotCall=false))); }\n    @IsTest static void explicitTrue() { emit('explicitTrue', OwnedCheckboxRead.describe(new Contact(DoNotCall=true))); }\n    @IsTest static void userPropertyNull() {\n        OwnedCheckboxRead.ValueHolder holder = new OwnedCheckboxRead.ValueHolder();\n        Object value = holder.value;\n        emit('userPropertyNull', new Map<String,Object>{'dot'=>holder.value, 'cast'=>OwnedCheckboxRead.castValue(value)});\n    }\n    @IsTest static void keyCollections() { emit('keyCollections', OwnedCheckboxRead.keys()); }\n}\n",
+          "sha256": "e3a5d314e3379818207fd5c1e125df2d735a0a115a46b6bcacccf6eb3c7355c2"
+        },
+        "force-app/main/default/classes/CheckboxReadObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/OwnedCheckboxRead.cls": {
+          "source": "public class OwnedCheckboxRead {\n    public class ValueHolder { public Boolean value { get; set; } }\n\n    public static Map<String,Object> describe(Contact row) {\n        Map<String,Object> answer = new Map<String,Object>();\n        try { answer.put('stringGet', row.get('DoNotCall')); }\n        catch (Exception ex) { answer.put('stringError', ex.getTypeName() + ': ' + ex.getMessage()); }\n        try { answer.put('tokenGet', row.get(Contact.DoNotCall)); }\n        catch (Exception ex) { answer.put('tokenError', ex.getTypeName() + ': ' + ex.getMessage()); }\n        try { answer.put('dot', row.DoNotCall); }\n        catch (Exception ex) { answer.put('dotError', ex.getTypeName() + ': ' + ex.getMessage()); }\n        try { answer.put('cast', castValue(row.get('DoNotCall'))); }\n        catch (Exception ex) { answer.put('castError', ex.getTypeName() + ': ' + ex.getMessage()); }\n        return answer;\n    }\n\n    public static Boolean castValue(Object value) { return (Boolean)value; }\n\n    public static Contact related() {\n        Account parent = new Account(Id='001000000000071', Name='Owned');\n        Contact row = new Contact(Id='003000000000071', AccountId=parent.Id, LastName='Owned');\n        row.putSObject('Account', parent);\n        return row;\n    }\n\n    public static Map<String,Object> keys() {\n        Map<Boolean,Integer> counts = new Map<Boolean,Integer>();\n        Set<Boolean> keys = new Set<Boolean>();\n        for (Contact row : new List<Contact>{new Contact(DoNotCall=true), new Contact(DoNotCall=false), new Contact()}) {\n            Boolean key = castValue(row.get('DoNotCall'));\n            keys.add(key);\n            counts.put(key, counts.containsKey(key) ? counts.get(key) + 1 : 1);\n        }\n        return new Map<String,Object>{'mapSize'=>counts.size(), 'setSize'=>keys.size(),\n            'nullCount'=>counts.get(null), 'falseCount'=>counts.get(false), 'trueCount'=>counts.get(true),\n            'setNull'=>keys.contains(null), 'setFalse'=>keys.contains(false), 'setTrue'=>keys.contains(true)};\n    }\n}\n",
+          "sha256": "ef9af7e4e69dc8c685e0064d4d2caaa143303359c31cc1b5af3bdf2e65252039"
+        },
+        "force-app/main/default/classes/OwnedCheckboxRead.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+          "sha256": "626c7c456c32aa5939840aa0d14ba9c1ef860038c28c39bdb8375f8995b96c66"
+        }
+      }
+    },
+    {
+      "context": "anonymous-api67",
+      "kind": "anonymous",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "sourceAPI": "67.0",
+      "callerAPI": "67.0",
+      "transportAPI": "67.0",
+      "marker": "CHECKBOX_READ_OBSERVATION|",
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "1d2d0c8a538692c5b51ff200924902d8f3dbd75884f4aef59e5cac4ff498a411",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "source.apex": "61cd8931f60717b13ceac65203febbad114ff5b9113ac05c887794d8e3afee67",
+        "run.json": "2c15260c8ad595078fd7d3092e20a6b9629eefdc91b892ebbd159e798c5187b9",
+        "ORG-RUN.txt": "caf3ac8ae06758259100a5d5956e38dc533896b854537af6f41ed79d3c6d3cec"
+      },
+      "rows": [
+        {
+          "id": "0",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "absent",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          }
+        },
+        {
+          "id": "1",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "absentWithId",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          }
+        },
+        {
+          "id": "2",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "absentWithParent",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          }
+        },
+        {
+          "id": "3",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "explicitNullConstructor",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          }
+        },
+        {
+          "id": "4",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "explicitNullPut",
+            "cast": null,
+            "dot": false,
+            "tokenGet": null,
+            "stringGet": null
+          }
+        },
+        {
+          "id": "5",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "explicitFalse",
+            "cast": false,
+            "dot": false,
+            "tokenGet": false,
+            "stringGet": false
+          }
+        },
+        {
+          "id": "6",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "explicitTrue",
+            "cast": true,
+            "dot": true,
+            "tokenGet": true,
+            "stringGet": true
+          }
+        },
+        {
+          "id": "7",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "userPropertyNull",
+            "cast": null,
+            "dot": null
+          }
+        },
+        {
+          "id": "8",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "keyCollections",
+            "setTrue": true,
+            "setFalse": true,
+            "setNull": true,
+            "trueCount": 1,
+            "falseCount": 1,
+            "nullCount": 1,
+            "setSize": 3,
+            "mapSize": 3
+          }
+        }
+      ],
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "status": 0
+      },
+      "source": {
+        "source": "class CheckboxProperty { public Boolean value { get; set; } }\nclass CheckboxReadProbe {\n    Boolean castValue(Object value) { return (Boolean)value; }\n    Map<String,Object> describe(Contact row) {\n        Map<String,Object> answer = new Map<String,Object>();\n        try { answer.put('stringGet', row.get('DoNotCall')); }\n        catch (Exception ex) { answer.put('stringError', ex.getTypeName() + ': ' + ex.getMessage()); }\n        try { answer.put('tokenGet', row.get(Contact.DoNotCall)); }\n        catch (Exception ex) { answer.put('tokenError', ex.getTypeName() + ': ' + ex.getMessage()); }\n        try { answer.put('dot', row.DoNotCall); }\n        catch (Exception ex) { answer.put('dotError', ex.getTypeName() + ': ' + ex.getMessage()); }\n        try { answer.put('cast', castValue(row.get('DoNotCall'))); }\n        catch (Exception ex) { answer.put('castError', ex.getTypeName() + ': ' + ex.getMessage()); }\n        return answer;\n    }\n    void emit(String cell, Map<String,Object> row) {\n        row.put('cell', cell);\n        row.put('sourceApi', '67.0');\n        row.put('callerApi', '67.0');\n        System.debug('CHECKBOX_READ_OBSERVATION|' + JSON.serialize(row));\n    }\n    public void observe() {\n        emit('absent', describe(new Contact()));\n        emit('absentWithId', describe(new Contact(Id='003000000000072', LastName='Owned')));\n        Account parent = new Account(Id='001000000000071', Name='Owned');\n        Contact related = new Contact(Id='003000000000071', AccountId=parent.Id, LastName='Owned');\n        related.putSObject('Account', parent);\n        emit('absentWithParent', describe(related));\n        emit('explicitNullConstructor', describe(new Contact(DoNotCall=null)));\n        Contact putNull = new Contact();\n        putNull.put('DoNotCall', null);\n        emit('explicitNullPut', describe(putNull));\n        emit('explicitFalse', describe(new Contact(DoNotCall=false)));\n        emit('explicitTrue', describe(new Contact(DoNotCall=true)));\n        CheckboxProperty holder = new CheckboxProperty();\n        Object value = holder.value;\n        emit('userPropertyNull', new Map<String,Object>{'dot'=>holder.value, 'cast'=>castValue(value)});\n        Map<Boolean,Integer> counts = new Map<Boolean,Integer>();\n        Set<Boolean> keys = new Set<Boolean>();\n        for (Contact row : new List<Contact>{new Contact(DoNotCall=true), new Contact(DoNotCall=false), new Contact()}) {\n            Boolean key = castValue(row.get('DoNotCall'));\n            keys.add(key);\n            counts.put(key, counts.containsKey(key) ? counts.get(key) + 1 : 1);\n        }\n        emit('keyCollections', new Map<String,Object>{'mapSize'=>counts.size(), 'setSize'=>keys.size(),\n            'nullCount'=>counts.get(null), 'falseCount'=>counts.get(false), 'trueCount'=>counts.get(true),\n            'setNull'=>keys.contains(null), 'setFalse'=>keys.contains(false), 'setTrue'=>keys.contains(true)});\n    }\n}\nnew CheckboxReadProbe().observe();\n",
+        "sha256": "61cd8931f60717b13ceac65203febbad114ff5b9113ac05c887794d8e3afee67"
+      }
+    }
+  ]
+}

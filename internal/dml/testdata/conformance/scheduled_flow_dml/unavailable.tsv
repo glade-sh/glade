@@ -1,0 +1,2 @@
+trigger	api	status	reason
+RecordAfterDelete	62	metadata_rejected	Error parsing file: 'RecordAfterDelete' is not a valid value for the enum 'FlowTriggerType'

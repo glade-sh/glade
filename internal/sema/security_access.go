@@ -142,6 +142,9 @@ func (a *Analyzer) securityAccessExpressionMessage(expr ir.Expr, scope irSemaSco
 }
 
 func (a *Analyzer) securityAccessFieldMessage(name string, scope irSemaScope, model *semaTypeMemberView) string {
+	if message := a.customSettingTokenMessage(name, scope, model); message != "" {
+		return message
+	}
 	parts := strings.Split(name, ".")
 	if len(parts) < 2 {
 		return ""

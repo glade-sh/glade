@@ -1,0 +1,4 @@
+id	outcome	value
+history	accepted	accepted
+logdate	accepted	accepted
+control	compile-rejected	Field is not writeable: Account.CreatedDate

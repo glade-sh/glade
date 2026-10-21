@@ -1,0 +1,1800 @@
+{
+  "captureDate": "2026-10-14",
+  "acceptance": "capture desk acknowledgement pending",
+  "caseTableSHA256": "725f5ee87cb98d61d042c0c820cc759b109d05330e9d5ee44d016ceb08a58264",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "groups": [
+    "C03",
+    "C02"
+  ],
+  "helper": "public class TraceEmitter {\n    public static String constructed() {\n        return new DmlException().getStackTraceString();\n    }\n    public static String thrown() {\n        try { throw new IllegalArgumentException('probe failure'); }\n        catch (Exception fault) { return fault.getStackTraceString(); }\n    }\n}\n",
+  "helperSHA256": "c0c32161c7f2dedd5a11868ba92b7c9a48719757096b6f131652a8d8d97e3f76",
+  "controls": [
+    {
+      "id": "CTRL_POS",
+      "api": "62.0",
+      "route": "anonymous",
+      "outcome": "runtime"
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "api": "62.0",
+      "route": "anonymous",
+      "outcome": "runtime"
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "api": "62.0",
+      "route": "anonymous",
+      "outcome": "uncaught_anonymous"
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "api": "62.0",
+      "route": "anonymous",
+      "outcome": "compile-rejected"
+    },
+    {
+      "id": "CTRL_POS",
+      "api": "62.0",
+      "route": "istest",
+      "outcome": "runtime"
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "api": "62.0",
+      "route": "istest",
+      "outcome": "runtime"
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "api": "62.0",
+      "route": "istest",
+      "outcome": "uncaught_named"
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "api": "62.0",
+      "route": "istest",
+      "outcome": "compile-rejected"
+    },
+    {
+      "id": "CTRL_POS",
+      "api": "67.0",
+      "route": "anonymous",
+      "outcome": "runtime"
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "api": "67.0",
+      "route": "anonymous",
+      "outcome": "runtime"
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "api": "67.0",
+      "route": "anonymous",
+      "outcome": "uncaught_anonymous"
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "api": "67.0",
+      "route": "anonymous",
+      "outcome": "compile-rejected"
+    },
+    {
+      "id": "CTRL_POS",
+      "api": "67.0",
+      "route": "istest",
+      "outcome": "runtime"
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "api": "67.0",
+      "route": "istest",
+      "outcome": "runtime"
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "api": "67.0",
+      "route": "istest",
+      "outcome": "uncaught_named"
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "api": "67.0",
+      "route": "istest",
+      "outcome": "compile-rejected"
+    },
+    {
+      "id": "CTRL_POS",
+      "api": "68.0",
+      "route": "anonymous",
+      "outcome": "runtime"
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "api": "68.0",
+      "route": "anonymous",
+      "outcome": "runtime"
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "api": "68.0",
+      "route": "anonymous",
+      "outcome": "uncaught_anonymous"
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "api": "68.0",
+      "route": "anonymous",
+      "outcome": "compile-rejected"
+    },
+    {
+      "id": "CTRL_POS",
+      "api": "68.0",
+      "route": "istest",
+      "outcome": "runtime"
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "api": "68.0",
+      "route": "istest",
+      "outcome": "runtime"
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "api": "68.0",
+      "route": "istest",
+      "outcome": "uncaught_named"
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "api": "68.0",
+      "route": "istest",
+      "outcome": "compile-rejected"
+    }
+  ],
+  "cells": [
+    {
+      "id": "C02-01",
+      "group": "C02",
+      "api": "62.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\ninsert new TriadPreference__c(SetupOwnerId=UserInfo.getOrganizationId(),Tone__c='bright');TriadPreference__c a=TriadPreference__c.getOrgDefaults();Id saved=a.Id;a.Id=null;TriadPreference__c b=TriadPreference__c.getOrgDefaults();r=new List<Object>{saved!=null,b.Id!=null,saved==b.Id,a===b,b.Tone__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-01|'+text);",
+      "sourceSHA256": "288984ff2752fb2db4dbc2a1bc013730615e5f5aeddf6b6479714322aef1ee2e",
+      "nativeMarkerSHA256": "ea4b4bb2397cbac505ef20788c6a9d36deda105bc26d0f567724ba0abf38bbc1",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          true,
+          true,
+          true,
+          false,
+          "bright"
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-02",
+      "group": "C02",
+      "api": "62.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);a.Armed__c=false;TriadPreference__c b=TriadPreference__c.getValues(owner);r=new List<Object>{b.Armed__c,a===b,[SELECT Armed__c FROM TriadPreference__c WHERE SetupOwnerId=:owner].Armed__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-02|'+text);",
+      "sourceSHA256": "1ec3235b93255ad92fb693ab9c7e5a01ced57fc21e0a87c7a17735d149f3f227",
+      "nativeMarkerSHA256": "9db26d11716cb4d93cf8df91bdda6863d620f225a498524521597c01423b32f0",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          false,
+          true,
+          true
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-03",
+      "group": "C02",
+      "api": "62.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new List<Object>{TriadPreference__c.getOrgDefaults(),TriadPreference__c.getValues(UserInfo.getUserId()),TriadPreference__c.getInstance()};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-03|'+text);",
+      "sourceSHA256": "744fbb7234968a354e09a753c051c02bc86c8741557ac8ae8bacf26457ca2710",
+      "nativeMarkerSHA256": "a0425ccd6721a67a89e425eeae631eec51d28edd057090a54ec6f72ba9190c25",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          {
+            "attributes": {
+              "type": "TriadPreference__c"
+            }
+          },
+          null,
+          {
+            "attributes": {
+              "type": "TriadPreference__c"
+            },
+            "SetupOwnerId": "[USER_ID]"
+          }
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-04",
+      "group": "C02",
+      "api": "62.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);TriadPreference__c b=a.clone();a.Armed__c=false;r=new List<Object>{a.Armed__c,b.Armed__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-04|'+text);",
+      "sourceSHA256": "cc9b76ed53199947d8ccc8873d25a366eb9e31a681b99ae3a4f795f80d740974",
+      "nativeMarkerSHA256": "dcf2dc959088194391b49af9c6b7662b64d6d8f3b1be7831ca1ff0b34d373f69",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          false,
+          true
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-05",
+      "group": "C02",
+      "api": "62.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);a.Armed__c=false;update a;r=TriadPreference__c.getValues(owner).Armed__c;\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'Boolean','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-05|'+text);",
+      "sourceSHA256": "094a95e26523dda47a0205d370949d48fd6d313f7995c6cdc13d13b6d3edea72",
+      "nativeMarkerSHA256": "eb5e313a4e6cd9bd0dfbd84a006a9f4301a9ae7d16f44fd9d5b2cc435a3bfdbe",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": false,
+        "type": "Boolean"
+      }
+    },
+    {
+      "id": "C02-06",
+      "group": "C02",
+      "api": "62.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TriadPreference__c.GETORGDEFAULTS();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'TriadPreference__c','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-06|'+text);",
+      "sourceSHA256": "dc8db33219cbd4fb485ebb8a14dc110976b3c6d40f92a6bdc1fe8bf6d1b0b151",
+      "nativeMarkerSHA256": "45e6a5aa200864e6249052796436240b93660f25ff7528b781dc95f9cc6bd3ce",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": {
+          "attributes": {
+            "type": "TriadPreference__c"
+          }
+        },
+        "type": "TriadPreference__c"
+      }
+    },
+    {
+      "id": "C02-07",
+      "group": "C02",
+      "api": "62.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nString owner=String.valueOf(UserInfo.getUserId());r=TriadPreference__c.getValues(owner);\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'TriadPreference__c','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-07|'+text);",
+      "sourceSHA256": "803047c6ad53b4d457340cdfb928195aa70a7ebfa199291251b83c4f8539e9f8",
+      "nativeMarkerSHA256": "f38e0f509a2f7dafbf286270d70323f9831ddb08064435fdf281c63974dd7bca",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": null,
+        "type": "TriadPreference__c"
+      }
+    },
+    {
+      "id": "C03-01",
+      "group": "C03",
+      "api": "62.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.constructed();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-01|'+text);",
+      "sourceSHA256": "02f84c5fa8501e30ab2c4c21ca6540fcdb072cc9c33a070af169c0b95c29e4bb",
+      "nativeMarkerSHA256": "700ea8322de8eb8510458f34b4a3562eb3fa36c3cd40721ad4e57f44192d4a37",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.constructed: line 3, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-02",
+      "group": "C03",
+      "api": "62.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.thrown();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-02|'+text);",
+      "sourceSHA256": "282081ee86d113d2012e20d99adacf86b68e3652c46f2e7d48b1f31f75e7dc0f",
+      "nativeMarkerSHA256": "c4f516a37db592286d6930987b6bef500d902d575dd89dedacf2507f25498029",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.thrown: line 6, column 1\nAnonymousBlock: line 3, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-03",
+      "group": "C03",
+      "api": "62.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new DmlException().getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-03|'+text);",
+      "sourceSHA256": "00cd28675a97777e09712ee89d3a22644a2ffb4497d97125274be5268d7951e2",
+      "nativeMarkerSHA256": "59a662458e2f4ad256e2338e0f72fc2bd3da8c7f56fc6afa221f34229749dc6a",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "AnonymousBlock: line 3, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-04",
+      "group": "C03",
+      "api": "62.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nString raw=TraceEmitter.constructed();r=new List<String>{raw,raw.replaceAll('Class\\\\.TraceEmitter\\\\.[^\\n]*column 1','').trim()};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<String>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-04|'+text);",
+      "sourceSHA256": "19f0e4015da2cddc9773b7e577c3f99e5919328c051a5177a87d3457f3463461",
+      "nativeMarkerSHA256": "040f6c0fa4207b49a72892c485e2c2de7b2163b41bb91a8f28cf428b79adb78b",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          "Class.TraceEmitter.constructed: line 3, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1",
+          "AnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1"
+        ],
+        "type": "List<String>"
+      }
+    },
+    {
+      "id": "C03-05",
+      "group": "C03",
+      "api": "62.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new NullPointerException().getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-05|'+text);",
+      "sourceSHA256": "bbe3df2129d38e1d61dcac9a86a4fffba66ea1daef70d1fda216cf27ef2bea5e",
+      "nativeMarkerSHA256": "59a662458e2f4ad256e2338e0f72fc2bd3da8c7f56fc6afa221f34229749dc6a",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "AnonymousBlock: line 3, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-06",
+      "group": "C03",
+      "api": "62.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.CONSTRUCTED();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-06|'+text);",
+      "sourceSHA256": "2fb0038a6a3a727d56507f7d03ef23118d749f764608dc35dc3ed946b78c1e90",
+      "nativeMarkerSHA256": "700ea8322de8eb8510458f34b4a3562eb3fa36c3cd40721ad4e57f44192d4a37",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.constructed: line 3, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-07",
+      "group": "C03",
+      "api": "62.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nException fault=null;r=fault?.getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String(null)','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-07|'+text);",
+      "sourceSHA256": "8f7b264f010f9abf0655a57706025297871145129c249e8dafd911acc165e176",
+      "nativeMarkerSHA256": "58d45e31b8346ed890ac8c5415bef1f5277dac06a919971aae2a7236b7667b0d",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": null,
+        "type": "String(null)"
+      }
+    },
+    {
+      "id": "C02-01",
+      "group": "C02",
+      "api": "62.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\ninsert new TriadPreference__c(SetupOwnerId=UserInfo.getOrganizationId(),Tone__c='bright');TriadPreference__c a=TriadPreference__c.getOrgDefaults();Id saved=a.Id;a.Id=null;TriadPreference__c b=TriadPreference__c.getOrgDefaults();r=new List<Object>{saved!=null,b.Id!=null,saved==b.Id,a===b,b.Tone__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-01|'+text);\n }\n}\n",
+      "sourceSHA256": "2dac542118868c6d1956a83f47c401ccd46e22513cef5be43eda9da5eeea8b67",
+      "nativeMarkerSHA256": "ea4b4bb2397cbac505ef20788c6a9d36deda105bc26d0f567724ba0abf38bbc1",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          true,
+          true,
+          true,
+          false,
+          "bright"
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-02",
+      "group": "C02",
+      "api": "62.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);a.Armed__c=false;TriadPreference__c b=TriadPreference__c.getValues(owner);r=new List<Object>{b.Armed__c,a===b,[SELECT Armed__c FROM TriadPreference__c WHERE SetupOwnerId=:owner].Armed__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-02|'+text);\n }\n}\n",
+      "sourceSHA256": "6df2397f697bdb3fa735ff820f82419f40b6344bce3d69a586d270e9ba8778ff",
+      "nativeMarkerSHA256": "5cf8629cd50cb159190c821d1fcf601b73525346cb8b3844f90afa21007565dd",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          true,
+          false,
+          true
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-03",
+      "group": "C02",
+      "api": "62.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new List<Object>{TriadPreference__c.getOrgDefaults(),TriadPreference__c.getValues(UserInfo.getUserId()),TriadPreference__c.getInstance()};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-03|'+text);\n }\n}\n",
+      "sourceSHA256": "86feccbf1b96d0247192f33390f4bd747a06a3fd10352555086016491d21fbff",
+      "nativeMarkerSHA256": "a0425ccd6721a67a89e425eeae631eec51d28edd057090a54ec6f72ba9190c25",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          {
+            "attributes": {
+              "type": "TriadPreference__c"
+            }
+          },
+          null,
+          {
+            "attributes": {
+              "type": "TriadPreference__c"
+            },
+            "SetupOwnerId": "[USER_ID]"
+          }
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-04",
+      "group": "C02",
+      "api": "62.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);TriadPreference__c b=a.clone();a.Armed__c=false;r=new List<Object>{a.Armed__c,b.Armed__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-04|'+text);\n }\n}\n",
+      "sourceSHA256": "e4d5a0cba5cad919d7df115b2ee68eb0409539778092e0b5de672bc7990c2be7",
+      "nativeMarkerSHA256": "dcf2dc959088194391b49af9c6b7662b64d6d8f3b1be7831ca1ff0b34d373f69",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          false,
+          true
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-05",
+      "group": "C02",
+      "api": "62.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);a.Armed__c=false;update a;r=TriadPreference__c.getValues(owner).Armed__c;\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'Boolean','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-05|'+text);\n }\n}\n",
+      "sourceSHA256": "481bba3bae13a70ff1b7f6f4a6c6054ae4910702c6a6adf4c3299a8a20d7c061",
+      "nativeMarkerSHA256": "eb5e313a4e6cd9bd0dfbd84a006a9f4301a9ae7d16f44fd9d5b2cc435a3bfdbe",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": false,
+        "type": "Boolean"
+      }
+    },
+    {
+      "id": "C02-06",
+      "group": "C02",
+      "api": "62.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TriadPreference__c.GETORGDEFAULTS();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'TriadPreference__c','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-06|'+text);\n }\n}\n",
+      "sourceSHA256": "ab5fdca5ecfc6890413efa4f6831b895cf7bbb6f8da67de5d747f033d66b9004",
+      "nativeMarkerSHA256": "45e6a5aa200864e6249052796436240b93660f25ff7528b781dc95f9cc6bd3ce",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": {
+          "attributes": {
+            "type": "TriadPreference__c"
+          }
+        },
+        "type": "TriadPreference__c"
+      }
+    },
+    {
+      "id": "C02-07",
+      "group": "C02",
+      "api": "62.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nString owner=String.valueOf(UserInfo.getUserId());r=TriadPreference__c.getValues(owner);\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'TriadPreference__c','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-07|'+text);\n }\n}\n",
+      "sourceSHA256": "bc2dfd5b9c73522044b4ab56f1e75f2552eac110815ab554c25d78badfe83914",
+      "nativeMarkerSHA256": "f38e0f509a2f7dafbf286270d70323f9831ddb08064435fdf281c63974dd7bca",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": null,
+        "type": "TriadPreference__c"
+      }
+    },
+    {
+      "id": "C03-01",
+      "group": "C03",
+      "api": "62.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.constructed();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-01|'+text);\n }\n}\n",
+      "sourceSHA256": "552081d132e9bd871854d5fa4aaffc931d1d5c1ae8dcf2cf292f31f3d227910e",
+      "nativeMarkerSHA256": "2cfd569bc1d6172f4b3219877b451c5e0cf4b1212f25bf72cf685f1db6dcf8b1",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.constructed: line 3, column 1\nClass.P3Observation.observe: line 5, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-02",
+      "group": "C03",
+      "api": "62.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.thrown();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-02|'+text);\n }\n}\n",
+      "sourceSHA256": "7477775c76ce8ce3d307c1195bd166a8ff9038e1fd7b451226f0fba775c5484a",
+      "nativeMarkerSHA256": "ca043796073e7b6004d21fa5f36275071960fac1fc9aebbb6596e70b86738f3c",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.thrown: line 6, column 1\nClass.P3Observation.observe: line 5, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-03",
+      "group": "C03",
+      "api": "62.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new DmlException().getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-03|'+text);\n }\n}\n",
+      "sourceSHA256": "67a531f2124673431c7574549ef33c776ac3e80e8f26635bcd57d1db54932ff9",
+      "nativeMarkerSHA256": "fa3e15b37f66c391bad512b966305e4f810e072ed3a1508bb498b54396c8b570",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.P3Observation.observe: line 5, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-04",
+      "group": "C03",
+      "api": "62.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nString raw=TraceEmitter.constructed();r=new List<String>{raw,raw.replaceAll('Class\\\\.TraceEmitter\\\\.[^\\n]*column 1','').trim()};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<String>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-04|'+text);\n }\n}\n",
+      "sourceSHA256": "c0467a8a0a5c37d3bada7a7ecd6f4bdcbb3ad26561b3e95a094811481b6e7919",
+      "nativeMarkerSHA256": "06ba5283205aae72e92f9c46350429024284a276b1b18cfe7d8be5aff361c7f0",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          "Class.TraceEmitter.constructed: line 3, column 1\nClass.P3Observation.observe: line 5, column 1",
+          "Class.P3Observation.observe: line 5, column 1"
+        ],
+        "type": "List<String>"
+      }
+    },
+    {
+      "id": "C03-05",
+      "group": "C03",
+      "api": "62.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new NullPointerException().getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-05|'+text);\n }\n}\n",
+      "sourceSHA256": "b622402402357d6837b33a295829f7e3b6cbc0689d76eb55a3f41c5abd7fdca2",
+      "nativeMarkerSHA256": "fa3e15b37f66c391bad512b966305e4f810e072ed3a1508bb498b54396c8b570",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.P3Observation.observe: line 5, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-06",
+      "group": "C03",
+      "api": "62.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.CONSTRUCTED();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-06|'+text);\n }\n}\n",
+      "sourceSHA256": "04ab6a6ca8c036e3eec409ab88f5516f87c148ef78b5685dd07b108c348b7952",
+      "nativeMarkerSHA256": "2cfd569bc1d6172f4b3219877b451c5e0cf4b1212f25bf72cf685f1db6dcf8b1",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.constructed: line 3, column 1\nClass.P3Observation.observe: line 5, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-07",
+      "group": "C03",
+      "api": "62.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nException fault=null;r=fault?.getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String(null)','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-07|'+text);\n }\n}\n",
+      "sourceSHA256": "131de9c977abdc10ee80e8744133f0146b61ae2480fd19857bacb5a2b9c05ad0",
+      "nativeMarkerSHA256": "58d45e31b8346ed890ac8c5415bef1f5277dac06a919971aae2a7236b7667b0d",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": null,
+        "type": "String(null)"
+      }
+    },
+    {
+      "id": "C02-01",
+      "group": "C02",
+      "api": "67.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\ninsert new TriadPreference__c(SetupOwnerId=UserInfo.getOrganizationId(),Tone__c='bright');TriadPreference__c a=TriadPreference__c.getOrgDefaults();Id saved=a.Id;a.Id=null;TriadPreference__c b=TriadPreference__c.getOrgDefaults();r=new List<Object>{saved!=null,b.Id!=null,saved==b.Id,a===b,b.Tone__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-01|'+text);",
+      "sourceSHA256": "288984ff2752fb2db4dbc2a1bc013730615e5f5aeddf6b6479714322aef1ee2e",
+      "nativeMarkerSHA256": "ea4b4bb2397cbac505ef20788c6a9d36deda105bc26d0f567724ba0abf38bbc1",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          true,
+          true,
+          true,
+          false,
+          "bright"
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-02",
+      "group": "C02",
+      "api": "67.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);a.Armed__c=false;TriadPreference__c b=TriadPreference__c.getValues(owner);r=new List<Object>{b.Armed__c,a===b,[SELECT Armed__c FROM TriadPreference__c WHERE SetupOwnerId=:owner].Armed__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-02|'+text);",
+      "sourceSHA256": "1ec3235b93255ad92fb693ab9c7e5a01ced57fc21e0a87c7a17735d149f3f227",
+      "nativeMarkerSHA256": "9db26d11716cb4d93cf8df91bdda6863d620f225a498524521597c01423b32f0",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          false,
+          true,
+          true
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-03",
+      "group": "C02",
+      "api": "67.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new List<Object>{TriadPreference__c.getOrgDefaults(),TriadPreference__c.getValues(UserInfo.getUserId()),TriadPreference__c.getInstance()};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-03|'+text);",
+      "sourceSHA256": "744fbb7234968a354e09a753c051c02bc86c8741557ac8ae8bacf26457ca2710",
+      "nativeMarkerSHA256": "a0425ccd6721a67a89e425eeae631eec51d28edd057090a54ec6f72ba9190c25",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          {
+            "attributes": {
+              "type": "TriadPreference__c"
+            }
+          },
+          null,
+          {
+            "attributes": {
+              "type": "TriadPreference__c"
+            },
+            "SetupOwnerId": "[USER_ID]"
+          }
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-04",
+      "group": "C02",
+      "api": "67.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);TriadPreference__c b=a.clone();a.Armed__c=false;r=new List<Object>{a.Armed__c,b.Armed__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-04|'+text);",
+      "sourceSHA256": "cc9b76ed53199947d8ccc8873d25a366eb9e31a681b99ae3a4f795f80d740974",
+      "nativeMarkerSHA256": "dcf2dc959088194391b49af9c6b7662b64d6d8f3b1be7831ca1ff0b34d373f69",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          false,
+          true
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-05",
+      "group": "C02",
+      "api": "67.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);a.Armed__c=false;update a;r=TriadPreference__c.getValues(owner).Armed__c;\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'Boolean','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-05|'+text);",
+      "sourceSHA256": "094a95e26523dda47a0205d370949d48fd6d313f7995c6cdc13d13b6d3edea72",
+      "nativeMarkerSHA256": "eb5e313a4e6cd9bd0dfbd84a006a9f4301a9ae7d16f44fd9d5b2cc435a3bfdbe",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": false,
+        "type": "Boolean"
+      }
+    },
+    {
+      "id": "C02-06",
+      "group": "C02",
+      "api": "67.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TriadPreference__c.GETORGDEFAULTS();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'TriadPreference__c','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-06|'+text);",
+      "sourceSHA256": "dc8db33219cbd4fb485ebb8a14dc110976b3c6d40f92a6bdc1fe8bf6d1b0b151",
+      "nativeMarkerSHA256": "45e6a5aa200864e6249052796436240b93660f25ff7528b781dc95f9cc6bd3ce",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": {
+          "attributes": {
+            "type": "TriadPreference__c"
+          }
+        },
+        "type": "TriadPreference__c"
+      }
+    },
+    {
+      "id": "C02-07",
+      "group": "C02",
+      "api": "67.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nString owner=String.valueOf(UserInfo.getUserId());r=TriadPreference__c.getValues(owner);\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'TriadPreference__c','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-07|'+text);",
+      "sourceSHA256": "803047c6ad53b4d457340cdfb928195aa70a7ebfa199291251b83c4f8539e9f8",
+      "nativeMarkerSHA256": "f38e0f509a2f7dafbf286270d70323f9831ddb08064435fdf281c63974dd7bca",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": null,
+        "type": "TriadPreference__c"
+      }
+    },
+    {
+      "id": "C03-01",
+      "group": "C03",
+      "api": "67.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.constructed();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-01|'+text);",
+      "sourceSHA256": "02f84c5fa8501e30ab2c4c21ca6540fcdb072cc9c33a070af169c0b95c29e4bb",
+      "nativeMarkerSHA256": "700ea8322de8eb8510458f34b4a3562eb3fa36c3cd40721ad4e57f44192d4a37",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.constructed: line 3, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-02",
+      "group": "C03",
+      "api": "67.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.thrown();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-02|'+text);",
+      "sourceSHA256": "282081ee86d113d2012e20d99adacf86b68e3652c46f2e7d48b1f31f75e7dc0f",
+      "nativeMarkerSHA256": "c4f516a37db592286d6930987b6bef500d902d575dd89dedacf2507f25498029",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.thrown: line 6, column 1\nAnonymousBlock: line 3, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-03",
+      "group": "C03",
+      "api": "67.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new DmlException().getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-03|'+text);",
+      "sourceSHA256": "00cd28675a97777e09712ee89d3a22644a2ffb4497d97125274be5268d7951e2",
+      "nativeMarkerSHA256": "59a662458e2f4ad256e2338e0f72fc2bd3da8c7f56fc6afa221f34229749dc6a",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "AnonymousBlock: line 3, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-04",
+      "group": "C03",
+      "api": "67.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nString raw=TraceEmitter.constructed();r=new List<String>{raw,raw.replaceAll('Class\\\\.TraceEmitter\\\\.[^\\n]*column 1','').trim()};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<String>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-04|'+text);",
+      "sourceSHA256": "19f0e4015da2cddc9773b7e577c3f99e5919328c051a5177a87d3457f3463461",
+      "nativeMarkerSHA256": "040f6c0fa4207b49a72892c485e2c2de7b2163b41bb91a8f28cf428b79adb78b",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          "Class.TraceEmitter.constructed: line 3, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1",
+          "AnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1"
+        ],
+        "type": "List<String>"
+      }
+    },
+    {
+      "id": "C03-05",
+      "group": "C03",
+      "api": "67.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new NullPointerException().getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-05|'+text);",
+      "sourceSHA256": "bbe3df2129d38e1d61dcac9a86a4fffba66ea1daef70d1fda216cf27ef2bea5e",
+      "nativeMarkerSHA256": "59a662458e2f4ad256e2338e0f72fc2bd3da8c7f56fc6afa221f34229749dc6a",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "AnonymousBlock: line 3, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-06",
+      "group": "C03",
+      "api": "67.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.CONSTRUCTED();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-06|'+text);",
+      "sourceSHA256": "2fb0038a6a3a727d56507f7d03ef23118d749f764608dc35dc3ed946b78c1e90",
+      "nativeMarkerSHA256": "700ea8322de8eb8510458f34b4a3562eb3fa36c3cd40721ad4e57f44192d4a37",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.constructed: line 3, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-07",
+      "group": "C03",
+      "api": "67.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nException fault=null;r=fault?.getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String(null)','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-07|'+text);",
+      "sourceSHA256": "8f7b264f010f9abf0655a57706025297871145129c249e8dafd911acc165e176",
+      "nativeMarkerSHA256": "58d45e31b8346ed890ac8c5415bef1f5277dac06a919971aae2a7236b7667b0d",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": null,
+        "type": "String(null)"
+      }
+    },
+    {
+      "id": "C02-01",
+      "group": "C02",
+      "api": "67.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\ninsert new TriadPreference__c(SetupOwnerId=UserInfo.getOrganizationId(),Tone__c='bright');TriadPreference__c a=TriadPreference__c.getOrgDefaults();Id saved=a.Id;a.Id=null;TriadPreference__c b=TriadPreference__c.getOrgDefaults();r=new List<Object>{saved!=null,b.Id!=null,saved==b.Id,a===b,b.Tone__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-01|'+text);\n }\n}\n",
+      "sourceSHA256": "2dac542118868c6d1956a83f47c401ccd46e22513cef5be43eda9da5eeea8b67",
+      "nativeMarkerSHA256": "ea4b4bb2397cbac505ef20788c6a9d36deda105bc26d0f567724ba0abf38bbc1",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          true,
+          true,
+          true,
+          false,
+          "bright"
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-02",
+      "group": "C02",
+      "api": "67.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);a.Armed__c=false;TriadPreference__c b=TriadPreference__c.getValues(owner);r=new List<Object>{b.Armed__c,a===b,[SELECT Armed__c FROM TriadPreference__c WHERE SetupOwnerId=:owner].Armed__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-02|'+text);\n }\n}\n",
+      "sourceSHA256": "6df2397f697bdb3fa735ff820f82419f40b6344bce3d69a586d270e9ba8778ff",
+      "nativeMarkerSHA256": "5cf8629cd50cb159190c821d1fcf601b73525346cb8b3844f90afa21007565dd",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          true,
+          false,
+          true
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-03",
+      "group": "C02",
+      "api": "67.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new List<Object>{TriadPreference__c.getOrgDefaults(),TriadPreference__c.getValues(UserInfo.getUserId()),TriadPreference__c.getInstance()};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-03|'+text);\n }\n}\n",
+      "sourceSHA256": "86feccbf1b96d0247192f33390f4bd747a06a3fd10352555086016491d21fbff",
+      "nativeMarkerSHA256": "a0425ccd6721a67a89e425eeae631eec51d28edd057090a54ec6f72ba9190c25",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          {
+            "attributes": {
+              "type": "TriadPreference__c"
+            }
+          },
+          null,
+          {
+            "attributes": {
+              "type": "TriadPreference__c"
+            },
+            "SetupOwnerId": "[USER_ID]"
+          }
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-04",
+      "group": "C02",
+      "api": "67.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);TriadPreference__c b=a.clone();a.Armed__c=false;r=new List<Object>{a.Armed__c,b.Armed__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-04|'+text);\n }\n}\n",
+      "sourceSHA256": "e4d5a0cba5cad919d7df115b2ee68eb0409539778092e0b5de672bc7990c2be7",
+      "nativeMarkerSHA256": "dcf2dc959088194391b49af9c6b7662b64d6d8f3b1be7831ca1ff0b34d373f69",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          false,
+          true
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-05",
+      "group": "C02",
+      "api": "67.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);a.Armed__c=false;update a;r=TriadPreference__c.getValues(owner).Armed__c;\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'Boolean','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-05|'+text);\n }\n}\n",
+      "sourceSHA256": "481bba3bae13a70ff1b7f6f4a6c6054ae4910702c6a6adf4c3299a8a20d7c061",
+      "nativeMarkerSHA256": "eb5e313a4e6cd9bd0dfbd84a006a9f4301a9ae7d16f44fd9d5b2cc435a3bfdbe",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": false,
+        "type": "Boolean"
+      }
+    },
+    {
+      "id": "C02-06",
+      "group": "C02",
+      "api": "67.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TriadPreference__c.GETORGDEFAULTS();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'TriadPreference__c','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-06|'+text);\n }\n}\n",
+      "sourceSHA256": "ab5fdca5ecfc6890413efa4f6831b895cf7bbb6f8da67de5d747f033d66b9004",
+      "nativeMarkerSHA256": "45e6a5aa200864e6249052796436240b93660f25ff7528b781dc95f9cc6bd3ce",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": {
+          "attributes": {
+            "type": "TriadPreference__c"
+          }
+        },
+        "type": "TriadPreference__c"
+      }
+    },
+    {
+      "id": "C02-07",
+      "group": "C02",
+      "api": "67.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nString owner=String.valueOf(UserInfo.getUserId());r=TriadPreference__c.getValues(owner);\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'TriadPreference__c','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-07|'+text);\n }\n}\n",
+      "sourceSHA256": "bc2dfd5b9c73522044b4ab56f1e75f2552eac110815ab554c25d78badfe83914",
+      "nativeMarkerSHA256": "f38e0f509a2f7dafbf286270d70323f9831ddb08064435fdf281c63974dd7bca",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": null,
+        "type": "TriadPreference__c"
+      }
+    },
+    {
+      "id": "C03-01",
+      "group": "C03",
+      "api": "67.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.constructed();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-01|'+text);\n }\n}\n",
+      "sourceSHA256": "552081d132e9bd871854d5fa4aaffc931d1d5c1ae8dcf2cf292f31f3d227910e",
+      "nativeMarkerSHA256": "2cfd569bc1d6172f4b3219877b451c5e0cf4b1212f25bf72cf685f1db6dcf8b1",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.constructed: line 3, column 1\nClass.P3Observation.observe: line 5, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-02",
+      "group": "C03",
+      "api": "67.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.thrown();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-02|'+text);\n }\n}\n",
+      "sourceSHA256": "7477775c76ce8ce3d307c1195bd166a8ff9038e1fd7b451226f0fba775c5484a",
+      "nativeMarkerSHA256": "ca043796073e7b6004d21fa5f36275071960fac1fc9aebbb6596e70b86738f3c",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.thrown: line 6, column 1\nClass.P3Observation.observe: line 5, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-03",
+      "group": "C03",
+      "api": "67.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new DmlException().getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-03|'+text);\n }\n}\n",
+      "sourceSHA256": "67a531f2124673431c7574549ef33c776ac3e80e8f26635bcd57d1db54932ff9",
+      "nativeMarkerSHA256": "fa3e15b37f66c391bad512b966305e4f810e072ed3a1508bb498b54396c8b570",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.P3Observation.observe: line 5, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-04",
+      "group": "C03",
+      "api": "67.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nString raw=TraceEmitter.constructed();r=new List<String>{raw,raw.replaceAll('Class\\\\.TraceEmitter\\\\.[^\\n]*column 1','').trim()};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<String>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-04|'+text);\n }\n}\n",
+      "sourceSHA256": "c0467a8a0a5c37d3bada7a7ecd6f4bdcbb3ad26561b3e95a094811481b6e7919",
+      "nativeMarkerSHA256": "06ba5283205aae72e92f9c46350429024284a276b1b18cfe7d8be5aff361c7f0",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          "Class.TraceEmitter.constructed: line 3, column 1\nClass.P3Observation.observe: line 5, column 1",
+          "Class.P3Observation.observe: line 5, column 1"
+        ],
+        "type": "List<String>"
+      }
+    },
+    {
+      "id": "C03-05",
+      "group": "C03",
+      "api": "67.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new NullPointerException().getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-05|'+text);\n }\n}\n",
+      "sourceSHA256": "b622402402357d6837b33a295829f7e3b6cbc0689d76eb55a3f41c5abd7fdca2",
+      "nativeMarkerSHA256": "fa3e15b37f66c391bad512b966305e4f810e072ed3a1508bb498b54396c8b570",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.P3Observation.observe: line 5, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-06",
+      "group": "C03",
+      "api": "67.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.CONSTRUCTED();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-06|'+text);\n }\n}\n",
+      "sourceSHA256": "04ab6a6ca8c036e3eec409ab88f5516f87c148ef78b5685dd07b108c348b7952",
+      "nativeMarkerSHA256": "2cfd569bc1d6172f4b3219877b451c5e0cf4b1212f25bf72cf685f1db6dcf8b1",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.constructed: line 3, column 1\nClass.P3Observation.observe: line 5, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-07",
+      "group": "C03",
+      "api": "67.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nException fault=null;r=fault?.getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String(null)','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-07|'+text);\n }\n}\n",
+      "sourceSHA256": "131de9c977abdc10ee80e8744133f0146b61ae2480fd19857bacb5a2b9c05ad0",
+      "nativeMarkerSHA256": "58d45e31b8346ed890ac8c5415bef1f5277dac06a919971aae2a7236b7667b0d",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": null,
+        "type": "String(null)"
+      }
+    },
+    {
+      "id": "C02-01",
+      "group": "C02",
+      "api": "68.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\ninsert new TriadPreference__c(SetupOwnerId=UserInfo.getOrganizationId(),Tone__c='bright');TriadPreference__c a=TriadPreference__c.getOrgDefaults();Id saved=a.Id;a.Id=null;TriadPreference__c b=TriadPreference__c.getOrgDefaults();r=new List<Object>{saved!=null,b.Id!=null,saved==b.Id,a===b,b.Tone__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-01|'+text);",
+      "sourceSHA256": "288984ff2752fb2db4dbc2a1bc013730615e5f5aeddf6b6479714322aef1ee2e",
+      "nativeMarkerSHA256": "ea4b4bb2397cbac505ef20788c6a9d36deda105bc26d0f567724ba0abf38bbc1",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          true,
+          true,
+          true,
+          false,
+          "bright"
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-02",
+      "group": "C02",
+      "api": "68.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);a.Armed__c=false;TriadPreference__c b=TriadPreference__c.getValues(owner);r=new List<Object>{b.Armed__c,a===b,[SELECT Armed__c FROM TriadPreference__c WHERE SetupOwnerId=:owner].Armed__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-02|'+text);",
+      "sourceSHA256": "1ec3235b93255ad92fb693ab9c7e5a01ced57fc21e0a87c7a17735d149f3f227",
+      "nativeMarkerSHA256": "9db26d11716cb4d93cf8df91bdda6863d620f225a498524521597c01423b32f0",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          false,
+          true,
+          true
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-03",
+      "group": "C02",
+      "api": "68.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new List<Object>{TriadPreference__c.getOrgDefaults(),TriadPreference__c.getValues(UserInfo.getUserId()),TriadPreference__c.getInstance()};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-03|'+text);",
+      "sourceSHA256": "744fbb7234968a354e09a753c051c02bc86c8741557ac8ae8bacf26457ca2710",
+      "nativeMarkerSHA256": "a0425ccd6721a67a89e425eeae631eec51d28edd057090a54ec6f72ba9190c25",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          {
+            "attributes": {
+              "type": "TriadPreference__c"
+            }
+          },
+          null,
+          {
+            "attributes": {
+              "type": "TriadPreference__c"
+            },
+            "SetupOwnerId": "[USER_ID]"
+          }
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-04",
+      "group": "C02",
+      "api": "68.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);TriadPreference__c b=a.clone();a.Armed__c=false;r=new List<Object>{a.Armed__c,b.Armed__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-04|'+text);",
+      "sourceSHA256": "cc9b76ed53199947d8ccc8873d25a366eb9e31a681b99ae3a4f795f80d740974",
+      "nativeMarkerSHA256": "dcf2dc959088194391b49af9c6b7662b64d6d8f3b1be7831ca1ff0b34d373f69",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          false,
+          true
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-05",
+      "group": "C02",
+      "api": "68.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);a.Armed__c=false;update a;r=TriadPreference__c.getValues(owner).Armed__c;\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'Boolean','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-05|'+text);",
+      "sourceSHA256": "094a95e26523dda47a0205d370949d48fd6d313f7995c6cdc13d13b6d3edea72",
+      "nativeMarkerSHA256": "eb5e313a4e6cd9bd0dfbd84a006a9f4301a9ae7d16f44fd9d5b2cc435a3bfdbe",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": false,
+        "type": "Boolean"
+      }
+    },
+    {
+      "id": "C02-06",
+      "group": "C02",
+      "api": "68.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TriadPreference__c.GETORGDEFAULTS();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'TriadPreference__c','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-06|'+text);",
+      "sourceSHA256": "dc8db33219cbd4fb485ebb8a14dc110976b3c6d40f92a6bdc1fe8bf6d1b0b151",
+      "nativeMarkerSHA256": "45e6a5aa200864e6249052796436240b93660f25ff7528b781dc95f9cc6bd3ce",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": {
+          "attributes": {
+            "type": "TriadPreference__c"
+          }
+        },
+        "type": "TriadPreference__c"
+      }
+    },
+    {
+      "id": "C02-07",
+      "group": "C02",
+      "api": "68.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nString owner=String.valueOf(UserInfo.getUserId());r=TriadPreference__c.getValues(owner);\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'TriadPreference__c','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-07|'+text);",
+      "sourceSHA256": "803047c6ad53b4d457340cdfb928195aa70a7ebfa199291251b83c4f8539e9f8",
+      "nativeMarkerSHA256": "f38e0f509a2f7dafbf286270d70323f9831ddb08064435fdf281c63974dd7bca",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": null,
+        "type": "TriadPreference__c"
+      }
+    },
+    {
+      "id": "C03-01",
+      "group": "C03",
+      "api": "68.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.constructed();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-01|'+text);",
+      "sourceSHA256": "02f84c5fa8501e30ab2c4c21ca6540fcdb072cc9c33a070af169c0b95c29e4bb",
+      "nativeMarkerSHA256": "700ea8322de8eb8510458f34b4a3562eb3fa36c3cd40721ad4e57f44192d4a37",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.constructed: line 3, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-02",
+      "group": "C03",
+      "api": "68.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.thrown();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-02|'+text);",
+      "sourceSHA256": "282081ee86d113d2012e20d99adacf86b68e3652c46f2e7d48b1f31f75e7dc0f",
+      "nativeMarkerSHA256": "c4f516a37db592286d6930987b6bef500d902d575dd89dedacf2507f25498029",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.thrown: line 6, column 1\nAnonymousBlock: line 3, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-03",
+      "group": "C03",
+      "api": "68.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new DmlException().getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-03|'+text);",
+      "sourceSHA256": "00cd28675a97777e09712ee89d3a22644a2ffb4497d97125274be5268d7951e2",
+      "nativeMarkerSHA256": "59a662458e2f4ad256e2338e0f72fc2bd3da8c7f56fc6afa221f34229749dc6a",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "AnonymousBlock: line 3, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-04",
+      "group": "C03",
+      "api": "68.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nString raw=TraceEmitter.constructed();r=new List<String>{raw,raw.replaceAll('Class\\\\.TraceEmitter\\\\.[^\\n]*column 1','').trim()};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<String>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-04|'+text);",
+      "sourceSHA256": "19f0e4015da2cddc9773b7e577c3f99e5919328c051a5177a87d3457f3463461",
+      "nativeMarkerSHA256": "040f6c0fa4207b49a72892c485e2c2de7b2163b41bb91a8f28cf428b79adb78b",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          "Class.TraceEmitter.constructed: line 3, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1",
+          "AnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1"
+        ],
+        "type": "List<String>"
+      }
+    },
+    {
+      "id": "C03-05",
+      "group": "C03",
+      "api": "68.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new NullPointerException().getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-05|'+text);",
+      "sourceSHA256": "bbe3df2129d38e1d61dcac9a86a4fffba66ea1daef70d1fda216cf27ef2bea5e",
+      "nativeMarkerSHA256": "59a662458e2f4ad256e2338e0f72fc2bd3da8c7f56fc6afa221f34229749dc6a",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "AnonymousBlock: line 3, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-06",
+      "group": "C03",
+      "api": "68.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.CONSTRUCTED();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-06|'+text);",
+      "sourceSHA256": "2fb0038a6a3a727d56507f7d03ef23118d749f764608dc35dc3ed946b78c1e90",
+      "nativeMarkerSHA256": "700ea8322de8eb8510458f34b4a3562eb3fa36c3cd40721ad4e57f44192d4a37",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.constructed: line 3, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-07",
+      "group": "C03",
+      "api": "68.0",
+      "route": "anonymous",
+      "source": "Object r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nException fault=null;r=fault?.getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String(null)','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-07|'+text);",
+      "sourceSHA256": "8f7b264f010f9abf0655a57706025297871145129c249e8dafd911acc165e176",
+      "nativeMarkerSHA256": "58d45e31b8346ed890ac8c5415bef1f5277dac06a919971aae2a7236b7667b0d",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": null,
+        "type": "String(null)"
+      }
+    },
+    {
+      "id": "C02-01",
+      "group": "C02",
+      "api": "68.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\ninsert new TriadPreference__c(SetupOwnerId=UserInfo.getOrganizationId(),Tone__c='bright');TriadPreference__c a=TriadPreference__c.getOrgDefaults();Id saved=a.Id;a.Id=null;TriadPreference__c b=TriadPreference__c.getOrgDefaults();r=new List<Object>{saved!=null,b.Id!=null,saved==b.Id,a===b,b.Tone__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-01|'+text);\n }\n}\n",
+      "sourceSHA256": "2dac542118868c6d1956a83f47c401ccd46e22513cef5be43eda9da5eeea8b67",
+      "nativeMarkerSHA256": "ea4b4bb2397cbac505ef20788c6a9d36deda105bc26d0f567724ba0abf38bbc1",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          true,
+          true,
+          true,
+          false,
+          "bright"
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-02",
+      "group": "C02",
+      "api": "68.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);a.Armed__c=false;TriadPreference__c b=TriadPreference__c.getValues(owner);r=new List<Object>{b.Armed__c,a===b,[SELECT Armed__c FROM TriadPreference__c WHERE SetupOwnerId=:owner].Armed__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-02|'+text);\n }\n}\n",
+      "sourceSHA256": "6df2397f697bdb3fa735ff820f82419f40b6344bce3d69a586d270e9ba8778ff",
+      "nativeMarkerSHA256": "5cf8629cd50cb159190c821d1fcf601b73525346cb8b3844f90afa21007565dd",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          true,
+          false,
+          true
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-03",
+      "group": "C02",
+      "api": "68.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new List<Object>{TriadPreference__c.getOrgDefaults(),TriadPreference__c.getValues(UserInfo.getUserId()),TriadPreference__c.getInstance()};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-03|'+text);\n }\n}\n",
+      "sourceSHA256": "86feccbf1b96d0247192f33390f4bd747a06a3fd10352555086016491d21fbff",
+      "nativeMarkerSHA256": "a0425ccd6721a67a89e425eeae631eec51d28edd057090a54ec6f72ba9190c25",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          {
+            "attributes": {
+              "type": "TriadPreference__c"
+            }
+          },
+          null,
+          {
+            "attributes": {
+              "type": "TriadPreference__c"
+            },
+            "SetupOwnerId": "[USER_ID]"
+          }
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-04",
+      "group": "C02",
+      "api": "68.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);TriadPreference__c b=a.clone();a.Armed__c=false;r=new List<Object>{a.Armed__c,b.Armed__c};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<Object>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-04|'+text);\n }\n}\n",
+      "sourceSHA256": "e4d5a0cba5cad919d7df115b2ee68eb0409539778092e0b5de672bc7990c2be7",
+      "nativeMarkerSHA256": "dcf2dc959088194391b49af9c6b7662b64d6d8f3b1be7831ca1ff0b34d373f69",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          false,
+          true
+        ],
+        "type": "List<Object>"
+      }
+    },
+    {
+      "id": "C02-05",
+      "group": "C02",
+      "api": "68.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nId owner=UserInfo.getUserId();insert new TriadPreference__c(SetupOwnerId=owner,Armed__c=true);TriadPreference__c a=TriadPreference__c.getValues(owner);a.Armed__c=false;update a;r=TriadPreference__c.getValues(owner).Armed__c;\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'Boolean','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-05|'+text);\n }\n}\n",
+      "sourceSHA256": "481bba3bae13a70ff1b7f6f4a6c6054ae4910702c6a6adf4c3299a8a20d7c061",
+      "nativeMarkerSHA256": "eb5e313a4e6cd9bd0dfbd84a006a9f4301a9ae7d16f44fd9d5b2cc435a3bfdbe",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": false,
+        "type": "Boolean"
+      }
+    },
+    {
+      "id": "C02-06",
+      "group": "C02",
+      "api": "68.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TriadPreference__c.GETORGDEFAULTS();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'TriadPreference__c','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-06|'+text);\n }\n}\n",
+      "sourceSHA256": "ab5fdca5ecfc6890413efa4f6831b895cf7bbb6f8da67de5d747f033d66b9004",
+      "nativeMarkerSHA256": "45e6a5aa200864e6249052796436240b93660f25ff7528b781dc95f9cc6bd3ce",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": {
+          "attributes": {
+            "type": "TriadPreference__c"
+          }
+        },
+        "type": "TriadPreference__c"
+      }
+    },
+    {
+      "id": "C02-07",
+      "group": "C02",
+      "api": "68.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nString owner=String.valueOf(UserInfo.getUserId());r=TriadPreference__c.getValues(owner);\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'TriadPreference__c','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C02-07|'+text);\n }\n}\n",
+      "sourceSHA256": "bc2dfd5b9c73522044b4ab56f1e75f2552eac110815ab554c25d78badfe83914",
+      "nativeMarkerSHA256": "f38e0f509a2f7dafbf286270d70323f9831ddb08064435fdf281c63974dd7bca",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": null,
+        "type": "TriadPreference__c"
+      }
+    },
+    {
+      "id": "C03-01",
+      "group": "C03",
+      "api": "68.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.constructed();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-01|'+text);\n }\n}\n",
+      "sourceSHA256": "552081d132e9bd871854d5fa4aaffc931d1d5c1ae8dcf2cf292f31f3d227910e",
+      "nativeMarkerSHA256": "2cfd569bc1d6172f4b3219877b451c5e0cf4b1212f25bf72cf685f1db6dcf8b1",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.constructed: line 3, column 1\nClass.P3Observation.observe: line 5, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-02",
+      "group": "C03",
+      "api": "68.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.thrown();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-02|'+text);\n }\n}\n",
+      "sourceSHA256": "7477775c76ce8ce3d307c1195bd166a8ff9038e1fd7b451226f0fba775c5484a",
+      "nativeMarkerSHA256": "ca043796073e7b6004d21fa5f36275071960fac1fc9aebbb6596e70b86738f3c",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.thrown: line 6, column 1\nClass.P3Observation.observe: line 5, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-03",
+      "group": "C03",
+      "api": "68.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new DmlException().getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-03|'+text);\n }\n}\n",
+      "sourceSHA256": "67a531f2124673431c7574549ef33c776ac3e80e8f26635bcd57d1db54932ff9",
+      "nativeMarkerSHA256": "fa3e15b37f66c391bad512b966305e4f810e072ed3a1508bb498b54396c8b570",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.P3Observation.observe: line 5, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-04",
+      "group": "C03",
+      "api": "68.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nString raw=TraceEmitter.constructed();r=new List<String>{raw,raw.replaceAll('Class\\\\.TraceEmitter\\\\.[^\\n]*column 1','').trim()};\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'List<String>','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-04|'+text);\n }\n}\n",
+      "sourceSHA256": "c0467a8a0a5c37d3bada7a7ecd6f4bdcbb3ad26561b3e95a094811481b6e7919",
+      "nativeMarkerSHA256": "06ba5283205aae72e92f9c46350429024284a276b1b18cfe7d8be5aff361c7f0",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": [
+          "Class.TraceEmitter.constructed: line 3, column 1\nClass.P3Observation.observe: line 5, column 1",
+          "Class.P3Observation.observe: line 5, column 1"
+        ],
+        "type": "List<String>"
+      }
+    },
+    {
+      "id": "C03-05",
+      "group": "C03",
+      "api": "68.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=new NullPointerException().getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-05|'+text);\n }\n}\n",
+      "sourceSHA256": "b622402402357d6837b33a295829f7e3b6cbc0689d76eb55a3f41c5abd7fdca2",
+      "nativeMarkerSHA256": "fa3e15b37f66c391bad512b966305e4f810e072ed3a1508bb498b54396c8b570",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.P3Observation.observe: line 5, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-06",
+      "group": "C03",
+      "api": "68.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nr=TraceEmitter.CONSTRUCTED();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-06|'+text);\n }\n}\n",
+      "sourceSHA256": "04ab6a6ca8c036e3eec409ab88f5516f87c148ef78b5685dd07b108c348b7952",
+      "nativeMarkerSHA256": "2cfd569bc1d6172f4b3219877b451c5e0cf4b1212f25bf72cf685f1db6dcf8b1",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": "Class.TraceEmitter.constructed: line 3, column 1\nClass.P3Observation.observe: line 5, column 1",
+        "type": "String"
+      }
+    },
+    {
+      "id": "C03-07",
+      "group": "C03",
+      "api": "68.0",
+      "route": "istest",
+      "source": "@IsTest private class P3Observation {\n @IsTest static void observe(){\nObject r;Boolean complete=false;String et=null,em=null,es=null;\ntry {\nException fault=null;r=fault?.getStackTraceString();\ncomplete=true;\n}catch(Exception fault){et=fault.getTypeName();em=fault.getMessage();es=fault.getStackTraceString();}\nMap<String,Object> payload=new Map<String,Object>{'type'=>'String(null)','value'=>r,'effectComplete'=>complete,'exceptionType'=>et,'exceptionMessage'=>em,'exceptionStack'=>es};\nString text=JSON.serialize(payload);System.assert(text.length()<580,'FIXTURE_ERROR|OVERSIZED|'+text.length());System.assert(false,'C126_RESULT|C03-07|'+text);\n }\n}\n",
+      "sourceSHA256": "131de9c977abdc10ee80e8744133f0146b61ae2480fd19857bacb5a2b9c05ad0",
+      "nativeMarkerSHA256": "58d45e31b8346ed890ac8c5415bef1f5277dac06a919971aae2a7236b7667b0d",
+      "native": {
+        "exceptionStack": null,
+        "exceptionMessage": null,
+        "exceptionType": null,
+        "effectComplete": true,
+        "value": null,
+        "type": "String(null)"
+      }
+    }
+  ],
+  "objects": {
+    "TriadPreference__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Triad Preference</label><customSettingsType>Hierarchy</customSettingsType><visibility>Public</visibility><fields><fullName>Armed__c</fullName><label>Armed</label><type>Checkbox</type><defaultValue>false</defaultValue></fields><fields><fullName>Tone__c</fullName><label>Tone</label><type>Text</type><length>30</length><defaultValue>\"base\"</defaultValue></fields></CustomObject>"
+  },
+  "objectSHA256": {
+    "TriadPreference__c": "4d49846117f71149daa03a1c8056ac31abd365b12c2259be59ee10d0c93e0d24"
+  }
+}

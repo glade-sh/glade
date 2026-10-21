@@ -1,0 +1,85 @@
+{
+  "route": "istest",
+  "rows": [
+    {
+      "id": "62_directOne",
+      "api": "62.0",
+      "class": "AliasedRemoval62",
+      "method": "directOne",
+      "native": {
+        "type": "System.FinalException",
+        "message": "Cannot modify a collection while it is being iterated."
+      }
+    },
+    {
+      "id": "62_directTwo",
+      "api": "62.0",
+      "class": "AliasedRemoval62",
+      "method": "directTwo",
+      "native": {
+        "type": "System.FinalException",
+        "message": "Cannot modify a collection while it is being iterated."
+      }
+    },
+    {
+      "id": "62_aliasOne",
+      "api": "62.0",
+      "class": "AliasedRemoval62",
+      "method": "aliasOne",
+      "native": {
+        "type": "System.FinalException",
+        "message": "Cannot modify a collection while it is being iterated."
+      }
+    },
+    {
+      "id": "62_aliasTwo",
+      "api": "62.0",
+      "class": "AliasedRemoval62",
+      "method": "aliasTwo",
+      "native": {
+        "type": "System.FinalException",
+        "message": "Cannot modify a collection while it is being iterated."
+      }
+    },
+    {
+      "id": "67_directOne",
+      "api": "67.0",
+      "class": "AliasedRemoval67",
+      "method": "directOne",
+      "native": {
+        "type": "System.FinalException",
+        "message": "Cannot modify a collection while it is being iterated."
+      }
+    },
+    {
+      "id": "67_directTwo",
+      "api": "67.0",
+      "class": "AliasedRemoval67",
+      "method": "directTwo",
+      "native": {
+        "type": "System.FinalException",
+        "message": "Cannot modify a collection while it is being iterated."
+      }
+    },
+    {
+      "id": "67_aliasOne",
+      "api": "67.0",
+      "class": "AliasedRemoval67",
+      "method": "aliasOne",
+      "native": {
+        "type": "System.FinalException",
+        "message": "Cannot modify a collection while it is being iterated."
+      }
+    },
+    {
+      "id": "67_aliasTwo",
+      "api": "67.0",
+      "class": "AliasedRemoval67",
+      "method": "aliasTwo",
+      "native": {
+        "type": "System.FinalException",
+        "message": "Cannot modify a collection while it is being iterated."
+      }
+    }
+  ]
+}

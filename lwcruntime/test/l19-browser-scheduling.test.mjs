@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
-import { createL19BatchAllocator, l19PageCount } from "../../internal/lwc/compile/testdata/l19_browser_scheduling.mjs";
+import { createL19BatchAllocator, l19PageCount, l19WorkerCount } from "../../internal/lwc/compile/testdata/l19_browser_scheduling.mjs";
 
 const fixture = JSON.parse(fs.readFileSync(new URL("../../internal/lwc/compile/testdata/l19_salesforce.json", import.meta.url), "utf8"));
 
@@ -46,7 +46,7 @@ test("L19 controls keep complete rows while free workers claim the next row", ()
     const rows = projectRows(api, project);
     assert.equal(rows.length, count);
     assert.ok(rows.every(row => ["fresh", "same-page-remount"].includes(row.cachePhase)));
-    const next = createL19BatchAllocator(rows, true);
+    const next = createL19BatchAllocator(rows, true, 12);
     const allocated = [];
     // Worker 5 repeatedly finishes while other pages remain busy. Its work
     // must come from the shared queue rather than a fixed per-worker stripe.
@@ -59,16 +59,31 @@ test("L19 controls keep complete rows while free workers claim the next row", ()
       assert.equal(batch.rows[0], rows[index]);
       allocated.push(...batch.rows);
     }
-    for (let worker = 0; worker < l19PageCount; worker++) assert.equal(next(worker), null);
+    for (let worker = 0; worker < 12; worker++) assert.equal(next(worker), null);
     assertCompleteUnion(rows, allocated);
   }
 });
 
-test("L19 rejects workers outside its existing six-page limit without consuming rows", () => {
+test("L19 rejects workers outside its page limit without consuming rows", () => {
   const rows = projectRows("67.0", "interactions");
   for (const controlProject of [false, true]) {
     const next = createL19BatchAllocator(rows, controlProject);
-    for (const worker of [-1, 6, 100, 0.5, "0"]) assert.throws(() => next(worker), RangeError);
+    const limit = l19WorkerCount(rows, controlProject);
+    for (const worker of [-1, limit, limit + 94, 0.5, "0"]) assert.throws(() => next(worker), RangeError);
     assert.equal(next(0).rows[0], rows[0]);
   }
+});
+
+test("L19 page limits: ordinary rows stay at six; controls widen unless the host caps concurrency", () => {
+  const rows = projectRows("67.0", "interactions");
+  assert.equal(rows.length >= 12, true);
+  assert.equal(l19WorkerCount(rows, false, {}), 6);
+  assert.equal(l19WorkerCount(rows, false, { GLADE_LWC_BROWSER_PAGES: "9" }), 6);
+  assert.equal(l19WorkerCount(rows, true, {}), 12);
+  assert.equal(l19WorkerCount(rows, true, { GLADE_LWC_BROWSER_CONCURRENCY: "3" }), 6);
+  assert.equal(l19WorkerCount(rows, true, { GLADE_LWC_BROWSER_CONCURRENCY: "3", GLADE_LWC_BROWSER_PAGES: "8" }), 8);
+  assert.equal(l19WorkerCount(rows.slice(0, 4), true, {}), 4);
+  const next = createL19BatchAllocator(rows, true, 12);
+  assert.equal(next(11).rows[0], rows[0]);
+  assert.throws(() => next(12), RangeError);
 });

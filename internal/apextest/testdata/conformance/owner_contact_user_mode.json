@@ -1,0 +1,1428 @@
+{
+  "sourceApiVersions": [
+    "61.0",
+    "62.0",
+    "67.0"
+  ],
+  "routes": [
+    "isTest",
+    "anonymous"
+  ],
+  "namespaceContext": "none",
+  "knownRows": 9,
+  "marker": "OWNER_CONTACT_OBSERVATION|",
+  "orgIdSha256": "3f19baff10e1558139e38fb8271f1b3fab121538652619fe247d05eb7f01dd49",
+  "devHubAlias": "scratch-org",
+  "pendingCoverage": [
+    "API68 is unobserved.",
+    "Namespace contexts are unobserved.",
+    "Queue-owned anonymous execution is unobserved.",
+    "Other owner target types, polymorphic relationships, fields and access-mode combinations are unobserved."
+  ],
+  "replayCurrentUser": {
+    "description": "Anonymous current-user values are not exported. Replay uses arbitrary owned values with exactly the observed nullness; payloads only compare each projected field with that same user.",
+    "fieldNullness": {
+      "Id": false,
+      "Name": false,
+      "FirstName": false,
+      "LastName": false,
+      "Phone": true,
+      "Email": false
+    }
+  },
+  "captures": [
+    {
+      "context": "named61-exact",
+      "sourceAPI": "61.0",
+      "route": "isTest",
+      "projectAPI": "62.0",
+      "replayProjectAPI": "62.0",
+      "transportAPI": "62.0",
+      "namespaceContext": "none",
+      "testClass": "OwnerContactObservation",
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        },
+        "force-app/main/default/classes/OwnerContactObservation.cls": {
+          "source": "@IsTest private class OwnerContactObservation {\nprivate static Map<String,Object> observe(Id caseId,User directOwner) {\n    Map<String,Object> answer=new Map<String,Object>();\n    List<String> fields=new List<String>{'Id','Name','FirstName','LastName','Phone','Email'};\n    answer.put('fields',fields);\n    Map<String,Object> combined=new Map<String,Object>{'q'=>false};\n    String stage='inlineQuery';\n    try {\n        List<Case> rows=[SELECT Id,OwnerId,Owner.Id,Owner.Name,Owner.FirstName,Owner.LastName,Owner.Phone,Owner.Email FROM Case WHERE Id=:caseId WITH USER_MODE];\n        combined.put('q',true);combined.put('n',rows.size());stage='readOwner';\n        if (!rows.isEmpty()) {\n            SObject owner=rows[0].getSObject('Owner');combined.put('z',owner==null);\n            List<Boolean> nullFlags=new List<Boolean>();List<Boolean> matches=new List<Boolean>();\n            stage='readFields';\n            for (String field:fields) {\n                Object value=owner==null?null:owner.get(field);nullFlags.add(value==null);\n                matches.add(directOwner==null?null:value==directOwner.get(field));\n            }\n            combined.put('null',nullFlags);combined.put('eq',matches);\n        }\n    } catch(Exception e) {combined.put('e',new List<String>{stage,e.getTypeName()});}\n    answer.put('c',combined);\n    Map<String,Object> individual=new Map<String,Object>();\n    List<String> probes=new List<String>();probes.addAll(fields);probes.add('MissingSynthetic__c');\n    for(String field:probes) {\n        Boolean queried=false;Integer count=null;stage='dynamicQuery';\n        try {\n            List<SObject> rows=Database.query('SELECT Id,Owner.'+field+' FROM Case WHERE Id=:caseId WITH USER_MODE');\n            queried=true;count=rows.size();stage='readOwner';\n            SObject owner=rows.isEmpty()?null:rows[0].getSObject('Owner');stage='readField';\n            Object value=owner==null?null:owner.get(field);\n            individual.put(field,new List<Object>{true,count,owner==null,value==null,directOwner==null?null:value==directOwner.get(field)});\n        } catch(Exception e) {\n            individual.put(field,queried?new List<Object>{true,count,stage,e.getTypeName()}:new List<Object>{false,e.getTypeName()});\n        }\n    }\n    answer.put('d',individual);answer.put('stage','complete');return answer;\n}\nprivate static User makeOwner() {\n    Id currentId=UserInfo.getUserId();\n    User t=[SELECT ProfileId,TimeZoneSidKey,LocaleSidKey,EmailEncodingKey,LanguageLocaleKey FROM User WHERE Id=:currentId];\n    User u=new User(FirstName='Atlas',LastName='Observer',Phone='5550102',Email='atlas@example.invalid',Alias='ownerobs',Username=String.valueOf(DateTime.now().getTime())+'.'+UserInfo.getOrganizationId()+'.ownercontact@example.invalid',ProfileId=t.ProfileId,TimeZoneSidKey=t.TimeZoneSidKey,LocaleSidKey=t.LocaleSidKey,EmailEncodingKey=t.EmailEncodingKey,LanguageLocaleKey=t.LanguageLocaleKey);\n    insert u;return u;\n}\n@IsTest static void userOwned() {\n    User u=makeOwner();\n    System.runAs(u) {\n        Id uid=u.Id;User directOwner=[SELECT Id,Name,FirstName,LastName,Phone,Email FROM User WHERE Id=:uid WITH USER_MODE];\n        Case c=new Case(Subject='Owned contact observation',Status='New',Origin='Phone',OwnerId=uid);insert c;\n        Map<String,Object> answer=observe(c.Id,directOwner);answer.put('sourceApi','61.0');answer.put('context','@IsTest');answer.put('owner','User');\n        System.assert(false,'OWNER_CONTACT_OBSERVATION|'+JSON.serialize(answer));\n    }\n}\n@IsTest static void queueOwned() {\n    Map<String,Object> answer=new Map<String,Object>{'sourceApi'=>'61.0','context'=>'@IsTest','owner'=>'Queue'};\n    try {\n        Group q=new Group(Name='Owned Contact Probe',DeveloperName='OwnedContactProbe'+String.valueOf(DateTime.now().getTime()),Type='Queue');insert q;\n        insert new QueueSobject(QueueId=q.Id,SobjectType='Case');\n        System.runAs(new User(Id=UserInfo.getUserId())) {\n            Case c=new Case(Subject='Owned queue contact observation',Status='New',Origin='Phone',OwnerId=q.Id);insert c;\n            answer.putAll(observe(c.Id,null));\n        }\n    } catch(Exception e) {answer.put('e',new List<String>{'queueSetup',e.getTypeName()});}\n    System.assert(false,'OWNER_CONTACT_OBSERVATION|'+JSON.serialize(answer));\n}\n}\n",
+          "sha256": "23acb47805477b86cf1a93620d43c2a4fa49a11ffec6d9e94ae894a2d3aaaf90"
+        },
+        "force-app/main/default/classes/OwnerContactObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>61.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "5a6a7962736b3c952d33ec0523bae961cbede81850aa090f40725ebef716f890"
+        }
+      },
+      "sourceManifest": {
+        "phase": "before-native-call",
+        "files": {
+          "sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9",
+          "force-app/main/default/classes/OwnerContactObservation.cls": "23acb47805477b86cf1a93620d43c2a4fa49a11ffec6d9e94ae894a2d3aaaf90",
+          "force-app/main/default/classes/OwnerContactObservation.cls-meta.xml": "5a6a7962736b3c952d33ec0523bae961cbede81850aa090f40725ebef716f890"
+        }
+      },
+      "sourceManifestSHA256": "de41b35399d545afc2413592f1876be14c21c68cc8d8559572f1406b076e1189",
+      "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"sfdx-project.json\": \"f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9\",\n    \"force-app/main/default/classes/OwnerContactObservation.cls\": \"23acb47805477b86cf1a93620d43c2a4fa49a11ffec6d9e94ae894a2d3aaaf90\",\n    \"force-app/main/default/classes/OwnerContactObservation.cls-meta.xml\": \"5a6a7962736b3c952d33ec0523bae961cbede81850aa090f40725ebef716f890\"\n  }\n}\n",
+      "rawSHA256": {
+        "source-digests.json": "de41b35399d545afc2413592f1876be14c21c68cc8d8559572f1406b076e1189",
+        "org.tsv": "4c30abb3b5c2fd63c5a4ed6287736b92d14c6d74d65d3b030d568a3345d579e6",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "digests.json": "e71dcae063cfa50497683826294e5308b8a5205a596b2884753f61909495920f",
+        "deploy.json": "ed68004f354a0e17f25ac1fdac8971a6664318aa784d5fbc5cb83078ee9c65a5",
+        "deploy.command.json": "0b712d0e90472be0d2562e5e562d000616c8766bd89eeee93e609267ebba121a",
+        "ORG-RUN.txt": "12c7eb8babe8f4b1b41881eb1dc5778bc265e79752659014b14d41e767b3a5b1",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=3f19baff10e1558139e38fb8271f1b3fab121538652619fe247d05eb7f01dd49\nsourceApi=61.0\ncallerApi=61.0\ntransportApi=62.0\ncontext=@IsTest\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"OwnerContactObservation\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T18:55:20Z\nexitCode=1\ndeploymentId=0Af000000000uZUCAY\nobservedRows=2\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T18:55:26Z\n",
+      "command": {
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        },
+        "command": [
+          "sf",
+          "project",
+          "deploy",
+          "start",
+          "--dry-run",
+          "--source-dir",
+          "force-app",
+          "--test-level",
+          "RunSpecifiedTests",
+          "--tests",
+          "OwnerContactObservation",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "62.0",
+          "--wait",
+          "1",
+          "--json"
+        ]
+      },
+      "errors": {
+        "componentFailures": [],
+        "transportOrSetupErrors": []
+      },
+      "rows": [
+        {
+          "id": "queueOwned",
+          "native": {
+            "stage": "complete",
+            "d": {
+              "MissingSynthetic__c": [
+                false,
+                "System.QueryException"
+              ],
+              "Email": [
+                true,
+                1,
+                false,
+                true,
+                null
+              ],
+              "Phone": [
+                true,
+                1,
+                false,
+                true,
+                null
+              ],
+              "LastName": [
+                true,
+                1,
+                false,
+                true,
+                null
+              ],
+              "FirstName": [
+                true,
+                1,
+                false,
+                true,
+                null
+              ],
+              "Name": [
+                true,
+                1,
+                false,
+                false,
+                null
+              ],
+              "Id": [
+                true,
+                1,
+                false,
+                false,
+                null
+              ]
+            },
+            "c": {
+              "eq": [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+              ],
+              "null": [
+                false,
+                false,
+                true,
+                true,
+                true,
+                true
+              ],
+              "z": false,
+              "n": 1,
+              "q": true
+            },
+            "fields": [
+              "Id",
+              "Name",
+              "FirstName",
+              "LastName",
+              "Phone",
+              "Email"
+            ],
+            "owner": "Queue",
+            "context": "@IsTest",
+            "sourceApi": "61.0"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNER_CONTACT_OBSERVATION|{\"stage\":\"complete\",\"d\":{\"MissingSynthetic__c\":[false,\"System.QueryException\"],\"Email\":[true,1,false,true,null],\"Phone\":[true,1,false,true,null],\"LastName\":[true,1,false,true,null],\"FirstName\":[true,1,false,true,null],\"Name\":[true,1,false,false,null],\"Id\":[true,1,false,false,null]},\"c\":{\"eq\":[null,null,null,null,null,null],\"null\":[false,false,true,true,true,true],\"z\":false,\"n\":1,\"q\":true},\"fields\":[\"Id\",\"Name\",\"FirstName\",\"LastName\",\"Phone\",\"Email\"],\"owner\":\"Queue\",\"context\":\"@IsTest\",\"sourceApi\":\"61.0\"}"
+          }
+        },
+        {
+          "id": "userOwned",
+          "native": {
+            "owner": "User",
+            "context": "@IsTest",
+            "sourceApi": "61.0",
+            "stage": "complete",
+            "d": {
+              "MissingSynthetic__c": [
+                false,
+                "System.QueryException"
+              ],
+              "Email": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Phone": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "LastName": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "FirstName": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Name": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Id": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ]
+            },
+            "c": {
+              "eq": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ],
+              "null": [
+                false,
+                false,
+                false,
+                false,
+                false,
+                false
+              ],
+              "z": false,
+              "n": 1,
+              "q": true
+            },
+            "fields": [
+              "Id",
+              "Name",
+              "FirstName",
+              "LastName",
+              "Phone",
+              "Email"
+            ]
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNER_CONTACT_OBSERVATION|{\"owner\":\"User\",\"context\":\"@IsTest\",\"sourceApi\":\"61.0\",\"stage\":\"complete\",\"d\":{\"MissingSynthetic__c\":[false,\"System.QueryException\"],\"Email\":[true,1,false,false,true],\"Phone\":[true,1,false,false,true],\"LastName\":[true,1,false,false,true],\"FirstName\":[true,1,false,false,true],\"Name\":[true,1,false,false,true],\"Id\":[true,1,false,false,true]},\"c\":{\"eq\":[true,true,true,true,true,true],\"null\":[false,false,false,false,false,false],\"z\":false,\"n\":1,\"q\":true},\"fields\":[\"Id\",\"Name\",\"FirstName\",\"LastName\",\"Phone\",\"Email\"]}"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0Af000000000uZUCAY",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 2,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 2
+      },
+      "receiptPathPolicy": "Personal command/environment paths are replaced with placeholders in this export; rawSHA256 retains original receipt hashes. Native observations and source manifests are unchanged."
+    },
+    {
+      "context": "named62",
+      "sourceAPI": "62.0",
+      "route": "isTest",
+      "projectAPI": "62.0",
+      "replayProjectAPI": "62.0",
+      "transportAPI": "62.0",
+      "namespaceContext": "none",
+      "testClass": "OwnerContactObservation",
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        },
+        "force-app/main/default/classes/OwnerContactObservation.cls": {
+          "source": "@IsTest private class OwnerContactObservation {\nprivate static Map<String,Object> observe(Id caseId,User directOwner) {\n    Map<String,Object> answer=new Map<String,Object>();\n    List<String> fields=new List<String>{'Id','Name','FirstName','LastName','Phone','Email'};\n    answer.put('fields',fields);\n    Map<String,Object> combined=new Map<String,Object>{'q'=>false};\n    String stage='inlineQuery';\n    try {\n        List<Case> rows=[SELECT Id,OwnerId,Owner.Id,Owner.Name,Owner.FirstName,Owner.LastName,Owner.Phone,Owner.Email FROM Case WHERE Id=:caseId WITH USER_MODE];\n        combined.put('q',true);combined.put('n',rows.size());stage='readOwner';\n        if (!rows.isEmpty()) {\n            SObject owner=rows[0].getSObject('Owner');combined.put('z',owner==null);\n            List<Boolean> nullFlags=new List<Boolean>();List<Boolean> matches=new List<Boolean>();\n            stage='readFields';\n            for (String field:fields) {\n                Object value=owner==null?null:owner.get(field);nullFlags.add(value==null);\n                matches.add(directOwner==null?null:value==directOwner.get(field));\n            }\n            combined.put('null',nullFlags);combined.put('eq',matches);\n        }\n    } catch(Exception e) {combined.put('e',new List<String>{stage,e.getTypeName()});}\n    answer.put('c',combined);\n    Map<String,Object> individual=new Map<String,Object>();\n    List<String> probes=new List<String>();probes.addAll(fields);probes.add('MissingSynthetic__c');\n    for(String field:probes) {\n        Boolean queried=false;Integer count=null;stage='dynamicQuery';\n        try {\n            List<SObject> rows=Database.query('SELECT Id,Owner.'+field+' FROM Case WHERE Id=:caseId WITH USER_MODE');\n            queried=true;count=rows.size();stage='readOwner';\n            SObject owner=rows.isEmpty()?null:rows[0].getSObject('Owner');stage='readField';\n            Object value=owner==null?null:owner.get(field);\n            individual.put(field,new List<Object>{true,count,owner==null,value==null,directOwner==null?null:value==directOwner.get(field)});\n        } catch(Exception e) {\n            individual.put(field,queried?new List<Object>{true,count,stage,e.getTypeName()}:new List<Object>{false,e.getTypeName()});\n        }\n    }\n    answer.put('d',individual);answer.put('stage','complete');return answer;\n}\nprivate static User makeOwner() {\n    Id currentId=UserInfo.getUserId();\n    User t=[SELECT ProfileId,TimeZoneSidKey,LocaleSidKey,EmailEncodingKey,LanguageLocaleKey FROM User WHERE Id=:currentId];\n    User u=new User(FirstName='Atlas',LastName='Observer',Phone='5550102',Email='atlas@example.invalid',Alias='ownerobs',Username=String.valueOf(DateTime.now().getTime())+'.'+UserInfo.getOrganizationId()+'.ownercontact@example.invalid',ProfileId=t.ProfileId,TimeZoneSidKey=t.TimeZoneSidKey,LocaleSidKey=t.LocaleSidKey,EmailEncodingKey=t.EmailEncodingKey,LanguageLocaleKey=t.LanguageLocaleKey);\n    insert u;return u;\n}\n@IsTest static void userOwned() {\n    User u=makeOwner();\n    System.runAs(u) {\n        Id uid=u.Id;User directOwner=[SELECT Id,Name,FirstName,LastName,Phone,Email FROM User WHERE Id=:uid WITH USER_MODE];\n        Case c=new Case(Subject='Owned contact observation',Status='New',Origin='Phone',OwnerId=uid);insert c;\n        Map<String,Object> answer=observe(c.Id,directOwner);answer.put('sourceApi','62.0');answer.put('context','@IsTest');answer.put('owner','User');\n        System.assert(false,'OWNER_CONTACT_OBSERVATION|'+JSON.serialize(answer));\n    }\n}\n@IsTest static void queueOwned() {\n    Map<String,Object> answer=new Map<String,Object>{'sourceApi'=>'62.0','context'=>'@IsTest','owner'=>'Queue'};\n    try {\n        Group q=new Group(Name='Owned Contact Probe',DeveloperName='OwnedContactProbe'+String.valueOf(DateTime.now().getTime()),Type='Queue');insert q;\n        insert new QueueSobject(QueueId=q.Id,SobjectType='Case');\n        System.runAs(new User(Id=UserInfo.getUserId())) {\n            Case c=new Case(Subject='Owned queue contact observation',Status='New',Origin='Phone',OwnerId=q.Id);insert c;\n            answer.putAll(observe(c.Id,null));\n        }\n    } catch(Exception e) {answer.put('e',new List<String>{'queueSetup',e.getTypeName()});}\n    System.assert(false,'OWNER_CONTACT_OBSERVATION|'+JSON.serialize(answer));\n}\n}\n",
+          "sha256": "9caba2fc6e901c90d14a3883b4a212fa1fdb9d0f69974806077f4c4ba02298db"
+        },
+        "force-app/main/default/classes/OwnerContactObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        }
+      },
+      "sourceManifest": {
+        "phase": "before-native-call",
+        "files": {
+          "sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9",
+          "force-app/main/default/classes/OwnerContactObservation.cls": "9caba2fc6e901c90d14a3883b4a212fa1fdb9d0f69974806077f4c4ba02298db",
+          "force-app/main/default/classes/OwnerContactObservation.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        }
+      },
+      "sourceManifestSHA256": "c5c9b0af9b8dad2fcdfcbc61886f4735d0946a5ceb31de9e32920672a03ddadb",
+      "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"sfdx-project.json\": \"f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9\",\n    \"force-app/main/default/classes/OwnerContactObservation.cls\": \"9caba2fc6e901c90d14a3883b4a212fa1fdb9d0f69974806077f4c4ba02298db\",\n    \"force-app/main/default/classes/OwnerContactObservation.cls-meta.xml\": \"51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d\"\n  }\n}\n",
+      "rawSHA256": {
+        "source-digests.json": "c5c9b0af9b8dad2fcdfcbc61886f4735d0946a5ceb31de9e32920672a03ddadb",
+        "org.tsv": "050f00353c68f413896cada485ce83f21e84846ceb8735454e5bbc42a91408ae",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "digests.json": "7834dda1f621ae8644772b310e113eac95700186d6ead6a578c38f84b35c7ec3",
+        "deploy.json": "47536e931e622239672b7594fb9786202aa582a4a763bb5758dce33e0bc88eda",
+        "deploy.command.json": "0b712d0e90472be0d2562e5e562d000616c8766bd89eeee93e609267ebba121a",
+        "ORG-RUN.txt": "1b31318c78251cddec5e0cfc8cfbb347b0e0b6d0028d1e9d8cd3ff36e8016391",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=3f19baff10e1558139e38fb8271f1b3fab121538652619fe247d05eb7f01dd49\nsourceApi=62.0\ncallerApi=62.0\ntransportApi=62.0\ncontext=@IsTest\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"OwnerContactObservation\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T18:56:05Z\nexitCode=1\ndeploymentId=0Af000000000shzCAA\nobservedRows=2\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T18:56:09Z\n",
+      "command": {
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        },
+        "command": [
+          "sf",
+          "project",
+          "deploy",
+          "start",
+          "--dry-run",
+          "--source-dir",
+          "force-app",
+          "--test-level",
+          "RunSpecifiedTests",
+          "--tests",
+          "OwnerContactObservation",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "62.0",
+          "--wait",
+          "1",
+          "--json"
+        ]
+      },
+      "errors": {
+        "componentFailures": [],
+        "transportOrSetupErrors": []
+      },
+      "rows": [
+        {
+          "id": "queueOwned",
+          "native": {
+            "stage": "complete",
+            "d": {
+              "MissingSynthetic__c": [
+                false,
+                "System.QueryException"
+              ],
+              "Email": [
+                true,
+                1,
+                false,
+                true,
+                null
+              ],
+              "Phone": [
+                true,
+                1,
+                false,
+                true,
+                null
+              ],
+              "LastName": [
+                true,
+                1,
+                false,
+                true,
+                null
+              ],
+              "FirstName": [
+                true,
+                1,
+                false,
+                true,
+                null
+              ],
+              "Name": [
+                true,
+                1,
+                false,
+                false,
+                null
+              ],
+              "Id": [
+                true,
+                1,
+                false,
+                false,
+                null
+              ]
+            },
+            "c": {
+              "eq": [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+              ],
+              "null": [
+                false,
+                false,
+                true,
+                true,
+                true,
+                true
+              ],
+              "z": false,
+              "n": 1,
+              "q": true
+            },
+            "fields": [
+              "Id",
+              "Name",
+              "FirstName",
+              "LastName",
+              "Phone",
+              "Email"
+            ],
+            "owner": "Queue",
+            "context": "@IsTest",
+            "sourceApi": "62.0"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNER_CONTACT_OBSERVATION|{\"stage\":\"complete\",\"d\":{\"MissingSynthetic__c\":[false,\"System.QueryException\"],\"Email\":[true,1,false,true,null],\"Phone\":[true,1,false,true,null],\"LastName\":[true,1,false,true,null],\"FirstName\":[true,1,false,true,null],\"Name\":[true,1,false,false,null],\"Id\":[true,1,false,false,null]},\"c\":{\"eq\":[null,null,null,null,null,null],\"null\":[false,false,true,true,true,true],\"z\":false,\"n\":1,\"q\":true},\"fields\":[\"Id\",\"Name\",\"FirstName\",\"LastName\",\"Phone\",\"Email\"],\"owner\":\"Queue\",\"context\":\"@IsTest\",\"sourceApi\":\"62.0\"}"
+          }
+        },
+        {
+          "id": "userOwned",
+          "native": {
+            "owner": "User",
+            "context": "@IsTest",
+            "sourceApi": "62.0",
+            "stage": "complete",
+            "d": {
+              "MissingSynthetic__c": [
+                false,
+                "System.QueryException"
+              ],
+              "Email": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Phone": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "LastName": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "FirstName": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Name": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Id": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ]
+            },
+            "c": {
+              "eq": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ],
+              "null": [
+                false,
+                false,
+                false,
+                false,
+                false,
+                false
+              ],
+              "z": false,
+              "n": 1,
+              "q": true
+            },
+            "fields": [
+              "Id",
+              "Name",
+              "FirstName",
+              "LastName",
+              "Phone",
+              "Email"
+            ]
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNER_CONTACT_OBSERVATION|{\"owner\":\"User\",\"context\":\"@IsTest\",\"sourceApi\":\"62.0\",\"stage\":\"complete\",\"d\":{\"MissingSynthetic__c\":[false,\"System.QueryException\"],\"Email\":[true,1,false,false,true],\"Phone\":[true,1,false,false,true],\"LastName\":[true,1,false,false,true],\"FirstName\":[true,1,false,false,true],\"Name\":[true,1,false,false,true],\"Id\":[true,1,false,false,true]},\"c\":{\"eq\":[true,true,true,true,true,true],\"null\":[false,false,false,false,false,false],\"z\":false,\"n\":1,\"q\":true},\"fields\":[\"Id\",\"Name\",\"FirstName\",\"LastName\",\"Phone\",\"Email\"]}"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0Af000000000shzCAA",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 2,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 2
+      },
+      "receiptPathPolicy": "Personal command/environment paths are replaced with placeholders in this export; rawSHA256 retains original receipt hashes. Native observations and source manifests are unchanged."
+    },
+    {
+      "context": "named67",
+      "sourceAPI": "67.0",
+      "route": "isTest",
+      "projectAPI": "62.0",
+      "replayProjectAPI": "62.0",
+      "transportAPI": "62.0",
+      "namespaceContext": "none",
+      "testClass": "OwnerContactObservation",
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        },
+        "force-app/main/default/classes/OwnerContactObservation.cls": {
+          "source": "@IsTest private class OwnerContactObservation {\nprivate static Map<String,Object> observe(Id caseId,User directOwner) {\n    Map<String,Object> answer=new Map<String,Object>();\n    List<String> fields=new List<String>{'Id','Name','FirstName','LastName','Phone','Email'};\n    answer.put('fields',fields);\n    Map<String,Object> combined=new Map<String,Object>{'q'=>false};\n    String stage='inlineQuery';\n    try {\n        List<Case> rows=[SELECT Id,OwnerId,Owner.Id,Owner.Name,Owner.FirstName,Owner.LastName,Owner.Phone,Owner.Email FROM Case WHERE Id=:caseId WITH USER_MODE];\n        combined.put('q',true);combined.put('n',rows.size());stage='readOwner';\n        if (!rows.isEmpty()) {\n            SObject owner=rows[0].getSObject('Owner');combined.put('z',owner==null);\n            List<Boolean> nullFlags=new List<Boolean>();List<Boolean> matches=new List<Boolean>();\n            stage='readFields';\n            for (String field:fields) {\n                Object value=owner==null?null:owner.get(field);nullFlags.add(value==null);\n                matches.add(directOwner==null?null:value==directOwner.get(field));\n            }\n            combined.put('null',nullFlags);combined.put('eq',matches);\n        }\n    } catch(Exception e) {combined.put('e',new List<String>{stage,e.getTypeName()});}\n    answer.put('c',combined);\n    Map<String,Object> individual=new Map<String,Object>();\n    List<String> probes=new List<String>();probes.addAll(fields);probes.add('MissingSynthetic__c');\n    for(String field:probes) {\n        Boolean queried=false;Integer count=null;stage='dynamicQuery';\n        try {\n            List<SObject> rows=Database.query('SELECT Id,Owner.'+field+' FROM Case WHERE Id=:caseId WITH USER_MODE');\n            queried=true;count=rows.size();stage='readOwner';\n            SObject owner=rows.isEmpty()?null:rows[0].getSObject('Owner');stage='readField';\n            Object value=owner==null?null:owner.get(field);\n            individual.put(field,new List<Object>{true,count,owner==null,value==null,directOwner==null?null:value==directOwner.get(field)});\n        } catch(Exception e) {\n            individual.put(field,queried?new List<Object>{true,count,stage,e.getTypeName()}:new List<Object>{false,e.getTypeName()});\n        }\n    }\n    answer.put('d',individual);answer.put('stage','complete');return answer;\n}\nprivate static User makeOwner() {\n    Id currentId=UserInfo.getUserId();\n    User t=[SELECT ProfileId,TimeZoneSidKey,LocaleSidKey,EmailEncodingKey,LanguageLocaleKey FROM User WHERE Id=:currentId];\n    User u=new User(FirstName='Atlas',LastName='Observer',Phone='5550102',Email='atlas@example.invalid',Alias='ownerobs',Username=String.valueOf(DateTime.now().getTime())+'.'+UserInfo.getOrganizationId()+'.ownercontact@example.invalid',ProfileId=t.ProfileId,TimeZoneSidKey=t.TimeZoneSidKey,LocaleSidKey=t.LocaleSidKey,EmailEncodingKey=t.EmailEncodingKey,LanguageLocaleKey=t.LanguageLocaleKey);\n    insert u;return u;\n}\n@IsTest static void userOwned() {\n    User u=makeOwner();\n    System.runAs(u) {\n        Id uid=u.Id;User directOwner=[SELECT Id,Name,FirstName,LastName,Phone,Email FROM User WHERE Id=:uid WITH USER_MODE];\n        Case c=new Case(Subject='Owned contact observation',Status='New',Origin='Phone',OwnerId=uid);insert c;\n        Map<String,Object> answer=observe(c.Id,directOwner);answer.put('sourceApi','67.0');answer.put('context','@IsTest');answer.put('owner','User');\n        System.assert(false,'OWNER_CONTACT_OBSERVATION|'+JSON.serialize(answer));\n    }\n}\n@IsTest static void queueOwned() {\n    Map<String,Object> answer=new Map<String,Object>{'sourceApi'=>'67.0','context'=>'@IsTest','owner'=>'Queue'};\n    try {\n        Group q=new Group(Name='Owned Contact Probe',DeveloperName='OwnedContactProbe'+String.valueOf(DateTime.now().getTime()),Type='Queue');insert q;\n        insert new QueueSobject(QueueId=q.Id,SobjectType='Case');\n        System.runAs(new User(Id=UserInfo.getUserId())) {\n            Case c=new Case(Subject='Owned queue contact observation',Status='New',Origin='Phone',OwnerId=q.Id);insert c;\n            answer.putAll(observe(c.Id,null));\n        }\n    } catch(Exception e) {answer.put('e',new List<String>{'queueSetup',e.getTypeName()});}\n    System.assert(false,'OWNER_CONTACT_OBSERVATION|'+JSON.serialize(answer));\n}\n}\n",
+          "sha256": "28e5ff0b56ce19e44fc30efc61009d47663da4d4ac7303586cb67984aa67b176"
+        },
+        "force-app/main/default/classes/OwnerContactObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        }
+      },
+      "sourceManifest": {
+        "phase": "before-native-call",
+        "files": {
+          "sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9",
+          "force-app/main/default/classes/OwnerContactObservation.cls": "28e5ff0b56ce19e44fc30efc61009d47663da4d4ac7303586cb67984aa67b176",
+          "force-app/main/default/classes/OwnerContactObservation.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        }
+      },
+      "sourceManifestSHA256": "09b97cd69bba082255ab9fc139f29a0eee28d5759b5512dee29b932345f7c525",
+      "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"sfdx-project.json\": \"f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9\",\n    \"force-app/main/default/classes/OwnerContactObservation.cls\": \"28e5ff0b56ce19e44fc30efc61009d47663da4d4ac7303586cb67984aa67b176\",\n    \"force-app/main/default/classes/OwnerContactObservation.cls-meta.xml\": \"17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b\"\n  }\n}\n",
+      "rawSHA256": {
+        "source-digests.json": "09b97cd69bba082255ab9fc139f29a0eee28d5759b5512dee29b932345f7c525",
+        "org.tsv": "cd9e0378daaa43ff1b7ed816c1c6934d46948e4f2d1bcc4110b8a82b56c8a96a",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "digests.json": "f8cbf91d4ecab4adfa8909534087bd04e22e5ade5fd379e218d6b8159b5de0e3",
+        "deploy.json": "444182817e54358fef130a23f4e403650db887b073a1da84f09dcc69b0e9c422",
+        "deploy.command.json": "0b712d0e90472be0d2562e5e562d000616c8766bd89eeee93e609267ebba121a",
+        "ORG-RUN.txt": "bacfcadf7f74c9bc640c2f411d0a8d2d0f97e9eff8efdace3f0bbdecd1993138",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=3f19baff10e1558139e38fb8271f1b3fab121538652619fe247d05eb7f01dd49\nsourceApi=67.0\ncallerApi=67.0\ntransportApi=62.0\ncontext=@IsTest\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"OwnerContactObservation\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T18:56:09Z\nexitCode=1\ndeploymentId=0Af000000000pMkCAI\nobservedRows=2\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T18:56:14Z\n",
+      "command": {
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        },
+        "command": [
+          "sf",
+          "project",
+          "deploy",
+          "start",
+          "--dry-run",
+          "--source-dir",
+          "force-app",
+          "--test-level",
+          "RunSpecifiedTests",
+          "--tests",
+          "OwnerContactObservation",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "62.0",
+          "--wait",
+          "1",
+          "--json"
+        ]
+      },
+      "errors": {
+        "componentFailures": [],
+        "transportOrSetupErrors": []
+      },
+      "rows": [
+        {
+          "id": "queueOwned",
+          "native": {
+            "stage": "complete",
+            "d": {
+              "MissingSynthetic__c": [
+                false,
+                "System.QueryException"
+              ],
+              "Email": [
+                true,
+                1,
+                false,
+                true,
+                null
+              ],
+              "Phone": [
+                true,
+                1,
+                false,
+                true,
+                null
+              ],
+              "LastName": [
+                true,
+                1,
+                false,
+                true,
+                null
+              ],
+              "FirstName": [
+                true,
+                1,
+                false,
+                true,
+                null
+              ],
+              "Name": [
+                true,
+                1,
+                false,
+                false,
+                null
+              ],
+              "Id": [
+                true,
+                1,
+                false,
+                false,
+                null
+              ]
+            },
+            "c": {
+              "eq": [
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+              ],
+              "null": [
+                false,
+                false,
+                true,
+                true,
+                true,
+                true
+              ],
+              "z": false,
+              "n": 1,
+              "q": true
+            },
+            "fields": [
+              "Id",
+              "Name",
+              "FirstName",
+              "LastName",
+              "Phone",
+              "Email"
+            ],
+            "owner": "Queue",
+            "context": "@IsTest",
+            "sourceApi": "67.0"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNER_CONTACT_OBSERVATION|{\"stage\":\"complete\",\"d\":{\"MissingSynthetic__c\":[false,\"System.QueryException\"],\"Email\":[true,1,false,true,null],\"Phone\":[true,1,false,true,null],\"LastName\":[true,1,false,true,null],\"FirstName\":[true,1,false,true,null],\"Name\":[true,1,false,false,null],\"Id\":[true,1,false,false,null]},\"c\":{\"eq\":[null,null,null,null,null,null],\"null\":[false,false,true,true,true,true],\"z\":false,\"n\":1,\"q\":true},\"fields\":[\"Id\",\"Name\",\"FirstName\",\"LastName\",\"Phone\",\"Email\"],\"owner\":\"Queue\",\"context\":\"@IsTest\",\"sourceApi\":\"67.0\"}"
+          }
+        },
+        {
+          "id": "userOwned",
+          "native": {
+            "owner": "User",
+            "context": "@IsTest",
+            "sourceApi": "67.0",
+            "stage": "complete",
+            "d": {
+              "MissingSynthetic__c": [
+                false,
+                "System.QueryException"
+              ],
+              "Email": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Phone": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "LastName": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "FirstName": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Name": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Id": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ]
+            },
+            "c": {
+              "eq": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ],
+              "null": [
+                false,
+                false,
+                false,
+                false,
+                false,
+                false
+              ],
+              "z": false,
+              "n": 1,
+              "q": true
+            },
+            "fields": [
+              "Id",
+              "Name",
+              "FirstName",
+              "LastName",
+              "Phone",
+              "Email"
+            ]
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNER_CONTACT_OBSERVATION|{\"owner\":\"User\",\"context\":\"@IsTest\",\"sourceApi\":\"67.0\",\"stage\":\"complete\",\"d\":{\"MissingSynthetic__c\":[false,\"System.QueryException\"],\"Email\":[true,1,false,false,true],\"Phone\":[true,1,false,false,true],\"LastName\":[true,1,false,false,true],\"FirstName\":[true,1,false,false,true],\"Name\":[true,1,false,false,true],\"Id\":[true,1,false,false,true]},\"c\":{\"eq\":[true,true,true,true,true,true],\"null\":[false,false,false,false,false,false],\"z\":false,\"n\":1,\"q\":true},\"fields\":[\"Id\",\"Name\",\"FirstName\",\"LastName\",\"Phone\",\"Email\"]}"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0Af000000000pMkCAI",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 2,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 2
+      },
+      "receiptPathPolicy": "Personal command/environment paths are replaced with placeholders in this export; rawSHA256 retains original receipt hashes. Native observations and source manifests are unchanged."
+    },
+    {
+      "context": "anonymous61",
+      "sourceAPI": "61.0",
+      "route": "anonymous",
+      "projectAPI": "",
+      "replayProjectAPI": "62.0",
+      "transportAPI": "61.0",
+      "namespaceContext": "none",
+      "testClass": "",
+      "sources": {
+        "source.apex": {
+          "source": "Savepoint sp=Database.setSavepoint();\ntry {\n    Id uid=UserInfo.getUserId();User directOwner=[SELECT Id,Name,FirstName,LastName,Phone,Email FROM User WHERE Id=:uid WITH USER_MODE];\n    Case c=new Case(Subject='Owned contact observation',Status='New',Origin='Phone',OwnerId=uid);insert c;Id caseId=c.Id;\n    Map<String,Object> answer=new Map<String,Object>();\n    List<String> fields=new List<String>{'Id','Name','FirstName','LastName','Phone','Email'};\n    answer.put('fields',fields);\n    Map<String,Object> combined=new Map<String,Object>{'q'=>false};\n    String stage='inlineQuery';\n    try {\n        List<Case> rows=[SELECT Id,OwnerId,Owner.Id,Owner.Name,Owner.FirstName,Owner.LastName,Owner.Phone,Owner.Email FROM Case WHERE Id=:caseId WITH USER_MODE];\n        combined.put('q',true);combined.put('n',rows.size());stage='readOwner';\n        if (!rows.isEmpty()) {\n            SObject owner=rows[0].getSObject('Owner');combined.put('z',owner==null);\n            List<Boolean> nullFlags=new List<Boolean>();List<Boolean> matches=new List<Boolean>();\n            stage='readFields';\n            for (String field:fields) {\n                Object value=owner==null?null:owner.get(field);nullFlags.add(value==null);\n                matches.add(directOwner==null?null:value==directOwner.get(field));\n            }\n            combined.put('null',nullFlags);combined.put('eq',matches);\n        }\n    } catch(Exception e) {combined.put('e',new List<String>{stage,e.getTypeName()});}\n    answer.put('c',combined);\n    Map<String,Object> individual=new Map<String,Object>();\n    List<String> probes=new List<String>();probes.addAll(fields);probes.add('MissingSynthetic__c');\n    for(String field:probes) {\n        Boolean queried=false;Integer count=null;stage='dynamicQuery';\n        try {\n            List<SObject> rows=Database.query('SELECT Id,Owner.'+field+' FROM Case WHERE Id=:caseId WITH USER_MODE');\n            queried=true;count=rows.size();stage='readOwner';\n            SObject owner=rows.isEmpty()?null:rows[0].getSObject('Owner');stage='readField';\n            Object value=owner==null?null:owner.get(field);\n            individual.put(field,new List<Object>{true,count,owner==null,value==null,directOwner==null?null:value==directOwner.get(field)});\n        } catch(Exception e) {\n            individual.put(field,queried?new List<Object>{true,count,stage,e.getTypeName()}:new List<Object>{false,e.getTypeName()});\n        }\n    }\n    answer.put('d',individual);answer.put('stage','complete');\n    answer.put('sourceApi','61.0');answer.put('context','anonymous');answer.put('owner','User');\n    System.debug(LoggingLevel.ERROR,'OWNER_CONTACT_OBSERVATION|'+JSON.serialize(answer));\n} finally {Database.rollback(sp);}\n",
+          "sha256": "332d9a0e41b3f38a0c2cf1f610987818bff510a29bd0ab36425e27d8580362be"
+        }
+      },
+      "sourceManifest": {
+        "phase": "before-native-call",
+        "files": {
+          "source.apex": "332d9a0e41b3f38a0c2cf1f610987818bff510a29bd0ab36425e27d8580362be"
+        }
+      },
+      "sourceManifestSHA256": "b8f450450a2b01e5e1657b24dbda0f5ce1cbf4657a5552aff65d970b2318ad26",
+      "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"source.apex\": \"332d9a0e41b3f38a0c2cf1f610987818bff510a29bd0ab36425e27d8580362be\"\n  }\n}\n",
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "run.command.json": "4c92224f5ce0999e7d6f45a1e40ff49b2e7a508a9dbb4b631b3a107d5761d1a3",
+        "source-digests.json": "b8f450450a2b01e5e1657b24dbda0f5ce1cbf4657a5552aff65d970b2318ad26",
+        "org.tsv": "ce6b397b46229b2051f561421dd71161c15eda7ac51f26ebe4877166757b9c4d",
+        "errors.json": "52c147f1e19ba54f443dfadfb0914c9aedbf6c3b5c3cf8f2fc55b6f5b8328a16",
+        "digests.json": "2c84ae6c2d0b890a2c6a8030546da1e85a3994cda99b0267417ed98c8593ff2a",
+        "run.json": "4df3a296887ed9997c72788475c118957401a22ab2cd4c1346e5837cb728d5fe",
+        "ORG-RUN.txt": "4b7c6501fd8d3320a542c19aad5f5b2ff25e83b1a039a382aee302d72a9e5678"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=3f19baff10e1558139e38fb8271f1b3fab121538652619fe247d05eb7f01dd49\nsourceApi=61.0\ntransportApi=61.0\ncontext=anonymous\nnamespace=none\nrollback=Savepoint/finally Database.rollback\ncleanupOwner=k6\nstart=2026-10-15T18:56:57.672312+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<fixture-source>\", \"--target-org\", \"scratch-org\", \"--api-version\", \"61.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nobservedRows=1\nend=2026-10-15T18:57:00.230878+00:00\n",
+      "command": {
+        "command": [
+          "sf",
+          "apex",
+          "run",
+          "--file",
+          "<fixture-source>",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "61.0",
+          "--json"
+        ],
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        }
+      },
+      "errors": {
+        "exitCode": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "rows": [
+        {
+          "id": "userOwned",
+          "native": {
+            "owner": "User",
+            "context": "anonymous",
+            "sourceApi": "61.0",
+            "stage": "complete",
+            "d": {
+              "MissingSynthetic__c": [
+                false,
+                "System.QueryException"
+              ],
+              "Email": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Phone": [
+                true,
+                1,
+                false,
+                true,
+                true
+              ],
+              "LastName": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "FirstName": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Name": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Id": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ]
+            },
+            "c": {
+              "eq": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ],
+              "null": [
+                false,
+                false,
+                false,
+                false,
+                true,
+                false
+              ],
+              "z": false,
+              "n": 1,
+              "q": true
+            },
+            "fields": [
+              "Id",
+              "Name",
+              "FirstName",
+              "LastName",
+              "Phone",
+              "Email"
+            ]
+          }
+        }
+      ],
+      "execution": {
+        "status": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "receiptPathPolicy": "Personal command/environment paths are replaced with placeholders in this export; rawSHA256 retains original receipt hashes. Native observations and source manifests are unchanged."
+    },
+    {
+      "context": "anonymous62",
+      "sourceAPI": "62.0",
+      "route": "anonymous",
+      "projectAPI": "",
+      "replayProjectAPI": "62.0",
+      "transportAPI": "62.0",
+      "namespaceContext": "none",
+      "testClass": "",
+      "sources": {
+        "source.apex": {
+          "source": "Savepoint sp=Database.setSavepoint();\ntry {\n    Id uid=UserInfo.getUserId();User directOwner=[SELECT Id,Name,FirstName,LastName,Phone,Email FROM User WHERE Id=:uid WITH USER_MODE];\n    Case c=new Case(Subject='Owned contact observation',Status='New',Origin='Phone',OwnerId=uid);insert c;Id caseId=c.Id;\n    Map<String,Object> answer=new Map<String,Object>();\n    List<String> fields=new List<String>{'Id','Name','FirstName','LastName','Phone','Email'};\n    answer.put('fields',fields);\n    Map<String,Object> combined=new Map<String,Object>{'q'=>false};\n    String stage='inlineQuery';\n    try {\n        List<Case> rows=[SELECT Id,OwnerId,Owner.Id,Owner.Name,Owner.FirstName,Owner.LastName,Owner.Phone,Owner.Email FROM Case WHERE Id=:caseId WITH USER_MODE];\n        combined.put('q',true);combined.put('n',rows.size());stage='readOwner';\n        if (!rows.isEmpty()) {\n            SObject owner=rows[0].getSObject('Owner');combined.put('z',owner==null);\n            List<Boolean> nullFlags=new List<Boolean>();List<Boolean> matches=new List<Boolean>();\n            stage='readFields';\n            for (String field:fields) {\n                Object value=owner==null?null:owner.get(field);nullFlags.add(value==null);\n                matches.add(directOwner==null?null:value==directOwner.get(field));\n            }\n            combined.put('null',nullFlags);combined.put('eq',matches);\n        }\n    } catch(Exception e) {combined.put('e',new List<String>{stage,e.getTypeName()});}\n    answer.put('c',combined);\n    Map<String,Object> individual=new Map<String,Object>();\n    List<String> probes=new List<String>();probes.addAll(fields);probes.add('MissingSynthetic__c');\n    for(String field:probes) {\n        Boolean queried=false;Integer count=null;stage='dynamicQuery';\n        try {\n            List<SObject> rows=Database.query('SELECT Id,Owner.'+field+' FROM Case WHERE Id=:caseId WITH USER_MODE');\n            queried=true;count=rows.size();stage='readOwner';\n            SObject owner=rows.isEmpty()?null:rows[0].getSObject('Owner');stage='readField';\n            Object value=owner==null?null:owner.get(field);\n            individual.put(field,new List<Object>{true,count,owner==null,value==null,directOwner==null?null:value==directOwner.get(field)});\n        } catch(Exception e) {\n            individual.put(field,queried?new List<Object>{true,count,stage,e.getTypeName()}:new List<Object>{false,e.getTypeName()});\n        }\n    }\n    answer.put('d',individual);answer.put('stage','complete');\n    answer.put('sourceApi','62.0');answer.put('context','anonymous');answer.put('owner','User');\n    System.debug(LoggingLevel.ERROR,'OWNER_CONTACT_OBSERVATION|'+JSON.serialize(answer));\n} finally {Database.rollback(sp);}\n",
+          "sha256": "4614a5a664b13f049ad8ca3a2d80565335e97744f72d6743e4a9621049659d6e"
+        }
+      },
+      "sourceManifest": {
+        "phase": "before-native-call",
+        "files": {
+          "source.apex": "4614a5a664b13f049ad8ca3a2d80565335e97744f72d6743e4a9621049659d6e"
+        }
+      },
+      "sourceManifestSHA256": "e53a9a398c42a2ea839b8e8cfc403fab788d94b22fe00cf67f02939a7d8d6682",
+      "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"source.apex\": \"4614a5a664b13f049ad8ca3a2d80565335e97744f72d6743e4a9621049659d6e\"\n  }\n}\n",
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "run.command.json": "6bebddd996379ab28e8301bc35ea5eaf041b1370c1254f23a6d0252e9f468976",
+        "source-digests.json": "e53a9a398c42a2ea839b8e8cfc403fab788d94b22fe00cf67f02939a7d8d6682",
+        "org.tsv": "1f20c4a658458a68e30e1da7672f2f283630aa8a58e54b93380ff1271a7fa473",
+        "errors.json": "52c147f1e19ba54f443dfadfb0914c9aedbf6c3b5c3cf8f2fc55b6f5b8328a16",
+        "digests.json": "b5698efe30e83b09e463222fc9db78d9e27f3bf63b14e277013f82019ac5f1a2",
+        "run.json": "74541ad644e6d366b577f742100d51e004a01373817714a6f9a1d5d689546042",
+        "ORG-RUN.txt": "b57a794637c9792757e62ba67b25bc4052bf0eb9044d19d237ebb8e78ad918c5"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=3f19baff10e1558139e38fb8271f1b3fab121538652619fe247d05eb7f01dd49\nsourceApi=62.0\ntransportApi=62.0\ncontext=anonymous\nnamespace=none\nrollback=Savepoint/finally Database.rollback\ncleanupOwner=k6\nstart=2026-10-15T18:57:00.231633+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<fixture-source>\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nobservedRows=1\nend=2026-10-15T18:57:01.482293+00:00\n",
+      "command": {
+        "command": [
+          "sf",
+          "apex",
+          "run",
+          "--file",
+          "<fixture-source>",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "62.0",
+          "--json"
+        ],
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        }
+      },
+      "errors": {
+        "exitCode": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "rows": [
+        {
+          "id": "userOwned",
+          "native": {
+            "owner": "User",
+            "context": "anonymous",
+            "sourceApi": "62.0",
+            "stage": "complete",
+            "d": {
+              "MissingSynthetic__c": [
+                false,
+                "System.QueryException"
+              ],
+              "Email": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Phone": [
+                true,
+                1,
+                false,
+                true,
+                true
+              ],
+              "LastName": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "FirstName": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Name": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Id": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ]
+            },
+            "c": {
+              "eq": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ],
+              "null": [
+                false,
+                false,
+                false,
+                false,
+                true,
+                false
+              ],
+              "z": false,
+              "n": 1,
+              "q": true
+            },
+            "fields": [
+              "Id",
+              "Name",
+              "FirstName",
+              "LastName",
+              "Phone",
+              "Email"
+            ]
+          }
+        }
+      ],
+      "execution": {
+        "status": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "receiptPathPolicy": "Personal command/environment paths are replaced with placeholders in this export; rawSHA256 retains original receipt hashes. Native observations and source manifests are unchanged."
+    },
+    {
+      "context": "anonymous67",
+      "sourceAPI": "67.0",
+      "route": "anonymous",
+      "projectAPI": "",
+      "replayProjectAPI": "62.0",
+      "transportAPI": "67.0",
+      "namespaceContext": "none",
+      "testClass": "",
+      "sources": {
+        "source.apex": {
+          "source": "Savepoint sp=Database.setSavepoint();\ntry {\n    Id uid=UserInfo.getUserId();User directOwner=[SELECT Id,Name,FirstName,LastName,Phone,Email FROM User WHERE Id=:uid WITH USER_MODE];\n    Case c=new Case(Subject='Owned contact observation',Status='New',Origin='Phone',OwnerId=uid);insert c;Id caseId=c.Id;\n    Map<String,Object> answer=new Map<String,Object>();\n    List<String> fields=new List<String>{'Id','Name','FirstName','LastName','Phone','Email'};\n    answer.put('fields',fields);\n    Map<String,Object> combined=new Map<String,Object>{'q'=>false};\n    String stage='inlineQuery';\n    try {\n        List<Case> rows=[SELECT Id,OwnerId,Owner.Id,Owner.Name,Owner.FirstName,Owner.LastName,Owner.Phone,Owner.Email FROM Case WHERE Id=:caseId WITH USER_MODE];\n        combined.put('q',true);combined.put('n',rows.size());stage='readOwner';\n        if (!rows.isEmpty()) {\n            SObject owner=rows[0].getSObject('Owner');combined.put('z',owner==null);\n            List<Boolean> nullFlags=new List<Boolean>();List<Boolean> matches=new List<Boolean>();\n            stage='readFields';\n            for (String field:fields) {\n                Object value=owner==null?null:owner.get(field);nullFlags.add(value==null);\n                matches.add(directOwner==null?null:value==directOwner.get(field));\n            }\n            combined.put('null',nullFlags);combined.put('eq',matches);\n        }\n    } catch(Exception e) {combined.put('e',new List<String>{stage,e.getTypeName()});}\n    answer.put('c',combined);\n    Map<String,Object> individual=new Map<String,Object>();\n    List<String> probes=new List<String>();probes.addAll(fields);probes.add('MissingSynthetic__c');\n    for(String field:probes) {\n        Boolean queried=false;Integer count=null;stage='dynamicQuery';\n        try {\n            List<SObject> rows=Database.query('SELECT Id,Owner.'+field+' FROM Case WHERE Id=:caseId WITH USER_MODE');\n            queried=true;count=rows.size();stage='readOwner';\n            SObject owner=rows.isEmpty()?null:rows[0].getSObject('Owner');stage='readField';\n            Object value=owner==null?null:owner.get(field);\n            individual.put(field,new List<Object>{true,count,owner==null,value==null,directOwner==null?null:value==directOwner.get(field)});\n        } catch(Exception e) {\n            individual.put(field,queried?new List<Object>{true,count,stage,e.getTypeName()}:new List<Object>{false,e.getTypeName()});\n        }\n    }\n    answer.put('d',individual);answer.put('stage','complete');\n    answer.put('sourceApi','67.0');answer.put('context','anonymous');answer.put('owner','User');\n    System.debug(LoggingLevel.ERROR,'OWNER_CONTACT_OBSERVATION|'+JSON.serialize(answer));\n} finally {Database.rollback(sp);}\n",
+          "sha256": "e67b2ee946330acbbf0273aab4d90b81067570522bbbf8692bee9b6a57697982"
+        }
+      },
+      "sourceManifest": {
+        "phase": "before-native-call",
+        "files": {
+          "source.apex": "e67b2ee946330acbbf0273aab4d90b81067570522bbbf8692bee9b6a57697982"
+        }
+      },
+      "sourceManifestSHA256": "d772d86ff0510b8781a04c05b12e1fb5cb4e31ee8af3c6a54a0137d88310778d",
+      "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"source.apex\": \"e67b2ee946330acbbf0273aab4d90b81067570522bbbf8692bee9b6a57697982\"\n  }\n}\n",
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "run.command.json": "545795a6561ee1de95233c003db2fd76a59a9ced9e5045d4ea7c55d433ac57d2",
+        "source-digests.json": "d772d86ff0510b8781a04c05b12e1fb5cb4e31ee8af3c6a54a0137d88310778d",
+        "org.tsv": "b15024f76d58a3a27444700e51250892be7e815f89ce5a89b613369d89689e7a",
+        "errors.json": "52c147f1e19ba54f443dfadfb0914c9aedbf6c3b5c3cf8f2fc55b6f5b8328a16",
+        "digests.json": "676b88ea606b51916ba9a9e997b5ddeff1a44b90eabcd1b9d46f453ccf168736",
+        "run.json": "0ac34f886e66aca89f886627e34c5b5bb9c746ce000077e9539406e3891c238c",
+        "ORG-RUN.txt": "9045de509283763a94daf2d4ebe5163fed873c6833104ac9675bd5b136c6c1b8"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=3f19baff10e1558139e38fb8271f1b3fab121538652619fe247d05eb7f01dd49\nsourceApi=67.0\ntransportApi=67.0\ncontext=anonymous\nnamespace=none\nrollback=Savepoint/finally Database.rollback\ncleanupOwner=k6\nstart=2026-10-15T18:57:01.482974+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<fixture-source>\", \"--target-org\", \"scratch-org\", \"--api-version\", \"67.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nobservedRows=1\nend=2026-10-15T18:57:02.772428+00:00\n",
+      "command": {
+        "command": [
+          "sf",
+          "apex",
+          "run",
+          "--file",
+          "<fixture-source>",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "67.0",
+          "--json"
+        ],
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        }
+      },
+      "errors": {
+        "exitCode": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "rows": [
+        {
+          "id": "userOwned",
+          "native": {
+            "owner": "User",
+            "context": "anonymous",
+            "sourceApi": "67.0",
+            "stage": "complete",
+            "d": {
+              "MissingSynthetic__c": [
+                false,
+                "System.QueryException"
+              ],
+              "Email": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Phone": [
+                true,
+                1,
+                false,
+                true,
+                true
+              ],
+              "LastName": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "FirstName": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Name": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ],
+              "Id": [
+                true,
+                1,
+                false,
+                false,
+                true
+              ]
+            },
+            "c": {
+              "eq": [
+                true,
+                true,
+                true,
+                true,
+                true,
+                true
+              ],
+              "null": [
+                false,
+                false,
+                false,
+                false,
+                true,
+                false
+              ],
+              "z": false,
+              "n": 1,
+              "q": true
+            },
+            "fields": [
+              "Id",
+              "Name",
+              "FirstName",
+              "LastName",
+              "Phone",
+              "Email"
+            ]
+          }
+        }
+      ],
+      "execution": {
+        "status": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "receiptPathPolicy": "Personal command/environment paths are replaced with placeholders in this export; rawSHA256 retains original receipt hashes. Native observations and source manifests are unchanged."
+    }
+  ],
+  "excludedAttempts": [
+    {
+      "context": "named61",
+      "reason": "Assertion transport truncated; no complete payload, excluded from semantic rows.",
+      "deploymentID": "0Afh1000000QvCQCA0",
+      "rawSHA256": {
+        "org.tsv": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "errors.json": "e27502b221f7438795dffc2931250e2e32391118a5b40c91a8adf0544a6f9770",
+        "digests.json": "9eead8dad26e5b45c7c21cd43ba533829d3b474d3de89a6834866fb1a3866d59",
+        "deploy.json": "686c50e75e63c536d5fd8573444f77a61267fcbbd50f606dc2128f48670f9208",
+        "deploy.command.json": "0b712d0e90472be0d2562e5e562d000616c8766bd89eeee93e609267ebba121a",
+        "ORG-RUN.txt": "2a5510f6d8740949116b054c63cc67a52d9797fe52b1ce61fed92ba2a4c71711",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "errors": {
+        "componentFailures": [],
+        "transportOrSetupErrors": [
+          {
+            "method": "observeOwnerContacts",
+            "reason": "truncated or invalid observation",
+            "message": "System.AssertException: Assertion Failed: OWNER_CONTACT_OBSERVATION|{\"queueOwned\":{\"observation\":{\"individual\":{\"MissingSynthetic__c\":{\"exceptionType\":\"System.QueryException\",\"querySucceeded\":false,\"stage\":\"dynamicQuery\"},\"Email\":{\"null\":true,\"ownerNull\":false,\"rowCount\":1,\"querySucceeded\":true,\"stage\":\"complete\"},\"Phone\":{\"null\":true,\"ownerNull\":false,\"rowCount\":1,\"querySucceeded\":true,\"stage\":\"complete\"},\"LastName\":{\"null\":true,\"ownerNull\":false,\"rowCount\":1,\"querySucceeded\":true,\"stage\":\"complete\"},\"FirstName\":{\"null\":true,\"ownerNull\":false,\"rowCount\":1,\"querySucceeded\":true,\"stage\":\"complete\"},\"Name\":{\"null\":false,\"ownerNull\":false,\"rowCount\":1,\"querySucceeded\":true,\"stage\":\"complete\"},\"Id\":{\"null\":false,\"ownerNull\":false,\"rowCount\":1,\""
+          }
+        ]
+      }
+    },
+    {
+      "context": "named61-compact",
+      "reason": "Synthetic local identifier was rejected at compilation; no semantic rows.",
+      "deploymentID": "0Afh1000000QzG1CAK",
+      "rawSHA256": {
+        "org.tsv": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "errors.json": "e0f14ee4f03e19dbac2db47f81c04e10da0b4fd7b86639a6d762ccfd86e04fa5",
+        "digests.json": "b5454b8941a9bc6bfb53b90bf105abd8747b983421d200035667c7023369dee1",
+        "deploy.json": "14c875098890c3ca598bb8430e05bad41053fbb6b03605d49591bbe7b4b82c04",
+        "deploy.command.json": "0b712d0e90472be0d2562e5e562d000616c8766bd89eeee93e609267ebba121a",
+        "ORG-RUN.txt": "dccdfcc385b981e138ff6cad3b24c4204ba19bd82ccb08d21b0a0730df2b0372",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "errors": {
+        "componentFailures": [
+          {
+            "changed": false,
+            "columnNumber": 13,
+            "componentType": "ApexClass",
+            "created": false,
+            "createdDate": "2026-10-15T18:54:48.000Z",
+            "deleted": false,
+            "fileName": "classes/OwnerContactObservation.cls",
+            "fullName": "OwnerContactObservation",
+            "lineNumber": 13,
+            "problem": "Unexpected token 'List'.",
+            "problemType": "Error",
+            "success": false
+          },
+          {
+            "changed": false,
+            "columnNumber": 13,
+            "componentType": "ApexClass",
+            "created": false,
+            "createdDate": "2026-10-15T18:54:48.000Z",
+            "deleted": false,
+            "fileName": "classes/OwnerContactObservation.cls",
+            "fullName": "OwnerContactObservation",
+            "lineNumber": 13,
+            "problem": "Unexpected token 'List'.",
+            "problemType": "Error",
+            "success": false
+          },
+          {
+            "changed": false,
+            "columnNumber": 27,
+            "componentType": "ApexClass",
+            "created": false,
+            "createdDate": "2026-10-15T18:54:48.000Z",
+            "deleted": false,
+            "fileName": "classes/OwnerContactObservation.cls",
+            "fullName": "OwnerContactObservation",
+            "lineNumber": 13,
+            "problem": "Unexpected token 'nulls'.",
+            "problemType": "Error",
+            "success": false
+          },
+          {
+            "changed": false,
+            "columnNumber": 33,
+            "componentType": "ApexClass",
+            "created": false,
+            "createdDate": "2026-10-15T18:54:48.000Z",
+            "deleted": false,
+            "fileName": "classes/OwnerContactObservation.cls",
+            "fullName": "OwnerContactObservation",
+            "lineNumber": 19,
+            "problem": "Unexpected token 'nulls'.",
+            "problemType": "Error",
+            "success": false
+          },
+          {
+            "changed": false,
+            "componentType": "ApexClass",
+            "created": false,
+            "createdDate": "2026-10-15T18:54:48.000Z",
+            "deleted": false,
+            "fileName": "classes/OwnerContactObservation.cls",
+            "fullName": "OwnerContactObservation",
+            "problem": "Expression cannot be assigned",
+            "problemType": "Error",
+            "success": false
+          },
+          {
+            "changed": false,
+            "columnNumber": 64,
+            "componentType": "ApexClass",
+            "created": false,
+            "createdDate": "2026-10-15T18:54:48.000Z",
+            "deleted": false,
+            "fileName": "classes/OwnerContactObservation.cls",
+            "fullName": "OwnerContactObservation",
+            "lineNumber": 16,
+            "problem": "Variable does not exist: nulls",
+            "problemType": "Error",
+            "success": false
+          }
+        ],
+        "transportOrSetupErrors": []
+      }
+    }
+  ]
+}

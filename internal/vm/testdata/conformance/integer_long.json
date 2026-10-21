@@ -813,7 +813,8 @@
       "code": "Object o = 5; r = o instanceof Object;",
       "expected": "COMPILE_ERROR\tline 132: Operation instanceof is always true since an instance of Object is always an instance of Object",
       "compile": false,
-      "floorExpected": "COMPILE_ERROR\tline 32: Operation instanceof is always true since an instance of Object is always an instance of Object"
+      "floorExpected": "COMPILE_ERROR\tline 32: Operation instanceof is always true since an instance of Object is always an instance of Object",
+      "expected68": "COMPILE_ERROR\tline 32: Operation instanceof is always true since an instance of Object is always an instance of Object"
     },
     {
       "id": "V01",
@@ -1212,7 +1213,8 @@
       "code": "Integer n; r = n instanceof Integer;",
       "expected": "COMPILE_ERROR\tline 188: Operation instanceof is always true since an instance of Integer is always an instance of Integer",
       "compile": false,
-      "floorExpected": "COMPILE_ERROR\tline 39: Operation instanceof is always true since an instance of Integer is always an instance of Integer"
+      "floorExpected": "COMPILE_ERROR\tline 39: Operation instanceof is always true since an instance of Integer is always an instance of Integer",
+      "expected68": "COMPILE_ERROR\tline 39: Operation instanceof is always true since an instance of Integer is always an instance of Integer"
     },
     {
       "id": "N12",
@@ -2187,7 +2189,8 @@
       "id": "O01",
       "code": "class OverloadOrgControl { public String pick(Integer count, Object label) { return 'integer-object'; } public String pick(Long count, String label) { return 'long-string'; } } new OverloadOrgControl().pick(1, 'one');",
       "expected": "COMPILE_ERROR\tline 9: Ambiguous method signature: void pick(Integer, String)",
-      "compile": true
+      "compile": true,
+      "expected68": "COMPILE_ERROR\tline 6: Ambiguous method signature: void pick(Integer, String)"
     },
     {
       "id": "O02",
@@ -2198,7 +2201,8 @@
   ],
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "floorOracle": {
     "apiVersion": "62.0",
@@ -2206,6 +2210,7 @@
     "rows": 300
   },
   "preservationAPIVersions": [
-    "67.0"
+    "67.0",
+    "68.0"
   ]
 }

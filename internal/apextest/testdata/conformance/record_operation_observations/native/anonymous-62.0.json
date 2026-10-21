@@ -1,0 +1,56 @@
+{
+  "compiled": true,
+  "success": true,
+  "compileProblem": "",
+  "exceptionMessage": "",
+  "exceptionStackTrace": "",
+  "observations": {
+    "identifierAccount": {
+      "updated": true,
+      "length": 18,
+      "zeroSegment": false
+    },
+    "identifierCustom": {
+      "updated": true,
+      "length": 18,
+      "zeroSegment": false
+    },
+    "mergeAll": {
+      "remaining": 1,
+      "results": [
+        {
+          "errors": [],
+          "merged": 2,
+          "masterMatches": true,
+          "success": true
+        }
+      ]
+    },
+    "mergePartial": {
+      "remaining": 2,
+      "results": [
+        {
+          "errors": [
+            "ENTITY_IS_DELETED"
+          ],
+          "merged": 0,
+          "masterMatches": true,
+          "success": false
+        }
+      ]
+    },
+    "mergeEmpty": {
+      "remaining": 3,
+      "results": [
+        {
+          "errors": [
+            "MISSING_ARGUMENT"
+          ],
+          "merged": 0,
+          "masterMatches": true,
+          "success": false
+        }
+      ]
+    }
+  }
+}

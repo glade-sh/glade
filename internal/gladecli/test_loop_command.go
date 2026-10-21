@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
@@ -85,11 +86,23 @@ func writeTestDaemonStatus(ctx context.Context, root string, w io.Writer) error 
 func stopTestDaemon(ctx context.Context, root string, w io.Writer) error {
 	socket := testdaemon.ServeSocketPath(root)
 	pidPath := testdaemon.ServePIDPath(root)
-	if testdaemon.ServerReachable(ctx, socket) {
+	resp, err := testdaemon.Ping(ctx, socket)
+	stale := testdaemon.IsServerUnavailable(err) &&
+		(errors.Is(err, os.ErrNotExist) || errors.Is(err, syscall.ECONNREFUSED))
+	if err != nil && !stale {
+		return fmt.Errorf("cannot stop test daemon (pid %s); stop it with the original binary before restarting: %w", daemonPIDLabel(pidPath), err)
+	}
+	if err == nil {
+		if !resp.OK {
+			return fmt.Errorf("cannot stop test daemon (pid %s): ping was rejected", daemonPIDLabel(pidPath))
+		}
 		if err := testdaemon.Shutdown(ctx, socket); err != nil {
 			return err
 		}
 		waitForDaemonSocketRemoval(socket, 2*time.Second)
+		if fileExists(socket) {
+			return fmt.Errorf("test daemon (pid %s) did not stop within 2s", daemonPIDLabel(pidPath))
+		}
 	}
 	_ = os.Remove(socket)
 	_ = os.Remove(pidPath)
@@ -102,6 +115,7 @@ func rewriteChangedTestArgs(args []string) ([]string, error) {
 	parsed, err := flagparse.New("glade test changed").
 		String("project", "p").
 		String("since", "").
+		String("test-timeout", "").
 		Bool("json", "j").
 		Bool("daemon", "").
 		Bool("progress", "").
@@ -121,6 +135,9 @@ func rewriteChangedTestArgs(args []string) ([]string, error) {
 		ref = "HEAD"
 	}
 	out := []string{"--project", root, "--changed-since", ref}
+	if len(parsed.Strings("test-timeout")) > 0 {
+		out = append(out, "--test-timeout", parsed.String("test-timeout"))
+	}
 	for _, flag := range []string{"json", "daemon", "progress", "progress-json", "no-progress", "quiet"} {
 		if parsed.Bool(flag) {
 			out = append(out, "--"+flag)

@@ -44,6 +44,33 @@ Unsupported test outcomes count as errors and exit with code `1`. An empty
 affected selection can exit with code `0`; run an explicit relevant test or
 suite when execution evidence is required.
 
+`excludedClasses` names invalid classes, their dependents, and excluded
+triggers; `summary.excludedClasses` counts them. Any exclusion exits `1`, even
+when all executed tests passed.
+
+## Local Flow execution
+
+Local DML loads active record-triggered Flows from project metadata. The
+`recordTriggerType` selects create, update, create-and-update, or delete;
+local execution handles before-save and after-save Flows, plus explicit `Delete`
+Flows in the before-delete phase. After-delete Flows are not executed locally.
+The checked paths cover entry filters, decisions, assignments, supported record
+lookup/create/update/delete, loops, subflows, and Apex actions. For supported
+after-save entry criteria, `doesRequireRecordChangedToMeetCriteria` compares the
+current record with its prior state. `$Record` and `$Record__Prior` support the
+captured current/prior record behavior. `Invocable.Action` can call supported
+local Flow actions and returns local result/error objects.
+
+Screen and wait nodes remain unsupported. Hosted scheduling, interactive Flow
+screens, and the full hosted Flow engine remain outside the local contract.
+An unmodeled node is not proof that the whole Flow runs correctly.
+
+`glade check` reports `GLADEAUTO001` workflow warnings, `GLADEAUTO002` Flow
+warnings, and `GLADEAUTO003` for an automation file skipped because it could
+not be read or parsed. Other files continue to load. `GLADEAUTO004` is an error
+for invalid supported Flow definitions, such as a bad triggering-record field
+reference. Inspect diagnostics before relying on an automation result.
+
 ## Stdout and stderr
 
 Stdout carries the primary result: JSON, SARIF, JUnit, Markdown, HTML, or terminal text.

@@ -17,6 +17,7 @@ import (
 )
 
 type configShowInfo struct {
+	Test                       config.TestConfig                 `json:"test"`
 	ConfigPath                 string                            `json:"configPath,omitempty"`
 	ConfigFound                bool                              `json:"configFound"`
 	ProjectRoot                string                            `json:"projectRoot"`
@@ -101,6 +102,12 @@ func runConfigShow(args []string, w io.Writer) error {
 	if len(info.PackageShims) > 0 {
 		fmt.Fprintf(w, "packageShims: %d\n", len(info.PackageShims))
 	}
+	if len(info.Test.PermissionSets) > 0 {
+		fmt.Fprintf(w, "test.permissionSets: %s\n", strings.Join(info.Test.PermissionSets, ", "))
+	}
+	if len(info.Test.PermissionSetGroups) > 0 {
+		fmt.Fprintf(w, "test.permissionSetGroups: %s\n", strings.Join(info.Test.PermissionSetGroups, ", "))
+	}
 	return nil
 }
 
@@ -122,7 +129,14 @@ func runConfigValidate(args []string, w io.Writer) error {
 		}
 		return err
 	}
+	p, err := project.Load(root)
+	if err != nil {
+		return err
+	}
 	fmt.Fprintf(w, "config: %s\n", cfgPath)
+	for _, warning := range project.ScratchDefinitionWarnings(p.Root) {
+		fmt.Fprintf(w, "warning: %s\n", warning)
+	}
 	fmt.Fprintln(w, "status: ok")
 	return nil
 }
@@ -202,6 +216,7 @@ func loadConfigShowInfo(root string) (configShowInfo, error) {
 	}
 	info := configShowInfo{
 		ProjectRoot:      p.Root,
+		Test:             p.Test,
 		Namespace:        p.Namespace,
 		SourceAPIVersion: p.SourceAPIVersion,
 		PackageDirs:      packageDirNames(p.PackageDirectories),

@@ -15,6 +15,8 @@ type Param struct {
 }
 
 type Method struct {
+	// SourceUnit binds duplicate project declarations to captured source context.
+	SourceUnit    string
 	Name          string
 	ReturnType    string
 	Params        []Param
@@ -37,6 +39,8 @@ type Method struct {
 	Unsupported        string
 	RuntimeLowering    bool
 	Dependency         bool
+	// Present only on the executing trigger frame, never ordinary class methods.
+	triggerLocalMethods []string
 }
 
 func (vm *VM) RegisterMethod(method Method) error {
@@ -109,6 +113,7 @@ func sameRegisteredMethod(left, right Method) bool {
 }
 
 type Field struct {
+	SourceUnit   string
 	Name         string
 	Type         string
 	Static       bool
@@ -133,6 +138,9 @@ type Field struct {
 }
 
 type Class struct {
+	SourceUnit string
+	// PlatformType records a standard-platform symbol, independent of its name.
+	PlatformType         bool
 	Name                 string
 	Namespace            string
 	APIVersion           string
@@ -297,6 +305,37 @@ func (vm *VM) duplicateClassForMerge(class Class) (Class, bool) {
 }
 
 func stampClassProvenance(class *Class) {
+	if class != nil && class.SourceUnit != "" {
+		for key, method := range class.Methods {
+			method.SourceUnit = class.SourceUnit
+			class.Methods[key] = method
+		}
+		for _, fields := range []map[string]Field{class.Fields, class.StaticFields} {
+			for key, field := range fields {
+				field.SourceUnit = class.SourceUnit
+				if field.Getter != nil {
+					getter := *field.Getter
+					getter.SourceUnit = class.SourceUnit
+					field.Getter = &getter
+				}
+				if field.Setter != nil {
+					setter := *field.Setter
+					setter.SourceUnit = class.SourceUnit
+					field.Setter = &setter
+				}
+				fields[key] = field
+			}
+		}
+		for i := range class.Constructors {
+			class.Constructors[i].SourceUnit = class.SourceUnit
+		}
+		for i := range class.StaticInitializers {
+			class.StaticInitializers[i].SourceUnit = class.SourceUnit
+		}
+		for i := range class.InstanceInitializers {
+			class.InstanceInitializers[i].SourceUnit = class.SourceUnit
+		}
+	}
 	if class == nil || !class.Dependency {
 		return
 	}
@@ -425,7 +464,8 @@ func mergeFields(existing, incoming map[string]Field, preferIncoming bool) map[s
 }
 
 func duplicateFieldDefsDiffer(existing, incoming Field) bool {
-	return !strings.EqualFold(existing.Type, incoming.Type)
+	return !strings.EqualFold(existing.Type, incoming.Type) ||
+		(!existing.Dependency && !incoming.Dependency && existing.SourceUnit != "" && incoming.SourceUnit != "" && existing.SourceUnit != incoming.SourceUnit)
 }
 
 func duplicateFieldMapKey(base string, field Field) string {

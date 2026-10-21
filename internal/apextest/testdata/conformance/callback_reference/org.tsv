@@ -1,0 +1,7 @@
+source_api	route	observation
+62.0	anonymous	{"count":2,"values":[6,12]}
+62.0	isTest	{"count":2,"values":[6,12]}
+67.0	anonymous	{"count":2,"values":[6,12]}
+67.0	isTest	{"count":2,"values":[6,12]}
+68.0	anonymous	{"count":2,"values":[6,12]}
+68.0	isTest	{"count":2,"values":[6,12]}

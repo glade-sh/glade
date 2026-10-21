@@ -56,8 +56,10 @@ type l08Table struct {
 
 // TestL08SalesforceConformance replays owned compiler/metadata and rendered Apex
 // bridge observations exported from the API 59 and 67 org.tsv and runtime.tsv
-// captures. The exported sources keep the native API class suffix, so
-// custom-exception names compare exactly without normalizing the two raw rows.
+// captures. API 68 uses the retained lwc_apex_bridge/api68
+// capture plus review-controls-api68 (native job capture-job, eleven
+// controls). Sources keep the native API class suffix, so custom-exception
+// names compare exactly without normalizing the raw rows.
 // Review controls add top-level custom exceptions and DTOs with populated
 // unannotated fields/properties, captured through imperative and wired calls.
 // CI uses only local fixtures; no capture tool or Salesforce access is required.
@@ -73,7 +75,7 @@ func TestL08SalesforceConformance(t *testing.T) {
 	if err := json.Unmarshal(data, &table); err != nil {
 		t.Fatal(err)
 	}
-	versions := []string{"59.0", "67.0"}
+	versions := []string{"59.0", "67.0", "68.0"}
 	seen, groups := map[string]bool{}, map[string]bool{}
 	var runtimeCases []l08Case
 	compileCases := 0

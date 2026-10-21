@@ -1,0 +1,850 @@
+{
+  "Captures": [
+    {
+      "API": "62.0",
+      "Context": "namespace",
+      "Route": "istest",
+      "Namespace": "gladens003",
+      "BindingSHA256": "capture-revision-094511018274603542474392345255231533155257931117113614034609222374167858913306",
+      "SourceManifestSHA256": "5d44644104e243559ecbe338dd99504322b1da1ecf284bda10d307d42a930d6d",
+      "Metadata": {
+        "package.xml": "<?xml version=\"1.0\"?><Package xmlns=\"http://soap.sforce.com/2006/04/metadata\"><types><members>Account.E57a1c1a45e20A62OrbitEcho__c</members><members>Account.E57a1c1a45e20A62TileBridge__c</members><members>E57a1c1a45e20A62LyricTile__c.E57a1c1a45e20A62EchoGlyph__c</members><members>E57a1c1a45e20A62TempoConfig__c.E57a1c1a45e20A62Tempo__c</members><name>CustomField</name></types><types><members>E57a1c1a45e20A62LyricTile__c</members><members>E57a1c1a45e20A62TempoConfig__c</members><name>CustomObject</name></types><types><members>E57a1c1a45e20A62Access</members><name>PermissionSet</name></types><version>62.0</version></Package>",
+        "objects/E57a1c1a45e20A62LyricTile__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><fields><fullName>E57a1c1a45e20A62EchoGlyph__c</fullName><formula>\"computed\"</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><label>Echo Glyph</label><type>Text</type></fields><label>E57a1c1a45e20A62 Lyric Tile</label><nameField><label>Tile Name</label><type>Text</type></nameField><pluralLabel>E57a1c1a45e20A62 Lyric Tiles</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+        "objects/E57a1c1a45e20A62TempoConfig__c.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingsType>Hierarchy</customSettingsType><fields><fullName>E57a1c1a45e20A62Tempo__c</fullName><label>Tempo</label><length>80</length><required>false</required><type>Text</type></fields><label>E57a1c1a45e20A62 Tempo Config</label><visibility>Public</visibility></CustomObject>",
+        "objects/Account.object": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fields><fullName>E57a1c1a45e20A62OrbitEcho__c</fullName><formula>\"computed\"</formula><formulaTreatBlanksAs>BlankAsBlank</formulaTreatBlanksAs><label>Orbit Echo</label><type>Text</type></fields><fields><fullName>E57a1c1a45e20A62TileBridge__c</fullName><deleteConstraint>SetNull</deleteConstraint><label>Tile Bridge</label><referenceTo>E57a1c1a45e20A62LyricTile__c</referenceTo><relationshipLabel>E57a1c1a45e20A62 Accounts</relationshipLabel><relationshipName>E57a1c1a45e20A62Accounts</relationshipName><required>false</required><type>Lookup</type></fields></CustomObject>",
+        "permissionsets/E57a1c1a45e20A62Access.permissionset": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingAccesses><enabled>true</enabled><name>E57a1c1a45e20A62TempoConfig__c</name></customSettingAccesses><fieldPermissions><editable>false</editable><field>Account.E57a1c1a45e20A62OrbitEcho__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>Account.E57a1c1a45e20A62TileBridge__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>false</editable><field>E57a1c1a45e20A62LyricTile__c.E57a1c1a45e20A62EchoGlyph__c</field><readable>true</readable></fieldPermissions><label>E57a1c1a45e20A62Access</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>E57a1c1a45e20A62LyricTile__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>"
+      },
+      "MetadataSHA256": {
+        "package.xml": "2e06e1d234a925c7e3bdee9e0af52d49ace8c1996a8647646394af003823df9f",
+        "objects/E57a1c1a45e20A62LyricTile__c.object": "ba99bfb680673e7d5c5c7eea33de52eba0224975034d37ab2724c72ad4c58eee",
+        "objects/E57a1c1a45e20A62TempoConfig__c.object": "422b0b6126a60562abe1262c71c4bcc03c19616d8ff7d0ed7ae4ccd8a3b4a73b",
+        "objects/Account.object": "3a9c81a321837bdea353730ce934c5023227729b7fbab9930e7ee196ab194b1a",
+        "permissionsets/E57a1c1a45e20A62Access.permissionset": "fec7885ed354ddc6d07944333ba844d9090572a495ecc8452a2c9a9b4e304822"
+      },
+      "Rows": [
+        {
+          "ID": "CTRL_POS",
+          "Variant": "absent",
+          "Expression": "result.put('value',7);",
+          "ExpressionSHA256": "0f773495c42522a1ecfc676ee2342518700be2979073a55a889041dc220650de",
+          "Native": {
+            "outcome": "runtime",
+            "value": {
+              "value": 7
+            },
+            "expression": "result.put('value',7);",
+            "helpers": {},
+            "marker_normalisation_apex": "String stableRaw=JSON.serialize(result);List<String> replayKeys=new List<String>();replayKeys.addAll(replayIds.keySet());for(String replayKey:replayKeys){if(replayKey.length()==18){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}for(String replayKey:replayKeys){if(replayKey.length()==15){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}stableRaw=stableRaw.replaceAll('\\\\b(?:[0-9][0-9A-Za-z]{2}|[aA][0-9A-Z][0-9A-Za-z])[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\\\\b','RECORD_ID');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\\\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})\\\\b','TIMESTAMP');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}\\\\b','DATE_VALUE');",
+            "marker_normalisation": "Apex before marker: TILE_ID/OWNER_ID/PARENT_ID/RECORD_ID; TIMESTAMP/DATE_VALUE; equality booleans preserved; JSON key order preserved",
+            "api": "62.0",
+            "context": "namespace",
+            "variant": "absent",
+            "source_sha256": "0f773495c42522a1ecfc676ee2342518700be2979073a55a889041dc220650de",
+            "invocation_sha256": "01a733157e0434226ee87e49cc3da42ba05ac5791b74b23297ffa5bb87b4064a"
+          },
+          "CarryReason": "",
+          "ProjectionCarries": {}
+        },
+        {
+          "ID": "CTRL_CAUGHT",
+          "Variant": "absent",
+          "Expression": "try{Integer ignored=1/0;}catch(Exception e){result.put('caught',e.getTypeName());result.put('message',e.getMessage());}",
+          "ExpressionSHA256": "bc4f738667b2597b946044380ccf008c94209d3d7e0e8cb824f1f291d930be86",
+          "Native": {
+            "outcome": "runtime",
+            "value": {
+              "message": "Divide by 0",
+              "caught": "System.MathException"
+            },
+            "expression": "try{Integer ignored=1/0;}catch(Exception e){result.put('caught',e.getTypeName());result.put('message',e.getMessage());}",
+            "helpers": {},
+            "marker_normalisation_apex": "String stableRaw=JSON.serialize(result);List<String> replayKeys=new List<String>();replayKeys.addAll(replayIds.keySet());for(String replayKey:replayKeys){if(replayKey.length()==18){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}for(String replayKey:replayKeys){if(replayKey.length()==15){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}stableRaw=stableRaw.replaceAll('\\\\b(?:[0-9][0-9A-Za-z]{2}|[aA][0-9A-Z][0-9A-Za-z])[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\\\\b','RECORD_ID');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\\\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})\\\\b','TIMESTAMP');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}\\\\b','DATE_VALUE');",
+            "marker_normalisation": "Apex before marker: TILE_ID/OWNER_ID/PARENT_ID/RECORD_ID; TIMESTAMP/DATE_VALUE; equality booleans preserved; JSON key order preserved",
+            "api": "62.0",
+            "context": "namespace",
+            "variant": "absent",
+            "source_sha256": "bc4f738667b2597b946044380ccf008c94209d3d7e0e8cb824f1f291d930be86",
+            "invocation_sha256": "04676c41e16218d31a31eb681703c4a22c2b622a90b7c0f1c4ef961368cc6036"
+          },
+          "CarryReason": "",
+          "ProjectionCarries": {}
+        },
+        {
+          "ID": "CTRL_UNCAUGHT",
+          "Variant": "absent",
+          "Expression": "Integer ignored=1/0;",
+          "ExpressionSHA256": "a90603cdb49f36afab23bf63af0194f2e478bee899fbcb50881c57173a497efd",
+          "Native": {
+            "outcome": "uncaught_test_failure",
+            "exceptionMessage": "System.MathException: Divide by 0",
+            "exceptionType": "System.MathException",
+            "expression": "Integer ignored=1/0;",
+            "helpers": {},
+            "marker_normalisation_apex": "String stableRaw=JSON.serialize(result);List<String> replayKeys=new List<String>();replayKeys.addAll(replayIds.keySet());for(String replayKey:replayKeys){if(replayKey.length()==18){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}for(String replayKey:replayKeys){if(replayKey.length()==15){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}stableRaw=stableRaw.replaceAll('\\\\b(?:[0-9][0-9A-Za-z]{2}|[aA][0-9A-Z][0-9A-Za-z])[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\\\\b','RECORD_ID');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\\\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})\\\\b','TIMESTAMP');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}\\\\b','DATE_VALUE');",
+            "marker_normalisation": "Apex before marker: TILE_ID/OWNER_ID/PARENT_ID/RECORD_ID; TIMESTAMP/DATE_VALUE; equality booleans preserved; JSON key order preserved",
+            "api": "62.0",
+            "context": "namespace",
+            "variant": "absent",
+            "source_sha256": "a90603cdb49f36afab23bf63af0194f2e478bee899fbcb50881c57173a497efd",
+            "invocation_sha256": "da55235e74e8eeaf62c7c559cd30e2744ba128857603b6473ec4d7b12a9b525d"
+          },
+          "CarryReason": "Existing uncaught exception qualification mismatch: native System.MathException: Divide by 0; local MathException: Divide by 0. Outside namespace provenance ownership.",
+          "ProjectionCarries": {}
+        },
+        {
+          "ID": "CTRL_COMPILE",
+          "Variant": "absent",
+          "Expression": "Integer ignored='wrong';",
+          "ExpressionSHA256": "a4747739e405ff75dfe30264fedbe5387dc957e7636f0d60956f39d6074602fa",
+          "Native": {
+            "outcome": "compile-rejected",
+            "diagnostics": [
+              {
+                "name": "E57a1c1a45e20A62Rowba67bd86",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Illegal assignment from String to Integer",
+                "column": 90
+              }
+            ],
+            "expression": "Integer ignored='wrong';",
+            "helpers": {},
+            "marker_normalisation_apex": "String stableRaw=JSON.serialize(result);List<String> replayKeys=new List<String>();replayKeys.addAll(replayIds.keySet());for(String replayKey:replayKeys){if(replayKey.length()==18){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}for(String replayKey:replayKeys){if(replayKey.length()==15){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}stableRaw=stableRaw.replaceAll('\\\\b(?:[0-9][0-9A-Za-z]{2}|[aA][0-9A-Z][0-9A-Za-z])[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\\\\b','RECORD_ID');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\\\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})\\\\b','TIMESTAMP');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}\\\\b','DATE_VALUE');",
+            "marker_normalisation": "Apex before marker: TILE_ID/OWNER_ID/PARENT_ID/RECORD_ID; TIMESTAMP/DATE_VALUE; equality booleans preserved; JSON key order preserved",
+            "api": "62.0",
+            "context": "namespace",
+            "variant": "absent",
+            "source_sha256": "a4747739e405ff75dfe30264fedbe5387dc957e7636f0d60956f39d6074602fa",
+            "invocation_sha256": "5a9f4653e200f45d16d73ddca5bf666de9867eb970c8356a77c498e3e0d32000"
+          },
+          "CarryReason": "",
+          "ProjectionCarries": {}
+        },
+        {
+          "ID": "G01PresentNonnullLocal",
+          "Variant": "present",
+          "Expression": "String localObject='E57a1c1a45e20A62LyricTile__c';String qualifiedObject='gladens003__E57a1c1a45e20A62LyricTile__c';String localBridge='E57a1c1a45e20A62TileBridge__c';String qualifiedBridge='gladens003__E57a1c1a45e20A62TileBridge__c';String localRelationship='E57a1c1a45e20A62TileBridge__r';String qualifiedRelationship='gladens003__E57a1c1a45e20A62TileBridge__r';step='seed';E57a1c1a45e20A62LyricTile__c tile=new E57a1c1a45e20A62LyricTile__c();Account owner=new Account(Name='Synthetic lookup owner');tile.Name='Synthetic lookup tile';insert tile;String tileReplayId=String.valueOf(tile.Id);replayIds.put(tileReplayId,'TILE_ID');replayIds.put(tileReplayId.substring(0,15),'TILE_ID');owner.put(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName(),tile.Id);owner.putSObject(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getRelationshipName(),tile);if(owner.get(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName())!=tile.Id){result.put('fixtureError',true);}if(owner.Id!=null){String ownerReplayId=String.valueOf(owner.Id);replayIds.put(ownerReplayId,'OWNER_ID');replayIds.put(ownerReplayId.substring(0,15),'OWNER_ID');}step='owner-lookup-read';List<Object> lookupReads=new List<Object>();for(String spelling:new List<String>{localBridge,qualifiedBridge,qualifiedBridge.toUpperCase()}){Map<String,Object> lookupRead=new Map<String,Object>{'spelling'=>spelling};try{Object observedLookup=owner.get(spelling);lookupRead.put('value',observedLookup);lookupRead.put('lookupEqualsTileId',observedLookup!=null && observedLookup==tile.Id);lookupRead.put('isNull',observedLookup==null);}catch(Exception readFailure){lookupRead.put('exceptionType',readFailure.getTypeName());lookupRead.put('exceptionMessage',readFailure.getMessage());}lookupReads.add(lookupRead);}result.put('ownerLookupReads',lookupReads);step='owner-parent-read';List<Object> parentReads=new List<Object>();for(String relationshipSpelling:new List<String>{localRelationship,qualifiedRelationship,qualifiedRelationship.toUpperCase()}){Map<String,Object> parentRead=new Map<String,Object>{'spelling'=>relationshipSpelling};try{SObject observedParent=owner.getSObject(relationshipSpelling);parentRead.put('isNull',observedParent==null);parentRead.put('json',JSON.serialize(observedParent));parentRead.put('parentEqualsTileId',observedParent!=null && observedParent.Id!=null && observedParent.Id==tile.Id);if(observedParent!=null && observedParent.Id!=null){String parentReplayId=String.valueOf(observedParent.Id);if(!replayIds.containsKey(parentReplayId)){replayIds.put(parentReplayId,'PARENT_ID');replayIds.put(parentReplayId.substring(0,15),'PARENT_ID');}}}catch(Exception parentFailure){parentRead.put('exceptionType',parentFailure.getTypeName());parentRead.put('exceptionMessage',parentFailure.getMessage());}parentReads.add(parentRead);}result.put('ownerParentReads',parentReads);step='owner-populated-fields';List<String> ownerPopulatedKeys=new List<String>();ownerPopulatedKeys.addAll(owner.getPopulatedFieldsAsMap().keySet());ownerPopulatedKeys.sort();result.put('ownerPopulatedKeys',ownerPopulatedKeys);result.put('ownerPopulatedMap',owner.getPopulatedFieldsAsMap());step='owner-json';String ownerJson=JSON.serialize(owner);result.put('ownerJson',ownerJson);Map<String,Object> ownerPayload=(Map<String,Object>)JSON.deserializeUntyped(ownerJson);List<String> ownerJsonKeys=new List<String>();ownerJsonKeys.addAll(ownerPayload.keySet());result.put('ownerJsonKeys',ownerJsonKeys);step='describe';Schema.DescribeSObjectResult actual=tile.getSObjectType().getDescribe();Schema.DescribeSObjectResult canonical=E57a1c1a45e20A62LyricTile__c.SObjectType.getDescribe();Schema.DescribeSObjectResult config=E57a1c1a45e20A62TempoConfig__c.SObjectType.getDescribe();result.put('objectName',actual.getName());result.put('objectLocal',actual.getLocalName());result.put('canonicalName',canonical.getName());result.put('canonicalLocal',canonical.getLocalName());result.put('settingName',config.getName());result.put('settingLocal',config.getLocalName());result.put('lookupPresent',true);result.put('lookupValue', 'nonnull');Schema.DescribeSObjectResult target=Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getReferenceTo()[0].getDescribe();result.put('targetName',target.getName());result.put('targetLocal',target.getLocalName());Map<String,Schema.SObjectType> allTypes=Schema.getGlobalDescribe();List<String> matching=new List<String>();for(String candidate:allTypes.keySet()){if(candidate.toLowerCase().contains(localObject.toLowerCase())){matching.add(candidate);}}matching.sort();result.put('globalKeys',matching);result.put('globalLocal',allTypes.containsKey(localObject));result.put('globalQualified',allTypes.containsKey(qualifiedObject));result.put('globalCase',allTypes.containsKey(qualifiedObject.toUpperCase()));Map<String,String> values=new Map<String,String>{actual.getName()=>'present'};result.put('mapKey',actual.getName());result.put('mapLocal',values.get(localObject));result.put('mapQualified',values.get(qualifiedObject));result.put('mapCase',values.get(qualifiedObject.toUpperCase()));String prefix=config.getName().startsWith('gladens003__')?'gladens003__':'';result.put('mapSettingPrefix',values.get(prefix+localObject));step='G01-name-consistency';result.put('instanceTokenNameEqual',actual.getName()==canonical.getName());result.put('instanceTokenLocalEqual',actual.getLocalName()==canonical.getLocalName());result.put('objectSettingPrefixEqual',actual.getName().startsWith('gladens003__')==config.getName().startsWith('gladens003__'));",
+          "ExpressionSHA256": "1feebdff4cc1fa6d146e89e83cf3ce018028e0631117df7b39a80f181bc0fb67",
+          "Native": {
+            "outcome": "runtime",
+            "value": {
+              "objectSettingPrefixEqual": true,
+              "instanceTokenLocalEqual": true,
+              "instanceTokenNameEqual": true,
+              "mapSettingPrefix": "present",
+              "mapCase": null,
+              "mapQualified": "present",
+              "mapLocal": null,
+              "mapKey": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "globalCase": true,
+              "globalQualified": true,
+              "globalLocal": false,
+              "globalKeys": [
+                "gladens003__e57a1c1a45e20a62lyrictile__c",
+                "gladens003__e57a1c1a45e20a62lyrictile__changeevent"
+              ],
+              "targetLocal": "E57a1c1a45e20A62LyricTile__c",
+              "targetName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "lookupValue": "nonnull",
+              "lookupPresent": true,
+              "settingLocal": "E57a1c1a45e20A62TempoConfig__c",
+              "settingName": "gladens003__E57a1c1a45e20A62TempoConfig__c",
+              "canonicalLocal": "E57a1c1a45e20A62LyricTile__c",
+              "canonicalName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "objectLocal": "E57a1c1a45e20A62LyricTile__c",
+              "objectName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "ownerJsonKeys": [
+                "attributes",
+                "Name",
+                "gladens003__E57a1c1a45e20A62TileBridge__c",
+                "gladens003__E57a1c1a45e20A62TileBridge__r"
+              ],
+              "ownerJson": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic lookup owner\",\"gladens003__E57a1c1a45e20A62TileBridge__c\":\"TILE_ID\",\"gladens003__E57a1c1a45e20A62TileBridge__r\":{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}}",
+              "ownerPopulatedMap": {
+                "gladens003__E57a1c1a45e20A62TileBridge__r": {
+                  "attributes": {
+                    "type": "gladens003__E57a1c1a45e20A62LyricTile__c",
+                    "url": "/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID"
+                  },
+                  "Name": "Synthetic lookup tile",
+                  "Id": "TILE_ID"
+                },
+                "gladens003__E57a1c1a45e20A62TileBridge__c": "TILE_ID",
+                "Name": "Synthetic lookup owner"
+              },
+              "ownerPopulatedKeys": [
+                "Name",
+                "gladens003__E57a1c1a45e20A62TileBridge__c",
+                "gladens003__E57a1c1a45e20A62TileBridge__r"
+              ],
+              "ownerParentReads": [
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "E57a1c1a45e20A62TileBridge__r"
+                },
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "gladens003__E57a1c1a45e20A62TileBridge__r"
+                },
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "GLADENS003__E57A1C1A45E20A62TILEBRIDGE__R"
+                }
+              ],
+              "ownerLookupReads": [
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "E57a1c1a45e20A62TileBridge__c"
+                },
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "gladens003__E57a1c1a45e20A62TileBridge__c"
+                },
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "GLADENS003__E57A1C1A45E20A62TILEBRIDGE__C"
+                }
+              ]
+            },
+            "raw_sha256": "be947af961cf2df8f7bd039c0a74f7f0bce4ce7662179fa92a49649403a1f279",
+            "expression": "String localObject='E57a1c1a45e20A62LyricTile__c';String qualifiedObject='gladens003__E57a1c1a45e20A62LyricTile__c';String localBridge='E57a1c1a45e20A62TileBridge__c';String qualifiedBridge='gladens003__E57a1c1a45e20A62TileBridge__c';String localRelationship='E57a1c1a45e20A62TileBridge__r';String qualifiedRelationship='gladens003__E57a1c1a45e20A62TileBridge__r';step='seed';E57a1c1a45e20A62LyricTile__c tile=new E57a1c1a45e20A62LyricTile__c();Account owner=new Account(Name='Synthetic lookup owner');tile.Name='Synthetic lookup tile';insert tile;String tileReplayId=String.valueOf(tile.Id);replayIds.put(tileReplayId,'TILE_ID');replayIds.put(tileReplayId.substring(0,15),'TILE_ID');owner.put(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName(),tile.Id);owner.putSObject(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getRelationshipName(),tile);if(owner.get(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName())!=tile.Id){result.put('fixtureError',true);}if(owner.Id!=null){String ownerReplayId=String.valueOf(owner.Id);replayIds.put(ownerReplayId,'OWNER_ID');replayIds.put(ownerReplayId.substring(0,15),'OWNER_ID');}step='owner-lookup-read';List<Object> lookupReads=new List<Object>();for(String spelling:new List<String>{localBridge,qualifiedBridge,qualifiedBridge.toUpperCase()}){Map<String,Object> lookupRead=new Map<String,Object>{'spelling'=>spelling};try{Object observedLookup=owner.get(spelling);lookupRead.put('value',observedLookup);lookupRead.put('lookupEqualsTileId',observedLookup!=null && observedLookup==tile.Id);lookupRead.put('isNull',observedLookup==null);}catch(Exception readFailure){lookupRead.put('exceptionType',readFailure.getTypeName());lookupRead.put('exceptionMessage',readFailure.getMessage());}lookupReads.add(lookupRead);}result.put('ownerLookupReads',lookupReads);step='owner-parent-read';List<Object> parentReads=new List<Object>();for(String relationshipSpelling:new List<String>{localRelationship,qualifiedRelationship,qualifiedRelationship.toUpperCase()}){Map<String,Object> parentRead=new Map<String,Object>{'spelling'=>relationshipSpelling};try{SObject observedParent=owner.getSObject(relationshipSpelling);parentRead.put('isNull',observedParent==null);parentRead.put('json',JSON.serialize(observedParent));parentRead.put('parentEqualsTileId',observedParent!=null && observedParent.Id!=null && observedParent.Id==tile.Id);if(observedParent!=null && observedParent.Id!=null){String parentReplayId=String.valueOf(observedParent.Id);if(!replayIds.containsKey(parentReplayId)){replayIds.put(parentReplayId,'PARENT_ID');replayIds.put(parentReplayId.substring(0,15),'PARENT_ID');}}}catch(Exception parentFailure){parentRead.put('exceptionType',parentFailure.getTypeName());parentRead.put('exceptionMessage',parentFailure.getMessage());}parentReads.add(parentRead);}result.put('ownerParentReads',parentReads);step='owner-populated-fields';List<String> ownerPopulatedKeys=new List<String>();ownerPopulatedKeys.addAll(owner.getPopulatedFieldsAsMap().keySet());ownerPopulatedKeys.sort();result.put('ownerPopulatedKeys',ownerPopulatedKeys);result.put('ownerPopulatedMap',owner.getPopulatedFieldsAsMap());step='owner-json';String ownerJson=JSON.serialize(owner);result.put('ownerJson',ownerJson);Map<String,Object> ownerPayload=(Map<String,Object>)JSON.deserializeUntyped(ownerJson);List<String> ownerJsonKeys=new List<String>();ownerJsonKeys.addAll(ownerPayload.keySet());result.put('ownerJsonKeys',ownerJsonKeys);step='describe';Schema.DescribeSObjectResult actual=tile.getSObjectType().getDescribe();Schema.DescribeSObjectResult canonical=E57a1c1a45e20A62LyricTile__c.SObjectType.getDescribe();Schema.DescribeSObjectResult config=E57a1c1a45e20A62TempoConfig__c.SObjectType.getDescribe();result.put('objectName',actual.getName());result.put('objectLocal',actual.getLocalName());result.put('canonicalName',canonical.getName());result.put('canonicalLocal',canonical.getLocalName());result.put('settingName',config.getName());result.put('settingLocal',config.getLocalName());result.put('lookupPresent',true);result.put('lookupValue', 'nonnull');Schema.DescribeSObjectResult target=Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getReferenceTo()[0].getDescribe();result.put('targetName',target.getName());result.put('targetLocal',target.getLocalName());Map<String,Schema.SObjectType> allTypes=Schema.getGlobalDescribe();List<String> matching=new List<String>();for(String candidate:allTypes.keySet()){if(candidate.toLowerCase().contains(localObject.toLowerCase())){matching.add(candidate);}}matching.sort();result.put('globalKeys',matching);result.put('globalLocal',allTypes.containsKey(localObject));result.put('globalQualified',allTypes.containsKey(qualifiedObject));result.put('globalCase',allTypes.containsKey(qualifiedObject.toUpperCase()));Map<String,String> values=new Map<String,String>{actual.getName()=>'present'};result.put('mapKey',actual.getName());result.put('mapLocal',values.get(localObject));result.put('mapQualified',values.get(qualifiedObject));result.put('mapCase',values.get(qualifiedObject.toUpperCase()));String prefix=config.getName().startsWith('gladens003__')?'gladens003__':'';result.put('mapSettingPrefix',values.get(prefix+localObject));step='G01-name-consistency';result.put('instanceTokenNameEqual',actual.getName()==canonical.getName());result.put('instanceTokenLocalEqual',actual.getLocalName()==canonical.getLocalName());result.put('objectSettingPrefixEqual',actual.getName().startsWith('gladens003__')==config.getName().startsWith('gladens003__'));",
+            "helpers": {},
+            "marker_normalisation_apex": "String stableRaw=JSON.serialize(result);List<String> replayKeys=new List<String>();replayKeys.addAll(replayIds.keySet());for(String replayKey:replayKeys){if(replayKey.length()==18){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}for(String replayKey:replayKeys){if(replayKey.length()==15){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}stableRaw=stableRaw.replaceAll('\\\\b(?:[0-9][0-9A-Za-z]{2}|[aA][0-9A-Z][0-9A-Za-z])[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\\\\b','RECORD_ID');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\\\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})\\\\b','TIMESTAMP');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}\\\\b','DATE_VALUE');",
+            "marker_normalisation": "Apex before marker: TILE_ID/OWNER_ID/PARENT_ID/RECORD_ID; TIMESTAMP/DATE_VALUE; equality booleans preserved; JSON key order preserved",
+            "api": "62.0",
+            "context": "namespace",
+            "variant": "present",
+            "source_sha256": "3f1467e6751db17e96f565545a6afe095e94d2fe378f1621d674da3c0ba51057",
+            "invocation_sha256": "52a3899a36e1aba7e2071146a405e41d6639ee3ced23a04c4d545d48de693b61"
+          },
+          "CarryReason": "",
+          "ProjectionCarries": {
+            "globalKeys": "global-changeevent: Native generated ChangeEvent companion is absent locally; assert every remaining canonical global-describe key, including absence of local namespace aliases.",
+            "ownerJson": "lookup-json-id-url-defaults: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerParentReads": "lookup-parent-json: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerLookupReads": "lookup-read-id: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerPopulatedMap": "lookup-map-id-url-defaults: Native REST attribute url and local parent OwnerId differ; assert all remaining populated fields, canonical lookup and parent keys, stable Id aliases, and values."
+          }
+        },
+        {
+          "ID": "G01PresentNonnullSchema",
+          "Variant": "present",
+          "Expression": "String localObject='E57a1c1a45e20A62LyricTile__c';String qualifiedObject='gladens003__E57a1c1a45e20A62LyricTile__c';String localBridge='E57a1c1a45e20A62TileBridge__c';String qualifiedBridge='gladens003__E57a1c1a45e20A62TileBridge__c';String localRelationship='E57a1c1a45e20A62TileBridge__r';String qualifiedRelationship='gladens003__E57a1c1a45e20A62TileBridge__r';step='seed';E57a1c1a45e20A62LyricTile__c tile=new E57a1c1a45e20A62LyricTile__c();Account owner=new Account(Name='Synthetic lookup owner');tile.Name='Synthetic lookup tile';insert tile;String tileReplayId=String.valueOf(tile.Id);replayIds.put(tileReplayId,'TILE_ID');replayIds.put(tileReplayId.substring(0,15),'TILE_ID');owner.put(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName(),tile.Id);owner.putSObject(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getRelationshipName(),tile);if(owner.get(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName())!=tile.Id){result.put('fixtureError',true);}if(owner.Id!=null){String ownerReplayId=String.valueOf(owner.Id);replayIds.put(ownerReplayId,'OWNER_ID');replayIds.put(ownerReplayId.substring(0,15),'OWNER_ID');}step='owner-lookup-read';List<Object> lookupReads=new List<Object>();for(String spelling:new List<String>{localBridge,qualifiedBridge,qualifiedBridge.toUpperCase()}){Map<String,Object> lookupRead=new Map<String,Object>{'spelling'=>spelling};try{Object observedLookup=owner.get(spelling);lookupRead.put('value',observedLookup);lookupRead.put('lookupEqualsTileId',observedLookup!=null && observedLookup==tile.Id);lookupRead.put('isNull',observedLookup==null);}catch(Exception readFailure){lookupRead.put('exceptionType',readFailure.getTypeName());lookupRead.put('exceptionMessage',readFailure.getMessage());}lookupReads.add(lookupRead);}result.put('ownerLookupReads',lookupReads);step='owner-parent-read';List<Object> parentReads=new List<Object>();for(String relationshipSpelling:new List<String>{localRelationship,qualifiedRelationship,qualifiedRelationship.toUpperCase()}){Map<String,Object> parentRead=new Map<String,Object>{'spelling'=>relationshipSpelling};try{SObject observedParent=owner.getSObject(relationshipSpelling);parentRead.put('isNull',observedParent==null);parentRead.put('json',JSON.serialize(observedParent));parentRead.put('parentEqualsTileId',observedParent!=null && observedParent.Id!=null && observedParent.Id==tile.Id);if(observedParent!=null && observedParent.Id!=null){String parentReplayId=String.valueOf(observedParent.Id);if(!replayIds.containsKey(parentReplayId)){replayIds.put(parentReplayId,'PARENT_ID');replayIds.put(parentReplayId.substring(0,15),'PARENT_ID');}}}catch(Exception parentFailure){parentRead.put('exceptionType',parentFailure.getTypeName());parentRead.put('exceptionMessage',parentFailure.getMessage());}parentReads.add(parentRead);}result.put('ownerParentReads',parentReads);step='owner-populated-fields';List<String> ownerPopulatedKeys=new List<String>();ownerPopulatedKeys.addAll(owner.getPopulatedFieldsAsMap().keySet());ownerPopulatedKeys.sort();result.put('ownerPopulatedKeys',ownerPopulatedKeys);result.put('ownerPopulatedMap',owner.getPopulatedFieldsAsMap());step='owner-json';String ownerJson=JSON.serialize(owner);result.put('ownerJson',ownerJson);Map<String,Object> ownerPayload=(Map<String,Object>)JSON.deserializeUntyped(ownerJson);List<String> ownerJsonKeys=new List<String>();ownerJsonKeys.addAll(ownerPayload.keySet());result.put('ownerJsonKeys',ownerJsonKeys);step='describe';Schema.DescribeSObjectResult actual=tile.getSObjectType().getDescribe();Schema.DescribeSObjectResult canonical=Schema.E57a1c1a45e20A62LyricTile__c.SObjectType.getDescribe();Schema.DescribeSObjectResult config=E57a1c1a45e20A62TempoConfig__c.SObjectType.getDescribe();result.put('objectName',actual.getName());result.put('objectLocal',actual.getLocalName());result.put('canonicalName',canonical.getName());result.put('canonicalLocal',canonical.getLocalName());result.put('settingName',config.getName());result.put('settingLocal',config.getLocalName());result.put('lookupPresent',true);result.put('lookupValue', 'nonnull');Schema.DescribeSObjectResult target=Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getReferenceTo()[0].getDescribe();result.put('targetName',target.getName());result.put('targetLocal',target.getLocalName());Map<String,Schema.SObjectType> allTypes=Schema.getGlobalDescribe();List<String> matching=new List<String>();for(String candidate:allTypes.keySet()){if(candidate.toLowerCase().contains(localObject.toLowerCase())){matching.add(candidate);}}matching.sort();result.put('globalKeys',matching);result.put('globalLocal',allTypes.containsKey(localObject));result.put('globalQualified',allTypes.containsKey(qualifiedObject));result.put('globalCase',allTypes.containsKey(qualifiedObject.toUpperCase()));Map<String,String> values=new Map<String,String>{actual.getName()=>'present'};result.put('mapKey',actual.getName());result.put('mapLocal',values.get(localObject));result.put('mapQualified',values.get(qualifiedObject));result.put('mapCase',values.get(qualifiedObject.toUpperCase()));String prefix=config.getName().startsWith('gladens003__')?'gladens003__':'';result.put('mapSettingPrefix',values.get(prefix+localObject));step='G01-name-consistency';result.put('instanceTokenNameEqual',actual.getName()==canonical.getName());result.put('instanceTokenLocalEqual',actual.getLocalName()==canonical.getLocalName());result.put('objectSettingPrefixEqual',actual.getName().startsWith('gladens003__')==config.getName().startsWith('gladens003__'));",
+          "ExpressionSHA256": "1685d24f795bded048cc5534e1d44b1148e97e8abd134f47050f1b3983aa7c3c",
+          "Native": {
+            "outcome": "runtime",
+            "value": {
+              "objectSettingPrefixEqual": true,
+              "instanceTokenLocalEqual": true,
+              "instanceTokenNameEqual": true,
+              "mapSettingPrefix": "present",
+              "mapCase": null,
+              "mapQualified": "present",
+              "mapLocal": null,
+              "mapKey": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "globalCase": true,
+              "globalQualified": true,
+              "globalLocal": false,
+              "globalKeys": [
+                "gladens003__e57a1c1a45e20a62lyrictile__c",
+                "gladens003__e57a1c1a45e20a62lyrictile__changeevent"
+              ],
+              "targetLocal": "E57a1c1a45e20A62LyricTile__c",
+              "targetName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "lookupValue": "nonnull",
+              "lookupPresent": true,
+              "settingLocal": "E57a1c1a45e20A62TempoConfig__c",
+              "settingName": "gladens003__E57a1c1a45e20A62TempoConfig__c",
+              "canonicalLocal": "E57a1c1a45e20A62LyricTile__c",
+              "canonicalName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "objectLocal": "E57a1c1a45e20A62LyricTile__c",
+              "objectName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "ownerJsonKeys": [
+                "attributes",
+                "Name",
+                "gladens003__E57a1c1a45e20A62TileBridge__c",
+                "gladens003__E57a1c1a45e20A62TileBridge__r"
+              ],
+              "ownerJson": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic lookup owner\",\"gladens003__E57a1c1a45e20A62TileBridge__c\":\"TILE_ID\",\"gladens003__E57a1c1a45e20A62TileBridge__r\":{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}}",
+              "ownerPopulatedMap": {
+                "gladens003__E57a1c1a45e20A62TileBridge__r": {
+                  "attributes": {
+                    "type": "gladens003__E57a1c1a45e20A62LyricTile__c",
+                    "url": "/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID"
+                  },
+                  "Name": "Synthetic lookup tile",
+                  "Id": "TILE_ID"
+                },
+                "gladens003__E57a1c1a45e20A62TileBridge__c": "TILE_ID",
+                "Name": "Synthetic lookup owner"
+              },
+              "ownerPopulatedKeys": [
+                "Name",
+                "gladens003__E57a1c1a45e20A62TileBridge__c",
+                "gladens003__E57a1c1a45e20A62TileBridge__r"
+              ],
+              "ownerParentReads": [
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "E57a1c1a45e20A62TileBridge__r"
+                },
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "gladens003__E57a1c1a45e20A62TileBridge__r"
+                },
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "GLADENS003__E57A1C1A45E20A62TILEBRIDGE__R"
+                }
+              ],
+              "ownerLookupReads": [
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "E57a1c1a45e20A62TileBridge__c"
+                },
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "gladens003__E57a1c1a45e20A62TileBridge__c"
+                },
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "GLADENS003__E57A1C1A45E20A62TILEBRIDGE__C"
+                }
+              ]
+            },
+            "raw_sha256": "be947af961cf2df8f7bd039c0a74f7f0bce4ce7662179fa92a49649403a1f279",
+            "expression": "String localObject='E57a1c1a45e20A62LyricTile__c';String qualifiedObject='gladens003__E57a1c1a45e20A62LyricTile__c';String localBridge='E57a1c1a45e20A62TileBridge__c';String qualifiedBridge='gladens003__E57a1c1a45e20A62TileBridge__c';String localRelationship='E57a1c1a45e20A62TileBridge__r';String qualifiedRelationship='gladens003__E57a1c1a45e20A62TileBridge__r';step='seed';E57a1c1a45e20A62LyricTile__c tile=new E57a1c1a45e20A62LyricTile__c();Account owner=new Account(Name='Synthetic lookup owner');tile.Name='Synthetic lookup tile';insert tile;String tileReplayId=String.valueOf(tile.Id);replayIds.put(tileReplayId,'TILE_ID');replayIds.put(tileReplayId.substring(0,15),'TILE_ID');owner.put(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName(),tile.Id);owner.putSObject(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getRelationshipName(),tile);if(owner.get(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName())!=tile.Id){result.put('fixtureError',true);}if(owner.Id!=null){String ownerReplayId=String.valueOf(owner.Id);replayIds.put(ownerReplayId,'OWNER_ID');replayIds.put(ownerReplayId.substring(0,15),'OWNER_ID');}step='owner-lookup-read';List<Object> lookupReads=new List<Object>();for(String spelling:new List<String>{localBridge,qualifiedBridge,qualifiedBridge.toUpperCase()}){Map<String,Object> lookupRead=new Map<String,Object>{'spelling'=>spelling};try{Object observedLookup=owner.get(spelling);lookupRead.put('value',observedLookup);lookupRead.put('lookupEqualsTileId',observedLookup!=null && observedLookup==tile.Id);lookupRead.put('isNull',observedLookup==null);}catch(Exception readFailure){lookupRead.put('exceptionType',readFailure.getTypeName());lookupRead.put('exceptionMessage',readFailure.getMessage());}lookupReads.add(lookupRead);}result.put('ownerLookupReads',lookupReads);step='owner-parent-read';List<Object> parentReads=new List<Object>();for(String relationshipSpelling:new List<String>{localRelationship,qualifiedRelationship,qualifiedRelationship.toUpperCase()}){Map<String,Object> parentRead=new Map<String,Object>{'spelling'=>relationshipSpelling};try{SObject observedParent=owner.getSObject(relationshipSpelling);parentRead.put('isNull',observedParent==null);parentRead.put('json',JSON.serialize(observedParent));parentRead.put('parentEqualsTileId',observedParent!=null && observedParent.Id!=null && observedParent.Id==tile.Id);if(observedParent!=null && observedParent.Id!=null){String parentReplayId=String.valueOf(observedParent.Id);if(!replayIds.containsKey(parentReplayId)){replayIds.put(parentReplayId,'PARENT_ID');replayIds.put(parentReplayId.substring(0,15),'PARENT_ID');}}}catch(Exception parentFailure){parentRead.put('exceptionType',parentFailure.getTypeName());parentRead.put('exceptionMessage',parentFailure.getMessage());}parentReads.add(parentRead);}result.put('ownerParentReads',parentReads);step='owner-populated-fields';List<String> ownerPopulatedKeys=new List<String>();ownerPopulatedKeys.addAll(owner.getPopulatedFieldsAsMap().keySet());ownerPopulatedKeys.sort();result.put('ownerPopulatedKeys',ownerPopulatedKeys);result.put('ownerPopulatedMap',owner.getPopulatedFieldsAsMap());step='owner-json';String ownerJson=JSON.serialize(owner);result.put('ownerJson',ownerJson);Map<String,Object> ownerPayload=(Map<String,Object>)JSON.deserializeUntyped(ownerJson);List<String> ownerJsonKeys=new List<String>();ownerJsonKeys.addAll(ownerPayload.keySet());result.put('ownerJsonKeys',ownerJsonKeys);step='describe';Schema.DescribeSObjectResult actual=tile.getSObjectType().getDescribe();Schema.DescribeSObjectResult canonical=Schema.E57a1c1a45e20A62LyricTile__c.SObjectType.getDescribe();Schema.DescribeSObjectResult config=E57a1c1a45e20A62TempoConfig__c.SObjectType.getDescribe();result.put('objectName',actual.getName());result.put('objectLocal',actual.getLocalName());result.put('canonicalName',canonical.getName());result.put('canonicalLocal',canonical.getLocalName());result.put('settingName',config.getName());result.put('settingLocal',config.getLocalName());result.put('lookupPresent',true);result.put('lookupValue', 'nonnull');Schema.DescribeSObjectResult target=Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getReferenceTo()[0].getDescribe();result.put('targetName',target.getName());result.put('targetLocal',target.getLocalName());Map<String,Schema.SObjectType> allTypes=Schema.getGlobalDescribe();List<String> matching=new List<String>();for(String candidate:allTypes.keySet()){if(candidate.toLowerCase().contains(localObject.toLowerCase())){matching.add(candidate);}}matching.sort();result.put('globalKeys',matching);result.put('globalLocal',allTypes.containsKey(localObject));result.put('globalQualified',allTypes.containsKey(qualifiedObject));result.put('globalCase',allTypes.containsKey(qualifiedObject.toUpperCase()));Map<String,String> values=new Map<String,String>{actual.getName()=>'present'};result.put('mapKey',actual.getName());result.put('mapLocal',values.get(localObject));result.put('mapQualified',values.get(qualifiedObject));result.put('mapCase',values.get(qualifiedObject.toUpperCase()));String prefix=config.getName().startsWith('gladens003__')?'gladens003__':'';result.put('mapSettingPrefix',values.get(prefix+localObject));step='G01-name-consistency';result.put('instanceTokenNameEqual',actual.getName()==canonical.getName());result.put('instanceTokenLocalEqual',actual.getLocalName()==canonical.getLocalName());result.put('objectSettingPrefixEqual',actual.getName().startsWith('gladens003__')==config.getName().startsWith('gladens003__'));",
+            "helpers": {},
+            "marker_normalisation_apex": "String stableRaw=JSON.serialize(result);List<String> replayKeys=new List<String>();replayKeys.addAll(replayIds.keySet());for(String replayKey:replayKeys){if(replayKey.length()==18){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}for(String replayKey:replayKeys){if(replayKey.length()==15){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}stableRaw=stableRaw.replaceAll('\\\\b(?:[0-9][0-9A-Za-z]{2}|[aA][0-9A-Z][0-9A-Za-z])[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\\\\b','RECORD_ID');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\\\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})\\\\b','TIMESTAMP');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}\\\\b','DATE_VALUE');",
+            "marker_normalisation": "Apex before marker: TILE_ID/OWNER_ID/PARENT_ID/RECORD_ID; TIMESTAMP/DATE_VALUE; equality booleans preserved; JSON key order preserved",
+            "api": "62.0",
+            "context": "namespace",
+            "variant": "present",
+            "source_sha256": "1fc7d2481dd74695a16f7ab7b83b8d53f572ce83d9c4a99a6af778ae913b2a54",
+            "invocation_sha256": "d54ce17cd5ce50e34389d816ad72b6b44cdce9e1408b4632f83648de49ea910c"
+          },
+          "CarryReason": "",
+          "ProjectionCarries": {
+            "globalKeys": "global-changeevent: Native generated ChangeEvent companion is absent locally; assert every remaining canonical global-describe key, including absence of local namespace aliases.",
+            "ownerJson": "lookup-json-id-url-defaults: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerParentReads": "lookup-parent-json: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerLookupReads": "lookup-read-id: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerPopulatedMap": "lookup-map-id-url-defaults: Native REST attribute url and local parent OwnerId differ; assert all remaining populated fields, canonical lookup and parent keys, stable Id aliases, and values."
+          }
+        },
+        {
+          "ID": "G02PresentNonnullLocal",
+          "Variant": "present",
+          "Expression": "String localObject='E57a1c1a45e20A62LyricTile__c';String qualifiedObject='gladens003__E57a1c1a45e20A62LyricTile__c';String localBridge='E57a1c1a45e20A62TileBridge__c';String qualifiedBridge='gladens003__E57a1c1a45e20A62TileBridge__c';String localRelationship='E57a1c1a45e20A62TileBridge__r';String qualifiedRelationship='gladens003__E57a1c1a45e20A62TileBridge__r';step='seed';E57a1c1a45e20A62LyricTile__c tile=new E57a1c1a45e20A62LyricTile__c();Account owner=new Account(Name='Synthetic lookup owner');tile.Name='Synthetic lookup tile';insert tile;String tileReplayId=String.valueOf(tile.Id);replayIds.put(tileReplayId,'TILE_ID');replayIds.put(tileReplayId.substring(0,15),'TILE_ID');owner.put(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName(),tile.Id);owner.putSObject(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getRelationshipName(),tile);if(owner.get(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName())!=tile.Id){result.put('fixtureError',true);}if(owner.Id!=null){String ownerReplayId=String.valueOf(owner.Id);replayIds.put(ownerReplayId,'OWNER_ID');replayIds.put(ownerReplayId.substring(0,15),'OWNER_ID');}step='owner-lookup-read';List<Object> lookupReads=new List<Object>();for(String spelling:new List<String>{localBridge,qualifiedBridge,qualifiedBridge.toUpperCase()}){Map<String,Object> lookupRead=new Map<String,Object>{'spelling'=>spelling};try{Object observedLookup=owner.get(spelling);lookupRead.put('value',observedLookup);lookupRead.put('lookupEqualsTileId',observedLookup!=null && observedLookup==tile.Id);lookupRead.put('isNull',observedLookup==null);}catch(Exception readFailure){lookupRead.put('exceptionType',readFailure.getTypeName());lookupRead.put('exceptionMessage',readFailure.getMessage());}lookupReads.add(lookupRead);}result.put('ownerLookupReads',lookupReads);step='owner-parent-read';List<Object> parentReads=new List<Object>();for(String relationshipSpelling:new List<String>{localRelationship,qualifiedRelationship,qualifiedRelationship.toUpperCase()}){Map<String,Object> parentRead=new Map<String,Object>{'spelling'=>relationshipSpelling};try{SObject observedParent=owner.getSObject(relationshipSpelling);parentRead.put('isNull',observedParent==null);parentRead.put('json',JSON.serialize(observedParent));parentRead.put('parentEqualsTileId',observedParent!=null && observedParent.Id!=null && observedParent.Id==tile.Id);if(observedParent!=null && observedParent.Id!=null){String parentReplayId=String.valueOf(observedParent.Id);if(!replayIds.containsKey(parentReplayId)){replayIds.put(parentReplayId,'PARENT_ID');replayIds.put(parentReplayId.substring(0,15),'PARENT_ID');}}}catch(Exception parentFailure){parentRead.put('exceptionType',parentFailure.getTypeName());parentRead.put('exceptionMessage',parentFailure.getMessage());}parentReads.add(parentRead);}result.put('ownerParentReads',parentReads);step='owner-populated-fields';List<String> ownerPopulatedKeys=new List<String>();ownerPopulatedKeys.addAll(owner.getPopulatedFieldsAsMap().keySet());ownerPopulatedKeys.sort();result.put('ownerPopulatedKeys',ownerPopulatedKeys);result.put('ownerPopulatedMap',owner.getPopulatedFieldsAsMap());step='owner-json';String ownerJson=JSON.serialize(owner);result.put('ownerJson',ownerJson);Map<String,Object> ownerPayload=(Map<String,Object>)JSON.deserializeUntyped(ownerJson);List<String> ownerJsonKeys=new List<String>();ownerJsonKeys.addAll(ownerPayload.keySet());result.put('ownerJsonKeys',ownerJsonKeys);step='describe';Schema.DescribeSObjectResult actual=tile.getSObjectType().getDescribe();Schema.DescribeSObjectResult canonical=E57a1c1a45e20A62LyricTile__c.SObjectType.getDescribe();Schema.DescribeSObjectResult config=E57a1c1a45e20A62TempoConfig__c.SObjectType.getDescribe();result.put('objectName',actual.getName());result.put('objectLocal',actual.getLocalName());result.put('canonicalName',canonical.getName());result.put('canonicalLocal',canonical.getLocalName());result.put('settingName',config.getName());result.put('settingLocal',config.getLocalName());result.put('lookupPresent',true);result.put('lookupValue', 'nonnull');Schema.DescribeSObjectResult target=Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getReferenceTo()[0].getDescribe();result.put('targetName',target.getName());result.put('targetLocal',target.getLocalName());Map<String,Schema.SObjectType> allTypes=Schema.getGlobalDescribe();List<String> matching=new List<String>();for(String candidate:allTypes.keySet()){if(candidate.toLowerCase().contains(localObject.toLowerCase())){matching.add(candidate);}}matching.sort();result.put('globalKeys',matching);result.put('globalLocal',allTypes.containsKey(localObject));result.put('globalQualified',allTypes.containsKey(qualifiedObject));result.put('globalCase',allTypes.containsKey(qualifiedObject.toUpperCase()));Map<String,String> values=new Map<String,String>{actual.getName()=>'present'};result.put('mapKey',actual.getName());result.put('mapLocal',values.get(localObject));result.put('mapQualified',values.get(qualifiedObject));result.put('mapCase',values.get(qualifiedObject.toUpperCase()));String prefix=config.getName().startsWith('gladens003__')?'gladens003__':'';result.put('mapSettingPrefix',values.get(prefix+localObject));step='G02-map-probe';result.put('actualMapValue',values.get(actual.getName()));result.put('mapContainsLocal',values.containsKey(localObject));result.put('mapContainsQualified',values.containsKey(qualifiedObject));result.put('mapContainsCase',values.containsKey(qualifiedObject.toUpperCase()));",
+          "ExpressionSHA256": "288898500a09d840e1106d0dc04faff94e1dbe605a413fe7d0397f5b2017a9b3",
+          "Native": {
+            "outcome": "runtime",
+            "value": {
+              "mapContainsCase": false,
+              "mapContainsQualified": true,
+              "mapContainsLocal": false,
+              "actualMapValue": "present",
+              "mapSettingPrefix": "present",
+              "mapCase": null,
+              "mapQualified": "present",
+              "mapLocal": null,
+              "mapKey": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "globalCase": true,
+              "globalQualified": true,
+              "globalLocal": false,
+              "globalKeys": [
+                "gladens003__e57a1c1a45e20a62lyrictile__c",
+                "gladens003__e57a1c1a45e20a62lyrictile__changeevent"
+              ],
+              "targetLocal": "E57a1c1a45e20A62LyricTile__c",
+              "targetName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "lookupValue": "nonnull",
+              "lookupPresent": true,
+              "settingLocal": "E57a1c1a45e20A62TempoConfig__c",
+              "settingName": "gladens003__E57a1c1a45e20A62TempoConfig__c",
+              "canonicalLocal": "E57a1c1a45e20A62LyricTile__c",
+              "canonicalName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "objectLocal": "E57a1c1a45e20A62LyricTile__c",
+              "objectName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "ownerJsonKeys": [
+                "attributes",
+                "Name",
+                "gladens003__E57a1c1a45e20A62TileBridge__c",
+                "gladens003__E57a1c1a45e20A62TileBridge__r"
+              ],
+              "ownerJson": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic lookup owner\",\"gladens003__E57a1c1a45e20A62TileBridge__c\":\"TILE_ID\",\"gladens003__E57a1c1a45e20A62TileBridge__r\":{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}}",
+              "ownerPopulatedMap": {
+                "gladens003__E57a1c1a45e20A62TileBridge__r": {
+                  "attributes": {
+                    "type": "gladens003__E57a1c1a45e20A62LyricTile__c",
+                    "url": "/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID"
+                  },
+                  "Name": "Synthetic lookup tile",
+                  "Id": "TILE_ID"
+                },
+                "gladens003__E57a1c1a45e20A62TileBridge__c": "TILE_ID",
+                "Name": "Synthetic lookup owner"
+              },
+              "ownerPopulatedKeys": [
+                "Name",
+                "gladens003__E57a1c1a45e20A62TileBridge__c",
+                "gladens003__E57a1c1a45e20A62TileBridge__r"
+              ],
+              "ownerParentReads": [
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "E57a1c1a45e20A62TileBridge__r"
+                },
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "gladens003__E57a1c1a45e20A62TileBridge__r"
+                },
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "GLADENS003__E57A1C1A45E20A62TILEBRIDGE__R"
+                }
+              ],
+              "ownerLookupReads": [
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "E57a1c1a45e20A62TileBridge__c"
+                },
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "gladens003__E57a1c1a45e20A62TileBridge__c"
+                },
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "GLADENS003__E57A1C1A45E20A62TILEBRIDGE__C"
+                }
+              ]
+            },
+            "raw_sha256": "f2989307197087f68878af9869acf60148af7f2cdc8e7bae126b05ac2a5b701d",
+            "expression": "String localObject='E57a1c1a45e20A62LyricTile__c';String qualifiedObject='gladens003__E57a1c1a45e20A62LyricTile__c';String localBridge='E57a1c1a45e20A62TileBridge__c';String qualifiedBridge='gladens003__E57a1c1a45e20A62TileBridge__c';String localRelationship='E57a1c1a45e20A62TileBridge__r';String qualifiedRelationship='gladens003__E57a1c1a45e20A62TileBridge__r';step='seed';E57a1c1a45e20A62LyricTile__c tile=new E57a1c1a45e20A62LyricTile__c();Account owner=new Account(Name='Synthetic lookup owner');tile.Name='Synthetic lookup tile';insert tile;String tileReplayId=String.valueOf(tile.Id);replayIds.put(tileReplayId,'TILE_ID');replayIds.put(tileReplayId.substring(0,15),'TILE_ID');owner.put(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName(),tile.Id);owner.putSObject(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getRelationshipName(),tile);if(owner.get(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName())!=tile.Id){result.put('fixtureError',true);}if(owner.Id!=null){String ownerReplayId=String.valueOf(owner.Id);replayIds.put(ownerReplayId,'OWNER_ID');replayIds.put(ownerReplayId.substring(0,15),'OWNER_ID');}step='owner-lookup-read';List<Object> lookupReads=new List<Object>();for(String spelling:new List<String>{localBridge,qualifiedBridge,qualifiedBridge.toUpperCase()}){Map<String,Object> lookupRead=new Map<String,Object>{'spelling'=>spelling};try{Object observedLookup=owner.get(spelling);lookupRead.put('value',observedLookup);lookupRead.put('lookupEqualsTileId',observedLookup!=null && observedLookup==tile.Id);lookupRead.put('isNull',observedLookup==null);}catch(Exception readFailure){lookupRead.put('exceptionType',readFailure.getTypeName());lookupRead.put('exceptionMessage',readFailure.getMessage());}lookupReads.add(lookupRead);}result.put('ownerLookupReads',lookupReads);step='owner-parent-read';List<Object> parentReads=new List<Object>();for(String relationshipSpelling:new List<String>{localRelationship,qualifiedRelationship,qualifiedRelationship.toUpperCase()}){Map<String,Object> parentRead=new Map<String,Object>{'spelling'=>relationshipSpelling};try{SObject observedParent=owner.getSObject(relationshipSpelling);parentRead.put('isNull',observedParent==null);parentRead.put('json',JSON.serialize(observedParent));parentRead.put('parentEqualsTileId',observedParent!=null && observedParent.Id!=null && observedParent.Id==tile.Id);if(observedParent!=null && observedParent.Id!=null){String parentReplayId=String.valueOf(observedParent.Id);if(!replayIds.containsKey(parentReplayId)){replayIds.put(parentReplayId,'PARENT_ID');replayIds.put(parentReplayId.substring(0,15),'PARENT_ID');}}}catch(Exception parentFailure){parentRead.put('exceptionType',parentFailure.getTypeName());parentRead.put('exceptionMessage',parentFailure.getMessage());}parentReads.add(parentRead);}result.put('ownerParentReads',parentReads);step='owner-populated-fields';List<String> ownerPopulatedKeys=new List<String>();ownerPopulatedKeys.addAll(owner.getPopulatedFieldsAsMap().keySet());ownerPopulatedKeys.sort();result.put('ownerPopulatedKeys',ownerPopulatedKeys);result.put('ownerPopulatedMap',owner.getPopulatedFieldsAsMap());step='owner-json';String ownerJson=JSON.serialize(owner);result.put('ownerJson',ownerJson);Map<String,Object> ownerPayload=(Map<String,Object>)JSON.deserializeUntyped(ownerJson);List<String> ownerJsonKeys=new List<String>();ownerJsonKeys.addAll(ownerPayload.keySet());result.put('ownerJsonKeys',ownerJsonKeys);step='describe';Schema.DescribeSObjectResult actual=tile.getSObjectType().getDescribe();Schema.DescribeSObjectResult canonical=E57a1c1a45e20A62LyricTile__c.SObjectType.getDescribe();Schema.DescribeSObjectResult config=E57a1c1a45e20A62TempoConfig__c.SObjectType.getDescribe();result.put('objectName',actual.getName());result.put('objectLocal',actual.getLocalName());result.put('canonicalName',canonical.getName());result.put('canonicalLocal',canonical.getLocalName());result.put('settingName',config.getName());result.put('settingLocal',config.getLocalName());result.put('lookupPresent',true);result.put('lookupValue', 'nonnull');Schema.DescribeSObjectResult target=Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getReferenceTo()[0].getDescribe();result.put('targetName',target.getName());result.put('targetLocal',target.getLocalName());Map<String,Schema.SObjectType> allTypes=Schema.getGlobalDescribe();List<String> matching=new List<String>();for(String candidate:allTypes.keySet()){if(candidate.toLowerCase().contains(localObject.toLowerCase())){matching.add(candidate);}}matching.sort();result.put('globalKeys',matching);result.put('globalLocal',allTypes.containsKey(localObject));result.put('globalQualified',allTypes.containsKey(qualifiedObject));result.put('globalCase',allTypes.containsKey(qualifiedObject.toUpperCase()));Map<String,String> values=new Map<String,String>{actual.getName()=>'present'};result.put('mapKey',actual.getName());result.put('mapLocal',values.get(localObject));result.put('mapQualified',values.get(qualifiedObject));result.put('mapCase',values.get(qualifiedObject.toUpperCase()));String prefix=config.getName().startsWith('gladens003__')?'gladens003__':'';result.put('mapSettingPrefix',values.get(prefix+localObject));step='G02-map-probe';result.put('actualMapValue',values.get(actual.getName()));result.put('mapContainsLocal',values.containsKey(localObject));result.put('mapContainsQualified',values.containsKey(qualifiedObject));result.put('mapContainsCase',values.containsKey(qualifiedObject.toUpperCase()));",
+            "helpers": {},
+            "marker_normalisation_apex": "String stableRaw=JSON.serialize(result);List<String> replayKeys=new List<String>();replayKeys.addAll(replayIds.keySet());for(String replayKey:replayKeys){if(replayKey.length()==18){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}for(String replayKey:replayKeys){if(replayKey.length()==15){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}stableRaw=stableRaw.replaceAll('\\\\b(?:[0-9][0-9A-Za-z]{2}|[aA][0-9A-Z][0-9A-Za-z])[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\\\\b','RECORD_ID');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\\\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})\\\\b','TIMESTAMP');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}\\\\b','DATE_VALUE');",
+            "marker_normalisation": "Apex before marker: TILE_ID/OWNER_ID/PARENT_ID/RECORD_ID; TIMESTAMP/DATE_VALUE; equality booleans preserved; JSON key order preserved",
+            "api": "62.0",
+            "context": "namespace",
+            "variant": "present",
+            "source_sha256": "101c029d74fcc97e18cf81f551ac6bd147e227a70a59f70bfe0acbcb22ed4f05",
+            "invocation_sha256": "643f73dfcbdba9d7436ba0c234ff050fd35d411de0ef2b9d857b183074b0488d"
+          },
+          "CarryReason": "",
+          "ProjectionCarries": {
+            "globalKeys": "global-changeevent: Native generated ChangeEvent companion is absent locally; assert every remaining canonical global-describe key, including absence of local namespace aliases.",
+            "ownerJson": "lookup-json-id-url-defaults: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerParentReads": "lookup-parent-json: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerLookupReads": "lookup-read-id: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerPopulatedMap": "lookup-map-id-url-defaults: Native REST attribute url and local parent OwnerId differ; assert all remaining populated fields, canonical lookup and parent keys, stable Id aliases, and values."
+          }
+        },
+        {
+          "ID": "G02PresentNonnullSchema",
+          "Variant": "present",
+          "Expression": "String localObject='E57a1c1a45e20A62LyricTile__c';String qualifiedObject='gladens003__E57a1c1a45e20A62LyricTile__c';String localBridge='E57a1c1a45e20A62TileBridge__c';String qualifiedBridge='gladens003__E57a1c1a45e20A62TileBridge__c';String localRelationship='E57a1c1a45e20A62TileBridge__r';String qualifiedRelationship='gladens003__E57a1c1a45e20A62TileBridge__r';step='seed';E57a1c1a45e20A62LyricTile__c tile=new E57a1c1a45e20A62LyricTile__c();Account owner=new Account(Name='Synthetic lookup owner');tile.Name='Synthetic lookup tile';insert tile;String tileReplayId=String.valueOf(tile.Id);replayIds.put(tileReplayId,'TILE_ID');replayIds.put(tileReplayId.substring(0,15),'TILE_ID');owner.put(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName(),tile.Id);owner.putSObject(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getRelationshipName(),tile);if(owner.get(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName())!=tile.Id){result.put('fixtureError',true);}if(owner.Id!=null){String ownerReplayId=String.valueOf(owner.Id);replayIds.put(ownerReplayId,'OWNER_ID');replayIds.put(ownerReplayId.substring(0,15),'OWNER_ID');}step='owner-lookup-read';List<Object> lookupReads=new List<Object>();for(String spelling:new List<String>{localBridge,qualifiedBridge,qualifiedBridge.toUpperCase()}){Map<String,Object> lookupRead=new Map<String,Object>{'spelling'=>spelling};try{Object observedLookup=owner.get(spelling);lookupRead.put('value',observedLookup);lookupRead.put('lookupEqualsTileId',observedLookup!=null && observedLookup==tile.Id);lookupRead.put('isNull',observedLookup==null);}catch(Exception readFailure){lookupRead.put('exceptionType',readFailure.getTypeName());lookupRead.put('exceptionMessage',readFailure.getMessage());}lookupReads.add(lookupRead);}result.put('ownerLookupReads',lookupReads);step='owner-parent-read';List<Object> parentReads=new List<Object>();for(String relationshipSpelling:new List<String>{localRelationship,qualifiedRelationship,qualifiedRelationship.toUpperCase()}){Map<String,Object> parentRead=new Map<String,Object>{'spelling'=>relationshipSpelling};try{SObject observedParent=owner.getSObject(relationshipSpelling);parentRead.put('isNull',observedParent==null);parentRead.put('json',JSON.serialize(observedParent));parentRead.put('parentEqualsTileId',observedParent!=null && observedParent.Id!=null && observedParent.Id==tile.Id);if(observedParent!=null && observedParent.Id!=null){String parentReplayId=String.valueOf(observedParent.Id);if(!replayIds.containsKey(parentReplayId)){replayIds.put(parentReplayId,'PARENT_ID');replayIds.put(parentReplayId.substring(0,15),'PARENT_ID');}}}catch(Exception parentFailure){parentRead.put('exceptionType',parentFailure.getTypeName());parentRead.put('exceptionMessage',parentFailure.getMessage());}parentReads.add(parentRead);}result.put('ownerParentReads',parentReads);step='owner-populated-fields';List<String> ownerPopulatedKeys=new List<String>();ownerPopulatedKeys.addAll(owner.getPopulatedFieldsAsMap().keySet());ownerPopulatedKeys.sort();result.put('ownerPopulatedKeys',ownerPopulatedKeys);result.put('ownerPopulatedMap',owner.getPopulatedFieldsAsMap());step='owner-json';String ownerJson=JSON.serialize(owner);result.put('ownerJson',ownerJson);Map<String,Object> ownerPayload=(Map<String,Object>)JSON.deserializeUntyped(ownerJson);List<String> ownerJsonKeys=new List<String>();ownerJsonKeys.addAll(ownerPayload.keySet());result.put('ownerJsonKeys',ownerJsonKeys);step='describe';Schema.DescribeSObjectResult actual=tile.getSObjectType().getDescribe();Schema.DescribeSObjectResult canonical=Schema.E57a1c1a45e20A62LyricTile__c.SObjectType.getDescribe();Schema.DescribeSObjectResult config=E57a1c1a45e20A62TempoConfig__c.SObjectType.getDescribe();result.put('objectName',actual.getName());result.put('objectLocal',actual.getLocalName());result.put('canonicalName',canonical.getName());result.put('canonicalLocal',canonical.getLocalName());result.put('settingName',config.getName());result.put('settingLocal',config.getLocalName());result.put('lookupPresent',true);result.put('lookupValue', 'nonnull');Schema.DescribeSObjectResult target=Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getReferenceTo()[0].getDescribe();result.put('targetName',target.getName());result.put('targetLocal',target.getLocalName());Map<String,Schema.SObjectType> allTypes=Schema.getGlobalDescribe();List<String> matching=new List<String>();for(String candidate:allTypes.keySet()){if(candidate.toLowerCase().contains(localObject.toLowerCase())){matching.add(candidate);}}matching.sort();result.put('globalKeys',matching);result.put('globalLocal',allTypes.containsKey(localObject));result.put('globalQualified',allTypes.containsKey(qualifiedObject));result.put('globalCase',allTypes.containsKey(qualifiedObject.toUpperCase()));Map<String,String> values=new Map<String,String>{actual.getName()=>'present'};result.put('mapKey',actual.getName());result.put('mapLocal',values.get(localObject));result.put('mapQualified',values.get(qualifiedObject));result.put('mapCase',values.get(qualifiedObject.toUpperCase()));String prefix=config.getName().startsWith('gladens003__')?'gladens003__':'';result.put('mapSettingPrefix',values.get(prefix+localObject));step='G02-map-probe';result.put('actualMapValue',values.get(actual.getName()));result.put('mapContainsLocal',values.containsKey(localObject));result.put('mapContainsQualified',values.containsKey(qualifiedObject));result.put('mapContainsCase',values.containsKey(qualifiedObject.toUpperCase()));",
+          "ExpressionSHA256": "f14d0644f3763752b75ff4d4e75b2dc13434fcef9ff08f59fc7944f4d958acb5",
+          "Native": {
+            "outcome": "runtime",
+            "value": {
+              "mapContainsCase": false,
+              "mapContainsQualified": true,
+              "mapContainsLocal": false,
+              "actualMapValue": "present",
+              "mapSettingPrefix": "present",
+              "mapCase": null,
+              "mapQualified": "present",
+              "mapLocal": null,
+              "mapKey": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "globalCase": true,
+              "globalQualified": true,
+              "globalLocal": false,
+              "globalKeys": [
+                "gladens003__e57a1c1a45e20a62lyrictile__c",
+                "gladens003__e57a1c1a45e20a62lyrictile__changeevent"
+              ],
+              "targetLocal": "E57a1c1a45e20A62LyricTile__c",
+              "targetName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "lookupValue": "nonnull",
+              "lookupPresent": true,
+              "settingLocal": "E57a1c1a45e20A62TempoConfig__c",
+              "settingName": "gladens003__E57a1c1a45e20A62TempoConfig__c",
+              "canonicalLocal": "E57a1c1a45e20A62LyricTile__c",
+              "canonicalName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "objectLocal": "E57a1c1a45e20A62LyricTile__c",
+              "objectName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "ownerJsonKeys": [
+                "attributes",
+                "Name",
+                "gladens003__E57a1c1a45e20A62TileBridge__c",
+                "gladens003__E57a1c1a45e20A62TileBridge__r"
+              ],
+              "ownerJson": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic lookup owner\",\"gladens003__E57a1c1a45e20A62TileBridge__c\":\"TILE_ID\",\"gladens003__E57a1c1a45e20A62TileBridge__r\":{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}}",
+              "ownerPopulatedMap": {
+                "gladens003__E57a1c1a45e20A62TileBridge__r": {
+                  "attributes": {
+                    "type": "gladens003__E57a1c1a45e20A62LyricTile__c",
+                    "url": "/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID"
+                  },
+                  "Name": "Synthetic lookup tile",
+                  "Id": "TILE_ID"
+                },
+                "gladens003__E57a1c1a45e20A62TileBridge__c": "TILE_ID",
+                "Name": "Synthetic lookup owner"
+              },
+              "ownerPopulatedKeys": [
+                "Name",
+                "gladens003__E57a1c1a45e20A62TileBridge__c",
+                "gladens003__E57a1c1a45e20A62TileBridge__r"
+              ],
+              "ownerParentReads": [
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "E57a1c1a45e20A62TileBridge__r"
+                },
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "gladens003__E57a1c1a45e20A62TileBridge__r"
+                },
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "GLADENS003__E57A1C1A45E20A62TILEBRIDGE__R"
+                }
+              ],
+              "ownerLookupReads": [
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "E57a1c1a45e20A62TileBridge__c"
+                },
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "gladens003__E57a1c1a45e20A62TileBridge__c"
+                },
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "GLADENS003__E57A1C1A45E20A62TILEBRIDGE__C"
+                }
+              ]
+            },
+            "raw_sha256": "f2989307197087f68878af9869acf60148af7f2cdc8e7bae126b05ac2a5b701d",
+            "expression": "String localObject='E57a1c1a45e20A62LyricTile__c';String qualifiedObject='gladens003__E57a1c1a45e20A62LyricTile__c';String localBridge='E57a1c1a45e20A62TileBridge__c';String qualifiedBridge='gladens003__E57a1c1a45e20A62TileBridge__c';String localRelationship='E57a1c1a45e20A62TileBridge__r';String qualifiedRelationship='gladens003__E57a1c1a45e20A62TileBridge__r';step='seed';E57a1c1a45e20A62LyricTile__c tile=new E57a1c1a45e20A62LyricTile__c();Account owner=new Account(Name='Synthetic lookup owner');tile.Name='Synthetic lookup tile';insert tile;String tileReplayId=String.valueOf(tile.Id);replayIds.put(tileReplayId,'TILE_ID');replayIds.put(tileReplayId.substring(0,15),'TILE_ID');owner.put(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName(),tile.Id);owner.putSObject(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getRelationshipName(),tile);if(owner.get(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName())!=tile.Id){result.put('fixtureError',true);}if(owner.Id!=null){String ownerReplayId=String.valueOf(owner.Id);replayIds.put(ownerReplayId,'OWNER_ID');replayIds.put(ownerReplayId.substring(0,15),'OWNER_ID');}step='owner-lookup-read';List<Object> lookupReads=new List<Object>();for(String spelling:new List<String>{localBridge,qualifiedBridge,qualifiedBridge.toUpperCase()}){Map<String,Object> lookupRead=new Map<String,Object>{'spelling'=>spelling};try{Object observedLookup=owner.get(spelling);lookupRead.put('value',observedLookup);lookupRead.put('lookupEqualsTileId',observedLookup!=null && observedLookup==tile.Id);lookupRead.put('isNull',observedLookup==null);}catch(Exception readFailure){lookupRead.put('exceptionType',readFailure.getTypeName());lookupRead.put('exceptionMessage',readFailure.getMessage());}lookupReads.add(lookupRead);}result.put('ownerLookupReads',lookupReads);step='owner-parent-read';List<Object> parentReads=new List<Object>();for(String relationshipSpelling:new List<String>{localRelationship,qualifiedRelationship,qualifiedRelationship.toUpperCase()}){Map<String,Object> parentRead=new Map<String,Object>{'spelling'=>relationshipSpelling};try{SObject observedParent=owner.getSObject(relationshipSpelling);parentRead.put('isNull',observedParent==null);parentRead.put('json',JSON.serialize(observedParent));parentRead.put('parentEqualsTileId',observedParent!=null && observedParent.Id!=null && observedParent.Id==tile.Id);if(observedParent!=null && observedParent.Id!=null){String parentReplayId=String.valueOf(observedParent.Id);if(!replayIds.containsKey(parentReplayId)){replayIds.put(parentReplayId,'PARENT_ID');replayIds.put(parentReplayId.substring(0,15),'PARENT_ID');}}}catch(Exception parentFailure){parentRead.put('exceptionType',parentFailure.getTypeName());parentRead.put('exceptionMessage',parentFailure.getMessage());}parentReads.add(parentRead);}result.put('ownerParentReads',parentReads);step='owner-populated-fields';List<String> ownerPopulatedKeys=new List<String>();ownerPopulatedKeys.addAll(owner.getPopulatedFieldsAsMap().keySet());ownerPopulatedKeys.sort();result.put('ownerPopulatedKeys',ownerPopulatedKeys);result.put('ownerPopulatedMap',owner.getPopulatedFieldsAsMap());step='owner-json';String ownerJson=JSON.serialize(owner);result.put('ownerJson',ownerJson);Map<String,Object> ownerPayload=(Map<String,Object>)JSON.deserializeUntyped(ownerJson);List<String> ownerJsonKeys=new List<String>();ownerJsonKeys.addAll(ownerPayload.keySet());result.put('ownerJsonKeys',ownerJsonKeys);step='describe';Schema.DescribeSObjectResult actual=tile.getSObjectType().getDescribe();Schema.DescribeSObjectResult canonical=Schema.E57a1c1a45e20A62LyricTile__c.SObjectType.getDescribe();Schema.DescribeSObjectResult config=E57a1c1a45e20A62TempoConfig__c.SObjectType.getDescribe();result.put('objectName',actual.getName());result.put('objectLocal',actual.getLocalName());result.put('canonicalName',canonical.getName());result.put('canonicalLocal',canonical.getLocalName());result.put('settingName',config.getName());result.put('settingLocal',config.getLocalName());result.put('lookupPresent',true);result.put('lookupValue', 'nonnull');Schema.DescribeSObjectResult target=Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getReferenceTo()[0].getDescribe();result.put('targetName',target.getName());result.put('targetLocal',target.getLocalName());Map<String,Schema.SObjectType> allTypes=Schema.getGlobalDescribe();List<String> matching=new List<String>();for(String candidate:allTypes.keySet()){if(candidate.toLowerCase().contains(localObject.toLowerCase())){matching.add(candidate);}}matching.sort();result.put('globalKeys',matching);result.put('globalLocal',allTypes.containsKey(localObject));result.put('globalQualified',allTypes.containsKey(qualifiedObject));result.put('globalCase',allTypes.containsKey(qualifiedObject.toUpperCase()));Map<String,String> values=new Map<String,String>{actual.getName()=>'present'};result.put('mapKey',actual.getName());result.put('mapLocal',values.get(localObject));result.put('mapQualified',values.get(qualifiedObject));result.put('mapCase',values.get(qualifiedObject.toUpperCase()));String prefix=config.getName().startsWith('gladens003__')?'gladens003__':'';result.put('mapSettingPrefix',values.get(prefix+localObject));step='G02-map-probe';result.put('actualMapValue',values.get(actual.getName()));result.put('mapContainsLocal',values.containsKey(localObject));result.put('mapContainsQualified',values.containsKey(qualifiedObject));result.put('mapContainsCase',values.containsKey(qualifiedObject.toUpperCase()));",
+            "helpers": {},
+            "marker_normalisation_apex": "String stableRaw=JSON.serialize(result);List<String> replayKeys=new List<String>();replayKeys.addAll(replayIds.keySet());for(String replayKey:replayKeys){if(replayKey.length()==18){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}for(String replayKey:replayKeys){if(replayKey.length()==15){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}stableRaw=stableRaw.replaceAll('\\\\b(?:[0-9][0-9A-Za-z]{2}|[aA][0-9A-Z][0-9A-Za-z])[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\\\\b','RECORD_ID');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\\\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})\\\\b','TIMESTAMP');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}\\\\b','DATE_VALUE');",
+            "marker_normalisation": "Apex before marker: TILE_ID/OWNER_ID/PARENT_ID/RECORD_ID; TIMESTAMP/DATE_VALUE; equality booleans preserved; JSON key order preserved",
+            "api": "62.0",
+            "context": "namespace",
+            "variant": "present",
+            "source_sha256": "abad38fcddcf10bb08cc7398ba89ffd31ed3d23ecd3c33c24ceb5bddef5dc4dc",
+            "invocation_sha256": "89a9748ff96e0e2273b16d1fd6b90d3a02eab61944fc136d609e222382977650"
+          },
+          "CarryReason": "",
+          "ProjectionCarries": {
+            "globalKeys": "global-changeevent: Native generated ChangeEvent companion is absent locally; assert every remaining canonical global-describe key, including absence of local namespace aliases.",
+            "ownerJson": "lookup-json-id-url-defaults: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerParentReads": "lookup-parent-json: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerLookupReads": "lookup-read-id: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerPopulatedMap": "lookup-map-id-url-defaults: Native REST attribute url and local parent OwnerId differ; assert all remaining populated fields, canonical lookup and parent keys, stable Id aliases, and values."
+          }
+        },
+        {
+          "ID": "G03PresentNonnullLocal",
+          "Variant": "present",
+          "Expression": "String localObject='E57a1c1a45e20A62LyricTile__c';String qualifiedObject='gladens003__E57a1c1a45e20A62LyricTile__c';String localBridge='E57a1c1a45e20A62TileBridge__c';String qualifiedBridge='gladens003__E57a1c1a45e20A62TileBridge__c';String localRelationship='E57a1c1a45e20A62TileBridge__r';String qualifiedRelationship='gladens003__E57a1c1a45e20A62TileBridge__r';step='seed';E57a1c1a45e20A62LyricTile__c tile=new E57a1c1a45e20A62LyricTile__c();Account owner=new Account(Name='Synthetic lookup owner');tile.Name='Synthetic lookup tile';insert tile;String tileReplayId=String.valueOf(tile.Id);replayIds.put(tileReplayId,'TILE_ID');replayIds.put(tileReplayId.substring(0,15),'TILE_ID');owner.put(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName(),tile.Id);owner.putSObject(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getRelationshipName(),tile);if(owner.get(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName())!=tile.Id){result.put('fixtureError',true);}if(owner.Id!=null){String ownerReplayId=String.valueOf(owner.Id);replayIds.put(ownerReplayId,'OWNER_ID');replayIds.put(ownerReplayId.substring(0,15),'OWNER_ID');}step='owner-lookup-read';List<Object> lookupReads=new List<Object>();for(String spelling:new List<String>{localBridge,qualifiedBridge,qualifiedBridge.toUpperCase()}){Map<String,Object> lookupRead=new Map<String,Object>{'spelling'=>spelling};try{Object observedLookup=owner.get(spelling);lookupRead.put('value',observedLookup);lookupRead.put('lookupEqualsTileId',observedLookup!=null && observedLookup==tile.Id);lookupRead.put('isNull',observedLookup==null);}catch(Exception readFailure){lookupRead.put('exceptionType',readFailure.getTypeName());lookupRead.put('exceptionMessage',readFailure.getMessage());}lookupReads.add(lookupRead);}result.put('ownerLookupReads',lookupReads);step='owner-parent-read';List<Object> parentReads=new List<Object>();for(String relationshipSpelling:new List<String>{localRelationship,qualifiedRelationship,qualifiedRelationship.toUpperCase()}){Map<String,Object> parentRead=new Map<String,Object>{'spelling'=>relationshipSpelling};try{SObject observedParent=owner.getSObject(relationshipSpelling);parentRead.put('isNull',observedParent==null);parentRead.put('json',JSON.serialize(observedParent));parentRead.put('parentEqualsTileId',observedParent!=null && observedParent.Id!=null && observedParent.Id==tile.Id);if(observedParent!=null && observedParent.Id!=null){String parentReplayId=String.valueOf(observedParent.Id);if(!replayIds.containsKey(parentReplayId)){replayIds.put(parentReplayId,'PARENT_ID');replayIds.put(parentReplayId.substring(0,15),'PARENT_ID');}}}catch(Exception parentFailure){parentRead.put('exceptionType',parentFailure.getTypeName());parentRead.put('exceptionMessage',parentFailure.getMessage());}parentReads.add(parentRead);}result.put('ownerParentReads',parentReads);step='owner-populated-fields';List<String> ownerPopulatedKeys=new List<String>();ownerPopulatedKeys.addAll(owner.getPopulatedFieldsAsMap().keySet());ownerPopulatedKeys.sort();result.put('ownerPopulatedKeys',ownerPopulatedKeys);result.put('ownerPopulatedMap',owner.getPopulatedFieldsAsMap());step='owner-json';String ownerJson=JSON.serialize(owner);result.put('ownerJson',ownerJson);Map<String,Object> ownerPayload=(Map<String,Object>)JSON.deserializeUntyped(ownerJson);List<String> ownerJsonKeys=new List<String>();ownerJsonKeys.addAll(ownerPayload.keySet());result.put('ownerJsonKeys',ownerJsonKeys);step='describe';Schema.DescribeSObjectResult actual=tile.getSObjectType().getDescribe();Schema.DescribeSObjectResult canonical=E57a1c1a45e20A62LyricTile__c.SObjectType.getDescribe();Schema.DescribeSObjectResult config=E57a1c1a45e20A62TempoConfig__c.SObjectType.getDescribe();result.put('objectName',actual.getName());result.put('objectLocal',actual.getLocalName());result.put('canonicalName',canonical.getName());result.put('canonicalLocal',canonical.getLocalName());result.put('settingName',config.getName());result.put('settingLocal',config.getLocalName());result.put('lookupPresent',true);result.put('lookupValue', 'nonnull');Schema.DescribeSObjectResult target=Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getReferenceTo()[0].getDescribe();result.put('targetName',target.getName());result.put('targetLocal',target.getLocalName());Map<String,Schema.SObjectType> allTypes=Schema.getGlobalDescribe();List<String> matching=new List<String>();for(String candidate:allTypes.keySet()){if(candidate.toLowerCase().contains(localObject.toLowerCase())){matching.add(candidate);}}matching.sort();result.put('globalKeys',matching);result.put('globalLocal',allTypes.containsKey(localObject));result.put('globalQualified',allTypes.containsKey(qualifiedObject));result.put('globalCase',allTypes.containsKey(qualifiedObject.toUpperCase()));Map<String,String> values=new Map<String,String>{actual.getName()=>'present'};result.put('mapKey',actual.getName());result.put('mapLocal',values.get(localObject));result.put('mapQualified',values.get(qualifiedObject));result.put('mapCase',values.get(qualifiedObject.toUpperCase()));String prefix=config.getName().startsWith('gladens003__')?'gladens003__':'';result.put('mapSettingPrefix',values.get(prefix+localObject));step='G03-target-global';List<String> referenceNames=new List<String>();List<String> referenceLocals=new List<String>();for(Schema.SObjectType reference:Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getReferenceTo()){referenceNames.add(reference.getDescribe().getName());referenceLocals.add(reference.getDescribe().getLocalName());}result.put('targetCanonicalNameEqual',target.getName()==canonical.getName());result.put('targetCanonicalLocalEqual',target.getLocalName()==canonical.getLocalName());result.put('referenceNames',referenceNames);result.put('referenceLocals',referenceLocals);result.put('globalActualKey',allTypes.containsKey(actual.getName()));result.put('globalCanonicalKey',allTypes.containsKey(canonical.getName()));",
+          "ExpressionSHA256": "c4185edd345f33b461852e97e15001152877e9ab88eddb67c37385867eca485a",
+          "Native": {
+            "outcome": "runtime",
+            "value": {
+              "globalCanonicalKey": true,
+              "globalActualKey": true,
+              "referenceLocals": [
+                "E57a1c1a45e20A62LyricTile__c"
+              ],
+              "referenceNames": [
+                "gladens003__E57a1c1a45e20A62LyricTile__c"
+              ],
+              "targetCanonicalLocalEqual": true,
+              "targetCanonicalNameEqual": true,
+              "mapSettingPrefix": "present",
+              "mapCase": null,
+              "mapQualified": "present",
+              "mapLocal": null,
+              "mapKey": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "globalCase": true,
+              "globalQualified": true,
+              "globalLocal": false,
+              "globalKeys": [
+                "gladens003__e57a1c1a45e20a62lyrictile__c",
+                "gladens003__e57a1c1a45e20a62lyrictile__changeevent"
+              ],
+              "targetLocal": "E57a1c1a45e20A62LyricTile__c",
+              "targetName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "lookupValue": "nonnull",
+              "lookupPresent": true,
+              "settingLocal": "E57a1c1a45e20A62TempoConfig__c",
+              "settingName": "gladens003__E57a1c1a45e20A62TempoConfig__c",
+              "canonicalLocal": "E57a1c1a45e20A62LyricTile__c",
+              "canonicalName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "objectLocal": "E57a1c1a45e20A62LyricTile__c",
+              "objectName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "ownerJsonKeys": [
+                "attributes",
+                "Name",
+                "gladens003__E57a1c1a45e20A62TileBridge__c",
+                "gladens003__E57a1c1a45e20A62TileBridge__r"
+              ],
+              "ownerJson": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic lookup owner\",\"gladens003__E57a1c1a45e20A62TileBridge__c\":\"TILE_ID\",\"gladens003__E57a1c1a45e20A62TileBridge__r\":{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}}",
+              "ownerPopulatedMap": {
+                "gladens003__E57a1c1a45e20A62TileBridge__r": {
+                  "attributes": {
+                    "type": "gladens003__E57a1c1a45e20A62LyricTile__c",
+                    "url": "/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID"
+                  },
+                  "Name": "Synthetic lookup tile",
+                  "Id": "TILE_ID"
+                },
+                "gladens003__E57a1c1a45e20A62TileBridge__c": "TILE_ID",
+                "Name": "Synthetic lookup owner"
+              },
+              "ownerPopulatedKeys": [
+                "Name",
+                "gladens003__E57a1c1a45e20A62TileBridge__c",
+                "gladens003__E57a1c1a45e20A62TileBridge__r"
+              ],
+              "ownerParentReads": [
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "E57a1c1a45e20A62TileBridge__r"
+                },
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "gladens003__E57a1c1a45e20A62TileBridge__r"
+                },
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "GLADENS003__E57A1C1A45E20A62TILEBRIDGE__R"
+                }
+              ],
+              "ownerLookupReads": [
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "E57a1c1a45e20A62TileBridge__c"
+                },
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "gladens003__E57a1c1a45e20A62TileBridge__c"
+                },
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "GLADENS003__E57A1C1A45E20A62TILEBRIDGE__C"
+                }
+              ]
+            },
+            "raw_sha256": "704ff0e5c6c1021e14b57e24aac5cd8855cb3321327e314c88d41e85a8af7547",
+            "expression": "String localObject='E57a1c1a45e20A62LyricTile__c';String qualifiedObject='gladens003__E57a1c1a45e20A62LyricTile__c';String localBridge='E57a1c1a45e20A62TileBridge__c';String qualifiedBridge='gladens003__E57a1c1a45e20A62TileBridge__c';String localRelationship='E57a1c1a45e20A62TileBridge__r';String qualifiedRelationship='gladens003__E57a1c1a45e20A62TileBridge__r';step='seed';E57a1c1a45e20A62LyricTile__c tile=new E57a1c1a45e20A62LyricTile__c();Account owner=new Account(Name='Synthetic lookup owner');tile.Name='Synthetic lookup tile';insert tile;String tileReplayId=String.valueOf(tile.Id);replayIds.put(tileReplayId,'TILE_ID');replayIds.put(tileReplayId.substring(0,15),'TILE_ID');owner.put(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName(),tile.Id);owner.putSObject(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getRelationshipName(),tile);if(owner.get(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName())!=tile.Id){result.put('fixtureError',true);}if(owner.Id!=null){String ownerReplayId=String.valueOf(owner.Id);replayIds.put(ownerReplayId,'OWNER_ID');replayIds.put(ownerReplayId.substring(0,15),'OWNER_ID');}step='owner-lookup-read';List<Object> lookupReads=new List<Object>();for(String spelling:new List<String>{localBridge,qualifiedBridge,qualifiedBridge.toUpperCase()}){Map<String,Object> lookupRead=new Map<String,Object>{'spelling'=>spelling};try{Object observedLookup=owner.get(spelling);lookupRead.put('value',observedLookup);lookupRead.put('lookupEqualsTileId',observedLookup!=null && observedLookup==tile.Id);lookupRead.put('isNull',observedLookup==null);}catch(Exception readFailure){lookupRead.put('exceptionType',readFailure.getTypeName());lookupRead.put('exceptionMessage',readFailure.getMessage());}lookupReads.add(lookupRead);}result.put('ownerLookupReads',lookupReads);step='owner-parent-read';List<Object> parentReads=new List<Object>();for(String relationshipSpelling:new List<String>{localRelationship,qualifiedRelationship,qualifiedRelationship.toUpperCase()}){Map<String,Object> parentRead=new Map<String,Object>{'spelling'=>relationshipSpelling};try{SObject observedParent=owner.getSObject(relationshipSpelling);parentRead.put('isNull',observedParent==null);parentRead.put('json',JSON.serialize(observedParent));parentRead.put('parentEqualsTileId',observedParent!=null && observedParent.Id!=null && observedParent.Id==tile.Id);if(observedParent!=null && observedParent.Id!=null){String parentReplayId=String.valueOf(observedParent.Id);if(!replayIds.containsKey(parentReplayId)){replayIds.put(parentReplayId,'PARENT_ID');replayIds.put(parentReplayId.substring(0,15),'PARENT_ID');}}}catch(Exception parentFailure){parentRead.put('exceptionType',parentFailure.getTypeName());parentRead.put('exceptionMessage',parentFailure.getMessage());}parentReads.add(parentRead);}result.put('ownerParentReads',parentReads);step='owner-populated-fields';List<String> ownerPopulatedKeys=new List<String>();ownerPopulatedKeys.addAll(owner.getPopulatedFieldsAsMap().keySet());ownerPopulatedKeys.sort();result.put('ownerPopulatedKeys',ownerPopulatedKeys);result.put('ownerPopulatedMap',owner.getPopulatedFieldsAsMap());step='owner-json';String ownerJson=JSON.serialize(owner);result.put('ownerJson',ownerJson);Map<String,Object> ownerPayload=(Map<String,Object>)JSON.deserializeUntyped(ownerJson);List<String> ownerJsonKeys=new List<String>();ownerJsonKeys.addAll(ownerPayload.keySet());result.put('ownerJsonKeys',ownerJsonKeys);step='describe';Schema.DescribeSObjectResult actual=tile.getSObjectType().getDescribe();Schema.DescribeSObjectResult canonical=E57a1c1a45e20A62LyricTile__c.SObjectType.getDescribe();Schema.DescribeSObjectResult config=E57a1c1a45e20A62TempoConfig__c.SObjectType.getDescribe();result.put('objectName',actual.getName());result.put('objectLocal',actual.getLocalName());result.put('canonicalName',canonical.getName());result.put('canonicalLocal',canonical.getLocalName());result.put('settingName',config.getName());result.put('settingLocal',config.getLocalName());result.put('lookupPresent',true);result.put('lookupValue', 'nonnull');Schema.DescribeSObjectResult target=Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getReferenceTo()[0].getDescribe();result.put('targetName',target.getName());result.put('targetLocal',target.getLocalName());Map<String,Schema.SObjectType> allTypes=Schema.getGlobalDescribe();List<String> matching=new List<String>();for(String candidate:allTypes.keySet()){if(candidate.toLowerCase().contains(localObject.toLowerCase())){matching.add(candidate);}}matching.sort();result.put('globalKeys',matching);result.put('globalLocal',allTypes.containsKey(localObject));result.put('globalQualified',allTypes.containsKey(qualifiedObject));result.put('globalCase',allTypes.containsKey(qualifiedObject.toUpperCase()));Map<String,String> values=new Map<String,String>{actual.getName()=>'present'};result.put('mapKey',actual.getName());result.put('mapLocal',values.get(localObject));result.put('mapQualified',values.get(qualifiedObject));result.put('mapCase',values.get(qualifiedObject.toUpperCase()));String prefix=config.getName().startsWith('gladens003__')?'gladens003__':'';result.put('mapSettingPrefix',values.get(prefix+localObject));step='G03-target-global';List<String> referenceNames=new List<String>();List<String> referenceLocals=new List<String>();for(Schema.SObjectType reference:Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getReferenceTo()){referenceNames.add(reference.getDescribe().getName());referenceLocals.add(reference.getDescribe().getLocalName());}result.put('targetCanonicalNameEqual',target.getName()==canonical.getName());result.put('targetCanonicalLocalEqual',target.getLocalName()==canonical.getLocalName());result.put('referenceNames',referenceNames);result.put('referenceLocals',referenceLocals);result.put('globalActualKey',allTypes.containsKey(actual.getName()));result.put('globalCanonicalKey',allTypes.containsKey(canonical.getName()));",
+            "helpers": {},
+            "marker_normalisation_apex": "String stableRaw=JSON.serialize(result);List<String> replayKeys=new List<String>();replayKeys.addAll(replayIds.keySet());for(String replayKey:replayKeys){if(replayKey.length()==18){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}for(String replayKey:replayKeys){if(replayKey.length()==15){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}stableRaw=stableRaw.replaceAll('\\\\b(?:[0-9][0-9A-Za-z]{2}|[aA][0-9A-Z][0-9A-Za-z])[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\\\\b','RECORD_ID');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\\\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})\\\\b','TIMESTAMP');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}\\\\b','DATE_VALUE');",
+            "marker_normalisation": "Apex before marker: TILE_ID/OWNER_ID/PARENT_ID/RECORD_ID; TIMESTAMP/DATE_VALUE; equality booleans preserved; JSON key order preserved",
+            "api": "62.0",
+            "context": "namespace",
+            "variant": "present",
+            "source_sha256": "8c015d9cf243350e9ff5323aca91041c09bc1a04c0c685570cc9bd7542814b63",
+            "invocation_sha256": "7427d6cbc6de5ffd666a3efee104ed60880a615cfea307f108a44c1085f7fa82"
+          },
+          "CarryReason": "",
+          "ProjectionCarries": {
+            "globalKeys": "global-changeevent: Native generated ChangeEvent companion is absent locally; assert every remaining canonical global-describe key, including absence of local namespace aliases.",
+            "ownerJson": "lookup-json-id-url-defaults: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerParentReads": "lookup-parent-json: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerLookupReads": "lookup-read-id: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerPopulatedMap": "lookup-map-id-url-defaults: Native REST attribute url and local parent OwnerId differ; assert all remaining populated fields, canonical lookup and parent keys, stable Id aliases, and values."
+          }
+        },
+        {
+          "ID": "G03PresentNonnullSchema",
+          "Variant": "present",
+          "Expression": "String localObject='E57a1c1a45e20A62LyricTile__c';String qualifiedObject='gladens003__E57a1c1a45e20A62LyricTile__c';String localBridge='E57a1c1a45e20A62TileBridge__c';String qualifiedBridge='gladens003__E57a1c1a45e20A62TileBridge__c';String localRelationship='E57a1c1a45e20A62TileBridge__r';String qualifiedRelationship='gladens003__E57a1c1a45e20A62TileBridge__r';step='seed';E57a1c1a45e20A62LyricTile__c tile=new E57a1c1a45e20A62LyricTile__c();Account owner=new Account(Name='Synthetic lookup owner');tile.Name='Synthetic lookup tile';insert tile;String tileReplayId=String.valueOf(tile.Id);replayIds.put(tileReplayId,'TILE_ID');replayIds.put(tileReplayId.substring(0,15),'TILE_ID');owner.put(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName(),tile.Id);owner.putSObject(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getRelationshipName(),tile);if(owner.get(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName())!=tile.Id){result.put('fixtureError',true);}if(owner.Id!=null){String ownerReplayId=String.valueOf(owner.Id);replayIds.put(ownerReplayId,'OWNER_ID');replayIds.put(ownerReplayId.substring(0,15),'OWNER_ID');}step='owner-lookup-read';List<Object> lookupReads=new List<Object>();for(String spelling:new List<String>{localBridge,qualifiedBridge,qualifiedBridge.toUpperCase()}){Map<String,Object> lookupRead=new Map<String,Object>{'spelling'=>spelling};try{Object observedLookup=owner.get(spelling);lookupRead.put('value',observedLookup);lookupRead.put('lookupEqualsTileId',observedLookup!=null && observedLookup==tile.Id);lookupRead.put('isNull',observedLookup==null);}catch(Exception readFailure){lookupRead.put('exceptionType',readFailure.getTypeName());lookupRead.put('exceptionMessage',readFailure.getMessage());}lookupReads.add(lookupRead);}result.put('ownerLookupReads',lookupReads);step='owner-parent-read';List<Object> parentReads=new List<Object>();for(String relationshipSpelling:new List<String>{localRelationship,qualifiedRelationship,qualifiedRelationship.toUpperCase()}){Map<String,Object> parentRead=new Map<String,Object>{'spelling'=>relationshipSpelling};try{SObject observedParent=owner.getSObject(relationshipSpelling);parentRead.put('isNull',observedParent==null);parentRead.put('json',JSON.serialize(observedParent));parentRead.put('parentEqualsTileId',observedParent!=null && observedParent.Id!=null && observedParent.Id==tile.Id);if(observedParent!=null && observedParent.Id!=null){String parentReplayId=String.valueOf(observedParent.Id);if(!replayIds.containsKey(parentReplayId)){replayIds.put(parentReplayId,'PARENT_ID');replayIds.put(parentReplayId.substring(0,15),'PARENT_ID');}}}catch(Exception parentFailure){parentRead.put('exceptionType',parentFailure.getTypeName());parentRead.put('exceptionMessage',parentFailure.getMessage());}parentReads.add(parentRead);}result.put('ownerParentReads',parentReads);step='owner-populated-fields';List<String> ownerPopulatedKeys=new List<String>();ownerPopulatedKeys.addAll(owner.getPopulatedFieldsAsMap().keySet());ownerPopulatedKeys.sort();result.put('ownerPopulatedKeys',ownerPopulatedKeys);result.put('ownerPopulatedMap',owner.getPopulatedFieldsAsMap());step='owner-json';String ownerJson=JSON.serialize(owner);result.put('ownerJson',ownerJson);Map<String,Object> ownerPayload=(Map<String,Object>)JSON.deserializeUntyped(ownerJson);List<String> ownerJsonKeys=new List<String>();ownerJsonKeys.addAll(ownerPayload.keySet());result.put('ownerJsonKeys',ownerJsonKeys);step='describe';Schema.DescribeSObjectResult actual=tile.getSObjectType().getDescribe();Schema.DescribeSObjectResult canonical=Schema.E57a1c1a45e20A62LyricTile__c.SObjectType.getDescribe();Schema.DescribeSObjectResult config=E57a1c1a45e20A62TempoConfig__c.SObjectType.getDescribe();result.put('objectName',actual.getName());result.put('objectLocal',actual.getLocalName());result.put('canonicalName',canonical.getName());result.put('canonicalLocal',canonical.getLocalName());result.put('settingName',config.getName());result.put('settingLocal',config.getLocalName());result.put('lookupPresent',true);result.put('lookupValue', 'nonnull');Schema.DescribeSObjectResult target=Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getReferenceTo()[0].getDescribe();result.put('targetName',target.getName());result.put('targetLocal',target.getLocalName());Map<String,Schema.SObjectType> allTypes=Schema.getGlobalDescribe();List<String> matching=new List<String>();for(String candidate:allTypes.keySet()){if(candidate.toLowerCase().contains(localObject.toLowerCase())){matching.add(candidate);}}matching.sort();result.put('globalKeys',matching);result.put('globalLocal',allTypes.containsKey(localObject));result.put('globalQualified',allTypes.containsKey(qualifiedObject));result.put('globalCase',allTypes.containsKey(qualifiedObject.toUpperCase()));Map<String,String> values=new Map<String,String>{actual.getName()=>'present'};result.put('mapKey',actual.getName());result.put('mapLocal',values.get(localObject));result.put('mapQualified',values.get(qualifiedObject));result.put('mapCase',values.get(qualifiedObject.toUpperCase()));String prefix=config.getName().startsWith('gladens003__')?'gladens003__':'';result.put('mapSettingPrefix',values.get(prefix+localObject));step='G03-target-global';List<String> referenceNames=new List<String>();List<String> referenceLocals=new List<String>();for(Schema.SObjectType reference:Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getReferenceTo()){referenceNames.add(reference.getDescribe().getName());referenceLocals.add(reference.getDescribe().getLocalName());}result.put('targetCanonicalNameEqual',target.getName()==canonical.getName());result.put('targetCanonicalLocalEqual',target.getLocalName()==canonical.getLocalName());result.put('referenceNames',referenceNames);result.put('referenceLocals',referenceLocals);result.put('globalActualKey',allTypes.containsKey(actual.getName()));result.put('globalCanonicalKey',allTypes.containsKey(canonical.getName()));",
+          "ExpressionSHA256": "718131a06df271dea3d01e866924cbfd6214f50a6d8ab603ca95f874b21d3316",
+          "Native": {
+            "outcome": "runtime",
+            "value": {
+              "globalCanonicalKey": true,
+              "globalActualKey": true,
+              "referenceLocals": [
+                "E57a1c1a45e20A62LyricTile__c"
+              ],
+              "referenceNames": [
+                "gladens003__E57a1c1a45e20A62LyricTile__c"
+              ],
+              "targetCanonicalLocalEqual": true,
+              "targetCanonicalNameEqual": true,
+              "mapSettingPrefix": "present",
+              "mapCase": null,
+              "mapQualified": "present",
+              "mapLocal": null,
+              "mapKey": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "globalCase": true,
+              "globalQualified": true,
+              "globalLocal": false,
+              "globalKeys": [
+                "gladens003__e57a1c1a45e20a62lyrictile__c",
+                "gladens003__e57a1c1a45e20a62lyrictile__changeevent"
+              ],
+              "targetLocal": "E57a1c1a45e20A62LyricTile__c",
+              "targetName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "lookupValue": "nonnull",
+              "lookupPresent": true,
+              "settingLocal": "E57a1c1a45e20A62TempoConfig__c",
+              "settingName": "gladens003__E57a1c1a45e20A62TempoConfig__c",
+              "canonicalLocal": "E57a1c1a45e20A62LyricTile__c",
+              "canonicalName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "objectLocal": "E57a1c1a45e20A62LyricTile__c",
+              "objectName": "gladens003__E57a1c1a45e20A62LyricTile__c",
+              "ownerJsonKeys": [
+                "attributes",
+                "Name",
+                "gladens003__E57a1c1a45e20A62TileBridge__c",
+                "gladens003__E57a1c1a45e20A62TileBridge__r"
+              ],
+              "ownerJson": "{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic lookup owner\",\"gladens003__E57a1c1a45e20A62TileBridge__c\":\"TILE_ID\",\"gladens003__E57a1c1a45e20A62TileBridge__r\":{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}}",
+              "ownerPopulatedMap": {
+                "gladens003__E57a1c1a45e20A62TileBridge__r": {
+                  "attributes": {
+                    "type": "gladens003__E57a1c1a45e20A62LyricTile__c",
+                    "url": "/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID"
+                  },
+                  "Name": "Synthetic lookup tile",
+                  "Id": "TILE_ID"
+                },
+                "gladens003__E57a1c1a45e20A62TileBridge__c": "TILE_ID",
+                "Name": "Synthetic lookup owner"
+              },
+              "ownerPopulatedKeys": [
+                "Name",
+                "gladens003__E57a1c1a45e20A62TileBridge__c",
+                "gladens003__E57a1c1a45e20A62TileBridge__r"
+              ],
+              "ownerParentReads": [
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "E57a1c1a45e20A62TileBridge__r"
+                },
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "gladens003__E57a1c1a45e20A62TileBridge__r"
+                },
+                {
+                  "parentEqualsTileId": true,
+                  "json": "{\"attributes\":{\"type\":\"gladens003__E57a1c1a45e20A62LyricTile__c\",\"url\":\"/services/data/v68.0/sobjects/gladens003__E57a1c1a45e20A62LyricTile__c/TILE_ID\"},\"Name\":\"Synthetic lookup tile\",\"Id\":\"TILE_ID\"}",
+                  "isNull": false,
+                  "spelling": "GLADENS003__E57A1C1A45E20A62TILEBRIDGE__R"
+                }
+              ],
+              "ownerLookupReads": [
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "E57a1c1a45e20A62TileBridge__c"
+                },
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "gladens003__E57a1c1a45e20A62TileBridge__c"
+                },
+                {
+                  "isNull": false,
+                  "lookupEqualsTileId": true,
+                  "value": "TILE_ID",
+                  "spelling": "GLADENS003__E57A1C1A45E20A62TILEBRIDGE__C"
+                }
+              ]
+            },
+            "raw_sha256": "704ff0e5c6c1021e14b57e24aac5cd8855cb3321327e314c88d41e85a8af7547",
+            "expression": "String localObject='E57a1c1a45e20A62LyricTile__c';String qualifiedObject='gladens003__E57a1c1a45e20A62LyricTile__c';String localBridge='E57a1c1a45e20A62TileBridge__c';String qualifiedBridge='gladens003__E57a1c1a45e20A62TileBridge__c';String localRelationship='E57a1c1a45e20A62TileBridge__r';String qualifiedRelationship='gladens003__E57a1c1a45e20A62TileBridge__r';step='seed';E57a1c1a45e20A62LyricTile__c tile=new E57a1c1a45e20A62LyricTile__c();Account owner=new Account(Name='Synthetic lookup owner');tile.Name='Synthetic lookup tile';insert tile;String tileReplayId=String.valueOf(tile.Id);replayIds.put(tileReplayId,'TILE_ID');replayIds.put(tileReplayId.substring(0,15),'TILE_ID');owner.put(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName(),tile.Id);owner.putSObject(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getRelationshipName(),tile);if(owner.get(Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getName())!=tile.Id){result.put('fixtureError',true);}if(owner.Id!=null){String ownerReplayId=String.valueOf(owner.Id);replayIds.put(ownerReplayId,'OWNER_ID');replayIds.put(ownerReplayId.substring(0,15),'OWNER_ID');}step='owner-lookup-read';List<Object> lookupReads=new List<Object>();for(String spelling:new List<String>{localBridge,qualifiedBridge,qualifiedBridge.toUpperCase()}){Map<String,Object> lookupRead=new Map<String,Object>{'spelling'=>spelling};try{Object observedLookup=owner.get(spelling);lookupRead.put('value',observedLookup);lookupRead.put('lookupEqualsTileId',observedLookup!=null && observedLookup==tile.Id);lookupRead.put('isNull',observedLookup==null);}catch(Exception readFailure){lookupRead.put('exceptionType',readFailure.getTypeName());lookupRead.put('exceptionMessage',readFailure.getMessage());}lookupReads.add(lookupRead);}result.put('ownerLookupReads',lookupReads);step='owner-parent-read';List<Object> parentReads=new List<Object>();for(String relationshipSpelling:new List<String>{localRelationship,qualifiedRelationship,qualifiedRelationship.toUpperCase()}){Map<String,Object> parentRead=new Map<String,Object>{'spelling'=>relationshipSpelling};try{SObject observedParent=owner.getSObject(relationshipSpelling);parentRead.put('isNull',observedParent==null);parentRead.put('json',JSON.serialize(observedParent));parentRead.put('parentEqualsTileId',observedParent!=null && observedParent.Id!=null && observedParent.Id==tile.Id);if(observedParent!=null && observedParent.Id!=null){String parentReplayId=String.valueOf(observedParent.Id);if(!replayIds.containsKey(parentReplayId)){replayIds.put(parentReplayId,'PARENT_ID');replayIds.put(parentReplayId.substring(0,15),'PARENT_ID');}}}catch(Exception parentFailure){parentRead.put('exceptionType',parentFailure.getTypeName());parentRead.put('exceptionMessage',parentFailure.getMessage());}parentReads.add(parentRead);}result.put('ownerParentReads',parentReads);step='owner-populated-fields';List<String> ownerPopulatedKeys=new List<String>();ownerPopulatedKeys.addAll(owner.getPopulatedFieldsAsMap().keySet());ownerPopulatedKeys.sort();result.put('ownerPopulatedKeys',ownerPopulatedKeys);result.put('ownerPopulatedMap',owner.getPopulatedFieldsAsMap());step='owner-json';String ownerJson=JSON.serialize(owner);result.put('ownerJson',ownerJson);Map<String,Object> ownerPayload=(Map<String,Object>)JSON.deserializeUntyped(ownerJson);List<String> ownerJsonKeys=new List<String>();ownerJsonKeys.addAll(ownerPayload.keySet());result.put('ownerJsonKeys',ownerJsonKeys);step='describe';Schema.DescribeSObjectResult actual=tile.getSObjectType().getDescribe();Schema.DescribeSObjectResult canonical=Schema.E57a1c1a45e20A62LyricTile__c.SObjectType.getDescribe();Schema.DescribeSObjectResult config=E57a1c1a45e20A62TempoConfig__c.SObjectType.getDescribe();result.put('objectName',actual.getName());result.put('objectLocal',actual.getLocalName());result.put('canonicalName',canonical.getName());result.put('canonicalLocal',canonical.getLocalName());result.put('settingName',config.getName());result.put('settingLocal',config.getLocalName());result.put('lookupPresent',true);result.put('lookupValue', 'nonnull');Schema.DescribeSObjectResult target=Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getReferenceTo()[0].getDescribe();result.put('targetName',target.getName());result.put('targetLocal',target.getLocalName());Map<String,Schema.SObjectType> allTypes=Schema.getGlobalDescribe();List<String> matching=new List<String>();for(String candidate:allTypes.keySet()){if(candidate.toLowerCase().contains(localObject.toLowerCase())){matching.add(candidate);}}matching.sort();result.put('globalKeys',matching);result.put('globalLocal',allTypes.containsKey(localObject));result.put('globalQualified',allTypes.containsKey(qualifiedObject));result.put('globalCase',allTypes.containsKey(qualifiedObject.toUpperCase()));Map<String,String> values=new Map<String,String>{actual.getName()=>'present'};result.put('mapKey',actual.getName());result.put('mapLocal',values.get(localObject));result.put('mapQualified',values.get(qualifiedObject));result.put('mapCase',values.get(qualifiedObject.toUpperCase()));String prefix=config.getName().startsWith('gladens003__')?'gladens003__':'';result.put('mapSettingPrefix',values.get(prefix+localObject));step='G03-target-global';List<String> referenceNames=new List<String>();List<String> referenceLocals=new List<String>();for(Schema.SObjectType reference:Account.E57a1c1a45e20A62TileBridge__c.getDescribe().getReferenceTo()){referenceNames.add(reference.getDescribe().getName());referenceLocals.add(reference.getDescribe().getLocalName());}result.put('targetCanonicalNameEqual',target.getName()==canonical.getName());result.put('targetCanonicalLocalEqual',target.getLocalName()==canonical.getLocalName());result.put('referenceNames',referenceNames);result.put('referenceLocals',referenceLocals);result.put('globalActualKey',allTypes.containsKey(actual.getName()));result.put('globalCanonicalKey',allTypes.containsKey(canonical.getName()));",
+            "helpers": {},
+            "marker_normalisation_apex": "String stableRaw=JSON.serialize(result);List<String> replayKeys=new List<String>();replayKeys.addAll(replayIds.keySet());for(String replayKey:replayKeys){if(replayKey.length()==18){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}for(String replayKey:replayKeys){if(replayKey.length()==15){stableRaw=stableRaw.replace(replayKey,replayIds.get(replayKey));}}stableRaw=stableRaw.replaceAll('\\\\b(?:[0-9][0-9A-Za-z]{2}|[aA][0-9A-Z][0-9A-Za-z])[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\\\\b','RECORD_ID');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\\\.[0-9]+)?(?:Z|[+-][0-9]{2}:[0-9]{2})\\\\b','TIMESTAMP');stableRaw=stableRaw.replaceAll('\\\\b[0-9]{4}-[0-9]{2}-[0-9]{2}\\\\b','DATE_VALUE');",
+            "marker_normalisation": "Apex before marker: TILE_ID/OWNER_ID/PARENT_ID/RECORD_ID; TIMESTAMP/DATE_VALUE; equality booleans preserved; JSON key order preserved",
+            "api": "62.0",
+            "context": "namespace",
+            "variant": "present",
+            "source_sha256": "b03767995ce1d137942074bea79dc17f5348af6162a77a7723deff760bb9d8f8",
+            "invocation_sha256": "de9801216fb0a342361d9ae5630dd3660e34d34452f25eff78e68d8fe592b3ed"
+          },
+          "CarryReason": "",
+          "ProjectionCarries": {
+            "globalKeys": "global-changeevent: Native generated ChangeEvent companion is absent locally; assert every remaining canonical global-describe key, including absence of local namespace aliases.",
+            "ownerJson": "lookup-json-id-url-defaults: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerParentReads": "lookup-parent-json: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerLookupReads": "lookup-read-id: Native record Ids are scrubbed, REST attribute url differs, and local parent includes OwnerId; assert all remaining keys, values, spellings, parent identity and null flags.",
+            "ownerPopulatedMap": "lookup-map-id-url-defaults: Native REST attribute url and local parent OwnerId differ; assert all remaining populated fields, canonical lookup and parent keys, stable Id aliases, and values."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,840 @@
+{
+  "sourceApiVersions": [
+    "61.0",
+    "62.0",
+    "67.0"
+  ],
+  "helperApi": "67.0",
+  "routes": [
+    "isTest",
+    "anonymous"
+  ],
+  "namespaceContext": "none",
+  "knownRows": 6,
+  "marker": "ANNOTATED_METHOD_OBSERVATION|",
+  "orgIdSha256": "21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70",
+  "devHubAlias": "scratch-org",
+  "receiptPathPolicy": "Only personal command, environment and ORG-RUN paths are replaced with explicit placeholders. Original raw receipt SHA256 hashes, source bytes and complete native payloads are unchanged. Named and helper-setup source manifests are unchanged; anonymous source manifests are explicitly labeled owned-source subsets, with the original raw manifest SHA256 retained and non-source SDK bookkeeping omitted.",
+  "pendingCoverage": [
+    "API68 callers are unobserved.",
+    "Helper source versions other than API67 are unobserved.",
+    "Namespace contexts are unobserved.",
+    "Invocable framework or external provider execution is not exercised; these observations cover ordinary direct Apex calls only."
+  ],
+  "captures": [
+    {
+      "context": "named61",
+      "sourceAPI": "61.0",
+      "helperAPI": "67.0",
+      "route": "isTest",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "namespaceContext": "none",
+      "testClass": "AnnotatedMethodObservation",
+      "sourceManifest": {
+        "phase": "before-native-call",
+        "files": {
+          "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3",
+          "force-app/main/default/classes/AnnotatedMethodObservation.cls": "d3ab2dc01c76c4e7482cb2ace0b32e715b1eb83e51cb57bc9e61a6e36f202a6b",
+          "force-app/main/default/classes/AtlasAction.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+          "force-app/main/default/classes/AnnotatedMethodObservation.cls-meta.xml": "6b398a48cac611870f1cfdd5b252f5585bd3bee5ca998f8da5e9df434601166b",
+          "force-app/main/default/classes/GlyphAction.cls": "dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504",
+          "force-app/main/default/classes/GlyphAction.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+          "force-app/main/default/classes/AtlasAction.cls": "496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc"
+        }
+      },
+      "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"sfdx-project.json\": \"04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3\",\n    \"force-app/main/default/classes/AnnotatedMethodObservation.cls\": \"d3ab2dc01c76c4e7482cb2ace0b32e715b1eb83e51cb57bc9e61a6e36f202a6b\",\n    \"force-app/main/default/classes/AtlasAction.cls-meta.xml\": \"eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7\",\n    \"force-app/main/default/classes/AnnotatedMethodObservation.cls-meta.xml\": \"6b398a48cac611870f1cfdd5b252f5585bd3bee5ca998f8da5e9df434601166b\",\n    \"force-app/main/default/classes/GlyphAction.cls\": \"dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504\",\n    \"force-app/main/default/classes/GlyphAction.cls-meta.xml\": \"eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7\",\n    \"force-app/main/default/classes/AtlasAction.cls\": \"496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc\"\n  }\n}\n",
+      "sourceManifestSHA256": "4d0bb03ba72d03b372e087907a8861130f2b54d151bf4ad451d369abe4a09597",
+      "sourceManifestKind": "original-precall",
+      "originalSourceManifestSHA256": "4d0bb03ba72d03b372e087907a8861130f2b54d151bf4ad451d369abe4a09597",
+      "omittedNonSourceFiles": 0,
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        },
+        "force-app/main/default/classes/AnnotatedMethodObservation.cls": {
+          "source": "@IsTest private class AnnotatedMethodObservation {\n @IsTest static void observe() {\nAtlasAction.Input a = new AtlasAction.Input(); a.value = 'alpha';\nAtlasAction.Input b = new AtlasAction.Input(); b.value = 'beta';\nList<AtlasAction.Output> values = AtlasAction.apply(new List<AtlasAction.Input>{a,b});\nGlyphAction.Input g = new GlyphAction.Input(); g.value = 'gamma';\nList<GlyphAction.Output> plain = GlyphAction.apply(new List<GlyphAction.Input>{g});\nMap<String,Object> observation = new Map<String,Object>{\n 'sourceApi'=>61, 'helperApi'=>67, 'route'=>'named', 'stage'=>'complete',\n 'nullCount'=>AtlasAction.apply(null).size(),\n 'emptyCount'=>AtlasAction.apply(new List<AtlasAction.Input>()).size(),\n 'valueCount'=>values.size(), 'values'=>new List<String>{values[0].value,values[1].value},\n 'plainCount'=>plain.size(), 'plainValues'=>new List<String>{plain[0].value},\n 'scalar'=>AtlasAction.scalar('delta')};\nString payload = JSON.serialize(observation);\nSystem.assert(payload.length() < 800, 'Observation transport bound');\nSystem.assert(false, 'ANNOTATED_METHOD_OBSERVATION|' + payload);\n }\n}\n\n",
+          "sha256": "d3ab2dc01c76c4e7482cb2ace0b32e715b1eb83e51cb57bc9e61a6e36f202a6b"
+        },
+        "force-app/main/default/classes/AtlasAction.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+        },
+        "force-app/main/default/classes/AnnotatedMethodObservation.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>61.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "6b398a48cac611870f1cfdd5b252f5585bd3bee5ca998f8da5e9df434601166b"
+        },
+        "force-app/main/default/classes/GlyphAction.cls": {
+          "source": "public inherited sharing class GlyphAction {\n public class Input { @InvocableVariable public String value; }\n public class Output { @InvocableVariable public String value; }\n @InvocableMethod(label='Apply owned values' category='Owned inputs' description='Project input values into output values')\n public static List<Output> apply(List<Input> inputs) {\n  List<Output> outputs = new List<Output>();\n  if (inputs == null) { return outputs; }\n  for (Input input : inputs) { Output output = new Output(); output.value = input.value; outputs.add(output); }\n  return outputs;\n }\n}\n",
+          "sha256": "dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504"
+        },
+        "force-app/main/default/classes/GlyphAction.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+        },
+        "force-app/main/default/classes/AtlasAction.cls": {
+          "source": "public inherited sharing class AtlasAction {\n public class Input { @InvocableVariable public String value; }\n public class Output { @InvocableVariable public String value; }\n @InvocableMethod(\n  label='Apply owned values'\n  category='Owned inputs'\n  description='Project input values into output values'\n )\n /** Projects {@link Input} values (including empty values). */\n public static List<Output> apply(List<Input> inputs) {\n  List<Output> outputs = new List<Output>();\n  if (inputs == null) { return outputs; }\n  for (Input input : inputs) { Output output = new Output(); output.value = input.value; outputs.add(output); }\n  return outputs;\n }\n public static String scalar(String value) { return value; }\n}\n",
+          "sha256": "496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc"
+        }
+      },
+      "rawSHA256": {
+        "ORG-RUN.txt": "f8702bb9637995dea997672db22001544dc300a58b714b13d6eb48c0ee88fd46",
+        "deploy.command.json": "b04fa5f5a1a73613ab2760f920cbe17745db422606a41ffb2c75cd5f5be530b9",
+        "deploy.json": "694980a43efcb72c1244807a65dfdcec230c03fe23f7d7bfbfa3b40f73eb85b2",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "digests.json": "8df0b8e65f373152889ad9596e32008e7cd12229e26c7abe03dcb09724befe7c",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "org.tsv": "15f4ffb26c03e2598c5485f9379f888025a141c870fe75b70c6e849e3562853a",
+        "source-digests.json": "4d0bb03ba72d03b372e087907a8861130f2b54d151bf4ad451d369abe4a09597"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\nsourceApi=61.0\ncallerApi=61.0\ntransportApi=62.0\ncontext=@IsTest\nhelperApi=67.0\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"AnnotatedMethodObservation\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T19:55:26Z\nexitCode=1\ndeploymentId=0Af000000000wvHCAQ\nobservedRows=1\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T19:55:29Z\n",
+      "command": {
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        },
+        "command": [
+          "sf",
+          "project",
+          "deploy",
+          "start",
+          "--dry-run",
+          "--source-dir",
+          "force-app",
+          "--test-level",
+          "RunSpecifiedTests",
+          "--tests",
+          "AnnotatedMethodObservation",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "62.0",
+          "--wait",
+          "1",
+          "--json"
+        ]
+      },
+      "errors": {
+        "componentFailures": [],
+        "transportOrSetupErrors": []
+      },
+      "rows": [
+        {
+          "id": "observe",
+          "native": {
+            "scalar": "delta",
+            "plainValues": [
+              "gamma"
+            ],
+            "plainCount": 1,
+            "values": [
+              "alpha",
+              "beta"
+            ],
+            "valueCount": 2,
+            "emptyCount": 0,
+            "nullCount": 0,
+            "stage": "complete",
+            "route": "named",
+            "helperApi": 67,
+            "sourceApi": 61
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: ANNOTATED_METHOD_OBSERVATION|{\"scalar\":\"delta\",\"plainValues\":[\"gamma\"],\"plainCount\":1,\"values\":[\"alpha\",\"beta\"],\"valueCount\":2,\"emptyCount\":0,\"nullCount\":0,\"stage\":\"complete\",\"route\":\"named\",\"helperApi\":67,\"sourceApi\":61}"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0Af000000000wvHCAQ",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 1,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 1
+      }
+    },
+    {
+      "context": "anonymous61",
+      "sourceAPI": "61.0",
+      "helperAPI": "67.0",
+      "route": "anonymous",
+      "projectAPI": "62.0",
+      "transportAPI": "61.0",
+      "namespaceContext": "none",
+      "testClass": "",
+      "sourceManifest": {
+        "phase": "owned-source-subset-of-before-native-call",
+        "files": {
+          "force-app/main/default/classes/AtlasAction.cls": "496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc",
+          "force-app/main/default/classes/AtlasAction.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+          "force-app/main/default/classes/GlyphAction.cls": "dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504",
+          "force-app/main/default/classes/GlyphAction.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+          "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3",
+          "source.apex": "6eac33682b1874c8b7bc54f48f43af63a6e68fc5cd6869a26340aaafeb905ad1"
+        }
+      },
+      "sourceManifestRaw": "{\n  \"phase\": \"owned-source-subset-of-before-native-call\",\n  \"files\": {\n    \"force-app/main/default/classes/AtlasAction.cls\": \"496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc\",\n    \"force-app/main/default/classes/AtlasAction.cls-meta.xml\": \"eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7\",\n    \"force-app/main/default/classes/GlyphAction.cls\": \"dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504\",\n    \"force-app/main/default/classes/GlyphAction.cls-meta.xml\": \"eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7\",\n    \"sfdx-project.json\": \"04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3\",\n    \"source.apex\": \"6eac33682b1874c8b7bc54f48f43af63a6e68fc5cd6869a26340aaafeb905ad1\"\n  }\n}\n",
+      "sourceManifestSHA256": "49b255b4df3838fa35c8098851c7af78478176a60e07b29c1cd429639642af88",
+      "sourceManifestKind": "owned-source-subset-of-precall-manifest",
+      "originalSourceManifestSHA256": "098b562a55e3a0bb33641fd8f31b17acb503d5cddf485d61121044cc61ed15e4",
+      "omittedNonSourceFiles": 14,
+      "sources": {
+        "force-app/main/default/classes/AtlasAction.cls": {
+          "source": "public inherited sharing class AtlasAction {\n public class Input { @InvocableVariable public String value; }\n public class Output { @InvocableVariable public String value; }\n @InvocableMethod(\n  label='Apply owned values'\n  category='Owned inputs'\n  description='Project input values into output values'\n )\n /** Projects {@link Input} values (including empty values). */\n public static List<Output> apply(List<Input> inputs) {\n  List<Output> outputs = new List<Output>();\n  if (inputs == null) { return outputs; }\n  for (Input input : inputs) { Output output = new Output(); output.value = input.value; outputs.add(output); }\n  return outputs;\n }\n public static String scalar(String value) { return value; }\n}\n",
+          "sha256": "496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc"
+        },
+        "force-app/main/default/classes/AtlasAction.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+        },
+        "force-app/main/default/classes/GlyphAction.cls": {
+          "source": "public inherited sharing class GlyphAction {\n public class Input { @InvocableVariable public String value; }\n public class Output { @InvocableVariable public String value; }\n @InvocableMethod(label='Apply owned values' category='Owned inputs' description='Project input values into output values')\n public static List<Output> apply(List<Input> inputs) {\n  List<Output> outputs = new List<Output>();\n  if (inputs == null) { return outputs; }\n  for (Input input : inputs) { Output output = new Output(); output.value = input.value; outputs.add(output); }\n  return outputs;\n }\n}\n",
+          "sha256": "dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504"
+        },
+        "force-app/main/default/classes/GlyphAction.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        },
+        "source.apex": {
+          "source": "AtlasAction.Input a = new AtlasAction.Input(); a.value = 'alpha';\nAtlasAction.Input b = new AtlasAction.Input(); b.value = 'beta';\nList<AtlasAction.Output> values = AtlasAction.apply(new List<AtlasAction.Input>{a,b});\nGlyphAction.Input g = new GlyphAction.Input(); g.value = 'gamma';\nList<GlyphAction.Output> plain = GlyphAction.apply(new List<GlyphAction.Input>{g});\nMap<String,Object> observation = new Map<String,Object>{\n 'sourceApi'=>61, 'helperApi'=>67, 'route'=>'anonymous', 'stage'=>'complete',\n 'nullCount'=>AtlasAction.apply(null).size(),\n 'emptyCount'=>AtlasAction.apply(new List<AtlasAction.Input>()).size(),\n 'valueCount'=>values.size(), 'values'=>new List<String>{values[0].value,values[1].value},\n 'plainCount'=>plain.size(), 'plainValues'=>new List<String>{plain[0].value},\n 'scalar'=>AtlasAction.scalar('delta')};\nString payload = JSON.serialize(observation);\nSystem.assert(payload.length() < 800, 'Observation transport bound');\nSystem.debug('ANNOTATED_METHOD_OBSERVATION|' + payload);\n",
+          "sha256": "6eac33682b1874c8b7bc54f48f43af63a6e68fc5cd6869a26340aaafeb905ad1"
+        }
+      },
+      "rawSHA256": {
+        "ORG-RUN.txt": "d89994cb84e2e986a594c20dda8ec1f233f9852985311c7d959ef5a8fac1c722",
+        "digests.json": "519f141dc8b8788a7af7c522ac8954994f9bc1590737c4aeca8a8bc96af868bf",
+        "errors.json": "52c147f1e19ba54f443dfadfb0914c9aedbf6c3b5c3cf8f2fc55b6f5b8328a16",
+        "org.tsv": "39a14108cc48a7da185412015f129bd851ccd79ca8f5232bd66021cf03dfeeef",
+        "run.command.json": "18a1057d6f264ff9fd94f7acae22fd29a693d19d114837d6e104e52c0449b0cf",
+        "run.json": "da8abb9e67c6ee4d944206234e44a2ef87cc44bef10c7297dfa81fd859260cd5",
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "098b562a55e3a0bb33641fd8f31b17acb503d5cddf485d61121044cc61ed15e4"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\ncontext=anonymous\nsourceApi=61.0\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=61.0\nnamespace=none\nmutation=none; pure synthetic method dispatch\nhelperSetupDeploymentId=0Af000000000rRjCAI\ncleanupOwner=k6\nstart=2026-10-15T19:58:23.565158+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/annotated_method_comments/api61/anonymous/source.apex\", \"--target-org\", \"scratch-org\", \"--api-version\", \"61.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nrows=1\nend=2026-10-15T19:58:24.808474+00:00\n",
+      "command": {
+        "command": [
+          "sf",
+          "apex",
+          "run",
+          "--file",
+          "<worktree>/probe/annotated_method_comments/api61/anonymous/source.apex",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "61.0",
+          "--json"
+        ],
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        }
+      },
+      "errors": {
+        "exitCode": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "rows": [
+        {
+          "id": "observe",
+          "native": {
+            "scalar": "delta",
+            "plainValues": [
+              "gamma"
+            ],
+            "plainCount": 1,
+            "values": [
+              "alpha",
+              "beta"
+            ],
+            "valueCount": 2,
+            "emptyCount": 0,
+            "nullCount": 0,
+            "stage": "complete",
+            "route": "anonymous",
+            "helperApi": 67,
+            "sourceApi": 61
+          }
+        }
+      ],
+      "execution": {
+        "status": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      }
+    },
+    {
+      "context": "named62",
+      "sourceAPI": "62.0",
+      "helperAPI": "67.0",
+      "route": "isTest",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "namespaceContext": "none",
+      "testClass": "AnnotatedMethodObservation",
+      "sourceManifest": {
+        "phase": "before-native-call",
+        "files": {
+          "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3",
+          "force-app/main/default/classes/AnnotatedMethodObservation.cls": "a276178e5134a863bc97278be51fe760ba9125de24f8bc780945f08f09d38b81",
+          "force-app/main/default/classes/AtlasAction.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+          "force-app/main/default/classes/AnnotatedMethodObservation.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+          "force-app/main/default/classes/GlyphAction.cls": "dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504",
+          "force-app/main/default/classes/GlyphAction.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+          "force-app/main/default/classes/AtlasAction.cls": "496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc"
+        }
+      },
+      "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"sfdx-project.json\": \"04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3\",\n    \"force-app/main/default/classes/AnnotatedMethodObservation.cls\": \"a276178e5134a863bc97278be51fe760ba9125de24f8bc780945f08f09d38b81\",\n    \"force-app/main/default/classes/AtlasAction.cls-meta.xml\": \"eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7\",\n    \"force-app/main/default/classes/AnnotatedMethodObservation.cls-meta.xml\": \"5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86\",\n    \"force-app/main/default/classes/GlyphAction.cls\": \"dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504\",\n    \"force-app/main/default/classes/GlyphAction.cls-meta.xml\": \"eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7\",\n    \"force-app/main/default/classes/AtlasAction.cls\": \"496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc\"\n  }\n}\n",
+      "sourceManifestSHA256": "ddd56d19e8f0ed3211ce2f8a3e8a91a1ecdf996189939c1438c65d44dd7269c5",
+      "sourceManifestKind": "original-precall",
+      "originalSourceManifestSHA256": "ddd56d19e8f0ed3211ce2f8a3e8a91a1ecdf996189939c1438c65d44dd7269c5",
+      "omittedNonSourceFiles": 0,
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        },
+        "force-app/main/default/classes/AnnotatedMethodObservation.cls": {
+          "source": "@IsTest private class AnnotatedMethodObservation {\n @IsTest static void observe() {\nAtlasAction.Input a = new AtlasAction.Input(); a.value = 'alpha';\nAtlasAction.Input b = new AtlasAction.Input(); b.value = 'beta';\nList<AtlasAction.Output> values = AtlasAction.apply(new List<AtlasAction.Input>{a,b});\nGlyphAction.Input g = new GlyphAction.Input(); g.value = 'gamma';\nList<GlyphAction.Output> plain = GlyphAction.apply(new List<GlyphAction.Input>{g});\nMap<String,Object> observation = new Map<String,Object>{\n 'sourceApi'=>62, 'helperApi'=>67, 'route'=>'named', 'stage'=>'complete',\n 'nullCount'=>AtlasAction.apply(null).size(),\n 'emptyCount'=>AtlasAction.apply(new List<AtlasAction.Input>()).size(),\n 'valueCount'=>values.size(), 'values'=>new List<String>{values[0].value,values[1].value},\n 'plainCount'=>plain.size(), 'plainValues'=>new List<String>{plain[0].value},\n 'scalar'=>AtlasAction.scalar('delta')};\nString payload = JSON.serialize(observation);\nSystem.assert(payload.length() < 800, 'Observation transport bound');\nSystem.assert(false, 'ANNOTATED_METHOD_OBSERVATION|' + payload);\n }\n}\n\n",
+          "sha256": "a276178e5134a863bc97278be51fe760ba9125de24f8bc780945f08f09d38b81"
+        },
+        "force-app/main/default/classes/AtlasAction.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+        },
+        "force-app/main/default/classes/AnnotatedMethodObservation.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+        },
+        "force-app/main/default/classes/GlyphAction.cls": {
+          "source": "public inherited sharing class GlyphAction {\n public class Input { @InvocableVariable public String value; }\n public class Output { @InvocableVariable public String value; }\n @InvocableMethod(label='Apply owned values' category='Owned inputs' description='Project input values into output values')\n public static List<Output> apply(List<Input> inputs) {\n  List<Output> outputs = new List<Output>();\n  if (inputs == null) { return outputs; }\n  for (Input input : inputs) { Output output = new Output(); output.value = input.value; outputs.add(output); }\n  return outputs;\n }\n}\n",
+          "sha256": "dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504"
+        },
+        "force-app/main/default/classes/GlyphAction.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+        },
+        "force-app/main/default/classes/AtlasAction.cls": {
+          "source": "public inherited sharing class AtlasAction {\n public class Input { @InvocableVariable public String value; }\n public class Output { @InvocableVariable public String value; }\n @InvocableMethod(\n  label='Apply owned values'\n  category='Owned inputs'\n  description='Project input values into output values'\n )\n /** Projects {@link Input} values (including empty values). */\n public static List<Output> apply(List<Input> inputs) {\n  List<Output> outputs = new List<Output>();\n  if (inputs == null) { return outputs; }\n  for (Input input : inputs) { Output output = new Output(); output.value = input.value; outputs.add(output); }\n  return outputs;\n }\n public static String scalar(String value) { return value; }\n}\n",
+          "sha256": "496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc"
+        }
+      },
+      "rawSHA256": {
+        "ORG-RUN.txt": "aafa5854ac7124bdcba1666736e0e76236488256c1a6361f965ce41777286204",
+        "deploy.command.json": "b04fa5f5a1a73613ab2760f920cbe17745db422606a41ffb2c75cd5f5be530b9",
+        "deploy.json": "a13f6ca0a45bb34095b958f4d278a4f99220f8c278efd6231a5479b386c43384",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "digests.json": "3a18be2895dc1bb89c0d7031ab21e8a9ccd3156a8205e2dc6a28280b7256e85f",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "org.tsv": "7a3b7cef3c20f2429da9a8026b01857f4d39e2de71d4c7fab35b831c304de7bc",
+        "source-digests.json": "ddd56d19e8f0ed3211ce2f8a3e8a91a1ecdf996189939c1438c65d44dd7269c5"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\nsourceApi=62.0\ncallerApi=62.0\ntransportApi=62.0\ncontext=@IsTest\nhelperApi=67.0\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"AnnotatedMethodObservation\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T19:55:29Z\nexitCode=1\ndeploymentId=0Af000000000pSsCAI\nobservedRows=1\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T19:55:33Z\n",
+      "command": {
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        },
+        "command": [
+          "sf",
+          "project",
+          "deploy",
+          "start",
+          "--dry-run",
+          "--source-dir",
+          "force-app",
+          "--test-level",
+          "RunSpecifiedTests",
+          "--tests",
+          "AnnotatedMethodObservation",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "62.0",
+          "--wait",
+          "1",
+          "--json"
+        ]
+      },
+      "errors": {
+        "componentFailures": [],
+        "transportOrSetupErrors": []
+      },
+      "rows": [
+        {
+          "id": "observe",
+          "native": {
+            "scalar": "delta",
+            "plainValues": [
+              "gamma"
+            ],
+            "plainCount": 1,
+            "values": [
+              "alpha",
+              "beta"
+            ],
+            "valueCount": 2,
+            "emptyCount": 0,
+            "nullCount": 0,
+            "stage": "complete",
+            "route": "named",
+            "helperApi": 67,
+            "sourceApi": 62
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: ANNOTATED_METHOD_OBSERVATION|{\"scalar\":\"delta\",\"plainValues\":[\"gamma\"],\"plainCount\":1,\"values\":[\"alpha\",\"beta\"],\"valueCount\":2,\"emptyCount\":0,\"nullCount\":0,\"stage\":\"complete\",\"route\":\"named\",\"helperApi\":67,\"sourceApi\":62}"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0Af000000000pSsCAI",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 1,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 1
+      }
+    },
+    {
+      "context": "anonymous62",
+      "sourceAPI": "62.0",
+      "helperAPI": "67.0",
+      "route": "anonymous",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "namespaceContext": "none",
+      "testClass": "",
+      "sourceManifest": {
+        "phase": "owned-source-subset-of-before-native-call",
+        "files": {
+          "force-app/main/default/classes/AtlasAction.cls": "496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc",
+          "force-app/main/default/classes/AtlasAction.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+          "force-app/main/default/classes/GlyphAction.cls": "dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504",
+          "force-app/main/default/classes/GlyphAction.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+          "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3",
+          "source.apex": "4efe19c5c7b2549cee51a13687deb146c12648218ec68b27f0d89d74a8087775"
+        }
+      },
+      "sourceManifestRaw": "{\n  \"phase\": \"owned-source-subset-of-before-native-call\",\n  \"files\": {\n    \"force-app/main/default/classes/AtlasAction.cls\": \"496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc\",\n    \"force-app/main/default/classes/AtlasAction.cls-meta.xml\": \"eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7\",\n    \"force-app/main/default/classes/GlyphAction.cls\": \"dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504\",\n    \"force-app/main/default/classes/GlyphAction.cls-meta.xml\": \"eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7\",\n    \"sfdx-project.json\": \"04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3\",\n    \"source.apex\": \"4efe19c5c7b2549cee51a13687deb146c12648218ec68b27f0d89d74a8087775\"\n  }\n}\n",
+      "sourceManifestSHA256": "44c926fe663da492d7558fbd426c31105831887c308cc6bbf8fdb2e20c257602",
+      "sourceManifestKind": "owned-source-subset-of-precall-manifest",
+      "originalSourceManifestSHA256": "0a64e2df2136a866161ee8e21fcae10c321e3f8f861ea887dbddae529cfada38",
+      "omittedNonSourceFiles": 14,
+      "sources": {
+        "force-app/main/default/classes/AtlasAction.cls": {
+          "source": "public inherited sharing class AtlasAction {\n public class Input { @InvocableVariable public String value; }\n public class Output { @InvocableVariable public String value; }\n @InvocableMethod(\n  label='Apply owned values'\n  category='Owned inputs'\n  description='Project input values into output values'\n )\n /** Projects {@link Input} values (including empty values). */\n public static List<Output> apply(List<Input> inputs) {\n  List<Output> outputs = new List<Output>();\n  if (inputs == null) { return outputs; }\n  for (Input input : inputs) { Output output = new Output(); output.value = input.value; outputs.add(output); }\n  return outputs;\n }\n public static String scalar(String value) { return value; }\n}\n",
+          "sha256": "496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc"
+        },
+        "force-app/main/default/classes/AtlasAction.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+        },
+        "force-app/main/default/classes/GlyphAction.cls": {
+          "source": "public inherited sharing class GlyphAction {\n public class Input { @InvocableVariable public String value; }\n public class Output { @InvocableVariable public String value; }\n @InvocableMethod(label='Apply owned values' category='Owned inputs' description='Project input values into output values')\n public static List<Output> apply(List<Input> inputs) {\n  List<Output> outputs = new List<Output>();\n  if (inputs == null) { return outputs; }\n  for (Input input : inputs) { Output output = new Output(); output.value = input.value; outputs.add(output); }\n  return outputs;\n }\n}\n",
+          "sha256": "dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504"
+        },
+        "force-app/main/default/classes/GlyphAction.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        },
+        "source.apex": {
+          "source": "AtlasAction.Input a = new AtlasAction.Input(); a.value = 'alpha';\nAtlasAction.Input b = new AtlasAction.Input(); b.value = 'beta';\nList<AtlasAction.Output> values = AtlasAction.apply(new List<AtlasAction.Input>{a,b});\nGlyphAction.Input g = new GlyphAction.Input(); g.value = 'gamma';\nList<GlyphAction.Output> plain = GlyphAction.apply(new List<GlyphAction.Input>{g});\nMap<String,Object> observation = new Map<String,Object>{\n 'sourceApi'=>62, 'helperApi'=>67, 'route'=>'anonymous', 'stage'=>'complete',\n 'nullCount'=>AtlasAction.apply(null).size(),\n 'emptyCount'=>AtlasAction.apply(new List<AtlasAction.Input>()).size(),\n 'valueCount'=>values.size(), 'values'=>new List<String>{values[0].value,values[1].value},\n 'plainCount'=>plain.size(), 'plainValues'=>new List<String>{plain[0].value},\n 'scalar'=>AtlasAction.scalar('delta')};\nString payload = JSON.serialize(observation);\nSystem.assert(payload.length() < 800, 'Observation transport bound');\nSystem.debug('ANNOTATED_METHOD_OBSERVATION|' + payload);\n",
+          "sha256": "4efe19c5c7b2549cee51a13687deb146c12648218ec68b27f0d89d74a8087775"
+        }
+      },
+      "rawSHA256": {
+        "ORG-RUN.txt": "ffbcb65edf84ffe6d6e3feb87f932c932bcc864cc7847eb3112f65282b56162d",
+        "digests.json": "673040b3edcf04abb1e27fc3e600bb8ab663cf30ea8c0df3520da22b461dea96",
+        "errors.json": "52c147f1e19ba54f443dfadfb0914c9aedbf6c3b5c3cf8f2fc55b6f5b8328a16",
+        "org.tsv": "07189bfaa45ffde903e90bc6607265c4f1b431eaa4100a5fb8fcc86604788716",
+        "run.command.json": "48efbffd4c1d9662253f74cbbef04874236c38132d8903c8efcd9c6352acf406",
+        "run.json": "b551422169672ec870a9e5f40def238ce1add9ac4dc0ec569ef52ffea6a0ecac",
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "0a64e2df2136a866161ee8e21fcae10c321e3f8f861ea887dbddae529cfada38"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\ncontext=anonymous\nsourceApi=62.0\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=62.0\nnamespace=none\nmutation=none; pure synthetic method dispatch\nhelperSetupDeploymentId=0Af000000000rRjCAI\ncleanupOwner=k6\nstart=2026-10-15T19:58:24.817663+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/annotated_method_comments/api62/anonymous/source.apex\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nrows=1\nend=2026-10-15T19:58:26.057823+00:00\n",
+      "command": {
+        "command": [
+          "sf",
+          "apex",
+          "run",
+          "--file",
+          "<worktree>/probe/annotated_method_comments/api62/anonymous/source.apex",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "62.0",
+          "--json"
+        ],
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        }
+      },
+      "errors": {
+        "exitCode": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "rows": [
+        {
+          "id": "observe",
+          "native": {
+            "scalar": "delta",
+            "plainValues": [
+              "gamma"
+            ],
+            "plainCount": 1,
+            "values": [
+              "alpha",
+              "beta"
+            ],
+            "valueCount": 2,
+            "emptyCount": 0,
+            "nullCount": 0,
+            "stage": "complete",
+            "route": "anonymous",
+            "helperApi": 67,
+            "sourceApi": 62
+          }
+        }
+      ],
+      "execution": {
+        "status": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      }
+    },
+    {
+      "context": "named67",
+      "sourceAPI": "67.0",
+      "helperAPI": "67.0",
+      "route": "isTest",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "namespaceContext": "none",
+      "testClass": "AnnotatedMethodObservation",
+      "sourceManifest": {
+        "phase": "before-native-call",
+        "files": {
+          "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3",
+          "force-app/main/default/classes/AnnotatedMethodObservation.cls": "28392815249b39f327fde4f235a71e3141e6dbdfc9053ccd1f93f10a4cbf3a90",
+          "force-app/main/default/classes/AtlasAction.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+          "force-app/main/default/classes/AnnotatedMethodObservation.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+          "force-app/main/default/classes/GlyphAction.cls": "dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504",
+          "force-app/main/default/classes/GlyphAction.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+          "force-app/main/default/classes/AtlasAction.cls": "496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc"
+        }
+      },
+      "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"sfdx-project.json\": \"04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3\",\n    \"force-app/main/default/classes/AnnotatedMethodObservation.cls\": \"28392815249b39f327fde4f235a71e3141e6dbdfc9053ccd1f93f10a4cbf3a90\",\n    \"force-app/main/default/classes/AtlasAction.cls-meta.xml\": \"eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7\",\n    \"force-app/main/default/classes/AnnotatedMethodObservation.cls-meta.xml\": \"eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7\",\n    \"force-app/main/default/classes/GlyphAction.cls\": \"dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504\",\n    \"force-app/main/default/classes/GlyphAction.cls-meta.xml\": \"eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7\",\n    \"force-app/main/default/classes/AtlasAction.cls\": \"496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc\"\n  }\n}\n",
+      "sourceManifestSHA256": "b2cc85cadaad0e7413ceafd7171db4a9532431217ab648459d85a3fba65837a0",
+      "sourceManifestKind": "original-precall",
+      "originalSourceManifestSHA256": "b2cc85cadaad0e7413ceafd7171db4a9532431217ab648459d85a3fba65837a0",
+      "omittedNonSourceFiles": 0,
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        },
+        "force-app/main/default/classes/AnnotatedMethodObservation.cls": {
+          "source": "@IsTest private class AnnotatedMethodObservation {\n @IsTest static void observe() {\nAtlasAction.Input a = new AtlasAction.Input(); a.value = 'alpha';\nAtlasAction.Input b = new AtlasAction.Input(); b.value = 'beta';\nList<AtlasAction.Output> values = AtlasAction.apply(new List<AtlasAction.Input>{a,b});\nGlyphAction.Input g = new GlyphAction.Input(); g.value = 'gamma';\nList<GlyphAction.Output> plain = GlyphAction.apply(new List<GlyphAction.Input>{g});\nMap<String,Object> observation = new Map<String,Object>{\n 'sourceApi'=>67, 'helperApi'=>67, 'route'=>'named', 'stage'=>'complete',\n 'nullCount'=>AtlasAction.apply(null).size(),\n 'emptyCount'=>AtlasAction.apply(new List<AtlasAction.Input>()).size(),\n 'valueCount'=>values.size(), 'values'=>new List<String>{values[0].value,values[1].value},\n 'plainCount'=>plain.size(), 'plainValues'=>new List<String>{plain[0].value},\n 'scalar'=>AtlasAction.scalar('delta')};\nString payload = JSON.serialize(observation);\nSystem.assert(payload.length() < 800, 'Observation transport bound');\nSystem.assert(false, 'ANNOTATED_METHOD_OBSERVATION|' + payload);\n }\n}\n\n",
+          "sha256": "28392815249b39f327fde4f235a71e3141e6dbdfc9053ccd1f93f10a4cbf3a90"
+        },
+        "force-app/main/default/classes/AtlasAction.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+        },
+        "force-app/main/default/classes/AnnotatedMethodObservation.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+        },
+        "force-app/main/default/classes/GlyphAction.cls": {
+          "source": "public inherited sharing class GlyphAction {\n public class Input { @InvocableVariable public String value; }\n public class Output { @InvocableVariable public String value; }\n @InvocableMethod(label='Apply owned values' category='Owned inputs' description='Project input values into output values')\n public static List<Output> apply(List<Input> inputs) {\n  List<Output> outputs = new List<Output>();\n  if (inputs == null) { return outputs; }\n  for (Input input : inputs) { Output output = new Output(); output.value = input.value; outputs.add(output); }\n  return outputs;\n }\n}\n",
+          "sha256": "dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504"
+        },
+        "force-app/main/default/classes/GlyphAction.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+        },
+        "force-app/main/default/classes/AtlasAction.cls": {
+          "source": "public inherited sharing class AtlasAction {\n public class Input { @InvocableVariable public String value; }\n public class Output { @InvocableVariable public String value; }\n @InvocableMethod(\n  label='Apply owned values'\n  category='Owned inputs'\n  description='Project input values into output values'\n )\n /** Projects {@link Input} values (including empty values). */\n public static List<Output> apply(List<Input> inputs) {\n  List<Output> outputs = new List<Output>();\n  if (inputs == null) { return outputs; }\n  for (Input input : inputs) { Output output = new Output(); output.value = input.value; outputs.add(output); }\n  return outputs;\n }\n public static String scalar(String value) { return value; }\n}\n",
+          "sha256": "496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc"
+        }
+      },
+      "rawSHA256": {
+        "ORG-RUN.txt": "43c1e67e360e0e1549d55f3e92a9a7971c640c65074b78c91f8bb220bf454146",
+        "deploy.command.json": "b04fa5f5a1a73613ab2760f920cbe17745db422606a41ffb2c75cd5f5be530b9",
+        "deploy.json": "8ee670d1d9aec4c70854ee0be4214b4245737f0937ed5a7d9819e547f6d75aa4",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "digests.json": "e2da0f86cafd1e2ccf685f875e094ec30659045646ada733393216443b5a9b6c",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "org.tsv": "4debb74fc80fc39f04434896e278f3d7ab349f4c717b42eca1b0d03c1b34b290",
+        "source-digests.json": "b2cc85cadaad0e7413ceafd7171db4a9532431217ab648459d85a3fba65837a0"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\nsourceApi=67.0\ncallerApi=67.0\ntransportApi=62.0\ncontext=@IsTest\nhelperApi=67.0\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"AnnotatedMethodObservation\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T19:54:15Z\nexitCode=1\ndeploymentId=0Af000000000dtQCAQ\nobservedRows=1\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T19:54:18Z\n",
+      "command": {
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        },
+        "command": [
+          "sf",
+          "project",
+          "deploy",
+          "start",
+          "--dry-run",
+          "--source-dir",
+          "force-app",
+          "--test-level",
+          "RunSpecifiedTests",
+          "--tests",
+          "AnnotatedMethodObservation",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "62.0",
+          "--wait",
+          "1",
+          "--json"
+        ]
+      },
+      "errors": {
+        "componentFailures": [],
+        "transportOrSetupErrors": []
+      },
+      "rows": [
+        {
+          "id": "observe",
+          "native": {
+            "scalar": "delta",
+            "plainValues": [
+              "gamma"
+            ],
+            "plainCount": 1,
+            "values": [
+              "alpha",
+              "beta"
+            ],
+            "valueCount": 2,
+            "emptyCount": 0,
+            "nullCount": 0,
+            "stage": "complete",
+            "route": "named",
+            "helperApi": 67,
+            "sourceApi": 67
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: ANNOTATED_METHOD_OBSERVATION|{\"scalar\":\"delta\",\"plainValues\":[\"gamma\"],\"plainCount\":1,\"values\":[\"alpha\",\"beta\"],\"valueCount\":2,\"emptyCount\":0,\"nullCount\":0,\"stage\":\"complete\",\"route\":\"named\",\"helperApi\":67,\"sourceApi\":67}"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0Af000000000dtQCAQ",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 1,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 1
+      }
+    },
+    {
+      "context": "anonymous67",
+      "sourceAPI": "67.0",
+      "helperAPI": "67.0",
+      "route": "anonymous",
+      "projectAPI": "62.0",
+      "transportAPI": "67.0",
+      "namespaceContext": "none",
+      "testClass": "",
+      "sourceManifest": {
+        "phase": "owned-source-subset-of-before-native-call",
+        "files": {
+          "force-app/main/default/classes/AtlasAction.cls": "496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc",
+          "force-app/main/default/classes/AtlasAction.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+          "force-app/main/default/classes/GlyphAction.cls": "dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504",
+          "force-app/main/default/classes/GlyphAction.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+          "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3",
+          "source.apex": "97eb5127d16e6a11077fdec91a15bfd9fce5f11b6993df5cea15f8c19711f915"
+        }
+      },
+      "sourceManifestRaw": "{\n  \"phase\": \"owned-source-subset-of-before-native-call\",\n  \"files\": {\n    \"force-app/main/default/classes/AtlasAction.cls\": \"496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc\",\n    \"force-app/main/default/classes/AtlasAction.cls-meta.xml\": \"eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7\",\n    \"force-app/main/default/classes/GlyphAction.cls\": \"dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504\",\n    \"force-app/main/default/classes/GlyphAction.cls-meta.xml\": \"eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7\",\n    \"sfdx-project.json\": \"04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3\",\n    \"source.apex\": \"97eb5127d16e6a11077fdec91a15bfd9fce5f11b6993df5cea15f8c19711f915\"\n  }\n}\n",
+      "sourceManifestSHA256": "870ed081dded083a6b63bedaa1c197d160e4fc8e3550b445d8d672eceb7904f6",
+      "sourceManifestKind": "owned-source-subset-of-precall-manifest",
+      "originalSourceManifestSHA256": "e5e865149a39a6efa0a9c3398bbfa5c24625fae7431da94477aff99797ca9921",
+      "omittedNonSourceFiles": 14,
+      "sources": {
+        "force-app/main/default/classes/AtlasAction.cls": {
+          "source": "public inherited sharing class AtlasAction {\n public class Input { @InvocableVariable public String value; }\n public class Output { @InvocableVariable public String value; }\n @InvocableMethod(\n  label='Apply owned values'\n  category='Owned inputs'\n  description='Project input values into output values'\n )\n /** Projects {@link Input} values (including empty values). */\n public static List<Output> apply(List<Input> inputs) {\n  List<Output> outputs = new List<Output>();\n  if (inputs == null) { return outputs; }\n  for (Input input : inputs) { Output output = new Output(); output.value = input.value; outputs.add(output); }\n  return outputs;\n }\n public static String scalar(String value) { return value; }\n}\n",
+          "sha256": "496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc"
+        },
+        "force-app/main/default/classes/AtlasAction.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+        },
+        "force-app/main/default/classes/GlyphAction.cls": {
+          "source": "public inherited sharing class GlyphAction {\n public class Input { @InvocableVariable public String value; }\n public class Output { @InvocableVariable public String value; }\n @InvocableMethod(label='Apply owned values' category='Owned inputs' description='Project input values into output values')\n public static List<Output> apply(List<Input> inputs) {\n  List<Output> outputs = new List<Output>();\n  if (inputs == null) { return outputs; }\n  for (Input input : inputs) { Output output = new Output(); output.value = input.value; outputs.add(output); }\n  return outputs;\n }\n}\n",
+          "sha256": "dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504"
+        },
+        "force-app/main/default/classes/GlyphAction.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        },
+        "source.apex": {
+          "source": "AtlasAction.Input a = new AtlasAction.Input(); a.value = 'alpha';\nAtlasAction.Input b = new AtlasAction.Input(); b.value = 'beta';\nList<AtlasAction.Output> values = AtlasAction.apply(new List<AtlasAction.Input>{a,b});\nGlyphAction.Input g = new GlyphAction.Input(); g.value = 'gamma';\nList<GlyphAction.Output> plain = GlyphAction.apply(new List<GlyphAction.Input>{g});\nMap<String,Object> observation = new Map<String,Object>{\n 'sourceApi'=>67, 'helperApi'=>67, 'route'=>'anonymous', 'stage'=>'complete',\n 'nullCount'=>AtlasAction.apply(null).size(),\n 'emptyCount'=>AtlasAction.apply(new List<AtlasAction.Input>()).size(),\n 'valueCount'=>values.size(), 'values'=>new List<String>{values[0].value,values[1].value},\n 'plainCount'=>plain.size(), 'plainValues'=>new List<String>{plain[0].value},\n 'scalar'=>AtlasAction.scalar('delta')};\nString payload = JSON.serialize(observation);\nSystem.assert(payload.length() < 800, 'Observation transport bound');\nSystem.debug('ANNOTATED_METHOD_OBSERVATION|' + payload);\n",
+          "sha256": "97eb5127d16e6a11077fdec91a15bfd9fce5f11b6993df5cea15f8c19711f915"
+        }
+      },
+      "rawSHA256": {
+        "ORG-RUN.txt": "55f680d9413249c74d4d9975694ba5e4d64e64e0c3e8a2f0d6839b8d8cb94303",
+        "digests.json": "21a21284bd7ce14b0b78aa5290b04c8239377a94b97266e1443a04764aa83607",
+        "errors.json": "52c147f1e19ba54f443dfadfb0914c9aedbf6c3b5c3cf8f2fc55b6f5b8328a16",
+        "org.tsv": "25f4423fd103b029a6cb4d997677d58cb856d895c7ae1e666ab7124117563947",
+        "run.command.json": "d496c0eb29255c67eb3624a19070a7cf4126cb20c7d3a151d1ac01019e25d851",
+        "run.json": "6497f6238416a1bfc4f8558fdf00091935c01e6ed031cf8dd8aa7e0a5aa57506",
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "e5e865149a39a6efa0a9c3398bbfa5c24625fae7431da94477aff99797ca9921"
+      },
+      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\ncontext=anonymous\nsourceApi=67.0\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=67.0\nnamespace=none\nmutation=none; pure synthetic method dispatch\nhelperSetupDeploymentId=0Af000000000rRjCAI\ncleanupOwner=k6\nstart=2026-10-15T19:58:22.306789+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/annotated_method_comments/api67/anonymous/source.apex\", \"--target-org\", \"scratch-org\", \"--api-version\", \"67.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nrows=1\nend=2026-10-15T19:58:23.554648+00:00\n",
+      "command": {
+        "command": [
+          "sf",
+          "apex",
+          "run",
+          "--file",
+          "<worktree>/probe/annotated_method_comments/api67/anonymous/source.apex",
+          "--target-org",
+          "scratch-org",
+          "--api-version",
+          "67.0",
+          "--json"
+        ],
+        "environment": {
+          "HOME": "<capture-home>",
+          "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+        }
+      },
+      "errors": {
+        "exitCode": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      },
+      "rows": [
+        {
+          "id": "observe",
+          "native": {
+            "scalar": "delta",
+            "plainValues": [
+              "gamma"
+            ],
+            "plainCount": 1,
+            "values": [
+              "alpha",
+              "beta"
+            ],
+            "valueCount": 2,
+            "emptyCount": 0,
+            "nullCount": 0,
+            "stage": "complete",
+            "route": "anonymous",
+            "helperApi": 67,
+            "sourceApi": 67
+          }
+        }
+      ],
+      "execution": {
+        "status": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      }
+    }
+  ],
+  "helperSetup": {
+    "deploymentID": "0Af000000000rRjCAI",
+    "status": "Succeeded",
+    "done": true,
+    "checkOnly": false,
+    "numberComponentErrors": 0,
+    "numberTestErrors": 0,
+    "sourceManifestRaw": "{\n  \"phase\": \"before-native-call\",\n  \"files\": {\n    \"force-app/main/default/classes/AtlasAction.cls\": \"496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc\",\n    \"force-app/main/default/classes/AtlasAction.cls-meta.xml\": \"eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7\",\n    \"force-app/main/default/classes/GlyphAction.cls\": \"dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504\",\n    \"force-app/main/default/classes/GlyphAction.cls-meta.xml\": \"eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7\",\n    \"sfdx-project.json\": \"04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3\"\n  }\n}\n",
+    "sourceManifestSHA256": "805003f2628cbdf52bcbf97e1186cccd317006d521aafff622d8e2df5c747ca0",
+    "sourceDigests": {
+      "force-app/main/default/classes/AtlasAction.cls": "496c68c3cdab00cd8ff8aec55b59cedf1fe4abe7bf78504d98589a335c8702bc",
+      "force-app/main/default/classes/AtlasAction.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "force-app/main/default/classes/GlyphAction.cls": "dc0e25b9924e5c180b34e5daa9948d687e61cbbe4cba0594219eb83d958aa504",
+      "force-app/main/default/classes/GlyphAction.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+    },
+    "rawSHA256": {
+      "ORG-RUN.txt": "bc4f635defc771aa716e25b5fdfba7acaa184f3f0477f4ad95d4600ea44a00e3",
+      "deploy.command.json": "2efcd605b1fbcc7436356828a8f75c0aa07356852011add85d8180b700775ae6",
+      "deploy.json": "577a523cd4cb6f46ae53c45b15ca048145c63f50de92034cabc32313117540e0",
+      "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "digests.json": "d458f04d120359227c4630130b503dde56bead8e40b24e73b27774b7381c6c03",
+      "errors.json": "51151021e18b06f24fbbb85f86bb752a69ef3c20492f822aed7175654bfe6365",
+      "source-digests.json": "805003f2628cbdf52bcbf97e1186cccd317006d521aafff622d8e2df5c747ca0"
+    },
+    "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\ncontext=synthetic-helper-setup\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=62.0\ncleanupOwner=k6\nstart=2026-10-15T19:58:18.911782+00:00\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--source-dir\", \"force-app\", \"--test-level\", \"NoTestRun\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\ndeploymentId=0Af000000000rRjCAI\nexitCode=0\nend=2026-10-15T19:58:22.297154+00:00\n",
+    "command": {
+      "command": [
+        "sf",
+        "project",
+        "deploy",
+        "start",
+        "--source-dir",
+        "force-app",
+        "--test-level",
+        "NoTestRun",
+        "--target-org",
+        "scratch-org",
+        "--api-version",
+        "62.0",
+        "--wait",
+        "1",
+        "--json"
+      ],
+      "environment": {
+        "HOME": "<capture-home>",
+        "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
+      }
+    },
+    "errors": {
+      "componentFailures": [],
+      "numberComponentErrors": 0,
+      "numberTestErrors": 0,
+      "status": "Succeeded",
+      "done": true,
+      "checkOnly": false
+    }
+  }
+}

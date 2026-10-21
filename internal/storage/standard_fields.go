@@ -12,13 +12,18 @@ const standardFieldsOverlayMarker = "__glade_standard_fields_overlay"
 // EnsureStandardObjectFields adds public Salesforce standard fields for objects
 // whose project metadata commonly only carries custom-field deltas.
 func EnsureStandardObjectFields(definition *ObjectDefinition) {
-	EnsureStandardObjectFieldsForFeatures(definition, nil)
+	if definition == nil {
+		return
+	}
+	// A refresh keeps the profile already applied to this definition. Callers
+	// changing org shape pass the desired profile explicitly instead.
+	EnsureStandardObjectFieldsForFeatures(definition, strings.Split(definition.Metadata[standardFieldsOverlayMarker], ","))
 }
 
 // StandardObjectFieldsNeedWrite reports whether EnsureStandardObjectFields
 // would mutate definition.
 func StandardObjectFieldsNeedWrite(definition ObjectDefinition) bool {
-	return standardObjectFieldsNeedWrite(definition, "")
+	return standardObjectFieldsNeedWrite(definition, definition.Metadata[standardFieldsOverlayMarker])
 }
 
 // RefreshStandardObjectFieldOverlay repairs an already-applied standard schema
@@ -71,11 +76,16 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	ensureCoreSystemFields(definition)
 	mergeStandardObjectDefinition(definition, features)
 	mergeStandardSObjectStubFields(definition, features)
+	mergeStandardSObjectStubReferencesFromV2Describe(definition, features)
+	enrichRequiredStandardStubFieldsFromV2Describe(definition)
 	mergeStandardSObjectStubRelationships(definition, features)
 	applyStandardObjectCompatibilityOverlays(definition)
 	EnsureRecordTypeIDField(definition)
 	ensureCommonRecordTypeField(definition)
 	fields := standardFieldsForObject(definition.APIName)
+	if stringsHasSuffixFold(definition.APIName, "__c") && stringsEqualFold(definition.Metadata["enableActivities"], "true") {
+		fields = append(fields, Field{APIName: "LastActivityDate", Label: "Last Activity", Type: FieldDate, DisplayType: "DATE", Createable: BoolFlag(false), Updateable: BoolFlag(false), Permissionable: BoolFlag(false)})
+	}
 	if IsCustomSettingDefinition(*definition) {
 		fields = withoutCustomSettingUnsupportedFields(fields)
 	}
@@ -94,6 +104,8 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	if !stateAndCountryPicklistEnabled {
 		removeStateAndCountryPicklistFields(definition)
 	}
+	removeDisabledStandardOptionalFields(definition, featureSignature)
+	removeOrganizationFeatureFlagFields(definition)
 	// Relations is ordered and feeds the schema stamp, so visit the remaining
 	// fields by API name rather than map order.
 	fieldNames := make([]string, 0, len(definition.Fields))
@@ -109,6 +121,9 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 }
 
 func standardObjectFieldsNeedWrite(definition ObjectDefinition, featureSignature string) bool {
+	if accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) {
+		return true
+	}
 	if masterDetailOwnerFieldsNeedRepair(definition) {
 		return true
 	}
@@ -130,7 +145,54 @@ func standardObjectFieldsNeedWrite(definition ObjectDefinition, featureSignature
 // the feature shape, so it cannot by itself tell whether an older cache missed
 // richer field metadata such as picklist entries.
 func standardFieldsOverlayNeedsRefresh(definition ObjectDefinition, featureSignature string) bool {
-	return standardOverlayCheckPlanFor(definition.APIName).needsRefresh(definition, featureSignature)
+	return accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || standardOverlayCheckPlanFor(definition.APIName).needsRefresh(definition, featureSignature)
+}
+
+func apexClassLengthNillabilityNeedsRepair(definition ObjectDefinition) bool {
+	if !stringsEqualFold(definition.APIName, "ApexClass") {
+		return false
+	}
+	name, exists := ResolveFieldName(definition, "", "LengthWithoutComments")
+	return !exists || FieldFlagValue(definition.Fields[name].Nillable, true)
+}
+
+func accountTeamReferencesNeedRepair(definition ObjectDefinition) bool {
+	if !stringsEqualFold(definition.APIName, "AccountTeamMember") {
+		return false
+	}
+	for _, reference := range []struct{ field, target string }{{"AccountId", "Account"}, {"UserId", "User"}} {
+		name, exists := ResolveFieldName(definition, "", reference.field)
+		if !exists || definition.Fields[name].RelationshipName == "" || !standardReferenceTargetContains(definition.Fields[name].ReferenceTo, reference.target) {
+			return true
+		}
+	}
+	return false
+}
+
+// Concrete article versions accept Language at creation (owned API62/67
+// observations), although the inherited stub marks it read-only.
+func knowledgeLanguageCreationNeedsRepair(definition ObjectDefinition) bool {
+	if !stringsEqualFold(definition.APIName, "Knowledge__kav") {
+		return false
+	}
+	name, exists := ResolveFieldName(definition, "", "Language")
+	if !exists {
+		return true
+	}
+	createable := definition.Fields[name].Createable
+	return createable == nil || !*createable
+}
+
+func userLicenseStatusDescribeNeedsRepair(definition ObjectDefinition) bool {
+	if !stringsEqualFold(definition.APIName, "UserLicense") {
+		return false
+	}
+	name, ok := ResolveFieldName(definition, "", "Status")
+	if !ok {
+		return true
+	}
+	field := definition.Fields[name]
+	return field.Type != FieldPicklist || !strings.EqualFold(field.DisplayType, "PICKLIST") || field.Nillable == nil || *field.Nillable
 }
 
 func RemoveCustomSettingUnsupportedFields(definition *ObjectDefinition) {
@@ -253,6 +315,9 @@ func removeMasterDetailOwnerFields(definition *ObjectDefinition) {
 }
 
 func ensureCoreSystemFields(definition *ObjectDefinition) {
+	if IsGeneratedHistoryObject(*definition) {
+		return
+	}
 	readOnly := func(field Field) Field {
 		field.Createable = BoolFlag(false)
 		field.Updateable = BoolFlag(false)
@@ -323,6 +388,22 @@ func standardFieldsForObject(objectName string) []Field {
 		return nil
 	}
 	switch {
+	case stringsEqualFold(objectName, "PermissionSetEvent"):
+		return permissionSetEventFields
+	case stringsEqualFold(objectName, "DocumentTemplateContentDoc"):
+		// These query fields are documented in Salesforce Help's Omnistudio
+		// community-user and Health Cloud group-benefits setup examples.
+		// https://help.salesforce.com/s/articleView?id=ind.doc_gen_run_apex_code_for_omnistudio_foundation_customer_community_user_395891.htm&type=5
+		// https://help.salesforce.com/s/articleView?id=sf.hc_admin_group_benefits_app_document_generation.htm&type=5
+		// Keep this a query shape: the examples do not specify field facets
+		// or forward relationship names. ID values do not require inventing
+		// reference metadata from their field names.
+		return []Field{
+			{APIName: "Name", Type: FieldString},
+			{APIName: "DocumentTemplateId", Type: FieldID},
+			{APIName: "ContentDocumentId", Type: FieldID},
+			{APIName: "LatestContentVersionId", Type: FieldID},
+		}
 	case strings.HasSuffix(objectName, "__e"):
 		return []Field{
 			{APIName: "EventUuid", Label: "Event UUID", Type: FieldString},
@@ -332,7 +413,7 @@ func standardFieldsForObject(objectName string) []Field {
 		return []Field{
 			{APIName: "DeveloperName", Label: "Developer Name", Type: FieldString},
 			{APIName: "Label", Label: "Label", Type: FieldString},
-			{APIName: "Language", Label: "Language", Type: FieldString},
+			{APIName: "Language", Label: "Language", Type: FieldPicklist, Length: 40},
 			{APIName: "MasterLabel", Label: "Master Label", Type: FieldString},
 			{APIName: "NamespacePrefix", Label: "Namespace Prefix", Type: FieldString},
 			{APIName: "QualifiedApiName", Label: "Qualified API Name", Type: FieldString},
@@ -366,6 +447,18 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "Name", Label: "Account Name", Type: FieldString},
 			{APIName: "AccountNumber", Label: "Account Number", Type: FieldString, Length: 40},
 			{APIName: "AnnualRevenue", Label: "Annual Revenue", Type: FieldDecimal},
+			{APIName: "CleanStatus", Label: "Clean Status", Type: FieldPicklist, DisplayType: "PICKLIST", Length: 40,
+				Createable: BoolFlag(true), Updateable: BoolFlag(true), Nillable: BoolFlag(true), DefaultedOnCreate: BoolFlag(false),
+				PicklistValues: []PicklistValue{
+					{Value: "Matched", Label: "In Sync", Active: true},
+					{Value: "Different", Label: "Different", Active: true},
+					{Value: "Acknowledged", Label: "Reviewed", Active: true},
+					{Value: "NotFound", Label: "Not Found", Active: true},
+					{Value: "Inactive", Label: "Inactive", Active: true},
+					{Value: "Pending", Label: "Not Compared", Active: true},
+					{Value: "SelectMatch", Label: "Select Match", Active: true},
+					{Value: "Skipped", Label: "Skipped", Active: true},
+				}},
 			{APIName: "BillingStreet", Label: "Billing Street", Type: FieldString},
 			{APIName: "BillingCity", Label: "Billing City", Type: FieldString},
 			{APIName: "BillingState", Label: "Billing State", Type: FieldString},
@@ -379,6 +472,7 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "Fax", Label: "Fax", Type: FieldString},
 			{APIName: "FirstName", Label: "First Name", Type: FieldString},
 			{APIName: "Industry", Label: "Industry", Type: FieldPicklist},
+			{APIName: "IsActive", Label: "Active", Type: FieldBoolean, DisplayType: "BOOLEAN", DefaultValue: "false", Nillable: BoolFlag(false), DefaultedOnCreate: BoolFlag(true), Createable: BoolFlag(true), Updateable: BoolFlag(true)},
 			{APIName: "IsPersonAccount", Label: "Is Person Account", Type: FieldBoolean},
 			{APIName: "LastName", Label: "Last Name", Type: FieldString},
 			{APIName: "MasterRecordId", Label: "Master Record ID", Type: FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "MasterRecord"},
@@ -539,7 +633,7 @@ func standardFieldsForObject(objectName string) []Field {
 		return []Field{
 			{APIName: "DeveloperName", Label: "Developer Name", Type: FieldString},
 			{APIName: "Label", Label: "Label", Type: FieldString},
-			{APIName: "Language", Label: "Language", Type: FieldString},
+			{APIName: "Language", Label: "Language", Type: FieldPicklist, Length: 40},
 			{APIName: "MasterLabel", Label: "Master Label", Type: FieldString},
 			{APIName: "NamespacePrefix", Label: "Namespace Prefix", Type: FieldString},
 			{APIName: "QualifiedApiName", Label: "Qualified API Name", Type: FieldString},
@@ -548,10 +642,6 @@ func standardFieldsForObject(objectName string) []Field {
 		return []Field{
 			{APIName: "Name", Label: "Name", Type: FieldString},
 			{APIName: "IsDeleted", Label: "Deleted", Type: FieldBoolean, DefaultValue: "false", Required: true, Nillable: BoolFlag(false), DefaultedOnCreate: BoolFlag(true), Createable: BoolFlag(false), Updateable: BoolFlag(false), Filterable: BoolFlag(true), Groupable: BoolFlag(true), Sortable: BoolFlag(true), Aggregatable: BoolFlag(false), Permissionable: BoolFlag(false)},
-			{APIName: "LastActivityDate", Label: "Last Activity", Type: FieldDate, DisplayType: "DATE", Createable: BoolFlag(false), Updateable: BoolFlag(false), Permissionable: BoolFlag(false)},
-			{APIName: "LastReferencedDate", Label: "Last Referenced Date", Type: FieldDateTime, DisplayType: "DATETIME", Nillable: BoolFlag(true), Createable: BoolFlag(false), Updateable: BoolFlag(false), Filterable: BoolFlag(true), Groupable: BoolFlag(false), Sortable: BoolFlag(true), Aggregatable: BoolFlag(true), Permissionable: BoolFlag(false)},
-			{APIName: "LastViewedDate", Label: "Last Viewed Date", Type: FieldDateTime, DisplayType: "DATETIME", Nillable: BoolFlag(true), Createable: BoolFlag(false), Updateable: BoolFlag(false), Filterable: BoolFlag(true), Groupable: BoolFlag(false), Sortable: BoolFlag(true), Aggregatable: BoolFlag(true), Permissionable: BoolFlag(false)},
-			{APIName: "RecordTypeId", Label: "Record Type ID", Type: FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"},
 		}
 	default:
 		return nil
@@ -573,6 +663,7 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 	if org == nil || objectName == "" {
 		return
 	}
+	org.ensureFeatureProfile()
 	if canonical, ok := ResolveKnownStandardObjectName(objectName); ok {
 		objectName = canonical
 	}
@@ -580,14 +671,19 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 		org.Objects = make(map[string]ObjectState)
 	}
 	state, existed := org.Objects[objectName]
+	features := strings.Split(state.Definition.Metadata[standardFieldsOverlayMarker], ",")
+	if org.Features != nil {
+		features = org.Features
+	}
+	fieldsNeedWrite := standardObjectFieldsNeedWrite(state.Definition, canonicalFeatureSignature(features))
 	// An existing object that needs neither write and has no record types is a
 	// no-op for every definition: both predicates are the conditions under which
 	// the steps below write, and the record type branch is skipped. A trusted
 	// runtime schema stamp then still describes the org, so it is kept.
 	definitionNoop := existed && len(state.Definition.RecordTypes) == 0 &&
 		!standardObjectDefinitionNeedsWrite(state.Definition, objectName) &&
-		!StandardObjectFieldsNeedWrite(state.Definition)
-	if existed && standardObjectDefinitionNeedsWrite(state.Definition, objectName) {
+		!fieldsNeedWrite
+	if existed && (standardObjectDefinitionNeedsWrite(state.Definition, objectName) || fieldsNeedWrite) {
 		state.Definition = state.Definition.Clone()
 	}
 	if state.Definition.APIName == "" {
@@ -608,7 +704,7 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 	if state.Indexes == nil {
 		state.Indexes = make(map[string]IndexSet)
 	}
-	EnsureStandardObjectFields(&state.Definition)
+	EnsureStandardObjectFieldsForFeatures(&state.Definition, features)
 	if entry, ok := standardObjectCatalogEntryForName(objectName); ok {
 		if state.Definition.Label == objectName && entry.Definition.Label != "" {
 			state.Definition.Label = entry.Definition.Label
@@ -669,6 +765,11 @@ func IsKnownStandardObject(objectName string) bool {
 }
 
 func isKnownStandardObjectExact(objectName string) bool {
+	for _, name := range platformRelationshipChildObjectNames {
+		if objectName == name {
+			return true
+		}
+	}
 	if objectName == "" {
 		return false
 	}
@@ -764,6 +865,10 @@ func initStandardSObjectStubLookupCache() {
 
 func buildKnownStandardObjectNameSet() map[string]bool {
 	names := make(map[string]bool)
+	for _, name := range platformRelationshipChildObjectNames {
+		names[name] = true
+	}
+
 	for name := range standardKeyPrefixBaseData {
 		names[name] = true
 	}
@@ -782,6 +887,11 @@ func buildKnownStandardObjectNameSet() map[string]bool {
 	for _, entry := range standardDescribeCatalogV2Index {
 		names[entry.Name] = true
 	}
+	// Parent catalogs can name child entities outside the rich describe spread.
+	for _, entry := range standardDescribeChildRelationshipsV2Index {
+		names[entry.Name] = true
+	}
+
 	for _, name := range standardSObjectStubNames() {
 		names[name] = true
 	}
@@ -791,6 +901,7 @@ func buildKnownStandardObjectNameSet() map[string]bool {
 	for _, name := range []string{
 		"Account",
 		"Contact",
+		"DocumentTemplateContentDoc",
 		"EmailTemplate",
 		"EntityDefinition",
 		"FieldDefinition",
@@ -798,6 +909,7 @@ func buildKnownStandardObjectNameSet() map[string]bool {
 		"OpportunityContactRole",
 		"OpportunityLineItem",
 		"PricebookEntry",
+		"PermissionSetEvent",
 	} {
 		names[name] = true
 	}
@@ -875,12 +987,28 @@ func StandardObjectDefinition(objectName string) (ObjectDefinition, bool) {
 	return definition, true
 }
 
-// StandardObjectMetadata returns a catalog-backed object metadata value
+// StandardObjectMetadata returns catalog or captured compatibility metadata
 // without mutating the runtime definition. This keeps optional describe
 // properties separate from the field/record-type overlay.
 func StandardObjectMetadata(objectName, key string) (string, bool) {
 	canonical, ok := ResolveKnownStandardObjectName(objectName)
 	if !ok {
+		return "", false
+	}
+	if key == "customizable" {
+		if value, observed := standardEntityCustomizable[canonical]; observed {
+			return strconv.FormatBool(value), true
+		}
+	}
+	if key == "triggerable" && stringsEqualFold(canonical, "EntityDefinition") {
+		return "false", true
+	}
+	if key == "keyPrefixNull" {
+		// The captured virtual-object describe has no public key prefix.
+		// Local storage can still retain its deterministic record-ID prefix.
+		if stringsEqualFold(canonical, "UserRecordAccess") {
+			return "true", true
+		}
 		return "", false
 	}
 	if key == "feedEnabled" && stringsEqualFold(canonical, "Account") {
@@ -955,6 +1083,34 @@ func enrichStandardDescribeMetadataFromV2(definition *ObjectDefinition) {
 	enrichStandardDescribeMetadata(definition, describe)
 }
 
+// The AccountBrand describe candidate supplies the two non-nillable input
+// shapes used by the required-field builder. Other stub objects and inferred
+// caller-required DML inputs await their own observations.
+func enrichRequiredStandardStubFieldsFromV2Describe(definition *ObjectDefinition) {
+	if definition == nil || !stringsEqualFold(definition.APIName, "AccountBrand") {
+		return
+	}
+	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
+	if err != nil || !ok {
+		return
+	}
+	for _, field := range describeFieldMap(describe.Fields) {
+		if !field.Required {
+			continue
+		}
+		name, ok := ResolveFieldName(*definition, "", field.APIName)
+		if !ok || definition.Fields[name].Nillable != nil {
+			continue
+		}
+		existing := definition.Fields[name]
+		// Describe non-nillability does not establish omitted-field DML errors.
+		// Keep any explicitly supplied requiredness while filling describe facets.
+		field.Required = false
+		enrichStandardField(&existing, field)
+		definition.Fields[name] = existing
+	}
+}
+
 func enrichStandardFieldsFromV2Describe(definition *ObjectDefinition) {
 	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
 	if err != nil || !ok {
@@ -1003,8 +1159,8 @@ func mergeStandardSObjectStubFields(definition *ObjectDefinition, features []str
 		fields = filtered
 	}
 	mergeStandardFields(definition, fields)
-	// Preserve stub defaults, while repairing captured scalar Time fields that
-	// older stubs classified as references and filling missing write flags.
+	// Preserve explicit field overrides while filling captured calculated
+	// facets, repairing scalar Time references, and filling missing write flags.
 	enrichStandardStubWriteFlagsFromV2Describe(definition)
 	applyStandardSObjectStubReadOnlyFields(definition)
 }
@@ -1014,17 +1170,24 @@ func enrichStandardStubWriteFlagsFromV2Describe(definition *ObjectDefinition) {
 	if err != nil || !ok {
 		return
 	}
+	stubFields, _ := standardSObjectStubFieldsFor(definition.APIName)
 	for _, captured := range describe.Fields {
 		name, exists := ResolveFieldName(*definition, "", captured.Name)
 		if !exists {
 			continue
 		}
 		field := definition.Fields[name]
+		if stub, exists := stubFields[captured.Name]; exists && captured.Calculated &&
+			field.Type == stub.Type && field.DisplayType == stub.DisplayType && field.Formula == "" {
+			field.Type = FieldCalculated
+			field.DisplayType = describeDisplayType(captured.Type)
+		}
 		if strings.EqualFold(captured.Type, "time") && standardStubTimeReference(field) {
 			field.Type = describeFieldType(captured)
 			field.DisplayType = describeDisplayType(captured.Type)
 			field.ReferenceTo = append([]string(nil), captured.ReferenceTo...)
 			field.RelationshipName = captured.RelationshipName
+			field.Aggregatable = cloneBoolFlag(captured.Aggregatable)
 		}
 		if field.Createable == nil {
 			field.Createable = cloneBoolFlag(captured.Createable)
@@ -1036,8 +1199,110 @@ func enrichStandardStubWriteFlagsFromV2Describe(definition *ObjectDefinition) {
 	}
 }
 
+// mergeStandardSObjectStubReferencesFromV2Describe fills reference fields
+// omitted by a generated SObject stub and corrects stub fields whose captured
+// describe type is a reference. Other stub field types retain their existing
+// precedence.
+func mergeStandardSObjectStubReferencesFromV2Describe(definition *ObjectDefinition, features []string) {
+	if definition == nil || definition.Fields == nil {
+		return
+	}
+	fields := standardStubReferenceFieldsFromV2Describe(definition.APIName)
+	for _, described := range fields {
+		if !standardStubReferenceFieldEnabled(definition.APIName, described.APIName, features) {
+			continue
+		}
+		name, exists := ResolveFieldName(*definition, "", described.APIName)
+		if !exists {
+			definition.Fields[described.APIName] = cloneField(described)
+			continue
+		}
+		existing := definition.Fields[name]
+		if existing.Type == FieldLocation {
+			existing.Type = described.Type
+			existing.DisplayType = described.DisplayType
+			existing.ReferenceTo = append([]string(nil), described.ReferenceTo...)
+			if described.RelationshipName != "" {
+				existing.RelationshipName = described.RelationshipName
+			}
+		} else {
+			enrichStandardField(&existing, described)
+		}
+		definition.Fields[name] = existing
+	}
+}
+
+func standardStubReferenceFieldEnabled(objectName, fieldName string, features []string) bool {
+	return standardStubReferenceFieldEnabledForSignature(objectName, fieldName, canonicalFeatureSignature(features))
+}
+
+func standardStubReferenceFieldEnabledForSignature(objectName, fieldName, featureSignature string) bool {
+	if stringsEqualFold(objectName, "Account") && !featureSignatureHas(featureSignature, "PersonAccounts") && isPersonAccountField(fieldName) {
+		return false
+	}
+	if strings.EqualFold(fieldName, "CurrencyIsoCode") && !featureSignatureHas(featureSignature, "MultiCurrency") {
+		return false
+	}
+	return standardOptionalFieldEnabled(objectName, fieldName, featureSignature)
+}
+
+func featureSignatureHas(signature, want string) bool {
+	for signature != "" {
+		feature, rest, found := strings.Cut(signature, ",")
+		if canonicalFeatureName(feature) == want {
+			return true
+		}
+		if !found {
+			break
+		}
+		signature = rest
+	}
+	return false
+}
+
+func standardStubReferenceFieldsFromV2Describe(objectName string) []Field {
+	if _, hasStub := standardSObjectStubFieldsFor(objectName); !hasStub {
+		return nil
+	}
+	describe, ok, err := lookupStandardDescribeCatalogV2(objectName)
+	if err != nil || !ok {
+		return nil
+	}
+	var fields []Field
+	for _, captured := range describe.Fields {
+		if !strings.EqualFold(captured.Type, "reference") || (captured.DeprecatedAndHidden != nil && *captured.DeprecatedAndHidden) {
+			continue
+		}
+		if !standardStubReferenceTargetsAvailable(captured.ReferenceTo) {
+			continue
+		}
+		field := describeField(captured)
+		// Non-nillability alone does not establish an omitted-field DML error.
+		// Existing explicit requirements remain intact when this field merges.
+		field.Required = false
+		fields = append(fields, field)
+	}
+	return fields
+}
+
+// Incremental projection must not require optional objects absent from the
+// local registry. Keep polymorphic target lists whole rather than narrowing
+// captured metadata to the available subset.
+func standardStubReferenceTargetsAvailable(targets []string) bool {
+	for _, target := range targets {
+		if target == "" {
+			continue
+		}
+		if _, known := ResolveKnownStandardObjectName(target); !known {
+			return false
+		}
+	}
+	return true
+}
+
 func standardStubTimeReference(field Field) bool {
-	return field.Type == FieldReference && len(field.ReferenceTo) == 1 &&
+	// Repeated stub merges can restore the target after the catalog repairs the type.
+	return (field.Type == FieldReference || field.Type == FieldTime) && len(field.ReferenceTo) == 1 &&
 		strings.EqualFold(field.ReferenceTo[0], "Time")
 }
 
@@ -1095,9 +1360,10 @@ func mergeStandardSObjectStubRelationships(definition *ObjectDefinition, feature
 func VisitStandardObjectRelationships(objectName string, features []string, visit func(Relationship)) bool {
 	found := false
 	personAccounts := hasCanonicalFeature(features, "PersonAccounts")
+	signature := canonicalFeatureSignature(features)
 	if entry, ok := standardObjectCatalogEntryForName(objectName); ok {
 		for _, relationship := range entry.Definition.Relations {
-			if !personAccounts && isPersonAccountRelationship(relationship) {
+			if (!personAccounts && isPersonAccountRelationship(relationship)) || !standardOptionalFieldEnabled(objectName, relationship.Field, signature) {
 				continue
 			}
 			visit(cloneRelationship(relationship))
@@ -1109,7 +1375,7 @@ func VisitStandardObjectRelationships(objectName string, features []string, visi
 		return found
 	}
 	for _, relationship := range relationships {
-		if !personAccounts && isPersonAccountRelationship(relationship) {
+		if (!personAccounts && isPersonAccountRelationship(relationship)) || !standardOptionalFieldEnabled(objectName, relationship.Field, signature) {
 			continue
 		}
 		visit(cloneRelationship(relationship))
@@ -1172,6 +1438,16 @@ func isPersonAccountField(name string) bool {
 }
 
 func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
+	// Owned describe observations keep integer digits separate from decimal precision.
+	if fieldName, digits := standardIntegerDigits(definition.APIName); fieldName != "" {
+		if name, exists := ResolveFieldName(*definition, "", fieldName); exists {
+			field := definition.Fields[name]
+			field.Digits = digits
+			definition.Fields[name] = field
+		}
+	}
+	applyPermissionSetCheckboxSchema(definition)
+	applyObjectPermissionCheckboxFacets(definition)
 	// R120-R122: these generated identifiers expose the AutoNumber facet at
 	// both source API endpoints, although the generated catalog omits it.
 	if name := standardGeneratedNumberField(definition.APIName); name != "" {
@@ -1181,6 +1457,28 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		}
 	}
 	switch {
+	case stringsEqualFold(definition.APIName, "ApexClass"):
+		if name, ok := ResolveFieldName(*definition, "", "LengthWithoutComments"); ok {
+			field := definition.Fields[name]
+			field.Nillable = BoolFlag(false)
+			definition.Fields[name] = field
+		}
+	case stringsEqualFold(definition.APIName, "AccountTeamMember"):
+		ensureReferenceShape(definition, "AccountId", []string{"Account"}, "Account")
+		ensureReferenceShape(definition, "UserId", []string{"User"}, "User")
+	case stringsEqualFold(definition.APIName, "Knowledge__kav"):
+		// The concrete Language field is createable; retain its native
+		// non-updateable describe facet and every other field's flags.
+		markFieldCreateable(definition, "Language")
+	case stringsEqualFold(definition.APIName, "UserLicense"):
+		// The owned setup-license observations distinguish the describe
+		// picklist type from the String value returned by a record projection.
+		setFieldTypeAndDisplay(definition, "Status", FieldPicklist, "PICKLIST")
+		if name, ok := ResolveFieldName(*definition, "", "Status"); ok {
+			field := definition.Fields[name]
+			field.Nillable = BoolFlag(false)
+			definition.Fields[name] = field
+		}
 	case stringsEqualFold(definition.APIName, "Account"):
 		markFieldRequired(definition, "Name")
 		// R177 observes this standard field even without the optional portal
@@ -1241,6 +1539,16 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		// SObject stub exposes only its Apex String shape, so correct the
 		// runtime field metadata at the standard-object compatibility seam.
 		setFieldTypeAndDisplay(definition, "Channel", FieldMultiPicklist, "MULTIPICKLIST")
+		if name, exists := ResolveFieldName(*definition, "", "Channel"); exists {
+			field := definition.Fields[name]
+			if !field.PicklistValuesConfigured && len(field.PicklistValues) == 0 {
+				for _, value := range []string{"Email", "Portal", "Phone", "Internal", "Event", "Task", "CaseComment", "Messaging"} {
+					field.PicklistValues = append(field.PicklistValues, PicklistValue{Value: value, Label: value, Active: true})
+				}
+				definition.Fields[name] = field
+			}
+		}
+
 	case stringsEqualFold(definition.APIName, "FeedItem"):
 		// FeedItem.ParentId is polymorphic on Salesforce: Chatter posts can
 		// target a user, a collaboration group, or a record feed. The public
@@ -1270,7 +1578,8 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		ensureField(definition, Field{APIName: "ExpectedRevenue", Label: "Expected Revenue", Type: FieldDecimal, DisplayType: "CURRENCY", Precision: 18, Scale: 2, Nillable: BoolFlag(true), Createable: BoolFlag(false), Updateable: BoolFlag(false), Filterable: BoolFlag(true), Groupable: BoolFlag(false), Sortable: BoolFlag(true), Aggregatable: BoolFlag(true)})
 		ensureField(definition, Field{APIName: "IsPrivate", Label: "Private", Type: FieldBoolean, DisplayType: "BOOLEAN", DefaultValue: "false", Nillable: BoolFlag(false), Createable: BoolFlag(true), Updateable: BoolFlag(true), Filterable: BoolFlag(true), Groupable: BoolFlag(true), Sortable: BoolFlag(true), Aggregatable: BoolFlag(false)})
 		ensureField(definition, Field{APIName: "IqScore", Label: "Opportunity Score", Type: FieldInteger, DisplayType: "INTEGER", Nillable: BoolFlag(true), Createable: BoolFlag(false), Updateable: BoolFlag(false), Filterable: BoolFlag(true), Groupable: BoolFlag(false), Sortable: BoolFlag(true), Aggregatable: BoolFlag(true)})
-		ensureField(definition, Field{APIName: "TotalOpportunityQuantity", Label: "Quantity", Type: FieldDecimal, DisplayType: "DOUBLE", Precision: 18, Scale: 2, Nillable: BoolFlag(true), Createable: BoolFlag(false), Updateable: BoolFlag(false), Filterable: BoolFlag(true), Groupable: BoolFlag(false), Sortable: BoolFlag(true), Aggregatable: BoolFlag(true)})
+		// Salesforce Opportunity reference lists Create and Update for quantity.
+		ensureField(definition, Field{APIName: "TotalOpportunityQuantity", Label: "Quantity", Type: FieldDecimal, DisplayType: "DOUBLE", Precision: 18, Scale: 2, Nillable: BoolFlag(true), Createable: BoolFlag(true), Updateable: BoolFlag(true), Filterable: BoolFlag(true), Groupable: BoolFlag(false), Sortable: BoolFlag(true), Aggregatable: BoolFlag(true)})
 	case stringsEqualFold(definition.APIName, "User"):
 		ensureField(definition, Field{APIName: "AssistantName", Label: "Assistant", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(true), Updateable: BoolFlag(true)})
 		ensureField(definition, Field{APIName: "LeadSource", Label: "Lead Source", Type: FieldPicklist, DisplayType: "PICKLIST", Createable: BoolFlag(true), Updateable: BoolFlag(true)})
@@ -1281,8 +1590,17 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		setFieldDefault(definition, "IsActive", "true")
 		ensureFieldDefault(definition, "LanguageLocaleKey", "en_US")
 		ensureFieldDefault(definition, "LocaleSidKey", "en_US")
-		ensureFieldDefault(definition, "ProfileId", "00e000000000001")
-		ensureFieldDefault(definition, "TimeZoneSidKey", "UTC")
+		ensureFieldDefault(definition, "ProfileId", DefaultProfileID)
+		// Native user-zone rows 037-053/066: this required field has no
+		// construction or insert default. Rows 052/068 reject non-picklist IDs.
+		setFieldDefault(definition, "TimeZoneSidKey", "")
+		markFieldRequired(definition, "TimeZoneSidKey")
+		if name, ok := ResolveFieldName(*definition, "", "TimeZoneSidKey"); ok {
+			field := definition.Fields[name]
+			field.DefaultedOnCreate = BoolFlag(false)
+			field.RestrictedPicklist = true
+			definition.Fields[name] = field
+		}
 		ensureFieldDefault(definition, "Username", "local-user@example.invalid")
 	case stringsEqualFold(definition.APIName, "UserRole"):
 		// Salesforce defaults this required createable picklist to Edit when it
@@ -1305,6 +1623,17 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 	case stringsEqualFold(definition.APIName, "PermissionSetGroupComponent"):
 		markFieldCreateable(definition, "PermissionSetGroupId")
 		markFieldCreateable(definition, "PermissionSetId")
+	}
+}
+
+func standardIntegerDigits(objectName string) (string, int) {
+	switch {
+	case strings.EqualFold(objectName, "Account"):
+		return "NumberOfEmployees", 8
+	case strings.EqualFold(objectName, "ContactPointAddress"), strings.EqualFold(objectName, "ContactPointEmail"):
+		return "PreferenceRank", 9
+	default:
+		return "", 0
 	}
 }
 
@@ -1768,6 +2097,7 @@ func cloneField(field Field) Field {
 	field.SummaryFilterItems = append([]SummaryFilterItem(nil), field.SummaryFilterItems...)
 	field.FilteredLookupInfo = cloneFilteredLookupInfo(field.FilteredLookupInfo)
 	field.Nillable = cloneBoolFlag(field.Nillable)
+	field.DescribeCaseSensitive = cloneBoolFlag(field.DescribeCaseSensitive)
 	field.DefaultedOnCreate = cloneBoolFlag(field.DefaultedOnCreate)
 	field.Accessible = cloneBoolFlag(field.Accessible)
 	field.Createable = cloneBoolFlag(field.Createable)

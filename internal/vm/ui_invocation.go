@@ -45,8 +45,9 @@ func (vm *VM) InvokeLWCMethod(className, methodName string, params map[string]an
 	return vm.invokeUIAction("lwc", className, methodName, params)
 }
 
-func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, params map[string]string) (UIInvocationResult, error) {
-	out := UIInvocationResult{Framework: "visualforce", ClassName: className, MethodName: methodName}
+func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, params map[string]string) (out UIInvocationResult, err error) {
+	defer recoverJSONConversionUIResult(&out, &err)
+	out = UIInvocationResult{Framework: "visualforce", ClassName: className, MethodName: methodName}
 	if strings.TrimSpace(className) == "" || strings.TrimSpace(methodName) == "" {
 		out.Success = false
 		out.Error = &UIActionError{Type: "UnsupportedFeature", Message: "Visualforce action requires controller class and method"}
@@ -151,9 +152,10 @@ func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, par
 	return out, nil
 }
 
-func (vm *VM) InvokeVisualforceActionOnController(controller Value, className, methodName, pageURL string, params map[string]string) (Value, Value, UIInvocationResult, error) {
+func (vm *VM) InvokeVisualforceActionOnController(controller Value, className, methodName, pageURL string, params map[string]string) (_ Value, _ Value, out UIInvocationResult, err error) {
+	defer recoverJSONConversionUIResult(&out, &err)
 	vm.registerSObjectAliasRecord(controller)
-	out := UIInvocationResult{Framework: "visualforce", ClassName: className, MethodName: methodName}
+	out = UIInvocationResult{Framework: "visualforce", ClassName: className, MethodName: methodName}
 	if strings.TrimSpace(className) == "" || strings.TrimSpace(methodName) == "" {
 		out.Success = false
 		out.Error = &UIActionError{Type: "UnsupportedFeature", Message: "Visualforce action requires controller class and method"}
@@ -163,7 +165,13 @@ func (vm *VM) InvokeVisualforceActionOnController(controller Value, className, m
 		pageURL = "/apex/current"
 	}
 	// A bound action shares its request's messages with constructors and setters.
+	headers := vm.currentPage.Fields["headers"]
 	vm.currentPage = vm.newPageReference(pageURL)
+	// Invoking a bound action stays in the same HTTP request. Retain its
+	// header map identity, including explicit response writes made earlier.
+	if headers.Kind == ValueMap && headers.Runtime == "pagereference-headers" {
+		vm.currentPage.Fields["headers"] = headers
+	}
 	if len(params) > 0 {
 		mergeCurrentPageStringParams(vm.currentPage, params)
 	}
@@ -284,8 +292,9 @@ func mergeCurrentPageStringParams(page Value, params map[string]string) {
 	page.Fields["parameters"] = pageParams
 }
 
-func (vm *VM) invokeUIAction(framework, className, methodName string, params map[string]any) (UIInvocationResult, error) {
-	out := UIInvocationResult{Framework: framework, ClassName: className, MethodName: methodName}
+func (vm *VM) invokeUIAction(framework, className, methodName string, params map[string]any) (out UIInvocationResult, err error) {
+	defer recoverJSONConversionUIResult(&out, &err)
+	out = UIInvocationResult{Framework: framework, ClassName: className, MethodName: methodName}
 	callerEntrySharing := vm.entrySharingMode
 	vm.entrySharingMode = "with sharing"
 	defer func() { vm.entrySharingMode = callerEntrySharing }()
@@ -528,6 +537,21 @@ func methodHasAuraEnabled(modifiers []string) bool {
 		}
 	}
 	return false
+}
+
+// UI actions convert return values and trace fields outside executeProgram.
+// Surface the same raw-conversion exception in their existing failure result.
+func recoverJSONConversionUIResult(out *UIInvocationResult, err *error) {
+	if recovered := recover(); recovered != nil {
+		failure, ok := recovered.(jsonConversionFailure)
+		if !ok {
+			panic(recovered)
+		}
+		out.Success = false
+		out.ReturnValue = nil
+		out.Error = uiInvocationError(failure.err)
+		*err = nil
+	}
 }
 
 func uiInvocationError(err error) *UIActionError {

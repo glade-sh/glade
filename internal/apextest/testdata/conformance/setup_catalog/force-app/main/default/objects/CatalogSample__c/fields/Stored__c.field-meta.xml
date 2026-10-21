@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Stored__c</fullName><label>Stored</label><type>Text</type><length>30</length></CustomField>

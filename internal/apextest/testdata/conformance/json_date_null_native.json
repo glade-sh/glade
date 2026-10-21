@@ -1,0 +1,1762 @@
+{
+  "apiVersions": [
+    "62.0",
+    "63.0",
+    "67.0"
+  ],
+  "routes": [
+    "isTest",
+    "anonymous"
+  ],
+  "namespaceContext": "none",
+  "knownRows": 81,
+  "pendingCoverage": [
+    "SourceAPI68 and other unobserved source versions",
+    "Mixed source/caller API pairs",
+    "Namespace contexts and user classes shadowing Date (local preservation only)",
+    "JSONParser Date null routes",
+    "Anonymous readonly user DTO Date null",
+    "Qualified System.Date.class setup was intentionally not introduced"
+  ],
+  "captures": [
+    {
+      "context": "api62",
+      "kind": "named",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "testClass": "OwnedDateNullBoundary",
+      "marker": "OWNED_DATE_NULL_BOUNDARY|",
+      "deployment": {
+        "id": "0AfRL00000iqtez0AA",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 6,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 6
+      },
+      "rawSHA256": {
+        "deploy.json": "d6c1bbf4370bab38c1b3741c3350400a6a3b6246a98703df3aa9f847cfa03af1",
+        "org.tsv": "dc0f878c7795e1bc73d78044d9d2a9d9483d4c510fc366210a2fb6b1ee290895",
+        "ORG-RUN.txt": "762bb36b707c906c27f1f42a3ba83e27c45205bb0a441e8ed5e9f9bd1b12407f",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09"
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        },
+        "force-app/main/default/classes/OwnedDateNullBoundary.cls": {
+          "source": "@IsTest private class OwnedDateNullBoundary {\n public class Envelope { public Date value {get;} }\n private static Object decode(String body,Type target,Boolean strict) {\n  try {\n   Object value=strict?JSON.deserializeStrict(body,target):JSON.deserialize(body,target);\n   return new Map<String,Object>{'returned'=>true,'isNull'=>value==null,'json'=>JSON.serialize(value)};\n  } catch(Exception e) {return new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()};}\n }\n private static Object valueOf(String text) {\n  try {Date value=Date.valueOf(text);return new Map<String,Object>{'returned'=>true,'isNull'=>value==null,'json'=>JSON.serialize(value)};}\n  catch(Exception e) {return new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()};}\n }\n private static void finish(Object result) {\n  System.assert(false,'OWNED_DATE_NULL_BOUNDARY|'+JSON.serialize(result));\n }\n @IsTest static void quotedDateNull() {\n  finish(decode('\"null\"',Date.class,false));\n }\n @IsTest static void strictRootDateNull() {\n  finish(new Map<String,Object>{'null'=>decode('null',Date.class,true),'quoted'=>decode('\"null\"',Date.class,true)});\n }\n @IsTest static void nestedDateNull() {\n  finish(decode('{\"value\":null}',Envelope.class,false));\n }\n @IsTest static void dateCollectionNulls() {\n  finish(new Map<String,Object>{'list'=>decode('[null]',List<Date>.class,false),'map'=>decode('{\"owned\":null}',Map<String,Date>.class,false)});\n }\n @IsTest static void otherScalarRootNulls() {\n  finish(new Map<String,Object>{'integer'=>decode('null',Integer.class,false),'string'=>decode('null',String.class,false),'datetime'=>decode('null',Datetime.class,false)});\n }\n @IsTest static void valueOfControls() {\n  finish(new Map<String,Object>{'null'=>valueOf(null),'quoted'=>valueOf('null'),'iso'=>valueOf('2004-02-29')});\n }\n}\n",
+          "sha256": "e00c0aa5eaa5c9fa0fe941d1e685da1b0e77d15022dfcdba478d7e05d855389a"
+        },
+        "force-app/main/default/classes/OwnedDateNullBoundary.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        }
+      },
+      "parserCorrection": null,
+      "rows": [
+        {
+          "id": "dateCollectionNulls",
+          "classification": "full",
+          "native": {
+            "map": {
+              "json": "{\"owned\":null}",
+              "isNull": false,
+              "returned": true
+            },
+            "list": {
+              "json": "[null]",
+              "isNull": false,
+              "returned": true
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"map\":{\"json\":\"{\\\"owned\\\":null}\",\"isNull\":false,\"returned\":true},\"list\":{\"json\":\"[null]\",\"isNull\":false,\"returned\":true}}"
+          }
+        },
+        {
+          "id": "nestedDateNull",
+          "classification": "full",
+          "native": {
+            "json": "{\"value\":null}",
+            "isNull": false,
+            "returned": true
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"json\":\"{\\\"value\\\":null}\",\"isNull\":false,\"returned\":true}"
+          }
+        },
+        {
+          "id": "otherScalarRootNulls",
+          "classification": "partial",
+          "native": {
+            "datetime": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            },
+            "string": {
+              "json": "null",
+              "isNull": true,
+              "returned": true
+            },
+            "integer": {
+              "json": "null",
+              "isNull": true,
+              "returned": true
+            }
+          },
+          "matchedPaths": [
+            "/integer",
+            "/string"
+          ],
+          "carriedPaths": {
+            "/datetime": "Root Datetime JSON null is a separate native-known mismatch reserved for the DateTime owner; Date-only rejection must not change it."
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"datetime\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"},\"string\":{\"json\":\"null\",\"isNull\":true,\"returned\":true},\"integer\":{\"json\":\"null\",\"isNull\":true,\"returned\":true}}"
+          }
+        },
+        {
+          "id": "quotedDateNull",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"}"
+          }
+        },
+        {
+          "id": "strictRootDateNull",
+          "classification": "full",
+          "native": {
+            "quoted": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            },
+            "null": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"quoted\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"},\"null\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"}}"
+          }
+        },
+        {
+          "id": "valueOfControls",
+          "classification": "full",
+          "native": {
+            "iso": {
+              "json": "\"2004-02-29\"",
+              "isNull": false,
+              "returned": true
+            },
+            "quoted": {
+              "message": "Invalid date: null",
+              "type": "System.TypeException"
+            },
+            "null": {
+              "message": "Argument cannot be null.",
+              "type": "System.NullPointerException"
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"iso\":{\"json\":\"\\\"2004-02-29\\\"\",\"isNull\":false,\"returned\":true},\"quoted\":{\"message\":\"Invalid date: null\",\"type\":\"System.TypeException\"},\"null\":{\"message\":\"Argument cannot be null.\",\"type\":\"System.NullPointerException\"}}"
+          }
+        }
+      ]
+    },
+    {
+      "context": "origin-input-api62",
+      "kind": "named",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "testClass": "OwnedDateNullInputOrigins",
+      "marker": "OWNED_DATE_NULL_INPUT_ORIGINS|",
+      "deployment": {
+        "id": "0AfRL00000iqogw0AA",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 4,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 4
+      },
+      "rawSHA256": {
+        "deploy.json": "4fb9fe65b2b8af5bbea253107011284b7d899cdea19bf5961722cb0ca2f1bc4c",
+        "org.tsv": "2656ad995225a70cda2eaed5c08204170cd5b837412aaec06a8514a2ffa101d9",
+        "ORG-RUN.txt": "21035030f0c35aa0a03d44b0c21467228975889505deaa16409138098bd0c82e",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09"
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        },
+        "force-app/main/default/classes/OwnedDateNullInputOrigins.cls": {
+          "source": "@IsTest private class OwnedDateNullInputOrigins {\n private static Object decode(String body,Type target,Boolean strict) {\n  try {\n   Object value=strict?JSON.deserializeStrict(body,target):JSON.deserialize(body,target);\n   return new Map<String,Object>{'returned'=>true,'isNull'=>value==null,'json'=>JSON.serialize(value)};\n  } catch(Exception e) {return new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()};}\n }\n private static void finish(Object result) {System.assert(false,'OWNED_DATE_NULL_INPUT_ORIGINS|'+JSON.serialize(result));}\n @IsTest static void nullTextOrigins() {\n  finish(new Map<String,Object>{'literal'=>decode('null',Date.class,false),'lookup'=>decode('null',Type.forName('Date'),false)});\n }\n @IsTest static void apexNullInputOrigins() {\n  finish(new Map<String,Object>{'literal'=>decode(null,Date.class,false),'lookup'=>decode(null,Type.forName('Date'),false)});\n }\n @IsTest static void strictTextOrigins() {\n  finish(new Map<String,Object>{'literal'=>decode('null',Date.class,true),'lookup'=>decode('null',Type.forName('Date'),true)});\n }\n @IsTest static void quotedTextOrigins() {\n  finish(new Map<String,Object>{'literal'=>decode('\"null\"',Date.class,false),'lookup'=>decode('\"null\"',Type.forName('Date'),false)});\n }\n}\n",
+          "sha256": "3d99039c1403d6feb2565eb5d88b282002665254f1073f233f398d25d67ca623"
+        },
+        "force-app/main/default/classes/OwnedDateNullInputOrigins.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d"
+        }
+      },
+      "parserCorrection": null,
+      "rows": [
+        {
+          "id": "apexNullInputOrigins",
+          "classification": "partial",
+          "native": {
+            "lookup": {
+              "message": "null input to JSON parser",
+              "type": "System.NullPointerException"
+            },
+            "literal": {
+              "message": "null input to JSON parser",
+              "type": "System.NullPointerException"
+            }
+          },
+          "matchedPaths": [
+            "/literal/type",
+            "/lookup/type"
+          ],
+          "carriedPaths": {
+            "/literal/message": "JSON input String is Apex null, not JSON text null. Native NullPointerException message differs from existing local diagnostics and is carried without changing that separate path.",
+            "/lookup/message": "JSON input String is Apex null, not JSON text null. Native NullPointerException message differs from existing local diagnostics and is carried without changing that separate path."
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_INPUT_ORIGINS|{\"lookup\":{\"message\":\"null input to JSON parser\",\"type\":\"System.NullPointerException\"},\"literal\":{\"message\":\"null input to JSON parser\",\"type\":\"System.NullPointerException\"}}"
+          }
+        },
+        {
+          "id": "nullTextOrigins",
+          "classification": "full",
+          "native": {
+            "lookup": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            },
+            "literal": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_INPUT_ORIGINS|{\"lookup\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"},\"literal\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"}}"
+          }
+        },
+        {
+          "id": "quotedTextOrigins",
+          "classification": "full",
+          "native": {
+            "lookup": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            },
+            "literal": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_INPUT_ORIGINS|{\"lookup\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"},\"literal\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"}}"
+          }
+        },
+        {
+          "id": "strictTextOrigins",
+          "classification": "full",
+          "native": {
+            "lookup": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            },
+            "literal": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_INPUT_ORIGINS|{\"lookup\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"},\"literal\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"}}"
+          }
+        }
+      ]
+    },
+    {
+      "context": "anonymous-api62",
+      "kind": "anonymous",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "marker": "OWNED_DATE_NULL_ANONYMOUS|",
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "status": 0,
+        "exitCode": 0,
+        "parseErrors": []
+      },
+      "source": {
+        "source": "List<String> labels=new List<String>{'rootDateNull','quotedDateNull','strictDateNull','strictQuotedDateNull','listDateNull','mapDateNull','rootIntegerNull','rootStringNull','rootDatetimeNull','apexNullDateInput','lookupDateNull','lookupApexNullInput','lookupStrictDateNull','lookupQuotedDateNull'};\nList<String> bodies=new List<String>{'null','\"null\"','null','\"null\"','[null]','{\"owned\":null}','null','null','null',null,'null',null,'null','\"null\"'};\nList<Type> targets=new List<Type>{Date.class,Date.class,Date.class,Date.class,List<Date>.class,Map<String,Date>.class,Integer.class,String.class,Datetime.class,Date.class,Type.forName('Date'),Type.forName('Date'),Type.forName('Date'),Type.forName('Date')};\nList<Boolean> stricts=new List<Boolean>{false,false,true,true,false,false,false,false,false,false,false,false,true,false};\nfor(Integer i=0;i<labels.size();i++){\n Map<String,Object> row=new Map<String,Object>{'label'=>labels[i]};\n try {\n  Object value=stricts[i]?JSON.deserializeStrict(bodies[i],targets[i]):JSON.deserialize(bodies[i],targets[i]);\n  row.put('returned',true);row.put('isNull',value==null);row.put('json',JSON.serialize(value));\n }catch(Exception e){row.put('type',e.getTypeName());row.put('message',e.getMessage());}\n System.debug(LoggingLevel.ERROR,'OWNED_DATE_NULL_ANONYMOUS|'+JSON.serialize(row));\n}\nList<String> valueOfInputs=new List<String>{null,'null','2004-02-29'};\nfor(Integer i=0;i<valueOfInputs.size();i++){\n Map<String,Object> row=new Map<String,Object>{'label'=>'valueOf'+i};\n try {Date value=Date.valueOf(valueOfInputs[i]);row.put('returned',true);row.put('isNull',value==null);row.put('json',JSON.serialize(value));}\n catch(Exception e){row.put('type',e.getTypeName());row.put('message',e.getMessage());}\n System.debug(LoggingLevel.ERROR,'OWNED_DATE_NULL_ANONYMOUS|'+JSON.serialize(row));\n}\n",
+        "sha256": "407f396eb1c7f7fd17164e5dada47415d64877b461f3e25eb8d41a8e8ddb2e8a"
+      },
+      "rawSHA256": {
+        "run.json": "fd549ca3c7c416f80b49525d1371824a442d6e369a6db3e82d5f29aac524b049",
+        "org.tsv": "fd38ba3f95cafcf48ebbc60f5abeab361d0da3dc23a3a88e2ab4fb4f17c08e7d",
+        "ORG-RUN.txt": "f851e916c0efc10c83b90e19de122a39f258d5e9b077806b7b0933cbd79bffd3",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "source.apex": "407f396eb1c7f7fd17164e5dada47415d64877b461f3e25eb8d41a8e8ddb2e8a"
+      },
+      "rows": [
+        {
+          "id": "0",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "rootDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "1",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "quotedDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "2",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "strictDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "3",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "strictQuotedDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "4",
+          "classification": "full",
+          "native": {
+            "json": "[null]",
+            "isNull": false,
+            "returned": true,
+            "label": "listDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "5",
+          "classification": "full",
+          "native": {
+            "json": "{\"owned\":null}",
+            "isNull": false,
+            "returned": true,
+            "label": "mapDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "6",
+          "classification": "full",
+          "native": {
+            "json": "null",
+            "isNull": true,
+            "returned": true,
+            "label": "rootIntegerNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "7",
+          "classification": "full",
+          "native": {
+            "json": "null",
+            "isNull": true,
+            "returned": true,
+            "label": "rootStringNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "8",
+          "classification": "carried",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "rootDatetimeNull"
+          },
+          "matchedPaths": [
+            "/label"
+          ],
+          "carriedPaths": {
+            "/type": "Root Datetime JSON null is a separate native-known mismatch reserved for the DateTime owner; this row matches label identity only.",
+            "/message": "Root Datetime JSON null is a separate native-known mismatch reserved for the DateTime owner; this row matches label identity only."
+          }
+        },
+        {
+          "id": "9",
+          "classification": "partial",
+          "native": {
+            "message": "null input to JSON parser",
+            "type": "System.NullPointerException",
+            "label": "apexNullDateInput"
+          },
+          "matchedPaths": [
+            "/label",
+            "/type"
+          ],
+          "carriedPaths": {
+            "/message": "Apex-null input String follows the separate NullPointerException path; its native message differs from existing local diagnostics."
+          }
+        },
+        {
+          "id": "10",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "lookupDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "11",
+          "classification": "partial",
+          "native": {
+            "message": "null input to JSON parser",
+            "type": "System.NullPointerException",
+            "label": "lookupApexNullInput"
+          },
+          "matchedPaths": [
+            "/label",
+            "/type"
+          ],
+          "carriedPaths": {
+            "/message": "Apex-null input String follows the separate NullPointerException path; its native message differs from existing local diagnostics."
+          }
+        },
+        {
+          "id": "12",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "lookupStrictDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "13",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "lookupQuotedDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "14",
+          "classification": "full",
+          "native": {
+            "message": "Argument cannot be null.",
+            "type": "System.NullPointerException",
+            "label": "valueOf0"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "15",
+          "classification": "full",
+          "native": {
+            "message": "Invalid date: null",
+            "type": "System.TypeException",
+            "label": "valueOf1"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "16",
+          "classification": "full",
+          "native": {
+            "json": "\"2004-02-29\"",
+            "isNull": false,
+            "returned": true,
+            "label": "valueOf2"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        }
+      ]
+    },
+    {
+      "context": "api63",
+      "kind": "named",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "sourceApi": "63.0",
+      "callerApi": "63.0",
+      "transportApi": "62.0",
+      "testClass": "OwnedDateNullBoundary",
+      "marker": "OWNED_DATE_NULL_BOUNDARY|",
+      "deployment": {
+        "id": "0AfRL00000iqsEI0AY",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 6,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 6
+      },
+      "rawSHA256": {
+        "deploy.json": "ef63c4524f61067215912e105f9513f804f7b003e1b1b81a93576e334028e6e2",
+        "org.tsv": "dc0f878c7795e1bc73d78044d9d2a9d9483d4c510fc366210a2fb6b1ee290895",
+        "ORG-RUN.txt": "c6be21ee6df3dda62fa2856e90eaa862979dfa6898c476b342dbd327a93c2641",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09"
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"63.0\"\n}\n",
+          "sha256": "3ed6ac4773e0a69178e5624efd765c7cc7d715d18cf65272018acf0a6d44a821"
+        },
+        "force-app/main/default/classes/OwnedDateNullBoundary.cls": {
+          "source": "@IsTest private class OwnedDateNullBoundary {\n public class Envelope { public Date value {get;} }\n private static Object decode(String body,Type target,Boolean strict) {\n  try {\n   Object value=strict?JSON.deserializeStrict(body,target):JSON.deserialize(body,target);\n   return new Map<String,Object>{'returned'=>true,'isNull'=>value==null,'json'=>JSON.serialize(value)};\n  } catch(Exception e) {return new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()};}\n }\n private static Object valueOf(String text) {\n  try {Date value=Date.valueOf(text);return new Map<String,Object>{'returned'=>true,'isNull'=>value==null,'json'=>JSON.serialize(value)};}\n  catch(Exception e) {return new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()};}\n }\n private static void finish(Object result) {\n  System.assert(false,'OWNED_DATE_NULL_BOUNDARY|'+JSON.serialize(result));\n }\n @IsTest static void quotedDateNull() {\n  finish(decode('\"null\"',Date.class,false));\n }\n @IsTest static void strictRootDateNull() {\n  finish(new Map<String,Object>{'null'=>decode('null',Date.class,true),'quoted'=>decode('\"null\"',Date.class,true)});\n }\n @IsTest static void nestedDateNull() {\n  finish(decode('{\"value\":null}',Envelope.class,false));\n }\n @IsTest static void dateCollectionNulls() {\n  finish(new Map<String,Object>{'list'=>decode('[null]',List<Date>.class,false),'map'=>decode('{\"owned\":null}',Map<String,Date>.class,false)});\n }\n @IsTest static void otherScalarRootNulls() {\n  finish(new Map<String,Object>{'integer'=>decode('null',Integer.class,false),'string'=>decode('null',String.class,false),'datetime'=>decode('null',Datetime.class,false)});\n }\n @IsTest static void valueOfControls() {\n  finish(new Map<String,Object>{'null'=>valueOf(null),'quoted'=>valueOf('null'),'iso'=>valueOf('2004-02-29')});\n }\n}\n",
+          "sha256": "e00c0aa5eaa5c9fa0fe941d1e685da1b0e77d15022dfcdba478d7e05d855389a"
+        },
+        "force-app/main/default/classes/OwnedDateNullBoundary.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>63.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "6f7ec8a797339ecf0905557851fc9d857813e3725d83260839eab163a65b54b8"
+        }
+      },
+      "parserCorrection": null,
+      "rows": [
+        {
+          "id": "dateCollectionNulls",
+          "classification": "full",
+          "native": {
+            "map": {
+              "json": "{\"owned\":null}",
+              "isNull": false,
+              "returned": true
+            },
+            "list": {
+              "json": "[null]",
+              "isNull": false,
+              "returned": true
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"map\":{\"json\":\"{\\\"owned\\\":null}\",\"isNull\":false,\"returned\":true},\"list\":{\"json\":\"[null]\",\"isNull\":false,\"returned\":true}}"
+          }
+        },
+        {
+          "id": "nestedDateNull",
+          "classification": "full",
+          "native": {
+            "json": "{\"value\":null}",
+            "isNull": false,
+            "returned": true
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"json\":\"{\\\"value\\\":null}\",\"isNull\":false,\"returned\":true}"
+          }
+        },
+        {
+          "id": "otherScalarRootNulls",
+          "classification": "partial",
+          "native": {
+            "datetime": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            },
+            "string": {
+              "json": "null",
+              "isNull": true,
+              "returned": true
+            },
+            "integer": {
+              "json": "null",
+              "isNull": true,
+              "returned": true
+            }
+          },
+          "matchedPaths": [
+            "/integer",
+            "/string"
+          ],
+          "carriedPaths": {
+            "/datetime": "Root Datetime JSON null is a separate native-known mismatch reserved for the DateTime owner; Date-only rejection must not change it."
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"datetime\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"},\"string\":{\"json\":\"null\",\"isNull\":true,\"returned\":true},\"integer\":{\"json\":\"null\",\"isNull\":true,\"returned\":true}}"
+          }
+        },
+        {
+          "id": "quotedDateNull",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"}"
+          }
+        },
+        {
+          "id": "strictRootDateNull",
+          "classification": "full",
+          "native": {
+            "quoted": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            },
+            "null": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"quoted\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"},\"null\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"}}"
+          }
+        },
+        {
+          "id": "valueOfControls",
+          "classification": "full",
+          "native": {
+            "iso": {
+              "json": "\"2004-02-29\"",
+              "isNull": false,
+              "returned": true
+            },
+            "quoted": {
+              "message": "Invalid date: null",
+              "type": "System.TypeException"
+            },
+            "null": {
+              "message": "Argument cannot be null.",
+              "type": "System.NullPointerException"
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"iso\":{\"json\":\"\\\"2004-02-29\\\"\",\"isNull\":false,\"returned\":true},\"quoted\":{\"message\":\"Invalid date: null\",\"type\":\"System.TypeException\"},\"null\":{\"message\":\"Argument cannot be null.\",\"type\":\"System.NullPointerException\"}}"
+          }
+        }
+      ]
+    },
+    {
+      "context": "origin-input-api63",
+      "kind": "named",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "sourceApi": "63.0",
+      "callerApi": "63.0",
+      "transportApi": "62.0",
+      "testClass": "OwnedDateNullInputOrigins",
+      "marker": "OWNED_DATE_NULL_INPUT_ORIGINS|",
+      "deployment": {
+        "id": "0AfRL00000iqtiD0AQ",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 4,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 4
+      },
+      "rawSHA256": {
+        "deploy.json": "473dc12ee9749ec43f7533ad04afb073112a0d2045935bf7bc2ba577e7ba5886",
+        "org.tsv": "2656ad995225a70cda2eaed5c08204170cd5b837412aaec06a8514a2ffa101d9",
+        "ORG-RUN.txt": "66666e556557ceaf37a837096de405197af5d480d189d7811eaba38c777ec3c5",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "parser-correction.json": "3fc44c8a3ed02afdf14a500304d8c153810d56316f08b4590f5f258ace5fce65"
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"63.0\"\n}\n",
+          "sha256": "3ed6ac4773e0a69178e5624efd765c7cc7d715d18cf65272018acf0a6d44a821"
+        },
+        "force-app/main/default/classes/OwnedDateNullInputOrigins.cls": {
+          "source": "@IsTest private class OwnedDateNullInputOrigins {\n private static Object decode(String body,Type target,Boolean strict) {\n  try {\n   Object value=strict?JSON.deserializeStrict(body,target):JSON.deserialize(body,target);\n   return new Map<String,Object>{'returned'=>true,'isNull'=>value==null,'json'=>JSON.serialize(value)};\n  } catch(Exception e) {return new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()};}\n }\n private static void finish(Object result) {System.assert(false,'OWNED_DATE_NULL_INPUT_ORIGINS|'+JSON.serialize(result));}\n @IsTest static void nullTextOrigins() {\n  finish(new Map<String,Object>{'literal'=>decode('null',Date.class,false),'lookup'=>decode('null',Type.forName('Date'),false)});\n }\n @IsTest static void apexNullInputOrigins() {\n  finish(new Map<String,Object>{'literal'=>decode(null,Date.class,false),'lookup'=>decode(null,Type.forName('Date'),false)});\n }\n @IsTest static void strictTextOrigins() {\n  finish(new Map<String,Object>{'literal'=>decode('null',Date.class,true),'lookup'=>decode('null',Type.forName('Date'),true)});\n }\n @IsTest static void quotedTextOrigins() {\n  finish(new Map<String,Object>{'literal'=>decode('\"null\"',Date.class,false),'lookup'=>decode('\"null\"',Type.forName('Date'),false)});\n }\n}\n",
+          "sha256": "3d99039c1403d6feb2565eb5d88b282002665254f1073f233f398d25d67ca623"
+        },
+        "force-app/main/default/classes/OwnedDateNullInputOrigins.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>63.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "6f7ec8a797339ecf0905557851fc9d857813e3725d83260839eab163a65b54b8"
+        }
+      },
+      "parserCorrection": {
+        "reason": "Local extractor expected OWNED_DATE_NULL_ORIGIN instead of the captured source marker OWNED_DATE_NULL_INPUT_ORIGINS. Native deployment and its four complete assertion payloads are unchanged; original parser derivatives retained.",
+        "nativeRunRepeated": false,
+        "rawDeploymentUnchanged": true,
+        "initialParserSHA256": {
+          "org.tsv": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "errors.json": "9152cfafd724de9005cf6a39a3309b209133e2abbcae389c34e4aa827b9b9434",
+          "digests.json": "8fca3f4b252729deab132d8cba3153ea5811c6b30c60d6831b43a0fd62d0b9be"
+        }
+      },
+      "rows": [
+        {
+          "id": "apexNullInputOrigins",
+          "classification": "partial",
+          "native": {
+            "lookup": {
+              "message": "null input to JSON parser",
+              "type": "System.NullPointerException"
+            },
+            "literal": {
+              "message": "null input to JSON parser",
+              "type": "System.NullPointerException"
+            }
+          },
+          "matchedPaths": [
+            "/literal/type",
+            "/lookup/type"
+          ],
+          "carriedPaths": {
+            "/literal/message": "JSON input String is Apex null, not JSON text null. Native NullPointerException message differs from existing local diagnostics and is carried without changing that separate path.",
+            "/lookup/message": "JSON input String is Apex null, not JSON text null. Native NullPointerException message differs from existing local diagnostics and is carried without changing that separate path."
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_INPUT_ORIGINS|{\"lookup\":{\"message\":\"null input to JSON parser\",\"type\":\"System.NullPointerException\"},\"literal\":{\"message\":\"null input to JSON parser\",\"type\":\"System.NullPointerException\"}}"
+          }
+        },
+        {
+          "id": "nullTextOrigins",
+          "classification": "full",
+          "native": {
+            "lookup": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            },
+            "literal": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_INPUT_ORIGINS|{\"lookup\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"},\"literal\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"}}"
+          }
+        },
+        {
+          "id": "quotedTextOrigins",
+          "classification": "full",
+          "native": {
+            "lookup": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            },
+            "literal": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_INPUT_ORIGINS|{\"lookup\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"},\"literal\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"}}"
+          }
+        },
+        {
+          "id": "strictTextOrigins",
+          "classification": "full",
+          "native": {
+            "lookup": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            },
+            "literal": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_INPUT_ORIGINS|{\"lookup\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"},\"literal\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"}}"
+          }
+        }
+      ]
+    },
+    {
+      "context": "anonymous-api63",
+      "kind": "anonymous",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "sourceApi": "63.0",
+      "callerApi": "63.0",
+      "transportApi": "63.0",
+      "marker": "OWNED_DATE_NULL_ANONYMOUS|",
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "status": 0,
+        "exitCode": 0,
+        "parseErrors": []
+      },
+      "source": {
+        "source": "List<String> labels=new List<String>{'rootDateNull','quotedDateNull','strictDateNull','strictQuotedDateNull','listDateNull','mapDateNull','rootIntegerNull','rootStringNull','rootDatetimeNull','apexNullDateInput','lookupDateNull','lookupApexNullInput','lookupStrictDateNull','lookupQuotedDateNull'};\nList<String> bodies=new List<String>{'null','\"null\"','null','\"null\"','[null]','{\"owned\":null}','null','null','null',null,'null',null,'null','\"null\"'};\nList<Type> targets=new List<Type>{Date.class,Date.class,Date.class,Date.class,List<Date>.class,Map<String,Date>.class,Integer.class,String.class,Datetime.class,Date.class,Type.forName('Date'),Type.forName('Date'),Type.forName('Date'),Type.forName('Date')};\nList<Boolean> stricts=new List<Boolean>{false,false,true,true,false,false,false,false,false,false,false,false,true,false};\nfor(Integer i=0;i<labels.size();i++){\n Map<String,Object> row=new Map<String,Object>{'label'=>labels[i]};\n try {\n  Object value=stricts[i]?JSON.deserializeStrict(bodies[i],targets[i]):JSON.deserialize(bodies[i],targets[i]);\n  row.put('returned',true);row.put('isNull',value==null);row.put('json',JSON.serialize(value));\n }catch(Exception e){row.put('type',e.getTypeName());row.put('message',e.getMessage());}\n System.debug(LoggingLevel.ERROR,'OWNED_DATE_NULL_ANONYMOUS|'+JSON.serialize(row));\n}\nList<String> valueOfInputs=new List<String>{null,'null','2004-02-29'};\nfor(Integer i=0;i<valueOfInputs.size();i++){\n Map<String,Object> row=new Map<String,Object>{'label'=>'valueOf'+i};\n try {Date value=Date.valueOf(valueOfInputs[i]);row.put('returned',true);row.put('isNull',value==null);row.put('json',JSON.serialize(value));}\n catch(Exception e){row.put('type',e.getTypeName());row.put('message',e.getMessage());}\n System.debug(LoggingLevel.ERROR,'OWNED_DATE_NULL_ANONYMOUS|'+JSON.serialize(row));\n}\n",
+        "sha256": "407f396eb1c7f7fd17164e5dada47415d64877b461f3e25eb8d41a8e8ddb2e8a"
+      },
+      "rawSHA256": {
+        "run.json": "67d0471ca08367c2279aa0b62c2387b0082b375c683b1edd1f2782dc614998cb",
+        "org.tsv": "fd38ba3f95cafcf48ebbc60f5abeab361d0da3dc23a3a88e2ab4fb4f17c08e7d",
+        "ORG-RUN.txt": "0414ca972b164640686912b2b6d2c76805bb6571643f389b224d14483a4b2f55",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "source.apex": "407f396eb1c7f7fd17164e5dada47415d64877b461f3e25eb8d41a8e8ddb2e8a"
+      },
+      "rows": [
+        {
+          "id": "0",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "rootDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "1",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "quotedDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "2",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "strictDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "3",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "strictQuotedDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "4",
+          "classification": "full",
+          "native": {
+            "json": "[null]",
+            "isNull": false,
+            "returned": true,
+            "label": "listDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "5",
+          "classification": "full",
+          "native": {
+            "json": "{\"owned\":null}",
+            "isNull": false,
+            "returned": true,
+            "label": "mapDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "6",
+          "classification": "full",
+          "native": {
+            "json": "null",
+            "isNull": true,
+            "returned": true,
+            "label": "rootIntegerNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "7",
+          "classification": "full",
+          "native": {
+            "json": "null",
+            "isNull": true,
+            "returned": true,
+            "label": "rootStringNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "8",
+          "classification": "carried",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "rootDatetimeNull"
+          },
+          "matchedPaths": [
+            "/label"
+          ],
+          "carriedPaths": {
+            "/type": "Root Datetime JSON null is a separate native-known mismatch reserved for the DateTime owner; this row matches label identity only.",
+            "/message": "Root Datetime JSON null is a separate native-known mismatch reserved for the DateTime owner; this row matches label identity only."
+          }
+        },
+        {
+          "id": "9",
+          "classification": "partial",
+          "native": {
+            "message": "null input to JSON parser",
+            "type": "System.NullPointerException",
+            "label": "apexNullDateInput"
+          },
+          "matchedPaths": [
+            "/label",
+            "/type"
+          ],
+          "carriedPaths": {
+            "/message": "Apex-null input String follows the separate NullPointerException path; its native message differs from existing local diagnostics."
+          }
+        },
+        {
+          "id": "10",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "lookupDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "11",
+          "classification": "partial",
+          "native": {
+            "message": "null input to JSON parser",
+            "type": "System.NullPointerException",
+            "label": "lookupApexNullInput"
+          },
+          "matchedPaths": [
+            "/label",
+            "/type"
+          ],
+          "carriedPaths": {
+            "/message": "Apex-null input String follows the separate NullPointerException path; its native message differs from existing local diagnostics."
+          }
+        },
+        {
+          "id": "12",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "lookupStrictDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "13",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "lookupQuotedDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "14",
+          "classification": "full",
+          "native": {
+            "message": "Argument cannot be null.",
+            "type": "System.NullPointerException",
+            "label": "valueOf0"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "15",
+          "classification": "full",
+          "native": {
+            "message": "Invalid date: null",
+            "type": "System.TypeException",
+            "label": "valueOf1"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "16",
+          "classification": "full",
+          "native": {
+            "json": "\"2004-02-29\"",
+            "isNull": false,
+            "returned": true,
+            "label": "valueOf2"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        }
+      ]
+    },
+    {
+      "context": "api67",
+      "kind": "named",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "62.0",
+      "testClass": "OwnedDateNullBoundary",
+      "marker": "OWNED_DATE_NULL_BOUNDARY|",
+      "deployment": {
+        "id": "0AfRL00000iqtOs0AI",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 6,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 6
+      },
+      "rawSHA256": {
+        "deploy.json": "ad10c1ec0f7fea189fe96bbc582155155c052fec852f08216e018a7bf902ae60",
+        "org.tsv": "dc0f878c7795e1bc73d78044d9d2a9d9483d4c510fc366210a2fb6b1ee290895",
+        "ORG-RUN.txt": "54f9e158efe277383b442358efde06d6a6cc5ed3d9d9f9dccb7d55743a1121fa",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09"
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+          "sha256": "2bc58206d0b9c401181c61264ca1a7084dff5c8afdec3c0d7edeea86a65d9484"
+        },
+        "force-app/main/default/classes/OwnedDateNullBoundary.cls": {
+          "source": "@IsTest private class OwnedDateNullBoundary {\n public class Envelope { public Date value {get;} }\n private static Object decode(String body,Type target,Boolean strict) {\n  try {\n   Object value=strict?JSON.deserializeStrict(body,target):JSON.deserialize(body,target);\n   return new Map<String,Object>{'returned'=>true,'isNull'=>value==null,'json'=>JSON.serialize(value)};\n  } catch(Exception e) {return new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()};}\n }\n private static Object valueOf(String text) {\n  try {Date value=Date.valueOf(text);return new Map<String,Object>{'returned'=>true,'isNull'=>value==null,'json'=>JSON.serialize(value)};}\n  catch(Exception e) {return new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()};}\n }\n private static void finish(Object result) {\n  System.assert(false,'OWNED_DATE_NULL_BOUNDARY|'+JSON.serialize(result));\n }\n @IsTest static void quotedDateNull() {\n  finish(decode('\"null\"',Date.class,false));\n }\n @IsTest static void strictRootDateNull() {\n  finish(new Map<String,Object>{'null'=>decode('null',Date.class,true),'quoted'=>decode('\"null\"',Date.class,true)});\n }\n @IsTest static void nestedDateNull() {\n  finish(decode('{\"value\":null}',Envelope.class,false));\n }\n @IsTest static void dateCollectionNulls() {\n  finish(new Map<String,Object>{'list'=>decode('[null]',List<Date>.class,false),'map'=>decode('{\"owned\":null}',Map<String,Date>.class,false)});\n }\n @IsTest static void otherScalarRootNulls() {\n  finish(new Map<String,Object>{'integer'=>decode('null',Integer.class,false),'string'=>decode('null',String.class,false),'datetime'=>decode('null',Datetime.class,false)});\n }\n @IsTest static void valueOfControls() {\n  finish(new Map<String,Object>{'null'=>valueOf(null),'quoted'=>valueOf('null'),'iso'=>valueOf('2004-02-29')});\n }\n}\n",
+          "sha256": "e00c0aa5eaa5c9fa0fe941d1e685da1b0e77d15022dfcdba478d7e05d855389a"
+        },
+        "force-app/main/default/classes/OwnedDateNullBoundary.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        }
+      },
+      "parserCorrection": null,
+      "rows": [
+        {
+          "id": "dateCollectionNulls",
+          "classification": "full",
+          "native": {
+            "map": {
+              "json": "{\"owned\":null}",
+              "isNull": false,
+              "returned": true
+            },
+            "list": {
+              "json": "[null]",
+              "isNull": false,
+              "returned": true
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"map\":{\"json\":\"{\\\"owned\\\":null}\",\"isNull\":false,\"returned\":true},\"list\":{\"json\":\"[null]\",\"isNull\":false,\"returned\":true}}"
+          }
+        },
+        {
+          "id": "nestedDateNull",
+          "classification": "full",
+          "native": {
+            "json": "{\"value\":null}",
+            "isNull": false,
+            "returned": true
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"json\":\"{\\\"value\\\":null}\",\"isNull\":false,\"returned\":true}"
+          }
+        },
+        {
+          "id": "otherScalarRootNulls",
+          "classification": "partial",
+          "native": {
+            "datetime": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            },
+            "string": {
+              "json": "null",
+              "isNull": true,
+              "returned": true
+            },
+            "integer": {
+              "json": "null",
+              "isNull": true,
+              "returned": true
+            }
+          },
+          "matchedPaths": [
+            "/integer",
+            "/string"
+          ],
+          "carriedPaths": {
+            "/datetime": "Root Datetime JSON null is a separate native-known mismatch reserved for the DateTime owner; Date-only rejection must not change it."
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"datetime\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"},\"string\":{\"json\":\"null\",\"isNull\":true,\"returned\":true},\"integer\":{\"json\":\"null\",\"isNull\":true,\"returned\":true}}"
+          }
+        },
+        {
+          "id": "quotedDateNull",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"}"
+          }
+        },
+        {
+          "id": "strictRootDateNull",
+          "classification": "full",
+          "native": {
+            "quoted": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            },
+            "null": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"quoted\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"},\"null\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"}}"
+          }
+        },
+        {
+          "id": "valueOfControls",
+          "classification": "full",
+          "native": {
+            "iso": {
+              "json": "\"2004-02-29\"",
+              "isNull": false,
+              "returned": true
+            },
+            "quoted": {
+              "message": "Invalid date: null",
+              "type": "System.TypeException"
+            },
+            "null": {
+              "message": "Argument cannot be null.",
+              "type": "System.NullPointerException"
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_BOUNDARY|{\"iso\":{\"json\":\"\\\"2004-02-29\\\"\",\"isNull\":false,\"returned\":true},\"quoted\":{\"message\":\"Invalid date: null\",\"type\":\"System.TypeException\"},\"null\":{\"message\":\"Argument cannot be null.\",\"type\":\"System.NullPointerException\"}}"
+          }
+        }
+      ]
+    },
+    {
+      "context": "origin-input-api67",
+      "kind": "named",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "62.0",
+      "testClass": "OwnedDateNullInputOrigins",
+      "marker": "OWNED_DATE_NULL_INPUT_ORIGINS|",
+      "deployment": {
+        "id": "0AfRL00000iqmFL0AY",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 4,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 4
+      },
+      "rawSHA256": {
+        "deploy.json": "f4d7c15af9adf85528a8270336d2ba2abd643574cde4d8b2b6c86693b418c313",
+        "org.tsv": "2656ad995225a70cda2eaed5c08204170cd5b837412aaec06a8514a2ffa101d9",
+        "ORG-RUN.txt": "ea331e29b9b53b0bef91a4bf48699329fdd8e244e0489ae708c5211a60f51425",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09"
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+          "sha256": "2bc58206d0b9c401181c61264ca1a7084dff5c8afdec3c0d7edeea86a65d9484"
+        },
+        "force-app/main/default/classes/OwnedDateNullInputOrigins.cls": {
+          "source": "@IsTest private class OwnedDateNullInputOrigins {\n private static Object decode(String body,Type target,Boolean strict) {\n  try {\n   Object value=strict?JSON.deserializeStrict(body,target):JSON.deserialize(body,target);\n   return new Map<String,Object>{'returned'=>true,'isNull'=>value==null,'json'=>JSON.serialize(value)};\n  } catch(Exception e) {return new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()};}\n }\n private static void finish(Object result) {System.assert(false,'OWNED_DATE_NULL_INPUT_ORIGINS|'+JSON.serialize(result));}\n @IsTest static void nullTextOrigins() {\n  finish(new Map<String,Object>{'literal'=>decode('null',Date.class,false),'lookup'=>decode('null',Type.forName('Date'),false)});\n }\n @IsTest static void apexNullInputOrigins() {\n  finish(new Map<String,Object>{'literal'=>decode(null,Date.class,false),'lookup'=>decode(null,Type.forName('Date'),false)});\n }\n @IsTest static void strictTextOrigins() {\n  finish(new Map<String,Object>{'literal'=>decode('null',Date.class,true),'lookup'=>decode('null',Type.forName('Date'),true)});\n }\n @IsTest static void quotedTextOrigins() {\n  finish(new Map<String,Object>{'literal'=>decode('\"null\"',Date.class,false),'lookup'=>decode('\"null\"',Type.forName('Date'),false)});\n }\n}\n",
+          "sha256": "3d99039c1403d6feb2565eb5d88b282002665254f1073f233f398d25d67ca623"
+        },
+        "force-app/main/default/classes/OwnedDateNullInputOrigins.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b"
+        }
+      },
+      "parserCorrection": null,
+      "rows": [
+        {
+          "id": "apexNullInputOrigins",
+          "classification": "partial",
+          "native": {
+            "lookup": {
+              "message": "null input to JSON parser",
+              "type": "System.NullPointerException"
+            },
+            "literal": {
+              "message": "null input to JSON parser",
+              "type": "System.NullPointerException"
+            }
+          },
+          "matchedPaths": [
+            "/literal/type",
+            "/lookup/type"
+          ],
+          "carriedPaths": {
+            "/literal/message": "JSON input String is Apex null, not JSON text null. Native NullPointerException message differs from existing local diagnostics and is carried without changing that separate path.",
+            "/lookup/message": "JSON input String is Apex null, not JSON text null. Native NullPointerException message differs from existing local diagnostics and is carried without changing that separate path."
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_INPUT_ORIGINS|{\"lookup\":{\"message\":\"null input to JSON parser\",\"type\":\"System.NullPointerException\"},\"literal\":{\"message\":\"null input to JSON parser\",\"type\":\"System.NullPointerException\"}}"
+          }
+        },
+        {
+          "id": "nullTextOrigins",
+          "classification": "full",
+          "native": {
+            "lookup": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            },
+            "literal": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_INPUT_ORIGINS|{\"lookup\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"},\"literal\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"}}"
+          }
+        },
+        {
+          "id": "quotedTextOrigins",
+          "classification": "full",
+          "native": {
+            "lookup": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            },
+            "literal": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_INPUT_ORIGINS|{\"lookup\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"},\"literal\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"}}"
+          }
+        },
+        {
+          "id": "strictTextOrigins",
+          "classification": "full",
+          "native": {
+            "lookup": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            },
+            "literal": {
+              "message": "Invalid format: \"null\"",
+              "type": "System.JSONException"
+            }
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {},
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: OWNED_DATE_NULL_INPUT_ORIGINS|{\"lookup\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"},\"literal\":{\"message\":\"Invalid format: \\\"null\\\"\",\"type\":\"System.JSONException\"}}"
+          }
+        }
+      ]
+    },
+    {
+      "context": "anonymous-api67",
+      "kind": "anonymous",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "marker": "OWNED_DATE_NULL_ANONYMOUS|",
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "status": 0,
+        "exitCode": 0,
+        "parseErrors": []
+      },
+      "source": {
+        "source": "List<String> labels=new List<String>{'rootDateNull','quotedDateNull','strictDateNull','strictQuotedDateNull','listDateNull','mapDateNull','rootIntegerNull','rootStringNull','rootDatetimeNull','apexNullDateInput','lookupDateNull','lookupApexNullInput','lookupStrictDateNull','lookupQuotedDateNull'};\nList<String> bodies=new List<String>{'null','\"null\"','null','\"null\"','[null]','{\"owned\":null}','null','null','null',null,'null',null,'null','\"null\"'};\nList<Type> targets=new List<Type>{Date.class,Date.class,Date.class,Date.class,List<Date>.class,Map<String,Date>.class,Integer.class,String.class,Datetime.class,Date.class,Type.forName('Date'),Type.forName('Date'),Type.forName('Date'),Type.forName('Date')};\nList<Boolean> stricts=new List<Boolean>{false,false,true,true,false,false,false,false,false,false,false,false,true,false};\nfor(Integer i=0;i<labels.size();i++){\n Map<String,Object> row=new Map<String,Object>{'label'=>labels[i]};\n try {\n  Object value=stricts[i]?JSON.deserializeStrict(bodies[i],targets[i]):JSON.deserialize(bodies[i],targets[i]);\n  row.put('returned',true);row.put('isNull',value==null);row.put('json',JSON.serialize(value));\n }catch(Exception e){row.put('type',e.getTypeName());row.put('message',e.getMessage());}\n System.debug(LoggingLevel.ERROR,'OWNED_DATE_NULL_ANONYMOUS|'+JSON.serialize(row));\n}\nList<String> valueOfInputs=new List<String>{null,'null','2004-02-29'};\nfor(Integer i=0;i<valueOfInputs.size();i++){\n Map<String,Object> row=new Map<String,Object>{'label'=>'valueOf'+i};\n try {Date value=Date.valueOf(valueOfInputs[i]);row.put('returned',true);row.put('isNull',value==null);row.put('json',JSON.serialize(value));}\n catch(Exception e){row.put('type',e.getTypeName());row.put('message',e.getMessage());}\n System.debug(LoggingLevel.ERROR,'OWNED_DATE_NULL_ANONYMOUS|'+JSON.serialize(row));\n}\n",
+        "sha256": "407f396eb1c7f7fd17164e5dada47415d64877b461f3e25eb8d41a8e8ddb2e8a"
+      },
+      "rawSHA256": {
+        "run.json": "f60b460c207541522c949365076af9d86230f0b75b3aa998a68a5eb48ce55f2e",
+        "org.tsv": "fd38ba3f95cafcf48ebbc60f5abeab361d0da3dc23a3a88e2ab4fb4f17c08e7d",
+        "ORG-RUN.txt": "b9ff2b7543aa95c3fc87b504f21c113283cbfce4949d38b10106c30472cb0725",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "source.apex": "407f396eb1c7f7fd17164e5dada47415d64877b461f3e25eb8d41a8e8ddb2e8a"
+      },
+      "rows": [
+        {
+          "id": "0",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "rootDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "1",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "quotedDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "2",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "strictDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "3",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "strictQuotedDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "4",
+          "classification": "full",
+          "native": {
+            "json": "[null]",
+            "isNull": false,
+            "returned": true,
+            "label": "listDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "5",
+          "classification": "full",
+          "native": {
+            "json": "{\"owned\":null}",
+            "isNull": false,
+            "returned": true,
+            "label": "mapDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "6",
+          "classification": "full",
+          "native": {
+            "json": "null",
+            "isNull": true,
+            "returned": true,
+            "label": "rootIntegerNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "7",
+          "classification": "full",
+          "native": {
+            "json": "null",
+            "isNull": true,
+            "returned": true,
+            "label": "rootStringNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "8",
+          "classification": "carried",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "rootDatetimeNull"
+          },
+          "matchedPaths": [
+            "/label"
+          ],
+          "carriedPaths": {
+            "/type": "Root Datetime JSON null is a separate native-known mismatch reserved for the DateTime owner; this row matches label identity only.",
+            "/message": "Root Datetime JSON null is a separate native-known mismatch reserved for the DateTime owner; this row matches label identity only."
+          }
+        },
+        {
+          "id": "9",
+          "classification": "partial",
+          "native": {
+            "message": "null input to JSON parser",
+            "type": "System.NullPointerException",
+            "label": "apexNullDateInput"
+          },
+          "matchedPaths": [
+            "/label",
+            "/type"
+          ],
+          "carriedPaths": {
+            "/message": "Apex-null input String follows the separate NullPointerException path; its native message differs from existing local diagnostics."
+          }
+        },
+        {
+          "id": "10",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "lookupDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "11",
+          "classification": "partial",
+          "native": {
+            "message": "null input to JSON parser",
+            "type": "System.NullPointerException",
+            "label": "lookupApexNullInput"
+          },
+          "matchedPaths": [
+            "/label",
+            "/type"
+          ],
+          "carriedPaths": {
+            "/message": "Apex-null input String follows the separate NullPointerException path; its native message differs from existing local diagnostics."
+          }
+        },
+        {
+          "id": "12",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "lookupStrictDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "13",
+          "classification": "full",
+          "native": {
+            "message": "Invalid format: \"null\"",
+            "type": "System.JSONException",
+            "label": "lookupQuotedDateNull"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "14",
+          "classification": "full",
+          "native": {
+            "message": "Argument cannot be null.",
+            "type": "System.NullPointerException",
+            "label": "valueOf0"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "15",
+          "classification": "full",
+          "native": {
+            "message": "Invalid date: null",
+            "type": "System.TypeException",
+            "label": "valueOf1"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        },
+        {
+          "id": "16",
+          "classification": "full",
+          "native": {
+            "json": "\"2004-02-29\"",
+            "isNull": false,
+            "returned": true,
+            "label": "valueOf2"
+          },
+          "matchedPaths": [
+            ""
+          ],
+          "carriedPaths": {}
+        }
+      ]
+    }
+  ],
+  "rowClassifications": {
+    "full": 66,
+    "partial": 12,
+    "carried": 3
+  },
+  "matchedPathCount": 93,
+  "carriedPathCount": 21
+}

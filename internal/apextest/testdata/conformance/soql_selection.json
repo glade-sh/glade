@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "oracle": "Owned observations at API 62.0 and 67.0; raw org.tsv text retained.",
   "declarations": {
@@ -2024,5 +2025,61 @@
       "owner": "SOQL selection",
       "reason": "Renamed-target control for C002: Apex source parser rejects the clause order before SOQL semantics; generic syntax error still lacks native assignment-token recovery."
     }
-  ]
+  ],
+  "ceilingOracle": {
+    "apiVersion": "68.0",
+    "route": "anonymous",
+    "rows": 274,
+    "observed": 269,
+    "orgTSVMissing": [
+      "R174",
+      "R207",
+      "R208",
+      "R209"
+    ],
+    "orgTSVMissingReason": "The API 68.0 org.tsv records MISSING for these rows.",
+    "transportArtifacts": [
+      "C010"
+    ],
+    "transportArtifactsReason": "The API 68.0 org.tsv records COMPILE_ERROR with empty diagnostic text for C010. That is a transport artifact, not a native compile rejection; C010 is unobserved and transport-indeterminate in this capture. Its API 62.0 and 67.0 evidence and A33 carry are unchanged.",
+    "controlsUnobserved": [
+      "Q001",
+      "Q002",
+      "Q003",
+      "Q004",
+      "Q005",
+      "Q006",
+      "Q007",
+      "Q008",
+      "Q009",
+      "E001",
+      "E002"
+    ],
+    "controlsUnobservedReason": "Review controls were not part of the API 68.0 capture.",
+    "uncaughtRecapture": {
+      "route": "anonymous",
+      "rows": [
+        "C010",
+        "R174",
+        "R207",
+        "R208",
+        "R209"
+      ],
+      "result": "Each row compiled and failed uncaught. R174: field 'Description' can not be sorted in a query call. C010 and R207: Field must be grouped or aggregated: IsDeleted. R208 and R209: Field must be grouped or aggregated: Id. Each equals the stored expected answer.",
+      "asserted": [
+        "R174"
+      ],
+      "carried": [
+        "C010",
+        "R207",
+        "R208",
+        "R209"
+      ],
+      "carriedReason": "A33 owns these grouped FIELDS rows; they stay carried with their existing owner and reason.",
+      "source": "native-capture",
+      "sha256": "7094d729dfb3c868b810c4b000f3693d2a24b38d6ed47582ecd7c9c98bd91b20"
+    },
+    "orgTSV": "native-capture",
+    "orgRowsSHA256": "288788e739cb576dc7414bad1ed2c73cc0b288d2424829545ec94a6591e756ee"
+  }
 }

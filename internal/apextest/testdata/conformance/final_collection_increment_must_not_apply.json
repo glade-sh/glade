@@ -1,0 +1,1383 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "must-not-apply",
+  "shapeCount": 10,
+  "nativeObservationCount": 60,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C166PF_121",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<String> a=new List<String>{'s'};a[0]++;r=a[0];System.assert(false,'C126_RESULT|C166PF_121|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "6600cd73a533d6ee7df51e22ae81429d4298eb99f1e6643e4df59ed9bf5e24b3"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary postfix increment/decrement can only be applied to numeric expressions: String",
+                  "line": 2,
+                  "column": 57,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary postfix increment/decrement can only be applied to numeric expressions: String",
+                  "line": 2,
+                  "column": 57,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary postfix increment/decrement can only be applied to numeric expressions: String",
+                  "line": 2,
+                  "column": 57,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe121": "@IsTest private class C166Observe121{@IsTest static void observe(){String r;final List<String> a=new List<String>{'s'};a[0]++;r=a[0];System.assert(false,'C126_RESULT|C166PF_121|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe121"
+          ],
+          "sourceSha256": {
+            "class:C166Observe121": "85f49365af2db9498bb029b9c8c812c93331a461efb52ac805db388f65eeb099"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe121",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe121",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe121",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_122",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Integer> a=new List<Integer>{1};a.get(0)++;r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_122|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "a8d794ad2605bf9b3d11279def772de35624b561de16ab3d6e0d7caa3a1409ce"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Expression cannot be assigned",
+                  "line": 2,
+                  "column": 55,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Expression cannot be assigned",
+                  "line": 2,
+                  "column": 55,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Expression cannot be assigned",
+                  "line": 2,
+                  "column": 55,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe122": "@IsTest private class C166Observe122{@IsTest static void observe(){String r;final List<Integer> a=new List<Integer>{1};a.get(0)++;r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_122|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe122"
+          ],
+          "sourceSha256": {
+            "class:C166Observe122": "e36dab026f1ec1aed397de6a53c789c0dbfd09895a668b79d25d89f11d415dea"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe122",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Expression cannot be assigned"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe122",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Expression cannot be assigned"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe122",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Expression cannot be assigned"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_123",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<String> a=new List<String>{'s'};++a[0];r=a[0];System.assert(false,'C126_RESULT|C166PF_123|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "31bd552dfd6c50a74367a5e3a1dc0a73d825d489c6667a6e01010c10f225e7fd"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary prefix increment can only be applied to numeric expressions: String",
+                  "line": 2,
+                  "column": 53,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix increment can only be applied to numeric expressions: String"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary prefix increment can only be applied to numeric expressions: String",
+                  "line": 2,
+                  "column": 53,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix increment can only be applied to numeric expressions: String"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary prefix increment can only be applied to numeric expressions: String",
+                  "line": 2,
+                  "column": 53,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix increment can only be applied to numeric expressions: String"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe123": "@IsTest private class C166Observe123{@IsTest static void observe(){String r;final List<String> a=new List<String>{'s'};++a[0];r=a[0];System.assert(false,'C126_RESULT|C166PF_123|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe123"
+          ],
+          "sourceSha256": {
+            "class:C166Observe123": "d840847901444e5df8e69656311165c94cd1e009285771b2db37bf63eaca9c5e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe123",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary prefix increment can only be applied to numeric expressions: String"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix increment can only be applied to numeric expressions: String"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe123",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary prefix increment can only be applied to numeric expressions: String"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix increment can only be applied to numeric expressions: String"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe123",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary prefix increment can only be applied to numeric expressions: String"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix increment can only be applied to numeric expressions: String"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_124",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Integer> a=new List<Integer>{1};++a.get(0);r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_124|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "fae5f79bef2cc6bc967db73aaf58d422199a0e044a689b290b8ec1b3e083bf37"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Expression cannot be assigned",
+                  "line": 2,
+                  "column": 57,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Expression cannot be assigned",
+                  "line": 2,
+                  "column": 57,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Expression cannot be assigned",
+                  "line": 2,
+                  "column": 57,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe124": "@IsTest private class C166Observe124{@IsTest static void observe(){String r;final List<Integer> a=new List<Integer>{1};++a.get(0);r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_124|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe124"
+          ],
+          "sourceSha256": {
+            "class:C166Observe124": "daddff44cae10835f59e04be6a7351632d0784c0388b399175f945bebbe6df61"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe124",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Expression cannot be assigned"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe124",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Expression cannot be assigned"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe124",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Expression cannot be assigned"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_125",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<String> a=new List<String>{'s'};a[0]--;r=a[0];System.assert(false,'C126_RESULT|C166PF_125|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "030adffb5009b2db06536235944526f8a1d58c62b8ca0e8725939bc1f91a7b24"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary postfix increment/decrement can only be applied to numeric expressions: String",
+                  "line": 2,
+                  "column": 57,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary postfix increment/decrement can only be applied to numeric expressions: String",
+                  "line": 2,
+                  "column": 57,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary postfix increment/decrement can only be applied to numeric expressions: String",
+                  "line": 2,
+                  "column": 57,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe125": "@IsTest private class C166Observe125{@IsTest static void observe(){String r;final List<String> a=new List<String>{'s'};a[0]--;r=a[0];System.assert(false,'C126_RESULT|C166PF_125|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe125"
+          ],
+          "sourceSha256": {
+            "class:C166Observe125": "b2bf345f763a51f4d1d5743e17019ee32836b77cf8d8ebb2d0d02231264821f4"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe125",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe125",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe125",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary postfix increment/decrement can only be applied to numeric expressions: String"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_126",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Integer> a=new List<Integer>{1};a.get(0)--;r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_126|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "c6784d5c37ef05cada128d96db502fa82967b0c36379ddf1ed78d030e26fb59c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Expression cannot be assigned",
+                  "line": 2,
+                  "column": 55,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Expression cannot be assigned",
+                  "line": 2,
+                  "column": 55,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Expression cannot be assigned",
+                  "line": 2,
+                  "column": 55,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe126": "@IsTest private class C166Observe126{@IsTest static void observe(){String r;final List<Integer> a=new List<Integer>{1};a.get(0)--;r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_126|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe126"
+          ],
+          "sourceSha256": {
+            "class:C166Observe126": "9ea2d12bf384599d2fa1fb7d9a7eb33eed5bde4848c340eea0953febaf2b677d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe126",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Expression cannot be assigned"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe126",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Expression cannot be assigned"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe126",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Expression cannot be assigned"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_127",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<String> a=new List<String>{'s'};--a[0];r=a[0];System.assert(false,'C126_RESULT|C166PF_127|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "1233f9f580e96f09450d54baebd9eaa3fc67f06d0f7a90f6a47fc46bf8b36f57"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary prefix decrement can only be applied to numeric expressions: String",
+                  "line": 2,
+                  "column": 53,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix decrement can only be applied to numeric expressions: String"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary prefix decrement can only be applied to numeric expressions: String",
+                  "line": 2,
+                  "column": 53,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix decrement can only be applied to numeric expressions: String"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unary prefix decrement can only be applied to numeric expressions: String",
+                  "line": 2,
+                  "column": 53,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix decrement can only be applied to numeric expressions: String"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe127": "@IsTest private class C166Observe127{@IsTest static void observe(){String r;final List<String> a=new List<String>{'s'};--a[0];r=a[0];System.assert(false,'C126_RESULT|C166PF_127|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe127"
+          ],
+          "sourceSha256": {
+            "class:C166Observe127": "650c5625a1df93208ab2933e9b48fb8b72d9b288c46db5199aeb111a1039219a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe127",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary prefix decrement can only be applied to numeric expressions: String"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix decrement can only be applied to numeric expressions: String"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe127",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary prefix decrement can only be applied to numeric expressions: String"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix decrement can only be applied to numeric expressions: String"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe127",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unary prefix decrement can only be applied to numeric expressions: String"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unary prefix decrement can only be applied to numeric expressions: String"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_128",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Integer> a=new List<Integer>{1};--a.get(0);r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_128|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "939ed76f756aab02176e2ec715de384dd0e5d981e555014e0361fb73a375aa45"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Expression cannot be assigned",
+                  "line": 2,
+                  "column": 57,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Expression cannot be assigned",
+                  "line": 2,
+                  "column": 57,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Expression cannot be assigned",
+                  "line": 2,
+                  "column": 57,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe128": "@IsTest private class C166Observe128{@IsTest static void observe(){String r;final List<Integer> a=new List<Integer>{1};--a.get(0);r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_128|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe128"
+          ],
+          "sourceSha256": {
+            "class:C166Observe128": "4c836d878a2c0628663aad41ba9e0a30a9d1c4709483093a9785d8db493c3e52"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe128",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Expression cannot be assigned"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe128",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Expression cannot be assigned"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe128",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Expression cannot be assigned"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Expression cannot be assigned"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_129",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final Map<String,Account> a=new Map<String,Account>{'k'=>new Account(NumberOfEmployees=1)};a.get('missing').NumberOfEmployees++;r=String.valueOf(a.get('missing').NumberOfEmployees);System.assert(false,'C126_RESULT|C166PF_129|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "f0641340d824df0a00df040f27b9cd9ceb54b0f01093e1e666fc827dbbf53294"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe129": "@IsTest private class C166Observe129{@IsTest static void observe(){String r;final Map<String,Account> a=new Map<String,Account>{'k'=>new Account(NumberOfEmployees=1)};a.get('missing').NumberOfEmployees++;r=String.valueOf(a.get('missing').NumberOfEmployees);System.assert(false,'C126_RESULT|C166PF_129|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe129"
+          ],
+          "sourceSha256": {
+            "class:C166Observe129": "37a8b8c711debd67598db238b6099cc16df0cec22a43745986ed4393590b6ca8"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe129",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object",
+                    "exceptionType": "System.NullPointerException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe129",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object",
+                    "exceptionType": "System.NullPointerException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe129",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object",
+                    "exceptionType": "System.NullPointerException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_130",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final Map<String,Account> a=new Map<String,Account>{'k'=>null};--a.get('k').AnnualRevenue;r=String.valueOf(a.get('k').AnnualRevenue);System.assert(false,'C126_RESULT|C166PF_130|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "e3e523b33caa66d579f863e4fda3835973ccdc78b89fa3623c6027a2c8809b43"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe130": "@IsTest private class C166Observe130{@IsTest static void observe(){String r;final Map<String,Account> a=new Map<String,Account>{'k'=>null};--a.get('k').AnnualRevenue;r=String.valueOf(a.get('k').AnnualRevenue);System.assert(false,'C126_RESULT|C166PF_130|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe130"
+          ],
+          "sourceSha256": {
+            "class:C166Observe130": "7b3394b670290f1b17f1fd8b6ed1ed82a1ca33bb32ca5b699ad364d5b258fc22"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe130",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object",
+                    "exceptionType": "System.NullPointerException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe130",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object",
+                    "exceptionType": "System.NullPointerException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe130",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object",
+                    "exceptionType": "System.NullPointerException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    }
+  ]
+}

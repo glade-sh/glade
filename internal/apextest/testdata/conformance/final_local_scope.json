@@ -1,0 +1,363 @@
+{
+  "apiVersions": [
+    "62.0",
+    "68.0"
+  ],
+  "owner": "source syntax and version rules",
+  "route": "executeAnonymous only; helpers are transient declarations inside the original anonymous source. No named runtime parity claim.",
+  "qualification": "All 24 requests compiled. F00/F01/F03/F04/F06/F09 completed successfully. C094/F02/F05/F07/F08/F10 raised the exact uncatchable FinalException; catch blocks remained in the source. No API split observed. Separate DML control capture: D00/D01/D02 compiled and completed all original insert/update/Id-preservation assertions at API62/68 (six requests); final Account and final List<Account> references remain mutable without rebinding.",
+  "sourceHashes": {
+    "native.json": "ea6893cb60d31faddca2d115a0b2a30c1f5d7cadd9dce1452784488dd847a8d8",
+    "rows.json": "96bfd69fa9b3986032aec3f57744c1a6e8ea17f171ef0687ec8a95820f894c0f",
+    "source-bindings.json": "971003a911cda76f58b322e06d9d6a5d9b61f10462d8d59a40dc47d1c501fa3d",
+    "dml/rows.json": "54e5171b755fba2bbfd6421ad153ded51b499efc60dfe176866a9588cc2638ea",
+    "dml/native.json": "955a3648d9ae37303a7bcccb6d04744925ea0fdcd2d57ebf5837fe0f7a865852"
+  },
+  "rows": [
+    {
+      "id": "F00",
+      "anonymous": "Integer x=1; x=2; System.assertEquals(2,x,'A01_CONTROL');\n",
+      "observation": "Stable mutable-local positive control: assignment/value assertion; both APIs must compile and succeed.",
+      "answers": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        }
+      }
+    },
+    {
+      "id": "C094",
+      "anonymous": "class P {\n  public void out(String id, Object v) { System.debug(LoggingLevel.ERROR, 'P64|' + id + '|' + EncodingUtil.base64Encode(Blob.valueOf('' + String.valueOf(v)))); }\n  public void err(String id, Exception e) { System.debug(LoggingLevel.ERROR, 'P64|' + id + '|' + EncodingUtil.base64Encode(Blob.valueOf('EXC|' + e.getTypeName() + '|' + e.getMessage()))); }\n}\nP pq = new P();\ntry { final Integer x=1; x=2;\npq.out('C094','compiled'); } catch(Exception e) {pq.err('C094',e);}\n",
+      "observation": "Original native baseline, byte-identical body: catches Exception but prior capture reports uncaught FinalException.",
+      "answers": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 6,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "System.FinalException: Final variable has already been initialized"
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 6,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "System.FinalException: Final variable has already been initialized"
+        }
+      }
+    },
+    {
+      "id": "F01",
+      "anonymous": "try {\nfinal Integer x; x=1; System.assertEquals(1,x,'A01_LATE_ONCE');\n} catch(Exception e) { System.assert(false, 'A01_CAUGHT|'+e.getTypeName()+'|'+e.getMessage()); }\n",
+      "observation": "Late initialization: one assignment after declaration; distinguishes declaration from initialization.",
+      "answers": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        }
+      }
+    },
+    {
+      "id": "F02",
+      "anonymous": "try {\nfinal Integer x; x=1; x=2; System.assertEquals(2,x,'A01_LATE_TWICE');\n} catch(Exception e) { System.assert(false, 'A01_CAUGHT|'+e.getTypeName()+'|'+e.getMessage()); }\n",
+      "observation": "Late initialization: second assignment; pairs with F01.",
+      "answers": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 2,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "System.FinalException: Final variable has already been initialized"
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 2,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "System.FinalException: Final variable has already been initialized"
+        }
+      }
+    },
+    {
+      "id": "F03",
+      "anonymous": "final Integer x=1; if(true){ Integer x=2; x=3; System.assertEquals(3,x,'A01_INNER'); } System.assertEquals(1,x,'A01_OUTER');\n",
+      "observation": "Nested lexical shadowing: capture whether source is legal; if legal verify inner mutable and outer final values.",
+      "answers": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        }
+      }
+    },
+    {
+      "id": "F04",
+      "anonymous": "if(true){ final Integer x=1; System.assertEquals(1,x,'A01_BLOCK'); } Integer x=2; x=3; System.assertEquals(3,x,'A01_AFTER_BLOCK');\n",
+      "observation": "Exited lexical block must not leave a final binding behind if the same name is legal later.",
+      "answers": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        }
+      }
+    },
+    {
+      "id": "F05",
+      "anonymous": "class FinalLocalScopeHelper { public Integer step(Integer x){x+=1;return x;} }\ntry {\nfinal Integer x=1; System.assertEquals(3,new FinalLocalScopeHelper().step(2),'A01_HELPER_PARAM'); x=2;\n} catch(Exception e) { System.assert(false, 'A01_CAUGHT|'+e.getTypeName()+'|'+e.getMessage()); }\n",
+      "observation": "Caller final binding survives helper call; helper same-name parameter stays mutable.",
+      "answers": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 3,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "System.FinalException: Final variable has already been initialized"
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 3,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "System.FinalException: Final variable has already been initialized"
+        }
+      }
+    },
+    {
+      "id": "F06",
+      "anonymous": "class FinalLocalScopeHelper { public Integer read(){final Integer x=1;return x;} }\nInteger x=2; System.assertEquals(1,new FinalLocalScopeHelper().read(),'A01_HELPER_FINAL'); x=3; System.assertEquals(3,x,'A01_CALLER_MUTABLE');\n",
+      "observation": "Callee final binding must not poison caller mutable binding with same name.",
+      "answers": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        }
+      }
+    },
+    {
+      "id": "F07",
+      "anonymous": "try {\nfinal Integer x=1; x+=1; System.assertEquals(2,x,'A01_COMPOUND');\n} catch(Exception e) { System.assert(false, 'A01_CAUGHT|'+e.getTypeName()+'|'+e.getMessage()); }\n",
+      "observation": "Compound assignment path on initialized final local.",
+      "answers": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 2,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "System.FinalException: Final variable has already been initialized"
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 2,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "System.FinalException: Final variable has already been initialized"
+        }
+      }
+    },
+    {
+      "id": "F08",
+      "anonymous": "try {\nfinal Integer x=1; x++; System.assertEquals(2,x,'A01_INCREMENT');\n} catch(Exception e) { System.assert(false, 'A01_CAUGHT|'+e.getTypeName()+'|'+e.getMessage()); }\n",
+      "observation": "Postincrement path may be rejected earlier than plain assignment; capture compilation separately.",
+      "answers": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 2,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "System.FinalException: Final variable has already been initialized"
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 2,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "System.FinalException: Final variable has already been initialized"
+        }
+      }
+    },
+    {
+      "id": "F09",
+      "anonymous": "final List<Integer> x=new List<Integer>{1};\nx.add(2);\nSystem.assertEquals(2,x.size(),'A01_LIST_ADD');\nx[0]=3;\nSystem.assertEquals(3,x[0],'A01_LIST_INDEX');\n",
+      "observation": "Reference mutation should be observed separately from binding assignment; lines identify method versus indexed mutation.",
+      "answers": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        }
+      }
+    },
+    {
+      "id": "F10",
+      "anonymous": "try {\nfinal List<Integer> x=new List<Integer>{1}; x=new List<Integer>{2}; System.assertEquals(2,x[0],'A01_LIST_REBIND');\n} catch(Exception e) { System.assert(false, 'A01_CAUGHT|'+e.getTypeName()+'|'+e.getMessage()); }\n",
+      "observation": "Reference rebinding contrasts F09 object mutation.",
+      "answers": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 2,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "System.FinalException: Final variable has already been initialized"
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 2,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "System.FinalException: Final variable has already been initialized"
+        }
+      }
+    },
+    {
+      "id": "D00",
+      "anonymous": "Savepoint sp=Database.setSavepoint();\ntry {\nAccount record=new Account(Name='A01FinalDML');\ninsert record;\nSystem.assertNotEquals(null,record.Id,'A01_INSERT_ID');\nId insertedId=record.Id; record.Name='A01FinalDMLUpdated'; update record;\nSystem.assertEquals(insertedId,record.Id,'A01_ID_PRESERVED');\nSystem.assertEquals('A01FinalDMLUpdated',[SELECT Name FROM Account WHERE Id=:insertedId].Name,'A01_UPDATE');\n} finally { Database.rollback(sp); }\n",
+      "observation": "Owned Account DML with unconditional rollback; mutable control; no raw IDs emitted.",
+      "answers": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        }
+      }
+    },
+    {
+      "id": "D01",
+      "anonymous": "Savepoint sp=Database.setSavepoint();\ntry {\nfinal Account record=new Account(Name='A01FinalDML');\ninsert record;\nSystem.assertNotEquals(null,record.Id,'A01_INSERT_ID');\nId insertedId=record.Id; record.Name='A01FinalDMLUpdated'; update record;\nSystem.assertEquals(insertedId,record.Id,'A01_ID_PRESERVED');\nSystem.assertEquals('A01FinalDMLUpdated',[SELECT Name FROM Account WHERE Id=:insertedId].Name,'A01_UPDATE');\n} finally { Database.rollback(sp); }\n",
+      "observation": "Owned Account DML with unconditional rollback; final reference mutation, no rebinding; no raw IDs emitted.",
+      "answers": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        }
+      }
+    },
+    {
+      "id": "D02",
+      "anonymous": "Savepoint sp=Database.setSavepoint();\ntry {\nfinal List<Account> records=new List<Account>{new Account(Name='A01FinalDMLList')};\ninsert records;\nSystem.assertEquals(1,records.size(),'A01_LIST_SIZE'); System.assertNotEquals(null,records[0].Id,'A01_LIST_INSERT_ID');\nId insertedId=records[0].Id; records[0].Name='A01FinalDMLListUpdated'; update records;\nSystem.assertEquals(insertedId,records[0].Id,'A01_LIST_ID_PRESERVED');\nSystem.assertEquals('A01FinalDMLListUpdated',[SELECT Name FROM Account WHERE Id=:insertedId].Name,'A01_LIST_UPDATE');\n} finally { Database.rollback(sp); }\n",
+      "observation": "Owned Account DML with unconditional rollback; final reference mutation, no rebinding; no raw IDs emitted.",
+      "answers": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": -1,
+          "column": -1,
+          "success": true,
+          "exceptionMessage": null
+        }
+      }
+    }
+  ]
+}

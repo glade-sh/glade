@@ -20,7 +20,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Both API endpoints use captured Salesforce answers and the same owned
+// API 62/67/68 use captured Salesforce answers and the same owned
 // calendar/holiday setup. Neither execution route needs Salesforce or tools.
 func TestBusinessHoursOrgConformance(t *testing.T) {
 	type familyCase struct {
@@ -41,7 +41,7 @@ func TestBusinessHoursOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 294 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 294 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle rows/versions: %d %v", len(data.Cases), data.APIVersions)
 	}
 	fixtureFile, err := os.Open("testdata/conformance/business_hours_fixture.json")

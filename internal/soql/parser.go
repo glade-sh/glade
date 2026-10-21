@@ -130,16 +130,41 @@ func lex(input string) ([]token, error) {
 				i++
 			}
 			bindStart := i
+			// Native binds any Apex expression, including a negated Boolean
+			// (`Active__c = :!flag`). Keep the `!` prefix with the bind text.
+			unary := ""
+			for bindStart+1 < len(input) && (input[bindStart] == '!' || input[bindStart] == '-') {
+				next := bindStart + 1
+				for next < len(input) && (input[next] == ' ' || input[next] == '\n' || input[next] == '\t' || input[next] == '\r') {
+					next++
+				}
+				if next >= len(input) || input[bindStart] == '!' && input[next] == '=' ||
+					input[bindStart] == '-' && !soqlBindIdentifierStart(input[next]) && input[next] != '(' {
+					break
+				}
+				unary += string(input[bindStart])
+				bindStart = next
+			}
 			if end, ok := scanSOQLCastBind(input, bindStart); ok {
-				out = append(out, token{bindOffset: start, text: ":" + strings.TrimSpace(input[bindStart:end])})
+				out = append(out, token{bindOffset: start, text: ":" + unary + strings.TrimSpace(input[bindStart:end])})
 				i = end
 				continue
 			}
 			if end, ok := scanSOQLStringMethodBind(input, bindStart); ok {
 				end = scanSOQLBindAdditiveTail(input, end)
-				out = append(out, token{bindOffset: start, text: ":" + input[bindStart:end]})
+				out = append(out, token{bindOffset: start, text: ":" + unary + input[bindStart:end]})
 				i = end
 				continue
+			}
+			if bindStart < len(input) && input[bindStart] == '(' {
+				if end, ok := scanSOQLBindFamilyBalanced(input, bindStart); ok && strings.TrimSpace(input[bindStart+1:end-1]) == "" {
+					return nil, soqlBindSyntaxError(")")
+				}
+				if end, ok := scanSOQLBindFamilyExpression(input, bindStart); ok {
+					out = append(out, token{bindOffset: start, text: ":" + unary + strings.TrimSpace(input[bindStart:end])})
+					i = end
+					continue
+				}
 			}
 			if bindStart == len(input) || !soqlBindIdentifierStart(input[bindStart]) {
 				// A numbered date literal accepts optional whitespace after its
@@ -150,7 +175,13 @@ func lex(input string) ([]token, error) {
 				continue
 			}
 			if end, ok := scanSOQLBindCollectionConstructor(input, bindStart); ok {
-				out = append(out, token{bindOffset: start, text: ":" + strings.TrimSpace(input[bindStart:end])})
+				out = append(out, token{bindOffset: start, text: ":" + unary + strings.TrimSpace(input[bindStart:end])})
+				i = end
+				continue
+			}
+			if end, ok := scanSOQLBindFamilyExpression(input, bindStart); ok {
+				end = scanSOQLBindAdditiveTail(input, end)
+				out = append(out, token{bindOffset: start, text: ":" + unary + strings.TrimSpace(input[bindStart:end])})
 				i = end
 				continue
 			}
@@ -176,10 +207,10 @@ func lex(input string) ([]token, error) {
 			}
 			i = scanSOQLBindDottedTail(input, i)
 			i = scanSOQLBindAdditiveTail(input, i)
-			if bindStart == i {
+			if bindStart == i && unary == "" {
 				out = append(out, token{bindOffset: start, text: input[start:i]})
 			} else {
-				out = append(out, token{bindOffset: start, text: ":" + strings.TrimSpace(input[bindStart:i])})
+				out = append(out, token{bindOffset: start, text: ":" + unary + strings.TrimSpace(input[bindStart:i])})
 			}
 		case soqlSeparatorBytes[input[i]]:
 			if i+1 < len(input) && input[i:i+2] == "!=" {
@@ -198,6 +229,10 @@ func lex(input string) ([]token, error) {
 		default:
 			start := i
 			for i < len(input) && !soqlTokenBoundaryBytes[input[i]] && (input[i] != ':' || !soqlBindIdentifierStart(input[start])) {
+				// A quote ends a word: native accepts `LIKE'%x'` with no space.
+				if input[i] == '\'' && i > start {
+					break
+				}
 				i++
 			}
 			if looksLikeISODateTime(input[start:i]) {
@@ -357,7 +392,9 @@ func scanSOQLBindDottedTail(input string, start int) int {
 		for dot < len(input) && (input[dot] == ' ' || input[dot] == '\n' || input[dot] == '\t' || input[dot] == '\r') {
 			dot++
 		}
-		if dot < len(input) && input[dot] == '.' {
+		if dot < len(input) && input[dot] == '?' && dot+1 < len(input) && input[dot+1] == '.' {
+			dot += 2
+		} else if dot < len(input) && input[dot] == '.' {
 			dot++
 		} else if end == 0 || input[end-1] != '.' {
 			return end
@@ -383,6 +420,9 @@ func scanSOQLBindAdditiveOperand(input string, start int) (int, bool) {
 	if input[start] == '\'' {
 		return scanSOQLStringMethodBind(input, start)
 	}
+	if soqlBindIdentifierStart(input[start]) {
+		return scanSOQLBindFamilyExpression(input, start)
+	}
 	if !soqlBindIdentifierStart(input[start]) && (input[start] < '0' || input[start] > '9') {
 		return 0, false
 	}
@@ -406,7 +446,7 @@ func scanSOQLBindAdditiveOperand(input string, start int) (int, bool) {
 }
 
 func soqlBindIdentifierPart(value byte) bool {
-	return soqlBindIdentifierStart(value) || value >= '0' && value <= '9'
+	return soqlBindIdentifierStart(value) || value >= '0' && value <= '9' || value == '$'
 }
 
 func soqlBindIdentifierStart(value byte) bool {
@@ -774,15 +814,17 @@ func (p *parser) parseQuery() (Query, error) {
 }
 
 func validateSemiAntiQuery(query Query) error {
-	joins, hasOr, err := semiAntiConditions(query.Where)
+	joins, _, err := semiAntiConditions(query.Where)
 	if err != nil {
 		return err
 	}
 	if len(joins) > 2 {
-		return fmt.Errorf("soql: a WHERE clause can contain at most two semi-join or anti-join subqueries")
+		return semiJoinCountRejection(joins)
 	}
-	if len(joins) > 0 && hasOr {
-		return unexpectedToken("OR", "semi-join and anti-join subqueries cannot be combined with OR")
+	if len(joins) > 0 {
+		if err := semiJoinBooleanRejection(query.Where); err != nil {
+			return err
+		}
 	}
 	for _, join := range joins {
 		if err := validateSemiAntiSubquery(query, *join.Subquery); err != nil {
@@ -795,7 +837,7 @@ func validateSemiAntiQuery(query Query) error {
 		}
 	}
 	for _, child := range query.ChildQueries {
-		if queryHasSemiAntiJoin(child.Query) {
+		if queryHasSemiAntiJoin(child.Query) && !semiJoinChildQuerySupported(query, child) {
 			return fmt.Errorf("soql: semi-join and anti-join subqueries are allowed only in the main WHERE clause")
 		}
 	}
@@ -805,8 +847,8 @@ func validateSemiAntiQuery(query Query) error {
 func semiAntiConditions(condition *Condition) ([]Condition, bool, error) {
 	var joins []Condition
 	hasOr := false
-	var walk func(*Condition, bool) error
-	walk = func(current *Condition, negated bool) error {
+	var walk func(*Condition, bool, bool) error
+	walk = func(current *Condition, negated, topLevelConjunct bool) error {
 		if current == nil {
 			return nil
 		}
@@ -815,30 +857,37 @@ func semiAntiConditions(condition *Condition) ([]Condition, bool, error) {
 			if !strings.EqualFold(current.Op, "IN") && !strings.EqualFold(current.Op, "NOT IN") {
 				return fmt.Errorf("soql: semi-join subqueries require IN or NOT IN")
 			}
-			if negated {
-				return fmt.Errorf("soql: use NOT IN for an anti-join; a semi-join cannot be negated with NOT")
+			if negated && !(topLevelConjunct && groupedNegatedSemiAntiCondition(current)) {
+				message := "'NOT' operator cannot be combined with semi/anti join subqueries"
+				return queryError(message, message)
 			}
 			joins = append(joins, *current)
 		}
 		if len(current.Or) > 0 {
 			hasOr = true
 		}
+		allowGroupedNegation := current == condition && current.SourceAnd && !negated && len(current.Or) == 0
 		for i := range current.And {
-			if err := walk(&current.And[i], negated); err != nil {
+			if err := walk(&current.And[i], negated, allowGroupedNegation); err != nil {
 				return err
 			}
 		}
 		for i := range current.Or {
-			if err := walk(&current.Or[i], negated); err != nil {
+			if err := walk(&current.Or[i], negated, false); err != nil {
 				return err
 			}
 		}
 		return nil
 	}
-	if err := walk(condition, false); err != nil {
+	if err := walk(condition, false, false); err != nil {
 		return nil, false, err
 	}
 	return joins, hasOr, nil
+}
+
+func groupedNegatedSemiAntiCondition(condition *Condition) bool {
+	return condition != nil && condition.Not && condition.Parenthesized && condition.Subquery != nil &&
+		(strings.EqualFold(condition.Op, "IN") || strings.EqualFold(condition.Op, "NOT IN"))
 }
 
 func validateSemiAntiSubquery(main, subquery Query) error {
@@ -857,7 +906,7 @@ func validateSemiAntiSubquery(main, subquery Query) error {
 		return fmt.Errorf("soql: semi-join subquery must select a single ID or reference field")
 	}
 	if queryHasSemiAntiJoin(subquery) {
-		return fmt.Errorf("soql: semi-join and anti-join subqueries cannot be nested")
+		return semiJoinNestingRejection(subquery)
 	}
 	if len(subquery.Order) > 0 || subquery.OrderBy != "" || subquery.HasLimit || subquery.Limit != 0 || subquery.LimitBind != "" || subquery.ForUpdate {
 		clause := "FOR"
@@ -867,7 +916,7 @@ func validateSemiAntiSubquery(main, subquery Query) error {
 		if len(subquery.Order) > 0 || subquery.OrderBy != "" {
 			clause = "ORDER"
 		}
-		return querySyntaxError("missing value at '"+clause+"'", "semi-join subqueries do not support ORDER BY, LIMIT, or FOR UPDATE")
+		return semiJoinWindowRejection(subquery, clause)
 	}
 	return nil
 }
@@ -1252,6 +1301,9 @@ func (p *parser) parseTypeofFieldList() ([]string, error) {
 func (p *parser) parseOrderList() ([]OrderSpec, error) {
 	var order []OrderSpec
 	for {
+		if strings.HasPrefix(p.peek().text, ":") {
+			return nil, soqlBindSyntaxError(":")
+		}
 		field, err := p.parseSelectableName()
 		if err != nil {
 			return nil, err
@@ -2257,13 +2309,13 @@ func parseAggregateField(field string) (Aggregate, bool, error) {
 	return Aggregate{Func: fn, Field: arg, Alias: alias}, true, nil
 }
 func (p *parser) parseOrCondition() (Condition, error) {
-	left, err := p.parseAndCondition()
+	left, err := p.parseAndCondition(true)
 	if err != nil {
 		return Condition{}, err
 	}
 	var ors []Condition
 	for p.matchWord("OR") {
-		right, err := p.parseAndCondition()
+		right, err := p.parseAndCondition(false)
 		if err != nil {
 			return Condition{}, err
 		}
@@ -2274,14 +2326,17 @@ func (p *parser) parseOrCondition() (Condition, error) {
 	}
 	return Condition{Or: append([]Condition{left}, ors...)}, nil
 }
-func (p *parser) parseAndCondition() (Condition, error) {
-	left, err := p.parsePrimaryCondition()
+
+// parseAndCondition parses an AND chain. allowNot is false after an OR, where
+// native SOQL rejects an ungrouped NOT.
+func (p *parser) parseAndCondition(allowNot bool) (Condition, error) {
+	left, err := p.parsePrimaryCondition(allowNot)
 	if err != nil {
 		return Condition{}, err
 	}
 	var ands []Condition
 	for p.matchWord("AND") {
-		right, err := p.parsePrimaryCondition()
+		right, err := p.parsePrimaryCondition(false)
 		if err != nil {
 			return Condition{}, err
 		}
@@ -2292,11 +2347,22 @@ func (p *parser) parseAndCondition() (Condition, error) {
 	}
 	return Condition{And: append([]Condition{left}, ands...), SourceAnd: true}, nil
 }
-func (p *parser) parsePrimaryCondition() (Condition, error) {
+
+// parsePrimaryCondition parses one condition. Native SOQL accepts an ungrouped
+// NOT only as the first operand of a group, and nothing may follow that
+// operand at the same level: "NOT a AND b", "a AND NOT b", "a OR NOT b" and
+// "NOT NOT a" all raise unexpected token on the offending AND, OR or NOT.
+func (p *parser) parsePrimaryCondition(allowNot bool) (Condition, error) {
+	if strings.EqualFold(p.peek().text, "NOT") && !allowNot {
+		return Condition{}, unexpectedToken(p.peek().text, "NOT is only valid as the first operand of a condition group")
+	}
 	if p.matchWord("NOT") {
-		cond, err := p.parsePrimaryCondition()
+		cond, err := p.parsePrimaryCondition(false)
 		if err != nil {
 			return Condition{}, err
+		}
+		if strings.EqualFold(p.peek().text, "AND") || strings.EqualFold(p.peek().text, "OR") {
+			return Condition{}, unexpectedToken(p.peek().text, "a NOT condition cannot be combined without parentheses")
 		}
 		cond.Not = true
 		// Parentheses around the operand do not enclose the NOT expression.
@@ -2318,7 +2384,7 @@ func (p *parser) parsePrimaryCondition() (Condition, error) {
 	if err != nil {
 		return Condition{}, err
 	}
-	op, err := p.parseOperator()
+	op, err := p.parseOperator(field)
 	if err != nil {
 		return Condition{}, err
 	}
@@ -2491,7 +2557,7 @@ func hasNumberedDateLiteralPrefix(text string) bool {
 		return false
 	}
 }
-func (p *parser) parseOperator() (string, error) {
+func (p *parser) parseOperator(field string) (string, error) {
 	tok := p.advance().text
 	if tok == "<" && p.match(">") {
 		return "!=", nil
@@ -2519,7 +2585,7 @@ func (p *parser) parseOperator() (string, error) {
 			return "NOT IN", nil
 		}
 		if p.matchWord("LIKE") {
-			return "NOT LIKE", nil
+			return "", unexpectedToken(field+" "+word+" "+p.tokens[p.pos-1].text, "postfix NOT LIKE is not valid")
 		}
 		return "", p.errorf("expected IN or LIKE after NOT")
 	}
@@ -2575,6 +2641,9 @@ func (p *parser) parseInOperand() ([]storage.Value, []storage.Value, []bool, *Qu
 		}
 		if !p.match(",") {
 			return nil, nil, nil, nil, p.errorf("expected , or ) in IN list")
+		}
+		if strings.HasPrefix(tok, ":") && p.peek().text == ")" {
+			return nil, nil, nil, nil, soqlBindSyntaxError(")")
 		}
 	}
 	return values, value2s, ranges, nil, nil

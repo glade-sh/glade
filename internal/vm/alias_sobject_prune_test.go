@@ -102,7 +102,7 @@ List<Object> objects = new List<Object>{children};
 	} {
 		for name, value := range machine.Globals {
 			if name != "children" {
-				machine.Globals[name] = cloneValuePreserveRefs(value)
+				machine.Globals[name] = machine.cloneValuePreserveRefs(value)
 			}
 		}
 		aliasSObjectPruneExecute(t, machine, stage.source)
@@ -148,7 +148,7 @@ Map<Id,Account> byId = new Map<Id,Account>{'001000000000001AAA' => record};
 `)
 			for name, value := range machine.Globals {
 				if name != "target" {
-					machine.Globals[name] = cloneValuePreserveRefs(value)
+					machine.Globals[name] = machine.cloneValuePreserveRefs(value)
 				}
 			}
 			aliasSObjectPruneExecute(t, machine, mutation)
@@ -228,7 +228,7 @@ Account record = new Account();
 			}
 			for name, value := range machine.Globals {
 				if name != "target" {
-					machine.Globals[name] = cloneValuePreserveRefs(value)
+					machine.Globals[name] = machine.cloneValuePreserveRefs(value)
 				}
 			}
 			aliasSObjectPruneExecute(t, machine, "target.put('key', 'after');")
@@ -268,7 +268,7 @@ List<Object> children = new List<Object>{target};
 				aliasSObjectPruneExecute(t, machine, "List<Account> records = new List<Account>{record};")
 				for name, value := range machine.Globals {
 					if name != "target" {
-						machine.Globals[name] = cloneValuePreserveRefs(value)
+						machine.Globals[name] = machine.cloneValuePreserveRefs(value)
 					}
 				}
 				aliasSObjectPruneExecute(t, machine, mutation)
@@ -313,7 +313,7 @@ List<Account> records = new List<Account>{copied};
 				}
 				for name, value := range machine.Globals {
 					if name != "target" {
-						machine.Globals[name] = cloneValuePreserveRefs(value)
+						machine.Globals[name] = machine.cloneValuePreserveRefs(value)
 					}
 				}
 				aliasSObjectPruneExecute(t, machine, mutation)
@@ -337,7 +337,7 @@ Map<String,Object> target = new Map<String,Object>();
 	aliasSObjectPruneExecute(t, machine, "List<Contact> records = new List<Contact>{contact};")
 	for name, value := range machine.Globals {
 		if name != "target" {
-			machine.Globals[name] = cloneValuePreserveRefs(value)
+			machine.Globals[name] = machine.cloneValuePreserveRefs(value)
 		}
 	}
 	aliasSObjectPruneExecute(t, machine, "target.put('key', 'after');")
@@ -380,7 +380,7 @@ Account record = new Account(Name = 'before');
 Account recordAlias = record;
 List<Account> records = new List<Account>{record};
 Map<String,Account> recordValues = new Map<String,Account>{'record' => record};
-Map<String,Object> target = record.getPopulatedFieldsAsMap();
+Map<String,Object> target = new Map<String,Object>(record.getPopulatedFieldsAsMap());
 AliasSObjectPopulatedState holder = new AliasSObjectPopulatedState();
 AliasSObjectPopulatedState.Shared = target;
 holder.Items = target;
@@ -390,12 +390,12 @@ Map<String,Object> values = new Map<String,Object>{'target' => target};
 			detach := func() {
 				for name, value := range machine.Globals {
 					if name != "target" {
-						machine.Globals[name] = cloneValuePreserveRefs(value)
+						machine.Globals[name] = machine.cloneValuePreserveRefs(value)
 					}
 				}
 				state := machine.Classes[class.Name]
 				field := state.StaticFields["Shared"]
-				field.Value = cloneValuePreserveRefs(field.Value)
+				field.Value = machine.cloneValuePreserveRefs(field.Value)
 				state.StaticFields["Shared"] = field
 			}
 			check := func(want map[string]Value) {
@@ -469,7 +469,7 @@ Account record = new Account();
 			}
 			clone.SetOrg(machine.Org)
 			for name, value := range machine.Globals {
-				clone.Globals[name] = cloneValuePreserveRefs(value)
+				clone.Globals[name] = clone.cloneValuePreserveRefs(value)
 			}
 			if !clone.sObjectCollectionAliasRefs[machine.Globals["record"].Ref] {
 				t.Fatal("runtime clone lost exceptional record registry")
@@ -717,7 +717,7 @@ func TestAliasSObjectPruneRestoredInstanceProperty(t *testing.T) {
 	if !machine.sObjectCollectionAliasRefs[record.Ref] {
 		t.Fatal("restored property graph was not registered")
 	}
-	machine.Globals["rows"] = cloneValuePreserveRefs(rows)
+	machine.Globals["rows"] = machine.cloneValuePreserveRefs(rows)
 	machine.Globals["target"] = target
 	aliasSObjectPruneExecute(t, machine, "target.put('key', 'after');")
 	aliasSObjectPruneCheckExceptionalAlias(t, "restored graph", machine.Globals["rows"].List[0].Fields["Name"], machine.Globals["target"])
@@ -766,12 +766,12 @@ func aliasSObjectPruneClass(t *testing.T, kind ValueKind) Class {
 func aliasSObjectPruneDetach(machine *VM) {
 	for name, value := range machine.Globals {
 		if name != "target" {
-			machine.Globals[name] = cloneValuePreserveRefs(value)
+			machine.Globals[name] = machine.cloneValuePreserveRefs(value)
 		}
 	}
 	class := machine.Classes["AliasSObjectPruneState"]
 	field := class.StaticFields["Shared"]
-	field.Value = cloneValuePreserveRefs(field.Value)
+	field.Value = machine.cloneValuePreserveRefs(field.Value)
 	class.StaticFields["Shared"] = field
 }
 

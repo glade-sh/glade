@@ -1,0 +1,170 @@
+[
+  {
+    "id": "receiver_case",
+    "api": "62.0",
+    "route": "anonymous",
+    "observation": {
+      "compiled": false,
+      "success": false,
+      "compileProblem": "Variable does not exist: SObjectType",
+      "line": "2",
+      "column": "24",
+      "exceptionMessage": "",
+      "exceptionStackTrace": "",
+      "logs": "",
+      "status": 1,
+      "name": "executeCompileFailure",
+      "message": "Compilation failed at Line 2 column 24 with the error:\n\nVariable does not exist: SObjectType"
+    }
+  },
+  {
+    "id": "receiver_case",
+    "api": "62.0",
+    "route": "isTest",
+    "observation": {
+      "status": "Failed",
+      "failures": [
+        {
+          "columnNumber": 24,
+          "fullName": "TokenSpanObservation",
+          "lineNumber": 4,
+          "problem": "Variable does not exist: SObjectType",
+          "problemType": "Error"
+        },
+        {
+          "columnNumber": 10,
+          "fullName": "TokenSpanObservation",
+          "lineNumber": 5,
+          "problem": "Variable does not exist: SObjectType",
+          "problemType": "Error"
+        }
+      ]
+    }
+  },
+  {
+    "id": "receiver_and_member_case",
+    "api": "62.0",
+    "route": "anonymous",
+    "observation": {
+      "compiled": false,
+      "success": false,
+      "compileProblem": "Variable does not exist: sobjecttype",
+      "line": "2",
+      "column": "24",
+      "exceptionMessage": "",
+      "exceptionStackTrace": "",
+      "logs": "",
+      "status": 1,
+      "name": "executeCompileFailure",
+      "message": "Compilation failed at Line 2 column 24 with the error:\n\nVariable does not exist: sobjecttype"
+    }
+  },
+  {
+    "id": "receiver_and_member_case",
+    "api": "62.0",
+    "route": "isTest",
+    "observation": {
+      "status": "Failed",
+      "failures": [
+        {
+          "columnNumber": 24,
+          "fullName": "TokenSpanObservation",
+          "lineNumber": 4,
+          "problem": "Variable does not exist: sobjecttype",
+          "problemType": "Error"
+        },
+        {
+          "columnNumber": 10,
+          "fullName": "TokenSpanObservation",
+          "lineNumber": 5,
+          "problem": "Variable does not exist: SObjectType",
+          "problemType": "Error"
+        }
+      ]
+    }
+  },
+  {
+    "id": "receiver_case",
+    "api": "67.0",
+    "route": "anonymous",
+    "observation": {
+      "compiled": false,
+      "success": false,
+      "compileProblem": "Variable does not exist: SObjectType",
+      "line": "2",
+      "column": "24",
+      "exceptionMessage": "",
+      "exceptionStackTrace": "",
+      "logs": "",
+      "status": 1,
+      "name": "executeCompileFailure",
+      "message": "Compilation failed at Line 2 column 24 with the error:\n\nVariable does not exist: SObjectType"
+    }
+  },
+  {
+    "id": "receiver_case",
+    "api": "67.0",
+    "route": "isTest",
+    "observation": {
+      "status": "Failed",
+      "failures": [
+        {
+          "columnNumber": 24,
+          "fullName": "TokenSpanObservation",
+          "lineNumber": 4,
+          "problem": "Variable does not exist: SObjectType",
+          "problemType": "Error"
+        },
+        {
+          "columnNumber": 10,
+          "fullName": "TokenSpanObservation",
+          "lineNumber": 5,
+          "problem": "Variable does not exist: SObjectType",
+          "problemType": "Error"
+        }
+      ]
+    }
+  },
+  {
+    "id": "receiver_and_member_case",
+    "api": "67.0",
+    "route": "anonymous",
+    "observation": {
+      "compiled": false,
+      "success": false,
+      "compileProblem": "Variable does not exist: sobjecttype",
+      "line": "2",
+      "column": "24",
+      "exceptionMessage": "",
+      "exceptionStackTrace": "",
+      "logs": "",
+      "status": 1,
+      "name": "executeCompileFailure",
+      "message": "Compilation failed at Line 2 column 24 with the error:\n\nVariable does not exist: sobjecttype"
+    }
+  },
+  {
+    "id": "receiver_and_member_case",
+    "api": "67.0",
+    "route": "isTest",
+    "observation": {
+      "status": "Failed",
+      "failures": [
+        {
+          "columnNumber": 24,
+          "fullName": "TokenSpanObservation",
+          "lineNumber": 4,
+          "problem": "Variable does not exist: sobjecttype",
+          "problemType": "Error"
+        },
+        {
+          "columnNumber": 10,
+          "fullName": "TokenSpanObservation",
+          "lineNumber": 5,
+          "problem": "Variable does not exist: SObjectType",
+          "problemType": "Error"
+        }
+      ]
+    }
+  }
+]

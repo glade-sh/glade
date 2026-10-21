@@ -1,0 +1,318 @@
+{
+  "objects": {
+    "ParcelBatchRow__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Parcel batch row</label><pluralLabel>Parcel batch rows</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>"
+  },
+  "rows": [
+    {
+      "api": "62.0",
+      "id": "account",
+      "className": "ParcelBatchAccount62",
+      "source": "public class ParcelBatchAccount62 implements Database.Batchable<Account> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, List<Account> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "4cde34052d531d858435b56b7e11ecaac200b95cfff88781e093ba6288845b63",
+      "accepted": false,
+      "problems": [
+        "Class ParcelBatchAccount62 must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+      ]
+    },
+    {
+      "api": "62.0",
+      "id": "sobject",
+      "className": "ParcelBatchSobject62",
+      "source": "public class ParcelBatchSobject62 implements Database.Batchable<SObject> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, List<SObject> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "5e2bd1a1262f1443a20b54e0404d6a05575c435e1645ca1ca080bc993572a11d",
+      "accepted": true,
+      "problems": []
+    },
+    {
+      "api": "62.0",
+      "id": "object",
+      "className": "ParcelBatchObject62",
+      "source": "public class ParcelBatchObject62 implements Database.Batchable<Object> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, List<Object> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "b7469e1d7a132a8ef11c441479307946f33e719911c28506fbdac4df28dfbdb8",
+      "accepted": true,
+      "problems": []
+    },
+    {
+      "api": "62.0",
+      "id": "custom",
+      "className": "ParcelBatchCustom62",
+      "source": "public class ParcelBatchCustom62 implements Database.Batchable<ParcelBatchRow__c> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, List<ParcelBatchRow__c> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "e15668321d377aa15c254799321d7b42007100eada8a71aa05ec61626082a496",
+      "accepted": false,
+      "problems": [
+        "Class ParcelBatchCustom62 must implement the method: System.Iterable<ParcelBatchRow__c> Database.Batchable<ParcelBatchRow__c>.start(Database.BatchableContext)"
+      ]
+    },
+    {
+      "api": "62.0",
+      "id": "iterableAccount",
+      "className": "ParcelBatchIterableAccount62",
+      "source": "public class ParcelBatchIterableAccount62 implements Database.Batchable<Account> {\n public Iterable<Account> start(Database.BatchableContext context) { return new List<Account>(); }\n public void execute(Database.BatchableContext context, List<Account> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "c0d987302a7158c385b025f469e16403910a52907a1012898fae72c183a130e8",
+      "accepted": true,
+      "problems": []
+    },
+    {
+      "api": "62.0",
+      "id": "accountIterableScope",
+      "className": "ParcelBatchAccountIterableScope62",
+      "source": "public class ParcelBatchAccountIterableScope62 implements Database.Batchable<Account> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, Iterable<Account> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "5513b7c21f3c4fef38ea5cbe6a41b0a264582a50d0c560bf7449a246d102dc60",
+      "accepted": false,
+      "problems": [
+        "Class ParcelBatchAccountIterableScope62 must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+      ]
+    },
+    {
+      "api": "67.0",
+      "id": "account",
+      "className": "ParcelBatchAccount67",
+      "source": "public class ParcelBatchAccount67 implements Database.Batchable<Account> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, List<Account> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "4d4be07456abd6348becfda7bf20ac1fc3e099ca19a8d2d809b967821157b005",
+      "accepted": false,
+      "problems": [
+        "Class ParcelBatchAccount67 must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+      ]
+    },
+    {
+      "api": "67.0",
+      "id": "sobject",
+      "className": "ParcelBatchSobject67",
+      "source": "public class ParcelBatchSobject67 implements Database.Batchable<SObject> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, List<SObject> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "f1bc1e4961735cda49346f75a535799887f59ea192bbbd5994ea9e12822c5c5c",
+      "accepted": true,
+      "problems": []
+    },
+    {
+      "api": "67.0",
+      "id": "object",
+      "className": "ParcelBatchObject67",
+      "source": "public class ParcelBatchObject67 implements Database.Batchable<Object> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, List<Object> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "cbfba82a8952775aaf28fa2c46ac7aba5a5846a4ef92f3d315c2b65447a56477",
+      "accepted": true,
+      "problems": []
+    },
+    {
+      "api": "67.0",
+      "id": "custom",
+      "className": "ParcelBatchCustom67",
+      "source": "public class ParcelBatchCustom67 implements Database.Batchable<ParcelBatchRow__c> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, List<ParcelBatchRow__c> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "418f3c4f30322eefbf7ca583d8660ea115bdf2b968fe339e52f29305aaada570",
+      "accepted": false,
+      "problems": [
+        "Class ParcelBatchCustom67 must implement the method: System.Iterable<ParcelBatchRow__c> Database.Batchable<ParcelBatchRow__c>.start(Database.BatchableContext)"
+      ]
+    },
+    {
+      "api": "67.0",
+      "id": "iterableAccount",
+      "className": "ParcelBatchIterableAccount67",
+      "source": "public class ParcelBatchIterableAccount67 implements Database.Batchable<Account> {\n public Iterable<Account> start(Database.BatchableContext context) { return new List<Account>(); }\n public void execute(Database.BatchableContext context, List<Account> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "4086c076c64c3b6559535a3810c0d2fe527b2cf396e46f20008208a517338810",
+      "accepted": true,
+      "problems": []
+    },
+    {
+      "api": "67.0",
+      "id": "accountIterableScope",
+      "className": "ParcelBatchAccountIterableScope67",
+      "source": "public class ParcelBatchAccountIterableScope67 implements Database.Batchable<Account> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, Iterable<Account> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "559729f7b93e179f2684b90e8650b2da72a6d4d80e4944d3ad1635cb94e48547",
+      "accepted": false,
+      "problems": [
+        "Class ParcelBatchAccountIterableScope67 must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+      ]
+    },
+    {
+      "api": "68.0",
+      "id": "account",
+      "className": "ParcelBatchAccount68",
+      "source": "public class ParcelBatchAccount68 implements Database.Batchable<Account> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, List<Account> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "3bc66242424f6acadfdf6052fb54bc5a0705037a0e53f2ed73c5fbc3845ac9d1",
+      "accepted": false,
+      "problems": [
+        "Class ParcelBatchAccount68 must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+      ]
+    },
+    {
+      "api": "68.0",
+      "id": "sobject",
+      "className": "ParcelBatchSobject68",
+      "source": "public class ParcelBatchSobject68 implements Database.Batchable<SObject> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, List<SObject> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "001e60780ad4388ea76df95540655d9ddea76dcaa8272cee61e2bbb6189e3a75",
+      "accepted": true,
+      "problems": []
+    },
+    {
+      "api": "68.0",
+      "id": "object",
+      "className": "ParcelBatchObject68",
+      "source": "public class ParcelBatchObject68 implements Database.Batchable<Object> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, List<Object> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "cf4b39b2ff8b73b205157c36b4d5bb72c1f9325d866e78fb94025b0838088a9c",
+      "accepted": true,
+      "problems": []
+    },
+    {
+      "api": "68.0",
+      "id": "custom",
+      "className": "ParcelBatchCustom68",
+      "source": "public class ParcelBatchCustom68 implements Database.Batchable<ParcelBatchRow__c> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, List<ParcelBatchRow__c> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "5c43d86594c30d057d0153b94a8e42168e1a20c2b53349a820c8acac9b4b979b",
+      "accepted": false,
+      "problems": [
+        "Class ParcelBatchCustom68 must implement the method: System.Iterable<ParcelBatchRow__c> Database.Batchable<ParcelBatchRow__c>.start(Database.BatchableContext)"
+      ]
+    },
+    {
+      "api": "68.0",
+      "id": "iterableAccount",
+      "className": "ParcelBatchIterableAccount68",
+      "source": "public class ParcelBatchIterableAccount68 implements Database.Batchable<Account> {\n public Iterable<Account> start(Database.BatchableContext context) { return new List<Account>(); }\n public void execute(Database.BatchableContext context, List<Account> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "2cd575b290cab8534508ccda36a0ad75118f026dabcea5c057d1df6bffd66618",
+      "accepted": true,
+      "problems": []
+    },
+    {
+      "api": "68.0",
+      "id": "accountIterableScope",
+      "className": "ParcelBatchAccountIterableScope68",
+      "source": "public class ParcelBatchAccountIterableScope68 implements Database.Batchable<Account> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, Iterable<Account> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "34e3b4534ba59000adff09499c02aeecc2a4f0841eb40f7a4158d2afb00f526b",
+      "accepted": false,
+      "problems": [
+        "Class ParcelBatchAccountIterableScope68 must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+      ]
+    },
+    {
+      "api": "62.0",
+      "id": "iterableScope",
+      "className": "ParcelBatchIterableScope62",
+      "source": "public class ParcelBatchIterableScope62 implements Database.Batchable<Account> {\n public Iterable<Account> start(Database.BatchableContext context) { return new List<Account>(); }\n public void execute(Database.BatchableContext context, Iterable<Account> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "e7a8ae0ba623daef80690cbfe9c184df84413c5aa0c1cab2156abcecd250ebcc",
+      "accepted": true,
+      "problems": []
+    },
+    {
+      "api": "62.0",
+      "id": "customIterableScope",
+      "className": "ParcelBatchCustomIterableScope62",
+      "source": "public class ParcelBatchCustomIterableScope62 implements Database.Batchable<ParcelBatchRow__c> {\n public Iterable<ParcelBatchRow__c> start(Database.BatchableContext context) { return new List<ParcelBatchRow__c>(); }\n public void execute(Database.BatchableContext context, Iterable<ParcelBatchRow__c> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "3c47aa96b99e29385e2190213a553dcb733c1ddb8600acac7833f9f7cb3cf968",
+      "accepted": true,
+      "problems": []
+    },
+    {
+      "api": "62.0",
+      "id": "string",
+      "className": "ParcelBatchString62",
+      "source": "public class ParcelBatchString62 implements Database.Batchable<String> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, List<String> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "10964138218bdae7840faed87a4d874f408fc68a404692823ec849d7682c66fd",
+      "accepted": false,
+      "problems": [
+        "Class ParcelBatchString62 must implement the method: System.Iterable<String> Database.Batchable<String>.start(Database.BatchableContext)"
+      ]
+    },
+    {
+      "api": "67.0",
+      "id": "iterableScope",
+      "className": "ParcelBatchIterableScope67",
+      "source": "public class ParcelBatchIterableScope67 implements Database.Batchable<Account> {\n public Iterable<Account> start(Database.BatchableContext context) { return new List<Account>(); }\n public void execute(Database.BatchableContext context, Iterable<Account> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "2d7e9a246f1a9f813979e66d99a684931b401a3a7842b020a5eac710a27e9cc6",
+      "accepted": true,
+      "problems": []
+    },
+    {
+      "api": "67.0",
+      "id": "customIterableScope",
+      "className": "ParcelBatchCustomIterableScope67",
+      "source": "public class ParcelBatchCustomIterableScope67 implements Database.Batchable<ParcelBatchRow__c> {\n public Iterable<ParcelBatchRow__c> start(Database.BatchableContext context) { return new List<ParcelBatchRow__c>(); }\n public void execute(Database.BatchableContext context, Iterable<ParcelBatchRow__c> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "ceeb354210c2a1c9ec1d6d5f21beb62e41c3bfe178e476955700aca3fd0f9301",
+      "accepted": true,
+      "problems": []
+    },
+    {
+      "api": "67.0",
+      "id": "string",
+      "className": "ParcelBatchString67",
+      "source": "public class ParcelBatchString67 implements Database.Batchable<String> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, List<String> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "327c94135913cb6de7202282ac5a6a9de4569be37941dd6f97338ae7fe5dfca3",
+      "accepted": false,
+      "problems": [
+        "Class ParcelBatchString67 must implement the method: System.Iterable<String> Database.Batchable<String>.start(Database.BatchableContext)"
+      ]
+    },
+    {
+      "api": "68.0",
+      "id": "iterableScope",
+      "className": "ParcelBatchIterableScope68",
+      "source": "public class ParcelBatchIterableScope68 implements Database.Batchable<Account> {\n public Iterable<Account> start(Database.BatchableContext context) { return new List<Account>(); }\n public void execute(Database.BatchableContext context, Iterable<Account> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "89dd238a3914aa9a0e0ee29994f1d81d1748e97dc75d6f990e9a1246e1d8d3f5",
+      "accepted": true,
+      "problems": []
+    },
+    {
+      "api": "68.0",
+      "id": "customIterableScope",
+      "className": "ParcelBatchCustomIterableScope68",
+      "source": "public class ParcelBatchCustomIterableScope68 implements Database.Batchable<ParcelBatchRow__c> {\n public Iterable<ParcelBatchRow__c> start(Database.BatchableContext context) { return new List<ParcelBatchRow__c>(); }\n public void execute(Database.BatchableContext context, Iterable<ParcelBatchRow__c> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "18699bdcb347c09cbd4ef582c430c8457ef196646decd275111b168c43b5fbd1",
+      "accepted": true,
+      "problems": []
+    },
+    {
+      "api": "68.0",
+      "id": "string",
+      "className": "ParcelBatchString68",
+      "source": "public class ParcelBatchString68 implements Database.Batchable<String> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator('SELECT Id FROM Account'); }\n public void execute(Database.BatchableContext context, List<String> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "52ec3ab872ab263431bfa6192d5d2f4489f5503807a10da4f97d78ea9ba7ddbf",
+      "accepted": false,
+      "problems": [
+        "Class ParcelBatchString68 must implement the method: System.Iterable<String> Database.Batchable<String>.start(Database.BatchableContext)"
+      ]
+    },
+    {
+      "api": "62.0",
+      "id": "inlineAccount",
+      "className": "ParcelBatchInlineAccount62",
+      "source": "public class ParcelBatchInlineAccount62 implements Database.Batchable<Account> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator([SELECT Id FROM Account]); }\n public void execute(Database.BatchableContext context, List<Account> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "7c3d2121ac7512555cd3f07e2bc6119b363ff650e805cb40609d50240277c56f",
+      "accepted": false,
+      "problems": [
+        "Class ParcelBatchInlineAccount62 must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+      ]
+    },
+    {
+      "api": "62.0",
+      "id": "nullAccount",
+      "className": "ParcelBatchNullAccount62",
+      "source": "public class ParcelBatchNullAccount62 implements Database.Batchable<Account> {\n public Database.QueryLocator start(Database.BatchableContext context) { return null; }\n public void execute(Database.BatchableContext context, List<Account> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "846d6aeaaf23cf40c72c1b6c182e5871e4191865a1d8682a077dcbd04ce0439b",
+      "accepted": false,
+      "problems": [
+        "Class ParcelBatchNullAccount62 must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+      ]
+    },
+    {
+      "api": "67.0",
+      "id": "inlineAccount",
+      "className": "ParcelBatchInlineAccount67",
+      "source": "public class ParcelBatchInlineAccount67 implements Database.Batchable<Account> {\n public Database.QueryLocator start(Database.BatchableContext context) { return Database.getQueryLocator([SELECT Id FROM Account]); }\n public void execute(Database.BatchableContext context, List<Account> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "8922839b0a2f5aa8c847ceaeb79b11c0f032434f07dad7b27506a84e58365d3a",
+      "accepted": false,
+      "problems": [
+        "Class ParcelBatchInlineAccount67 must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+      ]
+    },
+    {
+      "api": "67.0",
+      "id": "nullAccount",
+      "className": "ParcelBatchNullAccount67",
+      "source": "public class ParcelBatchNullAccount67 implements Database.Batchable<Account> {\n public Database.QueryLocator start(Database.BatchableContext context) { return null; }\n public void execute(Database.BatchableContext context, List<Account> scope) {}\n public void finish(Database.BatchableContext context) {}\n}\n",
+      "sourceSha256": "4c2e459a673381486c41400e77e6f5b4786b20c4c5b25432f4cc11d27ee9aa39",
+      "accepted": false,
+      "problems": [
+        "Class ParcelBatchNullAccount67 must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+mode	package	selection	before_seconds	before_result	after_seconds	after_result	notes
+test	internal/apextest	TestRunAsDefaultSecurityConformance/59.0	71.14	PASS	59.61	PASS	380 identical terminal results
+test	internal/visualforce	TestV04SalesforceConformance	170+	CENSORED_TIMEOUT	170+	CENSORED_TIMEOUT	no completed speed comparison
+test	internal/lwc/compile	TestL11SalesforceConformance	170+	CENSORED_TIMEOUT	170+	CENSORED_TIMEOUT	same cached Chromium; no completed speed comparison
+race	internal/apextest	TestRunAsDefaultSecurityConformance/59.0/C137_01[0-8]	16.97	PASS	17.26	PASS	11 identical terminals; nine asserted native cells; warm execution excludes compilation

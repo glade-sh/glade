@@ -1,0 +1,10 @@
+[
+  {
+    "method": "syncCapacity",
+    "shape": "Synchronous enqueue limit and count before and after one queueable submission"
+  },
+  {
+    "method": "asyncCapacity",
+    "shape": "Queueable enqueue limit and count before and after one child submission; a capacity guard prevents a second child"
+  }
+]

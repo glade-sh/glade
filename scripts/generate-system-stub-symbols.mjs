@@ -831,6 +831,13 @@ function applyGeneratedCompatibilityOverrides(specs) {
 		quickActionDefaultsHandler.constructors = [];
 	}
 
+	const siteUrlRewriter = byName.get("site.urlrewriter");
+	if (siteUrlRewriter) {
+		siteUrlRewriter.kind = "DeclarationInterface";
+		siteUrlRewriter.superClass = "";
+		siteUrlRewriter.constructors = [];
+	}
+
 	const unsupportedOperationException = byName.get("unsupportedoperationexception");
 	if (unsupportedOperationException) {
 		unsupportedOperationException.superClass = "Exception";

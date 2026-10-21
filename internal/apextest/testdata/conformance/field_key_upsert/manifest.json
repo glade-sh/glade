@@ -1,0 +1,99 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "nativeObservationCount": 798,
+  "shapeCount": 133,
+  "outcomes": {
+    "runtime": 672,
+    "compile-rejected": 126
+  },
+  "clusters": {
+    "transport": {
+      "shapes": 2,
+      "cells": 12
+    },
+    "describe_standard": {
+      "shapes": 18,
+      "cells": 108
+    },
+    "describe_custom": {
+      "shapes": 18,
+      "cells": 108
+    },
+    "database": {
+      "shapes": 36,
+      "cells": 216
+    },
+    "populated": {
+      "shapes": 6,
+      "cells": 36
+    },
+    "null": {
+      "shapes": 5,
+      "cells": 30
+    },
+    "statement": {
+      "shapes": 36,
+      "cells": 216
+    },
+    "keys": {
+      "shapes": 8,
+      "cells": 48
+    },
+    "rejections": {
+      "shapes": 3,
+      "cells": 18
+    },
+    "access": {
+      "shapes": 1,
+      "cells": 6
+    }
+  },
+  "uncaughtCells": [],
+  "artifactCells": [],
+  "partialTransportCells": 6,
+  "semanticCells": 792,
+  "rowsSha256": "a21bc2a1d9a47f538648c97deb1cbccfc0f9986f70dfaeb9422ba5d105735828",
+  "completionSha256": "45ed92080cc566f7b5c17629c569a0d7ca8c4a535c4f686d1ed8771c0dff888e",
+  "cleanupVerified": true,
+  "evidence": {
+    "api62/anonymous": {
+      "orgTSVSha256": "4a84fe0c99713d4d082490003af2f6c1f3734d035d0fbb1744e5b58a136d4742",
+      "orgRunSha256": "c27f83036f045f134f453e66278e1f9fa718c854a4de1e88fbc266f3d08838e0",
+      "nativeObservations": 133
+    },
+    "api62/istest": {
+      "orgTSVSha256": "0b093120cc105a354bd104fa3edffa8ac3cbc9c2c53b7fc1b697fc455a6503f7",
+      "orgRunSha256": "a502d527f4362b2daf069969ebd8944557cf89011c4b6e1fd496ad537dacd693",
+      "nativeObservations": 133
+    },
+    "api67/anonymous": {
+      "orgTSVSha256": "4a84fe0c99713d4d082490003af2f6c1f3734d035d0fbb1744e5b58a136d4742",
+      "orgRunSha256": "5429871c2e13e4479e134e5e999a5fae24de7bc78c376895223af5e2c00a00b3",
+      "nativeObservations": 133
+    },
+    "api67/istest": {
+      "orgTSVSha256": "1de71343fb0c76d2b17b7ff3b667fe8a0b62b8bebd6567931914265cecec5bbf",
+      "orgRunSha256": "a42ec507dafffbcba6a4fe376a5dff76f2676b9dfe1e8d775019a864226972fa",
+      "nativeObservations": 133
+    },
+    "api68/anonymous": {
+      "orgTSVSha256": "4a84fe0c99713d4d082490003af2f6c1f3734d035d0fbb1744e5b58a136d4742",
+      "orgRunSha256": "1dec9fccf760fdf0cf05b58b0b51c7b6186a8ccb49ab719ddc4d9837f341b74a",
+      "nativeObservations": 133
+    },
+    "api68/istest": {
+      "orgTSVSha256": "1de71343fb0c76d2b17b7ff3b667fe8a0b62b8bebd6567931914265cecec5bbf",
+      "orgRunSha256": "111555a79f352cbdbe7fa2a1b6d0b6e235cd09e6c89455f8fc8d9fd5e44cfb86",
+      "nativeObservations": 133
+    }
+  },
+  "api59": "Not captured. No API-68-only claim is made."
+}

@@ -1,0 +1,10 @@
+[
+  {
+    "method": "initialUpload",
+    "shape": "Insert an initial minor file version and query VersionNumber and IsLatest"
+  },
+  {
+    "method": "secondUpload",
+    "shape": "Insert a second minor version for the same document, then query both VersionNumber and IsLatest fields"
+  }
+]

@@ -1,0 +1,353 @@
+{
+  "group": "controls",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "shapeCount": 3,
+  "nativeObservationCount": 18,
+  "recoveredObservationCount": 0,
+  "notes": [
+    "Synthetic source-only project metadata, helper classes and triggers use the ordinary project loader.",
+    "Both independently captured routes compare complete reassembled payloads; named chunk envelopes are transport only.",
+    "Same-release APIs62/67/68; API59 has no rows.",
+    "API67/68 SOAP guide anchors compare by stable message parts; no org URL is produced or compared.",
+    "Rejected global-null metadata compares loader rejection plus the accepted modern runtime twin."
+  ],
+  "rows": [
+    {
+      "id": "C187CONTROL_001",
+      "label": "positive transport control",
+      "config": {},
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'value'=>7};String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CONTROL_001|'+encoded);",
+              "operationSHA256": "d5e3215a0c5f3b88bbf2198b88ca9b60bc1ea9a2f15822d8f253537a2795984f",
+              "captureSourceSHA256": {
+                "anonymous": "d5e3215a0c5f3b88bbf2198b88ca9b60bc1ea9a2f15822d8f253537a2795984f"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'value'=>7};String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CONTROL_001|'+encoded);",
+              "operationSHA256": "d5e3215a0c5f3b88bbf2198b88ca9b60bc1ea9a2f15822d8f253537a2795984f",
+              "captureSourceSHA256": {
+                "E32BA62C187CONTROL001": "66e4b112aa232c05fbbbaee3392136692eb72f31ad8a3de2d671367bc5e5a617"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'value'=>7};String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CONTROL_001|'+encoded);",
+              "operationSHA256": "d5e3215a0c5f3b88bbf2198b88ca9b60bc1ea9a2f15822d8f253537a2795984f",
+              "captureSourceSHA256": {
+                "anonymous": "d5e3215a0c5f3b88bbf2198b88ca9b60bc1ea9a2f15822d8f253537a2795984f"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'value'=>7};String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CONTROL_001|'+encoded);",
+              "operationSHA256": "d5e3215a0c5f3b88bbf2198b88ca9b60bc1ea9a2f15822d8f253537a2795984f",
+              "captureSourceSHA256": {
+                "E32BA67C187CONTROL001": "a15a804d9d6155be7cf2ad18430c3e0f39c3b47c117fef945551e49f13843a29"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'value'=>7};String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CONTROL_001|'+encoded);",
+              "operationSHA256": "d5e3215a0c5f3b88bbf2198b88ca9b60bc1ea9a2f15822d8f253537a2795984f",
+              "captureSourceSHA256": {
+                "anonymous": "d5e3215a0c5f3b88bbf2198b88ca9b60bc1ea9a2f15822d8f253537a2795984f"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=new Map<String,Object>{'value'=>7};String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CONTROL_001|'+encoded);",
+              "operationSHA256": "d5e3215a0c5f3b88bbf2198b88ca9b60bc1ea9a2f15822d8f253537a2795984f",
+              "captureSourceSHA256": {
+                "E32BA68C187CONTROL001": "185c4055065b2fba9ff99953fb8ccf7df427850ee43a65cdb5ccd4a59eff007a"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187CONTROL_002",
+      "label": "caught transport control",
+      "config": {},
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=new Map<String,Object>();try{List<Integer> values=new List<Integer>();Integer unused=values[0];}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CONTROL_002|'+encoded);",
+              "operationSHA256": "81a00e51794651231d614ed4e0bfd706e4cc8a069a8c5cd3a73cf0531b88f47e",
+              "captureSourceSHA256": {
+                "anonymous": "81a00e51794651231d614ed4e0bfd706e4cc8a069a8c5cd3a73cf0531b88f47e"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "List index out of bounds: 0",
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=new Map<String,Object>();try{List<Integer> values=new List<Integer>();Integer unused=values[0];}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CONTROL_002|'+encoded);",
+              "operationSHA256": "81a00e51794651231d614ed4e0bfd706e4cc8a069a8c5cd3a73cf0531b88f47e",
+              "captureSourceSHA256": {
+                "E32BA62C187CONTROL002": "7292193b4add8f691775272c4b9f6df9421a70ae143f0b9c2b5a6e85dc2e84a4"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "List index out of bounds: 0",
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=new Map<String,Object>();try{List<Integer> values=new List<Integer>();Integer unused=values[0];}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CONTROL_002|'+encoded);",
+              "operationSHA256": "81a00e51794651231d614ed4e0bfd706e4cc8a069a8c5cd3a73cf0531b88f47e",
+              "captureSourceSHA256": {
+                "anonymous": "81a00e51794651231d614ed4e0bfd706e4cc8a069a8c5cd3a73cf0531b88f47e"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "List index out of bounds: 0",
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=new Map<String,Object>();try{List<Integer> values=new List<Integer>();Integer unused=values[0];}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CONTROL_002|'+encoded);",
+              "operationSHA256": "81a00e51794651231d614ed4e0bfd706e4cc8a069a8c5cd3a73cf0531b88f47e",
+              "captureSourceSHA256": {
+                "E32BA67C187CONTROL002": "c5fe14c6546eeb2bdc569c29b78fc98159fb8da778517c09fbdf75081291dce7"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "List index out of bounds: 0",
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=new Map<String,Object>();try{List<Integer> values=new List<Integer>();Integer unused=values[0];}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CONTROL_002|'+encoded);",
+              "operationSHA256": "81a00e51794651231d614ed4e0bfd706e4cc8a069a8c5cd3a73cf0531b88f47e",
+              "captureSourceSHA256": {
+                "anonymous": "81a00e51794651231d614ed4e0bfd706e4cc8a069a8c5cd3a73cf0531b88f47e"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "List index out of bounds: 0",
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=new Map<String,Object>();try{List<Integer> values=new List<Integer>();Integer unused=values[0];}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187CONTROL_002|'+encoded);",
+              "operationSHA256": "81a00e51794651231d614ed4e0bfd706e4cc8a069a8c5cd3a73cf0531b88f47e",
+              "captureSourceSHA256": {
+                "E32BA68C187CONTROL002": "266ce949ebe2d06ca463c7db5e4eb5d01f5faab0e6e1e199d6be60fbd81aeb34"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionMessage": "List index out of bounds: 0",
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187CONTROL_003",
+      "label": "uncaught transport control",
+      "config": {},
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "System.assertEquals(1,2,'E32_GENUINE_UNCAUGHT');",
+              "operationSHA256": "066a347c382415aae6619f33c2664525bf3f7d8d4952c011901c474760b488be",
+              "captureSourceSHA256": {
+                "anonymous": "066a347c382415aae6619f33c2664525bf3f7d8d4952c011901c474760b488be"
+              },
+              "expected": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.AssertException: Assertion Failed: E32_GENUINE_UNCAUGHT: Expected: 1, Actual: 2",
+                "exceptionType": "System.AssertException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "System.assertEquals(1,2,'E32_GENUINE_UNCAUGHT');",
+              "operationSHA256": "066a347c382415aae6619f33c2664525bf3f7d8d4952c011901c474760b488be",
+              "captureSourceSHA256": {
+                "E32BA62C187CONTROL003": "d859c8b5446b884992b4892d77d70cb39fcd1ea07ce97a2961666d77b7a7254c"
+              },
+              "expected": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "E32BA62C187CONTROL003",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: E32_GENUINE_UNCAUGHT: Expected: 1, Actual: 2",
+                    "exceptionType": "System.AssertException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "System.assertEquals(1,2,'E32_GENUINE_UNCAUGHT');",
+              "operationSHA256": "066a347c382415aae6619f33c2664525bf3f7d8d4952c011901c474760b488be",
+              "captureSourceSHA256": {
+                "anonymous": "066a347c382415aae6619f33c2664525bf3f7d8d4952c011901c474760b488be"
+              },
+              "expected": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.AssertException: Assertion Failed: E32_GENUINE_UNCAUGHT: Expected: 1, Actual: 2",
+                "exceptionType": "System.AssertException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "System.assertEquals(1,2,'E32_GENUINE_UNCAUGHT');",
+              "operationSHA256": "066a347c382415aae6619f33c2664525bf3f7d8d4952c011901c474760b488be",
+              "captureSourceSHA256": {
+                "E32BA67C187CONTROL003": "df33fedcf6d1cc9441811f95486c4668800ba37e856cdb7e5cb76e7ad39beb40"
+              },
+              "expected": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "E32BA67C187CONTROL003",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: E32_GENUINE_UNCAUGHT: Expected: 1, Actual: 2",
+                    "exceptionType": "System.AssertException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "System.assertEquals(1,2,'E32_GENUINE_UNCAUGHT');",
+              "operationSHA256": "066a347c382415aae6619f33c2664525bf3f7d8d4952c011901c474760b488be",
+              "captureSourceSHA256": {
+                "anonymous": "066a347c382415aae6619f33c2664525bf3f7d8d4952c011901c474760b488be"
+              },
+              "expected": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.AssertException: Assertion Failed: E32_GENUINE_UNCAUGHT: Expected: 1, Actual: 2",
+                "exceptionType": "System.AssertException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "System.assertEquals(1,2,'E32_GENUINE_UNCAUGHT');",
+              "operationSHA256": "066a347c382415aae6619f33c2664525bf3f7d8d4952c011901c474760b488be",
+              "captureSourceSHA256": {
+                "E32BA68C187CONTROL003": "841d129e81f825587791a3247c98c826da0000673064fe4d173adfc094f973be"
+              },
+              "expected": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "E32BA68C187CONTROL003",
+                    "method": "observe",
+                    "message": "System.AssertException: Assertion Failed: E32_GENUINE_UNCAUGHT: Expected: 1, Actual: 2",
+                    "exceptionType": "System.AssertException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -36,6 +36,35 @@ type Run struct {
 	DurationMS            int64                    `json:"durationMs,omitempty"`
 	Dependencies          []typesys.DependencyInfo `json:"dependencies,omitempty"`
 	Suites                []Suite                  `json:"suites"`
+	// ExcludedClasses lists every class the dependency-scoped compile gate kept
+	// from running: classes with compile errors and the classes that depend on
+	// them. Their selected test methods also appear as compile_error cases.
+	ExcludedClasses []CompileExclusion `json:"excludedClasses,omitempty"`
+}
+
+// CompileExclusion is one class excluded by the compile gate. Root names the
+// class with its own compile error; for that class Root equals ClassName and
+// DependsOn is empty. A dependent names the excluded class it references in
+// DependsOn, and Message nests that class's message the way Salesforce does.
+type CompileExclusion struct {
+	ClassName string `json:"className"`
+	File      string `json:"file,omitempty"`
+	// Line is the line Salesforce reports. A dependent reports its root's
+	// line, which is not a line of the dependent's own file.
+	Line      int    `json:"line,omitempty"`
+	Root      string `json:"root"`
+	DependsOn string `json:"dependsOn,omitempty"`
+	Message   string `json:"message"`
+	// Problems lists every compile problem of a root class that has more than
+	// one, in the order Salesforce lists them. Line and Message repeat the
+	// first, which is the problem a dependent message nests.
+	Problems []CompileProblem `json:"problems,omitempty"`
+}
+
+// CompileProblem is one compile problem of an excluded root class.
+type CompileProblem struct {
+	Line    int    `json:"line,omitempty"`
+	Message string `json:"message"`
 }
 
 type Suite struct {
@@ -83,6 +112,15 @@ type Summary struct {
 	Unsupported   int   `json:"unsupported"`
 	Errors        int   `json:"errors"`
 	DurationMS    int64 `json:"durationMs"`
+	// ExcludedClasses counts Run.ExcludedClasses. An excluded class fails the
+	// run even when it has no selected test method.
+	ExcludedClasses int `json:"excludedClasses,omitempty"`
+}
+
+// OK reports whether every selected test passed and no class was excluded
+// by a compile error.
+func (s Summary) OK() bool {
+	return s.Failed == 0 && s.Errors == 0 && s.ExcludedClasses == 0
 }
 
 func (r Run) Summary() Summary {
@@ -104,6 +142,7 @@ func (r Run) Summary() Summary {
 			summary.DurationMS += suiteSummary.DurationMS
 		}
 	}
+	summary.ExcludedClasses = len(r.ExcludedClasses)
 	return summary
 }
 
@@ -149,6 +188,7 @@ func (r Run) MarshalJSON() ([]byte, error) {
 		Dependencies          []typesys.DependencyInfo `json:"dependencies,omitempty"`
 		Summary               Summary                  `json:"summary"`
 		Suites                []Suite                  `json:"suites"`
+		ExcludedClasses       []CompileExclusion       `json:"excludedClasses,omitempty"`
 	}
 	suites := r.Suites
 	if suites == nil {
@@ -161,6 +201,7 @@ func (r Run) MarshalJSON() ([]byte, error) {
 		Dependencies:          r.Dependencies,
 		Summary:               r.Summary(),
 		Suites:                suites,
+		ExcludedClasses:       r.ExcludedClasses,
 	})
 }
 

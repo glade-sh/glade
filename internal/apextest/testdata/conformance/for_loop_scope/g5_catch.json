@@ -1,0 +1,2534 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "g5_catch",
+  "shapeCount": 9,
+  "nativeObservationCount": 54,
+  "assertedObservationCount": 54,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C194S028",
+      "label": "catch then Integer",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "deeee823b05d7e315f3b3f28001d1b85aeec081c91df46e4fe5936c6844cecd3"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S028",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S028|{\"local\":1,\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": 1
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":1}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S028",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S028|{\"local\":1,\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": 1
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":1}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S028",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S028|{\"local\":1,\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": 1
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":1}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();Boolean caught=false;try{List<Integer> xs=new List<Integer>();Integer z=xs[0];}catch(Exception err){caught=true;observed.put('caughtType',err.getTypeName());}Integer err=1;observed.put('caught',caught);observed.put('local',err);throw new Scope194MarkerException('C126_RESULT|C194S028|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S028Test": "12d6adab722bdefe586bd0130b46250c804c4837374ccdc4a9234d61d70e17aa"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S028",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S028Test",
+                      "message": "C194S028Test.Scope194MarkerException: C126_RESULT|C194S028|{\"local\":1,\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": 1
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":1}",
+              "exceptionType": "C194S028Test.Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S028",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S028Test",
+                      "message": "C194S028Test.Scope194MarkerException: C126_RESULT|C194S028|{\"local\":1,\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": 1
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":1}",
+              "exceptionType": "C194S028Test.Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S028",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S028Test",
+                      "message": "C194S028Test.Scope194MarkerException: C126_RESULT|C194S028|{\"local\":1,\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": 1
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":1}",
+              "exceptionType": "C194S028Test.Scope194MarkerException"
+            }
+          },
+          "classes": {
+            "C194S028Test": "@IsTest public class C194S028Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();Boolean caught=false;try{List<Integer> xs=new List<Integer>();Integer z=xs[0];}catch(Exception err){caught=true;observed.put('caughtType',err.getTypeName());}Integer err=1;observed.put('caught',caught);observed.put('local',err);throw new Scope194MarkerException('C126_RESULT|C194S028|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S028Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S029",
+      "label": "Integer before catch",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "b4f3bd4d715039e4b911296d09f4e398792e0749afc4fc90d8f04f02e3a1aca5"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S029",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S029|{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S029",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S029|{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S029",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S029|{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();Integer err=1;Boolean caught=false;try{List<Integer> xs=new List<Integer>();Integer z=xs[0];}catch(Exception err){caught=true;observed.put('caughtType',err.getTypeName());}observed.put('caught',caught);throw new Scope194MarkerException('C126_RESULT|C194S029|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S029Test": "b44e6480cdd22910c153a049584e33855d696f646ca287a4324ed39d6c10b0f6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S029",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S029Test",
+                      "problem": "Duplicate variable: err",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S029Test",
+                      "problem": "Method does not exist or incorrect signature: void getTypeName() from the type Integer",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 2,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S029Test",
+                        "problem": "Duplicate variable: err",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S029Test",
+                        "problem": "Method does not exist or incorrect signature: void getTypeName() from the type Integer",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 2,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: err"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S029",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S029Test",
+                      "problem": "Duplicate variable: err",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S029Test",
+                      "problem": "Method does not exist or incorrect signature: void getTypeName() from the type Integer",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 2,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S029Test",
+                        "problem": "Duplicate variable: err",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S029Test",
+                        "problem": "Method does not exist or incorrect signature: void getTypeName() from the type Integer",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 2,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: err"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S029",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S029Test",
+                      "problem": "Duplicate variable: err",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S029Test",
+                      "problem": "Method does not exist or incorrect signature: void getTypeName() from the type Integer",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 2,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S029Test",
+                        "problem": "Duplicate variable: err",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S029Test",
+                        "problem": "Method does not exist or incorrect signature: void getTypeName() from the type Integer",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 2,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: err"
+            }
+          },
+          "classes": {
+            "C194S029Test": "@IsTest public class C194S029Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();Integer err=1;Boolean caught=false;try{List<Integer> xs=new List<Integer>();Integer z=xs[0];}catch(Exception err){caught=true;observed.put('caughtType',err.getTypeName());}observed.put('caught',caught);throw new Scope194MarkerException('C126_RESULT|C194S029|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S029Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S030",
+      "label": "Integer try-body then later",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "5b255c54d1bee16018624f03b27bb99f00f9fb9f63823d21e9acc546fb12c85c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S030",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S030|{\"local\":1,\"tryValue\":1}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": 1,
+                    "tryValue": 1
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":1,\"tryValue\":1}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S030",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S030|{\"local\":1,\"tryValue\":1}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": 1,
+                    "tryValue": 1
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":1,\"tryValue\":1}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S030",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S030|{\"local\":1,\"tryValue\":1}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": 1,
+                    "tryValue": 1
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":1,\"tryValue\":1}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();try{Integer x=1;observed.put('tryValue',x);}catch(Exception err){observed.put('exceptionType',err.getTypeName());}Integer x=1;observed.put('local',x);throw new Scope194MarkerException('C126_RESULT|C194S030|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S030Test": "4f72f2af0d0952487bfdffa0b36fef0d8f4e3e5650a5227594d2dc2babd0ed7c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S030",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S030Test",
+                      "message": "C194S030Test.Scope194MarkerException: C126_RESULT|C194S030|{\"local\":1,\"tryValue\":1}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": 1,
+                    "tryValue": 1
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":1,\"tryValue\":1}",
+              "exceptionType": "C194S030Test.Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S030",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S030Test",
+                      "message": "C194S030Test.Scope194MarkerException: C126_RESULT|C194S030|{\"local\":1,\"tryValue\":1}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": 1,
+                    "tryValue": 1
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":1,\"tryValue\":1}",
+              "exceptionType": "C194S030Test.Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S030",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S030Test",
+                      "message": "C194S030Test.Scope194MarkerException: C126_RESULT|C194S030|{\"local\":1,\"tryValue\":1}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": 1,
+                    "tryValue": 1
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":1,\"tryValue\":1}",
+              "exceptionType": "C194S030Test.Scope194MarkerException"
+            }
+          },
+          "classes": {
+            "C194S030Test": "@IsTest public class C194S030Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();try{Integer x=1;observed.put('tryValue',x);}catch(Exception err){observed.put('exceptionType',err.getTypeName());}Integer x=1;observed.put('local',x);throw new Scope194MarkerException('C126_RESULT|C194S030|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S030Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S031",
+      "label": "catch then String",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "b97a1a517deff92bbdeda7e903a558ebc96dacf04c6391f80321db7f16d62fc0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S031",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S031|{\"local\":\"one\",\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": "one"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":\"one\"}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S031",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S031|{\"local\":\"one\",\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": "one"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":\"one\"}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S031",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S031|{\"local\":\"one\",\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": "one"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":\"one\"}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();Boolean caught=false;try{List<Integer> xs=new List<Integer>();Integer z=xs[0];}catch(Exception err){caught=true;observed.put('caughtType',err.getTypeName());}String err='one';observed.put('caught',caught);observed.put('local',err);throw new Scope194MarkerException('C126_RESULT|C194S031|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S031Test": "3a1660ed3d763fc14a4cf3921d29577d9ac1ac24a2a444536c4272cefe5e6fc1"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S031",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S031Test",
+                      "message": "C194S031Test.Scope194MarkerException: C126_RESULT|C194S031|{\"local\":\"one\",\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": "one"
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":\"one\"}",
+              "exceptionType": "C194S031Test.Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S031",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S031Test",
+                      "message": "C194S031Test.Scope194MarkerException: C126_RESULT|C194S031|{\"local\":\"one\",\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": "one"
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":\"one\"}",
+              "exceptionType": "C194S031Test.Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S031",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S031Test",
+                      "message": "C194S031Test.Scope194MarkerException: C126_RESULT|C194S031|{\"local\":\"one\",\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": "one"
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":\"one\"}",
+              "exceptionType": "C194S031Test.Scope194MarkerException"
+            }
+          },
+          "classes": {
+            "C194S031Test": "@IsTest public class C194S031Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();Boolean caught=false;try{List<Integer> xs=new List<Integer>();Integer z=xs[0];}catch(Exception err){caught=true;observed.put('caughtType',err.getTypeName());}String err='one';observed.put('caught',caught);observed.put('local',err);throw new Scope194MarkerException('C126_RESULT|C194S031|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S031Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S032",
+      "label": "String before catch",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "22c07ed75a4e866821a7bd67dfc8922abbf83ffd963d63e01c72017ff1b1267d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S032",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S032|{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S032",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S032|{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S032",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S032|{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();String err='one';Boolean caught=false;try{List<Integer> xs=new List<Integer>();Integer z=xs[0];}catch(Exception err){caught=true;observed.put('caughtType',err.getTypeName());}observed.put('caught',caught);throw new Scope194MarkerException('C126_RESULT|C194S032|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S032Test": "d4610ccdd07b4352038f5b1840ab8017acee4a17bb366ac3105544f9ef125d96"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S032",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S032Test",
+                      "problem": "Duplicate variable: err",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S032Test",
+                      "problem": "Method does not exist or incorrect signature: void getTypeName() from the type String",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 2,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S032Test",
+                        "problem": "Duplicate variable: err",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S032Test",
+                        "problem": "Method does not exist or incorrect signature: void getTypeName() from the type String",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 2,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: err"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S032",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S032Test",
+                      "problem": "Duplicate variable: err",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S032Test",
+                      "problem": "Method does not exist or incorrect signature: void getTypeName() from the type String",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 2,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S032Test",
+                        "problem": "Duplicate variable: err",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S032Test",
+                        "problem": "Method does not exist or incorrect signature: void getTypeName() from the type String",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 2,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: err"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S032",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S032Test",
+                      "problem": "Duplicate variable: err",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S032Test",
+                      "problem": "Method does not exist or incorrect signature: void getTypeName() from the type String",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 2,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S032Test",
+                        "problem": "Duplicate variable: err",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S032Test",
+                        "problem": "Method does not exist or incorrect signature: void getTypeName() from the type String",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 2,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: err"
+            }
+          },
+          "classes": {
+            "C194S032Test": "@IsTest public class C194S032Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();String err='one';Boolean caught=false;try{List<Integer> xs=new List<Integer>();Integer z=xs[0];}catch(Exception err){caught=true;observed.put('caughtType',err.getTypeName());}observed.put('caught',caught);throw new Scope194MarkerException('C126_RESULT|C194S032|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S032Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S033",
+      "label": "String try-body then later",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "0e1d120637268a7611742d73ac40d33c59291bea38cab452d279b874630fcbe7"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S033",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S033|{\"local\":\"one\",\"tryValue\":\"one\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": "one",
+                    "tryValue": "one"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":\"one\",\"tryValue\":\"one\"}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S033",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S033|{\"local\":\"one\",\"tryValue\":\"one\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": "one",
+                    "tryValue": "one"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":\"one\",\"tryValue\":\"one\"}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S033",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S033|{\"local\":\"one\",\"tryValue\":\"one\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": "one",
+                    "tryValue": "one"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":\"one\",\"tryValue\":\"one\"}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}Map<String,Object> observed=new Map<String,Object>();try{String x='one';observed.put('tryValue',x);}catch(Exception err){observed.put('exceptionType',err.getTypeName());}String x='one';observed.put('local',x);throw new Scope194MarkerException('C126_RESULT|C194S033|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S033Test": "a279cdb245cf72a6beb8014b19b34f3ea14292328e80c0289fdf8bc5b1497464"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S033",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S033Test",
+                      "message": "C194S033Test.Scope194MarkerException: C126_RESULT|C194S033|{\"local\":\"one\",\"tryValue\":\"one\"}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": "one",
+                    "tryValue": "one"
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":\"one\",\"tryValue\":\"one\"}",
+              "exceptionType": "C194S033Test.Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S033",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S033Test",
+                      "message": "C194S033Test.Scope194MarkerException: C126_RESULT|C194S033|{\"local\":\"one\",\"tryValue\":\"one\"}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": "one",
+                    "tryValue": "one"
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":\"one\",\"tryValue\":\"one\"}",
+              "exceptionType": "C194S033Test.Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S033",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S033Test",
+                      "message": "C194S033Test.Scope194MarkerException: C126_RESULT|C194S033|{\"local\":\"one\",\"tryValue\":\"one\"}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": "one",
+                    "tryValue": "one"
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":\"one\",\"tryValue\":\"one\"}",
+              "exceptionType": "C194S033Test.Scope194MarkerException"
+            }
+          },
+          "classes": {
+            "C194S033Test": "@IsTest public class C194S033Test {public class Scope194MarkerException extends Exception {}@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();try{String x='one';observed.put('tryValue',x);}catch(Exception err){observed.put('exceptionType',err.getTypeName());}String x='one';observed.put('local',x);throw new Scope194MarkerException('C126_RESULT|C194S033|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S033Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S034",
+      "label": "catch then ScopeBox194",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "57f4e2d100e4fc233aa39f6c762e940daa87bc27b3f7ec47731561afebf1df15"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S034",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S034|{\"local\":{\"value\":1},\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": {
+                      "value": 1
+                    }
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":{\"value\":1}}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S034",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S034|{\"local\":{\"value\":1},\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": {
+                      "value": 1
+                    }
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":{\"value\":1}}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S034",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S034|{\"local\":{\"value\":1},\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": {
+                      "value": 1
+                    }
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":{\"value\":1}}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}public class ScopeBox194 { public Integer value=1; }Map<String,Object> observed=new Map<String,Object>();Boolean caught=false;try{List<Integer> xs=new List<Integer>();Integer z=xs[0];}catch(Exception err){caught=true;observed.put('caughtType',err.getTypeName());}ScopeBox194 err=new ScopeBox194();observed.put('caught',caught);observed.put('local',err);throw new Scope194MarkerException('C126_RESULT|C194S034|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S034Test": "9dbef10c15f2d36f4b1f6cae5c519eafb1354c94ad6491ca6ecb6b1d9a31f9ed"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S034",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S034Test",
+                      "message": "C194S034Test.Scope194MarkerException: C126_RESULT|C194S034|{\"local\":{\"value\":1},\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": {
+                      "value": 1
+                    }
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":{\"value\":1}}",
+              "exceptionType": "C194S034Test.Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S034",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S034Test",
+                      "message": "C194S034Test.Scope194MarkerException: C126_RESULT|C194S034|{\"local\":{\"value\":1},\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": {
+                      "value": 1
+                    }
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":{\"value\":1}}",
+              "exceptionType": "C194S034Test.Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S034",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S034Test",
+                      "message": "C194S034Test.Scope194MarkerException: C126_RESULT|C194S034|{\"local\":{\"value\":1},\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException",
+                    "local": {
+                      "value": 1
+                    }
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\",\"local\":{\"value\":1}}",
+              "exceptionType": "C194S034Test.Scope194MarkerException"
+            }
+          },
+          "classes": {
+            "C194S034Test": "@IsTest public class C194S034Test {public class Scope194MarkerException extends Exception {}public class ScopeBox194 { public Integer value=1; }@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();Boolean caught=false;try{List<Integer> xs=new List<Integer>();Integer z=xs[0];}catch(Exception err){caught=true;observed.put('caughtType',err.getTypeName());}ScopeBox194 err=new ScopeBox194();observed.put('caught',caught);observed.put('local',err);throw new Scope194MarkerException('C126_RESULT|C194S034|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S034Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S035",
+      "label": "ScopeBox194 before catch",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "e8d3c6a537a481b1f3e72b4626521aadca3e79ba6ed0e6e84e9a5dd2f4b482ee"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S035",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S035|{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S035",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S035|{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S035",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S035|{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "caught": true,
+                    "caughtType": "System.ListException"
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"caught\":true,\"caughtType\":\"System.ListException\"}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}public class ScopeBox194 { public Integer value=1; }Map<String,Object> observed=new Map<String,Object>();ScopeBox194 err=new ScopeBox194();Boolean caught=false;try{List<Integer> xs=new List<Integer>();Integer z=xs[0];}catch(Exception err){caught=true;observed.put('caughtType',err.getTypeName());}observed.put('caught',caught);throw new Scope194MarkerException('C126_RESULT|C194S035|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S035Test": "c717d00e6ce715181d2382ecf4788c7f41330cea600052a4361d8582c93d1136"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S035",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S035Test",
+                      "problem": "Duplicate variable: err",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S035Test",
+                      "problem": "Method does not exist or incorrect signature: void getTypeName() from the type C194S035Test.ScopeBox194",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 2,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S035Test",
+                        "problem": "Duplicate variable: err",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S035Test",
+                        "problem": "Method does not exist or incorrect signature: void getTypeName() from the type C194S035Test.ScopeBox194",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 2,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: err"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S035",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S035Test",
+                      "problem": "Duplicate variable: err",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S035Test",
+                      "problem": "Method does not exist or incorrect signature: void getTypeName() from the type C194S035Test.ScopeBox194",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 2,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S035Test",
+                        "problem": "Duplicate variable: err",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S035Test",
+                        "problem": "Method does not exist or incorrect signature: void getTypeName() from the type C194S035Test.ScopeBox194",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 2,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: err"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S035",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "C194S035Test",
+                      "problem": "Duplicate variable: err",
+                      "type": "ApexClass"
+                    },
+                    {
+                      "line": 1,
+                      "name": "C194S035Test",
+                      "problem": "Method does not exist or incorrect signature: void getTypeName() from the type C194S035Test.ScopeBox194",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "componentErrors": 2,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 0,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "observation": {
+                  "diagnostics": {
+                    "checkOnly": true,
+                    "code": null,
+                    "compile": [
+                      {
+                        "line": 1,
+                        "name": "C194S035Test",
+                        "problem": "Duplicate variable: err",
+                        "type": "ApexClass"
+                      },
+                      {
+                        "line": 1,
+                        "name": "C194S035Test",
+                        "problem": "Method does not exist or incorrect signature: void getTypeName() from the type C194S035Test.ScopeBox194",
+                        "type": "ApexClass"
+                      }
+                    ],
+                    "componentErrors": 2,
+                    "componentWarnings": [],
+                    "coverage": {
+                      "codeCoverage": [],
+                      "codeCoverageWarnings": []
+                    },
+                    "done": true,
+                    "errorMessage": null,
+                    "errorStatusCode": null,
+                    "status": "Failed",
+                    "success": false,
+                    "testErrors": 0,
+                    "testFailures": [],
+                    "testPasses": []
+                  },
+                  "outcome": "compile-rejected"
+                },
+                "route": "istest",
+                "status": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Duplicate variable: err"
+            }
+          },
+          "classes": {
+            "C194S035Test": "@IsTest public class C194S035Test {public class Scope194MarkerException extends Exception {}public class ScopeBox194 { public Integer value=1; }@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();ScopeBox194 err=new ScopeBox194();Boolean caught=false;try{List<Integer> xs=new List<Integer>();Integer z=xs[0];}catch(Exception err){caught=true;observed.put('caughtType',err.getTypeName());}observed.put('caught',caught);throw new Scope194MarkerException('C126_RESULT|C194S035|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S035Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C194S036",
+      "label": "ScopeBox194 try-body then later",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "18b7977c23e2691daa9b91b7678060868152fb12efd7230215c191aa6d159d48"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S036",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S036|{\"local\":{\"value\":1},\"tryValue\":{\"value\":1}}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": {
+                      "value": 1
+                    },
+                    "tryValue": {
+                      "value": 1
+                    }
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":{\"value\":1},\"tryValue\":{\"value\":1}}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S036",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S036|{\"local\":{\"value\":1},\"tryValue\":{\"value\":1}}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": {
+                      "value": 1
+                    },
+                    "tryValue": {
+                      "value": 1
+                    }
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":{\"value\":1},\"tryValue\":{\"value\":1}}",
+              "exceptionType": "Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S036",
+                "native": {
+                  "column": 1,
+                  "compileProblem": null,
+                  "compiled": true,
+                  "exceptionMessage": "Scope194MarkerException: C126_RESULT|C194S036|{\"local\":{\"value\":1},\"tryValue\":{\"value\":1}}",
+                  "line": 1,
+                  "success": false
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": {
+                      "value": 1
+                    },
+                    "tryValue": {
+                      "value": 1
+                    }
+                  }
+                },
+                "route": "anonymous",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":{\"value\":1},\"tryValue\":{\"value\":1}}",
+              "exceptionType": "Scope194MarkerException"
+            }
+          },
+          "anonymous": "public class Scope194MarkerException extends Exception {}public class ScopeBox194 { public Integer value=1; }Map<String,Object> observed=new Map<String,Object>();try{ScopeBox194 x=new ScopeBox194();observed.put('tryValue',x);}catch(Exception err){observed.put('exceptionType',err.getTypeName());}ScopeBox194 x=new ScopeBox194();observed.put('local',x);throw new Scope194MarkerException('C126_RESULT|C194S036|'+JSON.serialize(observed));"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:C194S036Test": "dd68e03968e9478302129fb576a79572bb537bca285959fcedb9a116524a923b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "api": "62.0",
+                "failures": [],
+                "id": "C194S036",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S036Test",
+                      "message": "C194S036Test.Scope194MarkerException: C126_RESULT|C194S036|{\"local\":{\"value\":1},\"tryValue\":{\"value\":1}}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": {
+                      "value": 1
+                    },
+                    "tryValue": {
+                      "value": 1
+                    }
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":{\"value\":1},\"tryValue\":{\"value\":1}}",
+              "exceptionType": "C194S036Test.Scope194MarkerException"
+            },
+            "67.0": {
+              "native": {
+                "api": "67.0",
+                "failures": [],
+                "id": "C194S036",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S036Test",
+                      "message": "C194S036Test.Scope194MarkerException: C126_RESULT|C194S036|{\"local\":{\"value\":1},\"tryValue\":{\"value\":1}}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": {
+                      "value": 1
+                    },
+                    "tryValue": {
+                      "value": 1
+                    }
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":{\"value\":1},\"tryValue\":{\"value\":1}}",
+              "exceptionType": "C194S036Test.Scope194MarkerException"
+            },
+            "68.0": {
+              "native": {
+                "api": "68.0",
+                "failures": [],
+                "id": "C194S036",
+                "native": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [],
+                  "componentErrors": 0,
+                  "componentWarnings": [],
+                  "coverage": {
+                    "codeCoverage": [],
+                    "codeCoverageWarnings": []
+                  },
+                  "done": true,
+                  "errorMessage": null,
+                  "errorStatusCode": null,
+                  "status": "Failed",
+                  "success": false,
+                  "testErrors": 1,
+                  "testFailures": [
+                    {
+                      "cls": "C194S036Test",
+                      "message": "C194S036Test.Scope194MarkerException: C126_RESULT|C194S036|{\"local\":{\"value\":1},\"tryValue\":{\"value\":1}}",
+                      "method": "observe"
+                    }
+                  ],
+                  "testPasses": []
+                },
+                "observation": {
+                  "outcome": "runtime",
+                  "value": {
+                    "local": {
+                      "value": 1
+                    },
+                    "tryValue": {
+                      "value": 1
+                    }
+                  }
+                },
+                "route": "istest",
+                "status": "runtime"
+              },
+              "outcome": "runtime",
+              "value": "{\"local\":{\"value\":1},\"tryValue\":{\"value\":1}}",
+              "exceptionType": "C194S036Test.Scope194MarkerException"
+            }
+          },
+          "classes": {
+            "C194S036Test": "@IsTest public class C194S036Test {public class Scope194MarkerException extends Exception {}public class ScopeBox194 { public Integer value=1; }@IsTest static void observe(){Map<String,Object> observed=new Map<String,Object>();try{ScopeBox194 x=new ScopeBox194();observed.put('tryValue',x);}catch(Exception err){observed.put('exceptionType',err.getTypeName());}ScopeBox194 x=new ScopeBox194();observed.put('local',x);throw new Scope194MarkerException('C126_RESULT|C194S036|'+JSON.serialize(observed));}}"
+          },
+          "tests": [
+            "C194S036Test"
+          ]
+        }
+      }
+    }
+  ]
+}

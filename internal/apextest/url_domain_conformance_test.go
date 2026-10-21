@@ -18,6 +18,7 @@ type urlDomainCase struct {
 	Compile       bool   `json:"compile"`
 	Expected      string `json:"expected"`
 	FloorExpected string `json:"floorExpected"`
+	API68Expected string `json:"api68Expected,omitempty"`
 	Carry         string `json:"carry"`
 }
 
@@ -53,7 +54,7 @@ func urlDomainAssertion(row urlDomainCase, expected string) string {
 	return observedType + " observedText; try { " + urlDomainCode(row) + " observedText = " + observedValue + "; } catch(Exception e) { observedText = 'EXC|' + e.getTypeName() + '|' + e.getMessage(); } " + assertion
 }
 
-// Owned API62/API67 answers are exported without credentials or live calls.
+// Owned API62/API67/API68 answers are exported without credentials or live calls.
 // Hostnames are relative to the saved org origin: ${ORG_LABEL} substitutes a
 // synthetic identity while retaining the captured host structure. Carries
 // retain their exact native answer and the reason they are outside this family.
@@ -69,7 +70,7 @@ func TestURLDomainOrgConformance(t *testing.T) {
 	if len(rows) != 271 {
 		t.Fatalf("rows=%d, want=271", len(rows))
 	}
-	for _, api := range []string{"62.0", "67.0"} {
+	for _, api := range []string{"62.0", "67.0", "68.0"} {
 		t.Run(api, func(t *testing.T) {
 			anonymousMatches, anonymousTotal, namedCompileMatches, namedMatches := 0, 0, 0, 0
 			compilerTotal := 0
@@ -92,14 +93,17 @@ func TestURLDomainOrgConformance(t *testing.T) {
 					t.Fatalf("duplicate row %s", row.ID)
 				}
 				seen[row.ID] = true
-				if row.Carry != "" {
-					carries++
-					t.Logf("%s carried: %s; native=%s", row.ID, row.Carry, row.Expected)
-					continue
-				}
 				expected := row.Expected
 				if api == "62.0" {
 					expected = row.FloorExpected
+				} else if api == "68.0" && row.API68Expected != "" {
+					// Preserve diagnostic coordinates from the API68 capture wrapper.
+					expected = row.API68Expected
+				}
+				if row.Carry != "" {
+					carries++
+					t.Logf("%s carried: %s; native=%s", row.ID, row.Carry, expected)
+					continue
 				}
 				expected = strings.ReplaceAll(expected, "${ORG_LABEL}", "url-domain")
 				anonymousTotal++

@@ -13,7 +13,7 @@ import (
 // standard object is ensured once on a fresh org.
 func buildStandardOrgForDeterminism() storage.OrgState {
 	org := storage.NewOrgState()
-	org.OrgID = "00D000000000001"
+	org.OrgID = "00D000000000mH2"
 	for _, objectName := range storage.KnownStandardObjectNames() {
 		storage.EnsureStandardObject(&org, objectName)
 	}

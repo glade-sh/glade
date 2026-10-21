@@ -1,0 +1,18 @@
+[
+  {
+    "method": "aliasAfterDirectAppend",
+    "shape": "Retained collection property observes direct or nested append, before or after aliasing"
+  },
+  {
+    "method": "aliasAfterHelperAppend",
+    "shape": "Retained collection property observes direct or nested append, before or after aliasing"
+  },
+  {
+    "method": "aliasBeforeDirectAppend",
+    "shape": "Retained collection property observes direct or nested append, before or after aliasing"
+  },
+  {
+    "method": "aliasBeforeHelperAppend",
+    "shape": "Retained collection property observes direct or nested append, before or after aliasing"
+  }
+]

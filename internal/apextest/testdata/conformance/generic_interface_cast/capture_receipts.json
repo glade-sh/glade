@@ -1,0 +1,40 @@
+{
+  "completion": {
+    "observations": 372,
+    "run": "gi",
+    "cleanupVerified": true,
+    "sha256": "80ef2d4c99b2980f3b29406863dae1a0f8d0e08e52a2d8d41f5743fd1150b0b1"
+  },
+  "routes": [
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "orgTSVSHA256": "dc726b1ed26806f022e03f25e3fba262f6e809c1841e14342c0f5fd37a94f1c5"
+    },
+    {
+      "api": "62.0",
+      "route": "istest",
+      "orgTSVSHA256": "e85dbec1f1de1446823cc9260e80250f5bcc63dbc3931786da8cb5c0f5242836"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "orgTSVSHA256": "a2ae50796dbb56fd50ca740ae1ba91edcd498f0303f06a38ca349b3a508c400e"
+    },
+    {
+      "api": "67.0",
+      "route": "istest",
+      "orgTSVSHA256": "94e884f4fa921d0a54061c74552966154c88d71c62dfc471e6dcbab349a1c491"
+    },
+    {
+      "api": "68.0",
+      "route": "anonymous",
+      "orgTSVSHA256": "58bdcc13cf66f57f0bb7c7325bd734e03dc1f51e1a402a48f5446e7215f201ae"
+    },
+    {
+      "api": "68.0",
+      "route": "istest",
+      "orgTSVSHA256": "a0ed99cc555fabfd45f9d1e94e13d4dd6745f44449e51cc4dbca4d1692e92c2b"
+    }
+  ]
+}

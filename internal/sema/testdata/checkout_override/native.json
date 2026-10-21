@@ -1,0 +1,77 @@
+[
+  {
+    "api": "62.0",
+    "status": 0,
+    "message": null,
+    "deployment": "0Afdq00000EcY5RCAV",
+    "result": "Succeeded",
+    "failures": [],
+    "observation": {
+      "status": 0,
+      "message": null,
+      "compiled": true,
+      "success": true,
+      "compileProblem": "",
+      "exceptionMessage": "",
+      "rows": [
+        "OVERRIDE|true"
+      ]
+    },
+    "named": {
+      "outcome": "Passed",
+      "testsRan": 1,
+      "passing": 1,
+      "failing": 0
+    }
+  },
+  {
+    "api": "67.0",
+    "status": 0,
+    "message": null,
+    "deployment": "0Afdq00000EcY73CAF",
+    "result": "Succeeded",
+    "failures": [],
+    "observation": {
+      "status": 0,
+      "message": null,
+      "compiled": true,
+      "success": true,
+      "compileProblem": "",
+      "exceptionMessage": "",
+      "rows": [
+        "OVERRIDE|true"
+      ]
+    },
+    "named": {
+      "outcome": "Passed",
+      "testsRan": 1,
+      "passing": 1,
+      "failing": 0
+    }
+  },
+  {
+    "api": "68.0",
+    "status": 0,
+    "message": null,
+    "deployment": "0Afdq00000EcY8fCAF",
+    "result": "Succeeded",
+    "failures": [],
+    "observation": {
+      "status": 0,
+      "message": null,
+      "compiled": true,
+      "success": true,
+      "compileProblem": "",
+      "exceptionMessage": "",
+      "rows": [
+        "OVERRIDE|true"
+      ]
+    },
+    "named": {
+      "outcome": "Passed",
+      "testsRan": 1,
+      "passing": 1,
+      "failing": 0
+    }
+  }
+]

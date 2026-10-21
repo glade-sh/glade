@@ -1,0 +1,37 @@
+[
+  {
+    "id": "split",
+    "type": "MeadowWords__mdt",
+    "field": "Words__c",
+    "class": "MeadowShapeSplit",
+    "expected": "oak:pine:0"
+  },
+  {
+    "id": "upperA",
+    "type": "MeadowNorth__mdt",
+    "field": "Code__c",
+    "class": "MeadowShapeUpperA",
+    "expected": "CA:0"
+  },
+  {
+    "id": "upperB",
+    "type": "MeadowSouth__mdt",
+    "field": "Code__c",
+    "class": "MeadowShapeUpperB",
+    "expected": "CA:0"
+  },
+  {
+    "id": "lower",
+    "type": "MeadowClient__mdt",
+    "field": "NameText__c",
+    "class": "MeadowShapeLower",
+    "expected": "grove:0"
+  },
+  {
+    "id": "event",
+    "type": "MeadowPulse__e",
+    "field": "Note__c",
+    "class": "MeadowShapeEvent",
+    "expected": "true"
+  }
+]

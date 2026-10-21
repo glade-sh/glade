@@ -1,0 +1,34 @@
+@IsTest private class SproutFlowProbeTest {
+    @IsTest static void FI01_dynamic() { System.debug('PROBE|FI01|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI01', false))); }
+    @IsTest static void FI01_subclass() { System.debug('PROBE|FI01|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI01', true))); }
+    @IsTest static void FI02_dynamic() { System.debug('PROBE|FI02|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI02', false))); }
+    @IsTest static void FI02_subclass() { System.debug('PROBE|FI02|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI02', true))); }
+    @IsTest static void FI03_dynamic() { System.debug('PROBE|FI03|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI03', false))); }
+    @IsTest static void FI03_subclass() { System.debug('PROBE|FI03|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI03', true))); }
+    @IsTest static void FI04_dynamic() { System.debug('PROBE|FI04|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI04', false))); }
+    @IsTest static void FI04_subclass() { System.debug('PROBE|FI04|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI04', true))); }
+    @IsTest static void FI05_dynamic() { System.debug('PROBE|FI05|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI05', false))); }
+    @IsTest static void FI05_subclass() { System.debug('PROBE|FI05|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI05', true))); }
+    @IsTest static void FI06_dynamic() { System.debug('PROBE|FI06|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI06', false))); }
+    @IsTest static void FI06_subclass() { System.debug('PROBE|FI06|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI06', true))); }
+    @IsTest static void FI07_dynamic() { System.debug('PROBE|FI07|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI07', false))); }
+    @IsTest static void FI07_subclass() { System.debug('PROBE|FI07|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI07', true))); }
+    @IsTest static void FI08_dynamic() { System.debug('PROBE|FI08|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI08', false))); }
+    @IsTest static void FI08_subclass() { System.debug('PROBE|FI08|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI08', true))); }
+    @IsTest static void FI09_dynamic() { System.debug('PROBE|FI09|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI09', false))); }
+    @IsTest static void FI09_subclass() { System.debug('PROBE|FI09|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI09', true))); }
+    @IsTest static void FI10_dynamic() { System.debug('PROBE|FI10|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI10', false))); }
+    @IsTest static void FI10_subclass() { System.debug('PROBE|FI10|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI10', true))); }
+    @IsTest static void FI11_dynamic() { System.debug('PROBE|FI11|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI11', false))); }
+    @IsTest static void FI11_subclass() { System.debug('PROBE|FI11|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI11', true))); }
+    @IsTest static void FI12_dynamic() { System.debug('PROBE|FI12|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI12', false))); }
+    @IsTest static void FI12_subclass() { System.debug('PROBE|FI12|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI12', true))); }
+    @IsTest static void FI13_dynamic() { System.debug('PROBE|FI13|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI13', false))); }
+    @IsTest static void FI13_subclass() { System.debug('PROBE|FI13|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI13', true))); }
+    @IsTest static void FI14_dynamic() { System.debug('PROBE|FI14|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI14', false))); }
+    @IsTest static void FI14_subclass() { System.debug('PROBE|FI14|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI14', true))); }
+    @IsTest static void FI15_dynamic() { System.debug('PROBE|FI15|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI15', false))); }
+    @IsTest static void FI15_subclass() { System.debug('PROBE|FI15|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI15', true))); }
+    @IsTest static void FI16_dynamic() { System.debug('PROBE|FI16|dynamic|' + JSON.serialize(SproutFlowProbe.observe('FI16', false))); }
+    @IsTest static void FI16_subclass() { System.debug('PROBE|FI16|subclass|' + JSON.serialize(SproutFlowProbe.observe('FI16', true))); }
+}

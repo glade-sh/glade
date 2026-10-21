@@ -18,16 +18,19 @@ type expressionValidationContext struct {
 	registry            storage.MetadataRegistry
 	classes             map[string]apexast.Declaration
 	objects             map[string]schema.Object
+	namespace           string
+	tabFiles            []string
 	controller          string
 	standardController  string
 	bindings            map[string]string
 	sourceBindings      bool
 	formControllers     []apexast.Declaration
 	standardFormActions map[string]bool
+	ajaxAssignments     map[*MarkupNode]bool
 }
 
 func newExpressionValidationContext(p project.Project, index *Index) (*expressionValidationContext, error) {
-	ctx := &expressionValidationContext{index: index, classes: map[string]apexast.Declaration{}, objects: map[string]schema.Object{}}
+	ctx := &expressionValidationContext{index: index, classes: map[string]apexast.Declaration{}, objects: map[string]schema.Object{}, namespace: strings.TrimSpace(p.Namespace), tabFiles: p.TabFiles}
 	if len(p.ApexFiles) != 0 {
 		parser := apexast.NewParser()
 		defer parser.Close()
@@ -116,11 +119,18 @@ func (ctx *expressionValidationContext) validate(tree *MarkupNode, sourceName st
 			}
 		}
 	}
+	local.ajaxAssignments = ajaxFunctionAssignmentNodes(tree)
 	var walk func(*MarkupNode, map[string]string) error
 	walk = func(node *MarkupNode, bindings map[string]string) error {
 		current := local
 		current.bindings = bindings
 		if err := validateFormControllerBinding(node, &current); err != nil {
+			return err
+		}
+		if err := current.validateFieldComponentBinding(node, sourceName); err != nil {
+			return err
+		}
+		if err := validateAjaxControllerBinding(node, &current); err != nil {
 			return err
 		}
 		for _, name := range sortedExpressionAttributeNames(node.Attributes) {
@@ -218,6 +228,12 @@ func (ctx *expressionValidationContext) validateTemplate(raw string, node *Marku
 				message = "Syntax error.  Missing ')'"
 			}
 			return fmt.Errorf("%s", message)
+		}
+		// e_function_param_unknown accepts an assignment destination without
+		// reading it. Preserve the shared syntax validation above.
+		if attribute == "assignto" && ctx.ajaxAssignments[node] {
+			offset = end + 1
+			continue
 		}
 		if _, err := ctx.expressionType(expr); err != nil {
 			return err
@@ -338,7 +354,14 @@ func (ctx *expressionValidationContext) functionType(name string, args []Express
 		}
 		return "", fmt.Errorf("Incorrect number of parameters for function '%s()'. Expected %d, received %d", name, expected, len(args))
 	}
-	for _, arg := range args {
+	for i, arg := range args {
+		if name == "URLFOR" && i == 0 && len(args) == 2 && ctx.sourceBindings {
+			if accepted, err := ctx.customTabURLTarget(arg, args[1]); err != nil {
+				return "", err
+			} else if accepted {
+				continue
+			}
+		}
 		typ, err := ctx.expressionType(arg)
 		if err != nil {
 			return "", err
@@ -379,6 +402,11 @@ func (ctx *expressionValidationContext) identifierType(parts []string) (string, 
 		switch root {
 		case "$remoteaction":
 			return "", ctx.validateRemoteActionReference(parts)
+		case "$asset":
+			if len(parts) == 2 && strings.EqualFold(parts[1], "SLDS") {
+				return "Text", nil
+			}
+			return missing()
 		case "$label":
 			if len(parts) < 2 {
 				return missing()
@@ -412,7 +440,19 @@ func (ctx *expressionValidationContext) identifierType(parts []string) (string, 
 			}
 			return "", nil
 		case "$setup":
-			if len(parts) < 3 || ctx.objects[strings.ToLower(parts[1])].CustomSettingsType == "" {
+			if len(parts) < 3 {
+				return missing()
+			}
+			object, found := ctx.objects[strings.ToLower(parts[1])]
+			if !found && len(parts) == 3 && ctx.namespace != "" && strings.Count(parts[1], "__") == 1 {
+				// Resolve only an owned hierarchy setting's local name. Explicit
+				// qualifiers and already resolved objects keep their identity.
+				candidate := ctx.objects[strings.ToLower(ctx.namespace+"__"+parts[1])]
+				if strings.EqualFold(candidate.CustomSettingsType, "Hierarchy") {
+					object = candidate
+				}
+			}
+			if object.CustomSettingsType == "" {
 				return missing()
 			}
 			return "", nil

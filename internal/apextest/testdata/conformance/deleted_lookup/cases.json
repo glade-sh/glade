@@ -1,0 +1,30 @@
+[
+  {
+    "method": "retainedChildUpdate",
+    "shape": "A retained inserted child restores its original automatically cleared lookup to a deleted parent"
+  },
+  {
+    "method": "sparseChildUpdate",
+    "shape": "An update omitting the lookup leaves its automatically cleared value null"
+  },
+  {
+    "method": "freshChildLookupUpdate",
+    "shape": "A fresh child instance restores the same historical deleted parent lookup"
+  },
+  {
+    "method": "newChildInsert",
+    "shape": "A new child cannot be inserted with a deleted parent lookup"
+  },
+  {
+    "method": "differentDeletedParentUpdate",
+    "shape": "A child cannot switch to a different deleted parent"
+  },
+  {
+    "method": "explicitNullThenRestore",
+    "shape": "An explicit null update prevents subsequent restoration of the historical deleted parent"
+  },
+  {
+    "method": "rolledBackNullThenRestore",
+    "shape": "Rollback of an explicit null update restores admission of the historical deleted parent"
+  }
+]

@@ -1,0 +1,1509 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "expectationStatus": "native captured",
+  "observations": 408,
+  "answersSHA256": "34865246f8488fa6ef3982fcb605cf5a21786121034d9cca5c8e1d521c134612",
+  "rowsSHA256": "e937384e2fa83e8a27d00de8c7866a75542d4be1072745c3c008de9cc1e1ef12",
+  "cases": [
+    {
+      "id": "C162TZ_001",
+      "group": "context-matrix",
+      "label": "zone snapshot",
+      "context": "running",
+      "role": "positive",
+      "twin": "C162TZ_002",
+      "code": "User currentUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];String orgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;TimeZone z=UserInfo.getTimeZone(); r=JSON.serialize(new List<Object>{z.getID(),z.getDisplayName(),z.getOffset(Datetime.newInstanceGmt(2024,1,15,12,0,0)),z.getOffset(Datetime.newInstanceGmt(2024,7,15,12,0,0)),currentUser.TimeZoneSidKey,currentUser.LocaleSidKey,orgZone});",
+      "codeSHA256": "995c8d506112c91b806a4ee8e9fc2058d35fcfef60ac5dddfe94bf71742f3726",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"America/Los_Angeles\",\"(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)\",-28800000,-25200000,\"America/Los_Angeles\",\"en_US\",\"America/Los_Angeles\"]",
+          "67.0": "[\"America/Los_Angeles\",\"(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)\",-28800000,-25200000,\"America/Los_Angeles\",\"en_US\",\"America/Los_Angeles\"]",
+          "68.0": "[\"America/Los_Angeles\",\"(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)\",-28800000,-25200000,\"America/Los_Angeles\",\"en_US\",\"America/Los_Angeles\"]"
+        },
+        "istest": {
+          "62.0": "[\"America/Los_Angeles\",\"(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)\",-28800000,-25200000,\"America/Los_Angeles\",\"en_US\",\"America/Los_Angeles\"]",
+          "67.0": "[\"America/Los_Angeles\",\"(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)\",-28800000,-25200000,\"America/Los_Angeles\",\"en_US\",\"America/Los_Angeles\"]",
+          "68.0": "[\"America/Los_Angeles\",\"(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)\",-28800000,-25200000,\"America/Los_Angeles\",\"en_US\",\"America/Los_Angeles\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_002",
+      "group": "context-matrix",
+      "label": "default and explicit formatting",
+      "context": "running",
+      "role": "positive",
+      "twin": "C162TZ_001",
+      "code": "Datetime d=Datetime.valueOfGmt('2024-01-15 00:30:00');r=JSON.serialize(new List<Object>{d.format(),d.format('yyyy-MM-dd HH:mm:ss Z'),d.format('yyyy-MM-dd HH:mm:ss Z',UserInfo.getTimeZone().getID()),d.formatGmt('yyyy-MM-dd HH:mm:ss Z')});",
+      "codeSHA256": "bf069176c1e330b352bc09efc4fd8db0f8c313b98ba3873a0e14c95f9686e27b",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"1/14/2024, 4:30 PM\",\"2024-01-14 16:30:00 -0800\",\"2024-01-14 16:30:00 -0800\",\"2024-01-15 00:30:00 +0000\"]",
+          "67.0": "[\"1/14/2024, 4:30 PM\",\"2024-01-14 16:30:00 -0800\",\"2024-01-14 16:30:00 -0800\",\"2024-01-15 00:30:00 +0000\"]",
+          "68.0": "[\"1/14/2024, 4:30 PM\",\"2024-01-14 16:30:00 -0800\",\"2024-01-14 16:30:00 -0800\",\"2024-01-15 00:30:00 +0000\"]"
+        },
+        "istest": {
+          "62.0": "[\"1/14/2024, 4:30 PM\",\"2024-01-14 16:30:00 -0800\",\"2024-01-14 16:30:00 -0800\",\"2024-01-15 00:30:00 +0000\"]",
+          "67.0": "[\"1/14/2024, 4:30 PM\",\"2024-01-14 16:30:00 -0800\",\"2024-01-14 16:30:00 -0800\",\"2024-01-15 00:30:00 +0000\"]",
+          "68.0": "[\"1/14/2024, 4:30 PM\",\"2024-01-14 16:30:00 -0800\",\"2024-01-14 16:30:00 -0800\",\"2024-01-15 00:30:00 +0000\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_003",
+      "group": "context-matrix",
+      "label": "UTC midnight before",
+      "context": "running",
+      "role": "positive",
+      "twin": "C162TZ_004",
+      "code": "Datetime d=Datetime.valueOfGmt('2024-01-14 23:59:59');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});",
+      "codeSHA256": "b83215880b49a4e70861f2999b6f8423f433489b48512bf8494ef5076648566e",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 15:59:59\",\"2024-01-14 23:59:59\"]",
+          "67.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 15:59:59\",\"2024-01-14 23:59:59\"]",
+          "68.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 15:59:59\",\"2024-01-14 23:59:59\"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 15:59:59\",\"2024-01-14 23:59:59\"]",
+          "67.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 15:59:59\",\"2024-01-14 23:59:59\"]",
+          "68.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 15:59:59\",\"2024-01-14 23:59:59\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_004",
+      "group": "context-matrix",
+      "label": "UTC midnight after",
+      "context": "running",
+      "role": "positive",
+      "twin": "C162TZ_003",
+      "code": "Datetime d=Datetime.valueOfGmt('2024-01-15 00:00:00');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});",
+      "codeSHA256": "49ed0e94e27744ffe2f1980b77af5ea94a441d6a72236fb9ab2d1d3c4b4a9f3a",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 16:00:00\",\"2024-01-15 00:00:00\"]",
+          "67.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 16:00:00\",\"2024-01-15 00:00:00\"]",
+          "68.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 16:00:00\",\"2024-01-15 00:00:00\"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 16:00:00\",\"2024-01-15 00:00:00\"]",
+          "67.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 16:00:00\",\"2024-01-15 00:00:00\"]",
+          "68.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 16:00:00\",\"2024-01-15 00:00:00\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_005",
+      "group": "context-matrix",
+      "label": "Tokyo midnight before",
+      "context": "running",
+      "role": "positive",
+      "twin": "C162TZ_006",
+      "code": "Datetime d=Datetime.valueOfGmt('2024-01-14 14:59:59');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});",
+      "codeSHA256": "f09c394aee599c98155afcb7572e53dddfda132cfe8b67be13b6cf7ef77dc694",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 06:59:59\",\"2024-01-14 14:59:59\"]",
+          "67.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 06:59:59\",\"2024-01-14 14:59:59\"]",
+          "68.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 06:59:59\",\"2024-01-14 14:59:59\"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 06:59:59\",\"2024-01-14 14:59:59\"]",
+          "67.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 06:59:59\",\"2024-01-14 14:59:59\"]",
+          "68.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 06:59:59\",\"2024-01-14 14:59:59\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_006",
+      "group": "context-matrix",
+      "label": "Tokyo midnight after",
+      "context": "running",
+      "role": "positive",
+      "twin": "C162TZ_005",
+      "code": "Datetime d=Datetime.valueOfGmt('2024-01-14 15:00:00');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});",
+      "codeSHA256": "aa2d1ab3964adfe510dd13d6964a053da4767aa9e36f00db03ecd5758dc48284",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 07:00:00\",\"2024-01-14 15:00:00\"]",
+          "67.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 07:00:00\",\"2024-01-14 15:00:00\"]",
+          "68.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 07:00:00\",\"2024-01-14 15:00:00\"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 07:00:00\",\"2024-01-14 15:00:00\"]",
+          "67.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 07:00:00\",\"2024-01-14 15:00:00\"]",
+          "68.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 07:00:00\",\"2024-01-14 15:00:00\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_007",
+      "group": "context-matrix",
+      "label": "Los Angeles midnight before",
+      "context": "running",
+      "role": "positive",
+      "twin": "C162TZ_008",
+      "code": "Datetime d=Datetime.valueOfGmt('2024-01-15 07:59:59');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});",
+      "codeSHA256": "7828e1becedd42f7c83af5e52500e723d82dd47d4af560b3d4a215bb126d4cd1",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 23:59:59\",\"2024-01-15 07:59:59\"]",
+          "67.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 23:59:59\",\"2024-01-15 07:59:59\"]",
+          "68.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 23:59:59\",\"2024-01-15 07:59:59\"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 23:59:59\",\"2024-01-15 07:59:59\"]",
+          "67.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 23:59:59\",\"2024-01-15 07:59:59\"]",
+          "68.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 23:59:59\",\"2024-01-15 07:59:59\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_008",
+      "group": "context-matrix",
+      "label": "Los Angeles midnight after",
+      "context": "running",
+      "role": "positive",
+      "twin": "C162TZ_007",
+      "code": "Datetime d=Datetime.valueOfGmt('2024-01-15 08:00:00');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});",
+      "codeSHA256": "0345b44da4d485fa0227c052d2589cd8fa1854ea764aafc32fae30e3f4319a83",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 00:00:00\",\"2024-01-15 08:00:00\"]",
+          "67.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 00:00:00\",\"2024-01-15 08:00:00\"]",
+          "68.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 00:00:00\",\"2024-01-15 08:00:00\"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 00:00:00\",\"2024-01-15 08:00:00\"]",
+          "67.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 00:00:00\",\"2024-01-15 08:00:00\"]",
+          "68.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 00:00:00\",\"2024-01-15 08:00:00\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_009",
+      "group": "context-matrix",
+      "label": "week boundary 2015",
+      "context": "running",
+      "role": "positive",
+      "twin": "C162TZ_002",
+      "code": "Datetime d=Datetime.newInstanceGmt(2015,12,27,0,0,0);r=JSON.serialize(new List<Object>{d.format('w'),d.formatGmt('w'),String.valueOf(d.date()),String.valueOf(d.dateGmt())});",
+      "codeSHA256": "f4acda99b85e097326e32352902c17551d1c6489b982395027acbf05aea972ca",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"52\",\"1\",\"2015-12-26\",\"2015-12-27\"]",
+          "67.0": "[\"52\",\"1\",\"2015-12-26\",\"2015-12-27\"]",
+          "68.0": "[\"52\",\"1\",\"2015-12-26\",\"2015-12-27\"]"
+        },
+        "istest": {
+          "62.0": "[\"52\",\"1\",\"2015-12-26\",\"2015-12-27\"]",
+          "67.0": "[\"52\",\"1\",\"2015-12-26\",\"2015-12-27\"]",
+          "68.0": "[\"52\",\"1\",\"2015-12-26\",\"2015-12-27\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_010",
+      "group": "context-matrix",
+      "label": "local valueOf round trip",
+      "context": "running",
+      "role": "positive",
+      "twin": "C162TZ_011",
+      "code": "Datetime d=Datetime.valueOf('2024-01-15 00:30:00');r=JSON.serialize(new List<Object>{d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss'),d==Datetime.valueOf(d.format('yyyy-MM-dd HH:mm:ss')),Date.valueOf(String.valueOf(d.date()))==d.date()});",
+      "codeSHA256": "e3aaaf3694d2d57794303563009d3c107cc1f69edf3c47b7e1f6b2850a2b0969",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true,true]",
+          "67.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true,true]",
+          "68.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true,true]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true,true]",
+          "67.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true,true]",
+          "68.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true,true]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_011",
+      "group": "context-matrix",
+      "label": "GMT valueOf round trip",
+      "context": "running",
+      "role": "positive",
+      "twin": "C162TZ_010",
+      "code": "Datetime d=Datetime.valueOfGmt('2024-01-15 00:30:00');r=JSON.serialize(new List<Object>{d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss'),d==Datetime.valueOfGmt(d.formatGmt('yyyy-MM-dd HH:mm:ss'))});",
+      "codeSHA256": "11331a5d9e00f7a4ec463a3d802acb7822308addc1eda2062e81b53ff17dacd1",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"2024-01-14 16:30:00\",\"2024-01-15 00:30:00\",true]",
+          "67.0": "[\"2024-01-14 16:30:00\",\"2024-01-15 00:30:00\",true]",
+          "68.0": "[\"2024-01-14 16:30:00\",\"2024-01-15 00:30:00\",true]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-14 16:30:00\",\"2024-01-15 00:30:00\",true]",
+          "67.0": "[\"2024-01-14 16:30:00\",\"2024-01-15 00:30:00\",true]",
+          "68.0": "[\"2024-01-14 16:30:00\",\"2024-01-15 00:30:00\",true]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_012",
+      "group": "context-matrix",
+      "label": "local newInstance round trip",
+      "context": "running",
+      "role": "positive",
+      "twin": "C162TZ_010",
+      "code": "Datetime d=Datetime.newInstance(Date.newInstance(2024,1,15),Time.newInstance(0,30,0,0));r=JSON.serialize(new List<Object>{d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss'),d==Datetime.valueOf('2024-01-15 00:30:00')});",
+      "codeSHA256": "78aca136735cf3409fc56e6ed1afca8415ed241f5c55cddfc0c843c6e708fd7d",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true]",
+          "67.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true]",
+          "68.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true]",
+          "67.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true]",
+          "68.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_013",
+      "group": "context-matrix",
+      "label": "zone snapshot",
+      "context": "runAs Tokyo",
+      "role": "route-boundary",
+      "twin": "C162TZ_014",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='Asia/Tokyo';insert u;System.runAs(u){User currentUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];String orgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;TimeZone z=UserInfo.getTimeZone(); r=JSON.serialize(new List<Object>{z.getID(),z.getDisplayName(),z.getOffset(Datetime.newInstanceGmt(2024,1,15,12,0,0)),z.getOffset(Datetime.newInstanceGmt(2024,7,15,12,0,0)),currentUser.TimeZoneSidKey,currentUser.LocaleSidKey,orgZone});}",
+      "codeSHA256": "5c00744ca898eca5daaa3464eaa8cc969f788d99d871570b3eb5c5c20dab3a59",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"Asia/Tokyo\",\"(GMT+09:00) Japan Standard Time (Asia/Tokyo)\",32400000,32400000,\"Asia/Tokyo\",\"en_US\",\"America/Los_Angeles\"]",
+          "67.0": "[\"Asia/Tokyo\",\"(GMT+09:00) Japan Standard Time (Asia/Tokyo)\",32400000,32400000,\"Asia/Tokyo\",\"en_US\",\"America/Los_Angeles\"]",
+          "68.0": "[\"Asia/Tokyo\",\"(GMT+09:00) Japan Standard Time (Asia/Tokyo)\",32400000,32400000,\"Asia/Tokyo\",\"en_US\",\"America/Los_Angeles\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_014",
+      "group": "context-matrix",
+      "label": "default and explicit formatting",
+      "context": "runAs Tokyo",
+      "role": "route-boundary",
+      "twin": "C162TZ_013",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='Asia/Tokyo';insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-15 00:30:00');r=JSON.serialize(new List<Object>{d.format(),d.format('yyyy-MM-dd HH:mm:ss Z'),d.format('yyyy-MM-dd HH:mm:ss Z',UserInfo.getTimeZone().getID()),d.formatGmt('yyyy-MM-dd HH:mm:ss Z')});}",
+      "codeSHA256": "d12449bcabef8dc3d6df7180b4b385281e04ac496ff23a60c6cb2ee2f3efe66e",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"1/15/2024, 9:30 AM\",\"2024-01-15 09:30:00 +0900\",\"2024-01-15 09:30:00 +0900\",\"2024-01-15 00:30:00 +0000\"]",
+          "67.0": "[\"1/15/2024, 9:30 AM\",\"2024-01-15 09:30:00 +0900\",\"2024-01-15 09:30:00 +0900\",\"2024-01-15 00:30:00 +0000\"]",
+          "68.0": "[\"1/15/2024, 9:30 AM\",\"2024-01-15 09:30:00 +0900\",\"2024-01-15 09:30:00 +0900\",\"2024-01-15 00:30:00 +0000\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_015",
+      "group": "context-matrix",
+      "label": "UTC midnight before",
+      "context": "runAs Tokyo",
+      "role": "route-boundary",
+      "twin": "C162TZ_016",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='Asia/Tokyo';insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-14 23:59:59');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "5803b28ebeb90abbe54a58577d7ac74638a872262058680a8ba7a38dfd095936",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-15\",\"2024-01-14\",\"2024-01-15 08:59:59\",\"2024-01-14 23:59:59\"]",
+          "67.0": "[\"2024-01-15\",\"2024-01-14\",\"2024-01-15 08:59:59\",\"2024-01-14 23:59:59\"]",
+          "68.0": "[\"2024-01-15\",\"2024-01-14\",\"2024-01-15 08:59:59\",\"2024-01-14 23:59:59\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_016",
+      "group": "context-matrix",
+      "label": "UTC midnight after",
+      "context": "runAs Tokyo",
+      "role": "route-boundary",
+      "twin": "C162TZ_015",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='Asia/Tokyo';insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-15 00:00:00');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "c86fab43a58c6d5f9362538561136a67168f0bafa4991a950078ab6b636ec64c",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 09:00:00\",\"2024-01-15 00:00:00\"]",
+          "67.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 09:00:00\",\"2024-01-15 00:00:00\"]",
+          "68.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 09:00:00\",\"2024-01-15 00:00:00\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_017",
+      "group": "context-matrix",
+      "label": "Tokyo midnight before",
+      "context": "runAs Tokyo",
+      "role": "route-boundary",
+      "twin": "C162TZ_018",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='Asia/Tokyo';insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-14 14:59:59');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "550bbbc1b0f268584c4a5b3c09bde3d66e27a99b3910c0e6f46bfb4f5a34bf46",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 23:59:59\",\"2024-01-14 14:59:59\"]",
+          "67.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 23:59:59\",\"2024-01-14 14:59:59\"]",
+          "68.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 23:59:59\",\"2024-01-14 14:59:59\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_018",
+      "group": "context-matrix",
+      "label": "Tokyo midnight after",
+      "context": "runAs Tokyo",
+      "role": "route-boundary",
+      "twin": "C162TZ_017",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='Asia/Tokyo';insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-14 15:00:00');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "e31b484dfb6434e5da52b553b6f68aeedb9c23d79979bd910adfe00c2cfdad18",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-15\",\"2024-01-14\",\"2024-01-15 00:00:00\",\"2024-01-14 15:00:00\"]",
+          "67.0": "[\"2024-01-15\",\"2024-01-14\",\"2024-01-15 00:00:00\",\"2024-01-14 15:00:00\"]",
+          "68.0": "[\"2024-01-15\",\"2024-01-14\",\"2024-01-15 00:00:00\",\"2024-01-14 15:00:00\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_019",
+      "group": "context-matrix",
+      "label": "Los Angeles midnight before",
+      "context": "runAs Tokyo",
+      "role": "route-boundary",
+      "twin": "C162TZ_020",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='Asia/Tokyo';insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-15 07:59:59');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "28283d775b2ee456bec3f01e34c1400bc0556156eb6c89867d95eb2af9beced0",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 16:59:59\",\"2024-01-15 07:59:59\"]",
+          "67.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 16:59:59\",\"2024-01-15 07:59:59\"]",
+          "68.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 16:59:59\",\"2024-01-15 07:59:59\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_020",
+      "group": "context-matrix",
+      "label": "Los Angeles midnight after",
+      "context": "runAs Tokyo",
+      "role": "route-boundary",
+      "twin": "C162TZ_019",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='Asia/Tokyo';insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-15 08:00:00');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "155918f12ab622f5bf1959c2493c74ea80b47b66dce5c6db838d5ded4fff93e9",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 17:00:00\",\"2024-01-15 08:00:00\"]",
+          "67.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 17:00:00\",\"2024-01-15 08:00:00\"]",
+          "68.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 17:00:00\",\"2024-01-15 08:00:00\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_021",
+      "group": "context-matrix",
+      "label": "week boundary 2015",
+      "context": "runAs Tokyo",
+      "role": "route-boundary",
+      "twin": "C162TZ_014",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='Asia/Tokyo';insert u;System.runAs(u){Datetime d=Datetime.newInstanceGmt(2015,12,27,0,0,0);r=JSON.serialize(new List<Object>{d.format('w'),d.formatGmt('w'),String.valueOf(d.date()),String.valueOf(d.dateGmt())});}",
+      "codeSHA256": "4a60126d0ebc8b064ba332300b6250f822ce066dc3ca74dc60af78cc047c9de3",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"1\",\"1\",\"2015-12-27\",\"2015-12-27\"]",
+          "67.0": "[\"1\",\"1\",\"2015-12-27\",\"2015-12-27\"]",
+          "68.0": "[\"1\",\"1\",\"2015-12-27\",\"2015-12-27\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_022",
+      "group": "context-matrix",
+      "label": "local valueOf round trip",
+      "context": "runAs Tokyo",
+      "role": "route-boundary",
+      "twin": "C162TZ_023",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='Asia/Tokyo';insert u;System.runAs(u){Datetime d=Datetime.valueOf('2024-01-15 00:30:00');r=JSON.serialize(new List<Object>{d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss'),d==Datetime.valueOf(d.format('yyyy-MM-dd HH:mm:ss')),Date.valueOf(String.valueOf(d.date()))==d.date()});}",
+      "codeSHA256": "969fe34bfdc29d9b11546af5ff35e0fc5e03432ab0adddec0217606a94bc7da1",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-15 00:30:00\",\"2024-01-14 15:30:00\",true,true]",
+          "67.0": "[\"2024-01-15 00:30:00\",\"2024-01-14 15:30:00\",true,true]",
+          "68.0": "[\"2024-01-15 00:30:00\",\"2024-01-14 15:30:00\",true,true]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_023",
+      "group": "context-matrix",
+      "label": "GMT valueOf round trip",
+      "context": "runAs Tokyo",
+      "role": "route-boundary",
+      "twin": "C162TZ_022",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='Asia/Tokyo';insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-15 00:30:00');r=JSON.serialize(new List<Object>{d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss'),d==Datetime.valueOfGmt(d.formatGmt('yyyy-MM-dd HH:mm:ss'))});}",
+      "codeSHA256": "69627fe9ff78f728f3ddcc4fbf726da97daa9b48d3caf0d28036b21b75f5b4bf",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-15 09:30:00\",\"2024-01-15 00:30:00\",true]",
+          "67.0": "[\"2024-01-15 09:30:00\",\"2024-01-15 00:30:00\",true]",
+          "68.0": "[\"2024-01-15 09:30:00\",\"2024-01-15 00:30:00\",true]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_024",
+      "group": "context-matrix",
+      "label": "local newInstance round trip",
+      "context": "runAs Tokyo",
+      "role": "route-boundary",
+      "twin": "C162TZ_022",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='Asia/Tokyo';insert u;System.runAs(u){Datetime d=Datetime.newInstance(Date.newInstance(2024,1,15),Time.newInstance(0,30,0,0));r=JSON.serialize(new List<Object>{d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss'),d==Datetime.valueOf('2024-01-15 00:30:00')});}",
+      "codeSHA256": "0daab5971bbf4d1e9ef90d4dac8522a669318ea4d5b32369b8bbcc5682e4ab84",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-15 00:30:00\",\"2024-01-14 15:30:00\",true]",
+          "67.0": "[\"2024-01-15 00:30:00\",\"2024-01-14 15:30:00\",true]",
+          "68.0": "[\"2024-01-15 00:30:00\",\"2024-01-14 15:30:00\",true]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_025",
+      "group": "context-matrix",
+      "label": "zone snapshot",
+      "context": "runAs org default",
+      "role": "route-boundary",
+      "twin": "C162TZ_026",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);String seedOrgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;u.TimeZoneSidKey=seedOrgZone;insert u;System.runAs(u){User currentUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];String orgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;TimeZone z=UserInfo.getTimeZone(); r=JSON.serialize(new List<Object>{z.getID(),z.getDisplayName(),z.getOffset(Datetime.newInstanceGmt(2024,1,15,12,0,0)),z.getOffset(Datetime.newInstanceGmt(2024,7,15,12,0,0)),currentUser.TimeZoneSidKey,currentUser.LocaleSidKey,orgZone});}",
+      "codeSHA256": "124e8998a7cbc85bf4501f5465a1bb7974e2d94f1f2b821c19158cfb380f0a43",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"America/Los_Angeles\",\"(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)\",-28800000,-25200000,\"America/Los_Angeles\",\"en_US\",\"America/Los_Angeles\"]",
+          "67.0": "[\"America/Los_Angeles\",\"(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)\",-28800000,-25200000,\"America/Los_Angeles\",\"en_US\",\"America/Los_Angeles\"]",
+          "68.0": "[\"America/Los_Angeles\",\"(GMT-07:00) Pacific Daylight Time (America/Los_Angeles)\",-28800000,-25200000,\"America/Los_Angeles\",\"en_US\",\"America/Los_Angeles\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_026",
+      "group": "context-matrix",
+      "label": "default and explicit formatting",
+      "context": "runAs org default",
+      "role": "route-boundary",
+      "twin": "C162TZ_025",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);String seedOrgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;u.TimeZoneSidKey=seedOrgZone;insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-15 00:30:00');r=JSON.serialize(new List<Object>{d.format(),d.format('yyyy-MM-dd HH:mm:ss Z'),d.format('yyyy-MM-dd HH:mm:ss Z',UserInfo.getTimeZone().getID()),d.formatGmt('yyyy-MM-dd HH:mm:ss Z')});}",
+      "codeSHA256": "aa6f03b3010583246fce1d565e93d371c60c88b8f75e21aaa272ec7279643854",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"1/14/2024, 4:30 PM\",\"2024-01-14 16:30:00 -0800\",\"2024-01-14 16:30:00 -0800\",\"2024-01-15 00:30:00 +0000\"]",
+          "67.0": "[\"1/14/2024, 4:30 PM\",\"2024-01-14 16:30:00 -0800\",\"2024-01-14 16:30:00 -0800\",\"2024-01-15 00:30:00 +0000\"]",
+          "68.0": "[\"1/14/2024, 4:30 PM\",\"2024-01-14 16:30:00 -0800\",\"2024-01-14 16:30:00 -0800\",\"2024-01-15 00:30:00 +0000\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_027",
+      "group": "context-matrix",
+      "label": "UTC midnight before",
+      "context": "runAs org default",
+      "role": "route-boundary",
+      "twin": "C162TZ_028",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);String seedOrgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;u.TimeZoneSidKey=seedOrgZone;insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-14 23:59:59');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "a60524faa925fe81aed2c94e2d419dce75ecdc79647def93fabf3c580f28bce4",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 15:59:59\",\"2024-01-14 23:59:59\"]",
+          "67.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 15:59:59\",\"2024-01-14 23:59:59\"]",
+          "68.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 15:59:59\",\"2024-01-14 23:59:59\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_028",
+      "group": "context-matrix",
+      "label": "UTC midnight after",
+      "context": "runAs org default",
+      "role": "route-boundary",
+      "twin": "C162TZ_027",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);String seedOrgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;u.TimeZoneSidKey=seedOrgZone;insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-15 00:00:00');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "50e46804721fc8f5e3174e7101fbb0f20643f7ffb944d8b2586753b15ba560e6",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 16:00:00\",\"2024-01-15 00:00:00\"]",
+          "67.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 16:00:00\",\"2024-01-15 00:00:00\"]",
+          "68.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 16:00:00\",\"2024-01-15 00:00:00\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_029",
+      "group": "context-matrix",
+      "label": "Tokyo midnight before",
+      "context": "runAs org default",
+      "role": "route-boundary",
+      "twin": "C162TZ_030",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);String seedOrgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;u.TimeZoneSidKey=seedOrgZone;insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-14 14:59:59');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "6ec1826ed8435dde607b487e4323fd1b6b72974c6778522c067be30ecfe4a8c5",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 06:59:59\",\"2024-01-14 14:59:59\"]",
+          "67.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 06:59:59\",\"2024-01-14 14:59:59\"]",
+          "68.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 06:59:59\",\"2024-01-14 14:59:59\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_030",
+      "group": "context-matrix",
+      "label": "Tokyo midnight after",
+      "context": "runAs org default",
+      "role": "route-boundary",
+      "twin": "C162TZ_029",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);String seedOrgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;u.TimeZoneSidKey=seedOrgZone;insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-14 15:00:00');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "a186be839cca2d1e5cc388e9720ddf4d481e1ee692a1f9c31da687241c98b1f4",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 07:00:00\",\"2024-01-14 15:00:00\"]",
+          "67.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 07:00:00\",\"2024-01-14 15:00:00\"]",
+          "68.0": "[\"2024-01-14\",\"2024-01-14\",\"2024-01-14 07:00:00\",\"2024-01-14 15:00:00\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_031",
+      "group": "context-matrix",
+      "label": "Los Angeles midnight before",
+      "context": "runAs org default",
+      "role": "route-boundary",
+      "twin": "C162TZ_032",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);String seedOrgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;u.TimeZoneSidKey=seedOrgZone;insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-15 07:59:59');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "d328edee7780ca9437c1c3f045256fc4b36cfa962c5bd12922aa481bf3fa69bf",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 23:59:59\",\"2024-01-15 07:59:59\"]",
+          "67.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 23:59:59\",\"2024-01-15 07:59:59\"]",
+          "68.0": "[\"2024-01-14\",\"2024-01-15\",\"2024-01-14 23:59:59\",\"2024-01-15 07:59:59\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_032",
+      "group": "context-matrix",
+      "label": "Los Angeles midnight after",
+      "context": "runAs org default",
+      "role": "route-boundary",
+      "twin": "C162TZ_031",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);String seedOrgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;u.TimeZoneSidKey=seedOrgZone;insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-15 08:00:00');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "99296bfbf4c574e2f32a81b4cd3a3efc8b6228ab82c0c9a6a00877d1e710e457",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 00:00:00\",\"2024-01-15 08:00:00\"]",
+          "67.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 00:00:00\",\"2024-01-15 08:00:00\"]",
+          "68.0": "[\"2024-01-15\",\"2024-01-15\",\"2024-01-15 00:00:00\",\"2024-01-15 08:00:00\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_033",
+      "group": "context-matrix",
+      "label": "week boundary 2015",
+      "context": "runAs org default",
+      "role": "route-boundary",
+      "twin": "C162TZ_026",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);String seedOrgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;u.TimeZoneSidKey=seedOrgZone;insert u;System.runAs(u){Datetime d=Datetime.newInstanceGmt(2015,12,27,0,0,0);r=JSON.serialize(new List<Object>{d.format('w'),d.formatGmt('w'),String.valueOf(d.date()),String.valueOf(d.dateGmt())});}",
+      "codeSHA256": "031d1223fd5b64de165c9727730fade51b4d1064f663b5006908b2f4ebeeee08",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"52\",\"1\",\"2015-12-26\",\"2015-12-27\"]",
+          "67.0": "[\"52\",\"1\",\"2015-12-26\",\"2015-12-27\"]",
+          "68.0": "[\"52\",\"1\",\"2015-12-26\",\"2015-12-27\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_034",
+      "group": "context-matrix",
+      "label": "local valueOf round trip",
+      "context": "runAs org default",
+      "role": "route-boundary",
+      "twin": "C162TZ_035",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);String seedOrgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;u.TimeZoneSidKey=seedOrgZone;insert u;System.runAs(u){Datetime d=Datetime.valueOf('2024-01-15 00:30:00');r=JSON.serialize(new List<Object>{d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss'),d==Datetime.valueOf(d.format('yyyy-MM-dd HH:mm:ss')),Date.valueOf(String.valueOf(d.date()))==d.date()});}",
+      "codeSHA256": "2b266a013a58c769547cc6bae269113dedf02b9d2151f019fb1a25bc169b708f",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true,true]",
+          "67.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true,true]",
+          "68.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true,true]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_035",
+      "group": "context-matrix",
+      "label": "GMT valueOf round trip",
+      "context": "runAs org default",
+      "role": "route-boundary",
+      "twin": "C162TZ_034",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);String seedOrgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;u.TimeZoneSidKey=seedOrgZone;insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-15 00:30:00');r=JSON.serialize(new List<Object>{d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss'),d==Datetime.valueOfGmt(d.formatGmt('yyyy-MM-dd HH:mm:ss'))});}",
+      "codeSHA256": "172b3686cb62a0c296c09698769200f3e47e9ac5df9d1fc9723d62d472827381",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-14 16:30:00\",\"2024-01-15 00:30:00\",true]",
+          "67.0": "[\"2024-01-14 16:30:00\",\"2024-01-15 00:30:00\",true]",
+          "68.0": "[\"2024-01-14 16:30:00\",\"2024-01-15 00:30:00\",true]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_036",
+      "group": "context-matrix",
+      "label": "local newInstance round trip",
+      "context": "runAs org default",
+      "role": "route-boundary",
+      "twin": "C162TZ_034",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);String seedOrgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;u.TimeZoneSidKey=seedOrgZone;insert u;System.runAs(u){Datetime d=Datetime.newInstance(Date.newInstance(2024,1,15),Time.newInstance(0,30,0,0));r=JSON.serialize(new List<Object>{d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss'),d==Datetime.valueOf('2024-01-15 00:30:00')});}",
+      "codeSHA256": "59d488f20038a0d346306d52d63b3413f442c53fa3f826f40599d62afdaebf9b",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true]",
+          "67.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true]",
+          "68.0": "[\"2024-01-15 00:30:00\",\"2024-01-15 08:30:00\",true]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_037",
+      "group": "context-matrix",
+      "label": "zone snapshot",
+      "context": "runAs omitted zone",
+      "role": "route-boundary",
+      "twin": "C162TZ_038",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);insert u;System.runAs(u){User currentUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];String orgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;TimeZone z=UserInfo.getTimeZone(); r=JSON.serialize(new List<Object>{z.getID(),z.getDisplayName(),z.getOffset(Datetime.newInstanceGmt(2024,1,15,12,0,0)),z.getOffset(Datetime.newInstanceGmt(2024,7,15,12,0,0)),currentUser.TimeZoneSidKey,currentUser.LocaleSidKey,orgZone});}",
+      "codeSHA256": "8343f935c535f67fd23b5a18e9fc99ba083ce35647c56f5d05f0d2b354e2c289",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_038",
+      "group": "context-matrix",
+      "label": "default and explicit formatting",
+      "context": "runAs omitted zone",
+      "role": "route-boundary",
+      "twin": "C162TZ_037",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-15 00:30:00');r=JSON.serialize(new List<Object>{d.format(),d.format('yyyy-MM-dd HH:mm:ss Z'),d.format('yyyy-MM-dd HH:mm:ss Z',UserInfo.getTimeZone().getID()),d.formatGmt('yyyy-MM-dd HH:mm:ss Z')});}",
+      "codeSHA256": "a775a0dd9f2deae723a84841d23e92431f48ed43b625292093829d610ff64706",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_039",
+      "group": "context-matrix",
+      "label": "UTC midnight before",
+      "context": "runAs omitted zone",
+      "role": "route-boundary",
+      "twin": "C162TZ_040",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-14 23:59:59');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "e260a46ea271769824f6c2b746526dcdafdc55e9f26c5cf0aba4946f2ebaafee",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_040",
+      "group": "context-matrix",
+      "label": "UTC midnight after",
+      "context": "runAs omitted zone",
+      "role": "route-boundary",
+      "twin": "C162TZ_039",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-15 00:00:00');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "2ad317b60edbaa0d518d7ac6d0fb27dbbc30c7747118ae45df95c8c532e8da61",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_041",
+      "group": "context-matrix",
+      "label": "Tokyo midnight before",
+      "context": "runAs omitted zone",
+      "role": "route-boundary",
+      "twin": "C162TZ_042",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-14 14:59:59');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "209f0454aeb6708341836a18685699b9893aa3fe1361c1a0714f3e7196b83f90",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_042",
+      "group": "context-matrix",
+      "label": "Tokyo midnight after",
+      "context": "runAs omitted zone",
+      "role": "route-boundary",
+      "twin": "C162TZ_041",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-14 15:00:00');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "69fe727297bacd4b3de15cfa0d04912e8e5c6262c184564fdf96cf094b310091",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_043",
+      "group": "context-matrix",
+      "label": "Los Angeles midnight before",
+      "context": "runAs omitted zone",
+      "role": "route-boundary",
+      "twin": "C162TZ_044",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-15 07:59:59');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "b239a6f305d195d49eb964d8e86e47c25cbd9a0cec08e6ea5b0851dfd2ed6739",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_044",
+      "group": "context-matrix",
+      "label": "Los Angeles midnight after",
+      "context": "runAs omitted zone",
+      "role": "route-boundary",
+      "twin": "C162TZ_043",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-15 08:00:00');r=JSON.serialize(new List<Object>{String.valueOf(d.date()),String.valueOf(d.dateGmt()),d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "c99a8f53dd57d80b1380ad636e4d705d037d068f68a7c1e2e77be4cae90262e4",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_045",
+      "group": "context-matrix",
+      "label": "week boundary 2015",
+      "context": "runAs omitted zone",
+      "role": "route-boundary",
+      "twin": "C162TZ_038",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);insert u;System.runAs(u){Datetime d=Datetime.newInstanceGmt(2015,12,27,0,0,0);r=JSON.serialize(new List<Object>{d.format('w'),d.formatGmt('w'),String.valueOf(d.date()),String.valueOf(d.dateGmt())});}",
+      "codeSHA256": "f4914884597b185f97c42ffe76646f1ddf94392d4348740db2cdff6dc3320eea",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_046",
+      "group": "context-matrix",
+      "label": "local valueOf round trip",
+      "context": "runAs omitted zone",
+      "role": "route-boundary",
+      "twin": "C162TZ_047",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);insert u;System.runAs(u){Datetime d=Datetime.valueOf('2024-01-15 00:30:00');r=JSON.serialize(new List<Object>{d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss'),d==Datetime.valueOf(d.format('yyyy-MM-dd HH:mm:ss')),Date.valueOf(String.valueOf(d.date()))==d.date()});}",
+      "codeSHA256": "a9607d6f396041a10b7de2d2af5057a798228cd576a19a7634e50830563e01c0",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_047",
+      "group": "context-matrix",
+      "label": "GMT valueOf round trip",
+      "context": "runAs omitted zone",
+      "role": "route-boundary",
+      "twin": "C162TZ_046",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-01-15 00:30:00');r=JSON.serialize(new List<Object>{d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss'),d==Datetime.valueOfGmt(d.formatGmt('yyyy-MM-dd HH:mm:ss'))});}",
+      "codeSHA256": "2ea4505b60b384f5e6c87b731332ca4e6a40012586c407a115cc1d78ed16e3e4",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_048",
+      "group": "context-matrix",
+      "label": "local newInstance round trip",
+      "context": "runAs omitted zone",
+      "role": "route-boundary",
+      "twin": "C162TZ_046",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);insert u;System.runAs(u){Datetime d=Datetime.newInstance(Date.newInstance(2024,1,15),Time.newInstance(0,30,0,0));r=JSON.serialize(new List<Object>{d.format('yyyy-MM-dd HH:mm:ss'),d.formatGmt('yyyy-MM-dd HH:mm:ss'),d==Datetime.valueOf('2024-01-15 00:30:00')});}",
+      "codeSHA256": "ba591003c581306dde6b4ee469fe555c18141d56cbc1ed4131aa606537992f97",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_049",
+      "group": "user-creation",
+      "label": "insert explicit Tokyo",
+      "context": "running",
+      "role": "positive",
+      "twin": "C162TZ_050",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='Asia/Tokyo';Object before=u.TimeZoneSidKey;insert u;User saved=[SELECT TimeZoneSidKey,LocaleSidKey FROM User WHERE Id=:u.Id];r=JSON.serialize(new List<Object>{before,saved.TimeZoneSidKey,saved.LocaleSidKey,UserInfo.getTimeZone().getID(),UserInfo.getUserId()==u.Id});",
+      "codeSHA256": "1f87b4f8592ecae521ad8837aee953d6f3612368895c49bcd15f09571fbc112b",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"Asia/Tokyo\",\"Asia/Tokyo\",\"en_US\",\"America/Los_Angeles\",false]",
+          "67.0": "[\"Asia/Tokyo\",\"Asia/Tokyo\",\"en_US\",\"America/Los_Angeles\",false]",
+          "68.0": "[\"Asia/Tokyo\",\"Asia/Tokyo\",\"en_US\",\"America/Los_Angeles\",false]"
+        },
+        "istest": {
+          "62.0": "[\"Asia/Tokyo\",\"Asia/Tokyo\",\"en_US\",\"America/Los_Angeles\",false]",
+          "67.0": "[\"Asia/Tokyo\",\"Asia/Tokyo\",\"en_US\",\"America/Los_Angeles\",false]",
+          "68.0": "[\"Asia/Tokyo\",\"Asia/Tokyo\",\"en_US\",\"America/Los_Angeles\",false]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_050",
+      "group": "user-creation",
+      "label": "insert explicit org zone",
+      "context": "running",
+      "role": "positive",
+      "twin": "C162TZ_049",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);String seedOrgZone=[SELECT TimeZoneSidKey FROM Organization LIMIT 1].TimeZoneSidKey;u.TimeZoneSidKey=seedOrgZone;Object before=u.TimeZoneSidKey;insert u;User saved=[SELECT TimeZoneSidKey,LocaleSidKey FROM User WHERE Id=:u.Id];r=JSON.serialize(new List<Object>{before,saved.TimeZoneSidKey,saved.LocaleSidKey,UserInfo.getTimeZone().getID(),UserInfo.getUserId()==u.Id});",
+      "codeSHA256": "6dc42b38e8702bd478981d880ff146030ad8cd3cf35c81a90be69db90bb179f9",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"America/Los_Angeles\",\"America/Los_Angeles\",\"en_US\",\"America/Los_Angeles\",false]",
+          "67.0": "[\"America/Los_Angeles\",\"America/Los_Angeles\",\"en_US\",\"America/Los_Angeles\",false]",
+          "68.0": "[\"America/Los_Angeles\",\"America/Los_Angeles\",\"en_US\",\"America/Los_Angeles\",false]"
+        },
+        "istest": {
+          "62.0": "[\"America/Los_Angeles\",\"America/Los_Angeles\",\"en_US\",\"America/Los_Angeles\",false]",
+          "67.0": "[\"America/Los_Angeles\",\"America/Los_Angeles\",\"en_US\",\"America/Los_Angeles\",false]",
+          "68.0": "[\"America/Los_Angeles\",\"America/Los_Angeles\",\"en_US\",\"America/Los_Angeles\",false]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_051",
+      "group": "user-creation",
+      "label": "insert omitted zone",
+      "context": "running",
+      "role": "rejection-candidate",
+      "twin": "C162TZ_050",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);Object before=u.TimeZoneSidKey;insert u;User saved=[SELECT TimeZoneSidKey,LocaleSidKey FROM User WHERE Id=:u.Id];r=JSON.serialize(new List<Object>{before,saved.TimeZoneSidKey,saved.LocaleSidKey,UserInfo.getTimeZone().getID(),UserInfo.getUserId()==u.Id});",
+      "codeSHA256": "f041dd478f33ef8cbd7123debb66c4eae9559992e69ccad31194159a4e2a1ad0",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_052",
+      "group": "user-creation",
+      "label": "insert invalid zone",
+      "context": "running",
+      "role": "rejection-candidate",
+      "twin": "C162TZ_049",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='Invalid/Zone';Object before=u.TimeZoneSidKey;insert u;User saved=[SELECT TimeZoneSidKey,LocaleSidKey FROM User WHERE Id=:u.Id];r=JSON.serialize(new List<Object>{before,saved.TimeZoneSidKey,saved.LocaleSidKey,UserInfo.getTimeZone().getID(),UserInfo.getUserId()==u.Id});",
+      "codeSHA256": "8b496a277102716a57fb3cc576db47c6e833c7079af2ac38fcf6ac6113e8b7c6",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.DmlException\",[[\"INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST\",[\"TimeZoneSidKey\"]]]]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_053",
+      "group": "user-creation",
+      "label": "insert null zone",
+      "context": "running",
+      "role": "rejection-candidate",
+      "twin": "C162TZ_050",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey=null;Object before=u.TimeZoneSidKey;insert u;User saved=[SELECT TimeZoneSidKey,LocaleSidKey FROM User WHERE Id=:u.Id];r=JSON.serialize(new List<Object>{before,saved.TimeZoneSidKey,saved.LocaleSidKey,UserInfo.getTimeZone().getID(),UserInfo.getUserId()==u.Id});",
+      "codeSHA256": "16e432e57614fe6f2fea792dd8394235eeb4d4f288bad167ebe013fd0a8e1e0b",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_054",
+      "group": "user-creation",
+      "label": "runAs auto-insert omitted zone",
+      "context": "runAs omitted auto-insert",
+      "role": "route-boundary",
+      "twin": "C162TZ_051",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);System.runAs(u){r=JSON.serialize(new List<Object>{UserInfo.getTimeZone().getID(),[SELECT TimeZoneSidKey FROM User WHERE Id=:UserInfo.getUserId()].TimeZoneSidKey});}",
+      "codeSHA256": "982fc91503dd9102968037dc6fa3f8a45c6197368295b784bf1f4814ddec2225",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"REQUIRED_FIELD_MISSING\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_055",
+      "group": "DST-boundaries",
+      "label": "2024-03-10 09:59:59",
+      "context": "explicit zone",
+      "role": "boundary",
+      "twin": "C162TZ_056",
+      "code": "Datetime d=Datetime.valueOfGmt('2024-03-10 09:59:59');TimeZone z=TimeZone.getTimeZone('America/Los_Angeles');r=JSON.serialize(new List<Object>{z.getID(),z.getOffset(d),d.format('yyyy-MM-dd HH:mm:ss Z','America/Los_Angeles'),d.formatGmt('yyyy-MM-dd HH:mm:ss Z')});",
+      "codeSHA256": "ae98d01ad1eb054f043ba954394367eea22536cde3d207fb35e9db3570428951",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"America/Los_Angeles\",-28800000,\"2024-03-10 01:59:59 -0800\",\"2024-03-10 09:59:59 +0000\"]",
+          "67.0": "[\"America/Los_Angeles\",-28800000,\"2024-03-10 01:59:59 -0800\",\"2024-03-10 09:59:59 +0000\"]",
+          "68.0": "[\"America/Los_Angeles\",-28800000,\"2024-03-10 01:59:59 -0800\",\"2024-03-10 09:59:59 +0000\"]"
+        },
+        "istest": {
+          "62.0": "[\"America/Los_Angeles\",-28800000,\"2024-03-10 01:59:59 -0800\",\"2024-03-10 09:59:59 +0000\"]",
+          "67.0": "[\"America/Los_Angeles\",-28800000,\"2024-03-10 01:59:59 -0800\",\"2024-03-10 09:59:59 +0000\"]",
+          "68.0": "[\"America/Los_Angeles\",-28800000,\"2024-03-10 01:59:59 -0800\",\"2024-03-10 09:59:59 +0000\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_056",
+      "group": "DST-boundaries",
+      "label": "2024-03-10 10:00:00",
+      "context": "explicit zone",
+      "role": "boundary",
+      "twin": "C162TZ_055",
+      "code": "Datetime d=Datetime.valueOfGmt('2024-03-10 10:00:00');TimeZone z=TimeZone.getTimeZone('America/Los_Angeles');r=JSON.serialize(new List<Object>{z.getID(),z.getOffset(d),d.format('yyyy-MM-dd HH:mm:ss Z','America/Los_Angeles'),d.formatGmt('yyyy-MM-dd HH:mm:ss Z')});",
+      "codeSHA256": "6e39aa3b312ee0b5f482a064bf19b99451229777236703006c430d5a1aeadfc9",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"America/Los_Angeles\",-25200000,\"2024-03-10 03:00:00 -0700\",\"2024-03-10 10:00:00 +0000\"]",
+          "67.0": "[\"America/Los_Angeles\",-25200000,\"2024-03-10 03:00:00 -0700\",\"2024-03-10 10:00:00 +0000\"]",
+          "68.0": "[\"America/Los_Angeles\",-25200000,\"2024-03-10 03:00:00 -0700\",\"2024-03-10 10:00:00 +0000\"]"
+        },
+        "istest": {
+          "62.0": "[\"America/Los_Angeles\",-25200000,\"2024-03-10 03:00:00 -0700\",\"2024-03-10 10:00:00 +0000\"]",
+          "67.0": "[\"America/Los_Angeles\",-25200000,\"2024-03-10 03:00:00 -0700\",\"2024-03-10 10:00:00 +0000\"]",
+          "68.0": "[\"America/Los_Angeles\",-25200000,\"2024-03-10 03:00:00 -0700\",\"2024-03-10 10:00:00 +0000\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_057",
+      "group": "DST-boundaries",
+      "label": "2024-11-03 08:59:59",
+      "context": "explicit zone",
+      "role": "boundary",
+      "twin": "C162TZ_058",
+      "code": "Datetime d=Datetime.valueOfGmt('2024-11-03 08:59:59');TimeZone z=TimeZone.getTimeZone('America/Los_Angeles');r=JSON.serialize(new List<Object>{z.getID(),z.getOffset(d),d.format('yyyy-MM-dd HH:mm:ss Z','America/Los_Angeles'),d.formatGmt('yyyy-MM-dd HH:mm:ss Z')});",
+      "codeSHA256": "649a1d292d1ee8e8043e72080ef8a1dd0d47724bf550c8c99a0f9d4aa5df6cab",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"America/Los_Angeles\",-25200000,\"2024-11-03 01:59:59 -0700\",\"2024-11-03 08:59:59 +0000\"]",
+          "67.0": "[\"America/Los_Angeles\",-25200000,\"2024-11-03 01:59:59 -0700\",\"2024-11-03 08:59:59 +0000\"]",
+          "68.0": "[\"America/Los_Angeles\",-25200000,\"2024-11-03 01:59:59 -0700\",\"2024-11-03 08:59:59 +0000\"]"
+        },
+        "istest": {
+          "62.0": "[\"America/Los_Angeles\",-25200000,\"2024-11-03 01:59:59 -0700\",\"2024-11-03 08:59:59 +0000\"]",
+          "67.0": "[\"America/Los_Angeles\",-25200000,\"2024-11-03 01:59:59 -0700\",\"2024-11-03 08:59:59 +0000\"]",
+          "68.0": "[\"America/Los_Angeles\",-25200000,\"2024-11-03 01:59:59 -0700\",\"2024-11-03 08:59:59 +0000\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_058",
+      "group": "DST-boundaries",
+      "label": "2024-11-03 09:00:00",
+      "context": "explicit zone",
+      "role": "boundary",
+      "twin": "C162TZ_057",
+      "code": "Datetime d=Datetime.valueOfGmt('2024-11-03 09:00:00');TimeZone z=TimeZone.getTimeZone('America/Los_Angeles');r=JSON.serialize(new List<Object>{z.getID(),z.getOffset(d),d.format('yyyy-MM-dd HH:mm:ss Z','America/Los_Angeles'),d.formatGmt('yyyy-MM-dd HH:mm:ss Z')});",
+      "codeSHA256": "8549c71d23f8f4f9c7ccb0fdf2b32ac9c64e95a75335b45f62463dce5d4ea89f",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"America/Los_Angeles\",-28800000,\"2024-11-03 01:00:00 -0800\",\"2024-11-03 09:00:00 +0000\"]",
+          "67.0": "[\"America/Los_Angeles\",-28800000,\"2024-11-03 01:00:00 -0800\",\"2024-11-03 09:00:00 +0000\"]",
+          "68.0": "[\"America/Los_Angeles\",-28800000,\"2024-11-03 01:00:00 -0800\",\"2024-11-03 09:00:00 +0000\"]"
+        },
+        "istest": {
+          "62.0": "[\"America/Los_Angeles\",-28800000,\"2024-11-03 01:00:00 -0800\",\"2024-11-03 09:00:00 +0000\"]",
+          "67.0": "[\"America/Los_Angeles\",-28800000,\"2024-11-03 01:00:00 -0800\",\"2024-11-03 09:00:00 +0000\"]",
+          "68.0": "[\"America/Los_Angeles\",-28800000,\"2024-11-03 01:00:00 -0800\",\"2024-11-03 09:00:00 +0000\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_059",
+      "group": "DST-boundaries",
+      "label": "2024-03-10 09:59:59",
+      "context": "runAs Los Angeles",
+      "role": "boundary",
+      "twin": "C162TZ_060",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='America/Los_Angeles';insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-03-10 09:59:59');TimeZone z=UserInfo.getTimeZone();r=JSON.serialize(new List<Object>{z.getID(),z.getOffset(d),d.format('yyyy-MM-dd HH:mm:ss Z'),d.formatGmt('yyyy-MM-dd HH:mm:ss Z'),String.valueOf(d.date()),String.valueOf(d.dateGmt()),Datetime.valueOf(d.format('yyyy-MM-dd HH:mm:ss')).formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "4e5bcb7bcd7b10413a1a25aa9a04ac434a804ed406877e82477b628483db88d1",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"America/Los_Angeles\",-28800000,\"2024-03-10 01:59:59 -0800\",\"2024-03-10 09:59:59 +0000\",\"2024-03-10\",\"2024-03-10\",\"2024-03-10 09:59:59\"]",
+          "67.0": "[\"America/Los_Angeles\",-28800000,\"2024-03-10 01:59:59 -0800\",\"2024-03-10 09:59:59 +0000\",\"2024-03-10\",\"2024-03-10\",\"2024-03-10 09:59:59\"]",
+          "68.0": "[\"America/Los_Angeles\",-28800000,\"2024-03-10 01:59:59 -0800\",\"2024-03-10 09:59:59 +0000\",\"2024-03-10\",\"2024-03-10\",\"2024-03-10 09:59:59\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_060",
+      "group": "DST-boundaries",
+      "label": "2024-03-10 10:00:00",
+      "context": "runAs Los Angeles",
+      "role": "boundary",
+      "twin": "C162TZ_059",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='America/Los_Angeles';insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-03-10 10:00:00');TimeZone z=UserInfo.getTimeZone();r=JSON.serialize(new List<Object>{z.getID(),z.getOffset(d),d.format('yyyy-MM-dd HH:mm:ss Z'),d.formatGmt('yyyy-MM-dd HH:mm:ss Z'),String.valueOf(d.date()),String.valueOf(d.dateGmt()),Datetime.valueOf(d.format('yyyy-MM-dd HH:mm:ss')).formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "60e892405aad6663a928d3e72cccdbb41198d53cc1bd624da429a673a790020c",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"America/Los_Angeles\",-25200000,\"2024-03-10 03:00:00 -0700\",\"2024-03-10 10:00:00 +0000\",\"2024-03-10\",\"2024-03-10\",\"2024-03-10 10:00:00\"]",
+          "67.0": "[\"America/Los_Angeles\",-25200000,\"2024-03-10 03:00:00 -0700\",\"2024-03-10 10:00:00 +0000\",\"2024-03-10\",\"2024-03-10\",\"2024-03-10 10:00:00\"]",
+          "68.0": "[\"America/Los_Angeles\",-25200000,\"2024-03-10 03:00:00 -0700\",\"2024-03-10 10:00:00 +0000\",\"2024-03-10\",\"2024-03-10\",\"2024-03-10 10:00:00\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_061",
+      "group": "DST-boundaries",
+      "label": "2024-11-03 08:59:59",
+      "context": "runAs Los Angeles",
+      "role": "boundary",
+      "twin": "C162TZ_062",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='America/Los_Angeles';insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-11-03 08:59:59');TimeZone z=UserInfo.getTimeZone();r=JSON.serialize(new List<Object>{z.getID(),z.getOffset(d),d.format('yyyy-MM-dd HH:mm:ss Z'),d.formatGmt('yyyy-MM-dd HH:mm:ss Z'),String.valueOf(d.date()),String.valueOf(d.dateGmt()),Datetime.valueOf(d.format('yyyy-MM-dd HH:mm:ss')).formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "9c63eb1f0cfd69b8d70cc009b03806f036e16c798b7d851a7fbe2ea4c1678d48",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"America/Los_Angeles\",-25200000,\"2024-11-03 01:59:59 -0700\",\"2024-11-03 08:59:59 +0000\",\"2024-11-03\",\"2024-11-03\",\"2024-11-03 09:59:59\"]",
+          "67.0": "[\"America/Los_Angeles\",-25200000,\"2024-11-03 01:59:59 -0700\",\"2024-11-03 08:59:59 +0000\",\"2024-11-03\",\"2024-11-03\",\"2024-11-03 09:59:59\"]",
+          "68.0": "[\"America/Los_Angeles\",-25200000,\"2024-11-03 01:59:59 -0700\",\"2024-11-03 08:59:59 +0000\",\"2024-11-03\",\"2024-11-03\",\"2024-11-03 09:59:59\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_062",
+      "group": "DST-boundaries",
+      "label": "2024-11-03 09:00:00",
+      "context": "runAs Los Angeles",
+      "role": "boundary",
+      "twin": "C162TZ_061",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='America/Los_Angeles';insert u;System.runAs(u){Datetime d=Datetime.valueOfGmt('2024-11-03 09:00:00');TimeZone z=UserInfo.getTimeZone();r=JSON.serialize(new List<Object>{z.getID(),z.getOffset(d),d.format('yyyy-MM-dd HH:mm:ss Z'),d.formatGmt('yyyy-MM-dd HH:mm:ss Z'),String.valueOf(d.date()),String.valueOf(d.dateGmt()),Datetime.valueOf(d.format('yyyy-MM-dd HH:mm:ss')).formatGmt('yyyy-MM-dd HH:mm:ss')});}",
+      "codeSHA256": "c005cf96e529d264fe55a2eda1f4b520d38fc1eade813389b1839606992142a4",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"America/Los_Angeles\",-28800000,\"2024-11-03 01:00:00 -0800\",\"2024-11-03 09:00:00 +0000\",\"2024-11-03\",\"2024-11-03\",\"2024-11-03 09:00:00\"]",
+          "67.0": "[\"America/Los_Angeles\",-28800000,\"2024-11-03 01:00:00 -0800\",\"2024-11-03 09:00:00 +0000\",\"2024-11-03\",\"2024-11-03\",\"2024-11-03 09:00:00\"]",
+          "68.0": "[\"America/Los_Angeles\",-28800000,\"2024-11-03 01:00:00 -0800\",\"2024-11-03 09:00:00 +0000\",\"2024-11-03\",\"2024-11-03\",\"2024-11-03 09:00:00\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_063",
+      "group": "negative-boundaries",
+      "label": "invalid local valueOf",
+      "context": "running",
+      "role": "rejection-candidate",
+      "twin": "C162TZ_010",
+      "code": "r=String.valueOf(Datetime.valueOf('not-a-datetime'));",
+      "codeSHA256": "01b042ce1d5a2ebaf82e75ed830b063e98a55ae9af1dd74dcd12f1ae00481c80",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"Invalid date/time: not-a-datetime\"]",
+          "67.0": "[\"System.TypeException\",\"Invalid date/time: not-a-datetime\"]",
+          "68.0": "[\"System.TypeException\",\"Invalid date/time: not-a-datetime\"]"
+        },
+        "istest": {
+          "62.0": "[\"System.TypeException\",\"Invalid date/time: not-a-datetime\"]",
+          "67.0": "[\"System.TypeException\",\"Invalid date/time: not-a-datetime\"]",
+          "68.0": "[\"System.TypeException\",\"Invalid date/time: not-a-datetime\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_064",
+      "group": "negative-boundaries",
+      "label": "GMT calendar month overflow normalizes",
+      "context": "running",
+      "role": "boundary",
+      "twin": "C162TZ_011",
+      "code": "r=String.valueOf(Datetime.newInstanceGmt(2024,13,15,0,0,0));",
+      "codeSHA256": "16539d608cb052e505cfcafa34828888441cd6794a7a4f5500edee759b061bae",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "2025-01-14 16:00:00",
+          "67.0": "2025-01-14 16:00:00",
+          "68.0": "2025-01-14 16:00:00"
+        },
+        "istest": {
+          "62.0": "2025-01-14 16:00:00",
+          "67.0": "2025-01-14 16:00:00",
+          "68.0": "2025-01-14 16:00:00"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_065",
+      "group": "negative-boundaries",
+      "label": "wrong getOffset argument type",
+      "context": "running",
+      "role": "compile-rejection-candidate",
+      "twin": "C162TZ_001",
+      "code": "r=String.valueOf(UserInfo.getTimeZone().getOffset('2024-01-15 00:30:00'));",
+      "codeSHA256": "bc5a537c7f85d1514902eeeead3bc72256d41aa5bbd6441bcf8bc76036a9e2dc",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "COMPILE_ERROR|Method does not exist or incorrect signature: void getOffset(String) from the type System.TimeZone",
+          "67.0": "COMPILE_ERROR|Method does not exist or incorrect signature: void getOffset(String) from the type System.TimeZone",
+          "68.0": "COMPILE_ERROR|Method does not exist or incorrect signature: void getOffset(String) from the type System.TimeZone"
+        },
+        "istest": {
+          "62.0": "COMPILE_ERROR|Method does not exist or incorrect signature: void getOffset(String) from the type System.TimeZone",
+          "67.0": "COMPILE_ERROR|Method does not exist or incorrect signature: void getOffset(String) from the type System.TimeZone",
+          "68.0": "COMPILE_ERROR|Method does not exist or incorrect signature: void getOffset(String) from the type System.TimeZone"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_066",
+      "group": "negative-boundaries",
+      "label": "new User field and describe defaults",
+      "context": "running",
+      "role": "must-not-apply",
+      "twin": "C162TZ_051",
+      "code": "User u=new User();r=JSON.serialize(new List<Object>{u.TimeZoneSidKey,User.TimeZoneSidKey.getDescribe().getDefaultValue(),User.TimeZoneSidKey.getDescribe().isDefaultedOnCreate(),User.TimeZoneSidKey.getDescribe().isNillable(),UserInfo.getTimeZone().getID()});",
+      "codeSHA256": "d7a1af1028dbe576b20912b6f2729ee4927dab97ae4399d4cf1a1917fbeeeb5d",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[null,null,false,false,\"America/Los_Angeles\"]",
+          "67.0": "[null,null,false,false,\"America/Los_Angeles\"]",
+          "68.0": "[null,null,false,false,\"America/Los_Angeles\"]"
+        },
+        "istest": {
+          "62.0": "[null,null,false,false,\"America/Los_Angeles\"]",
+          "67.0": "[null,null,false,false,\"America/Los_Angeles\"]",
+          "68.0": "[null,null,false,false,\"America/Los_Angeles\"]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_067",
+      "group": "context-restoration",
+      "label": "runAs Asia/Tokyo restores caller",
+      "context": "runAs restore",
+      "role": "must-not-apply",
+      "twin": "C162TZ_068",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='Asia/Tokyo';insert u;String before=UserInfo.getTimeZone().getID();String inside;System.runAs(u){inside=UserInfo.getTimeZone().getID();}r=JSON.serialize(new List<Object>{before,inside,UserInfo.getTimeZone().getID(),before==UserInfo.getTimeZone().getID()});",
+      "codeSHA256": "eec1952f5484f8a9236e96550b596cf03a627ac60c553d0e0880220abbe0fffd",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "67.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]",
+          "68.0": "[\"System.TypeException\",\"System.runAs can only be used within a test method: \"]"
+        },
+        "istest": {
+          "62.0": "[\"America/Los_Angeles\",\"Asia/Tokyo\",\"America/Los_Angeles\",true]",
+          "67.0": "[\"America/Los_Angeles\",\"Asia/Tokyo\",\"America/Los_Angeles\",true]",
+          "68.0": "[\"America/Los_Angeles\",\"Asia/Tokyo\",\"America/Los_Angeles\",true]"
+        }
+      }
+    },
+    {
+      "id": "C162TZ_068",
+      "group": "context-restoration",
+      "label": "UTC rejected on User insert; restoration unobserved",
+      "context": "insert before runAs",
+      "role": "rejection",
+      "twin": "C162TZ_067",
+      "code": "User seedUser=[SELECT TimeZoneSidKey,LocaleSidKey,LanguageLocaleKey,ProfileId,EmailEncodingKey FROM User WHERE Id=:UserInfo.getUserId()];User u=new User(LastName='Synthetic zone row',Alias='tzrow',Email='tz@example.invalid',Username='tz.'+String.valueOf(Crypto.getRandomLong())+'@example.invalid',ProfileId=seedUser.ProfileId,LocaleSidKey=seedUser.LocaleSidKey,LanguageLocaleKey=seedUser.LanguageLocaleKey,EmailEncodingKey=seedUser.EmailEncodingKey);u.TimeZoneSidKey='UTC';insert u;String before=UserInfo.getTimeZone().getID();String inside;System.runAs(u){inside=UserInfo.getTimeZone().getID();}r=JSON.serialize(new List<Object>{before,inside,UserInfo.getTimeZone().getID(),before==UserInfo.getTimeZone().getID()});",
+      "codeSHA256": "5941e6aa253fa58848742566fa534a3b1aba2d35060a900894f597ffd8142114",
+      "expectedByRouteAPI": {
+        "anonymous": {
+          "62.0": "[\"System.DmlException\",[[\"INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST\",[\"TimeZoneSidKey\"]]]]"
+        },
+        "istest": {
+          "62.0": "[\"System.DmlException\",[[\"INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST\",[\"TimeZoneSidKey\"]]]]",
+          "67.0": "[\"System.DmlException\",[[\"INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST\",[\"TimeZoneSidKey\"]]]]",
+          "68.0": "[\"System.DmlException\",[[\"INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST\",[\"TimeZoneSidKey\"]]]]"
+        }
+      }
+    }
+  ]
+}

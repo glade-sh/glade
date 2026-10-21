@@ -115,3 +115,29 @@ func BenchmarkJSONSerializeCycleGuardScalars(b *testing.B) {
 		}
 	}
 }
+
+func TestJSONFromValueCycleRaisesExceptionForParentChildGraph(t *testing.T) {
+	parent := Object("GcrNode")
+	parent.Fields["name"] = String("root")
+	child := Object("GcrNode")
+	child.Fields["name"] = String("leaf")
+	child.Fields["parent"] = parent
+	parent.Fields["children"] = List(child)
+	nodes := Map()
+	nodes.Map["root"] = parent
+
+	assertJSONCycleGuardBounded(t)
+	raw, err := jsonFromValueChecked(nodes, false)
+	assertJSONConversionException(t, err)
+	if raw != nil {
+		t.Fatal("raw conversion must not return partial JSON after a cycle")
+	}
+}
+
+func TestJSONFromValueSharedAcyclicValueIsNotCyclic(t *testing.T) {
+	leaf := Object("GcrNode")
+	leaf.Fields["name"] = String("leaf")
+	if _, err := jsonFromValueChecked(List(leaf, leaf), false); err != nil {
+		t.Fatalf("a value repeated in siblings is shared, not cyclic: %v", err)
+	}
+}

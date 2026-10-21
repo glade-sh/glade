@@ -1,0 +1,3 @@
+source_api	method	observation
+62.0	dateSubtractionBeforeInsert	{"Future":{"stored":-2,"before":{"value":-2,"positive":false}},"Past":{"stored":5,"before":{"value":5,"positive":true}},"Blank":{"stored":null,"before":{"value":null,"positive":false}}}
+67.0	dateSubtractionBeforeInsert	{"Future":{"stored":-2,"before":{"value":-2,"positive":false}},"Past":{"stored":5,"before":{"value":5,"positive":true}},"Blank":{"stored":null,"before":{"value":null,"positive":false}}}

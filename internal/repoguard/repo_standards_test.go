@@ -703,12 +703,15 @@ const (
 	// Namespace\s*=\s*"NAME"|SetCurrentNamespace\("NAME"\)|Type\.forName\('NAME')
 	// or the case-sensitive \bNAME\.[A-Za-z].
 	privateNameNamespace
+	// privateNamePhrase is (?i)\bNAME\b; NAME is letters separated by spaces.
+	privateNamePhrase
 )
 
 // privateNameTable lists the guarded names in finding order: the kind, the
 // name's length in runes, privateNameFingerprint of the lower-case name (a
 // cheap prefilter), and the hex SHA-256 of privateNameSalt and that name.
-// Names of every kind but privateNameHyphenated are ASCII letters.
+// Names are ASCII letters, with hyphens for privateNameHyphenated and
+// spaces for privateNamePhrase.
 var privateNameTable = []struct {
 	kind        privateNameKind
 	length      int
@@ -737,6 +740,8 @@ var privateNameTable = []struct {
 	{privateNameWordPrefix, 13, 0x48b5, "738f947092646c23753821093b0a711ea47ee27ae49d5971921e0fc75cfa08dc"},
 	{privateNameWordPrefix, 16, 0x6dc9, "308f1ecef2ee1fb50883c7959fbb1660ecee86142308e1416b5955486ab29903"},
 	{privateNameWordPrefix, 24, 0xb497, "8e78b1c099d33b82380e7ac37750710e416b4a0a7df3b159261db78488eda5e7"},
+	{privateNamePhrase, 15, 0x88a4, "dd538701916e4588093d6b1ac427561ad5250bc03ef812cb0940f99c66526414"},
+	{privateNamePhrase, 30, 0x1011, "0063f9509f624b3f44c98edf0ec395238beaf73b2517d11b45486e151f46bcc7"},
 }
 
 type privatePackagePattern struct {
@@ -878,6 +883,7 @@ func matchPrivateNames(patterns []privatePackagePattern, text string, prefilter 
 		privateNameOrder(patterns, privateNameProduct),
 		namespace)
 	scan.scanHyphenatedRuns(privateNameOrder(patterns, privateNameHyphenated))
+	scan.scanPhraseSpans(privateNameOrder(patterns, privateNamePhrase))
 	if scan.contexts {
 		scan.scanNamespaceContexts(namespace)
 	}
@@ -964,8 +970,8 @@ func (scan *privateNameScan) nameAt(pattern *privatePackagePattern, start int, h
 	return privateNameSum(scan.name) == pattern.digest
 }
 
-// scanLetterRuns visits each maximal run of folded letters. Every name but a
-// hyphenated one is letters, so it lies inside one run.
+// scanLetterRuns visits each maximal run of folded letters. Names other than
+// hyphenated names and phrases lie inside one run.
 func (scan *privateNameScan) scanLetterRuns(wordStart, product, namespace []int) {
 	n := len(scan.runes)
 	for start := 0; start < n; start++ {
@@ -1096,12 +1102,53 @@ func (scan *privateNameScan) scanHyphenatedRuns(order []int) {
 	}
 }
 
-// privateNamespaceOpening matches the text before a quoted namespace name.
-// No opening can start inside another, so FindAll returns every one.
-var privateNamespaceOpening = regexp.MustCompile(`(?i)(namespace"\s*:\s*"|Namespace:\s*"|Namespace\s*=\s*")|(SetCurrentNamespace\(")|(Type\.forName\(')`)
+// scanPhraseSpans checks fixed-length phrases between word boundaries.
+// The digest also checks the spaces, so unrelated words cannot match.
+func (scan *privateNameScan) scanPhraseSpans(order []int) {
+	if len(order) == 0 {
+		return
+	}
+	for start := 0; start < len(scan.runes); start++ {
+		if !privateLetter(scan.fold(start)) || !scan.boundary(start) {
+			continue
+		}
+		for _, index := range order {
+			pattern := &scan.patterns[index]
+			end := start + pattern.length
+			if end > len(scan.runes) {
+				break
+			}
+			if !scan.matched[index] && scan.boundary(end) && scan.nameAt(pattern, start, scan.spanFNV(start, end)) {
+				scan.matched[index] = true
+			}
+		}
+	}
+}
+
+// privateNamespaceOpening validates a candidate starting with one of the
+// public context prefixes, without scanning the rest of the file on failure.
+var privateNamespaceOpening = regexp.MustCompile(`(?i)^(?:(namespace"\s*:\s*"|Namespace:\s*"|Namespace\s*=\s*")|(SetCurrentNamespace\(")|(Type\.forName\('))`)
 
 func (scan *privateNameScan) scanNamespaceContexts(namespace []int) {
-	for _, opening := range privateNamespaceOpening.FindAllStringSubmatchIndex(scan.text, -1) {
+	for offset, r := range scan.text {
+		prefix := ""
+		switch privateRuneFold[privateRuneByte(r)] {
+		case 'n':
+			prefix = "namespace"
+		case 's':
+			prefix = "setcurrentnamespace"
+		case 't':
+			prefix = "type.forname"
+		default:
+			continue
+		}
+		if !privateContextPrefix(scan.text[offset:], prefix) {
+			continue
+		}
+		opening := privateNamespaceOpening.FindStringSubmatchIndex(scan.text[offset:])
+		if opening == nil {
+			continue
+		}
 		closing := `"`
 		if opening[4] >= 0 {
 			closing = `")`
@@ -1110,11 +1157,22 @@ func (scan *privateNameScan) scanNamespaceContexts(namespace []int) {
 		}
 		for _, index := range namespace {
 			pattern := &scan.patterns[index]
-			if !scan.matched[index] && scan.quotedName(pattern, opening[1], closing) {
+			if !scan.matched[index] && scan.quotedName(pattern, offset+opening[1], closing) {
 				scan.matched[index] = true
 			}
 		}
 	}
+}
+
+func privateContextPrefix(text, prefix string) bool {
+	for _, want := range prefix {
+		r, size := utf8.DecodeRuneInString(text)
+		if size == 0 || privateRuneFold[privateRuneByte(r)] != byte(want) {
+			return false
+		}
+		text = text[size:]
+	}
+	return true
 }
 
 // quotedName reports whether the text at byte offset is the pattern's name
@@ -1144,8 +1202,8 @@ func (scan *privateNameScan) quotedName(pattern *privatePackagePattern, offset i
 func TestPrivateExamplePackagePatternsReuseDecodedSet(t *testing.T) {
 	first := privateExamplePackagePatterns()
 	second := privateExamplePackagePatterns()
-	if len(first) != 22 {
-		t.Fatalf("private example package pattern count = %d, want 22", len(first))
+	if len(first) != 24 {
+		t.Fatalf("private example package pattern count = %d, want 24", len(first))
 	}
 	if !slices.Equal(first, second) || !slices.Equal(first, buildPrivateExamplePackagePatterns()) {
 		t.Fatal("private example package patterns differ between calls")

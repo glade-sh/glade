@@ -1,0 +1,304 @@
+{
+  "sourceHelperApi": "61.0",
+  "sourceCallerApi": "61.0",
+  "transportApi": "61.0",
+  "route": "isTest",
+  "namespaceContext": "none",
+  "knownRowCount": 3,
+  "pendingCoverage": "Other source/caller versions and anonymous route remain unobserved for the parsed alias. No namespace, recursive or other erased aliases are inferred.",
+  "captures": [
+    {
+      "deployment": {
+        "id": "0AfEc00000p1cInKAI",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 3,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 3
+      },
+      "sources": {
+        "force-app/main/default/classes/RawListObservation61.cls": {
+          "source": "@IsTest private class RawListObservation61 {\n@IsTest static void RAW_LIST_OBJECT(){Map<String,Object> payload=RawListView61.RAW_LIST_OBJECT();System.assertEquals('RAW_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PARSED_LIST_OBJECT(){Map<String,Object> payload=RawListView61.PARSED_LIST_OBJECT();System.assertEquals('RAW_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void OTHER_TARGETS(){Map<String,Object> payload=RawListView61.OTHER_TARGETS();System.assertEquals('RAW_LIST_OBSERVATION',JSON.serialize(payload));}\n}\n",
+          "sha256": "203b5721810d377538d18182ef5447673ee45e1dc052da13de8cfd38ad190672"
+        },
+        "force-app/main/default/classes/RawListObservation61.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>61.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "d32b45563f339df54471e87359dd9d02fc52a531765f164fb3943e94f6b7bfd3"
+        },
+        "force-app/main/default/classes/RawListView61.cls": {
+          "source": "public class RawListView61 {\n public static Map<String,Object> RAW_LIST_OBJECT(){Map<String,Object> payload=new Map<String,Object>();try{Type raw=Type.forName('List');Type concrete=Type.forName('List<Object>');payload.put('rawNotNull',raw!=null);payload.put('concreteNotNull',concrete!=null);payload.put('assignable',raw.isAssignableFrom(concrete));}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}return payload;}\n public static Map<String,Object> PARSED_LIST_OBJECT(){Map<String,Object> payload=new Map<String,Object>();try{Object source=new List<Object>{'word'};try{Date value=(Date)source;}catch(TypeException error){String sourceLabel=error.getMessage().substringAfter('Invalid conversion sourceLabel runtime type ').substringBefore(' to Date');payload.put('sourceLabel',sourceLabel);Type parsed=Type.forName(sourceLabel);payload.put('parsedNotNull',parsed!=null);if(parsed!=null)payload.put('assignable',Type.forName('List').isAssignableFrom(parsed));}}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}return payload;}\n public static Map<String,Object> OTHER_TARGETS(){Map<String,Object> payload=new Map<String,Object>();try{payload.put('typedSelf',Type.forName('List<String>').isAssignableFrom(Type.forName('List<String>')));payload.put('setToRaw',Type.forName('List').isAssignableFrom(Type.forName('Set<Date>')));payload.put('otherElement',Type.forName('List').isAssignableFrom(Type.forName('List<String>')));}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}return payload;}\n}\n",
+          "sha256": "731b718e8c986315a0203eb1c7b04b75c4cf6cc1a50245c8455dbd88dd67c4ce"
+        },
+        "force-app/main/default/classes/RawListView61.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>61.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "d32b45563f339df54471e87359dd9d02fc52a531765f164fb3943e94f6b7bfd3"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"61.0\"\n}\n",
+          "sha256": "f882e521f83056481b7d58bb9a130502d63330b8ec7e3a48fb7b7c883cb17853"
+        }
+      },
+      "metadataUnchanged": true,
+      "rawSha256": {
+        "ORG-RUN.txt": "a069a6b2bae89bc3b3db164dd0dc498c6abaacca889802b0e9019be9496ad375",
+        "RAW-DIGESTS.json": "d85a3382a17d3f544826f0abf502d61c6defcbd801df5fa7898486329607dbcf",
+        "REPAIR.txt": "acd181f854b3969a60cdd36079533a9999d94957f9c4fc5804c68c7dc6f14576",
+        "SOURCE-DIGESTS.json": "c6f034b4fc4435ea21a4935be24cdc34db034146bb819143ee82ff3c68bd4f2d",
+        "after.command.json": "c21c81da2d11f7f4cab69987db994f2a14e87baad693aa2028e95f411e8fc69f",
+        "after.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647",
+        "after.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "before.command.json": "c21c81da2d11f7f4cab69987db994f2a14e87baad693aa2028e95f411e8fc69f",
+        "before.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647",
+        "before.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "deploy.command.json": "9d27222d601e831f9aa13259f0de263d1ae842005e522b1a111cf4e6b3b539c9",
+        "deploy.json": "967cb8e1f6709a2dac8fb6e41a897bbb2916ae5be30627c4db3bdcc716f100ca",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "driver.log": "5a6fc99ca7459b94296baf7172b0a422084910f7cfb19c46173a9ab132b11fbd",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "org.tsv": "2d128c6aaa2347f2fd43cd4c01396ade1de0f283d3d14675cd776cf296befe9a",
+        "owner-inspection.json": "5851317f012f050373613de4ce22b5a86e7ade45d4b52720afb90a00b7f6a127",
+        "selected-rows.json": "1ba6f93fc635be6a8496d973cc2077a763939291052e6df5fd0c48b4f9ec2fac"
+      },
+      "rows": [
+        {
+          "method": "OTHER_TARGETS",
+          "nativeFailure": {
+            "id": "01pEc00001GorDtIAJ",
+            "message": "System.AssertException: Assertion Failed: Expected: RAW_LIST_OBSERVATION, Actual: {\"otherElement\":true,\"setToRaw\":false,\"typedSelf\":true}",
+            "methodName": "OTHER_TARGETS",
+            "name": "RawListObservation61",
+            "namespace": null,
+            "packageName": "RawListObservation61",
+            "stackTrace": "Class.RawListObservation61.OTHER_TARGETS: line 4, column 1",
+            "time": 81,
+            "type": "Class"
+          },
+          "native": {
+            "otherElement": true,
+            "setToRaw": false,
+            "typedSelf": true
+          }
+        },
+        {
+          "method": "RAW_LIST_OBJECT",
+          "nativeFailure": {
+            "id": "01pEc00001GorDtIAJ",
+            "message": "System.AssertException: Assertion Failed: Expected: RAW_LIST_OBSERVATION, Actual: {\"assignable\":true,\"concreteNotNull\":true,\"rawNotNull\":true}",
+            "methodName": "RAW_LIST_OBJECT",
+            "name": "RawListObservation61",
+            "namespace": null,
+            "packageName": "RawListObservation61",
+            "stackTrace": "Class.RawListObservation61.RAW_LIST_OBJECT: line 2, column 1",
+            "time": 53,
+            "type": "Class"
+          },
+          "native": {
+            "assignable": true,
+            "concreteNotNull": true,
+            "rawNotNull": true
+          }
+        }
+      ],
+      "excludedRows": [
+        {
+          "method": "PARSED_LIST_OBJECT",
+          "nativeFailure": {
+            "id": "01pEc00001GorDtIAJ",
+            "message": "System.AssertException: Assertion Failed: Expected: RAW_LIST_OBSERVATION, Actual: {\"parsedNotNull\":false,\"sourceLabel\":\"\"}",
+            "methodName": "PARSED_LIST_OBJECT",
+            "name": "RawListObservation61",
+            "namespace": null,
+            "packageName": "RawListObservation61",
+            "stackTrace": "Class.RawListObservation61.PARSED_LIST_OBJECT: line 3, column 1",
+            "time": 55,
+            "type": "Class"
+          },
+          "native": {
+            "parsedNotNull": false,
+            "sourceLabel": ""
+          },
+          "reason": "Fixture rewrite changed the exception-prefix literal. This payload does not answer parsed reflection and is excluded from parity assertions."
+        }
+      ]
+    },
+    {
+      "deployment": {
+        "id": "0AfEc00000p1cSTKAY",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 1,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 1
+      },
+      "sources": {
+        "force-app/main/default/classes/RawListObservation61.cls": {
+          "source": "@IsTest private class RawListObservation61 {@IsTest static void PARSED_LIST_OBJECT(){Map<String,Object> payload=RawListView61.PARSED_LIST_OBJECT();System.assertEquals('RAW_LIST_OBSERVATION',JSON.serialize(payload));}}\n",
+          "sha256": "710ac041ed4d086b51ca70bb07f728bd777ec81468986ea789a1e208f7e33634"
+        },
+        "force-app/main/default/classes/RawListObservation61.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>61.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "d32b45563f339df54471e87359dd9d02fc52a531765f164fb3943e94f6b7bfd3"
+        },
+        "force-app/main/default/classes/RawListView61.cls": {
+          "source": "public class RawListView61 {public static Map<String,Object> PARSED_LIST_OBJECT(){Map<String,Object> payload=new Map<String,Object>();try{Object source=new List<Object>{'word'};try{Date value=(Date)source;}catch(TypeException error){String sourceLabel=error.getMessage().substringAfter('Invalid conversion from runtime type ').substringBefore(' to Date');payload.put('sourceLabel',sourceLabel);Type parsed=Type.forName(sourceLabel);payload.put('parsedNotNull',parsed!=null);if(parsed!=null)payload.put('assignable',Type.forName('List').isAssignableFrom(parsed));}}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}return payload;}}\n",
+          "sha256": "ea5b209e717947da965ce11e72c97302f4c6e7bdd2a368b72b31fcfeb48d745f"
+        },
+        "force-app/main/default/classes/RawListView61.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>61.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "d32b45563f339df54471e87359dd9d02fc52a531765f164fb3943e94f6b7bfd3"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"61.0\"\n}\n",
+          "sha256": "f882e521f83056481b7d58bb9a130502d63330b8ec7e3a48fb7b7c883cb17853"
+        }
+      },
+      "metadataUnchanged": true,
+      "rawSha256": {
+        "ORG-RUN.txt": "f6dc6079b60baea1bad64a73ffa6a49cf95b825cd8fc3eac2803afad7c9db851",
+        "RAW-DIGESTS.json": "41d0cc71d1f1efa85413c0aafc7e550f321f2b37de0d893cb7df2ceb82097921",
+        "REPAIR.txt": "a7b432a9cc4a553878dd963893bc2ec737d3b5d8972c63485c644c38b664e6af",
+        "SOURCE-DIGESTS.json": "af84165ae393e468758d2643e50eb64247734d4631ccfffab5307957c398b773",
+        "after.command.json": "c21c81da2d11f7f4cab69987db994f2a14e87baad693aa2028e95f411e8fc69f",
+        "after.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647",
+        "after.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "before.command.json": "c21c81da2d11f7f4cab69987db994f2a14e87baad693aa2028e95f411e8fc69f",
+        "before.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647",
+        "before.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "deploy.command.json": "9d27222d601e831f9aa13259f0de263d1ae842005e522b1a111cf4e6b3b539c9",
+        "deploy.json": "cf4eb2c2836c331806bef653bb53b62b2707d9feda68cb1e5e7bc705caf1e0df",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "driver-first.log": "9215d19046b28c471b92ad4705339eb76212668e251072aa3d3f7143ea65a5e6",
+        "driver.log": "124b460105fb343eb8500c0ae23f2b7a40ca968448d4e00e62bb695355e76efb",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "org.tsv": "445a9870e5faeca844f3e9ef970e2af8ba93574f4a7db407506dd2a74aae3a91",
+        "owner-inspection-first.json": "35cba670a3d759ffe4dcd3c48441e55c170a92f1083acb26686aedf997ae3796",
+        "owner-inspection.json": "5851317f012f050373613de4ce22b5a86e7ade45d4b52720afb90a00b7f6a127",
+        "selected-rows.json": "c0ce3577e13a665ec12e889ed2f96791f7fdf4d547b205ad83d1fb83720f2e4b"
+      },
+      "rows": [
+        {
+          "method": "PARSED_LIST_OBJECT",
+          "nativeFailure": {
+            "id": "01pEc00001GorKLIAZ",
+            "message": "System.AssertException: Assertion Failed: Expected: RAW_LIST_OBSERVATION, Actual: {\"assignable\":true,\"parsedNotNull\":true,\"sourceLabel\":\"List<ANY>\"}",
+            "methodName": "PARSED_LIST_OBJECT",
+            "name": "RawListObservation61",
+            "namespace": null,
+            "packageName": "RawListObservation61",
+            "stackTrace": "Class.RawListObservation61.PARSED_LIST_OBJECT: line 1, column 1",
+            "time": 84,
+            "type": "Class"
+          },
+          "native": {
+            "assignable": true,
+            "parsedNotNull": true,
+            "sourceLabel": "List<ANY>"
+          }
+        }
+      ],
+      "excludedRows": []
+    }
+  ],
+  "setupRejected": {
+    "deploymentId": "0AfEc00000p1cFZKAY",
+    "checkOnly": true,
+    "done": true,
+    "reason": "Existing pending fixture used reserved local identifier from; deployment compile-rejected before observations. No native semantic answer inferred.",
+    "componentFailures": [
+      {
+        "changed": false,
+        "columnNumber": 214,
+        "componentType": "ApexClass",
+        "created": false,
+        "createdDate": "2026-10-15T08:45:45.000Z",
+        "deleted": false,
+        "fileName": "classes/RawListObservation61.cls",
+        "fullName": "RawListObservation61",
+        "lineNumber": 3,
+        "problem": "Dependent class is invalid and needs recompilation:\n Class RawListView61 : Unexpected token 'from'.",
+        "problemType": "Error",
+        "success": false
+      },
+      {
+        "changed": false,
+        "columnNumber": 214,
+        "componentType": "ApexClass",
+        "created": false,
+        "createdDate": "2026-10-15T08:45:45.000Z",
+        "deleted": false,
+        "fileName": "classes/RawListView61.cls",
+        "fullName": "RawListView61",
+        "lineNumber": 3,
+        "problem": "Unexpected token 'from'.",
+        "problemType": "Error",
+        "success": false
+      },
+      {
+        "changed": false,
+        "columnNumber": 348,
+        "componentType": "ApexClass",
+        "created": false,
+        "createdDate": "2026-10-15T08:45:45.000Z",
+        "deleted": false,
+        "fileName": "classes/RawListView61.cls",
+        "fullName": "RawListView61",
+        "lineNumber": 3,
+        "problem": "Unexpected token 'from'.",
+        "problemType": "Error",
+        "success": false
+      },
+      {
+        "changed": false,
+        "columnNumber": 379,
+        "componentType": "ApexClass",
+        "created": false,
+        "createdDate": "2026-10-15T08:45:45.000Z",
+        "deleted": false,
+        "fileName": "classes/RawListView61.cls",
+        "fullName": "RawListView61",
+        "lineNumber": 3,
+        "problem": "Extra ')', at 'from'.",
+        "problemType": "Error",
+        "success": false
+      },
+      {
+        "changed": false,
+        "columnNumber": 371,
+        "componentType": "ApexClass",
+        "created": false,
+        "createdDate": "2026-10-15T08:45:45.000Z",
+        "deleted": false,
+        "fileName": "classes/RawListView61.cls",
+        "fullName": "RawListView61",
+        "lineNumber": 3,
+        "problem": "Method does not exist or incorrect signature: void forName() from the type System.Type",
+        "problemType": "Error",
+        "success": false
+      }
+    ],
+    "rawSha256": {
+      "ORG-RUN.txt": "7d734dafb207a6624fb3ed7ac28370c733fb777dc5100bf693fed5ff90e745e9",
+      "RAW-DIGESTS.json": "d2eaabe8f5a47015cf3f931cf3a366a4bb3280331d2ae0cb0a552b16b3f2ca4d",
+      "SOURCE-DIGESTS.json": "041d6fe532450eae26a0e80fc8542e0fcfab31d859fd8b7fbb47125244132fae",
+      "after.command.json": "c21c81da2d11f7f4cab69987db994f2a14e87baad693aa2028e95f411e8fc69f",
+      "after.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647",
+      "after.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "before.command.json": "c21c81da2d11f7f4cab69987db994f2a14e87baad693aa2028e95f411e8fc69f",
+      "before.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647",
+      "before.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "deploy.command.json": "9d27222d601e831f9aa13259f0de263d1ae842005e522b1a111cf4e6b3b539c9",
+      "deploy.json": "ce7ca36d8ff26e40a04f932459c64ee92625e36dd004bae5ff96cc131ac2739b",
+      "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "driver.log": "7193fc03ae58c8277ec088c70e748027c778c6ed952b5789975f513a17bd10aa",
+      "errors.json": "1f3b60a3043174fcc012088329bc6ceb79face0639989ad58f2a391e621bc73d",
+      "org.tsv": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "owner-inspection.json": "5851317f012f050373613de4ce22b5a86e7ade45d4b52720afb90a00b7f6a127",
+      "selected-rows.json": "1ba6f93fc635be6a8496d973cc2077a763939291052e6df5fd0c48b4f9ec2fac"
+    },
+    "metadataUnchanged": true
+  }
+}

@@ -1,0 +1,454 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "shapeCount": 4,
+  "nativeObservationCount": 18,
+  "rows": [
+    {
+      "id": "OG02",
+      "expected": {
+        "outcome": "runtime",
+        "value": "governed:1:1:0:0:true:true|plain:1:1:0:0:true:true"
+      },
+      "routes": {
+        "anonymous": {
+          "id": "OG01A",
+          "stage": "runtime",
+          "groupMetadata": {
+            "OwnedGrantTarget": "<Group xmlns=\"http://soap.sforce.com/2006/04/metadata\"><doesIncludeBosses>false</doesIncludeBosses><name>OwnedGrantTarget</name></Group>\n",
+            "OwnedGrantOrigin": "<Group xmlns=\"http://soap.sforce.com/2006/04/metadata\"><doesIncludeBosses>false</doesIncludeBosses><name>OwnedGrantOrigin</name></Group>\n"
+          },
+          "sharingRuleMetadata": {
+            "OwnedRuleBox__c": "<SharingRules xmlns=\"http://soap.sforce.com/2006/04/metadata\"><sharingOwnerRules><fullName>OwnedReadGrant</fullName><accessLevel>Read</accessLevel><label>Owned Read Grant</label><sharedTo><group>OwnedGrantTarget</group></sharedTo><sharedFrom><group>OwnedGrantOrigin</group></sharedFrom></sharingOwnerRules></SharingRules>\n"
+          },
+          "anonymous": "System.assert(false,'P|OG01A|'+OwnerGrantProbe.anonymousObservation());\n",
+          "setupClasses": {
+            "OwnerGrantProbe": "public class OwnerGrantProbe {\n public static String shares(Id parentId, Boolean governed, Id ownerId, Id groupId) {\n  Integer total=0, owners=0, rules=0, manual=0; Boolean ownerMatch=true, ruleMatch=true;\n  List<SObject> rows=Database.query('SELECT ParentId,UserOrGroupId,RowCause,AccessLevel FROM '+(governed?'OwnedRuleBox__Share':'OwnedPlainBox__Share')+' WHERE ParentId = :parentId');\n  for(SObject row:rows) { total++; String cause=(String)row.get('RowCause');\n   if(cause=='Owner'){owners++;ownerMatch=ownerMatch && row.get('UserOrGroupId')==ownerId && row.get('AccessLevel')=='All';}\n   else if(cause=='Rule'){rules++;ruleMatch=ruleMatch && row.get('UserOrGroupId')==groupId && row.get('AccessLevel')=='Read';}\n   else if(cause=='Manual'){manual++;}\n  }\n  return total+':'+owners+':'+rules+':'+manual+':'+ownerMatch+':'+ruleMatch;\n }\n public static String anonymousObservation() {\n  Savepoint sp=Database.setSavepoint();\n  try{\n   OwnedRuleBox__c governed=new OwnedRuleBox__c(Name='Owned'); insert governed;\n   OwnedPlainBox__c plain=new OwnedPlainBox__c(Name='Control'); insert plain;\n   return 'governed:'+shares(governed.Id,true,UserInfo.getUserId(),null)+'|plain:'+shares(plain.Id,false,UserInfo.getUserId(),null);\n  }finally{Database.rollback(sp);}\n }\n}\n"
+          },
+          "setupObjects": {
+            "OwnedPlainBox__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>OwnedPlainBox</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>OwnedPlainBox Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>\n",
+            "OwnedRuleBox__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>OwnedRuleBox</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>OwnedRuleBox Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>\n"
+          },
+          "sourceSha256": {
+            "setupClass:OwnerGrantProbe": "2fa33b0f561cfa35a17bc12a5b3e395e23c1fb9fdf4dad872a6cd86834f88222",
+            "setupObject:OwnedPlainBox__c": "81c86c6d500f32f3342f86c0904ff2e34b0b9edca7899cf85539a2039b75dc34",
+            "setupObject:OwnedRuleBox__c": "b52306f5fef01715099b385348fe7b0d21f7e4f9f5a73a3cd690d0cda45bd428",
+            "group:OwnedGrantTarget": "3a614a38a0681e6ac0abf0c64151e3828a84286f5f86af0f7f802d80af861946",
+            "group:OwnedGrantOrigin": "1b1d88cccce47b20dc0a39fb23027ef6e8627f3a3050f2e1e5ddb46453531ea6",
+            "sharingRule:OwnedRuleBox__c": "4db8c5ac93a64027bb565004c7593ab7e92216a5a3f700c959db78699ee40a41",
+            "anonymous": "066249fe2102058487a924422c38d38e63d90a223e1bf90434dd5e5a614f195a"
+          }
+        },
+        "isTest": {
+          "id": "OG02T",
+          "stage": "runtime",
+          "groupMetadata": {
+            "OwnedGrantTarget": "<Group xmlns=\"http://soap.sforce.com/2006/04/metadata\"><doesIncludeBosses>false</doesIncludeBosses><name>OwnedGrantTarget</name></Group>\n",
+            "OwnedGrantOrigin": "<Group xmlns=\"http://soap.sforce.com/2006/04/metadata\"><doesIncludeBosses>false</doesIncludeBosses><name>OwnedGrantOrigin</name></Group>\n"
+          },
+          "sharingRuleMetadata": {
+            "OwnedRuleBox__c": "<SharingRules xmlns=\"http://soap.sforce.com/2006/04/metadata\"><sharingOwnerRules><fullName>OwnedReadGrant</fullName><accessLevel>Read</accessLevel><label>Owned Read Grant</label><sharedTo><group>OwnedGrantTarget</group></sharedTo><sharedFrom><group>OwnedGrantOrigin</group></sharedFrom></sharingOwnerRules></SharingRules>\n"
+          },
+          "classes": {
+            "OwnerGrantProbe": "public class OwnerGrantProbe {\n public static String shares(Id parentId, Boolean governed, Id ownerId, Id groupId) {\n  Integer total=0, owners=0, rules=0, manual=0; Boolean ownerMatch=true, ruleMatch=true;\n  List<SObject> rows=Database.query('SELECT ParentId,UserOrGroupId,RowCause,AccessLevel FROM '+(governed?'OwnedRuleBox__Share':'OwnedPlainBox__Share')+' WHERE ParentId = :parentId');\n  for(SObject row:rows) { total++; String cause=(String)row.get('RowCause');\n   if(cause=='Owner'){owners++;ownerMatch=ownerMatch && row.get('UserOrGroupId')==ownerId && row.get('AccessLevel')=='All';}\n   else if(cause=='Rule'){rules++;ruleMatch=ruleMatch && row.get('UserOrGroupId')==groupId && row.get('AccessLevel')=='Read';}\n   else if(cause=='Manual'){manual++;}\n  }\n  return total+':'+owners+':'+rules+':'+manual+':'+ownerMatch+':'+ruleMatch;\n }\n public static String anonymousObservation() {\n  Savepoint sp=Database.setSavepoint();\n  try{\n   OwnedRuleBox__c governed=new OwnedRuleBox__c(Name='Owned'); insert governed;\n   OwnedPlainBox__c plain=new OwnedPlainBox__c(Name='Control'); insert plain;\n   return 'governed:'+shares(governed.Id,true,UserInfo.getUserId(),null)+'|plain:'+shares(plain.Id,false,UserInfo.getUserId(),null);\n  }finally{Database.rollback(sp);}\n }\n}\n",
+            "OwnerGrantSpec": "@IsTest private class OwnerGrantSpec {\n static User actor(String key) {\n  return new User(Alias=key,Email=key+'@example.invalid',EmailEncodingKey='UTF-8',LastName=key,LanguageLocaleKey='en_US',LocaleSidKey='en_US',ProfileId=UserInfo.getProfileId(),TimeZoneSidKey='America/Los_Angeles',Username=key+'.'+String.valueOf(Datetime.now().getTime())+UserInfo.getOrganizationId()+'@example.invalid');\n }\n @IsTest static void baseline() {System.assert(false,'P|OG02T|'+OwnerGrantProbe.anonymousObservation());}\n @IsTest static void observe() {\n  User inside=actor('origin'),outside=actor('outside');\n  Group origin=[SELECT Id FROM Group WHERE DeveloperName='OwnedGrantOrigin'];\n  Group target=[SELECT Id FROM Group WHERE DeveloperName='OwnedGrantTarget'];\n  Integer before=[SELECT count() FROM GroupMember WHERE GroupId IN :new Set<Id>{origin.Id,target.Id}];\n  insert new List<User>{inside,outside};\n  insert new List<GroupMember>{new GroupMember(GroupId=origin.Id,UserOrGroupId=inside.Id),new GroupMember(GroupId=target.Id,UserOrGroupId=outside.Id)};\n  String observation='members:'+before+':'+[SELECT count() FROM GroupMember WHERE GroupId IN :new Set<Id>{origin.Id,target.Id}];\n  System.runAs(outside) {\n   OwnedRuleBox__c governed=new OwnedRuleBox__c(Name='Owned');insert governed;\n   OwnedPlainBox__c plain=new OwnedPlainBox__c(Name='Control');insert plain;\n   observation+='|outside:'+OwnerGrantProbe.shares(governed.Id,true,outside.Id,target.Id);\n   governed.OwnerId=inside.Id;update governed;\n   observation+='|inside:'+OwnerGrantProbe.shares(governed.Id,true,inside.Id,target.Id);\n   plain.OwnerId=inside.Id;update plain;\n   observation+='|plain:'+OwnerGrantProbe.shares(plain.Id,false,inside.Id,target.Id);\n   governed.OwnerId=outside.Id;update governed;\n   observation+='|restored:'+OwnerGrantProbe.shares(governed.Id,true,outside.Id,target.Id);\n  }\n  System.assert(false,'P|OG01T|'+observation);\n }\n}\n"
+          },
+          "objects": {
+            "OwnedPlainBox__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>OwnedPlainBox</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>OwnedPlainBox Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>\n",
+            "OwnedRuleBox__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>OwnedRuleBox</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>OwnedRuleBox Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>\n"
+          },
+          "tests": [
+            "OwnerGrantSpec"
+          ],
+          "observationMethod": "baseline",
+          "sourceSha256": {
+            "class:OwnerGrantProbe": "2fa33b0f561cfa35a17bc12a5b3e395e23c1fb9fdf4dad872a6cd86834f88222",
+            "class:OwnerGrantSpec": "bba36544d2478afc1df5c9cd4709605ec610ef9fde2321cc8ce22e8ea5b72df4",
+            "object:OwnedPlainBox__c": "81c86c6d500f32f3342f86c0904ff2e34b0b9edca7899cf85539a2039b75dc34",
+            "object:OwnedRuleBox__c": "b52306f5fef01715099b385348fe7b0d21f7e4f9f5a73a3cd690d0cda45bd428",
+            "group:OwnedGrantTarget": "3a614a38a0681e6ac0abf0c64151e3828a84286f5f86af0f7f802d80af861946",
+            "group:OwnedGrantOrigin": "1b1d88cccce47b20dc0a39fb23027ef6e8627f3a3050f2e1e5ddb46453531ea6",
+            "sharingRule:OwnedRuleBox__c": "4db8c5ac93a64027bb565004c7593ab7e92216a5a3f700c959db78699ee40a41"
+          }
+        }
+      }
+    },
+    {
+      "id": "OG01",
+      "expected": {
+        "outcome": "runtime",
+        "value": "members:0:2|outside:1:1:0:0:true:true|inside:2:1:1:0:true:true|plain:1:1:0:0:true:true|restored:1:1:0:0:true:true"
+      },
+      "routes": {
+        "isTest": {
+          "id": "OG01T",
+          "stage": "runtime",
+          "groupMetadata": {
+            "OwnedGrantTarget": "<Group xmlns=\"http://soap.sforce.com/2006/04/metadata\"><doesIncludeBosses>false</doesIncludeBosses><name>OwnedGrantTarget</name></Group>\n",
+            "OwnedGrantOrigin": "<Group xmlns=\"http://soap.sforce.com/2006/04/metadata\"><doesIncludeBosses>false</doesIncludeBosses><name>OwnedGrantOrigin</name></Group>\n"
+          },
+          "sharingRuleMetadata": {
+            "OwnedRuleBox__c": "<SharingRules xmlns=\"http://soap.sforce.com/2006/04/metadata\"><sharingOwnerRules><fullName>OwnedReadGrant</fullName><accessLevel>Read</accessLevel><label>Owned Read Grant</label><sharedTo><group>OwnedGrantTarget</group></sharedTo><sharedFrom><group>OwnedGrantOrigin</group></sharedFrom></sharingOwnerRules></SharingRules>\n"
+          },
+          "classes": {
+            "OwnerGrantProbe": "public class OwnerGrantProbe {\n public static String shares(Id parentId, Boolean governed, Id ownerId, Id groupId) {\n  Integer total=0, owners=0, rules=0, manual=0; Boolean ownerMatch=true, ruleMatch=true;\n  List<SObject> rows=Database.query('SELECT ParentId,UserOrGroupId,RowCause,AccessLevel FROM '+(governed?'OwnedRuleBox__Share':'OwnedPlainBox__Share')+' WHERE ParentId = :parentId');\n  for(SObject row:rows) { total++; String cause=(String)row.get('RowCause');\n   if(cause=='Owner'){owners++;ownerMatch=ownerMatch && row.get('UserOrGroupId')==ownerId && row.get('AccessLevel')=='All';}\n   else if(cause=='Rule'){rules++;ruleMatch=ruleMatch && row.get('UserOrGroupId')==groupId && row.get('AccessLevel')=='Read';}\n   else if(cause=='Manual'){manual++;}\n  }\n  return total+':'+owners+':'+rules+':'+manual+':'+ownerMatch+':'+ruleMatch;\n }\n public static String anonymousObservation() {\n  Savepoint sp=Database.setSavepoint();\n  try{\n   OwnedRuleBox__c governed=new OwnedRuleBox__c(Name='Owned'); insert governed;\n   OwnedPlainBox__c plain=new OwnedPlainBox__c(Name='Control'); insert plain;\n   return 'governed:'+shares(governed.Id,true,UserInfo.getUserId(),null)+'|plain:'+shares(plain.Id,false,UserInfo.getUserId(),null);\n  }finally{Database.rollback(sp);}\n }\n}\n",
+            "OwnerGrantSpec": "@IsTest private class OwnerGrantSpec {\n static User actor(String key) {\n  return new User(Alias=key,Email=key+'@example.invalid',EmailEncodingKey='UTF-8',LastName=key,LanguageLocaleKey='en_US',LocaleSidKey='en_US',ProfileId=UserInfo.getProfileId(),TimeZoneSidKey='America/Los_Angeles',Username=key+'.'+String.valueOf(Datetime.now().getTime())+UserInfo.getOrganizationId()+'@example.invalid');\n }\n @IsTest static void baseline() {System.assert(false,'P|OG02T|'+OwnerGrantProbe.anonymousObservation());}\n @IsTest static void observe() {\n  User inside=actor('origin'),outside=actor('outside');\n  Group origin=[SELECT Id FROM Group WHERE DeveloperName='OwnedGrantOrigin'];\n  Group target=[SELECT Id FROM Group WHERE DeveloperName='OwnedGrantTarget'];\n  Integer before=[SELECT count() FROM GroupMember WHERE GroupId IN :new Set<Id>{origin.Id,target.Id}];\n  insert new List<User>{inside,outside};\n  insert new List<GroupMember>{new GroupMember(GroupId=origin.Id,UserOrGroupId=inside.Id),new GroupMember(GroupId=target.Id,UserOrGroupId=outside.Id)};\n  String observation='members:'+before+':'+[SELECT count() FROM GroupMember WHERE GroupId IN :new Set<Id>{origin.Id,target.Id}];\n  System.runAs(outside) {\n   OwnedRuleBox__c governed=new OwnedRuleBox__c(Name='Owned');insert governed;\n   OwnedPlainBox__c plain=new OwnedPlainBox__c(Name='Control');insert plain;\n   observation+='|outside:'+OwnerGrantProbe.shares(governed.Id,true,outside.Id,target.Id);\n   governed.OwnerId=inside.Id;update governed;\n   observation+='|inside:'+OwnerGrantProbe.shares(governed.Id,true,inside.Id,target.Id);\n   plain.OwnerId=inside.Id;update plain;\n   observation+='|plain:'+OwnerGrantProbe.shares(plain.Id,false,inside.Id,target.Id);\n   governed.OwnerId=outside.Id;update governed;\n   observation+='|restored:'+OwnerGrantProbe.shares(governed.Id,true,outside.Id,target.Id);\n  }\n  System.assert(false,'P|OG01T|'+observation);\n }\n}\n"
+          },
+          "objects": {
+            "OwnedPlainBox__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>OwnedPlainBox</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>OwnedPlainBox Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>\n",
+            "OwnedRuleBox__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>OwnedRuleBox</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>OwnedRuleBox Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>\n"
+          },
+          "tests": [
+            "OwnerGrantSpec"
+          ],
+          "observationMethod": "observe",
+          "sourceSha256": {
+            "class:OwnerGrantProbe": "2fa33b0f561cfa35a17bc12a5b3e395e23c1fb9fdf4dad872a6cd86834f88222",
+            "class:OwnerGrantSpec": "bba36544d2478afc1df5c9cd4709605ec610ef9fde2321cc8ce22e8ea5b72df4",
+            "object:OwnedPlainBox__c": "81c86c6d500f32f3342f86c0904ff2e34b0b9edca7899cf85539a2039b75dc34",
+            "object:OwnedRuleBox__c": "b52306f5fef01715099b385348fe7b0d21f7e4f9f5a73a3cd690d0cda45bd428",
+            "group:OwnedGrantTarget": "3a614a38a0681e6ac0abf0c64151e3828a84286f5f86af0f7f802d80af861946",
+            "group:OwnedGrantOrigin": "1b1d88cccce47b20dc0a39fb23027ef6e8627f3a3050f2e1e5ddb46453531ea6",
+            "sharingRule:OwnedRuleBox__c": "4db8c5ac93a64027bb565004c7593ab7e92216a5a3f700c959db78699ee40a41"
+          }
+        }
+      }
+    },
+    {
+      "id": "OG03",
+      "expected": {
+        "outcome": "runtime",
+        "value": "members:0:2|outside:1:1:0:0:true:true|inside:2:1:1:0:true:true|plain:1:1:0:0:true:true|restored:1:1:0:0:true:true"
+      },
+      "routes": {
+        "isTest": {
+          "id": "OG01T",
+          "stage": "runtime",
+          "groupMetadata": {
+            "OwnedGrantTarget": "<Group xmlns=\"http://soap.sforce.com/2006/04/metadata\"><doesIncludeBosses>false</doesIncludeBosses><name>OwnedGrantTarget</name></Group>\n",
+            "OwnedGrantOrigin": "<Group xmlns=\"http://soap.sforce.com/2006/04/metadata\"><doesIncludeBosses>true</doesIncludeBosses><name>OwnedGrantOrigin</name></Group>\n"
+          },
+          "sharingRuleMetadata": {
+            "OwnedRuleBox__c": "<SharingRules xmlns=\"http://soap.sforce.com/2006/04/metadata\"><sharingOwnerRules><fullName>OwnedReadGrant</fullName><accessLevel>Read</accessLevel><label>Owned Read Grant</label><sharedTo><group>OwnedGrantTarget</group></sharedTo><sharedFrom><group>OwnedGrantOrigin</group></sharedFrom></sharingOwnerRules></SharingRules>\n"
+          },
+          "classes": {
+            "OwnerGrantProbe": "public class OwnerGrantProbe {\n public static String shares(Id parentId, Boolean governed, Id ownerId, Id groupId) {\n  Integer total=0, owners=0, rules=0, manual=0; Boolean ownerMatch=true, ruleMatch=true;\n  List<SObject> rows=Database.query('SELECT ParentId,UserOrGroupId,RowCause,AccessLevel FROM '+(governed?'OwnedRuleBox__Share':'OwnedPlainBox__Share')+' WHERE ParentId = :parentId');\n  for(SObject row:rows) { total++; String cause=(String)row.get('RowCause');\n   if(cause=='Owner'){owners++;ownerMatch=ownerMatch && row.get('UserOrGroupId')==ownerId && row.get('AccessLevel')=='All';}\n   else if(cause=='Rule'){rules++;ruleMatch=ruleMatch && row.get('UserOrGroupId')==groupId && row.get('AccessLevel')=='Read';}\n   else if(cause=='Manual'){manual++;}\n  }\n  return total+':'+owners+':'+rules+':'+manual+':'+ownerMatch+':'+ruleMatch;\n }\n public static String anonymousObservation() {\n  Savepoint sp=Database.setSavepoint();\n  try{\n   OwnedRuleBox__c governed=new OwnedRuleBox__c(Name='Owned'); insert governed;\n   OwnedPlainBox__c plain=new OwnedPlainBox__c(Name='Control'); insert plain;\n   return 'governed:'+shares(governed.Id,true,UserInfo.getUserId(),null)+'|plain:'+shares(plain.Id,false,UserInfo.getUserId(),null);\n  }finally{Database.rollback(sp);}\n }\n}\n",
+            "OwnerGrantSpec": "@IsTest private class OwnerGrantSpec {\n static User actor(String key) {\n  return new User(Alias=key,Email=key+'@example.invalid',EmailEncodingKey='UTF-8',LastName=key,LanguageLocaleKey='en_US',LocaleSidKey='en_US',ProfileId=UserInfo.getProfileId(),TimeZoneSidKey='America/Los_Angeles',Username=key+'.'+String.valueOf(Datetime.now().getTime())+UserInfo.getOrganizationId()+'@example.invalid');\n }\n @IsTest static void baseline() {System.assert(false,'P|OG02T|'+OwnerGrantProbe.anonymousObservation());}\n @IsTest static void observe() {\n  User inside=actor('origin'),outside=actor('outside');\n  Group origin=[SELECT Id FROM Group WHERE DeveloperName='OwnedGrantOrigin'];\n  Group target=[SELECT Id FROM Group WHERE DeveloperName='OwnedGrantTarget'];\n  Integer before=[SELECT count() FROM GroupMember WHERE GroupId IN :new Set<Id>{origin.Id,target.Id}];\n  insert new List<User>{inside,outside};\n  insert new List<GroupMember>{new GroupMember(GroupId=origin.Id,UserOrGroupId=inside.Id),new GroupMember(GroupId=target.Id,UserOrGroupId=outside.Id)};\n  String observation='members:'+before+':'+[SELECT count() FROM GroupMember WHERE GroupId IN :new Set<Id>{origin.Id,target.Id}];\n  System.runAs(outside) {\n   OwnedRuleBox__c governed=new OwnedRuleBox__c(Name='Owned');insert governed;\n   OwnedPlainBox__c plain=new OwnedPlainBox__c(Name='Control');insert plain;\n   observation+='|outside:'+OwnerGrantProbe.shares(governed.Id,true,outside.Id,target.Id);\n   governed.OwnerId=inside.Id;update governed;\n   observation+='|inside:'+OwnerGrantProbe.shares(governed.Id,true,inside.Id,target.Id);\n   plain.OwnerId=inside.Id;update plain;\n   observation+='|plain:'+OwnerGrantProbe.shares(plain.Id,false,inside.Id,target.Id);\n   governed.OwnerId=outside.Id;update governed;\n   observation+='|restored:'+OwnerGrantProbe.shares(governed.Id,true,outside.Id,target.Id);\n  }\n  System.assert(false,'P|OG01T|'+observation);\n }\n}\n"
+          },
+          "objects": {
+            "OwnedPlainBox__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>OwnedPlainBox</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>OwnedPlainBox Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>\n",
+            "OwnedRuleBox__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>OwnedRuleBox</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>OwnedRuleBox Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>\n"
+          },
+          "tests": [
+            "OwnerGrantSpec"
+          ],
+          "observationMethod": "observe",
+          "sourceSha256": {
+            "class:OwnerGrantProbe": "2fa33b0f561cfa35a17bc12a5b3e395e23c1fb9fdf4dad872a6cd86834f88222",
+            "class:OwnerGrantSpec": "bba36544d2478afc1df5c9cd4709605ec610ef9fde2321cc8ce22e8ea5b72df4",
+            "object:OwnedPlainBox__c": "81c86c6d500f32f3342f86c0904ff2e34b0b9edca7899cf85539a2039b75dc34",
+            "object:OwnedRuleBox__c": "b52306f5fef01715099b385348fe7b0d21f7e4f9f5a73a3cd690d0cda45bd428",
+            "group:OwnedGrantTarget": "3a614a38a0681e6ac0abf0c64151e3828a84286f5f86af0f7f802d80af861946",
+            "group:OwnedGrantOrigin": "0b8b0830fdafa918d574da40f33b1e9d59d3db78e727ab13ca6903261cd5175d",
+            "sharingRule:OwnedRuleBox__c": "4db8c5ac93a64027bb565004c7593ab7e92216a5a3f700c959db78699ee40a41"
+          }
+        }
+      }
+    },
+    {
+      "id": "OD01",
+      "expected": {
+        "outcome": "runtime",
+        "value": "shares:1:0:1:true|cascade:true"
+      },
+      "routes": {
+        "anonymous": {
+          "id": "OD01A",
+          "stage": "runtime",
+          "anonymous": "System.assert(false,'P|OD01A|'+OwnerDeleteProbe.observe());\n",
+          "setupClasses": {
+            "OwnerDeleteProbe": "public class OwnerDeleteProbe {\n public static String observe() {\n  Savepoint sp=Database.setSavepoint();\n  try {\n   OwnedPlainBox__c row=new OwnedPlainBox__c(Name='Owned lifecycle');insert row;\n   Id parentId=row.Id;\n   Integer initial=[SELECT count() FROM OwnedPlainBox__Share WHERE ParentId=:parentId];\n   delete row;\n   Integer removed=[SELECT count() FROM OwnedPlainBox__Share WHERE ParentId=:parentId];\n   undelete row;\n   List<OwnedPlainBox__Share> restored=[SELECT UserOrGroupId,AccessLevel,RowCause FROM OwnedPlainBox__Share WHERE ParentId=:parentId];\n   Boolean restoredOwner=restored.size()==1 && restored[0].UserOrGroupId==UserInfo.getUserId() && restored[0].AccessLevel=='All' && restored[0].RowCause=='Owner';\n   Boolean cascadeFlag=null;\n   for(Schema.ChildRelationship relation:OwnedPlainBox__c.SObjectType.getDescribe().getChildRelationships()){\n    if(relation.getChildSObject()==OwnedPlainBox__Share.SObjectType && relation.getField()==OwnedPlainBox__Share.ParentId){cascadeFlag=relation.isCascadeDelete();}\n   }\n   return 'shares:'+initial+':'+removed+':'+restored.size()+':'+restoredOwner+'|cascade:'+cascadeFlag;\n  }finally{Database.rollback(sp);}\n }\n}\n"
+          },
+          "setupObjects": {
+            "OwnedPlainBox__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>OwnedPlainBox</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>OwnedPlainBox Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>\n",
+            "OwnedRuleBox__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>OwnedRuleBox</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>OwnedRuleBox Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>\n"
+          },
+          "sourceSha256": {
+            "setupClass:OwnerDeleteProbe": "21d9e0b59c9d910c7e69176a611c67b1c12f992cc4013779e66314429e73ad4e",
+            "setupObject:OwnedPlainBox__c": "81c86c6d500f32f3342f86c0904ff2e34b0b9edca7899cf85539a2039b75dc34",
+            "setupObject:OwnedRuleBox__c": "b52306f5fef01715099b385348fe7b0d21f7e4f9f5a73a3cd690d0cda45bd428",
+            "anonymous": "d34594cda33ed44feb581ebcde38d78028ee43003e6ab3f67d898042733b1fe9"
+          }
+        },
+        "isTest": {
+          "id": "OD01T",
+          "stage": "runtime",
+          "classes": {
+            "OwnerDeleteProbe": "public class OwnerDeleteProbe {\n public static String observe() {\n  Savepoint sp=Database.setSavepoint();\n  try {\n   OwnedPlainBox__c row=new OwnedPlainBox__c(Name='Owned lifecycle');insert row;\n   Id parentId=row.Id;\n   Integer initial=[SELECT count() FROM OwnedPlainBox__Share WHERE ParentId=:parentId];\n   delete row;\n   Integer removed=[SELECT count() FROM OwnedPlainBox__Share WHERE ParentId=:parentId];\n   undelete row;\n   List<OwnedPlainBox__Share> restored=[SELECT UserOrGroupId,AccessLevel,RowCause FROM OwnedPlainBox__Share WHERE ParentId=:parentId];\n   Boolean restoredOwner=restored.size()==1 && restored[0].UserOrGroupId==UserInfo.getUserId() && restored[0].AccessLevel=='All' && restored[0].RowCause=='Owner';\n   Boolean cascadeFlag=null;\n   for(Schema.ChildRelationship relation:OwnedPlainBox__c.SObjectType.getDescribe().getChildRelationships()){\n    if(relation.getChildSObject()==OwnedPlainBox__Share.SObjectType && relation.getField()==OwnedPlainBox__Share.ParentId){cascadeFlag=relation.isCascadeDelete();}\n   }\n   return 'shares:'+initial+':'+removed+':'+restored.size()+':'+restoredOwner+'|cascade:'+cascadeFlag;\n  }finally{Database.rollback(sp);}\n }\n}\n",
+            "OwnerDeleteSpec": "@IsTest private class OwnerDeleteSpec {@IsTest static void observe(){System.assert(false,'P|OD01T|'+OwnerDeleteProbe.observe());}}\n"
+          },
+          "objects": {
+            "OwnedPlainBox__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>OwnedPlainBox</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>OwnedPlainBox Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>\n",
+            "OwnedRuleBox__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>OwnedRuleBox</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>OwnedRuleBox Records</pluralLabel><sharingModel>Private</sharingModel></CustomObject>\n"
+          },
+          "tests": [
+            "OwnerDeleteSpec"
+          ],
+          "sourceSha256": {
+            "class:OwnerDeleteProbe": "21d9e0b59c9d910c7e69176a611c67b1c12f992cc4013779e66314429e73ad4e",
+            "class:OwnerDeleteSpec": "682b53afb08dfbc31925ca7d4fe388abe753e957f17fb40d9483a32bdb5b57e4",
+            "object:OwnedPlainBox__c": "81c86c6d500f32f3342f86c0904ff2e34b0b9edca7899cf85539a2039b75dc34",
+            "object:OwnedRuleBox__c": "b52306f5fef01715099b385348fe7b0d21f7e4f9f5a73a3cd690d0cda45bd428"
+          }
+        }
+      }
+    }
+  ],
+  "cells": [
+    {
+      "api": "62.0",
+      "row": "OG02",
+      "route": "anonymous",
+      "id": "OG01A",
+      "native": "governed:1:1:0:0:true:true|plain:1:1:0:0:true:true",
+      "nativeSHA256": "7113eccea12f335e624b9bb9cb080dd94f5dd0ced751b82386693a40e92f6626",
+      "rawReceiptSHA256": "b5d7ff7d99a147a72fd764288c93f595cbdca7551bfc70ab96d1dfd787e48e93",
+      "nativeStdoutSHA256": "cd0ab2234632e9b612529790ada4c9faffdd67e5333654e0e6e1c2fb3dac6805"
+    },
+    {
+      "api": "62.0",
+      "row": "OG02",
+      "route": "isTest",
+      "id": "OG02T",
+      "native": "governed:1:1:0:0:true:true|plain:1:1:0:0:true:true",
+      "nativeSHA256": "7113eccea12f335e624b9bb9cb080dd94f5dd0ced751b82386693a40e92f6626",
+      "rawReceiptSHA256": "f50218b45bd49f6a79ad649194008774017216b7dec83db3015a9cc5f7ee7762",
+      "nativeStdoutSHA256": "6b68a1798cc32816a99697e1b0b558864c3c52fb619694ddc0b196fdce7d6e38"
+    },
+    {
+      "api": "62.0",
+      "row": "OG01",
+      "route": "isTest",
+      "id": "OG01T",
+      "native": "members:0:2|outside:1:1:0:0:true:true|inside:2:1:1:0:true:true|plain:1:1:0:0:true:true|restored:1:1:0:0:true:true",
+      "nativeSHA256": "d5f023f23d9eddb6582ea473ae4dcf585f028b01b566350ebe853518aeafc87e",
+      "rawReceiptSHA256": "f50218b45bd49f6a79ad649194008774017216b7dec83db3015a9cc5f7ee7762",
+      "nativeStdoutSHA256": "6b68a1798cc32816a99697e1b0b558864c3c52fb619694ddc0b196fdce7d6e38"
+    },
+    {
+      "api": "62.0",
+      "row": "OG03",
+      "route": "isTest",
+      "id": "OG01T",
+      "native": "members:0:2|outside:1:1:0:0:true:true|inside:2:1:1:0:true:true|plain:1:1:0:0:true:true|restored:1:1:0:0:true:true",
+      "nativeSHA256": "d5f023f23d9eddb6582ea473ae4dcf585f028b01b566350ebe853518aeafc87e",
+      "rawReceiptSHA256": "80391b8dbadbb5ee04538dbe3024d006773c7336ccd7126761783a4ae7615513",
+      "nativeStdoutSHA256": "41c210b3c8209250efb1591af9804934a6d7e67645deb32c125dcc92a6db0f89"
+    },
+    {
+      "api": "67.0",
+      "row": "OG02",
+      "route": "anonymous",
+      "id": "OG01A",
+      "native": "governed:1:1:0:0:true:true|plain:1:1:0:0:true:true",
+      "nativeSHA256": "7113eccea12f335e624b9bb9cb080dd94f5dd0ced751b82386693a40e92f6626",
+      "rawReceiptSHA256": "cfd07ff93b2de48d15397643a2b2b57e4a1c1533962aca234374e37ffc64bd23",
+      "nativeStdoutSHA256": "7ede945b60ae344ea6ebc823d1c208cc87d67c1514959dc76031483201b3e6d9"
+    },
+    {
+      "api": "67.0",
+      "row": "OG02",
+      "route": "isTest",
+      "id": "OG02T",
+      "native": "governed:1:1:0:0:true:true|plain:1:1:0:0:true:true",
+      "nativeSHA256": "7113eccea12f335e624b9bb9cb080dd94f5dd0ced751b82386693a40e92f6626",
+      "rawReceiptSHA256": "cf2462539cc98e91001a8775e74a9397d5a2b7c5bec8b1df8ca4eea1d29e4ab3",
+      "nativeStdoutSHA256": "1deb53b164d43421d3502c2d585c63d2438ce13ecf1beddfd2fd4f50c9ae68a4"
+    },
+    {
+      "api": "67.0",
+      "row": "OG01",
+      "route": "isTest",
+      "id": "OG01T",
+      "native": "members:0:2|outside:1:1:0:0:true:true|inside:2:1:1:0:true:true|plain:1:1:0:0:true:true|restored:1:1:0:0:true:true",
+      "nativeSHA256": "d5f023f23d9eddb6582ea473ae4dcf585f028b01b566350ebe853518aeafc87e",
+      "rawReceiptSHA256": "cf2462539cc98e91001a8775e74a9397d5a2b7c5bec8b1df8ca4eea1d29e4ab3",
+      "nativeStdoutSHA256": "1deb53b164d43421d3502c2d585c63d2438ce13ecf1beddfd2fd4f50c9ae68a4"
+    },
+    {
+      "api": "67.0",
+      "row": "OG03",
+      "route": "isTest",
+      "id": "OG01T",
+      "native": "members:0:2|outside:1:1:0:0:true:true|inside:2:1:1:0:true:true|plain:1:1:0:0:true:true|restored:1:1:0:0:true:true",
+      "nativeSHA256": "d5f023f23d9eddb6582ea473ae4dcf585f028b01b566350ebe853518aeafc87e",
+      "rawReceiptSHA256": "79ff5704a6d52fde52b74fb36bd5b4a29a661a2e48b7a03a53b9209b1b6716e9",
+      "nativeStdoutSHA256": "3c2d0895050782c90668e627083eb1f9a709cc3aa7bf45f4154d99e890409aa5"
+    },
+    {
+      "api": "68.0",
+      "row": "OG02",
+      "route": "anonymous",
+      "id": "OG01A",
+      "native": "governed:1:1:0:0:true:true|plain:1:1:0:0:true:true",
+      "nativeSHA256": "7113eccea12f335e624b9bb9cb080dd94f5dd0ced751b82386693a40e92f6626",
+      "rawReceiptSHA256": "194106c8d96dc260029f4300d72bbdd6ecf3f80bef772adb7dd752116811dbd8",
+      "nativeStdoutSHA256": "4c122c7ca6af0397b72315edb4a7d4038e9b33139b474f08c4705c38e2a45ef6"
+    },
+    {
+      "api": "68.0",
+      "row": "OG02",
+      "route": "isTest",
+      "id": "OG02T",
+      "native": "governed:1:1:0:0:true:true|plain:1:1:0:0:true:true",
+      "nativeSHA256": "7113eccea12f335e624b9bb9cb080dd94f5dd0ced751b82386693a40e92f6626",
+      "rawReceiptSHA256": "26a1c0f36e9289c146c16ef7926ca9cf5171da63e713ecc7608a2fc05154cb74",
+      "nativeStdoutSHA256": "31258107cb0ff523a683d064da263f20ba6e55eefcdd07b569e9774190aad945"
+    },
+    {
+      "api": "68.0",
+      "row": "OG01",
+      "route": "isTest",
+      "id": "OG01T",
+      "native": "members:0:2|outside:1:1:0:0:true:true|inside:2:1:1:0:true:true|plain:1:1:0:0:true:true|restored:1:1:0:0:true:true",
+      "nativeSHA256": "d5f023f23d9eddb6582ea473ae4dcf585f028b01b566350ebe853518aeafc87e",
+      "rawReceiptSHA256": "26a1c0f36e9289c146c16ef7926ca9cf5171da63e713ecc7608a2fc05154cb74",
+      "nativeStdoutSHA256": "31258107cb0ff523a683d064da263f20ba6e55eefcdd07b569e9774190aad945"
+    },
+    {
+      "api": "68.0",
+      "row": "OG03",
+      "route": "isTest",
+      "id": "OG01T",
+      "native": "members:0:2|outside:1:1:0:0:true:true|inside:2:1:1:0:true:true|plain:1:1:0:0:true:true|restored:1:1:0:0:true:true",
+      "nativeSHA256": "d5f023f23d9eddb6582ea473ae4dcf585f028b01b566350ebe853518aeafc87e",
+      "rawReceiptSHA256": "100ec29ff1a4ce9daf21b7a76ff849aea867a622ae9e78dcde6d8dcbdc10cea0",
+      "nativeStdoutSHA256": "97c3d2359d4a824a0f4effb39eb08f6a24ca6d3b7099879d1bd461e49c577715"
+    },
+    {
+      "api": "62.0",
+      "row": "OD01",
+      "route": "anonymous",
+      "id": "OD01A",
+      "native": "shares:1:0:1:true|cascade:true",
+      "nativeSHA256": "ff1664d03bbc1dbbdb7f6725afa470d4f87589b507d6dd0d1b1a2d430da5fed5",
+      "rawReceiptSHA256": "aae42bf581658e9f8f8e7dba22a3fcc8e51d6b7d3dbb2df750beda4023fa54c6",
+      "nativeStdoutSHA256": "6084489d44e5abd064f30ce5e121d0065a2652d864d82247c073d4db0f55c42f"
+    },
+    {
+      "api": "67.0",
+      "row": "OD01",
+      "route": "anonymous",
+      "id": "OD01A",
+      "native": "shares:1:0:1:true|cascade:true",
+      "nativeSHA256": "ff1664d03bbc1dbbdb7f6725afa470d4f87589b507d6dd0d1b1a2d430da5fed5",
+      "rawReceiptSHA256": "d1cbd8c2794d2ab2b4a60439b224cbd19e86b3d1bd36bc057bc648f40d76221f",
+      "nativeStdoutSHA256": "846b00f0b12a6016fc132d5e8e428113d344bf97d2d3b747ab1677a0d0ed33e5"
+    },
+    {
+      "api": "68.0",
+      "row": "OD01",
+      "route": "anonymous",
+      "id": "OD01A",
+      "native": "shares:1:0:1:true|cascade:true",
+      "nativeSHA256": "ff1664d03bbc1dbbdb7f6725afa470d4f87589b507d6dd0d1b1a2d430da5fed5",
+      "rawReceiptSHA256": "03d720f75cea82fcac762d390352d9d8f461be39dffe225f281ccbeae89bd8df",
+      "nativeStdoutSHA256": "3e135ce6aefb0d7f740816fa9f70de7ec72aaeabde704882103f7e03346df366"
+    },
+    {
+      "api": "62.0",
+      "row": "OD01",
+      "route": "isTest",
+      "id": "OD01T",
+      "native": "shares:1:0:1:true|cascade:true",
+      "nativeSHA256": "ff1664d03bbc1dbbdb7f6725afa470d4f87589b507d6dd0d1b1a2d430da5fed5",
+      "rawReceiptSHA256": "1256fccfa68d698264cd05342937e564bc2978545f66ab03f3c6ae0e988e74e0",
+      "nativeStdoutSHA256": "a557f320b403f619f2d4cd6f406206a5067e1fe862066f82e3f1f51cb71c5e95"
+    },
+    {
+      "api": "67.0",
+      "row": "OD01",
+      "route": "isTest",
+      "id": "OD01T",
+      "native": "shares:1:0:1:true|cascade:true",
+      "nativeSHA256": "ff1664d03bbc1dbbdb7f6725afa470d4f87589b507d6dd0d1b1a2d430da5fed5",
+      "rawReceiptSHA256": "513ca560d7f4b3714cce69243b9c2f27597bd409b1c5bed6200ace08085dcbff",
+      "nativeStdoutSHA256": "b5eb5ab24d0f8e53ee1235e016b16cf659ff0e93f7ee16cd43ce0377a337c60c"
+    },
+    {
+      "api": "68.0",
+      "row": "OD01",
+      "route": "isTest",
+      "id": "OD01T",
+      "native": "shares:1:0:1:true|cascade:true",
+      "nativeSHA256": "ff1664d03bbc1dbbdb7f6725afa470d4f87589b507d6dd0d1b1a2d430da5fed5",
+      "rawReceiptSHA256": "c13badf0100be48cd0fe613933d226e4a79e3115c0065c37fa96625faee4739f",
+      "nativeStdoutSHA256": "3d78c0192f5622031e131ae63f16bf86a9af70c3d015c86c0d53f5ae9bf50bd7"
+    }
+  ],
+  "classMetadataByAPI": {
+    "62.0": {
+      "OwnerGrantProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "OwnerGrantSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "OwnerDeleteProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "OwnerDeleteSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "67.0": {
+      "OwnerGrantProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "OwnerGrantSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "OwnerDeleteProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "OwnerDeleteSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "68.0": {
+      "OwnerGrantProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "OwnerGrantSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "OwnerDeleteProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "OwnerDeleteSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+    }
+  },
+  "classMetadataSHA256": {
+    "62.0": {
+      "OwnerGrantProbe": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "OwnerGrantSpec": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "OwnerDeleteProbe": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "OwnerDeleteSpec": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+    },
+    "67.0": {
+      "OwnerGrantProbe": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "OwnerGrantSpec": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "OwnerDeleteProbe": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "OwnerDeleteSpec": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+    },
+    "68.0": {
+      "OwnerGrantProbe": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "OwnerGrantSpec": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "OwnerDeleteProbe": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "OwnerDeleteSpec": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147"
+    }
+  },
+  "carries": [
+    {
+      "shape": "anonymous owner transfer needing additional users",
+      "expectedNative": null
+    },
+    {
+      "shape": "declared metadata membership",
+      "expectedNative": null
+    },
+    {
+      "shape": "omitted boss flag lifecycle",
+      "expectedNative": null
+    },
+    {
+      "shape": "membership-change recalculation, nested membership and role hierarchy grant expansion",
+      "expectedNative": null
+    },
+    {
+      "shape": "recipient visibility beyond observed share rows",
+      "expectedNative": null
+    }
+  ]
+}

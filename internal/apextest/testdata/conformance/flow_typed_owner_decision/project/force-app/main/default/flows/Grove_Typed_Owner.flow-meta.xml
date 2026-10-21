@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <decisions>
+        <name>ChooseOwner</name>
+        <label>Choose owner</label>
+        <locationX>176</locationX>
+        <locationY>158</locationY>
+        <defaultConnector><targetReference>MarkOtherOwner</targetReference></defaultConnector>
+        <defaultConnectorLabel>Other owner</defaultConnectorLabel>
+        <rules>
+            <name>ActiveUser</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Owner:User.IsActive</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue><booleanValue>true</booleanValue></rightValue>
+            </conditions>
+            <connector><targetReference>MarkActiveUser</targetReference></connector>
+            <label>Active user</label>
+        </rules>
+    </decisions>
+    <environments>Default</environments>
+    <interviewLabel>Grove typed owner {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Grove typed owner</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value><stringValue>LightningFlowBuilder</stringValue></value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordUpdates>
+        <name>MarkActiveUser</name>
+        <label>Mark active user</label>
+        <locationX>50</locationX>
+        <locationY>278</locationY>
+        <inputAssignments>
+            <field>Description</field>
+            <value><stringValue>active-user</stringValue></value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+    <recordUpdates>
+        <name>MarkOtherOwner</name>
+        <label>Mark other owner</label>
+        <locationX>302</locationX>
+        <locationY>278</locationY>
+        <inputAssignments>
+            <field>Description</field>
+            <value><stringValue>other-owner</stringValue></value>
+        </inputAssignments>
+        <inputReference>$Record</inputReference>
+    </recordUpdates>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector><targetReference>ChooseOwner</targetReference></connector>
+        <object>Case</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

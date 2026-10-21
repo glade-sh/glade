@@ -1,0 +1,1265 @@
+{
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "running_object",
+  "shapeCount": 6,
+  "assertedObservationCount": 48,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C185ID_035",
+      "routes": {
+        "anonymous": {
+          "59.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH USER_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_035|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "54dd3891bdfda3a976f3bc070848eeddb8be2821aba69f33bd0928490974cfdd"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH USER_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_035|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "9ec21c567aeee6eb507bdce1fbdf378f13824da41ba209b9b49cf77ddf2ffb56"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH USER_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_035|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "8a722aed1c211b1410143c84954217e9682d307df534d9d941b251da7beaf03a"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH USER_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_035|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "38ec0bc4ca5d57b561f4778219529b4216ef48f0aa7edeffb5ec157ef065b938"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          }
+        },
+        "istest": {
+          "59.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID035Test": "@IsTest private without sharing class QueryObserveC185ID035Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH USER_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_035|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID035Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID035Test": "a62915ca0d29c9d9b6121d59ee82c865874a1fe67a805074509311c842dd68d1"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID035Test": "@IsTest private without sharing class QueryObserveC185ID035Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH USER_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_035|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID035Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID035Test": "249ea06e91953a430dde127027bde74f8a58722b86f74113578fae11eaf79e50"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID035Test": "@IsTest private without sharing class QueryObserveC185ID035Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH USER_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_035|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID035Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID035Test": "0bdb6081e07d117ea9aa8f3da66e17ad778efa2571bdf51f14443d2e19bd88b0"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID035Test": "@IsTest private without sharing class QueryObserveC185ID035Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH USER_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_035|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID035Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID035Test": "0f4eef5cb71bd2f761bd075cdfb447667be894891a92bda1cb1188304d13a3a3"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          }
+        }
+      }
+    },
+    {
+      "id": "C185ID_036",
+      "routes": {
+        "anonymous": {
+          "59.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH USER_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_036|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "f45178e6c3e5ee41dca1cffe43a404c6cc98db2508218c401f1c213a118e7c6f"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH USER_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_036|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "cbfb0cee5b6a1a64c861816f9038f9a6cbbfa4cfbdab397d9f23763709c1ae65"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH USER_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_036|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "d00744f66b30ebf639ed21694f835eb3ac2ff79c09e1b260bb040cc7b14104fd"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH USER_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_036|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "a50f6c337e1a69db89f716f7393b3f765e85a553618d79cb32c8767b968cbccd"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          }
+        },
+        "istest": {
+          "59.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID036Test": "@IsTest private without sharing class QueryObserveC185ID036Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH USER_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_036|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID036Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID036Test": "928b8ad7b4fa7080e6662af7dcce7c3748712763f0a16add3f2951a14e514593"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID036Test": "@IsTest private without sharing class QueryObserveC185ID036Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH USER_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_036|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID036Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID036Test": "3bc4df2b489a3a902202e53ffa2129d2d7d60d0820aa71b8184a0afe4011ddb2"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID036Test": "@IsTest private without sharing class QueryObserveC185ID036Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH USER_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_036|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID036Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID036Test": "51cf6123ba8deae284e284437f968005ffa9938c22c7f0cbec1d57810bcd01de"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID036Test": "@IsTest private without sharing class QueryObserveC185ID036Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH USER_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_036|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID036Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID036Test": "edc30a3b369fff26876d14e45a81c23b51c232c545da182a8d68d2e11ffb8a42"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          }
+        }
+      }
+    },
+    {
+      "id": "C185ID_037",
+      "routes": {
+        "anonymous": {
+          "59.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SECURITY_ENFORCED];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_037|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "5e155f72bcfd7e9dc54a71ee69a49c9d8871ed720abb9c65a0ddc28ca938a14f"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SECURITY_ENFORCED];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_037|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "d7994d67c5a9cca8b498e79d030008045eb2885939bac74457ed16ac5c126a9c"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SECURITY_ENFORCED];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_037|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "37f4c5cb9562f2413edd1a52aab379c5a48e8ee9da5cc72f71fa1e857d194e20"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "diagnostics": {
+                "column": 923,
+                "compileProblem": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.",
+                "compiled": false,
+                "exceptionMessage": null,
+                "line": 1,
+                "success": false
+              },
+              "outcome": "compile-rejected"
+            },
+            "outcome": "reject",
+            "primary": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead."
+          },
+          "68.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SECURITY_ENFORCED];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_037|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "4abe0d9f55e25453cdea35e1be964df50b2a54c89d05767026a34ceb39b2b968"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "diagnostics": {
+                "column": 923,
+                "compileProblem": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.",
+                "compiled": false,
+                "exceptionMessage": null,
+                "line": 1,
+                "success": false
+              },
+              "outcome": "compile-rejected"
+            },
+            "outcome": "reject",
+            "primary": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead."
+          }
+        },
+        "istest": {
+          "59.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID037Test": "@IsTest private without sharing class QueryObserveC185ID037Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SECURITY_ENFORCED];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_037|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID037Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID037Test": "db701f7b2d7ccd0e728202e0839d8e1736b1fbfcbea4cdf2947d53879b1d8311"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID037Test": "@IsTest private without sharing class QueryObserveC185ID037Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SECURITY_ENFORCED];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_037|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID037Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID037Test": "5d8361f2f0fd130eaf86915415226b7e18386c22412dd038c60c5d76309ac4d1"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID037Test": "@IsTest private without sharing class QueryObserveC185ID037Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SECURITY_ENFORCED];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_037|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID037Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID037Test": "1d452ddec979d995a7bdc4b63ec6d45ff9949f120f90aabf3c171ad886fbed9d"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "diagnostics": {
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "line": 1,
+                    "name": "QueryObserveC185ID037Test",
+                    "problem": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.",
+                    "type": "ApexClass"
+                  }
+                ],
+                "coverage": [],
+                "coverageWarnings": [],
+                "done": true,
+                "errorMessage": null,
+                "errorStatusCode": null,
+                "infrastructure_fault": false,
+                "platform_fault": false,
+                "platform_signature": null,
+                "status": "Failed",
+                "success": false,
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "compile-rejected"
+            },
+            "outcome": "reject",
+            "primary": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead."
+          },
+          "68.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID037Test": "@IsTest private without sharing class QueryObserveC185ID037Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SECURITY_ENFORCED];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_037|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID037Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID037Test": "ce9a8bbabe17af38ffdeebd015947751fdd69bd34b047347657b4eb10cc0f7c0"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "diagnostics": {
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "line": 1,
+                    "name": "QueryObserveC185ID037Test",
+                    "problem": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.",
+                    "type": "ApexClass"
+                  }
+                ],
+                "coverage": [],
+                "coverageWarnings": [],
+                "done": true,
+                "errorMessage": null,
+                "errorStatusCode": null,
+                "infrastructure_fault": false,
+                "platform_fault": false,
+                "platform_signature": null,
+                "status": "Failed",
+                "success": false,
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "compile-rejected"
+            },
+            "outcome": "reject",
+            "primary": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead."
+          }
+        }
+      }
+    },
+    {
+      "id": "C185ID_038",
+      "routes": {
+        "anonymous": {
+          "59.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SECURITY_ENFORCED');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_038|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "7adeb4f229bb8b1a99628b87be5d1dacf4bdad8d6e39ee1e1e1165c489c11cfc"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SECURITY_ENFORCED');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_038|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "f6d532c6423cce2511057793712321ab06ff02b46121b2059b54f216535ff144"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SECURITY_ENFORCED');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_038|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "3b62a26fc79236b766a9c1999d14f91aa9fa4963a172fa85ba8b44d6faf5d2cf"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.",
+                "exceptionType": "System.QueryException",
+                "inaccessibleFields": {},
+                "mapIsNull": false,
+                "mapKeys": [],
+                "mapSize": 0,
+                "nestedSets": {},
+                "querySucceeded": false,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.\", \"exceptionType\": \"System.QueryException\", \"inaccessibleFields\": {}, \"mapIsNull\": false, \"mapKeys\": [], \"mapSize\": 0, \"nestedSets\": {}, \"querySucceeded\": false, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SECURITY_ENFORCED');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_038|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "c6b90816bfc869787df464e102b20ad8b8eb42da3206b3030b23594cc813b4f2"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.",
+                "exceptionType": "System.QueryException",
+                "inaccessibleFields": {},
+                "mapIsNull": false,
+                "mapKeys": [],
+                "mapSize": 0,
+                "nestedSets": {},
+                "querySucceeded": false,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.\", \"exceptionType\": \"System.QueryException\", \"inaccessibleFields\": {}, \"mapIsNull\": false, \"mapKeys\": [], \"mapSize\": 0, \"nestedSets\": {}, \"querySucceeded\": false, \"seedCount\": 1}"
+          }
+        },
+        "istest": {
+          "59.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID038Test": "@IsTest private without sharing class QueryObserveC185ID038Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SECURITY_ENFORCED');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_038|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID038Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID038Test": "fa7cff1e53cdc8cec2329eb93846a6d5ce9e73db86d42e456cfe508dee2b57f0"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID038Test": "@IsTest private without sharing class QueryObserveC185ID038Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SECURITY_ENFORCED');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_038|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID038Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID038Test": "5eb8aa7bf790e19d9478ff4654b38b6b1f0d8cf83a9554b34a350ffc49fde9f3"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID038Test": "@IsTest private without sharing class QueryObserveC185ID038Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SECURITY_ENFORCED');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_038|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID038Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID038Test": "75d5fbf195b4cd5a79a02ff977b3085e7107effdd4c9f1216ca0ea03891c3661"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.",
+                "exceptionType": "System.QueryException",
+                "inaccessibleFields": {},
+                "mapIsNull": false,
+                "mapKeys": [],
+                "mapSize": 0,
+                "nestedSets": {},
+                "querySucceeded": false,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.\", \"exceptionType\": \"System.QueryException\", \"inaccessibleFields\": {}, \"mapIsNull\": false, \"mapKeys\": [], \"mapSize\": 0, \"nestedSets\": {}, \"querySucceeded\": false, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID038Test": "@IsTest private without sharing class QueryObserveC185ID038Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SECURITY_ENFORCED');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_038|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID038Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID038Test": "a6dd6c51b0e544f89a46d16ba632f3653a2b8ffcd556244b0510ad11df9dc6f4"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.",
+                "exceptionType": "System.QueryException",
+                "inaccessibleFields": {},
+                "mapIsNull": false,
+                "mapKeys": [],
+                "mapSize": 0,
+                "nestedSets": {},
+                "querySucceeded": false,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.\", \"exceptionType\": \"System.QueryException\", \"inaccessibleFields\": {}, \"mapIsNull\": false, \"mapKeys\": [], \"mapSize\": 0, \"nestedSets\": {}, \"querySucceeded\": false, \"seedCount\": 1}"
+          }
+        }
+      }
+    },
+    {
+      "id": "C185ID_039",
+      "routes": {
+        "anonymous": {
+          "59.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>{'owner'=>'admin'};try{Account accountRow=new Account(OwnerId=UserInfo.getUserId(),Name='Synthetic query scope',C185A594f708b41Secret__c='private-one',C185A594f708b41SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(OwnerId=UserInfo.getUserId(),Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId AND OwnerId=:UserInfo.getUserId()];payload.put('sc',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}}if(!payload.containsKey('fixtureError')){payload.put('es',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SYSTEM_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('os',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('rc',result.size());payload.put('qs',true);}catch(QueryException queryError){payload.put('qs',false);\npayload.put('et',queryError.getTypeName());\nString queryMessage=queryError.getMessage();payload.put('em',queryMessage.length()>96?queryMessage.substring(0,96):queryMessage);payload.put('ml',queryMessage.length());payload.put('mt',queryMessage.length()>96);\n\nif(queryMessage.contains('UNKNOWN_EXCEPTION')){payload.put('platformFaultCode','UNKNOWN_EXCEPTION');}else if(queryMessage.contains('UNABLE_TO_LOCK_ROW')){payload.put('platformFaultCode','UNABLE_TO_LOCK_ROW');}else if(queryMessage.contains('Internal Salesforce Error')){payload.put('platformFaultCode','INTERNAL_SALESFORCE_ERROR');}else if(queryMessage.contains('An unexpected error occurred') && queryMessage.contains('ErrorId')){payload.put('platformFaultCode','SALESFORCE_GACK');}Map<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('if',inaccessible);payload.put('mn',inaccessible==null);\nif(inaccessible!=null){\npayload.put('ms',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mk',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'sn'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('n',values.size());}nested.put(key,entry);}\npayload.put('ns',nested);\n}\n}}}catch(Exception unexpected){payload.put('et',unexpected.getTypeName());String unexpectedMessage=unexpected.getMessage();payload.put('em',unexpectedMessage.length()>96?unexpectedMessage.substring(0,96):unexpectedMessage);payload.put('ml',unexpectedMessage.length());payload.put('mt',unexpectedMessage.length()>96);if(unexpectedMessage.contains('UNKNOWN_EXCEPTION')){payload.put('platformFaultCode','UNKNOWN_EXCEPTION');}else if(unexpectedMessage.contains('UNABLE_TO_LOCK_ROW')){payload.put('platformFaultCode','UNABLE_TO_LOCK_ROW');}else if(unexpectedMessage.contains('Internal Salesforce Error')){payload.put('platformFaultCode','INTERNAL_SALESFORCE_ERROR');}else if(unexpectedMessage.contains('An unexpected error occurred') && unexpectedMessage.contains('ErrorId')){payload.put('platformFaultCode','SALESFORCE_GACK');}if(!payload.containsKey('es')){payload.put('fixtureError','seed-or-harness-exception');}}String serialized=JSON.serialize(payload);System.assert(false,'C126_RESULT|C185ID_039|'+serialized);",
+              "sourceSha256": {
+                "anonymous": "73fba7fbc295678d31ba44a48ea594fb13a964f2d463fa84bd754273604910c7"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "diagnostics": {
+                "column": 1050,
+                "compileProblem": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "compiled": false,
+                "exceptionMessage": null,
+                "line": 1,
+                "success": false
+              },
+              "outcome": "compile-rejected",
+              "owner": "admin"
+            },
+            "fixture": "retry",
+            "wireFormat": "compact-v2",
+            "outcome": "reject",
+            "primary": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+          },
+          "62.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>{'owner'=>'admin'};try{Account accountRow=new Account(OwnerId=UserInfo.getUserId(),Name='Synthetic query scope',C185A6204f6031dSecret__c='private-one',C185A6204f6031dSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(OwnerId=UserInfo.getUserId(),Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId AND OwnerId=:UserInfo.getUserId()];payload.put('sc',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}}if(!payload.containsKey('fixtureError')){payload.put('es',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SYSTEM_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('os',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('rc',result.size());payload.put('qs',true);}catch(QueryException queryError){payload.put('qs',false);\npayload.put('et',queryError.getTypeName());\nString queryMessage=queryError.getMessage();payload.put('em',queryMessage.length()>96?queryMessage.substring(0,96):queryMessage);payload.put('ml',queryMessage.length());payload.put('mt',queryMessage.length()>96);\n\nif(queryMessage.contains('UNKNOWN_EXCEPTION')){payload.put('platformFaultCode','UNKNOWN_EXCEPTION');}else if(queryMessage.contains('UNABLE_TO_LOCK_ROW')){payload.put('platformFaultCode','UNABLE_TO_LOCK_ROW');}else if(queryMessage.contains('Internal Salesforce Error')){payload.put('platformFaultCode','INTERNAL_SALESFORCE_ERROR');}else if(queryMessage.contains('An unexpected error occurred') && queryMessage.contains('ErrorId')){payload.put('platformFaultCode','SALESFORCE_GACK');}Map<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('if',inaccessible);payload.put('mn',inaccessible==null);\nif(inaccessible!=null){\npayload.put('ms',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mk',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'sn'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('n',values.size());}nested.put(key,entry);}\npayload.put('ns',nested);\n}\n}}}catch(Exception unexpected){payload.put('et',unexpected.getTypeName());String unexpectedMessage=unexpected.getMessage();payload.put('em',unexpectedMessage.length()>96?unexpectedMessage.substring(0,96):unexpectedMessage);payload.put('ml',unexpectedMessage.length());payload.put('mt',unexpectedMessage.length()>96);if(unexpectedMessage.contains('UNKNOWN_EXCEPTION')){payload.put('platformFaultCode','UNKNOWN_EXCEPTION');}else if(unexpectedMessage.contains('UNABLE_TO_LOCK_ROW')){payload.put('platformFaultCode','UNABLE_TO_LOCK_ROW');}else if(unexpectedMessage.contains('Internal Salesforce Error')){payload.put('platformFaultCode','INTERNAL_SALESFORCE_ERROR');}else if(unexpectedMessage.contains('An unexpected error occurred') && unexpectedMessage.contains('ErrorId')){payload.put('platformFaultCode','SALESFORCE_GACK');}if(!payload.containsKey('es')){payload.put('fixtureError','seed-or-harness-exception');}}String serialized=JSON.serialize(payload);System.assert(false,'C126_RESULT|C185ID_039|'+serialized);",
+              "sourceSha256": {
+                "anonymous": "2bca06c477114f25f9a044032d3b1c7be5a2fcc3a15c36a95919bb07150325f7"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "diagnostics": {
+                "column": 1050,
+                "compileProblem": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "compiled": false,
+                "exceptionMessage": null,
+                "line": 1,
+                "success": false
+              },
+              "outcome": "compile-rejected",
+              "owner": "admin"
+            },
+            "fixture": "retry",
+            "wireFormat": "compact-v2",
+            "outcome": "reject",
+            "primary": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+          },
+          "67.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>{'owner'=>'admin'};try{Account accountRow=new Account(OwnerId=UserInfo.getUserId(),Name='Synthetic query scope',C185A67c27bae69Secret__c='private-one',C185A67c27bae69SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(OwnerId=UserInfo.getUserId(),Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId AND OwnerId=:UserInfo.getUserId()];payload.put('sc',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}}if(!payload.containsKey('fixtureError')){payload.put('es',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SYSTEM_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('os',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('rc',result.size());payload.put('qs',true);}catch(QueryException queryError){payload.put('qs',false);\npayload.put('et',queryError.getTypeName());\nString queryMessage=queryError.getMessage();payload.put('em',queryMessage.length()>96?queryMessage.substring(0,96):queryMessage);payload.put('ml',queryMessage.length());payload.put('mt',queryMessage.length()>96);\n\nif(queryMessage.contains('UNKNOWN_EXCEPTION')){payload.put('platformFaultCode','UNKNOWN_EXCEPTION');}else if(queryMessage.contains('UNABLE_TO_LOCK_ROW')){payload.put('platformFaultCode','UNABLE_TO_LOCK_ROW');}else if(queryMessage.contains('Internal Salesforce Error')){payload.put('platformFaultCode','INTERNAL_SALESFORCE_ERROR');}else if(queryMessage.contains('An unexpected error occurred') && queryMessage.contains('ErrorId')){payload.put('platformFaultCode','SALESFORCE_GACK');}Map<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('if',inaccessible);payload.put('mn',inaccessible==null);\nif(inaccessible!=null){\npayload.put('ms',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mk',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'sn'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('n',values.size());}nested.put(key,entry);}\npayload.put('ns',nested);\n}\n}}}catch(Exception unexpected){payload.put('et',unexpected.getTypeName());String unexpectedMessage=unexpected.getMessage();payload.put('em',unexpectedMessage.length()>96?unexpectedMessage.substring(0,96):unexpectedMessage);payload.put('ml',unexpectedMessage.length());payload.put('mt',unexpectedMessage.length()>96);if(unexpectedMessage.contains('UNKNOWN_EXCEPTION')){payload.put('platformFaultCode','UNKNOWN_EXCEPTION');}else if(unexpectedMessage.contains('UNABLE_TO_LOCK_ROW')){payload.put('platformFaultCode','UNABLE_TO_LOCK_ROW');}else if(unexpectedMessage.contains('Internal Salesforce Error')){payload.put('platformFaultCode','INTERNAL_SALESFORCE_ERROR');}else if(unexpectedMessage.contains('An unexpected error occurred') && unexpectedMessage.contains('ErrorId')){payload.put('platformFaultCode','SALESFORCE_GACK');}if(!payload.containsKey('es')){payload.put('fixtureError','seed-or-harness-exception');}}String serialized=JSON.serialize(payload);System.assert(false,'C126_RESULT|C185ID_039|'+serialized);",
+              "sourceSha256": {
+                "anonymous": "de878d35f41a0293701af6868562450edc8e66404df56dcf29717b3008813972"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "diagnostics": {
+                "column": 1050,
+                "compileProblem": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "compiled": false,
+                "exceptionMessage": null,
+                "line": 1,
+                "success": false
+              },
+              "outcome": "compile-rejected",
+              "owner": "admin"
+            },
+            "fixture": "retry",
+            "wireFormat": "compact-v2",
+            "outcome": "reject",
+            "primary": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+          },
+          "68.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>{'owner'=>'admin'};try{Account accountRow=new Account(OwnerId=UserInfo.getUserId(),Name='Synthetic query scope',C185A68f0cbe7b5Secret__c='private-one',C185A68f0cbe7b5SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(OwnerId=UserInfo.getUserId(),Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId AND OwnerId=:UserInfo.getUserId()];payload.put('sc',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}}if(!payload.containsKey('fixtureError')){payload.put('es',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SYSTEM_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('os',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('rc',result.size());payload.put('qs',true);}catch(QueryException queryError){payload.put('qs',false);\npayload.put('et',queryError.getTypeName());\nString queryMessage=queryError.getMessage();payload.put('em',queryMessage.length()>96?queryMessage.substring(0,96):queryMessage);payload.put('ml',queryMessage.length());payload.put('mt',queryMessage.length()>96);\n\nif(queryMessage.contains('UNKNOWN_EXCEPTION')){payload.put('platformFaultCode','UNKNOWN_EXCEPTION');}else if(queryMessage.contains('UNABLE_TO_LOCK_ROW')){payload.put('platformFaultCode','UNABLE_TO_LOCK_ROW');}else if(queryMessage.contains('Internal Salesforce Error')){payload.put('platformFaultCode','INTERNAL_SALESFORCE_ERROR');}else if(queryMessage.contains('An unexpected error occurred') && queryMessage.contains('ErrorId')){payload.put('platformFaultCode','SALESFORCE_GACK');}Map<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('if',inaccessible);payload.put('mn',inaccessible==null);\nif(inaccessible!=null){\npayload.put('ms',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mk',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'sn'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('n',values.size());}nested.put(key,entry);}\npayload.put('ns',nested);\n}\n}}}catch(Exception unexpected){payload.put('et',unexpected.getTypeName());String unexpectedMessage=unexpected.getMessage();payload.put('em',unexpectedMessage.length()>96?unexpectedMessage.substring(0,96):unexpectedMessage);payload.put('ml',unexpectedMessage.length());payload.put('mt',unexpectedMessage.length()>96);if(unexpectedMessage.contains('UNKNOWN_EXCEPTION')){payload.put('platformFaultCode','UNKNOWN_EXCEPTION');}else if(unexpectedMessage.contains('UNABLE_TO_LOCK_ROW')){payload.put('platformFaultCode','UNABLE_TO_LOCK_ROW');}else if(unexpectedMessage.contains('Internal Salesforce Error')){payload.put('platformFaultCode','INTERNAL_SALESFORCE_ERROR');}else if(unexpectedMessage.contains('An unexpected error occurred') && unexpectedMessage.contains('ErrorId')){payload.put('platformFaultCode','SALESFORCE_GACK');}if(!payload.containsKey('es')){payload.put('fixtureError','seed-or-harness-exception');}}String serialized=JSON.serialize(payload);System.assert(false,'C126_RESULT|C185ID_039|'+serialized);",
+              "sourceSha256": {
+                "anonymous": "0868e7f5ff612f0847a31f7d59c774386cf78d29f084ad72f23407d0e1e24775"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "diagnostics": {
+                "column": 1050,
+                "compileProblem": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "compiled": false,
+                "exceptionMessage": null,
+                "line": 1,
+                "success": false
+              },
+              "outcome": "compile-rejected",
+              "owner": "admin"
+            },
+            "fixture": "retry",
+            "wireFormat": "compact-v2",
+            "outcome": "reject",
+            "primary": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex."
+          }
+        },
+        "istest": {
+          "59.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID039Test": "@IsTest private without sharing class QueryObserveC185ID039Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SYSTEM_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_039|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID039Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID039Test": "b13486b8d9a6ebe0ff032318023dc27c424afc8ba280de990d2159fdf18fc8b3"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID039Test": "@IsTest private without sharing class QueryObserveC185ID039Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SYSTEM_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_039|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID039Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID039Test": "c458c92b0fdaa0dd5e10438785f62b9e8da5dc8f4a8b57d335eb54c61bb998ba"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID039Test": "@IsTest private without sharing class QueryObserveC185ID039Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SYSTEM_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_039|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID039Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID039Test": "2bda98c9abeaf854e86697611ae959c76ab625b2462c2bc7d1d0f8fe87f27a20"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID039Test": "@IsTest private without sharing class QueryObserveC185ID039Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<Opportunity> result=[SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SYSTEM_MODE];Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_039|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID039Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID039Test": "2be79990c9f9596462245ab0a4f363421ae48b525e69e0137626feedf256471c"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          }
+        }
+      }
+    },
+    {
+      "id": "C185ID_040",
+      "routes": {
+        "anonymous": {
+          "59.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SYSTEM_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_040|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "8408d9381616aec7c96d10a812e32d61d2c743d4bd5f21b7ff83b811e8501cc1"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "exceptionType": "System.SecurityException",
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.\", \"exceptionType\": \"System.SecurityException\", \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SYSTEM_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_040|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "c83fcd4a8df83e4debff075253f213d096316b3e81b17e87c88a4b9d6c1df011"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "exceptionType": "System.SecurityException",
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.\", \"exceptionType\": \"System.SecurityException\", \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SYSTEM_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_040|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "21df3bcbc5c1a406efb6235f43bd4a00c5e2768a4384e43efa192702aae541fe"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "exceptionType": "System.SecurityException",
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.\", \"exceptionType\": \"System.SecurityException\", \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SYSTEM_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_040|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "a701a3103e4ccceaacb4ff28c491011cf9010f49bb0efec1db12c206df10e418"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "exceptionType": "System.SecurityException",
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"Cannot use SYSTEM_MODE access level in anonymous execution of Apex.\", \"exceptionType\": \"System.SecurityException\", \"seedCount\": 1}"
+          }
+        },
+        "istest": {
+          "59.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID040Test": "@IsTest private without sharing class QueryObserveC185ID040Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SYSTEM_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_040|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID040Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID040Test": "0e21df198d2afcc32968a35371fefdd8fe88b3ed9d9ac6e20143f79c4f2ee5b5"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID040Test": "@IsTest private without sharing class QueryObserveC185ID040Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SYSTEM_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_040|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID040Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID040Test": "eafd6350cb6f062c797d97afe315161a2be999762c89904c0760f90d1feb27c2"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID040Test": "@IsTest private without sharing class QueryObserveC185ID040Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SYSTEM_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_040|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID040Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID040Test": "64c15837cfaf3d43b7215ca4092e71064e9c3b4a462a2bf6bc98fed9bd206118"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID040Test": "@IsTest private without sharing class QueryObserveC185ID040Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;List<OpportunityStage> stages=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1];if(stages.size()!=1){payload.put('fixtureError','opportunity-stage-unavailable');}else{Opportunity opportunityRow=new Opportunity(Name='Synthetic query scope',StageName=stages[0].MasterLabel,CloseDate=Date.today(),AccountId=accountRow.Id);insert opportunityRow;scopeId=opportunityRow.Id;}if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Opportunity WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, Name FROM Opportunity WHERE Id = :scopeId WITH SYSTEM_MODE');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_040|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID040Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID040Test": "c36f4ea88f0e5c3ca33edbbc51501bcc0bc07cebbf23cbf55b0b32eb9eb59476"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "outOfScope": 0,
+                "querySucceeded": true,
+                "resultCount": 1,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"outOfScope\": 0, \"querySucceeded\": true, \"resultCount\": 1, \"seedCount\": 1}"
+          }
+        }
+      }
+    }
+  ],
+  "nativeObservationCount": 48
+}

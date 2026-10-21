@@ -1,0 +1,430 @@
+{
+  "contexts": [
+    {
+      "callerApi": "67.0",
+      "id": "source67-istest-transport62",
+      "route": "istest",
+      "rows": {
+        "afterCalculate": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "afterComponent": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "afterInsert": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "beforeInsert": {
+          "matchingCount": 0
+        },
+        "standalone": {
+          "custom": true,
+          "groupIdNull": true,
+          "labelMatches": true,
+          "licenseNull": true,
+          "nameMatches": true,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Regular"
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "62.0",
+      "id": "source67-anonymous-transport62",
+      "route": "anonymous",
+      "rows": {
+        "afterComponent": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "afterInsert": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "beforeInsert": {
+          "matchingCount": 0
+        },
+        "standalone": {
+          "custom": true,
+          "groupIdNull": true,
+          "labelMatches": true,
+          "licenseNull": true,
+          "nameMatches": true,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Regular"
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "62.0",
+      "id": "source62-istest-transport62",
+      "route": "istest",
+      "rows": {
+        "afterCalculate": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "afterComponent": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "afterInsert": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "beforeInsert": {
+          "matchingCount": 0
+        },
+        "standalone": {
+          "custom": true,
+          "groupIdNull": true,
+          "labelMatches": true,
+          "licenseNull": true,
+          "nameMatches": true,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Regular"
+        }
+      },
+      "sourceApi": "62.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "62.0",
+      "id": "source62-anonymous-transport62",
+      "route": "anonymous",
+      "rows": {
+        "afterComponent": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "afterInsert": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "beforeInsert": {
+          "matchingCount": 0
+        },
+        "standalone": {
+          "custom": true,
+          "groupIdNull": true,
+          "labelMatches": true,
+          "licenseNull": true,
+          "nameMatches": true,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Regular"
+        }
+      },
+      "sourceApi": "62.0",
+      "transportApi": "62.0"
+    },
+    {
+      "callerApi": "67.0",
+      "id": "source67-istest-transport67",
+      "route": "istest",
+      "rows": {
+        "afterCalculate": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "afterComponent": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "afterInsert": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "beforeInsert": {
+          "matchingCount": 0
+        },
+        "standalone": {
+          "custom": true,
+          "groupIdNull": true,
+          "labelMatches": true,
+          "licenseNull": true,
+          "nameMatches": true,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Regular"
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "67.0"
+    },
+    {
+      "callerApi": "67.0",
+      "id": "source67-anonymous-transport67",
+      "route": "anonymous",
+      "rows": {
+        "afterComponent": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "afterInsert": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "beforeInsert": {
+          "matchingCount": 0
+        },
+        "standalone": {
+          "custom": true,
+          "groupIdNull": true,
+          "labelMatches": true,
+          "licenseNull": true,
+          "nameMatches": true,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Regular"
+        }
+      },
+      "sourceApi": "67.0",
+      "transportApi": "67.0"
+    },
+    {
+      "callerApi": "68.0",
+      "id": "source68-istest-transport68",
+      "route": "istest",
+      "rows": {
+        "afterCalculate": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "afterComponent": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "afterInsert": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "beforeInsert": {
+          "matchingCount": 0
+        },
+        "standalone": {
+          "custom": true,
+          "groupIdNull": true,
+          "labelMatches": true,
+          "licenseNull": true,
+          "nameMatches": true,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Regular"
+        }
+      },
+      "sourceApi": "68.0",
+      "transportApi": "68.0"
+    },
+    {
+      "callerApi": "68.0",
+      "id": "source68-anonymous-transport68",
+      "route": "anonymous",
+      "rows": {
+        "afterComponent": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "afterInsert": {
+          "custom": true,
+          "labelMatchesMasterLabel": true,
+          "licenseNull": true,
+          "linked": true,
+          "linkedCount": 1,
+          "nameMatchesDeveloperName": true,
+          "namedCount": 1,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Group"
+        },
+        "beforeInsert": {
+          "matchingCount": 0
+        },
+        "standalone": {
+          "custom": true,
+          "groupIdNull": true,
+          "labelMatches": true,
+          "licenseNull": true,
+          "nameMatches": true,
+          "namespaceNull": true,
+          "ownedByProfile": false,
+          "type": "Regular"
+        }
+      },
+      "sourceApi": "68.0",
+      "transportApi": "68.0"
+    }
+  ],
+  "files": [
+    {
+      "path": "setup/GroupProjectionObservation.cls",
+      "sha256": "1b4b3fe5a1b77a4961402c247300c73fb61605f2e7a314cd0ffd974fe4f9877b"
+    },
+    {
+      "path": "setup/GroupProjectionObservationTest.cls",
+      "sha256": "68704e08f72607a0132c2e35b04d5afb96a67161c437b883c57e9b21a568ce14"
+    }
+  ]
+}

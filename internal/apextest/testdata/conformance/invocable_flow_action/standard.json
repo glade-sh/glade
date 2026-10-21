@@ -1,0 +1,206 @@
+{
+  "cluster": "standard",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "nativeObservationCount": 12,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C187IA_017",
+      "routes": {
+        "anonymous": {
+          "code": "step='create';Invocable.Action action=Invocable.Action.createStandardAction('emailSimple');payload.put('created',action!=null);",
+          "operationSHA256": "bd2e7e7b550d1c625bcbae0e7dbd73a8f72acf9e082706c98fb7b94dc27ca337",
+          "captureSourceSHA256": {
+            "anonymous": "bad0885bf16bf253446b0d272f61ab897f1aed0b434b7aa38084f5df40a11fd5"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "create",
+                "created": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "create",
+                "created": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "create",
+                "created": true
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='create';Invocable.Action action=Invocable.Action.createStandardAction('emailSimple');payload.put('created',action!=null);",
+          "operationSHA256": "bd2e7e7b550d1c625bcbae0e7dbd73a8f72acf9e082706c98fb7b94dc27ca337",
+          "captureSourceSHA256": {
+            "C187Observe017": "deb52ecbcda33a2d51fb811e9a6629d01954fbd6c9dd8ffd49eeda90d012d95d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "create",
+                "created": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "create",
+                "created": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "create",
+                "created": true
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_018",
+      "routes": {
+        "anonymous": {
+          "code": "Account acc=new Account(Name='Before',Description='Keep',Industry='Technology');Account other=new Account(Name='Other',Description='OtherKeep',Industry='Banking');step='seed';insert acc;Set<Id> ownedIds=new Set<Id>();if(acc.Id!=null){ownedIds.add(acc.Id);}if(other.Id!=null){ownedIds.add(other.Id);}payload.put('queryOutsideScope',0);payload.put('inputBefore',new Map<String,Object>{'Name'=>acc.Name,'Description'=>acc.Description,'Industry'=>acc.Industry,'idPresent'=>acc.Id!=null});step='create';Invocable.Action action=Invocable.Action.createStandardAction('flow');payload.put('created',action!=null);step='parameter';action.setInvocationParameter('record',acc);step='invoke';List<Invocable.Action.Result> results=action.invoke();List<Object> resultsRows=new List<Object>();payload.put('results',resultsRows);if(results==null){payload.put('resultsNull',true);}else{for(Invocable.Action.Result res:results){Map<String,Object> one=new Map<String,Object>{'success'=>res.isSuccess()};Map<String,Object> outputs=res.getOutputParameters();one.put('outputsNull',outputs==null);if(outputs!=null){List<String> keys=new List<String>(outputs.keySet());keys.sort();one.put('keys',keys);one.put('hasRecord',outputs.containsKey('record'));one.put('fired',outputs.get('fired'));one.put('reached',outputs.get('reached'));if(outputs.get('record')!=null){Account outRec=(Account)outputs.get('record');one.put('record',new Map<String,Object>{'Name'=>outRec.Name,'Description'=>outRec.Description,'Industry'=>outRec.Industry,'idPresent'=>outRec.Id!=null,'sameId'=>outRec.Id==acc.Id,'sameSecondId'=>outRec.Id==other.Id});}}List<Invocable.Action.Error> errors=res.getErrors();one.put('errorsNull',errors==null);List<Object> errorRows=new List<Object>();if(errors!=null){for(Invocable.Action.Error err:errors){errorRows.add(new Map<String,Object>{'code'=>err.getCode(),'message'=>err.getMessage(),'messageLength'=>err.getMessage()==null?null:err.getMessage().length()});}}one.put('errors',errorRows);resultsRows.add(one);}}step='snapshot';payload.put('inputAfter',new Map<String,Object>{'Name'=>acc.Name,'Description'=>acc.Description,'Industry'=>acc.Industry,'idPresent'=>acc.Id!=null});List<Account> dbBefore=[SELECT Id,Name,Description,Industry FROM Account WHERE Id IN :ownedIds ORDER BY Name];payload.put('databaseBefore',new List<Object>());for(Account db:dbBefore){if(!ownedIds.contains(db.Id)){payload.put('queryOutsideScope',((Integer)payload.get('queryOutsideScope'))+1);}((List<Object>)payload.get('databaseBefore')).add(new Map<String,Object>{'Name'=>db.Name,'Description'=>db.Description,'Industry'=>db.Industry,'isFirst'=>db.Id==acc.Id});}",
+          "operationSHA256": "bb3c54034505a6b82d1182aed4c1f48a9926f1b83df77e9ee4c80a374894b851",
+          "captureSourceSHA256": {
+            "anonymous": "315e1b5d18584e3baad8e178c07363a3820faa236acd38a09d58585d804de8c1"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "invoke",
+                "exceptionMessageLength": 57,
+                "exceptionMessage": "Specify a name for the flow custom invocable action type.",
+                "exceptionType": "System.NullPointerException",
+                "created": true,
+                "inputBefore": {
+                  "idPresent": true,
+                  "Industry": "Technology",
+                  "Description": "Keep",
+                  "Name": "Before"
+                },
+                "queryOutsideScope": 0
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "invoke",
+                "exceptionMessageLength": 57,
+                "exceptionMessage": "Specify a name for the flow custom invocable action type.",
+                "exceptionType": "System.NullPointerException",
+                "created": true,
+                "inputBefore": {
+                  "idPresent": true,
+                  "Industry": "Technology",
+                  "Description": "Keep",
+                  "Name": "Before"
+                },
+                "queryOutsideScope": 0
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "invoke",
+                "exceptionMessageLength": 57,
+                "exceptionMessage": "Specify a name for the flow custom invocable action type.",
+                "exceptionType": "System.NullPointerException",
+                "created": true,
+                "inputBefore": {
+                  "idPresent": true,
+                  "Industry": "Technology",
+                  "Description": "Keep",
+                  "Name": "Before"
+                },
+                "queryOutsideScope": 0
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "Account acc=new Account(Name='Before',Description='Keep',Industry='Technology');Account other=new Account(Name='Other',Description='OtherKeep',Industry='Banking');step='seed';insert acc;Set<Id> ownedIds=new Set<Id>();if(acc.Id!=null){ownedIds.add(acc.Id);}if(other.Id!=null){ownedIds.add(other.Id);}payload.put('queryOutsideScope',0);payload.put('inputBefore',new Map<String,Object>{'Name'=>acc.Name,'Description'=>acc.Description,'Industry'=>acc.Industry,'idPresent'=>acc.Id!=null});step='create';Invocable.Action action=Invocable.Action.createStandardAction('flow');payload.put('created',action!=null);step='parameter';action.setInvocationParameter('record',acc);step='invoke';List<Invocable.Action.Result> results=action.invoke();List<Object> resultsRows=new List<Object>();payload.put('results',resultsRows);if(results==null){payload.put('resultsNull',true);}else{for(Invocable.Action.Result res:results){Map<String,Object> one=new Map<String,Object>{'success'=>res.isSuccess()};Map<String,Object> outputs=res.getOutputParameters();one.put('outputsNull',outputs==null);if(outputs!=null){List<String> keys=new List<String>(outputs.keySet());keys.sort();one.put('keys',keys);one.put('hasRecord',outputs.containsKey('record'));one.put('fired',outputs.get('fired'));one.put('reached',outputs.get('reached'));if(outputs.get('record')!=null){Account outRec=(Account)outputs.get('record');one.put('record',new Map<String,Object>{'Name'=>outRec.Name,'Description'=>outRec.Description,'Industry'=>outRec.Industry,'idPresent'=>outRec.Id!=null,'sameId'=>outRec.Id==acc.Id,'sameSecondId'=>outRec.Id==other.Id});}}List<Invocable.Action.Error> errors=res.getErrors();one.put('errorsNull',errors==null);List<Object> errorRows=new List<Object>();if(errors!=null){for(Invocable.Action.Error err:errors){errorRows.add(new Map<String,Object>{'code'=>err.getCode(),'message'=>err.getMessage(),'messageLength'=>err.getMessage()==null?null:err.getMessage().length()});}}one.put('errors',errorRows);resultsRows.add(one);}}step='snapshot';payload.put('inputAfter',new Map<String,Object>{'Name'=>acc.Name,'Description'=>acc.Description,'Industry'=>acc.Industry,'idPresent'=>acc.Id!=null});List<Account> dbBefore=[SELECT Id,Name,Description,Industry FROM Account WHERE Id IN :ownedIds ORDER BY Name];payload.put('databaseBefore',new List<Object>());for(Account db:dbBefore){if(!ownedIds.contains(db.Id)){payload.put('queryOutsideScope',((Integer)payload.get('queryOutsideScope'))+1);}((List<Object>)payload.get('databaseBefore')).add(new Map<String,Object>{'Name'=>db.Name,'Description'=>db.Description,'Industry'=>db.Industry,'isFirst'=>db.Id==acc.Id});}",
+          "operationSHA256": "bb3c54034505a6b82d1182aed4c1f48a9926f1b83df77e9ee4c80a374894b851",
+          "captureSourceSHA256": {
+            "C187Observe018": "05472728c10e65ef8bac799cb342f705caed54222653e6750355f627c703541e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "invoke",
+                "exceptionMessageLength": 57,
+                "exceptionMessage": "Specify a name for the flow custom invocable action type.",
+                "exceptionType": "System.NullPointerException",
+                "created": true,
+                "inputBefore": {
+                  "idPresent": true,
+                  "Industry": "Technology",
+                  "Description": "Keep",
+                  "Name": "Before"
+                },
+                "queryOutsideScope": 0
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "invoke",
+                "exceptionMessageLength": 57,
+                "exceptionMessage": "Specify a name for the flow custom invocable action type.",
+                "exceptionType": "System.NullPointerException",
+                "created": true,
+                "inputBefore": {
+                  "idPresent": true,
+                  "Industry": "Technology",
+                  "Description": "Keep",
+                  "Name": "Before"
+                },
+                "queryOutsideScope": 0
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "invoke",
+                "exceptionMessageLength": 57,
+                "exceptionMessage": "Specify a name for the flow custom invocable action type.",
+                "exceptionType": "System.NullPointerException",
+                "created": true,
+                "inputBefore": {
+                  "idPresent": true,
+                  "Industry": "Technology",
+                  "Description": "Keep",
+                  "Name": "Before"
+                },
+                "queryOutsideScope": 0
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    }
+  ]
+}

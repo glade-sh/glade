@@ -1,0 +1,61 @@
+{
+  "base": "capture-revision-100674082189950676909464270273097705397729225196210387419024790090144103579119",
+  "status": "corrected from coordinator before-run; after pending",
+  "differingCells": 75,
+  "clusters": {
+    "ownership": {
+      "ids": [
+        "R001",
+        "R003",
+        "R004",
+        "R008",
+        "R009",
+        "R023"
+      ],
+      "cells": 36
+    },
+    "getters": {
+      "ids": [
+        "R016",
+        "R017",
+        "R018",
+        "R022"
+      ],
+      "cells": 24
+    },
+    "describe": {
+      "ids": [
+        "R026"
+      ],
+      "cells": 6
+    },
+    "identity_dto": {
+      "ids": [
+        "C003"
+      ],
+      "routes": [
+        "isTest"
+      ],
+      "cells": 3
+    },
+    "deployment": {
+      "ids": [
+        "E001",
+        "E002"
+      ],
+      "routes": [
+        "anonymous"
+      ],
+      "cells": 6
+    }
+  },
+  "beforeHead": "capture-revision-103780337224150642338823987594914914484098982597654167921744673296853674557725",
+  "beforeJob": "capture-job",
+  "expectedPassingCells": {
+    "ownership": 96,
+    "getters": 42,
+    "describe": 18,
+    "identity_dto": 24,
+    "deployment": 12
+  }
+}

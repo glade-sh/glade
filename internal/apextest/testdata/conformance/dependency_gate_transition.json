@@ -1,0 +1,197 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "transition",
+  "nativeObservationCount": 3,
+  "cells": [
+    {
+      "id": "C180GS_036",
+      "api": "62.0",
+      "route": "metadata",
+      "group": "signature-transition",
+      "state": "signature",
+      "kind": "transition",
+      "classes": {
+        "E7624d75789eRoot": "public class E7624d75789eRoot{public static String token(Integer value){return String.valueOf(value);}}"
+      },
+      "triggers": {},
+      "objects": {
+        "E7624d75789eDirect__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eDirect__c</label><pluralLabel>E7624d75789eDirect__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7624d75789eDirectMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7624d75789eChain__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eChain__c</label><pluralLabel>E7624d75789eChain__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7624d75789eChainMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7624d75789eMixed__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eMixed__c</label><pluralLabel>E7624d75789eMixed__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7624d75789eMixedMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7624d75789eClean__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eClean__c</label><pluralLabel>E7624d75789eClean__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7624d75789eCleanMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7624d75789eDependency__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7624d75789eDependency__c</label><pluralLabel>E7624d75789eDependency__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Value__c</fullName><label>E7624d75789eDependencyValue__c</label><length>80</length><type>Text</type></fields></CustomObject>"
+      },
+      "anonymous": "",
+      "tests": [],
+      "native": {
+        "outcome": "accepted",
+        "retry_recommended": false,
+        "infrastructure_faults": [],
+        "componentFailures": [],
+        "testFailures": [],
+        "codeCoverageWarnings": [],
+        "flowCoverageWarnings": [],
+        "referencedFieldRejected": false,
+        "errorStatusCode": null,
+        "errorMessage": null
+      },
+      "carry": "Real Metadata signature transition; retained as deployment evidence, not a local execution assertion.",
+      "sourceSha256": {
+        "classes:E7624d75789eRoot": "dceed29212da02641383a9f3c7bbffc07bd841a25c73c42d4a21da7d744e9768",
+        "objects:E7624d75789eDirect__c": "d479f8dbc7a4caa8ef4f3a9c3bf43d82d7b48555abf9c697c19734691317d5d9",
+        "objects:E7624d75789eChain__c": "2c3c4be5aeade82d59d53de89a6d15524852c7854f10e6bbc03a244c74462841",
+        "objects:E7624d75789eMixed__c": "906a7d7377d15265c8f672fbeb0c127bc86f4d0cc94313fa57705a2d4131e3b1",
+        "objects:E7624d75789eClean__c": "9fd4bb9203cadbf5aa41d67037bf7219bbb4b3213615457c392344c7a5c1ce37",
+        "objects:E7624d75789eDependency__c": "c5f146ac1b0e627b561d5f4580dde52ba7f3500e34895a52ebfa38342496b7e3"
+      }
+    },
+    {
+      "id": "C180GS_036",
+      "api": "67.0",
+      "route": "metadata",
+      "group": "signature-transition",
+      "state": "signature",
+      "kind": "transition",
+      "classes": {
+        "E7674d75789eRoot": "public class E7674d75789eRoot{public static String token(Integer value){return String.valueOf(value);}}"
+      },
+      "triggers": {},
+      "objects": {
+        "E7674d75789eDirect__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eDirect__c</label><pluralLabel>E7674d75789eDirect__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7674d75789eDirectMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7674d75789eChain__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eChain__c</label><pluralLabel>E7674d75789eChain__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7674d75789eChainMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7674d75789eMixed__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eMixed__c</label><pluralLabel>E7674d75789eMixed__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7674d75789eMixedMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7674d75789eClean__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eClean__c</label><pluralLabel>E7674d75789eClean__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7674d75789eCleanMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7674d75789eDependency__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7674d75789eDependency__c</label><pluralLabel>E7674d75789eDependency__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Value__c</fullName><label>E7674d75789eDependencyValue__c</label><length>80</length><type>Text</type></fields></CustomObject>"
+      },
+      "anonymous": "",
+      "tests": [],
+      "native": {
+        "outcome": "accepted",
+        "retry_recommended": false,
+        "infrastructure_faults": [],
+        "componentFailures": [],
+        "testFailures": [],
+        "codeCoverageWarnings": [],
+        "flowCoverageWarnings": [],
+        "referencedFieldRejected": false,
+        "errorStatusCode": null,
+        "errorMessage": null
+      },
+      "carry": "Real Metadata signature transition; retained as deployment evidence, not a local execution assertion.",
+      "sourceSha256": {
+        "classes:E7674d75789eRoot": "8d5c4fa668f0b191993ebb20d24778b66ec61d27ae0c53f9ef4db22b2f742178",
+        "objects:E7674d75789eDirect__c": "36eafde74b41952660c25a2226b83459aba7232508c17cc3ba824322fe0615f1",
+        "objects:E7674d75789eChain__c": "51535fcf4859433ea8f8ab0263508f02749125777e36aafc83a72aff920ce564",
+        "objects:E7674d75789eMixed__c": "941c6084a20ac0821c5ed6a238c43d82f37653368c479d24e96f346a31b652f5",
+        "objects:E7674d75789eClean__c": "ba08817d4a19b73c62e16036bdceca34e423553ae72d11fd85d134c814006643",
+        "objects:E7674d75789eDependency__c": "d61e98fb4e4226ce5208949eed3c4be434094676a4b0c30e776f82a033132804"
+      }
+    },
+    {
+      "id": "C180GS_036",
+      "api": "68.0",
+      "route": "metadata",
+      "group": "signature-transition",
+      "state": "signature",
+      "kind": "transition",
+      "classes": {
+        "E7684d75789eRoot": "public class E7684d75789eRoot{public static String token(Integer value){return String.valueOf(value);}}"
+      },
+      "triggers": {},
+      "objects": {
+        "E7684d75789eDirect__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eDirect__c</label><pluralLabel>E7684d75789eDirect__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7684d75789eDirectMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7684d75789eChain__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eChain__c</label><pluralLabel>E7684d75789eChain__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7684d75789eChainMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7684d75789eMixed__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eMixed__c</label><pluralLabel>E7684d75789eMixed__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7684d75789eMixedMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7684d75789eClean__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eClean__c</label><pluralLabel>E7684d75789eClean__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Marker__c</fullName><label>E7684d75789eCleanMarker__c</label><length>80</length><type>Text</type></fields></CustomObject>",
+        "E7684d75789eDependency__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>E7684d75789eDependency__c</label><pluralLabel>E7684d75789eDependency__c</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><fields><fullName>Value__c</fullName><label>E7684d75789eDependencyValue__c</label><length>80</length><type>Text</type></fields></CustomObject>"
+      },
+      "anonymous": "",
+      "tests": [],
+      "native": {
+        "outcome": "accepted",
+        "retry_recommended": false,
+        "infrastructure_faults": [],
+        "componentFailures": [],
+        "testFailures": [],
+        "codeCoverageWarnings": [],
+        "flowCoverageWarnings": [],
+        "referencedFieldRejected": false,
+        "errorStatusCode": null,
+        "errorMessage": null
+      },
+      "carry": "Real Metadata signature transition; retained as deployment evidence, not a local execution assertion.",
+      "sourceSha256": {
+        "classes:E7684d75789eRoot": "4f675fd75c77ee852c336f10d229b7d26e0441870f6678f1190b3896ada9b18e",
+        "objects:E7684d75789eDirect__c": "96bb1dc4c7c5e655995b498eef1926ccdba96031b3996bc7ca1b67ad1a4b730c",
+        "objects:E7684d75789eChain__c": "5d6bc1e643c64d3eb9246cf46776a1c4a20c31421a2ed78e1a0dff89d24d178f",
+        "objects:E7684d75789eMixed__c": "bddaad86951948aa959f28dd5a02a513b857918c397b16bae324473bbc95aa36",
+        "objects:E7684d75789eClean__c": "895746c33b11e1f049640fbd0e5cc7aff01bed8e9d9b2b3820bcc45470e2c339",
+        "objects:E7684d75789eDependency__c": "6a0393b841489cbf80b48767c41dd13336b5bacfdd54c125b36822833f43d38a"
+      }
+    }
+  ],
+  "evidence": {
+    "sourceManifestSHA256": "538f12e7b0b7d6c23ee8ceb5f3ee137b2ac0aff5b9e57b01e52874c99f7f7135",
+    "routeControls": {
+      "62.0": {
+        "anonymous": {
+          "proven": true
+        },
+        "istest": {
+          "proven": true
+        }
+      },
+      "67.0": {
+        "anonymous": {
+          "proven": true
+        },
+        "istest": {
+          "proven": true
+        }
+      },
+      "68.0": {
+        "anonymous": {
+          "proven": true
+        },
+        "istest": {
+          "proven": true
+        }
+      }
+    },
+    "observations": 204,
+    "noAnswerRows": 0,
+    "stateUnavailable": 0
+  },
+  "assertionPolicy": "Native runtime/compiler facts only. Partial-run behavior is a local product policy; component acceptance never proves native tests ran. Carries retain observations without asserting local values.",
+  "excludedArtifacts": {
+    "noNativeAnswer": [],
+    "UNCAUGHT": [],
+    "emptyCompile": [],
+    "PLATFORM_FAULT": [],
+    "FIXTURE_ERROR": []
+  },
+  "sideRecord": {
+    "outcome": "rejected-with-component",
+    "retry_recommended": false,
+    "infrastructure_faults": [],
+    "componentFailures": [
+      {
+        "fullName": "E7624d75789eDependency__c.Value__c",
+        "componentType": "CustomField",
+        "lineNumber": null,
+        "problemType": "Error",
+        "problem": "This custom field is referenced elsewhere in salesforce.com. : Apex Class - E7624d75789eRoot."
+      }
+    ],
+    "testFailures": [],
+    "codeCoverageWarnings": [],
+    "flowCoverageWarnings": [],
+    "referencedFieldRejected": true,
+    "errorStatusCode": null,
+    "errorMessage": null
+  }
+}

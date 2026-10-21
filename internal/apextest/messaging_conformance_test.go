@@ -22,6 +22,12 @@ import (
 // Salesforce captures at API 62/67 supply every expected row. The exported
 // inbound implementation, folder and templates keep both CI routes independent
 // of the capture project and Salesforce credentials.
+// The API 68 anonymous capture at native-capture
+// (SHA-256 d905691f1cd818834e0da72af63ee847d9ccd05b97123ae6ffe60b29b2a1dc92)
+// answers all 298 primary rows with the exact API 67 text. The M and T controls
+// have no API 68 capture, so API 68 asserts the primary rows only. That capture
+// is anonymous-only: the local @IsTest route at 68 counts as legacy, not as
+// native named evidence. No A41 row is in the API 68 UNCAUGHT recapture.
 func TestMessagingOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected, Group string
@@ -46,7 +52,7 @@ func TestMessagingOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 298 || len(data.Controls) != 31 || len(data.Declarations) != 4 || len(data.DeclarationAPIVersions) != 4 || len(data.Metadata) != 7 || len(data.CarriedControls) != 1 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 298 || len(data.Controls) != 31 || len(data.Declarations) != 4 || len(data.DeclarationAPIVersions) != 4 || len(data.Metadata) != 7 || len(data.CarriedControls) != 1 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle shape: rows=%d controls=%d helpers=%d metadata=%d versions=%v", len(data.Cases), len(data.Controls), len(data.Declarations), len(data.Metadata), data.APIVersions)
 	}
 	rows := append(data.Cases, data.Controls...)
@@ -112,6 +118,11 @@ func TestMessagingOrgConformance(t *testing.T) {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "messaging", api)
 			apiRows := append([]familyCase(nil), rows...)
+			if api == "68.0" {
+				apiRows = append([]familyCase(nil), data.Cases...)
+				t.Logf("A41 API 68.0 excludes %d controls: no native API 68 capture", len(data.Controls))
+				t.Logf("A41 API 68.0: %d anonymous-captured rows; @IsTest checks retain anonymous-backed local assertions without native named-route capture", len(apiRows))
+			}
 			for i := range apiRows {
 				if api == "62.0" && apiRows[i].FloorExpected != "" {
 					apiRows[i].Expected = apiRows[i].FloorExpected
@@ -221,7 +232,11 @@ func TestMessagingOrgConformance(t *testing.T) {
 						}
 					})
 					t.Run("isTest", func(t *testing.T) {
-						counts.Track(t, "@IsTest", 1)
+						namedKind := "exact"
+						if api == "68.0" {
+							namedKind = "legacy"
+						}
+						counts.TrackKind(t, "@IsTest", namedKind, 1)
 						if !rejected {
 							if executeNamed == nil {
 								prepareNamed()

@@ -1,0 +1,128 @@
+{
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "transport_control",
+  "shapeCount": 1,
+  "nativeObservationCount": 8,
+  "assertedObservationCount": 8,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C168CONTROL_001",
+      "group": "transport-control",
+      "role": "protocol-control",
+      "twin": null,
+      "routes": {
+        "anonymous": {
+          "originalApex": "v=7;",
+          "originalApexSha256": "8ac34dc2e5a7f0a38b9c8c8bcd37ae6be04fff186b96874271e81bfd08b1cc22",
+          "sourceSha256": {
+            "anonymous": "0d088df865ea83fb6ffe14757789a51044831e19e30daca9f83fdc33ef310b93"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            }
+          },
+          "anonymous": "Object v;try{v=7;}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168CONTROL_001');"
+        },
+        "isTest": {
+          "originalApex": "v=7;",
+          "originalApexSha256": "8ac34dc2e5a7f0a38b9c8c8bcd37ae6be04fff186b96874271e81bfd08b1cc22",
+          "sourceSha256": {
+            "class:C168C168CONTROL001Test": "a48f37a2ee9e021c95e6c70f55cd43263d0c6c205456cf4fad2e7fef95f3cf32"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            }
+          },
+          "classes": {
+            "C168C168CONTROL001Test": "@IsTest private class C168C168CONTROL001Test{@IsTest static void observe(){Object v;try{v=7;}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168CONTROL_001');}}"
+          },
+          "tests": [
+            "C168C168CONTROL001Test"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,598 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 8,
+  "nativeObservationCount": 48,
+  "packetRowsSha256": "dd20c9a36edbeceb6e5d0c7b112871103f8f68b10afdfcd94bdf0526b067542b",
+  "rows": [
+    {
+      "id": "C125A2_001",
+      "expected": {
+        "outcome": "runtime",
+        "value": "size=2;bTouched=1;equal=true;hashSame=false"
+      },
+      "question": "Equals-only Set literal distinct identities: size and touched",
+      "role": "positive",
+      "routes": {
+        "anonymous": {
+          "id": "C125A2_001A",
+          "anonymous": "String obs; try { CAC125A2001.EqualityOnly a=new CAC125A2001.EqualityOnly(), b=new CAC125A2001.EqualityOnly(); Set<CAC125A2001.EqualityOnly> s=new Set<CAC125A2001.EqualityOnly>{a,b}; for(CAC125A2001.EqualityOnly x:s)x.touched=1; obs='size='+s.size()+';bTouched='+b.touched+';equal='+a.equals(b)+';hashSame='+(a.hashCode()==b.hashCode());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125A2_001A|'+obs);",
+          "setupClasses": {
+            "CAC125A2001": "public class CAC125A2001 {public class EqualityOnly {public Integer touched=0; public Boolean equals(Object other){return other instanceof EqualityOnly;}} public class HashAgreement {public Boolean equals(Object other){return other instanceof HashAgreement;} public Integer hashCode(){return 7;}}}"
+          },
+          "sourceSha256": {
+            "anonymous": "3b5f0803591d28542720b540279b0603683f679dc820cf11ba03351b35de53cf",
+            "setupClass:CAC125A2001": "b1e079142dc8baf19d711033cfb0c4f998894e3b06e34f39f6992905be14daa9"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125A2_001T",
+          "classes": {
+            "CAC125A2001Test": "@IsTest private class CAC125A2001Test {@IsTest static void observe(){String obs; try { CAC125A2001.EqualityOnly a=new CAC125A2001.EqualityOnly(), b=new CAC125A2001.EqualityOnly(); Set<CAC125A2001.EqualityOnly> s=new Set<CAC125A2001.EqualityOnly>{a,b}; for(CAC125A2001.EqualityOnly x:s)x.touched=1; obs='size='+s.size()+';bTouched='+b.touched+';equal='+a.equals(b)+';hashSame='+(a.hashCode()==b.hashCode());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125A2_001T|'+obs);}}",
+            "CAC125A2001": "public class CAC125A2001 {public class EqualityOnly {public Integer touched=0; public Boolean equals(Object other){return other instanceof EqualityOnly;}} public class HashAgreement {public Boolean equals(Object other){return other instanceof HashAgreement;} public Integer hashCode(){return 7;}}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125A2001Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125A2001Test": "e04123b966f9d9953ff56186f546c7d0ee6fcba7aef333a2513edd6801a78985",
+            "class:CAC125A2001": "b1e079142dc8baf19d711033cfb0c4f998894e3b06e34f39f6992905be14daa9"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125A2_002",
+      "expected": {
+        "outcome": "runtime",
+        "value": "1"
+      },
+      "question": "Matching explicit hash and equality narrows identity fallback",
+      "role": "rejection",
+      "routes": {
+        "anonymous": {
+          "id": "C125A2_002A",
+          "anonymous": "String obs; try {Set<CAC125A2002.HashAgreement> s=new Set<CAC125A2002.HashAgreement>{new CAC125A2002.HashAgreement(),new CAC125A2002.HashAgreement()}; obs=String.valueOf(s.size());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125A2_002A|'+obs);",
+          "setupClasses": {
+            "CAC125A2002": "public class CAC125A2002 {public class EqualityOnly {public Integer touched=0; public Boolean equals(Object other){return other instanceof EqualityOnly;}} public class HashAgreement {public Boolean equals(Object other){return other instanceof HashAgreement;} public Integer hashCode(){return 7;}}}"
+          },
+          "sourceSha256": {
+            "anonymous": "fac20c7d03ff41171fa4e0bb1519b49ffeb9915c463074adc93cf386e0b599ad",
+            "setupClass:CAC125A2002": "83cdcfa14e7e43da75662f29efa9299b947f64abaa53930d5db791ddddbd1d5a"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125A2_002T",
+          "classes": {
+            "CAC125A2002Test": "@IsTest private class CAC125A2002Test {@IsTest static void observe(){String obs; try {Set<CAC125A2002.HashAgreement> s=new Set<CAC125A2002.HashAgreement>{new CAC125A2002.HashAgreement(),new CAC125A2002.HashAgreement()}; obs=String.valueOf(s.size());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125A2_002T|'+obs);}}",
+            "CAC125A2002": "public class CAC125A2002 {public class EqualityOnly {public Integer touched=0; public Boolean equals(Object other){return other instanceof EqualityOnly;}} public class HashAgreement {public Boolean equals(Object other){return other instanceof HashAgreement;} public Integer hashCode(){return 7;}}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125A2002Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125A2002Test": "f284558a88af0d72027a3336ac3bfa4486a05733c0181901343681ce24c0af3d",
+            "class:CAC125A2002": "83cdcfa14e7e43da75662f29efa9299b947f64abaa53930d5db791ddddbd1d5a"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125A2_003",
+      "expected": {
+        "outcome": "runtime",
+        "value": "1"
+      },
+      "question": "Same reference twice in equals-only Set",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C125A2_003A",
+          "anonymous": "String obs; try {CAC125A2003.EqualityOnly a=new CAC125A2003.EqualityOnly(); obs=String.valueOf(new Set<CAC125A2003.EqualityOnly>{a,a}.size());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125A2_003A|'+obs);",
+          "setupClasses": {
+            "CAC125A2003": "public class CAC125A2003 {public class EqualityOnly {public Integer touched=0; public Boolean equals(Object other){return other instanceof EqualityOnly;}} public class HashAgreement {public Boolean equals(Object other){return other instanceof HashAgreement;} public Integer hashCode(){return 7;}}}"
+          },
+          "sourceSha256": {
+            "anonymous": "82df2a8b125bfbf345e900245f7366ea525fb48db50cb4b493557af3b6cd5446",
+            "setupClass:CAC125A2003": "ec5ddac4a94040fc60473a759822436deec1d062107ecb74ee28db30eccbb50a"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125A2_003T",
+          "classes": {
+            "CAC125A2003Test": "@IsTest private class CAC125A2003Test {@IsTest static void observe(){String obs; try {CAC125A2003.EqualityOnly a=new CAC125A2003.EqualityOnly(); obs=String.valueOf(new Set<CAC125A2003.EqualityOnly>{a,a}.size());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125A2_003T|'+obs);}}",
+            "CAC125A2003": "public class CAC125A2003 {public class EqualityOnly {public Integer touched=0; public Boolean equals(Object other){return other instanceof EqualityOnly;}} public class HashAgreement {public Boolean equals(Object other){return other instanceof HashAgreement;} public Integer hashCode(){return 7;}}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125A2003Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125A2003Test": "180e5f5e02c8ac10ab75fb1e2f8836a9597999d2d4482822dd31509a36208453",
+            "class:CAC125A2003": "ec5ddac4a94040fc60473a759822436deec1d062107ecb74ee28db30eccbb50a"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125A2_004",
+      "expected": {
+        "outcome": "runtime",
+        "value": "first=true;second=true;self=true;fresh=false;size=2"
+      },
+      "question": "Equals-only add and contains with fresh equal object",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C125A2_004A",
+          "anonymous": "String obs; try {CAC125A2004.EqualityOnly a=new CAC125A2004.EqualityOnly(),b=new CAC125A2004.EqualityOnly(); Set<CAC125A2004.EqualityOnly> s=new Set<CAC125A2004.EqualityOnly>(); Boolean first=s.add(a),second=s.add(b); obs='first='+first+';second='+second+';self='+s.contains(a)+';fresh='+s.contains(new CAC125A2004.EqualityOnly())+';size='+s.size();} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125A2_004A|'+obs);",
+          "setupClasses": {
+            "CAC125A2004": "public class CAC125A2004 {public class EqualityOnly {public Integer touched=0; public Boolean equals(Object other){return other instanceof EqualityOnly;}} public class HashAgreement {public Boolean equals(Object other){return other instanceof HashAgreement;} public Integer hashCode(){return 7;}}}"
+          },
+          "sourceSha256": {
+            "anonymous": "8199342e48a22904763de8ae850bfd1a7138df57205e5a84f3dc6f478a087266",
+            "setupClass:CAC125A2004": "bd59198875722e644ff178b9fd1d707b8c8ebc063da78be0d17212832fd7d1b2"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125A2_004T",
+          "classes": {
+            "CAC125A2004Test": "@IsTest private class CAC125A2004Test {@IsTest static void observe(){String obs; try {CAC125A2004.EqualityOnly a=new CAC125A2004.EqualityOnly(),b=new CAC125A2004.EqualityOnly(); Set<CAC125A2004.EqualityOnly> s=new Set<CAC125A2004.EqualityOnly>(); Boolean first=s.add(a),second=s.add(b); obs='first='+first+';second='+second+';self='+s.contains(a)+';fresh='+s.contains(new CAC125A2004.EqualityOnly())+';size='+s.size();} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125A2_004T|'+obs);}}",
+            "CAC125A2004": "public class CAC125A2004 {public class EqualityOnly {public Integer touched=0; public Boolean equals(Object other){return other instanceof EqualityOnly;}} public class HashAgreement {public Boolean equals(Object other){return other instanceof HashAgreement;} public Integer hashCode(){return 7;}}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125A2004Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125A2004Test": "6b2bcadd6275aeac7c57319268dd43a0f400b63d21f493703fec32e325f088de",
+            "class:CAC125A2004": "bd59198875722e644ff178b9fd1d707b8c8ebc063da78be0d17212832fd7d1b2"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125A2_005",
+      "expected": {
+        "outcome": "runtime",
+        "value": "fresh=false;self=true;size=0"
+      },
+      "question": "Equals-only remove different equal identity then same reference",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C125A2_005A",
+          "anonymous": "String obs; try {CAC125A2005.EqualityOnly a=new CAC125A2005.EqualityOnly(); Set<CAC125A2005.EqualityOnly> s=new Set<CAC125A2005.EqualityOnly>{a}; Boolean fresh=s.remove(new CAC125A2005.EqualityOnly()),self=s.remove(a); obs='fresh='+fresh+';self='+self+';size='+s.size();} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125A2_005A|'+obs);",
+          "setupClasses": {
+            "CAC125A2005": "public class CAC125A2005 {public class EqualityOnly {public Integer touched=0; public Boolean equals(Object other){return other instanceof EqualityOnly;}} public class HashAgreement {public Boolean equals(Object other){return other instanceof HashAgreement;} public Integer hashCode(){return 7;}}}"
+          },
+          "sourceSha256": {
+            "anonymous": "c285045e5d090de25473230420ba76f6e1744b27f00b33992c6b035972ccc18c",
+            "setupClass:CAC125A2005": "d0acadba9e87cdb5e6410a6d50e9046d2be5413372108c121c15cf5ede0c7af5"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125A2_005T",
+          "classes": {
+            "CAC125A2005Test": "@IsTest private class CAC125A2005Test {@IsTest static void observe(){String obs; try {CAC125A2005.EqualityOnly a=new CAC125A2005.EqualityOnly(); Set<CAC125A2005.EqualityOnly> s=new Set<CAC125A2005.EqualityOnly>{a}; Boolean fresh=s.remove(new CAC125A2005.EqualityOnly()),self=s.remove(a); obs='fresh='+fresh+';self='+self+';size='+s.size();} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125A2_005T|'+obs);}}",
+            "CAC125A2005": "public class CAC125A2005 {public class EqualityOnly {public Integer touched=0; public Boolean equals(Object other){return other instanceof EqualityOnly;}} public class HashAgreement {public Boolean equals(Object other){return other instanceof HashAgreement;} public Integer hashCode(){return 7;}}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125A2005Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125A2005Test": "11c8ed93a556bc75a4c4fc5c94749d52557d1966e2b49f224c6442ebdbf1aa47",
+            "class:CAC125A2005": "d0acadba9e87cdb5e6410a6d50e9046d2be5413372108c121c15cf5ede0c7af5"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125A2_006",
+      "expected": {
+        "outcome": "runtime",
+        "value": "true"
+      },
+      "question": "List contains intentionally tests equality outside hashing",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C125A2_006A",
+          "anonymous": "String obs; try {CAC125A2006.EqualityOnly a=new CAC125A2006.EqualityOnly(); obs=String.valueOf(new List<CAC125A2006.EqualityOnly>{a}.contains(new CAC125A2006.EqualityOnly()));} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125A2_006A|'+obs);",
+          "setupClasses": {
+            "CAC125A2006": "public class CAC125A2006 {public class EqualityOnly {public Integer touched=0; public Boolean equals(Object other){return other instanceof EqualityOnly;}} public class HashAgreement {public Boolean equals(Object other){return other instanceof HashAgreement;} public Integer hashCode(){return 7;}}}"
+          },
+          "sourceSha256": {
+            "anonymous": "c7b66a30f38d98c71f025fa2688acc4806edd7d8f89634dd6467fdd2c56868b9",
+            "setupClass:CAC125A2006": "f7b8636542f11b86c6399fe9af59b08ed3432da955a2d60e6b25d0173a4ed360"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125A2_006T",
+          "classes": {
+            "CAC125A2006Test": "@IsTest private class CAC125A2006Test {@IsTest static void observe(){String obs; try {CAC125A2006.EqualityOnly a=new CAC125A2006.EqualityOnly(); obs=String.valueOf(new List<CAC125A2006.EqualityOnly>{a}.contains(new CAC125A2006.EqualityOnly()));} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125A2_006T|'+obs);}}",
+            "CAC125A2006": "public class CAC125A2006 {public class EqualityOnly {public Integer touched=0; public Boolean equals(Object other){return other instanceof EqualityOnly;}} public class HashAgreement {public Boolean equals(Object other){return other instanceof HashAgreement;} public Integer hashCode(){return 7;}}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125A2006Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125A2006Test": "95efe81d63f3b02330eb5cf844ac0815a7206a0fcaa4ba964aba7a6e8fcf82f2",
+            "class:CAC125A2006": "f7b8636542f11b86c6399fe9af59b08ed3432da955a2d60e6b25d0173a4ed360"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125A2_007",
+      "expected": {
+        "outcome": "runtime",
+        "value": "2"
+      },
+      "question": "Null and same reference Set boundary",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "id": "C125A2_007A",
+          "anonymous": "String obs; try {CAC125A2007.EqualityOnly a=new CAC125A2007.EqualityOnly(); obs=String.valueOf(new Set<CAC125A2007.EqualityOnly>{null,null,a,a}.size());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125A2_007A|'+obs);",
+          "setupClasses": {
+            "CAC125A2007": "public class CAC125A2007 {public class EqualityOnly {public Integer touched=0; public Boolean equals(Object other){return other instanceof EqualityOnly;}} public class HashAgreement {public Boolean equals(Object other){return other instanceof HashAgreement;} public Integer hashCode(){return 7;}}}"
+          },
+          "sourceSha256": {
+            "anonymous": "4f241394170c59169f5d8c714ea6aea5fa73c4e9b2ee35ff5c76df91648cb648",
+            "setupClass:CAC125A2007": "e2bcc3128327717055c11a200c4f7c992abe6cb3e443bb3baf5438c68135c23e"
+          },
+          "stage": "runtime"
+        },
+        "isTest": {
+          "id": "C125A2_007T",
+          "classes": {
+            "CAC125A2007Test": "@IsTest private class CAC125A2007Test {@IsTest static void observe(){String obs; try {CAC125A2007.EqualityOnly a=new CAC125A2007.EqualityOnly(); obs=String.valueOf(new Set<CAC125A2007.EqualityOnly>{null,null,a,a}.size());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125A2_007T|'+obs);}}",
+            "CAC125A2007": "public class CAC125A2007 {public class EqualityOnly {public Integer touched=0; public Boolean equals(Object other){return other instanceof EqualityOnly;}} public class HashAgreement {public Boolean equals(Object other){return other instanceof HashAgreement;} public Integer hashCode(){return 7;}}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125A2007Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125A2007Test": "1c64c8276d812c67ff5a15b18abebb353013d97db0a5c30308b3cfe7b3b7c838",
+            "class:CAC125A2007": "e2bcc3128327717055c11a200c4f7c992abe6cb3e443bb3baf5438c68135c23e"
+          },
+          "stage": "runtime"
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        }
+      }
+    },
+    {
+      "id": "C125A2_008",
+      "expected": {
+        "outcome": "reject"
+      },
+      "question": "Wrong element type compile rejection",
+      "role": "rejection",
+      "routes": {
+        "anonymous": {
+          "id": "C125A2_008A",
+          "anonymous": "String obs; try {Set<CAC125A2008.EqualityOnly> s=new Set<CAC125A2008.EqualityOnly>{'bad'}; obs=String.valueOf(s.size());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125A2_008A|'+obs);",
+          "setupClasses": {
+            "CAC125A2008": "public class CAC125A2008 {public class EqualityOnly {public Integer touched=0; public Boolean equals(Object other){return other instanceof EqualityOnly;}} public class HashAgreement {public Boolean equals(Object other){return other instanceof HashAgreement;} public Integer hashCode(){return 7;}}}"
+          },
+          "sourceSha256": {
+            "anonymous": "49b6c034efe070d3c2853408c8d54f674f3e245c5ab3806db61065beca84a99d",
+            "setupClass:CAC125A2008": "17ba36e0e397267169d64ccc8dc4082f47c5f00ca10b619a945d8abe3345f8fa"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "problem": "Initial expression is of incorrect type, expected: CAC125A2008.EqualityOnly but was: String"
+            }
+          ]
+        },
+        "isTest": {
+          "id": "C125A2_008T",
+          "classes": {
+            "CAC125A2008Test": "@IsTest private class CAC125A2008Test {@IsTest static void observe(){String obs; try {Set<CAC125A2008.EqualityOnly> s=new Set<CAC125A2008.EqualityOnly>{'bad'}; obs=String.valueOf(s.size());} catch(Exception e){obs='EXC|'+e.getTypeName()+'|'+e.getMessage();}System.assert(false,'P|C125A2_008T|'+obs);}}",
+            "CAC125A2008": "public class CAC125A2008 {public class EqualityOnly {public Integer touched=0; public Boolean equals(Object other){return other instanceof EqualityOnly;}} public class HashAgreement {public Boolean equals(Object other){return other instanceof HashAgreement;} public Integer hashCode(){return 7;}}}"
+          },
+          "objects": {},
+          "tests": [
+            "CAC125A2008Test"
+          ],
+          "sourceSha256": {
+            "class:CAC125A2008Test": "10c397bb228da454a80c5c602bc70362894bf2b1b7fec0bafe80e5b9658e958a",
+            "class:CAC125A2008": "17ba36e0e397267169d64ccc8dc4082f47c5f00ca10b619a945d8abe3345f8fa"
+          },
+          "stage": "compile-rejected",
+          "nativeDiagnostics": [
+            {
+              "line": 1,
+              "name": "CAC125A2008Test",
+              "problem": "Initial expression is of incorrect type, expected: CAC125A2008.EqualityOnly but was: String",
+              "type": "ApexClass"
+            }
+          ]
+        }
+      },
+      "evidenceSHA256": {
+        "62.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        },
+        "67.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        },
+        "68.0": {
+          "anonymous": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da",
+            "setupSha256": "eebac72cd4e1bda4249b8a419fa64b765c1bf473783bfea060ce591cf2681055"
+          },
+          "isTest": {
+            "tsvSha256": "9797f390509fa9d811482b14d491d4465a62cd4d32e6502d2a9ccff9b96dc0da"
+          }
+        }
+      }
+    }
+  ],
+  "diagnosticContract": "Exact primary native text asserted on each rejected route; full deployment diagnostic arrays preserved, cascades are evidence only",
+  "provenance": "Synthetic source; independent anonymous and check-only named observations. Named native.json artifact excluded; TSV and setup evidence authoritative.",
+  "staticAnalysis": {
+    "baseline": "capture-revision-100674082189950676909464270273097705397729225196210387419024790090144103579119",
+    "executed": false,
+    "predictionBasis": "Code reading only; semantic and diagnostic-only differences counted separately, both routes/all APIs",
+    "predictedSemanticMismatchShapes": [
+      "C125A2_001",
+      "C125A2_004",
+      "C125A2_005"
+    ],
+    "predictedPrimaryDiagnosticMismatchShapes": [
+      "C125A2_008"
+    ],
+    "predictedAssertedMismatches": 24,
+    "codeReferences": [
+      "internal/vm/set_history.go:39",
+      "internal/vm/set_history.go:46",
+      "internal/vm/set_history.go:73",
+      "internal/vm/method_dispatch.go:1788",
+      "internal/sema/body_ir.go:3325",
+      "internal/sema/body_ir.go:2238"
+    ],
+    "proposedChange": "Preserve default identity hashes in Set history for insertion/membership/removal. Preserve explicit custom hash/equality and List equality. Separately align the wrong-element Set literal diagnostic; do not change rejection.",
+    "limits": "Runtime prediction covers only captured equals-only shapes, not arbitrary hashing/collision histories."
+  }
+}

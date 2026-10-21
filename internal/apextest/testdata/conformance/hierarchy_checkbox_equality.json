@@ -1,0 +1,535 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "routes": [
+    "istest"
+  ],
+  "nativeObservationCount": 8,
+  "phases": [
+    "freshDefaults",
+    "clearedId",
+    "explicitFalse"
+  ],
+  "comparisons": [
+    "operator",
+    "equals",
+    "assertAreEqual",
+    "sameHash"
+  ],
+  "objects": {
+    "QuietPreference__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><customSettingsType>Hierarchy</customSettingsType><label>Quiet Preference</label><visibility>Public</visibility><fields><fullName>Muted__c</fullName><label>Muted</label><defaultValue>false</defaultValue><type>Checkbox</type></fields></CustomObject>",
+    "QuietTile__c": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>Quiet Tile</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>Quiet Tiles</pluralLabel><sharingModel>ReadWrite</sharingModel><fields><fullName>Muted__c</fullName><label>Muted</label><defaultValue>false</defaultValue><type>Checkbox</type></fields></CustomObject>"
+  },
+  "objectSHA256": {
+    "QuietPreference__c": "49feebd4496f74ddd7688c2121af033ff60d8d5d8ca06f7520dddfcf03b196d5",
+    "QuietTile__c": "752b689015ce1f1e3d3aa9c6fa94d63fcbd5406e4c913713a3cad11776d703a1"
+  },
+  "fixtures": {
+    "62.0/dynamic": {
+      "classes": {
+        "HierarchyCheckboxObservation": "@IsTest private class HierarchyCheckboxObservation {\n private static List<Object> compare(SObject left,SObject right) {\n  Boolean assertionPassed=false;\n  try {System.Assert.areEqual(left,right);assertionPassed=true;} catch(System.AssertException failure) {}\n  return new List<Object>{left==right,left.equals(right),assertionPassed,left.hashCode()==right.hashCode()};\n }\n private static void observe(String shape,Schema.SObjectType token) {\n  SObject left=token.newSObject(null,true);\n  SObject right=token.newSObject(null,true);\n  List<Object> checks=new List<Object>{compare(left,right)};\n  right.Id=null;\n  checks.add(compare(left,right));\n  left.put('Muted__c',false);\n  checks.add(compare(left,right));\n  String payload=JSON.serialize(new Map<String,Object>{'shape'=>shape,'checks'=>checks,'l'=>left.get('Muted__c'),'r'=>right.get('Muted__c'),'p'=>new List<Object>{left.getPopulatedFieldsAsMap(),right.getPopulatedFieldsAsMap()},'j'=>new List<String>{JSON.serialize(left),JSON.serialize(right)}});\n  System.assert(payload.length()<650,'HCE_TRANSPORT_OVERSIZE');\n  System.assertEquals('HCE_NATIVE',payload);\n }\n @IsTest static void hierarchy(){observe('hierarchy',QuietPreference__c.SObjectType);}\n @IsTest static void ordinary(){observe('ordinary',QuietTile__c.SObjectType);}\n}\n"
+      },
+      "sourceSHA256": {
+        "HierarchyCheckboxObservation": "6b7e43fe08a29a6a9ba651cd92552c0e9265df760e974c98c6b5b66b2f558825"
+      },
+      "classMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "classMetadataSHA256": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa"
+    },
+    "62.0/typed": {
+      "classes": {
+        "HierarchyCheckboxObservation": "@IsTest private class HierarchyCheckboxObservation {\n private static List<Object> compare(SObject left,SObject right) {\n  Boolean assertionPassed=false;\n  try {System.Assert.areEqual(left,right);assertionPassed=true;} catch(System.AssertException failure) {}\n  return new List<Object>{left==right,left.equals(right),assertionPassed,left.hashCode()==right.hashCode()};\n }\n private static void emit(String shape,List<Object> checks,SObject left,SObject right) {\n  String payload=JSON.serialize(new Map<String,Object>{'shape'=>shape,'checks'=>checks,'l'=>left.get('Muted__c'),'r'=>right.get('Muted__c'),'p'=>new List<Object>{left.getPopulatedFieldsAsMap(),right.getPopulatedFieldsAsMap()},'j'=>new List<String>{JSON.serialize(left),JSON.serialize(right)}});\n  System.assert(payload.length()<650,'HCE_TRANSPORT_OVERSIZE');\n  System.assertEquals('HCE_NATIVE',payload);\n }\n @IsTest static void hierarchy(){\n  QuietPreference__c left=(QuietPreference__c)QuietPreference__c.SObjectType.newSObject(null,true);\n  QuietPreference__c right=(QuietPreference__c)QuietPreference__c.SObjectType.newSObject(null,true);\n  List<Object> checks=new List<Object>{compare(left,right)};\n  right.Id=null;\n  checks.add(compare(left,right));\n  left.Muted__c=false;\n  checks.add(compare(left,right));\n  emit('hierarchy',checks,left,right);\n }\n @IsTest static void ordinary(){\n  QuietTile__c left=(QuietTile__c)QuietTile__c.SObjectType.newSObject(null,true);\n  QuietTile__c right=(QuietTile__c)QuietTile__c.SObjectType.newSObject(null,true);\n  List<Object> checks=new List<Object>{compare(left,right)};\n  right.Id=null;\n  checks.add(compare(left,right));\n  left.Muted__c=false;\n  checks.add(compare(left,right));\n  emit('ordinary',checks,left,right);\n }\n}\n"
+      },
+      "sourceSHA256": {
+        "HierarchyCheckboxObservation": "2fd59b6e5700f0eacee7c400c94d76541157a22d384fa56e3b21c6764d8341df"
+      },
+      "classMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "classMetadataSHA256": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa"
+    },
+    "67.0/dynamic": {
+      "classes": {
+        "HierarchyCheckboxObservation": "@IsTest private class HierarchyCheckboxObservation {\n private static List<Object> compare(SObject left,SObject right) {\n  Boolean assertionPassed=false;\n  try {System.Assert.areEqual(left,right);assertionPassed=true;} catch(System.AssertException failure) {}\n  return new List<Object>{left==right,left.equals(right),assertionPassed,left.hashCode()==right.hashCode()};\n }\n private static void observe(String shape,Schema.SObjectType token) {\n  SObject left=token.newSObject(null,true);\n  SObject right=token.newSObject(null,true);\n  List<Object> checks=new List<Object>{compare(left,right)};\n  right.Id=null;\n  checks.add(compare(left,right));\n  left.put('Muted__c',false);\n  checks.add(compare(left,right));\n  String payload=JSON.serialize(new Map<String,Object>{'shape'=>shape,'checks'=>checks,'l'=>left.get('Muted__c'),'r'=>right.get('Muted__c'),'p'=>new List<Object>{left.getPopulatedFieldsAsMap(),right.getPopulatedFieldsAsMap()},'j'=>new List<String>{JSON.serialize(left),JSON.serialize(right)}});\n  System.assert(payload.length()<650,'HCE_TRANSPORT_OVERSIZE');\n  System.assertEquals('HCE_NATIVE',payload);\n }\n @IsTest static void hierarchy(){observe('hierarchy',QuietPreference__c.SObjectType);}\n @IsTest static void ordinary(){observe('ordinary',QuietTile__c.SObjectType);}\n}\n"
+      },
+      "sourceSHA256": {
+        "HierarchyCheckboxObservation": "6b7e43fe08a29a6a9ba651cd92552c0e9265df760e974c98c6b5b66b2f558825"
+      },
+      "classMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "classMetadataSHA256": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d"
+    },
+    "67.0/typed": {
+      "classes": {
+        "HierarchyCheckboxObservation": "@IsTest private class HierarchyCheckboxObservation {\n private static List<Object> compare(SObject left,SObject right) {\n  Boolean assertionPassed=false;\n  try {System.Assert.areEqual(left,right);assertionPassed=true;} catch(System.AssertException failure) {}\n  return new List<Object>{left==right,left.equals(right),assertionPassed,left.hashCode()==right.hashCode()};\n }\n private static void emit(String shape,List<Object> checks,SObject left,SObject right) {\n  String payload=JSON.serialize(new Map<String,Object>{'shape'=>shape,'checks'=>checks,'l'=>left.get('Muted__c'),'r'=>right.get('Muted__c'),'p'=>new List<Object>{left.getPopulatedFieldsAsMap(),right.getPopulatedFieldsAsMap()},'j'=>new List<String>{JSON.serialize(left),JSON.serialize(right)}});\n  System.assert(payload.length()<650,'HCE_TRANSPORT_OVERSIZE');\n  System.assertEquals('HCE_NATIVE',payload);\n }\n @IsTest static void hierarchy(){\n  QuietPreference__c left=(QuietPreference__c)QuietPreference__c.SObjectType.newSObject(null,true);\n  QuietPreference__c right=(QuietPreference__c)QuietPreference__c.SObjectType.newSObject(null,true);\n  List<Object> checks=new List<Object>{compare(left,right)};\n  right.Id=null;\n  checks.add(compare(left,right));\n  left.Muted__c=false;\n  checks.add(compare(left,right));\n  emit('hierarchy',checks,left,right);\n }\n @IsTest static void ordinary(){\n  QuietTile__c left=(QuietTile__c)QuietTile__c.SObjectType.newSObject(null,true);\n  QuietTile__c right=(QuietTile__c)QuietTile__c.SObjectType.newSObject(null,true);\n  List<Object> checks=new List<Object>{compare(left,right)};\n  right.Id=null;\n  checks.add(compare(left,right));\n  left.Muted__c=false;\n  checks.add(compare(left,right));\n  emit('ordinary',checks,left,right);\n }\n}\n"
+      },
+      "sourceSHA256": {
+        "HierarchyCheckboxObservation": "2fd59b6e5700f0eacee7c400c94d76541157a22d384fa56e3b21c6764d8341df"
+      },
+      "classMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "classMetadataSHA256": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d"
+    }
+  },
+  "cells": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "syntax": "dynamic",
+      "method": "hierarchy",
+      "fixture": "62.0/dynamic",
+      "deploymentID": "0AfEc00000p1WLSKA2",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; no persistent metadata or test data",
+      "rawDeploymentSHA256": "5ddc81b794df8f50180c7ba48a0aece9207438b6d69c676fb46a6ac88f0ec4e5",
+      "rawRowSHA256": "878fce5216d89b1012a765e9ecaaad542fe3e2b39d40b0fb9b07a0449a51896c",
+      "projectedPayload": "{\"j\":[\"{\\\"attributes\\\":{\\\"type\\\":\\\"QuietPreference__c\\\"},\\\"IsDeleted\\\":false,\\\"Muted__c\\\":false}\",\"{\\\"attributes\\\":{\\\"type\\\":\\\"QuietPreference__c\\\"},\\\"IsDeleted\\\":false,\\\"Muted__c\\\":false}\"],\"p\":[{\"Muted__c\":false,\"IsDeleted\":false},{\"Muted__c\":false,\"IsDeleted\":false}],\"r\":false,\"l\":false,\"checks\":[[true,true,true,true],[true,true,true,true],[true,true,true,true]],\"shape\":\"hierarchy\"}",
+      "projectedPayloadSHA256": "ab13ba9f82a97e7b9115682735273068e15fef2600a3d99c6ae24c6a9593b32d",
+      "native": {
+        "j": [
+          "{\"attributes\":{\"type\":\"QuietPreference__c\"},\"IsDeleted\":false,\"Muted__c\":false}",
+          "{\"attributes\":{\"type\":\"QuietPreference__c\"},\"IsDeleted\":false,\"Muted__c\":false}"
+        ],
+        "p": [
+          {
+            "Muted__c": false,
+            "IsDeleted": false
+          },
+          {
+            "Muted__c": false,
+            "IsDeleted": false
+          }
+        ],
+        "r": false,
+        "l": false,
+        "checks": [
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ]
+        ],
+        "shape": "hierarchy"
+      }
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "syntax": "dynamic",
+      "method": "ordinary",
+      "fixture": "62.0/dynamic",
+      "deploymentID": "0AfEc00000p1WLSKA2",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; no persistent metadata or test data",
+      "rawDeploymentSHA256": "5ddc81b794df8f50180c7ba48a0aece9207438b6d69c676fb46a6ac88f0ec4e5",
+      "rawRowSHA256": "ef33529ac43c951c36b8504cb9910d380690e48f773b11e36b83771cdc451787",
+      "projectedPayload": "{\"j\":[\"{\\\"attributes\\\":{\\\"type\\\":\\\"QuietTile__c\\\"},\\\"IsDeleted\\\":false,\\\"OwnerId\\\":\\\"[USER_ID]\\\",\\\"Muted__c\\\":false}\",\"{\\\"attributes\\\":{\\\"type\\\":\\\"QuietTile__c\\\"},\\\"IsDeleted\\\":false,\\\"OwnerId\\\":\\\"[USER_ID]\\\",\\\"Muted__c\\\":false}\"],\"p\":[{\"Muted__c\":false,\"OwnerId\":\"[USER_ID]\",\"IsDeleted\":false},{\"Muted__c\":false,\"OwnerId\":\"[USER_ID]\",\"IsDeleted\":false}],\"r\":false,\"l\":false,\"checks\":[[true,true,true,true],[true,true,true,true],[true,true,true,true]],\"shape\":\"ordinary\"}",
+      "projectedPayloadSHA256": "e7fe4a15dc26668cdb21ec6b980c60fdd6fbf763fa28144fbf7b26691324e494",
+      "native": {
+        "j": [
+          "{\"attributes\":{\"type\":\"QuietTile__c\"},\"IsDeleted\":false,\"OwnerId\":\"[USER_ID]\",\"Muted__c\":false}",
+          "{\"attributes\":{\"type\":\"QuietTile__c\"},\"IsDeleted\":false,\"OwnerId\":\"[USER_ID]\",\"Muted__c\":false}"
+        ],
+        "p": [
+          {
+            "Muted__c": false,
+            "OwnerId": "[USER_ID]",
+            "IsDeleted": false
+          },
+          {
+            "Muted__c": false,
+            "OwnerId": "[USER_ID]",
+            "IsDeleted": false
+          }
+        ],
+        "r": false,
+        "l": false,
+        "checks": [
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ]
+        ],
+        "shape": "ordinary"
+      }
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "syntax": "typed",
+      "method": "hierarchy",
+      "fixture": "62.0/typed",
+      "deploymentID": "0AfEc00000p1a2UKAQ",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; no persistent metadata or test data",
+      "rawDeploymentSHA256": "388418974f3075a8e0fb2ef97042e3f893f57120fc4731f7080ccee9a6e6bfe0",
+      "rawRowSHA256": "878fce5216d89b1012a765e9ecaaad542fe3e2b39d40b0fb9b07a0449a51896c",
+      "projectedPayload": "{\"j\":[\"{\\\"attributes\\\":{\\\"type\\\":\\\"QuietPreference__c\\\"},\\\"IsDeleted\\\":false,\\\"Muted__c\\\":false}\",\"{\\\"attributes\\\":{\\\"type\\\":\\\"QuietPreference__c\\\"},\\\"IsDeleted\\\":false,\\\"Muted__c\\\":false}\"],\"p\":[{\"Muted__c\":false,\"IsDeleted\":false},{\"Muted__c\":false,\"IsDeleted\":false}],\"r\":false,\"l\":false,\"checks\":[[true,true,true,true],[true,true,true,true],[true,true,true,true]],\"shape\":\"hierarchy\"}",
+      "projectedPayloadSHA256": "ab13ba9f82a97e7b9115682735273068e15fef2600a3d99c6ae24c6a9593b32d",
+      "native": {
+        "j": [
+          "{\"attributes\":{\"type\":\"QuietPreference__c\"},\"IsDeleted\":false,\"Muted__c\":false}",
+          "{\"attributes\":{\"type\":\"QuietPreference__c\"},\"IsDeleted\":false,\"Muted__c\":false}"
+        ],
+        "p": [
+          {
+            "Muted__c": false,
+            "IsDeleted": false
+          },
+          {
+            "Muted__c": false,
+            "IsDeleted": false
+          }
+        ],
+        "r": false,
+        "l": false,
+        "checks": [
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ]
+        ],
+        "shape": "hierarchy"
+      }
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "syntax": "typed",
+      "method": "ordinary",
+      "fixture": "62.0/typed",
+      "deploymentID": "0AfEc00000p1a2UKAQ",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; no persistent metadata or test data",
+      "rawDeploymentSHA256": "388418974f3075a8e0fb2ef97042e3f893f57120fc4731f7080ccee9a6e6bfe0",
+      "rawRowSHA256": "ef33529ac43c951c36b8504cb9910d380690e48f773b11e36b83771cdc451787",
+      "projectedPayload": "{\"j\":[\"{\\\"attributes\\\":{\\\"type\\\":\\\"QuietTile__c\\\"},\\\"IsDeleted\\\":false,\\\"OwnerId\\\":\\\"[USER_ID]\\\",\\\"Muted__c\\\":false}\",\"{\\\"attributes\\\":{\\\"type\\\":\\\"QuietTile__c\\\"},\\\"IsDeleted\\\":false,\\\"OwnerId\\\":\\\"[USER_ID]\\\",\\\"Muted__c\\\":false}\"],\"p\":[{\"Muted__c\":false,\"OwnerId\":\"[USER_ID]\",\"IsDeleted\":false},{\"Muted__c\":false,\"OwnerId\":\"[USER_ID]\",\"IsDeleted\":false}],\"r\":false,\"l\":false,\"checks\":[[true,true,true,true],[true,true,true,true],[true,true,true,true]],\"shape\":\"ordinary\"}",
+      "projectedPayloadSHA256": "e7fe4a15dc26668cdb21ec6b980c60fdd6fbf763fa28144fbf7b26691324e494",
+      "native": {
+        "j": [
+          "{\"attributes\":{\"type\":\"QuietTile__c\"},\"IsDeleted\":false,\"OwnerId\":\"[USER_ID]\",\"Muted__c\":false}",
+          "{\"attributes\":{\"type\":\"QuietTile__c\"},\"IsDeleted\":false,\"OwnerId\":\"[USER_ID]\",\"Muted__c\":false}"
+        ],
+        "p": [
+          {
+            "Muted__c": false,
+            "OwnerId": "[USER_ID]",
+            "IsDeleted": false
+          },
+          {
+            "Muted__c": false,
+            "OwnerId": "[USER_ID]",
+            "IsDeleted": false
+          }
+        ],
+        "r": false,
+        "l": false,
+        "checks": [
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ]
+        ],
+        "shape": "ordinary"
+      }
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "syntax": "dynamic",
+      "method": "hierarchy",
+      "fixture": "67.0/dynamic",
+      "deploymentID": "0AfEc00000p1RSFKA2",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; no persistent metadata or test data",
+      "rawDeploymentSHA256": "1484bb885cb0777842285c6db3a1b0753c44bcfe1020672b945f01700807a12b",
+      "rawRowSHA256": "878fce5216d89b1012a765e9ecaaad542fe3e2b39d40b0fb9b07a0449a51896c",
+      "projectedPayload": "{\"j\":[\"{\\\"attributes\\\":{\\\"type\\\":\\\"QuietPreference__c\\\"},\\\"IsDeleted\\\":false,\\\"Muted__c\\\":false}\",\"{\\\"attributes\\\":{\\\"type\\\":\\\"QuietPreference__c\\\"},\\\"IsDeleted\\\":false,\\\"Muted__c\\\":false}\"],\"p\":[{\"Muted__c\":false,\"IsDeleted\":false},{\"Muted__c\":false,\"IsDeleted\":false}],\"r\":false,\"l\":false,\"checks\":[[true,true,true,true],[true,true,true,true],[true,true,true,true]],\"shape\":\"hierarchy\"}",
+      "projectedPayloadSHA256": "ab13ba9f82a97e7b9115682735273068e15fef2600a3d99c6ae24c6a9593b32d",
+      "native": {
+        "j": [
+          "{\"attributes\":{\"type\":\"QuietPreference__c\"},\"IsDeleted\":false,\"Muted__c\":false}",
+          "{\"attributes\":{\"type\":\"QuietPreference__c\"},\"IsDeleted\":false,\"Muted__c\":false}"
+        ],
+        "p": [
+          {
+            "Muted__c": false,
+            "IsDeleted": false
+          },
+          {
+            "Muted__c": false,
+            "IsDeleted": false
+          }
+        ],
+        "r": false,
+        "l": false,
+        "checks": [
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ]
+        ],
+        "shape": "hierarchy"
+      }
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "syntax": "dynamic",
+      "method": "ordinary",
+      "fixture": "67.0/dynamic",
+      "deploymentID": "0AfEc00000p1RSFKA2",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; no persistent metadata or test data",
+      "rawDeploymentSHA256": "1484bb885cb0777842285c6db3a1b0753c44bcfe1020672b945f01700807a12b",
+      "rawRowSHA256": "ef33529ac43c951c36b8504cb9910d380690e48f773b11e36b83771cdc451787",
+      "projectedPayload": "{\"j\":[\"{\\\"attributes\\\":{\\\"type\\\":\\\"QuietTile__c\\\"},\\\"IsDeleted\\\":false,\\\"OwnerId\\\":\\\"[USER_ID]\\\",\\\"Muted__c\\\":false}\",\"{\\\"attributes\\\":{\\\"type\\\":\\\"QuietTile__c\\\"},\\\"IsDeleted\\\":false,\\\"OwnerId\\\":\\\"[USER_ID]\\\",\\\"Muted__c\\\":false}\"],\"p\":[{\"Muted__c\":false,\"OwnerId\":\"[USER_ID]\",\"IsDeleted\":false},{\"Muted__c\":false,\"OwnerId\":\"[USER_ID]\",\"IsDeleted\":false}],\"r\":false,\"l\":false,\"checks\":[[true,true,true,true],[true,true,true,true],[true,true,true,true]],\"shape\":\"ordinary\"}",
+      "projectedPayloadSHA256": "e7fe4a15dc26668cdb21ec6b980c60fdd6fbf763fa28144fbf7b26691324e494",
+      "native": {
+        "j": [
+          "{\"attributes\":{\"type\":\"QuietTile__c\"},\"IsDeleted\":false,\"OwnerId\":\"[USER_ID]\",\"Muted__c\":false}",
+          "{\"attributes\":{\"type\":\"QuietTile__c\"},\"IsDeleted\":false,\"OwnerId\":\"[USER_ID]\",\"Muted__c\":false}"
+        ],
+        "p": [
+          {
+            "Muted__c": false,
+            "OwnerId": "[USER_ID]",
+            "IsDeleted": false
+          },
+          {
+            "Muted__c": false,
+            "OwnerId": "[USER_ID]",
+            "IsDeleted": false
+          }
+        ],
+        "r": false,
+        "l": false,
+        "checks": [
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ]
+        ],
+        "shape": "ordinary"
+      }
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "syntax": "typed",
+      "method": "hierarchy",
+      "fixture": "67.0/typed",
+      "deploymentID": "0AfEc00000p1U8NKAU",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; no persistent metadata or test data",
+      "rawDeploymentSHA256": "3367dd14b78fa5ea867d12543a5b2e346c5ca63ca8041dbfbce5f8480e5274b4",
+      "rawRowSHA256": "878fce5216d89b1012a765e9ecaaad542fe3e2b39d40b0fb9b07a0449a51896c",
+      "projectedPayload": "{\"j\":[\"{\\\"attributes\\\":{\\\"type\\\":\\\"QuietPreference__c\\\"},\\\"IsDeleted\\\":false,\\\"Muted__c\\\":false}\",\"{\\\"attributes\\\":{\\\"type\\\":\\\"QuietPreference__c\\\"},\\\"IsDeleted\\\":false,\\\"Muted__c\\\":false}\"],\"p\":[{\"Muted__c\":false,\"IsDeleted\":false},{\"Muted__c\":false,\"IsDeleted\":false}],\"r\":false,\"l\":false,\"checks\":[[true,true,true,true],[true,true,true,true],[true,true,true,true]],\"shape\":\"hierarchy\"}",
+      "projectedPayloadSHA256": "ab13ba9f82a97e7b9115682735273068e15fef2600a3d99c6ae24c6a9593b32d",
+      "native": {
+        "j": [
+          "{\"attributes\":{\"type\":\"QuietPreference__c\"},\"IsDeleted\":false,\"Muted__c\":false}",
+          "{\"attributes\":{\"type\":\"QuietPreference__c\"},\"IsDeleted\":false,\"Muted__c\":false}"
+        ],
+        "p": [
+          {
+            "Muted__c": false,
+            "IsDeleted": false
+          },
+          {
+            "Muted__c": false,
+            "IsDeleted": false
+          }
+        ],
+        "r": false,
+        "l": false,
+        "checks": [
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ]
+        ],
+        "shape": "hierarchy"
+      }
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "syntax": "typed",
+      "method": "ordinary",
+      "fixture": "67.0/typed",
+      "deploymentID": "0AfEc00000p1U8NKAU",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; no persistent metadata or test data",
+      "rawDeploymentSHA256": "3367dd14b78fa5ea867d12543a5b2e346c5ca63ca8041dbfbce5f8480e5274b4",
+      "rawRowSHA256": "ef33529ac43c951c36b8504cb9910d380690e48f773b11e36b83771cdc451787",
+      "projectedPayload": "{\"j\":[\"{\\\"attributes\\\":{\\\"type\\\":\\\"QuietTile__c\\\"},\\\"IsDeleted\\\":false,\\\"OwnerId\\\":\\\"[USER_ID]\\\",\\\"Muted__c\\\":false}\",\"{\\\"attributes\\\":{\\\"type\\\":\\\"QuietTile__c\\\"},\\\"IsDeleted\\\":false,\\\"OwnerId\\\":\\\"[USER_ID]\\\",\\\"Muted__c\\\":false}\"],\"p\":[{\"Muted__c\":false,\"OwnerId\":\"[USER_ID]\",\"IsDeleted\":false},{\"Muted__c\":false,\"OwnerId\":\"[USER_ID]\",\"IsDeleted\":false}],\"r\":false,\"l\":false,\"checks\":[[true,true,true,true],[true,true,true,true],[true,true,true,true]],\"shape\":\"ordinary\"}",
+      "projectedPayloadSHA256": "e7fe4a15dc26668cdb21ec6b980c60fdd6fbf763fa28144fbf7b26691324e494",
+      "native": {
+        "j": [
+          "{\"attributes\":{\"type\":\"QuietTile__c\"},\"IsDeleted\":false,\"OwnerId\":\"[USER_ID]\",\"Muted__c\":false}",
+          "{\"attributes\":{\"type\":\"QuietTile__c\"},\"IsDeleted\":false,\"OwnerId\":\"[USER_ID]\",\"Muted__c\":false}"
+        ],
+        "p": [
+          {
+            "Muted__c": false,
+            "OwnerId": "[USER_ID]",
+            "IsDeleted": false
+          },
+          {
+            "Muted__c": false,
+            "OwnerId": "[USER_ID]",
+            "IsDeleted": false
+          }
+        ],
+        "r": false,
+        "l": false,
+        "checks": [
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ]
+        ],
+        "shape": "ordinary"
+      }
+    }
+  ],
+  "carried": {
+    "p": "Raw populated-field observations retained; full constructor/system-field projection is a separate family. Only Muted__c field reads and equality are asserted here.",
+    "j": "Raw serialized observations retained; JSON field inclusion, textual ordering and Id display are separate families.",
+    "anonymous": "No anonymous observation admitted in this bounded named follow-through.",
+    "api68": "API68 was not captured; existing ordinary controls remain unchanged."
+  }
+}

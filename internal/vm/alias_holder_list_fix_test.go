@@ -58,7 +58,7 @@ String expected;
 			if name == "second" {
 				continue
 			}
-			machine.Globals[name] = cloneValuePreserveRefs(value)
+			machine.Globals[name] = machine.cloneValuePreserveRefs(value)
 		}
 		execute(mutation)
 		globals := machine.Globals

@@ -1,0 +1,3979 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "markerPrefix": "RKP|",
+  "rowCount": 53,
+  "rows": [
+    {
+      "id": "I_A_D_SOBJ",
+      "snippet": "Object o = new List<Account>{new Account(Name='x')}; o instanceof SObject",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');Boolean value=o instanceof SObject;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_D_SOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeADSOBJ": "@IsTest private class RecordKindProbeADSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');Boolean value=o instanceof SObject;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_D_SOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeADSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_A_I_SOBJ",
+      "snippet": "Object o = new List<Account>{new Account(Name='x')}; RecordKindSeenAISOBJ.Observer p = new RecordKindSeenAISOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof SObject",
+      "helpers": {
+        "RecordKindSeenAISOBJ": "public class RecordKindSeenAISOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof SObject;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');RecordKindSeenAISOBJ.Observer p=new RecordKindSeenAISOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_I_SOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeAISOBJ": "@IsTest private class RecordKindProbeAISOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');RecordKindSeenAISOBJ.Observer p=new RecordKindSeenAISOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_I_SOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeAISOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_A_D_LSOBJ",
+      "snippet": "Object o = new List<Account>{new Account(Name='x')}; o instanceof List<SObject>",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');Boolean value=o instanceof List<SObject>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_D_LSOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeADLSOBJ": "@IsTest private class RecordKindProbeADLSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');Boolean value=o instanceof List<SObject>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_D_LSOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeADLSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_A_I_LSOBJ",
+      "snippet": "Object o = new List<Account>{new Account(Name='x')}; RecordKindSeenAILSOBJ.Observer p = new RecordKindSeenAILSOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof List<SObject>",
+      "helpers": {
+        "RecordKindSeenAILSOBJ": "public class RecordKindSeenAILSOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof List<SObject>;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');RecordKindSeenAILSOBJ.Observer p=new RecordKindSeenAILSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_I_LSOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeAILSOBJ": "@IsTest private class RecordKindProbeAILSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');RecordKindSeenAILSOBJ.Observer p=new RecordKindSeenAILSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_I_LSOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeAILSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_A_D_LACCT",
+      "snippet": "Object o = new List<Account>{new Account(Name='x')}; o instanceof List<Account>",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');Boolean value=o instanceof List<Account>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_D_LACCT|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeADLACCT": "@IsTest private class RecordKindProbeADLACCT {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');Boolean value=o instanceof List<Account>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_D_LACCT|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeADLACCT"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_A_I_LACCT",
+      "snippet": "Object o = new List<Account>{new Account(Name='x')}; RecordKindSeenAILACCT.Observer p = new RecordKindSeenAILACCT.Seen(); p.sees(o); // sees(Object o): return o instanceof List<Account>",
+      "helpers": {
+        "RecordKindSeenAILACCT": "public class RecordKindSeenAILACCT {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof List<Account>;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');RecordKindSeenAILACCT.Observer p=new RecordKindSeenAILACCT.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_I_LACCT|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeAILACCT": "@IsTest private class RecordKindProbeAILACCT {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');RecordKindSeenAILACCT.Observer p=new RecordKindSeenAILACCT.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_I_LACCT|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeAILACCT"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_A_D_OBJ",
+      "snippet": "Object o = new List<Account>{new Account(Name='x')}; o instanceof Object",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');Boolean value=o instanceof Object;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_D_OBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeADOBJ": "@IsTest private class RecordKindProbeADOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');Boolean value=o instanceof Object;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_D_OBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeADOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_A_I_OBJ",
+      "snippet": "Object o = new List<Account>{new Account(Name='x')}; RecordKindSeenAIOBJ.Observer p = new RecordKindSeenAIOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof Object",
+      "helpers": {
+        "RecordKindSeenAIOBJ": "public class RecordKindSeenAIOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof Object;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');RecordKindSeenAIOBJ.Observer p=new RecordKindSeenAIOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_I_OBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeAIOBJ": "@IsTest private class RecordKindProbeAIOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');RecordKindSeenAIOBJ.Observer p=new RecordKindSeenAIOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_I_OBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeAIOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_A_CAST",
+      "snippet": "Object o = new List<Account>{new Account(Name='x')}; SObject result = (SObject)o;",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');SObject result=(SObject)o;payload.put('success',true);payload.put('isNull',result==null);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_CAST|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeACAST": "@IsTest private class RecordKindProbeACAST {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>{new Account(Name='x')};payload.put('stage','observe');SObject result=(SObject)o;payload.put('success',true);payload.put('isNull',result==null);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_A_CAST|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeACAST"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<Account> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<Account> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<Account> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<Account> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<Account> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<Account> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_B_D_SOBJ",
+      "snippet": "Object o = new List<SObject>{new Account(Name='x')}; o instanceof SObject",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');Boolean value=o instanceof SObject;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_D_SOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeBDSOBJ": "@IsTest private class RecordKindProbeBDSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');Boolean value=o instanceof SObject;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_D_SOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeBDSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_B_I_SOBJ",
+      "snippet": "Object o = new List<SObject>{new Account(Name='x')}; RecordKindSeenBISOBJ.Observer p = new RecordKindSeenBISOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof SObject",
+      "helpers": {
+        "RecordKindSeenBISOBJ": "public class RecordKindSeenBISOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof SObject;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');RecordKindSeenBISOBJ.Observer p=new RecordKindSeenBISOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_I_SOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeBISOBJ": "@IsTest private class RecordKindProbeBISOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');RecordKindSeenBISOBJ.Observer p=new RecordKindSeenBISOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_I_SOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeBISOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_B_D_LSOBJ",
+      "snippet": "Object o = new List<SObject>{new Account(Name='x')}; o instanceof List<SObject>",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');Boolean value=o instanceof List<SObject>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_D_LSOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeBDLSOBJ": "@IsTest private class RecordKindProbeBDLSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');Boolean value=o instanceof List<SObject>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_D_LSOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeBDLSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_B_I_LSOBJ",
+      "snippet": "Object o = new List<SObject>{new Account(Name='x')}; RecordKindSeenBILSOBJ.Observer p = new RecordKindSeenBILSOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof List<SObject>",
+      "helpers": {
+        "RecordKindSeenBILSOBJ": "public class RecordKindSeenBILSOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof List<SObject>;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');RecordKindSeenBILSOBJ.Observer p=new RecordKindSeenBILSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_I_LSOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeBILSOBJ": "@IsTest private class RecordKindProbeBILSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');RecordKindSeenBILSOBJ.Observer p=new RecordKindSeenBILSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_I_LSOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeBILSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_B_D_LACCT",
+      "snippet": "Object o = new List<SObject>{new Account(Name='x')}; o instanceof List<Account>",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');Boolean value=o instanceof List<Account>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_D_LACCT|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeBDLACCT": "@IsTest private class RecordKindProbeBDLACCT {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');Boolean value=o instanceof List<Account>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_D_LACCT|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeBDLACCT"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_B_I_LACCT",
+      "snippet": "Object o = new List<SObject>{new Account(Name='x')}; RecordKindSeenBILACCT.Observer p = new RecordKindSeenBILACCT.Seen(); p.sees(o); // sees(Object o): return o instanceof List<Account>",
+      "helpers": {
+        "RecordKindSeenBILACCT": "public class RecordKindSeenBILACCT {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof List<Account>;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');RecordKindSeenBILACCT.Observer p=new RecordKindSeenBILACCT.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_I_LACCT|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeBILACCT": "@IsTest private class RecordKindProbeBILACCT {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');RecordKindSeenBILACCT.Observer p=new RecordKindSeenBILACCT.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_I_LACCT|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeBILACCT"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_B_D_OBJ",
+      "snippet": "Object o = new List<SObject>{new Account(Name='x')}; o instanceof Object",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');Boolean value=o instanceof Object;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_D_OBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeBDOBJ": "@IsTest private class RecordKindProbeBDOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');Boolean value=o instanceof Object;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_D_OBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeBDOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_B_I_OBJ",
+      "snippet": "Object o = new List<SObject>{new Account(Name='x')}; RecordKindSeenBIOBJ.Observer p = new RecordKindSeenBIOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof Object",
+      "helpers": {
+        "RecordKindSeenBIOBJ": "public class RecordKindSeenBIOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof Object;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');RecordKindSeenBIOBJ.Observer p=new RecordKindSeenBIOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_I_OBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeBIOBJ": "@IsTest private class RecordKindProbeBIOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');RecordKindSeenBIOBJ.Observer p=new RecordKindSeenBIOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_I_OBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeBIOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_B_CAST",
+      "snippet": "Object o = new List<SObject>{new Account(Name='x')}; SObject result = (SObject)o;",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');SObject result=(SObject)o;payload.put('success',true);payload.put('isNull',result==null);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_CAST|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeBCAST": "@IsTest private class RecordKindProbeBCAST {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<SObject>{new Account(Name='x')};payload.put('stage','observe');SObject result=(SObject)o;payload.put('success',true);payload.put('isNull',result==null);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_B_CAST|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeBCAST"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<SObject> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<SObject> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<SObject> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<SObject> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<SObject> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<SObject> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_C_D_SOBJ",
+      "snippet": "Object o = new List<Account>(); o instanceof SObject",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');Boolean value=o instanceof SObject;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_D_SOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeCDSOBJ": "@IsTest private class RecordKindProbeCDSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');Boolean value=o instanceof SObject;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_D_SOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeCDSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_C_I_SOBJ",
+      "snippet": "Object o = new List<Account>(); RecordKindSeenCISOBJ.Observer p = new RecordKindSeenCISOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof SObject",
+      "helpers": {
+        "RecordKindSeenCISOBJ": "public class RecordKindSeenCISOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof SObject;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');RecordKindSeenCISOBJ.Observer p=new RecordKindSeenCISOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_I_SOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeCISOBJ": "@IsTest private class RecordKindProbeCISOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');RecordKindSeenCISOBJ.Observer p=new RecordKindSeenCISOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_I_SOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeCISOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_C_D_LSOBJ",
+      "snippet": "Object o = new List<Account>(); o instanceof List<SObject>",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');Boolean value=o instanceof List<SObject>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_D_LSOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeCDLSOBJ": "@IsTest private class RecordKindProbeCDLSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');Boolean value=o instanceof List<SObject>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_D_LSOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeCDLSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_C_I_LSOBJ",
+      "snippet": "Object o = new List<Account>(); RecordKindSeenCILSOBJ.Observer p = new RecordKindSeenCILSOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof List<SObject>",
+      "helpers": {
+        "RecordKindSeenCILSOBJ": "public class RecordKindSeenCILSOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof List<SObject>;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');RecordKindSeenCILSOBJ.Observer p=new RecordKindSeenCILSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_I_LSOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeCILSOBJ": "@IsTest private class RecordKindProbeCILSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');RecordKindSeenCILSOBJ.Observer p=new RecordKindSeenCILSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_I_LSOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeCILSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_C_D_LACCT",
+      "snippet": "Object o = new List<Account>(); o instanceof List<Account>",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');Boolean value=o instanceof List<Account>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_D_LACCT|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeCDLACCT": "@IsTest private class RecordKindProbeCDLACCT {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');Boolean value=o instanceof List<Account>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_D_LACCT|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeCDLACCT"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_C_I_LACCT",
+      "snippet": "Object o = new List<Account>(); RecordKindSeenCILACCT.Observer p = new RecordKindSeenCILACCT.Seen(); p.sees(o); // sees(Object o): return o instanceof List<Account>",
+      "helpers": {
+        "RecordKindSeenCILACCT": "public class RecordKindSeenCILACCT {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof List<Account>;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');RecordKindSeenCILACCT.Observer p=new RecordKindSeenCILACCT.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_I_LACCT|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeCILACCT": "@IsTest private class RecordKindProbeCILACCT {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');RecordKindSeenCILACCT.Observer p=new RecordKindSeenCILACCT.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_I_LACCT|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeCILACCT"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_C_D_OBJ",
+      "snippet": "Object o = new List<Account>(); o instanceof Object",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');Boolean value=o instanceof Object;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_D_OBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeCDOBJ": "@IsTest private class RecordKindProbeCDOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');Boolean value=o instanceof Object;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_D_OBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeCDOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_C_I_OBJ",
+      "snippet": "Object o = new List<Account>(); RecordKindSeenCIOBJ.Observer p = new RecordKindSeenCIOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof Object",
+      "helpers": {
+        "RecordKindSeenCIOBJ": "public class RecordKindSeenCIOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof Object;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');RecordKindSeenCIOBJ.Observer p=new RecordKindSeenCIOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_I_OBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeCIOBJ": "@IsTest private class RecordKindProbeCIOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');RecordKindSeenCIOBJ.Observer p=new RecordKindSeenCIOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_I_OBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeCIOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_C_CAST",
+      "snippet": "Object o = new List<Account>(); SObject result = (SObject)o;",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');SObject result=(SObject)o;payload.put('success',true);payload.put('isNull',result==null);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_CAST|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeCCAST": "@IsTest private class RecordKindProbeCCAST {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new List<Account>();payload.put('stage','observe');SObject result=(SObject)o;payload.put('success',true);payload.put('isNull',result==null);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_C_CAST|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeCCAST"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<Account> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<Account> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<Account> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<Account> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<Account> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "readBackComplete": false,
+                "stage": "observe",
+                "exceptionMessage": "Invalid conversion from runtime type List<Account> to SObject",
+                "exceptionType": "System.TypeException"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_D_D_SOBJ",
+      "snippet": "Object o = new Account(Name='x'); o instanceof SObject",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');Boolean value=o instanceof SObject;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_D_SOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeDDSOBJ": "@IsTest private class RecordKindProbeDDSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');Boolean value=o instanceof SObject;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_D_SOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeDDSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_D_I_SOBJ",
+      "snippet": "Object o = new Account(Name='x'); RecordKindSeenDISOBJ.Observer p = new RecordKindSeenDISOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof SObject",
+      "helpers": {
+        "RecordKindSeenDISOBJ": "public class RecordKindSeenDISOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof SObject;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');RecordKindSeenDISOBJ.Observer p=new RecordKindSeenDISOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_I_SOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeDISOBJ": "@IsTest private class RecordKindProbeDISOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');RecordKindSeenDISOBJ.Observer p=new RecordKindSeenDISOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_I_SOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeDISOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_D_D_LSOBJ",
+      "snippet": "Object o = new Account(Name='x'); o instanceof List<SObject>",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');Boolean value=o instanceof List<SObject>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_D_LSOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeDDLSOBJ": "@IsTest private class RecordKindProbeDDLSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');Boolean value=o instanceof List<SObject>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_D_LSOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeDDLSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_D_I_LSOBJ",
+      "snippet": "Object o = new Account(Name='x'); RecordKindSeenDILSOBJ.Observer p = new RecordKindSeenDILSOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof List<SObject>",
+      "helpers": {
+        "RecordKindSeenDILSOBJ": "public class RecordKindSeenDILSOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof List<SObject>;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');RecordKindSeenDILSOBJ.Observer p=new RecordKindSeenDILSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_I_LSOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeDILSOBJ": "@IsTest private class RecordKindProbeDILSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');RecordKindSeenDILSOBJ.Observer p=new RecordKindSeenDILSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_I_LSOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeDILSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_D_D_LACCT",
+      "snippet": "Object o = new Account(Name='x'); o instanceof List<Account>",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');Boolean value=o instanceof List<Account>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_D_LACCT|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeDDLACCT": "@IsTest private class RecordKindProbeDDLACCT {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');Boolean value=o instanceof List<Account>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_D_LACCT|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeDDLACCT"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_D_I_LACCT",
+      "snippet": "Object o = new Account(Name='x'); RecordKindSeenDILACCT.Observer p = new RecordKindSeenDILACCT.Seen(); p.sees(o); // sees(Object o): return o instanceof List<Account>",
+      "helpers": {
+        "RecordKindSeenDILACCT": "public class RecordKindSeenDILACCT {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof List<Account>;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');RecordKindSeenDILACCT.Observer p=new RecordKindSeenDILACCT.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_I_LACCT|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeDILACCT": "@IsTest private class RecordKindProbeDILACCT {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');RecordKindSeenDILACCT.Observer p=new RecordKindSeenDILACCT.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_I_LACCT|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeDILACCT"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_D_D_OBJ",
+      "snippet": "Object o = new Account(Name='x'); o instanceof Object",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');Boolean value=o instanceof Object;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_D_OBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeDDOBJ": "@IsTest private class RecordKindProbeDDOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');Boolean value=o instanceof Object;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_D_OBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeDDOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_D_I_OBJ",
+      "snippet": "Object o = new Account(Name='x'); RecordKindSeenDIOBJ.Observer p = new RecordKindSeenDIOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof Object",
+      "helpers": {
+        "RecordKindSeenDIOBJ": "public class RecordKindSeenDIOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof Object;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');RecordKindSeenDIOBJ.Observer p=new RecordKindSeenDIOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_I_OBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeDIOBJ": "@IsTest private class RecordKindProbeDIOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');RecordKindSeenDIOBJ.Observer p=new RecordKindSeenDIOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_I_OBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeDIOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_D_CAST",
+      "snippet": "Object o = new Account(Name='x'); SObject result = (SObject)o;",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');SObject result=(SObject)o;payload.put('success',true);payload.put('isNull',result==null);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_CAST|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeDCAST": "@IsTest private class RecordKindProbeDCAST {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=new Account(Name='x');payload.put('stage','observe');SObject result=(SObject)o;payload.put('success',true);payload.put('isNull',result==null);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_CAST|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeDCAST"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "isNull": false,
+                "success": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "isNull": false,
+                "success": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "isNull": false,
+                "success": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "isNull": false,
+                "success": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "isNull": false,
+                "success": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "isNull": false,
+                "success": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_E_D_SOBJ",
+      "snippet": "Object o = null; o instanceof SObject",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');Boolean value=o instanceof SObject;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_D_SOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeEDSOBJ": "@IsTest private class RecordKindProbeEDSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');Boolean value=o instanceof SObject;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_D_SOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeEDSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_E_I_SOBJ",
+      "snippet": "Object o = null; RecordKindSeenEISOBJ.Observer p = new RecordKindSeenEISOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof SObject",
+      "helpers": {
+        "RecordKindSeenEISOBJ": "public class RecordKindSeenEISOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof SObject;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');RecordKindSeenEISOBJ.Observer p=new RecordKindSeenEISOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_I_SOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeEISOBJ": "@IsTest private class RecordKindProbeEISOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');RecordKindSeenEISOBJ.Observer p=new RecordKindSeenEISOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_I_SOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeEISOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_E_D_LSOBJ",
+      "snippet": "Object o = null; o instanceof List<SObject>",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');Boolean value=o instanceof List<SObject>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_D_LSOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeEDLSOBJ": "@IsTest private class RecordKindProbeEDLSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');Boolean value=o instanceof List<SObject>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_D_LSOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeEDLSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_E_I_LSOBJ",
+      "snippet": "Object o = null; RecordKindSeenEILSOBJ.Observer p = new RecordKindSeenEILSOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof List<SObject>",
+      "helpers": {
+        "RecordKindSeenEILSOBJ": "public class RecordKindSeenEILSOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof List<SObject>;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');RecordKindSeenEILSOBJ.Observer p=new RecordKindSeenEILSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_I_LSOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeEILSOBJ": "@IsTest private class RecordKindProbeEILSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');RecordKindSeenEILSOBJ.Observer p=new RecordKindSeenEILSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_I_LSOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeEILSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_E_D_LACCT",
+      "snippet": "Object o = null; o instanceof List<Account>",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');Boolean value=o instanceof List<Account>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_D_LACCT|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeEDLACCT": "@IsTest private class RecordKindProbeEDLACCT {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');Boolean value=o instanceof List<Account>;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_D_LACCT|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeEDLACCT"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_E_I_LACCT",
+      "snippet": "Object o = null; RecordKindSeenEILACCT.Observer p = new RecordKindSeenEILACCT.Seen(); p.sees(o); // sees(Object o): return o instanceof List<Account>",
+      "helpers": {
+        "RecordKindSeenEILACCT": "public class RecordKindSeenEILACCT {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof List<Account>;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');RecordKindSeenEILACCT.Observer p=new RecordKindSeenEILACCT.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_I_LACCT|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeEILACCT": "@IsTest private class RecordKindProbeEILACCT {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');RecordKindSeenEILACCT.Observer p=new RecordKindSeenEILACCT.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_I_LACCT|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeEILACCT"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_E_D_OBJ",
+      "snippet": "Object o = null; o instanceof Object",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');Boolean value=o instanceof Object;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_D_OBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeEDOBJ": "@IsTest private class RecordKindProbeEDOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');Boolean value=o instanceof Object;payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_D_OBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeEDOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_E_I_OBJ",
+      "snippet": "Object o = null; RecordKindSeenEIOBJ.Observer p = new RecordKindSeenEIOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof Object",
+      "helpers": {
+        "RecordKindSeenEIOBJ": "public class RecordKindSeenEIOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof Object;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');RecordKindSeenEIOBJ.Observer p=new RecordKindSeenEIOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_I_OBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeEIOBJ": "@IsTest private class RecordKindProbeEIOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');RecordKindSeenEIOBJ.Observer p=new RecordKindSeenEIOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_I_OBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeEIOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_E_CAST",
+      "snippet": "Object o = null; SObject result = (SObject)o;",
+      "helpers": {},
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');SObject result=(SObject)o;payload.put('success',true);payload.put('isNull',result==null);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_CAST|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeECAST": "@IsTest private class RecordKindProbeECAST {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{Object o=null;payload.put('stage','observe');SObject result=(SObject)o;payload.put('success',true);payload.put('isNull',result==null);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_CAST|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeECAST"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "isNull": true,
+                "success": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "isNull": true,
+                "success": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "isNull": true,
+                "success": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "isNull": true,
+                "success": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "isNull": true,
+                "success": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "isNull": true,
+                "success": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_D_S_SOBJ",
+      "snippet": "SObject o = new Account(Name='x'); RecordKindSeenDSSOBJ.Observer p = new RecordKindSeenDSSOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof SObject",
+      "helpers": {
+        "RecordKindSeenDSSOBJ": "public class RecordKindSeenDSSOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof SObject;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{SObject o=new Account(Name='x');payload.put('stage','observe');RecordKindSeenDSSOBJ.Observer p=new RecordKindSeenDSSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_S_SOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeDSSOBJ": "@IsTest private class RecordKindProbeDSSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{SObject o=new Account(Name='x');payload.put('stage','observe');RecordKindSeenDSSOBJ.Observer p=new RecordKindSeenDSSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_S_SOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeDSSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": true,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_D_S_LSOBJ",
+      "snippet": "SObject o = new Account(Name='x'); RecordKindSeenDSLSOBJ.Observer p = new RecordKindSeenDSLSOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof List<SObject>",
+      "helpers": {
+        "RecordKindSeenDSLSOBJ": "public class RecordKindSeenDSLSOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof List<SObject>;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{SObject o=new Account(Name='x');payload.put('stage','observe');RecordKindSeenDSLSOBJ.Observer p=new RecordKindSeenDSLSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_S_LSOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeDSLSOBJ": "@IsTest private class RecordKindProbeDSLSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{SObject o=new Account(Name='x');payload.put('stage','observe');RecordKindSeenDSLSOBJ.Observer p=new RecordKindSeenDSLSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_S_LSOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeDSLSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_D_S_LACCT",
+      "snippet": "SObject o = new Account(Name='x'); RecordKindSeenDSLACCT.Observer p = new RecordKindSeenDSLACCT.Seen(); p.sees(o); // sees(Object o): return o instanceof List<Account>",
+      "helpers": {
+        "RecordKindSeenDSLACCT": "public class RecordKindSeenDSLACCT {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof List<Account>;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{SObject o=new Account(Name='x');payload.put('stage','observe');RecordKindSeenDSLACCT.Observer p=new RecordKindSeenDSLACCT.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_S_LACCT|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeDSLACCT": "@IsTest private class RecordKindProbeDSLACCT {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{SObject o=new Account(Name='x');payload.put('stage','observe');RecordKindSeenDSLACCT.Observer p=new RecordKindSeenDSLACCT.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_S_LACCT|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeDSLACCT"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_D_S_OBJ",
+      "snippet": "SObject o = new Account(Name='x'); RecordKindSeenDSOBJ.Observer p = new RecordKindSeenDSOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof Object",
+      "helpers": {
+        "RecordKindSeenDSOBJ": "public class RecordKindSeenDSOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof Object;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{SObject o=new Account(Name='x');payload.put('stage','observe');RecordKindSeenDSOBJ.Observer p=new RecordKindSeenDSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_S_OBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeDSOBJ": "@IsTest private class RecordKindProbeDSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{SObject o=new Account(Name='x');payload.put('stage','observe');RecordKindSeenDSOBJ.Observer p=new RecordKindSeenDSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_D_S_OBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeDSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_E_S_SOBJ",
+      "snippet": "SObject o = null; RecordKindSeenESSOBJ.Observer p = new RecordKindSeenESSOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof SObject",
+      "helpers": {
+        "RecordKindSeenESSOBJ": "public class RecordKindSeenESSOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof SObject;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{SObject o=null;payload.put('stage','observe');RecordKindSeenESSOBJ.Observer p=new RecordKindSeenESSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_S_SOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeESSOBJ": "@IsTest private class RecordKindProbeESSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{SObject o=null;payload.put('stage','observe');RecordKindSeenESSOBJ.Observer p=new RecordKindSeenESSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_S_SOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeESSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_E_S_LSOBJ",
+      "snippet": "SObject o = null; RecordKindSeenESLSOBJ.Observer p = new RecordKindSeenESLSOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof List<SObject>",
+      "helpers": {
+        "RecordKindSeenESLSOBJ": "public class RecordKindSeenESLSOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof List<SObject>;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{SObject o=null;payload.put('stage','observe');RecordKindSeenESLSOBJ.Observer p=new RecordKindSeenESLSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_S_LSOBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeESLSOBJ": "@IsTest private class RecordKindProbeESLSOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{SObject o=null;payload.put('stage','observe');RecordKindSeenESLSOBJ.Observer p=new RecordKindSeenESLSOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_S_LSOBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeESLSOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_E_S_LACCT",
+      "snippet": "SObject o = null; RecordKindSeenESLACCT.Observer p = new RecordKindSeenESLACCT.Seen(); p.sees(o); // sees(Object o): return o instanceof List<Account>",
+      "helpers": {
+        "RecordKindSeenESLACCT": "public class RecordKindSeenESLACCT {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof List<Account>;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{SObject o=null;payload.put('stage','observe');RecordKindSeenESLACCT.Observer p=new RecordKindSeenESLACCT.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_S_LACCT|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeESLACCT": "@IsTest private class RecordKindProbeESLACCT {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{SObject o=null;payload.put('stage','observe');RecordKindSeenESLACCT.Observer p=new RecordKindSeenESLACCT.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_S_LACCT|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeESLACCT"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "value": false,
+                "readBackComplete": true,
+                "stage": "observe",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "I_E_S_OBJ",
+      "snippet": "SObject o = null; RecordKindSeenESOBJ.Observer p = new RecordKindSeenESOBJ.Seen(); p.sees(o); // sees(Object o): return o instanceof Object",
+      "helpers": {
+        "RecordKindSeenESOBJ": "public class RecordKindSeenESOBJ {public interface Observer {Boolean sees(Object o);} public class Seen implements Observer {public Boolean sees(Object o){return o instanceof Object;}}}"
+      },
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{SObject o=null;payload.put('stage','observe');RecordKindSeenESOBJ.Observer p=new RecordKindSeenESOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_S_OBJ|'+JSON.serialize(payload));",
+      "classes": {
+        "RecordKindProbeESOBJ": "@IsTest private class RecordKindProbeESOBJ {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null,'stage'=>'setup','readBackComplete'=>false};try{SObject o=null;payload.put('stage','observe');RecordKindSeenESOBJ.Observer p=new RecordKindSeenESOBJ.Seen();Boolean value=p.sees(o);payload.put('value',value);payload.put('readBackComplete',true);}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'RKP|I_E_S_OBJ|'+JSON.serialize(payload));}}"
+      },
+      "tests": [
+        "RecordKindProbeESOBJ"
+      ],
+      "routes": {
+        "anonymous": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        },
+        "isTest": {
+          "byAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "primary": "Operation instanceof is always true since an instance of Object is always an instance of Object"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+source_api	route	observation
+62.0	anonymous	{"count":3,"empty":0,"inherited":5,"innerTypeFound":true,"sum":18}
+62.0	isTest	{"count":3,"empty":0,"inherited":5,"innerTypeFound":true,"sum":18}
+67.0	anonymous	{"count":3,"empty":0,"inherited":5,"innerTypeFound":true,"sum":18}
+67.0	isTest	{"count":3,"empty":0,"inherited":5,"innerTypeFound":true,"sum":18}
+68.0	anonymous	{"count":3,"empty":0,"inherited":5,"innerTypeFound":true,"sum":18}
+68.0	isTest	{"count":3,"empty":0,"inherited":5,"innerTypeFound":true,"sum":18}

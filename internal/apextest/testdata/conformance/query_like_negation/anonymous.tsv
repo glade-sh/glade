@@ -1,0 +1,13 @@
+source_api	method	observation
+62.0	postfix	"{""value"":""System.QueryException:unexpected token: 'Name NOT LIKE'""}"
+62.0	lowercase	"{""value"":""System.QueryException:unexpected token: 'Name not like'""}"
+62.0	prefix	"{""value"":""accepted""}"
+62.0	notIn	"{""value"":""accepted""}"
+67.0	postfix	"{""value"":""System.QueryException:unexpected token: 'Name NOT LIKE'""}"
+67.0	lowercase	"{""value"":""System.QueryException:unexpected token: 'Name not like'""}"
+67.0	prefix	"{""value"":""accepted""}"
+67.0	notIn	"{""value"":""accepted""}"
+68.0	postfix	"{""value"":""System.QueryException:unexpected token: 'Name NOT LIKE'""}"
+68.0	lowercase	"{""value"":""System.QueryException:unexpected token: 'Name not like'""}"
+68.0	prefix	"{""value"":""accepted""}"
+68.0	notIn	"{""value"":""accepted""}"

@@ -1,0 +1,565 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 5,
+  "nativeObservationCount": 30,
+  "packetRowsSha256": "bdb07c4592ca774891f1569ddbb47b04d8979873883901e5e60ab5a6c6092167",
+  "nativeJsonSha256": "3371b4658cc7034d1461a6b1e24ebf443dbdfb588c66ae393a06296feaa30e65",
+  "sourceManifestSha256": "cd86500b7b47c95e1fe5992615a7f7169c90dd9d903e6776516d2162a3219255",
+  "rows": [
+    {
+      "id": "C126TASKCHILD_001",
+      "question": "All Account Task child identities",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126TASKCHILD_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "d2023b4294369787344bd18c35d81796ec1c6645331cc2e1836a97161156e8e0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "relationships": [
+                  "AccountId|null",
+                  "WhatId|Tasks"
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "relationships": [
+                  "AccountId|null",
+                  "WhatId|Tasks"
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "relationships": [
+                  "AccountId|null",
+                  "WhatId|Tasks"
+                ]
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "081b7916dd1cfbc7406f7bbc317a33eda68a7637445f65629e14c4119108b1bc",
+            "67.0": "cd6dc550f942d299b16646dda8d22c09f7e393245229101762884f75484b6be1",
+            "68.0": "119e3ed8e31944d5114b6631f509db3aad4f5994bacbd935dc633c869c6769ea"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<String> r=new List<String>();for(Schema.ChildRelationship c:Account.SObjectType.getDescribe().getChildRelationships()){if(c.getChildSObject()==Task.SObjectType){r.add(String.valueOf(c.getField())+'|'+String.valueOf(c.getRelationshipName()));}}r.sort();o.put('relationships',r);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126TASKCHILD_001|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126TASKCHILD_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "12b8512924d5f28fd0893be58774ffd9f458941748f151eb3baa808912a699c6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "relationships": [
+                  "AccountId|null",
+                  "WhatId|Tasks"
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "relationships": [
+                  "AccountId|null",
+                  "WhatId|Tasks"
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "relationships": [
+                  "AccountId|null",
+                  "WhatId|Tasks"
+                ]
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "0b8d3051b14866785a7e1d84268d79208c84fc693beaa7b98e318609d8deaf7e",
+            "67.0": "087af8beca9bc40e48550cf30504cfa7c099f9b1a408495465b0002cbd13fb2e",
+            "68.0": "1971d6db25eff2d3c650c34bc437e22be2ac816dcab243edb6c3e9cde220b623"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nList<String> r=new List<String>();for(Schema.ChildRelationship c:Account.SObjectType.getDescribe().getChildRelationships()){if(c.getChildSObject()==Task.SObjectType){r.add(String.valueOf(c.getField())+'|'+String.valueOf(c.getRelationshipName()));}}r.sort();o.put('relationships',r);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126TASKCHILD_001|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126TASKCHILD_002",
+      "question": "Task.AccountId parent metadata",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126TASKCHILD_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "49b5fd4468e41c9d3f9e20b7302b2761331dff7b57f7b09bd87f194a12402b22"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "targets": "(Account)",
+                "relationship": "Account"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "targets": "(Account)",
+                "relationship": "Account"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "targets": "(Account)",
+                "relationship": "Account"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "551d6f64f75895a589d087e11874cfe1063846ae6cb6931cd69543e472b8ca6c",
+            "67.0": "378d436ddb20090d6bc391e19758619d11b41ed39d502bb3b8c422861e4a28fc",
+            "68.0": "98d921aaa87247ad3f4e0017c75e44fe4449efe9ab6207ba2830a3d63faefa33"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nSchema.DescribeFieldResult f=Task.AccountId.getDescribe();o.put('relationship',f.getRelationshipName());o.put('targets',String.valueOf(f.getReferenceTo()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126TASKCHILD_002|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126TASKCHILD_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "c8e264318f90cb4f9a0586f7db03c4cb8b24ce1a83a1f6ef3c8b6de1be5be646"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "targets": "(Account)",
+                "relationship": "Account"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "targets": "(Account)",
+                "relationship": "Account"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "targets": "(Account)",
+                "relationship": "Account"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "ad9bb906bf665b452dcc1f0726644d5940cf058042b7deedef0361b60dec5422",
+            "67.0": "753373052de8983c86517e8435b2d15d2ff93d7e364608f609e695b379f86405",
+            "68.0": "df9dc53278113ed493ed143275e40f6c7fab99ef184fbc522a35f8e5af25926e"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nSchema.DescribeFieldResult f=Task.AccountId.getDescribe();o.put('relationship',f.getRelationshipName());o.put('targets',String.valueOf(f.getReferenceTo()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126TASKCHILD_002|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126TASKCHILD_003",
+      "question": "Task.WhatId parent metadata",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126TASKCHILD_003",
+          "stage": "carried",
+          "sourceSha256": {
+            "anonymous": "4919269c535097212fa8686b658cb62604e9b872ed744496adca7321c2b26c6e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "targets": "(Account, ApprovalSubmission, ApprovalSubmissionDetail, ApprovalWorkItem, ApptBundleAggrDurDnscale, ApptBundleAggrPolicy, ApptBundleConfig, ApptBundlePolicy, ApptBundlePolicySvcTerr, ApptBundlePropagatePolicy, ...)",
+                "relationship": "What"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "targets": "(Account, ApprovalSubmission, ApprovalSubmissionDetail, ApprovalWorkItem, ApptBundleAggrDurDnscale, ApptBundleAggrPolicy, ApptBundleConfig, ApptBundlePolicy, ApptBundlePolicySvcTerr, ApptBundlePropagatePolicy, ...)",
+                "relationship": "What"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "targets": "(Account, ApprovalSubmission, ApprovalSubmissionDetail, ApprovalWorkItem, ApptBundleAggrDurDnscale, ApptBundleAggrPolicy, ApptBundleConfig, ApptBundlePolicy, ApptBundlePolicySvcTerr, ApptBundlePropagatePolicy, ...)",
+                "relationship": "What"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "f4f43e441a8f455515023691f00fb2aa5e36ea2966dd5ea96dd9aadd685f91d3",
+            "67.0": "d8844b2345deb6fdbd6ac73a6f5d863423352d164e07a9baac3171c35a39bc85",
+            "68.0": "ec39d3a65228e56d0052340faed66f7c62416d24b9f8367d1d5436398ed7112a"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nSchema.DescribeFieldResult f=Task.WhatId.getDescribe();o.put('relationship',f.getRelationshipName());o.put('targets',String.valueOf(f.getReferenceTo()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126TASKCHILD_003|'+JSON.serialize(o));",
+          "objects": {},
+          "carryReason": "Task.WhatId target list needs an org/catalog decision; known gap in the frozen release scope.",
+          "carryOwner": "classify the one shot baselines and the six vetted candidate repos"
+        },
+        "isTest": {
+          "id": "C126TASKCHILD_003",
+          "stage": "carried",
+          "sourceSha256": {
+            "class:C126Test": "a3311819ce2084ac1b83e355f381abd88de62ea7a1a6423aa77ed471acda742d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "targets": "(Account, ApprovalSubmission, ApprovalSubmissionDetail, ApprovalWorkItem, ApptBundleAggrDurDnscale, ApptBundleAggrPolicy, ApptBundleConfig, ApptBundlePolicy, ApptBundlePolicySvcTerr, ApptBundlePropagatePolicy, ...)",
+                "relationship": "What"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "targets": "(Account, ApprovalSubmission, ApprovalSubmissionDetail, ApprovalWorkItem, ApptBundleAggrDurDnscale, ApptBundleAggrPolicy, ApptBundleConfig, ApptBundlePolicy, ApptBundlePolicySvcTerr, ApptBundlePropagatePolicy, ...)",
+                "relationship": "What"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "targets": "(Account, ApprovalSubmission, ApprovalSubmissionDetail, ApprovalWorkItem, ApptBundleAggrDurDnscale, ApptBundleAggrPolicy, ApptBundleConfig, ApptBundlePolicy, ApptBundlePolicySvcTerr, ApptBundlePropagatePolicy, ...)",
+                "relationship": "What"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "c96d06a0b8482f4f74036d00537f31be877f9c56f4fb37e0b86e143f7d6230e2",
+            "67.0": "33ae3763c9b7fb1f80a6f064169ba5d6d6b5a7048dcf533de1ea821ff7d92caf",
+            "68.0": "bba95c48eadae0c13793cb5f3419727253d9c17d7b455962bded17b7e3dbdea8"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nSchema.DescribeFieldResult f=Task.WhatId.getDescribe();o.put('relationship',f.getRelationshipName());o.put('targets',String.valueOf(f.getReferenceTo()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126TASKCHILD_003|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {},
+          "carryReason": "Task.WhatId target list needs an org/catalog decision; known gap in the frozen release scope.",
+          "carryOwner": "classify the one shot baselines and the six vetted candidate repos"
+        }
+      }
+    },
+    {
+      "id": "C126TASKCHILD_004",
+      "question": "Actual Tasks subquery using WhatId",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126TASKCHILD_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "afe77455a785d79029eb935db707c754cbc5be6cc5fe5367394e18ac785ad569"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "030daba991d877933eeb56da35860b0f74dbe87e74551874ff928da5578bbb86",
+            "67.0": "bdb3754939ab63767c67aa446141868c3ee6d3b08c70b5ba9f9e96e6eaa6914a",
+            "68.0": "c6fd76db8bf2896fb03ec00fe46360e24f425b5681a1f966bb23da45dfa437c0"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=new Account(Name='Synthetic');insert a;insert new Task(Subject='Synthetic',WhatId=a.Id,Status='Not Started',Priority='Normal');Account b=[SELECT Id,(SELECT Id,WhatId FROM Tasks) FROM Account WHERE Id=:a.Id];o.put('count',b.Tasks.size());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126TASKCHILD_004|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126TASKCHILD_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "272e595036f59bade7ec07bbef19b7766c6e40c251b55f84178f044e67c0694a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "a5610f1a79dcb93e05c57b53ca4b25b0cc84bb4a68701430464db89a030b6178",
+            "67.0": "35caa1339b5d04fe427ca8f3c9687af97b4cd030567944287f044b58ee7bcacc",
+            "68.0": "42bec6f4bd681f55d19c59033a7cfd51fc9bea63fcbc61b1dcd7f63ec94b883b"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=new Account(Name='Synthetic');insert a;insert new Task(Subject='Synthetic',WhatId=a.Id,Status='Not Started',Priority='Normal');Account b=[SELECT Id,(SELECT Id,WhatId FROM Tasks) FROM Account WHERE Id=:a.Id];o.put('count',b.Tasks.size());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126TASKCHILD_004|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126TASKCHILD_005",
+      "question": "Unknown Account child relationship",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126TASKCHILD_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "3651ed3f0bd5ce28b8e5c51a4d20f3f54a269bc715fd3a89e487f4666169a65a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "\nSELECT Id,(SELECT Id FROM C126Missing) FROM Account LIMIT 1\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'C126Missing' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 11,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "\nSELECT Id,(SELECT Id FROM C126Missing) FROM Account LIMIT 1\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'C126Missing' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 11,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "\nSELECT Id,(SELECT Id FROM C126Missing) FROM Account LIMIT 1\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'C126Missing' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 11,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "\nSELECT Id,(SELECT Id FROM C126Missing) FROM Account LIMIT 1\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'C126Missing' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 11
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "\nSELECT Id,(SELECT Id FROM C126Missing) FROM Account LIMIT 1\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'C126Missing' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 11
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "\nSELECT Id,(SELECT Id FROM C126Missing) FROM Account LIMIT 1\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'C126Missing' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 11
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "378e737ac19233871c9ea0364144a5b07b09230e5e205479c64ddf305fb96f77",
+            "67.0": "5d9378af62200dbad264652fde860d266bdca2ee29655811a52588ef7de2d864",
+            "68.0": "b07c90005d1344a3d64db0fa735ca2916bbaf4d60f43065f55303ff4ed0e25a5"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=[SELECT Id,(SELECT Id FROM C126Missing) FROM Account LIMIT 1];o.put('json',JSON.serialize(a));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126TASKCHILD_005|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126TASKCHILD_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "d1d003fab4e84c0f1699e37aa111d17869f14a8af147462590756fe419fd1508"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "SELECT Id,(SELECT Id FROM C126Missing) FROM Account LIMIT 1\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'C126Missing' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "SELECT Id,(SELECT Id FROM C126Missing) FROM Account LIMIT 1\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'C126Missing' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "SELECT Id,(SELECT Id FROM C126Missing) FROM Account LIMIT 1\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'C126Missing' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "SELECT Id,(SELECT Id FROM C126Missing) FROM Account LIMIT 1\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'C126Missing' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "SELECT Id,(SELECT Id FROM C126Missing) FROM Account LIMIT 1\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'C126Missing' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "SELECT Id,(SELECT Id FROM C126Missing) FROM Account LIMIT 1\n                           ^\nERROR at Row:1:Column:28\nDidn't understand relationship 'C126Missing' in FROM part of query call. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "2ffe9cc67a57c6d921e765c8801b830f9a280021bccceea100245ff2ff15bfbf",
+            "67.0": "0e3241613ad8e7808054bcf38400b5fadd45f2e2cb49f8b7fcd5119dd08f699d",
+            "68.0": "1b47893541be504a003e821f3e350d7228d09e789cc261dde21c3b899f4fb3cc"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=[SELECT Id,(SELECT Id FROM C126Missing) FROM Account LIMIT 1];o.put('json',JSON.serialize(a));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126TASKCHILD_005|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    }
+  ]
+}

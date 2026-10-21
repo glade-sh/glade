@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -46,15 +47,21 @@ type l09Case struct {
 }
 
 type l09PayloadProbe struct {
-	FixtureClock string                             `json:"fixture_clock"`
-	UserName     string                             `json:"user_name"`
-	Fields       []string                           `json:"fields"`
-	Create       lwcbrowser.WireCreateRecordRequest `json:"create"`
+	FixtureClock      string                             `json:"fixture_clock"`
+	FixtureClockByAPI map[string]string                  `json:"fixture_clock_by_api,omitempty"`
+	UserTimeZoneByAPI map[string]string                  `json:"user_time_zone_by_api,omitempty"`
+	UserName          string                             `json:"user_name"`
+	Fields            []string                           `json:"fields"`
+	Create            lwcbrowser.WireCreateRecordRequest `json:"create"`
 }
 
 // TestL09SalesforceConformance replays the owned LDS fixture through the product
 // compiler, browser runtime and server, comparing each complete native row.
 // The native context supplies relationship and date payload expectations.
+// All 367 API68 IDs staged at a recorded revision rematch retained raw TSVs (including
+// opaque body.id fields); see clock evidence for source hashes. The payload
+// projects an existing ID. Four fresh 59/68 observations add no native IDs
+// and do not establish full API68 native/named/error closure.
 // The same-source isolated schema rejection supersedes its batch acceptance.
 // GLADE_L09_CAPTURE=1 records mismatches without failing; GLADE_L09_REPORT
 // selects the per-row TSV. The fixture and oracle are credential-free exports.
@@ -72,7 +79,7 @@ func l09SalesforceConformance(t *testing.T) {
 	if err := json.Unmarshal(data, &cases); err != nil {
 		t.Fatal(err)
 	}
-	versions := []string{"59.0", "67.0"}
+	versions := []string{"59.0", "67.0", "68.0"}
 	seen, groups := map[string]bool{}, map[string]bool{}
 	var compileCases, runtimeCases, payloadCases []l09Case
 	diagnosticRows := 0
@@ -86,7 +93,7 @@ func l09SalesforceConformance(t *testing.T) {
 		}
 		carries := []*l07Carry{c.Carry}
 		for api, carry := range c.DiagnosticCarries {
-			if (api != "59.0" && api != "67.0") || carry == nil || c.DiagnosticExpected[api] == "" {
+			if (api != "59.0" && api != "67.0" && api != "68.0") || carry == nil || c.DiagnosticExpected[api] == "" {
 				t.Fatalf("invalid L09 diagnostic carry %s API %s", c.ID, api)
 			}
 			carries = append(carries, carry)
@@ -165,7 +172,7 @@ func l09SalesforceConformance(t *testing.T) {
 	matches, total, compileMatches, domMatches, localDOMRows := 0, 0, 0, 0, 0
 	payloadMatches := 0
 	diagnosticMatches, diagnosticTotal := 0, 0
-	carriedRows, diagnosticCarries := 0, 0
+	carriedRows, diagnosticCarries, volatileIDCarries := 0, 0, 0
 	originalMatches, controlMatches := 0, 0
 	bundleNames := map[string]string{}
 	for index, c := range compileCases {
@@ -173,16 +180,25 @@ func l09SalesforceConformance(t *testing.T) {
 	}
 	for _, api := range versions {
 		compiled := l09CompileCases(t, api, compileCases)
-		dom, domErrors, runtimeCompileErr, browserErr := l09ObserveDOM(t, api, runtimeCases, dependencyRoot)
+		dom, domErrors, runtimeCompileErr, browserErr := l09ObserveDOM(t, api, runtimeCases, dependencyRoot, l09PayloadUserTimeZone(t, api, payloadCases[0].Payload))
 		if browserErr != nil {
 			t.Fatalf("L09 browser environment: %v", browserErr)
+		}
+		if runtimeCompileErr != nil {
+			t.Logf("L09 API %s runtime compilation failed: %v", api, runtimeCompileErr)
+		}
+		if dom == nil {
+			// Runtime compilation failures return no DOM map. Retain the
+			// compiler failure below while independently checking the payload.
+			dom = make(map[string]json.RawMessage)
 		}
 		for id, value := range l09ObservePayload(t, api, payloadCases) {
 			dom[id] = value
 		}
-		apiMatches, apiDOMRows, originalAPIMatches, controlAPIMatches := 0, 0, 0, 0
+		apiMatches, apiDOMRows, originalAPIMatches, controlAPIMatches, apiVolatileIDCarries := 0, 0, 0, 0, 0
 		for _, c := range cases {
 			want, got, reason := c.Expected[api], "", ""
+			volatileIDCarry := false
 			diagnosticWant, diagnosticGot, diagnosticStatus := c.DiagnosticExpected[api], "", ""
 			diagnosticCarry := c.DiagnosticCarries[api]
 			diagnosticWant = strings.ReplaceAll(diagnosticWant, "{bundle}", bundleNames[c.ID])
@@ -238,22 +254,25 @@ func l09SalesforceConformance(t *testing.T) {
 				}
 			} else if raw, ok := dom[c.ID]; ok {
 				// Reuse L07's native compact/sorted/ensure_ascii serializer.
-				// It preserves every field and raw null; no semantic normalization.
+				// Keep the complete raw answer in the report, including volatile IDs.
 				text, err := l07BrowserText(raw)
 				if err != nil {
 					t.Fatal(err)
 				}
 				got = "JSON|" + strings.TrimPrefix(text, "BROWSER|")
-				if got != want {
+				volatileIDCarry, err = l09VolatileErrorIDCarry(api, got, want)
+				if err != nil {
+					reason = "L09/record operations: " + err.Error()
+				} else if got != want {
 					reason = "LDS observation differs from native"
 				}
 				if c.Kind == "runtime" {
 					localDOMRows++
 					apiDOMRows++
-					if got == want {
+					if got == want && !volatileIDCarry {
 						domMatches++
 					}
-				} else if got == want {
+				} else if got == want && !volatileIDCarry {
 					payloadMatches++
 				}
 			} else {
@@ -269,7 +288,13 @@ func l09SalesforceConformance(t *testing.T) {
 			if got != want && c.MismatchReason != "" && got != "BROWSER_ERROR" && got != "BROWSER_COMPILE_ERROR" {
 				reason = "" + c.MismatchReason
 			}
-			if got == want {
+			if volatileIDCarry {
+				status, reason = "CARRY", l09VolatileErrorIDReason
+				carriedRows++
+				volatileIDCarries++
+				apiVolatileIDCarries++
+				t.Logf("carry %s API %s: %s; expected <%s> actual <%s>", c.ID, api, reason, want, got)
+			} else if got == want {
 				status = "MATCH"
 				matches++
 				apiMatches++
@@ -289,21 +314,127 @@ func l09SalesforceConformance(t *testing.T) {
 			total++
 			fmt.Fprintf(&report, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", api, c.ID, c.Kind, status, l07OneLine(got), l07OneLine(want), l07OneLine(reason), diagnosticStatus, l07OneLine(diagnosticGot), l07OneLine(diagnosticWant), l07OneLine(diagnosticReason))
 		}
-		fmt.Fprintf(&report, "API_TOTAL\t%s\t%d/%d\nLOCAL_DOM_ROWS\t%s\t%d/%d\n", api, apiMatches, len(cases), api, apiDOMRows, len(runtimeCases))
-		t.Logf("L09 API %s matches %d/%d; observed local DOM %d/%d", api, apiMatches, len(cases), apiDOMRows, len(runtimeCases))
+		fmt.Fprintf(&report, "API_TOTAL\t%s\t%d exact + %d volatile-id carries / %d\nLOCAL_DOM_ROWS\t%s\t%d/%d\n", api, apiMatches, apiVolatileIDCarries, len(cases), api, apiDOMRows, len(runtimeCases))
+		t.Logf("L09 API %s: %d exact + %d volatile-id carries / %d; observed local DOM %d/%d", api, apiMatches, apiVolatileIDCarries, len(cases), apiDOMRows, len(runtimeCases))
 		fmt.Fprintf(&report, "ORIGINAL_API_TOTAL\t%s\t%d/248\nCONTROL_API_TOTAL\t%s\t%d/120\n", api, originalAPIMatches, api, controlAPIMatches)
 		t.Logf("L09 API %s original rows %d/248; native controls %d/120", api, originalAPIMatches, controlAPIMatches)
 		originalMatches += originalAPIMatches
 		controlMatches += controlAPIMatches
 	}
-	fmt.Fprintf(&report, "TOTAL\t%d/%d\nCOMPILE_TOTAL\t%d/%d\nDOM_TOTAL\t%d/%d\nDIAGNOSTIC_TOTAL\t%d/%d\n", matches, total, compileMatches, len(compileCases)*len(versions), domMatches, len(runtimeCases)*len(versions), diagnosticMatches, diagnosticTotal)
+	fmt.Fprintf(&report, "TOTAL\t%d exact + %d volatile-id carries / %d\nCOMPILE_TOTAL\t%d/%d\nDOM_TOTAL\t%d/%d\nDIAGNOSTIC_TOTAL\t%d/%d\n", matches, volatileIDCarries, total, compileMatches, len(compileCases)*len(versions), domMatches, len(runtimeCases)*len(versions), diagnosticMatches, diagnosticTotal)
 	fmt.Fprintf(&report, "PAYLOAD_TOTAL\t%d/%d\n", payloadMatches, len(payloadCases)*len(versions))
 	fmt.Fprintf(&report, "CARRIED_ROWS\t%d\nCARRIED_DIAGNOSTICS\t%d\n", carriedRows, diagnosticCarries)
-	fmt.Fprintf(&report, "ORIGINAL_TOTAL\t%d/496\nCONTROL_TOTAL\t%d/240\n", originalMatches, controlMatches)
-	t.Logf("L09 matches %d/%d; compile %d/%d; DOM %d/%d; observed local DOM %d/%d; diagnostics %d/%d", matches, total, compileMatches, len(compileCases)*len(versions), domMatches, len(runtimeCases)*len(versions), localDOMRows, len(runtimeCases)*len(versions), diagnosticMatches, diagnosticTotal)
+	fmt.Fprintf(&report, "ORIGINAL_TOTAL\t%d/%d\nCONTROL_TOTAL\t%d/%d\n", originalMatches, 248*len(versions), controlMatches, 120*len(versions))
+	t.Logf("L09 %d exact + %d volatile-id carries / %d; compile %d/%d; DOM %d/%d; observed local DOM %d/%d; diagnostics %d/%d", matches, volatileIDCarries, total, compileMatches, len(compileCases)*len(versions), domMatches, len(runtimeCases)*len(versions), localDOMRows, len(runtimeCases)*len(versions), diagnosticMatches, diagnosticTotal)
 	t.Logf("L09 native payload matches %d/%d", payloadMatches, len(payloadCases)*len(versions))
 	if path := os.Getenv("GLADE_L09_REPORT"); path != "" {
 		l07Write(t, path, []byte(report.String()))
+	}
+}
+
+const l09VolatileErrorIDReason = "Winter '27 release drift at all API versions: a same-release capture (2026-10-12) returns random UUID body.id at 59.0, 67.0 and 68.0; Glade emits a numeric id and cannot reproduce a random UUID; compared with the id masked; owner L09"
+
+var l09ErrorUUID = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
+// Like A39's fresh-UUID exclusions, these rows' error body.id never counts as exact.
+// The recorded API 59/67 numeric answers predate the release change and stay byte-exact.
+// Unlike a whole-row exclusion, every byte outside the single error ID must
+// still match. The complete captured and actual answers remain in the report.
+func l09VolatileErrorIDCarry(api, got, want string) (bool, error) {
+	if api != "68.0" {
+		return false, nil
+	}
+	wantID, ok := l09ErrorBodyID(want)
+	if !ok || !l09ErrorUUID.MatchString(wantID) {
+		return false, nil
+	}
+	gotID, ok := l09ErrorBodyID(got)
+	if !ok || strings.TrimSpace(gotID) == "" {
+		return false, errors.New("volatile error body.id must be a non-empty string in one fetchResponse error")
+	}
+	mask := func(text, id string) (string, bool) {
+		raw, _ := json.Marshal(id)
+		encoded, err := l07BrowserText(raw)
+		if err != nil {
+			return "", false
+		}
+		token := `"id":` + strings.TrimPrefix(encoded, "BROWSER|")
+		// Refuse ambiguous repeated IDs rather than mask another field.
+		if strings.Count(text, token) != 1 {
+			return "", false
+		}
+		return strings.Replace(text, token, `"id":"[VOLATILE_ERROR_ID]"`, 1), true
+	}
+	maskedGot, gotOK := mask(got, gotID)
+	maskedWant, wantOK := mask(want, wantID)
+	return gotOK && wantOK && maskedGot == maskedWant, nil
+}
+
+func l09ErrorBodyID(text string) (string, bool) {
+	if !strings.HasPrefix(text, "JSON|") {
+		return "", false
+	}
+	var value any
+	if err := json.Unmarshal([]byte(strings.TrimPrefix(text, "JSON|")), &value); err != nil {
+		return "", false
+	}
+	id, count := "", 0
+	var walk func(any)
+	walk = func(value any) {
+		switch value := value.(type) {
+		case map[string]any:
+			if value["errorType"] == "fetchResponse" {
+				count++
+				body, _ := value["body"].(map[string]any)
+				id, _ = body["id"].(string)
+			}
+			for _, child := range value {
+				walk(child)
+			}
+		case []any:
+			for _, child := range value {
+				walk(child)
+			}
+		}
+	}
+	walk(value)
+	return id, count == 1
+}
+
+// TestL09CapturedPayloadClock replays the fresh API59/68 paired payload and the
+// retained API67 synthetic projection through the same product observer as the
+// full family, without Node. API67 adds no independent native observation.
+func TestL09CapturedPayloadClock(t *testing.T) {
+	data, err := os.ReadFile("testdata/l09_salesforce.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cases []l09Case
+	if err := json.Unmarshal(data, &cases); err != nil {
+		t.Fatal(err)
+	}
+	var payloads []l09Case
+	for _, c := range cases {
+		if c.Kind == "payload" {
+			payloads = append(payloads, c)
+		}
+	}
+	if len(payloads) != 1 {
+		t.Fatalf("expected one derived payload, got %d", len(payloads))
+	}
+	for _, api := range []string{"59.0", "67.0", "68.0"} {
+		t.Run(api, func(t *testing.T) {
+			actual := l09ObservePayload(t, api, payloads)
+			c := payloads[0]
+			text, err := l07BrowserText(actual[c.ID])
+			if err != nil {
+				t.Fatal(err)
+			}
+			got, want := "JSON|"+strings.TrimPrefix(text, "BROWSER|"), c.Expected[api]
+			if got != want {
+				t.Errorf("%s API%s: got %s; want %s", c.ID, api, got, want)
+			}
+		})
 	}
 }
 
@@ -320,18 +451,26 @@ func l09ObservePayload(t *testing.T, api string, cases []l09Case) map[string]jso
 	observed := map[string]json.RawMessage{}
 	for _, c := range cases {
 		fixture := c.Payload
-		clock, err := time.Parse(time.RFC3339, fixture.FixtureClock)
+		clockText := fixture.FixtureClock
+		if api == "59.0" || api == "68.0" {
+			clockText = fixture.FixtureClockByAPI[api]
+			if clockText == "" || fixture.UserTimeZoneByAPI[api] == "" {
+				t.Fatalf("missing captured L09 payload clock/timezone for API %s", api)
+			}
+		}
+		clock, err := time.Parse(time.RFC3339Nano, clockText)
 		if err != nil {
 			t.Fatal(err)
 		}
-		// Native context masks raw timestamps. This explicit CI clock is not a
-		// claimed native instant; it fixes the UTC context for its display check.
+		// API59/68 bind the same-record native timestamp and user timezone.
+		// API67 retains its historical synthetic display context, not a raw clock claim.
 		org := storage.NewOrgState()
 		org.APIVersion, org.Now = api, func() time.Time { return clock }
 		storage.EnsureDeterministicPlatformData(&org)
 		user := org.Objects["User"]
-		record := user.Records[storage.ID("005000000000001")]
+		record := user.Records[storage.ID(storage.DefaultUserID)]
 		record.Fields["Name"] = storage.StringValue(fixture.UserName)
+		record.Fields["TimeZoneSidKey"] = storage.StringValue(l09PayloadUserTimeZone(t, api, fixture))
 		user.Records[record.ID] = record
 		org.Objects["User"] = user
 		body, err := json.Marshal(fixture.Create)
@@ -421,7 +560,21 @@ func l09CompileCases(t *testing.T, api string, cases []l09Case) map[string]compi
 	return results
 }
 
-func l09ObserveDOM(t *testing.T, api string, cases []l09Case, dependencyRoot string) (map[string]json.RawMessage, map[string]string, error, error) {
+func l09PayloadUserTimeZone(t *testing.T, api string, fixture *l09PayloadProbe) string {
+	t.Helper()
+	if api == "67.0" {
+		// The retained API67 projection uses an explicit synthetic UTC
+		// context. This is not a claim about its unobserved native timestamp.
+		return "UTC"
+	}
+	if zone := fixture.UserTimeZoneByAPI[api]; zone != "" {
+		return zone
+	}
+	t.Fatalf("missing captured L09 user timezone for API %s", api)
+	return ""
+}
+
+func l09ObserveDOM(t *testing.T, api string, cases []l09Case, dependencyRoot, userTimeZone string) (map[string]json.RawMessage, map[string]string, error, error) {
 	t.Helper()
 	root := t.TempDir()
 	l07Copy(t, filepath.Join("testdata", "l09_runtime", "api"+api[:2]), root)
@@ -462,6 +615,11 @@ func l09ObserveDOM(t *testing.T, api string, cases []l09Case, dependencyRoot str
 	org := storage.NewOrgState()
 	storage.EnsureDeterministicPlatformData(&org)
 	l09SeedNativeModifier(t, &org, api, cases)
+	users := org.Objects["User"]
+	user := users.Records[storage.ID(storage.DefaultUserID)]
+	user.Fields["TimeZoneSidKey"] = storage.StringValue(userTimeZone)
+	users.Records[user.ID] = user
+	org.Objects["User"] = users
 	org.Metadata = registry
 	product := server.NewWithSource(&org, source)
 	product.SetProjectIndex(typesys.Build(p, schema))
@@ -542,7 +700,7 @@ func l09SeedNativeModifier(t *testing.T, org *storage.OrgState, api string, case
 		// Map the captured execution user's name onto the local fixture user.
 		// Product collision messages still resolve the stored modifier record.
 		user := org.Objects["User"]
-		record, ok := user.Records[storage.ID("005000000000001")]
+		record, ok := user.Records[storage.ID(storage.DefaultUserID)]
 		if !ok {
 			t.Fatal("missing local execution user")
 		}

@@ -52,7 +52,7 @@ func TestTask31MethodReturnFallbackPropagatesReceiverToStatic(t *testing.T) {
 	defer ResetPerfCounters()
 
 	prepared.receiver.Fields = map[string]Value{"Name": String("receiver-before")}
-	staticReceiver := cloneValuePreserveRefs(prepared.receiver)
+	staticReceiver := prepared.machine.cloneValuePreserveRefs(prepared.receiver)
 	if sameMapBacking(staticReceiver.Fields, prepared.receiver.Fields) {
 		t.Fatal("test requires a detached static alias with the same receiver reference")
 	}

@@ -1,0 +1,7 @@
+@IsTest private class F4F6054Observe { @IsTest static void observe() {
+String unitName='N3_054'; Map<String,Object> payload=new Map<String,Object>();
+FlowCoreN3Record__c equalOnly=new FlowCoreN3Record__c(Name='subject',Unit__c=unitName,Gate__c=true,Moment__c=Datetime.newInstanceGmt(2026,10,1,12,0,0), OtherMoment__c=Datetime.newInstanceGmt(2020,1,1,0,0,0)); insert equalOnly; payload.put('equalOnly',[SELECT COUNT() FROM FlowCoreN3Record__c WHERE Unit__c=:unitName AND Name='log']);
+FlowCoreN3Record__c greaterOnly=new FlowCoreN3Record__c(Name='subject',Unit__c=unitName,Gate__c=true,Moment__c=Datetime.newInstanceGmt(2020,1,1,0,0,0), OtherMoment__c=Datetime.newInstanceGmt(2026,10,1,12,0,0)); insert greaterOnly; payload.put('greaterOnly',[SELECT COUNT() FROM FlowCoreN3Record__c WHERE Unit__c=:unitName AND Name='log']);
+FlowCoreN3Record__c neither=new FlowCoreN3Record__c(Name='subject',Unit__c=unitName,Gate__c=true,Moment__c=Datetime.newInstanceGmt(2020,1,1,0,0,0), OtherMoment__c=Datetime.newInstanceGmt(2020,1,1,0,0,0)); insert neither; payload.put('neither',[SELECT COUNT() FROM FlowCoreN3Record__c WHERE Unit__c=:unitName AND Name='log']);
+System.assert(false,'FLOW_CORE_RESULT|F4F6_054|'+JSON.serialize(payload));
+} }

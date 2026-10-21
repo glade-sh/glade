@@ -1,0 +1,135 @@
+{
+  "sourceApis": {
+    "CensusKey": "50.0",
+    "LookupPort": "48.0",
+    "EqualityProvider": "51.0",
+    "SetProviderProof": "51.0"
+  },
+  "projectApi": "51.0",
+  "projectNamespace": "probe",
+  "transportApi": "62.0",
+  "route": "isTest",
+  "knownRowCount": 4,
+  "pendingCoverage": "Other source/transport versions and routes, whole-Set hash mutation and equality/hash callback counts are unobserved. No assertions or generalization for those cells.",
+  "deployment": {
+    "id": "0AfEc00000p1f70KAA",
+    "done": true,
+    "checkOnly": true,
+    "status": "Failed",
+    "numberComponentErrors": 0,
+    "numberTestErrors": 4,
+    "numberTestsCompleted": 0,
+    "numberTestsTotal": 4
+  },
+  "metadataUnchanged": true,
+  "rawSHA256": {
+    "ORG-RUN.txt": "5542e40cf32b6131376b5c9574002061b1d877f574936401dbaaad0a298224c1",
+    "SOURCE-DIGESTS.json": "b59f34ff09fc5b30e746fbeb38946965ede9f7f583e0da6f601fa3f7290194b3",
+    "after.command.json": "c39df8f9b369fbf3276458a2629394fa71111d9bc32a1e4efbb840d4ff6a1221",
+    "after.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647",
+    "after.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "before.command.json": "c39df8f9b369fbf3276458a2629394fa71111d9bc32a1e4efbb840d4ff6a1221",
+    "before.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647",
+    "before.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "deploy.command.json": "ae2b4e3a7132e632c9152a723bfe5ea555c3a2af6d62413f5c8b033c03de1e41",
+    "deploy.json": "c17901628a56b8d285879854761f6b5609b2f8d374d3df1bd551c12e518d674a",
+    "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+    "org.tsv": "08293000a836d682caf382bff15f5f0b5c0a74952a484221e3e47d4d4a69cb10",
+    "owner-inspection.json": "5851317f012f050373613de4ce22b5a86e7ade45d4b52720afb90a00b7f6a127",
+    "selected-rows.json": "8049a2f451aaccf2c663eaef6eea5df99f103de8414d1127620abbc1abeea078",
+    "RAW-DIGESTS.json": "2329cb824821b6ce97556fa0fbc1d7c7bf334932d4461b5b9a62702622b23e1e"
+  },
+  "sources": {
+    "force-app/main/default/classes/CensusKey.cls": {
+      "source": "public class CensusKey {\n    private Integer code;\n    public CensusKey(Integer code) { this.code=code; }\n    public Boolean equals(Object other) { return other instanceof CensusKey && code==((CensusKey)other).code; }\n    public Integer hashCode() { return code; }\n}\n",
+      "sha256": "6fdd9acf853271aa3ef530e90165f94b05de5e5e6298472b59a143be1a84b8b6"
+    },
+    "force-app/main/default/classes/CensusKey.cls-meta.xml": {
+      "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>50.0</apiVersion><status>Active</status></ApexClass>",
+      "sha256": "38d800223056409fa5707d967fe40c70aecd4e58b410da8ffbbe0d0360fe202c"
+    },
+    "force-app/main/default/classes/EqualityProvider.cls": {
+      "source": "public class EqualityProvider implements System.StubProvider {\n    public Boolean recording=false;\n    public Object expected;\n    public List<Type> signature;\n    public Boolean sameSignature;\n    public Boolean sameArguments;\n    public Boolean membership;\n    public List<String> calls=new List<String>();\n    public Object handleMethodCall(Object target,String method,Type output,List<Type> inputTypes,List<String> names,List<Object> args) {\n        calls.add(method+'|'+inputTypes[0].getName()+'|'+output.getName());\n        if(recording) { expected=args[0]; signature=inputTypes; return null; }\n        sameSignature=signature==inputTypes;\n        sameArguments=expected==args[0];\n        Set<CensusKey> expectedKeys=(Set<CensusKey>)expected;\n        Set<CensusKey> actualKeys=(Set<CensusKey>)args[0];\n        membership=expectedKeys.contains(actualKeys.iterator().next());\n        return sameSignature && sameArguments ? new List<String>{'ready'} : null;\n    }\n}\n",
+      "sha256": "b0d20be00cfb5ac822e471871e6d7be6c4fae0c68913daea5b2b7f89f12b1aab"
+    },
+    "force-app/main/default/classes/EqualityProvider.cls-meta.xml": {
+      "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>51.0</apiVersion><status>Active</status></ApexClass>",
+      "sha256": "f613e6b22c2c968a9b134584533bd0d0cc7eab57156815a66a35557f16cab710"
+    },
+    "force-app/main/default/classes/LookupPort.cls": {
+      "source": "public virtual class LookupPort {\n    public virtual List<String> lookup(Set<String> values) { return null; }\n    public virtual List<String> lookup(Set<CensusKey> values) { return null; }\n}\n",
+      "sha256": "624a38c8885474deba8fe0a68acb8ed73fe91f9fb9da83023d53b8b3067aab64"
+    },
+    "force-app/main/default/classes/LookupPort.cls-meta.xml": {
+      "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>48.0</apiVersion><status>Active</status></ApexClass>",
+      "sha256": "f374d0a861f7a9d55791769e44f23c14d6e118512e0958d537b71acb0a0e3ad2"
+    },
+    "force-app/main/default/classes/SetProviderProof.cls": {
+      "source": "@IsTest private class SetProviderProof {\n private static Map<String,Object> compare(Set<CensusKey> a,Set<CensusKey> b){\n  Object left=a,right=b;\n  return new Map<String,Object>{'operator'=>a==b,'method'=>a.equals(b),'boxedOperator'=>left==right,'boxedMethod'=>left.equals(right),'nestedList'=>new List<Object>{left}==new List<Object>{right},'leftSize'=>a.size(),'rightSize'=>b.size()};\n }\n private static void emit(Map<String,Object> value){System.assertEquals('SET_EQ_OBSERVATION',JSON.serialize(value),'SET_EQ_OBSERVATION');}\n @IsTest static void freshEquivalent(){\n  CensusKey a=new CensusKey(17),b=new CensusKey(17);\n  Set<CensusKey> left=new Set<CensusKey>{a};\n  Set<CensusKey> right=new Set<CensusKey>(new List<CensusKey>{b});\n  Map<String,Object> value=compare(left,right);value.put('scalarEqual',a.equals(b));value.put('membership',left.contains(b));emit(value);\n }\n @IsTest static void sameInstance(){\n  CensusKey key=new CensusKey(17);emit(compare(new Set<CensusKey>{key},new Set<CensusKey>(new List<CensusKey>{key})));\n }\n @IsTest static void distinctValue(){emit(compare(new Set<CensusKey>{new CensusKey(17)},new Set<CensusKey>(new List<CensusKey>{new CensusKey(29)})));}\n @IsTest static void providerEquivalent(){\n  EqualityProvider provider=new EqualityProvider();LookupPort port=(LookupPort)Test.createStub(LookupPort.class,provider);\n  provider.recording=true;port.lookup(new Set<CensusKey>{new CensusKey(17)});provider.recording=false;\n  List<String> value=port.lookup(new Set<CensusKey>(new List<CensusKey>{new CensusKey(17)}));\n  emit(new Map<String,Object>{'sameSignature'=>provider.sameSignature,'membership'=>provider.membership,'sameArguments'=>provider.sameArguments,'responseNotNull'=>value!=null,'responseSize'=>value==null?null:value.size()});\n }\n}\n",
+      "sha256": "b337340fbd0633264f688e0cdfbde343f15afdbe75214f78d8ab4e589de657a7"
+    },
+    "force-app/main/default/classes/SetProviderProof.cls-meta.xml": {
+      "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>51.0</apiVersion><status>Active</status></ApexClass>",
+      "sha256": "f613e6b22c2c968a9b134584533bd0d0cc7eab57156815a66a35557f16cab710"
+    },
+    "sfdx-project.json": {
+      "source": "{\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}],\"namespace\":\"probe\",\"sourceApiVersion\":\"51.0\"}\n",
+      "sha256": "25fbccdc2b362e8373396bdbdd2b9dac6e8e5661ea0b0512543554e9cfe271f3"
+    }
+  },
+  "rows": [
+    {
+      "method": "distinctValue",
+      "nativeFailureMessage": "System.AssertException: Assertion Failed: SET_EQ_OBSERVATION: Expected: SET_EQ_OBSERVATION, Actual: {\"rightSize\":1,\"leftSize\":1,\"nestedList\":false,\"boxedMethod\":false,\"boxedOperator\":false,\"method\":false,\"operator\":false}",
+      "native": {
+        "rightSize": 1,
+        "leftSize": 1,
+        "nestedList": false,
+        "boxedMethod": false,
+        "boxedOperator": false,
+        "method": false,
+        "operator": false
+      }
+    },
+    {
+      "method": "freshEquivalent",
+      "nativeFailureMessage": "System.AssertException: Assertion Failed: SET_EQ_OBSERVATION: Expected: SET_EQ_OBSERVATION, Actual: {\"membership\":true,\"scalarEqual\":true,\"rightSize\":1,\"leftSize\":1,\"nestedList\":true,\"boxedMethod\":true,\"boxedOperator\":true,\"method\":true,\"operator\":true}",
+      "native": {
+        "membership": true,
+        "scalarEqual": true,
+        "rightSize": 1,
+        "leftSize": 1,
+        "nestedList": true,
+        "boxedMethod": true,
+        "boxedOperator": true,
+        "method": true,
+        "operator": true
+      }
+    },
+    {
+      "method": "providerEquivalent",
+      "nativeFailureMessage": "System.AssertException: Assertion Failed: SET_EQ_OBSERVATION: Expected: SET_EQ_OBSERVATION, Actual: {\"responseSize\":1,\"responseNotNull\":true,\"sameArguments\":true,\"membership\":true,\"sameSignature\":true}",
+      "native": {
+        "responseSize": 1,
+        "responseNotNull": true,
+        "sameArguments": true,
+        "membership": true,
+        "sameSignature": true
+      }
+    },
+    {
+      "method": "sameInstance",
+      "nativeFailureMessage": "System.AssertException: Assertion Failed: SET_EQ_OBSERVATION: Expected: SET_EQ_OBSERVATION, Actual: {\"rightSize\":1,\"leftSize\":1,\"nestedList\":true,\"boxedMethod\":true,\"boxedOperator\":true,\"method\":true,\"operator\":true}",
+      "native": {
+        "rightSize": 1,
+        "leftSize": 1,
+        "nestedList": true,
+        "boxedMethod": true,
+        "boxedOperator": true,
+        "method": true,
+        "operator": true
+      }
+    }
+  ]
+}

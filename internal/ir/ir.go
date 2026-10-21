@@ -10,6 +10,7 @@ type Program struct {
 type Instruction struct {
 	Op         Op            `json:"op"`
 	Type       string        `json:"type,omitempty"`
+	Final      bool          `json:"final,omitempty"`
 	CatchTypes []string      `json:"catchTypes,omitempty"`
 	Name       string        `json:"name,omitempty"`
 	Expr       Expr          `json:"expr,omitempty"`
@@ -76,6 +77,10 @@ type Expr struct {
 	NamedArgs []NamedArg `json:"namedArgs,omitempty"`
 	Left      *Expr      `json:"left,omitempty"`
 	Right     *Expr      `json:"right,omitempty"`
+
+	// CastQueryOperand distinguishes a directly enclosed query expression
+	// from a stored result or an Object bridge before runtime values erase it.
+	CastQueryOperand bool `json:"castQueryOperand,omitempty"`
 }
 
 type NamedArg struct {

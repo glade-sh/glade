@@ -1,0 +1,353 @@
+{
+  "description": "Owned native JSON allocation observations, named test route. Source APIs49/62/67, transport67. Source-class constructors and initializers skipped for deserialize/deserializeStrict, nested and list values; ordinary new runs both. Each assertion carries one observed cell. API49 first five cells recovered from a truncated original transport and reused without rerun.",
+  "versions": [
+    {
+      "api": "49.0",
+      "cells": [
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": false,
+          "shape": "plain"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": false,
+          "shape": "throwing"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": false,
+          "shape": "initializer"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": false,
+          "shape": "parameter"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "size": 1,
+          "decoded": true,
+          "strict": false,
+          "shape": "list"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": false,
+          "shape": "nested"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": true,
+          "shape": "plain"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": true,
+          "shape": "throwing"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": true,
+          "shape": "initializer"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": true,
+          "shape": "parameter"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "size": 1,
+          "decoded": true,
+          "strict": true,
+          "shape": "list"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": true,
+          "shape": "nested"
+        },
+        {
+          "initial": "owned-initial",
+          "payload": "owned-constructor",
+          "initializers": 1,
+          "constructors": 1,
+          "shape": "normal-new"
+        }
+      ]
+    },
+    {
+      "api": "62.0",
+      "cells": [
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": false,
+          "shape": "plain"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": false,
+          "shape": "throwing"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": false,
+          "shape": "initializer"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": false,
+          "shape": "parameter"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "size": 1,
+          "decoded": true,
+          "strict": false,
+          "shape": "list"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": false,
+          "shape": "nested"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": true,
+          "shape": "plain"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": true,
+          "shape": "throwing"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": true,
+          "shape": "initializer"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": true,
+          "shape": "parameter"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "size": 1,
+          "decoded": true,
+          "strict": true,
+          "shape": "list"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": true,
+          "shape": "nested"
+        },
+        {
+          "initial": "owned-initial",
+          "payload": "owned-constructor",
+          "initializers": 1,
+          "constructors": 1,
+          "shape": "normal-new"
+        }
+      ]
+    },
+    {
+      "api": "67.0",
+      "cells": [
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": false,
+          "shape": "plain"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": false,
+          "shape": "throwing"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": false,
+          "shape": "initializer"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": false,
+          "shape": "parameter"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "size": 1,
+          "decoded": true,
+          "strict": false,
+          "shape": "list"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": false,
+          "shape": "nested"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": true,
+          "shape": "plain"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": true,
+          "shape": "throwing"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": true,
+          "shape": "initializer"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": true,
+          "shape": "parameter"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "size": 1,
+          "decoded": true,
+          "strict": true,
+          "shape": "list"
+        },
+        {
+          "initializers": 0,
+          "constructors": 0,
+          "initial": null,
+          "payload": "owned-json",
+          "decoded": true,
+          "strict": true,
+          "shape": "nested"
+        },
+        {
+          "initial": "owned-initial",
+          "payload": "owned-constructor",
+          "initializers": 1,
+          "constructors": 1,
+          "shape": "normal-new"
+        }
+      ]
+    }
+  ]
+}

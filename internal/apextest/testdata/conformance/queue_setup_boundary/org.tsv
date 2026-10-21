@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"assignment":{"ok":true},"group":{"ok":true},"member":{"ok":true},"permission_set":{"ok":true},"queue_object":{"ok":true}}
+62.0	isTest	{"assignment":{"ok":true},"group":{"ok":true},"member":{"ok":true},"permission_set":{"ok":true},"queue_object":{"ok":true}}
+67.0	anonymous	{"assignment":{"ok":true},"group":{"ok":true},"member":{"ok":true},"permission_set":{"ok":true},"queue_object":{"ok":true}}
+67.0	isTest	{"assignment":{"ok":true},"group":{"ok":true},"member":{"ok":true},"permission_set":{"ok":true},"queue_object":{"ok":true}}

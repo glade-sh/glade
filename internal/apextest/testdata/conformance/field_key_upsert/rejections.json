@@ -1,0 +1,397 @@
+{
+  "cluster": "rejections",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 3,
+  "nativeObservationCount": 18,
+  "rows": [
+    {
+      "id": "C183ID_130",
+      "group": "REJECTIONS",
+      "label": "field token from another object",
+      "role": "rejection",
+      "twin": "C183ID_003",
+      "comparison": "exact",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{List<Opportunity> records=new List<Opportunity>{new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15))};Schema.SObjectField key=Account.Id;Map<String,Object> step=payload;List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_130|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "41c9e3126c99e93e8acfb7432ec2708b60881c71a1e2ea0253da4608021855d8"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionType": "System.TypeException",
+                  "exceptionMessage": "Expected field from SObject type Opportunity but found Id from Account"
+                }
+              },
+              "value": {
+                "exceptionType": "System.TypeException",
+                "exceptionMessage": "Expected field from SObject type Opportunity but found Id from Account"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionType": "System.TypeException",
+                  "exceptionMessage": "Expected field from SObject type Opportunity but found Id from Account"
+                }
+              },
+              "value": {
+                "exceptionType": "System.TypeException",
+                "exceptionMessage": "Expected field from SObject type Opportunity but found Id from Account"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionType": "System.TypeException",
+                  "exceptionMessage": "Expected field from SObject type Opportunity but found Id from Account"
+                }
+              },
+              "value": {
+                "exceptionType": "System.TypeException",
+                "exceptionMessage": "Expected field from SObject type Opportunity but found Id from Account"
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID130Test": "@IsTest private class KeyObserveC183ID130Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{List<Opportunity> records=new List<Opportunity>{new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15))};Schema.SObjectField key=Account.Id;Map<String,Object> step=payload;List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_130|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID130Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID130Test": "7b4e5cbe52a635ea2d01c1ce45f27208c30728009da112dca0b5d5b1c48e42ed"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionType": "System.TypeException",
+                  "exceptionMessage": "Expected field from SObject type Opportunity but found Id from Account"
+                }
+              },
+              "value": {
+                "exceptionType": "System.TypeException",
+                "exceptionMessage": "Expected field from SObject type Opportunity but found Id from Account"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "results": [
+                    {
+                      "success": false,
+                      "created": false,
+                      "idPresent": false,
+                      "errors": [
+                        {
+                          "statusCode": "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+                          "message": "Expected field from SObject type Opportunity but found Id from Account",
+                          "fields": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "results": [
+                  {
+                    "success": false,
+                    "created": false,
+                    "idPresent": false,
+                    "errors": [
+                      {
+                        "statusCode": "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+                        "message": "Expected field from SObject type Opportunity but found Id from Account",
+                        "fields": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "results": [
+                    {
+                      "success": false,
+                      "created": false,
+                      "idPresent": false,
+                      "errors": [
+                        {
+                          "statusCode": "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+                          "message": "Expected field from SObject type Opportunity but found Id from Account",
+                          "fields": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "results": [
+                  {
+                    "success": false,
+                    "created": false,
+                    "idPresent": false,
+                    "errors": [
+                      {
+                        "statusCode": "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+                        "message": "Expected field from SObject type Opportunity but found Id from Account",
+                        "fields": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C183ID_131",
+      "group": "REJECTIONS",
+      "label": "null field token",
+      "role": "rejection",
+      "twin": "C183ID_007",
+      "comparison": "exact",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{List<Account> records=new List<Account>{new Account(Name='Synthetic key')};Schema.SObjectField key=null;Map<String,Object> step=payload;List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_131|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "37e7aff46367143481b0791b918907faa0067b71b45abdaafa9895c3a7639f4b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionType": "System.NullPointerException",
+                  "exceptionMessage": "Argument 2 cannot be null"
+                }
+              },
+              "value": {
+                "exceptionType": "System.NullPointerException",
+                "exceptionMessage": "Argument 2 cannot be null"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionType": "System.NullPointerException",
+                  "exceptionMessage": "Argument 2 cannot be null"
+                }
+              },
+              "value": {
+                "exceptionType": "System.NullPointerException",
+                "exceptionMessage": "Argument 2 cannot be null"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionType": "System.NullPointerException",
+                  "exceptionMessage": "Argument 2 cannot be null"
+                }
+              },
+              "value": {
+                "exceptionType": "System.NullPointerException",
+                "exceptionMessage": "Argument 2 cannot be null"
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID131Test": "@IsTest private class KeyObserveC183ID131Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{List<Account> records=new List<Account>{new Account(Name='Synthetic key')};Schema.SObjectField key=null;Map<String,Object> step=payload;List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_131|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID131Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID131Test": "58e263267b424203d729308c0cdc230348f784d7e1a819b5652ba472598224ae"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionType": "System.NullPointerException",
+                  "exceptionMessage": "Argument 2 cannot be null"
+                }
+              },
+              "value": {
+                "exceptionType": "System.NullPointerException",
+                "exceptionMessage": "Argument 2 cannot be null"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionType": "System.NullPointerException",
+                  "exceptionMessage": "Argument 2 cannot be null"
+                }
+              },
+              "value": {
+                "exceptionType": "System.NullPointerException",
+                "exceptionMessage": "Argument 2 cannot be null"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionType": "System.NullPointerException",
+                  "exceptionMessage": "Argument 2 cannot be null"
+                }
+              },
+              "value": {
+                "exceptionType": "System.NullPointerException",
+                "exceptionMessage": "Argument 2 cannot be null"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C183ID_132",
+      "group": "REJECTIONS",
+      "label": "empty list valid key",
+      "role": "boundary",
+      "twin": "C183ID_007",
+      "comparison": "exact",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{List<Account> records=new List<Account>();Schema.SObjectField key=Account.Id;Map<String,Object> step=payload;List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_132|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "ae1886bbfbcf479862ad232183d2a94181b5f0c0d92bb70c0b97ec85b76c59a4"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "results": []
+                }
+              },
+              "value": {
+                "results": []
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "results": []
+                }
+              },
+              "value": {
+                "results": []
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "results": []
+                }
+              },
+              "value": {
+                "results": []
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID132Test": "@IsTest private class KeyObserveC183ID132Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{List<Account> records=new List<Account>();Schema.SObjectField key=Account.Id;Map<String,Object> step=payload;List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_132|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID132Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID132Test": "bb6bf677bead45d2508fe84ff20ef00decfbcde2be30a7de839cc2bbfd3dfa76"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "results": []
+                }
+              },
+              "value": {
+                "results": []
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "results": []
+                }
+              },
+              "value": {
+                "results": []
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "results": []
+                }
+              },
+              "value": {
+                "results": []
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

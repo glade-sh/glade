@@ -1,0 +1,4 @@
+delete_success=true
+scratch_org_info_status=Deleted
+active_scratch_org_count=0
+verification_scope=only the scratch org created for these observations

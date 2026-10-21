@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"deleted":1,"empty":0,"inserted":2,"otherParent":0,"rollbackNew":0,"rollbackOld":2,"undeleted":2}
+62.0	isTest	{"deleted":1,"empty":0,"inserted":2,"otherParent":0,"rollbackNew":0,"rollbackOld":2,"undeleted":2}
+67.0	anonymous	{"deleted":1,"empty":0,"inserted":2,"otherParent":0,"rollbackNew":0,"rollbackOld":2,"undeleted":2}
+67.0	isTest	{"deleted":1,"empty":0,"inserted":2,"otherParent":0,"rollbackNew":0,"rollbackOld":2,"undeleted":2}

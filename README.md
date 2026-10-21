@@ -51,7 +51,7 @@ choose the path that matches your workspace:
 The Quickstart uses commands available in the current stable CLI and also
 covers recovery, API-version rules, and the Salesforce boundary. The bundled
 `RefinementServiceTest` first shipped in **v0.2.14** and is included in the
-**v0.2.15 stable release**.
+**v0.3.0 release**.
 
 For an existing Salesforce DX project, substitute a test class that it owns:
 
@@ -87,10 +87,11 @@ or [Choose a workflow](https://glade.sh/guide/workflows).
 - Supported local behavior is not blanket Salesforce parity. Hosted services,
   live auth, deployment, exact Lightning Experience behavior, and final
   production validation remain with Salesforce.
-- Checked Apex source versions are 65.0, 66.0, and 67.0. Historical sources may
-  be preserved without checked correctness credit; Execute Anonymous and LWC
-  have stricter eligibility. Checked HTTP endpoints are a separate axis:
-  60.0, 65.0, 66.0, and 67.0.
+- The v0.3.0 support window is Apex 62.0-68.0, LWC and Visualforce 59.0-68.0.
+  Apex source API below 62.0 is unsupported, even when a project loads.
+  Execute Anonymous accepts 65.0, 66.0, 67.0, and 68.0. Checked HTTP endpoints
+  are a separate axis: 60.0, 65.0, 66.0, 67.0, and 68.0; the default is 65.0.
+- DataWeave, ConnectApi, and Slack are excluded and unsupported.
 - Local test isolation is not an OS sandbox. Plugins run as your user.
   Review network use by custom code and external AI providers.
 - Preview and deterministic harness behavior have named limits. A supported

@@ -1,0 +1,15 @@
+api	case	accepted	message	runtime
+62.0	OrchardContainerValue	false	addError must be invoked on an expression that is an exact SObject field reference	-
+62.0	OrchardDecimalValue	false	addError must be invoked on an expression that is an exact SObject field reference	-
+62.0	OrchardFlagField	true	-	true
+62.0	OrchardNameField	true	-	true
+62.0	OrchardRecordError	true	-	true
+62.0	OrchardRevenueField	true	-	true
+62.0	OrchardWrongArgument	false	Method does not exist or incorrect signature: void addError(Integer) from the type Decimal	-
+67.0	OrchardContainerValue	false	addError must be invoked on an expression that is an exact SObject field reference	-
+67.0	OrchardDecimalValue	false	addError must be invoked on an expression that is an exact SObject field reference	-
+67.0	OrchardFlagField	true	-	true
+67.0	OrchardNameField	true	-	true
+67.0	OrchardRecordError	true	-	true
+67.0	OrchardRevenueField	true	-	true
+67.0	OrchardWrongArgument	false	Method does not exist or incorrect signature: void addError(Integer) from the type Decimal	-

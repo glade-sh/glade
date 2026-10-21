@@ -37,12 +37,13 @@ type l04Case struct {
 	Carried            map[string]string `json:"carried"`
 }
 
-// TestL04SalesforceConformance replays owned API 59/67 compiler and DOM captures.
+// TestL04SalesforceConformance replays owned API 59/67/68 compiler and DOM captures.
 // GLADE_L04_CAPTURE reports every mismatch or missing oracle without accepting it.
 // Sources and observations are exported from the native lifecycle capture; CI
 // never accesses Salesforce or imports the capture tools.
-// Native DOM answers come from the per-API runtime observations. The original
-// source compilation answers are preserved separately for each API.
+// Native DOM answers come from the per-API runtime observations at API 59, 67
+// and 68. The original source compilation answers are preserved separately for
+// each API.
 // Rejection signatures preserve the LWC code and message from diagnostics.json;
 // source positions and local stack traces are outside that signature.
 func TestL04SalesforceConformance(t *testing.T) {
@@ -55,7 +56,7 @@ func TestL04SalesforceConformance(t *testing.T) {
 	if err := json.Unmarshal(data, &cases); err != nil {
 		t.Fatal(err)
 	}
-	versions := []string{"59.0", "67.0"}
+	versions := []string{"59.0", "67.0", "68.0"}
 	seen, groups := map[string]bool{}, map[string]bool{}
 	runtimeCases := []l04Case{}
 	runtimeIndices := map[string]int{}

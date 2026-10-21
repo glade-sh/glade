@@ -1,0 +1,40 @@
+{
+  "projectAPI": "62.0",
+  "transportAPI": "62.0",
+  "context": "named test, unpackaged",
+  "observedDate": "2026-10-15",
+  "deployment": {
+    "id": "0AfhP000001CBggSAG",
+    "status": "Succeeded",
+    "done": true,
+    "checkOnly": true,
+    "componentErrors": 0,
+    "testErrors": 0,
+    "passed": 2,
+    "total": 2,
+    "responseSHA256": "3f20d1711420096b07d84638ea8e79dc0c63dd59794fbf2aa59ad449847bf5bd"
+  },
+  "rows": [
+    {
+      "class": "OwnedAnnotation62Test",
+      "sourceAPI": "62.0",
+      "source": "@IsTest\nprivate class OwnedAnnotation62Test {\n    @SupressWarnings('ExcessiveParameterList')\n    private static Integer misspelled() { return 7; }\n    @OwnedOpaqueMarker('opaque')\n    private static Integer unknown() { return 11; }\n    @SuppressWarnings('PMD')\n    private static Integer known() { return 13; }\n    @OwnedInstanceMarker('opaque')\n    private Integer instance() { return 23; }\n    @IsTest static void annotationControl() {\n        Assert.areEqual(7,misspelled());\n        Assert.areEqual(11,unknown());\n        Assert.areEqual(13,known());\n        Assert.areEqual(23,(new OwnedAnnotation62Test()).instance());\n    }\n}\n",
+      "sourceSHA256": "2fac22d6205aa1605811df4792b1260c0ed186e452908ec188d97bdd6d7510d8",
+      "method": "annotationControl",
+      "expected": "pass"
+    },
+    {
+      "class": "OwnedAnnotation67Test",
+      "sourceAPI": "67.0",
+      "source": "@IsTest\nprivate class OwnedAnnotation67Test {\n    @SupressWarnings('ExcessiveParameterList')\n    private static Integer misspelled() { return 7; }\n    @OwnedOpaqueMarker('opaque')\n    private static Integer unknown() { return 11; }\n    @SuppressWarnings('PMD')\n    private static Integer known() { return 13; }\n    @OwnedInstanceMarker('opaque')\n    private Integer instance() { return 23; }\n    @IsTest static void annotationControl() {\n        Assert.areEqual(7,misspelled());\n        Assert.areEqual(11,unknown());\n        Assert.areEqual(13,known());\n        Assert.areEqual(23,(new OwnedAnnotation67Test()).instance());\n    }\n}\n",
+      "sourceSHA256": "c68ab600d24b5b255a868c9505339eb2ebec093f90b3a49954a6691c1c601ed5",
+      "method": "annotationControl",
+      "expected": "pass"
+    }
+  ],
+  "pendingCoverage": [
+    "Other declaration targets",
+    "Namespaces and managed packages",
+    "Other unknown annotation argument shapes"
+  ]
+}

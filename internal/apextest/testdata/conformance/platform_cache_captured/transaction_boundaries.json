@@ -1,0 +1,1997 @@
+{
+  "APIVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "Cluster": "transaction_boundaries",
+  "CellCount": 30,
+  "ObservedCount": 27,
+  "AssertedCount": 27,
+  "CarriedCount": 3,
+  "Cells": [
+    {
+      "ID": "PCR001",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(Cache.Org.get('local.PcAlt.PcKPCR001A62A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCR001A62A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR001|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "fdbb824c613066f50b77607550f205d91f6f6ccee02613ccf4b51f16eb638818"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": null,
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": null,
+      "Flow": "requests",
+      "BeforeAnonymous": "Cache.Org.remove('local.PcAlt.PcKPCR001A62A');",
+      "RollbackWriter": "Cache.Org.put('local.PcAlt.PcKPCR001A62A', 'written'); throw new IllegalArgumentException('PcRollback');",
+      "DelaySeconds": 0,
+      "WriterExceptionType": "System.IllegalArgumentException",
+      "WriterExceptionMessage": "PcRollback",
+      "PhaseSHA256": {
+        "BeforeAnonymous": "f0e47ad372066c38c9a6dc81e9d61322382ac70eedc8ee26b4e5006ac7478000",
+        "RollbackWriter": "a37bd91f99010916ad73529d41aff010be3ce82663f32715b5b171433b2b1989"
+      }
+    },
+    {
+      "ID": "PCR002",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { Cache.OrgPartition p = Cache.Org.getPartition('local.PcAlt'); p.remove('PcKPCR002A62A'); Savepoint sp = Database.setSavepoint(); p.put('PcKPCR002A62A', 'written'); Database.rollback(sp); r = String.valueOf(p.get('PcKPCR002A62A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.getPartition('local.PcAlt').remove('PcKPCR002A62A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR002|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "be7cc2719b5add093af5c3cf870fb922956bbf4182831cc4a5b9570faefae3fa"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR002",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCR002A62Test": "@IsTest private class PcPCR002A62Test { @IsTest static void observe(){String r; try { Cache.OrgPartition p = Cache.Org.getPartition('local.PcAlt'); p.remove('PcKPCR002A62I'); Savepoint sp = Database.setSavepoint(); p.put('PcKPCR002A62I', 'written'); Database.rollback(sp); r = String.valueOf(p.get('PcKPCR002A62I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.getPartition('local.PcAlt').remove('PcKPCR002A62I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCR002|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCR002A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCR002A62Test": "950fd5adb2f7fc234b2b5d708bfdc6aeb4f92b55869f923e48f9a2677124b30a"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR003",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { Cache.OrgPartition p = Cache.Org.getPartition('local.PcAlt'); p.remove('PcKPCR003A62A'); p.put('PcKPCR003A62A', 'written'); try { throw new IllegalArgumentException('PcCaught'); } catch (Exception e) { } r = String.valueOf(p.get('PcKPCR003A62A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.getPartition('local.PcAlt').remove('PcKPCR003A62A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR003|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "9b62fee84e31e7d3edf5dfcd24d7e9b1d701b23d6f7371f3f66a6bd68a24178d"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR003",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCR003A62Test": "@IsTest private class PcPCR003A62Test { @IsTest static void observe(){String r; try { Cache.OrgPartition p = Cache.Org.getPartition('local.PcAlt'); p.remove('PcKPCR003A62I'); p.put('PcKPCR003A62I', 'written'); try { throw new IllegalArgumentException('PcCaught'); } catch (Exception e) { } r = String.valueOf(p.get('PcKPCR003A62I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.getPartition('local.PcAlt').remove('PcKPCR003A62I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCR003|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCR003A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCR003A62Test": "00c71426c3b97de56ec8dded28a91d2f67e99e5c9a74c196fc6b82c5a6f6e0a6"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR004",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); r = String.valueOf(Cache.Session.get('local.PcAlt.PcKPCR004A62A')); r=JSON.serialize(new Map<String,Object>{'cache_value'=>r,'reader_session_sha256'=>pcSidHash}); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCR004A62A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR004|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "42e8c9e5da7c70fdc2f2eabcd6199dbf38d536299e55586d8165b04054562b35"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "FIXTURE_ERROR",
+        "classification": "FixtureError",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "carry",
+      "CarryReason": "Native fixture error; no answer to the rollback reader.",
+      "Flow": "requests",
+      "BeforeAnonymous": "Cache.Session.remove('local.PcAlt.PcKPCR004A62A');",
+      "RollbackWriter": "String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); Cache.Session.put('local.PcAlt.PcKPCR004A62A', 'written'); throw new IllegalArgumentException('PcRollback|SESSION|'+(pcSidHash==null ? 'MISSING' : pcSidHash));",
+      "DelaySeconds": 0,
+      "WriterExceptionType": "System.IllegalArgumentException",
+      "WriterExceptionMessage": "PcRollback",
+      "PayloadField": "cache_value",
+      "PhaseSHA256": {
+        "BeforeAnonymous": "531ff66c46cc48bdea5b81ddcdc1c6336ae4851698f3f97cb33e8f004fde8864",
+        "RollbackWriter": "cc5bdf18fd407c73a2ba696ac6b9c5b2a99d1abea006e20f5d88f1e4a55f56b2"
+      }
+    },
+    {
+      "ID": "PCR005",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { Cache.SessionPartition p = Cache.Session.getPartition('local.PcAlt'); p.remove('PcKPCR005A62A'); Savepoint sp = Database.setSavepoint(); p.put('PcKPCR005A62A', 'written'); Database.rollback(sp); r = String.valueOf(p.get('PcKPCR005A62A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.getPartition('local.PcAlt').remove('PcKPCR005A62A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR005|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "b2c435291e3b226f460579828ee45036764cfc1936f119c9ce81635aa73967c0"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR005",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCR005A62Test": "@IsTest private class PcPCR005A62Test { @IsTest static void observe(){String r; try { Cache.SessionPartition p = Cache.Session.getPartition('local.PcAlt'); p.remove('PcKPCR005A62I'); Savepoint sp = Database.setSavepoint(); p.put('PcKPCR005A62I', 'written'); Database.rollback(sp); r = String.valueOf(p.get('PcKPCR005A62I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.getPartition('local.PcAlt').remove('PcKPCR005A62I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCR005|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCR005A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCR005A62Test": "472a689b57d779e8e2f32632c89de7484412554e74d17f7d8f476d7b6ddb6685"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR006",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { Cache.SessionPartition p = Cache.Session.getPartition('local.PcAlt'); p.remove('PcKPCR006A62A'); p.put('PcKPCR006A62A', 'written'); try { throw new IllegalArgumentException('PcCaught'); } catch (Exception e) { } r = String.valueOf(p.get('PcKPCR006A62A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.getPartition('local.PcAlt').remove('PcKPCR006A62A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR006|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "cf7ba49aaf3e8551e40e49d41ad47ea028af51871204260add376b6969f6f141"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR006",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCR006A62Test": "@IsTest private class PcPCR006A62Test { @IsTest static void observe(){String r; try { Cache.SessionPartition p = Cache.Session.getPartition('local.PcAlt'); p.remove('PcKPCR006A62I'); p.put('PcKPCR006A62I', 'written'); try { throw new IllegalArgumentException('PcCaught'); } catch (Exception e) { } r = String.valueOf(p.get('PcKPCR006A62I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.getPartition('local.PcAlt').remove('PcKPCR006A62I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCR006|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCR006A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCR006A62Test": "b98816dd84817165272860632a2fe1eee270fbeacee3b6f2fff0a3381d24e750"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR001",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(Cache.Org.get('local.PcAlt.PcKPCR001A67A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCR001A67A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR001|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "38708d7387feec317addacd2978b9f9a8f7b86213689a2a3d0e15b9d2387083d"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": null,
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": null,
+      "Flow": "requests",
+      "BeforeAnonymous": "Cache.Org.remove('local.PcAlt.PcKPCR001A67A');",
+      "RollbackWriter": "Cache.Org.put('local.PcAlt.PcKPCR001A67A', 'written'); throw new IllegalArgumentException('PcRollback');",
+      "DelaySeconds": 0,
+      "WriterExceptionType": "System.IllegalArgumentException",
+      "WriterExceptionMessage": "PcRollback",
+      "PhaseSHA256": {
+        "BeforeAnonymous": "405c163755d62e63894c4547c64165b89070677f8618d5f9558ed36341efeddf",
+        "RollbackWriter": "0f1dc945aa41f9c53553f956ccec6c8c34af530d4a77d74eeeaffecc2b8a2a95"
+      }
+    },
+    {
+      "ID": "PCR002",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { Cache.OrgPartition p = Cache.Org.getPartition('local.PcAlt'); p.remove('PcKPCR002A67A'); Savepoint sp = Database.setSavepoint(); p.put('PcKPCR002A67A', 'written'); Database.rollback(sp); r = String.valueOf(p.get('PcKPCR002A67A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.getPartition('local.PcAlt').remove('PcKPCR002A67A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR002|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "ad6f0af1ee6e06a9cb7721b2627f9eeeebad8d79ec6fddb16c2a221e0a96dd1b"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR002",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCR002A67Test": "@IsTest private class PcPCR002A67Test { @IsTest static void observe(){String r; try { Cache.OrgPartition p = Cache.Org.getPartition('local.PcAlt'); p.remove('PcKPCR002A67I'); Savepoint sp = Database.setSavepoint(); p.put('PcKPCR002A67I', 'written'); Database.rollback(sp); r = String.valueOf(p.get('PcKPCR002A67I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.getPartition('local.PcAlt').remove('PcKPCR002A67I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCR002|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCR002A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCR002A67Test": "a5807c3aa4f2d4535fc60ddc2861f29ed226e4281ea28f6c1a7cc682319aa56c"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR003",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { Cache.OrgPartition p = Cache.Org.getPartition('local.PcAlt'); p.remove('PcKPCR003A67A'); p.put('PcKPCR003A67A', 'written'); try { throw new IllegalArgumentException('PcCaught'); } catch (Exception e) { } r = String.valueOf(p.get('PcKPCR003A67A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.getPartition('local.PcAlt').remove('PcKPCR003A67A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR003|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "6235dbede2e2e3bb4dfc868c1c4951a400fc37d2c16c69dbba3e066b0be59e7b"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR003",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCR003A67Test": "@IsTest private class PcPCR003A67Test { @IsTest static void observe(){String r; try { Cache.OrgPartition p = Cache.Org.getPartition('local.PcAlt'); p.remove('PcKPCR003A67I'); p.put('PcKPCR003A67I', 'written'); try { throw new IllegalArgumentException('PcCaught'); } catch (Exception e) { } r = String.valueOf(p.get('PcKPCR003A67I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.getPartition('local.PcAlt').remove('PcKPCR003A67I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCR003|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCR003A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCR003A67Test": "20d9750ab4cb7a3d1230b46938fcf2a86842dcb207eb1b70fe348607a03b7af1"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR004",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); r = String.valueOf(Cache.Session.get('local.PcAlt.PcKPCR004A67A')); r=JSON.serialize(new Map<String,Object>{'cache_value'=>r,'reader_session_sha256'=>pcSidHash}); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCR004A67A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR004|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "646e8d028c905f3012a298632179480a7dd00132ed6bce04a5d8169dec59bf37"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "FIXTURE_ERROR",
+        "classification": "FixtureError",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "carry",
+      "CarryReason": "Native fixture error; no answer to the rollback reader.",
+      "Flow": "requests",
+      "BeforeAnonymous": "Cache.Session.remove('local.PcAlt.PcKPCR004A67A');",
+      "RollbackWriter": "String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); Cache.Session.put('local.PcAlt.PcKPCR004A67A', 'written'); throw new IllegalArgumentException('PcRollback|SESSION|'+(pcSidHash==null ? 'MISSING' : pcSidHash));",
+      "DelaySeconds": 0,
+      "WriterExceptionType": "System.IllegalArgumentException",
+      "WriterExceptionMessage": "PcRollback",
+      "PayloadField": "cache_value",
+      "PhaseSHA256": {
+        "BeforeAnonymous": "b7d79e0b84c0d8c009ae94b65247601008e00ea28c89496509bbde024dac1182",
+        "RollbackWriter": "6531e97259752290fdde4c4f9019fd523d15167f2385fd8b753a841ae40ab482"
+      }
+    },
+    {
+      "ID": "PCR005",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { Cache.SessionPartition p = Cache.Session.getPartition('local.PcAlt'); p.remove('PcKPCR005A67A'); Savepoint sp = Database.setSavepoint(); p.put('PcKPCR005A67A', 'written'); Database.rollback(sp); r = String.valueOf(p.get('PcKPCR005A67A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.getPartition('local.PcAlt').remove('PcKPCR005A67A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR005|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "787e938474997f05553228c62b6bab4fd58756a5d7d2745f264c42d396ceb1d4"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR005",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCR005A67Test": "@IsTest private class PcPCR005A67Test { @IsTest static void observe(){String r; try { Cache.SessionPartition p = Cache.Session.getPartition('local.PcAlt'); p.remove('PcKPCR005A67I'); Savepoint sp = Database.setSavepoint(); p.put('PcKPCR005A67I', 'written'); Database.rollback(sp); r = String.valueOf(p.get('PcKPCR005A67I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.getPartition('local.PcAlt').remove('PcKPCR005A67I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCR005|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCR005A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCR005A67Test": "9000e129f3f4361ae8ac1ba636cb45a7c91933a62a92e1703a588300f1cdd85a"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR006",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { Cache.SessionPartition p = Cache.Session.getPartition('local.PcAlt'); p.remove('PcKPCR006A67A'); p.put('PcKPCR006A67A', 'written'); try { throw new IllegalArgumentException('PcCaught'); } catch (Exception e) { } r = String.valueOf(p.get('PcKPCR006A67A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.getPartition('local.PcAlt').remove('PcKPCR006A67A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR006|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "3c0642d21a46766eb09c250412ad1ffa33f9e2787a89ae96496414a0108f41ed"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR006",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCR006A67Test": "@IsTest private class PcPCR006A67Test { @IsTest static void observe(){String r; try { Cache.SessionPartition p = Cache.Session.getPartition('local.PcAlt'); p.remove('PcKPCR006A67I'); p.put('PcKPCR006A67I', 'written'); try { throw new IllegalArgumentException('PcCaught'); } catch (Exception e) { } r = String.valueOf(p.get('PcKPCR006A67I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.getPartition('local.PcAlt').remove('PcKPCR006A67I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCR006|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCR006A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCR006A67Test": "09e75876ce76c293a555459ee4dbb58f4d14a123e549f941a1ac5ed35a441c92"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR001",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(Cache.Org.get('local.PcAlt.PcKPCR001A68A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCR001A68A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR001|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "ea60d650ab7180213247a998cd1e93b8a1abf4359dade33f34e8e728c4c60255"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": null,
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": null,
+      "Flow": "requests",
+      "BeforeAnonymous": "Cache.Org.remove('local.PcAlt.PcKPCR001A68A');",
+      "RollbackWriter": "Cache.Org.put('local.PcAlt.PcKPCR001A68A', 'written'); throw new IllegalArgumentException('PcRollback');",
+      "DelaySeconds": 0,
+      "WriterExceptionType": "System.IllegalArgumentException",
+      "WriterExceptionMessage": "PcRollback",
+      "PhaseSHA256": {
+        "BeforeAnonymous": "f10eb74799d642ca94a9c48cab42133c1efdd485c03a068d1e53ebf125c9919c",
+        "RollbackWriter": "2f3a002584dd56d98cb2d9cdfc36532b9dd51cb0583935587fca09e793babecb"
+      }
+    },
+    {
+      "ID": "PCR002",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { Cache.OrgPartition p = Cache.Org.getPartition('local.PcAlt'); p.remove('PcKPCR002A68A'); Savepoint sp = Database.setSavepoint(); p.put('PcKPCR002A68A', 'written'); Database.rollback(sp); r = String.valueOf(p.get('PcKPCR002A68A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.getPartition('local.PcAlt').remove('PcKPCR002A68A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR002|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "0981c42552c4a75cb39246ea394b252faebb5ac511d27bd80137fbbe7e55f3d3"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR002",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCR002A68Test": "@IsTest private class PcPCR002A68Test { @IsTest static void observe(){String r; try { Cache.OrgPartition p = Cache.Org.getPartition('local.PcAlt'); p.remove('PcKPCR002A68I'); Savepoint sp = Database.setSavepoint(); p.put('PcKPCR002A68I', 'written'); Database.rollback(sp); r = String.valueOf(p.get('PcKPCR002A68I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.getPartition('local.PcAlt').remove('PcKPCR002A68I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCR002|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCR002A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCR002A68Test": "a6398237a018929cc43277742f1dc99df507b25d30d581153ea70687ba54e57b"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR003",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { Cache.OrgPartition p = Cache.Org.getPartition('local.PcAlt'); p.remove('PcKPCR003A68A'); p.put('PcKPCR003A68A', 'written'); try { throw new IllegalArgumentException('PcCaught'); } catch (Exception e) { } r = String.valueOf(p.get('PcKPCR003A68A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.getPartition('local.PcAlt').remove('PcKPCR003A68A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR003|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "a89610bc15a626eb9880513b01f906c37cd92d12b5f2e9c6cf3621beed347c16"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR003",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCR003A68Test": "@IsTest private class PcPCR003A68Test { @IsTest static void observe(){String r; try { Cache.OrgPartition p = Cache.Org.getPartition('local.PcAlt'); p.remove('PcKPCR003A68I'); p.put('PcKPCR003A68I', 'written'); try { throw new IllegalArgumentException('PcCaught'); } catch (Exception e) { } r = String.valueOf(p.get('PcKPCR003A68I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.getPartition('local.PcAlt').remove('PcKPCR003A68I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCR003|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCR003A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCR003A68Test": "eabed41c0e566859ec2539bf994d10a3213cccb366675ea4303f8925ce864d42"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR004",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); r = String.valueOf(Cache.Session.get('local.PcAlt.PcKPCR004A68A')); r=JSON.serialize(new Map<String,Object>{'cache_value'=>r,'reader_session_sha256'=>pcSidHash}); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCR004A68A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR004|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "9aabee919f1c6ac733bd119576813e52ea79e19f53c53b829f3eb39110112f8e"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "FIXTURE_ERROR",
+        "classification": "FixtureError",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "carry",
+      "CarryReason": "Native fixture error; no answer to the rollback reader.",
+      "Flow": "requests",
+      "BeforeAnonymous": "Cache.Session.remove('local.PcAlt.PcKPCR004A68A');",
+      "RollbackWriter": "String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); Cache.Session.put('local.PcAlt.PcKPCR004A68A', 'written'); throw new IllegalArgumentException('PcRollback|SESSION|'+(pcSidHash==null ? 'MISSING' : pcSidHash));",
+      "DelaySeconds": 0,
+      "WriterExceptionType": "System.IllegalArgumentException",
+      "WriterExceptionMessage": "PcRollback",
+      "PayloadField": "cache_value",
+      "PhaseSHA256": {
+        "BeforeAnonymous": "697ea01ce8f64e6ad4eb79d400f03d40a01916500b5d3795f3c7862f63a2cb87",
+        "RollbackWriter": "2e70609c5c14200bcc6ae36c8426c6c7057f5e3031bc0d11cdfbcb942b03cc7e"
+      }
+    },
+    {
+      "ID": "PCR005",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { Cache.SessionPartition p = Cache.Session.getPartition('local.PcAlt'); p.remove('PcKPCR005A68A'); Savepoint sp = Database.setSavepoint(); p.put('PcKPCR005A68A', 'written'); Database.rollback(sp); r = String.valueOf(p.get('PcKPCR005A68A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.getPartition('local.PcAlt').remove('PcKPCR005A68A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR005|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "2b080e9686fb44735ceeb392873c5371c7de2888bf49f5a861c8218236dda286"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR005",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCR005A68Test": "@IsTest private class PcPCR005A68Test { @IsTest static void observe(){String r; try { Cache.SessionPartition p = Cache.Session.getPartition('local.PcAlt'); p.remove('PcKPCR005A68I'); Savepoint sp = Database.setSavepoint(); p.put('PcKPCR005A68I', 'written'); Database.rollback(sp); r = String.valueOf(p.get('PcKPCR005A68I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.getPartition('local.PcAlt').remove('PcKPCR005A68I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCR005|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCR005A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCR005A68Test": "d589425048ea37e41465679930453f8fc3d0deb2f805909c0e18316751f3e502"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR006",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { Cache.SessionPartition p = Cache.Session.getPartition('local.PcAlt'); p.remove('PcKPCR006A68A'); p.put('PcKPCR006A68A', 'written'); try { throw new IllegalArgumentException('PcCaught'); } catch (Exception e) { } r = String.valueOf(p.get('PcKPCR006A68A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.getPartition('local.PcAlt').remove('PcKPCR006A68A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCR006|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "17696bbd8eb66679e0fa04b8d06881d8c958196d5d0a8a7b4e4bc72c250d97a5"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    },
+    {
+      "ID": "PCR006",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCR006A68Test": "@IsTest private class PcPCR006A68Test { @IsTest static void observe(){String r; try { Cache.SessionPartition p = Cache.Session.getPartition('local.PcAlt'); p.remove('PcKPCR006A68I'); p.put('PcKPCR006A68I', 'written'); try { throw new IllegalArgumentException('PcCaught'); } catch (Exception e) { } r = String.valueOf(p.get('PcKPCR006A68I')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.getPartition('local.PcAlt').remove('PcKPCR006A68I'); } catch(Exception pcCleanup) { }String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+20>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCR006|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCR006A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCR006A68Test": "e71edc485cb269b17fb820e05f7739632eb0b7ecbf02e699e9ef96b0b07c98d3"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "written",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "written"
+    }
+  ]
+}

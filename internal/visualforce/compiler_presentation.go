@@ -56,13 +56,24 @@ func validatePresentationSource(source, sourceName string) error {
 			key := strings.ToLower(a.Key)
 			unsupported := !strings.HasPrefix(key, "html-") && !presentationAttributeSupported(tag, key)
 			switch tag {
+			case "page":
+				// authorization and request context policy_requireSSL_{true,false,maybe} rejects this
+				// attribute regardless of its value at API 59 and 67; other
+				// unsupported page attributes stay rejected (view state view-state rows).
+				unsupported = unsupported || key == "requiressl"
 			case "pageBlock", "pageBlockSection", "pageBlockSectionItem":
 				unsupported = unsupported || key == "styleclass" || key == "style"
 			case "panelGroup":
 				unsupported = unsupported || key == "title" || key == "onclick"
+			case "inputField":
+				unsupported = unsupported || key == "disabled" || key == "tabindex"
 			}
 			if unsupported {
 				return fmt.Errorf("Unsupported attribute %s in <apex:%s>%s", key, tag, location)
+			}
+			if (tag == "inputField" || tag == "outputField") && key == "value" &&
+				(!strings.HasPrefix(a.Val, "{!") || findExpressionTemplateEnd(a.Val, 2) != len(a.Val)-1) {
+				return fmt.Errorf("Attribute value in <apex:%s> must contain only a formula expression that resolves to a single controller variable or method%s", tag, location)
 			}
 			if strings.HasPrefix(key, "html-") {
 				if tag == "panelGroup" {
@@ -77,6 +88,11 @@ func validatePresentationSource(source, sourceName string) error {
 			if key == "columns" && (tag == "panelGrid" || tag == "pageBlockSection") && !strings.Contains(a.Val, "{!") {
 				if _, err := strconv.Atoi(strings.TrimSpace(a.Val)); err != nil && strings.TrimSpace(a.Val) != "" {
 					return fmt.Errorf("Value '%s' cannot be converted from Text to int.", a.Val)
+				}
+			}
+			if tag == "page" && key == "expires" && strings.TrimSpace(a.Val) != "" && !strings.Contains(a.Val, "{!") {
+				if _, err := strconv.ParseFloat(strings.TrimSpace(a.Val), 64); err != nil {
+					return fmt.Errorf("Value '%s' cannot be converted from Text to Number.", a.Val)
 				}
 			}
 		}
@@ -169,6 +185,10 @@ func presentationCompileTag(name string) string {
 		return "outputPanel"
 	case "apex:outputtext":
 		return "outputText"
+	case "apex:inputfield":
+		return "inputField"
+	case "apex:outputfield":
+		return "outputField"
 	case "apex:pageblock":
 		return "pageBlock"
 	case "apex:pageblocksection":

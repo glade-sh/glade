@@ -26,12 +26,23 @@ var observedPlatformSourceMemberAvailability = map[string]apexversion.Range{
 	// Both cursor counter getters are admitted at API 62 and 67.
 	"system.limits.getapexcursors":      {Since: 62},
 	"system.limits.getlimitapexcursors": {Since: 62},
+	// credential_mock_visibility captures these references behind mock branches
+	// in named and anonymous Apex at source APIs 62, 65, 66 and 67. Their release
+	// introduction does not gate source visibility; hosted execution stays separate.
+	"connectapi.namedcredentials.updatenamedcredential":    {Since: 62},
+	"connectapi.namedcredentials.deletenamedcredential":    {Since: 62},
+	"connectapi.namedcredentials.updateexternalcredential": {Since: 62},
+	"connectapi.namedcredentials.deleteexternalcredential": {Since: 62},
 }
 
 var observedPlatformSourceExactAvailability = map[string]apexversion.Range{
 	"apex:richmessaging.processformhandler.processformrequest(richmessaging.processformresponse)": {Since: 65},
-	"apex:system.limits.getapexcursors()":      {Since: 62},
-	"apex:system.limits.getlimitapexcursors()": {Since: 62},
+	"apex:system.limits.getapexcursors()":                                                                  {Since: 62},
+	"apex:system.limits.getlimitapexcursors()":                                                             {Since: 62},
+	"apex:connectapi.namedcredentials.updatenamedcredential(string,connectapi.namedcredentialinput)":       {Since: 62},
+	"apex:connectapi.namedcredentials.deletenamedcredential(string)":                                       {Since: 62},
+	"apex:connectapi.namedcredentials.updateexternalcredential(string,connectapi.externalcredentialinput)": {Since: 62},
+	"apex:connectapi.namedcredentials.deleteexternalcredential(string)":                                    {Since: 62},
 }
 
 func semaPlatformTypeUnavailable(version, typeName string) bool {
@@ -144,7 +155,7 @@ func sourceAPIVersionDiagnostics(index typesys.Index) []diagnostic.Diagnostic {
 			continue
 		}
 		if _, err := apexversion.PreserveSource(typ.EffectiveAPIVersion); err != nil {
-			diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_VERSION", Message: fmt.Sprintf("%s %q: %v", typ.Kind, typ.Name, err), File: typ.File, Range: &typ.Range})
+			diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_VERSION", NativeMessage: "Invalid api version:" + typ.EffectiveAPIVersion, Message: fmt.Sprintf("%s %q: %v", typ.Kind, typ.Name, err), File: typ.File, Range: &typ.Range})
 		}
 	}
 	for _, trigger := range index.Triggers {
@@ -152,7 +163,7 @@ func sourceAPIVersionDiagnostics(index typesys.Index) []diagnostic.Diagnostic {
 			continue
 		}
 		if _, err := apexversion.PreserveSource(trigger.EffectiveAPIVersion); err != nil {
-			diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_VERSION", Message: fmt.Sprintf("trigger %q: %v", trigger.Name, err), File: trigger.File, Range: &trigger.Range})
+			diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_VERSION", NativeMessage: "Invalid api version:" + trigger.EffectiveAPIVersion, Message: fmt.Sprintf("trigger %q: %v", trigger.Name, err), File: trigger.File, Range: &trigger.Range})
 		}
 	}
 	return diagnostics

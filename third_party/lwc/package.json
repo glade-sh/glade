@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "postinstall": "node ./scripts/apply-lwc-shared-api67.mjs"
+    "postinstall": "node ./scripts/prepare-lwc-shared.mjs"
   },
   "dependencies": {
     "@babel/parser": "7.29.7",

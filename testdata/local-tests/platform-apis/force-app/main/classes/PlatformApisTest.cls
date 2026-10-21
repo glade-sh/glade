@@ -16,7 +16,7 @@ private class PlatformApisTest {
     System.assertEquals(false, Auth.CommunitiesUtil.isGuestUser());
 
     ConnectApi.OrganizationSettings settings = ConnectApi.Organization.getSettings();
-    System.assertEquals('00D000000000001', settings.orgId);
+    System.assertEquals('00D000000000mH2', settings.orgId);
   }
 
   @isTest static void platformCachePartitionsAreIsolatedAndMutable() {

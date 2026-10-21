@@ -1,0 +1,1166 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "istest"
+  ],
+  "shapeCount": 19,
+  "nativeObservationCount": 57,
+  "enforcedObservationCount": 51,
+  "metadata": {
+    "objects/SearchMoment__c/SearchMoment__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Search Moment</label><pluralLabel>Search Moments</pluralLabel><nameField><label>Search Moment Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel><enableSearch>true</enableSearch></CustomObject>\n",
+    "objects/SearchMoment__c/fields/RecordedAt__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>RecordedAt__c</fullName><label>Recorded At</label><type>DateTime</type></CustomField>\n"
+  },
+  "metadataSHA256": {
+    "objects/SearchMoment__c/SearchMoment__c.object-meta.xml": "a69e6b958559261fd9ba8b15afa213e120408ecef62c5c4950900cef91cd1372",
+    "objects/SearchMoment__c/fields/RecordedAt__c.field-meta.xml": "d773c8ecd35bcbea19727bade977bb7e046b86bab57f8809d3384b778d19f503"
+  },
+  "fixtures": {
+    "62.0": {
+      "files": {
+        "classes/DatetimeNullSearchProbe62.cls": "public class DatetimeNullSearchProbe62 {\n    public static Map<String,Object> observe(String row) {\n        Map<String,Object> out = new Map<String,Object>{'row'=>row, 'isTest'=>Test.isRunningTest()};\n        String phase = 'setup';\n        try {\n            Datetime cutoff = Datetime.newInstanceGmt(2020,1,2,0,0,0);\n            Datetime emptyCutoff;\n            List<SearchMoment__c> seed = new List<SearchMoment__c>{\n                new SearchMoment__c(Name='ABlank'),\n                new SearchMoment__c(Name='BEarly', RecordedAt__c=cutoff.addDays(-1)),\n                new SearchMoment__c(Name='CEqual', RecordedAt__c=cutoff),\n                new SearchMoment__c(Name='DLate', RecordedAt__c=cutoff.addDays(1))\n            };\n            Database.insert(seed, true, AccessLevel.SYSTEM_MODE);\n            phase = 'fixedCandidates';\n            if (row != 'D16') Test.setFixedSearchResults(new List<Id>{seed[3].Id,seed[0].Id,seed[1].Id,seed[2].Id});\n            String predicate;\n        if (row == 'D01') predicate = 'RecordedAt__c > :cutoff';\n        else if (row == 'D02') predicate = 'RecordedAt__c >= :cutoff';\n        else if (row == 'D03') predicate = 'RecordedAt__c < :cutoff';\n        else if (row == 'D04') predicate = 'RecordedAt__c <= :cutoff';\n        else if (row == 'D05') predicate = 'NOT (RecordedAt__c > :cutoff)';\n        else if (row == 'D06') predicate = 'NOT (RecordedAt__c >= :cutoff)';\n        else if (row == 'D07') predicate = 'NOT (RecordedAt__c < :cutoff)';\n        else if (row == 'D08') predicate = 'NOT (RecordedAt__c <= :cutoff)';\n        else if (row == 'D09') predicate = 'RecordedAt__c = null';\n        else if (row == 'D10') predicate = 'RecordedAt__c != null';\n        else if (row == 'D11') predicate = 'RecordedAt__c > :cutoff OR Name = \\'ABlank\\'';\n        else if (row == 'D12') predicate = 'NOT (RecordedAt__c > :cutoff OR Name = \\'ABlank\\')';\n        else if (row == 'D13') predicate = 'RecordedAt__c > :cutoff AND Name = \\'ABlank\\'';\n        else if (row == 'D14') predicate = 'NOT (RecordedAt__c > :cutoff AND Name = \\'DLate\\')';\n        else if (row == 'D15') predicate = 'RecordedAt__c != null';\n        else if (row == 'D16') predicate = 'RecordedAt__c > :cutoff';\n        else if (row == 'D17') predicate = 'RecordedAt__c > null';\n        else if (row == 'D18') predicate = 'RecordedAt__c > :emptyCutoff';\n        else if (row == 'Q01') predicate = 'NOT (RecordedAt__c > :cutoff)';\n            String orderBy = row == 'D15' ? 'RecordedAt__c DESC' : 'Name ASC';\n            phase = 'query';\n            List<String> labels = new List<String>();\n            String exceptionType;\n            String message;\n            try {\n                List<SObject> found;\n                if (row == 'Q01') found = Database.query('SELECT Name FROM SearchMoment__c WHERE '+predicate+' ORDER BY '+orderBy, AccessLevel.SYSTEM_MODE);\n                else found = Search.query('FIND {unindexedneedle} IN NAME FIELDS RETURNING SearchMoment__c(Name WHERE '+predicate+' ORDER BY '+orderBy+')', AccessLevel.SYSTEM_MODE)[0];\n                for (SObject record : found) labels.add((String)record.get('Name'));\n            } catch (Exception e) { exceptionType=e.getTypeName(); message=e.getMessage(); }\n            out.put('labels', labels); out.put('exceptionType', exceptionType); out.put('message', message);\n        } catch (Exception e) { out.put('outerExceptionType',e.getTypeName()); out.put('outerMessage',e.getMessage()); }\n        out.put('phase', phase);\n        return out;\n    }\n}\n",
+        "classes/DatetimeNullSearchProbe62.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "classes/DatetimeNullSearchSpec62.cls": "@IsTest private class DatetimeNullSearchSpec62 {\n    @IsTest static void rowD01(){System.assert(false,'SDN|D01|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D01')));}\n    @IsTest static void rowD02(){System.assert(false,'SDN|D02|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D02')));}\n    @IsTest static void rowD03(){System.assert(false,'SDN|D03|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D03')));}\n    @IsTest static void rowD04(){System.assert(false,'SDN|D04|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D04')));}\n    @IsTest static void rowD05(){System.assert(false,'SDN|D05|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D05')));}\n    @IsTest static void rowD06(){System.assert(false,'SDN|D06|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D06')));}\n    @IsTest static void rowD07(){System.assert(false,'SDN|D07|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D07')));}\n    @IsTest static void rowD08(){System.assert(false,'SDN|D08|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D08')));}\n    @IsTest static void rowD09(){System.assert(false,'SDN|D09|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D09')));}\n    @IsTest static void rowD10(){System.assert(false,'SDN|D10|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D10')));}\n    @IsTest static void rowD11(){System.assert(false,'SDN|D11|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D11')));}\n    @IsTest static void rowD12(){System.assert(false,'SDN|D12|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D12')));}\n    @IsTest static void rowD13(){System.assert(false,'SDN|D13|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D13')));}\n    @IsTest static void rowD14(){System.assert(false,'SDN|D14|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D14')));}\n    @IsTest static void rowD15(){System.assert(false,'SDN|D15|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D15')));}\n    @IsTest static void rowD16(){System.assert(false,'SDN|D16|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D16')));}\n    @IsTest static void rowD17(){System.assert(false,'SDN|D17|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D17')));}\n    @IsTest static void rowD18(){System.assert(false,'SDN|D18|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D18')));}\n    @IsTest static void rowQ01(){System.assert(false,'SDN|Q01|'+JSON.serialize(DatetimeNullSearchProbe62.observe('Q01')));}\n}\n",
+        "classes/DatetimeNullSearchSpec62.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "anonymous-context.apex": "Savepoint checkpoint=Database.setSavepoint();\nSystem.debug('SDN|D01|'+JSON.serialize(DatetimeNullSearchProbe62.observe('D01')));\nDatabase.rollback(checkpoint);\n"
+      },
+      "sourceSHA256": {
+        "classes/DatetimeNullSearchProbe62.cls": "b8da105c23b1c91b9f2a802cb9070b598bb0d2bb812a1f58e59c16a953740c81",
+        "classes/DatetimeNullSearchProbe62.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "classes/DatetimeNullSearchSpec62.cls": "3a002bc2a18e55d0f79016212e928930aaed70d6590e5b04d530fb3314a66bcd",
+        "classes/DatetimeNullSearchSpec62.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "anonymous-context.apex": "db945bda9ce520beee9a42f73c11c46142615c1afd17e0bf19868072be11bfca"
+      }
+    },
+    "67.0": {
+      "files": {
+        "classes/DatetimeNullSearchProbe67.cls": "public class DatetimeNullSearchProbe67 {\n    public static Map<String,Object> observe(String row) {\n        Map<String,Object> out = new Map<String,Object>{'row'=>row, 'isTest'=>Test.isRunningTest()};\n        String phase = 'setup';\n        try {\n            Datetime cutoff = Datetime.newInstanceGmt(2020,1,2,0,0,0);\n            Datetime emptyCutoff;\n            List<SearchMoment__c> seed = new List<SearchMoment__c>{\n                new SearchMoment__c(Name='ABlank'),\n                new SearchMoment__c(Name='BEarly', RecordedAt__c=cutoff.addDays(-1)),\n                new SearchMoment__c(Name='CEqual', RecordedAt__c=cutoff),\n                new SearchMoment__c(Name='DLate', RecordedAt__c=cutoff.addDays(1))\n            };\n            Database.insert(seed, true, AccessLevel.SYSTEM_MODE);\n            phase = 'fixedCandidates';\n            if (row != 'D16') Test.setFixedSearchResults(new List<Id>{seed[3].Id,seed[0].Id,seed[1].Id,seed[2].Id});\n            String predicate;\n        if (row == 'D01') predicate = 'RecordedAt__c > :cutoff';\n        else if (row == 'D02') predicate = 'RecordedAt__c >= :cutoff';\n        else if (row == 'D03') predicate = 'RecordedAt__c < :cutoff';\n        else if (row == 'D04') predicate = 'RecordedAt__c <= :cutoff';\n        else if (row == 'D05') predicate = 'NOT (RecordedAt__c > :cutoff)';\n        else if (row == 'D06') predicate = 'NOT (RecordedAt__c >= :cutoff)';\n        else if (row == 'D07') predicate = 'NOT (RecordedAt__c < :cutoff)';\n        else if (row == 'D08') predicate = 'NOT (RecordedAt__c <= :cutoff)';\n        else if (row == 'D09') predicate = 'RecordedAt__c = null';\n        else if (row == 'D10') predicate = 'RecordedAt__c != null';\n        else if (row == 'D11') predicate = 'RecordedAt__c > :cutoff OR Name = \\'ABlank\\'';\n        else if (row == 'D12') predicate = 'NOT (RecordedAt__c > :cutoff OR Name = \\'ABlank\\')';\n        else if (row == 'D13') predicate = 'RecordedAt__c > :cutoff AND Name = \\'ABlank\\'';\n        else if (row == 'D14') predicate = 'NOT (RecordedAt__c > :cutoff AND Name = \\'DLate\\')';\n        else if (row == 'D15') predicate = 'RecordedAt__c != null';\n        else if (row == 'D16') predicate = 'RecordedAt__c > :cutoff';\n        else if (row == 'D17') predicate = 'RecordedAt__c > null';\n        else if (row == 'D18') predicate = 'RecordedAt__c > :emptyCutoff';\n        else if (row == 'Q01') predicate = 'NOT (RecordedAt__c > :cutoff)';\n            String orderBy = row == 'D15' ? 'RecordedAt__c DESC' : 'Name ASC';\n            phase = 'query';\n            List<String> labels = new List<String>();\n            String exceptionType;\n            String message;\n            try {\n                List<SObject> found;\n                if (row == 'Q01') found = Database.query('SELECT Name FROM SearchMoment__c WHERE '+predicate+' ORDER BY '+orderBy, AccessLevel.SYSTEM_MODE);\n                else found = Search.query('FIND {unindexedneedle} IN NAME FIELDS RETURNING SearchMoment__c(Name WHERE '+predicate+' ORDER BY '+orderBy+')', AccessLevel.SYSTEM_MODE)[0];\n                for (SObject record : found) labels.add((String)record.get('Name'));\n            } catch (Exception e) { exceptionType=e.getTypeName(); message=e.getMessage(); }\n            out.put('labels', labels); out.put('exceptionType', exceptionType); out.put('message', message);\n        } catch (Exception e) { out.put('outerExceptionType',e.getTypeName()); out.put('outerMessage',e.getMessage()); }\n        out.put('phase', phase);\n        return out;\n    }\n}\n",
+        "classes/DatetimeNullSearchProbe67.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "classes/DatetimeNullSearchSpec67.cls": "@IsTest private class DatetimeNullSearchSpec67 {\n    @IsTest static void rowD01(){System.assert(false,'SDN|D01|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D01')));}\n    @IsTest static void rowD02(){System.assert(false,'SDN|D02|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D02')));}\n    @IsTest static void rowD03(){System.assert(false,'SDN|D03|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D03')));}\n    @IsTest static void rowD04(){System.assert(false,'SDN|D04|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D04')));}\n    @IsTest static void rowD05(){System.assert(false,'SDN|D05|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D05')));}\n    @IsTest static void rowD06(){System.assert(false,'SDN|D06|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D06')));}\n    @IsTest static void rowD07(){System.assert(false,'SDN|D07|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D07')));}\n    @IsTest static void rowD08(){System.assert(false,'SDN|D08|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D08')));}\n    @IsTest static void rowD09(){System.assert(false,'SDN|D09|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D09')));}\n    @IsTest static void rowD10(){System.assert(false,'SDN|D10|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D10')));}\n    @IsTest static void rowD11(){System.assert(false,'SDN|D11|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D11')));}\n    @IsTest static void rowD12(){System.assert(false,'SDN|D12|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D12')));}\n    @IsTest static void rowD13(){System.assert(false,'SDN|D13|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D13')));}\n    @IsTest static void rowD14(){System.assert(false,'SDN|D14|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D14')));}\n    @IsTest static void rowD15(){System.assert(false,'SDN|D15|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D15')));}\n    @IsTest static void rowD16(){System.assert(false,'SDN|D16|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D16')));}\n    @IsTest static void rowD17(){System.assert(false,'SDN|D17|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D17')));}\n    @IsTest static void rowD18(){System.assert(false,'SDN|D18|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D18')));}\n    @IsTest static void rowQ01(){System.assert(false,'SDN|Q01|'+JSON.serialize(DatetimeNullSearchProbe67.observe('Q01')));}\n}\n",
+        "classes/DatetimeNullSearchSpec67.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "anonymous-context.apex": "Savepoint checkpoint=Database.setSavepoint();\nSystem.debug('SDN|D01|'+JSON.serialize(DatetimeNullSearchProbe67.observe('D01')));\nDatabase.rollback(checkpoint);\n"
+      },
+      "sourceSHA256": {
+        "classes/DatetimeNullSearchProbe67.cls": "7be44445c22ee686bb56c235e7de68d08aad84c365dd7197c9faaeae68832848",
+        "classes/DatetimeNullSearchProbe67.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "classes/DatetimeNullSearchSpec67.cls": "ff094de06ca463ae651272e77935aa650fd9cf513d6d35cf21d62e0fbd941953",
+        "classes/DatetimeNullSearchSpec67.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "anonymous-context.apex": "88535c7cee65f3198afc19f551117f42ac18b95afdcaaf6ced360ea171ad36e5"
+      }
+    },
+    "68.0": {
+      "files": {
+        "classes/DatetimeNullSearchProbe68.cls": "public class DatetimeNullSearchProbe68 {\n    public static Map<String,Object> observe(String row) {\n        Map<String,Object> out = new Map<String,Object>{'row'=>row, 'isTest'=>Test.isRunningTest()};\n        String phase = 'setup';\n        try {\n            Datetime cutoff = Datetime.newInstanceGmt(2020,1,2,0,0,0);\n            Datetime emptyCutoff;\n            List<SearchMoment__c> seed = new List<SearchMoment__c>{\n                new SearchMoment__c(Name='ABlank'),\n                new SearchMoment__c(Name='BEarly', RecordedAt__c=cutoff.addDays(-1)),\n                new SearchMoment__c(Name='CEqual', RecordedAt__c=cutoff),\n                new SearchMoment__c(Name='DLate', RecordedAt__c=cutoff.addDays(1))\n            };\n            Database.insert(seed, true, AccessLevel.SYSTEM_MODE);\n            phase = 'fixedCandidates';\n            if (row != 'D16') Test.setFixedSearchResults(new List<Id>{seed[3].Id,seed[0].Id,seed[1].Id,seed[2].Id});\n            String predicate;\n        if (row == 'D01') predicate = 'RecordedAt__c > :cutoff';\n        else if (row == 'D02') predicate = 'RecordedAt__c >= :cutoff';\n        else if (row == 'D03') predicate = 'RecordedAt__c < :cutoff';\n        else if (row == 'D04') predicate = 'RecordedAt__c <= :cutoff';\n        else if (row == 'D05') predicate = 'NOT (RecordedAt__c > :cutoff)';\n        else if (row == 'D06') predicate = 'NOT (RecordedAt__c >= :cutoff)';\n        else if (row == 'D07') predicate = 'NOT (RecordedAt__c < :cutoff)';\n        else if (row == 'D08') predicate = 'NOT (RecordedAt__c <= :cutoff)';\n        else if (row == 'D09') predicate = 'RecordedAt__c = null';\n        else if (row == 'D10') predicate = 'RecordedAt__c != null';\n        else if (row == 'D11') predicate = 'RecordedAt__c > :cutoff OR Name = \\'ABlank\\'';\n        else if (row == 'D12') predicate = 'NOT (RecordedAt__c > :cutoff OR Name = \\'ABlank\\')';\n        else if (row == 'D13') predicate = 'RecordedAt__c > :cutoff AND Name = \\'ABlank\\'';\n        else if (row == 'D14') predicate = 'NOT (RecordedAt__c > :cutoff AND Name = \\'DLate\\')';\n        else if (row == 'D15') predicate = 'RecordedAt__c != null';\n        else if (row == 'D16') predicate = 'RecordedAt__c > :cutoff';\n        else if (row == 'D17') predicate = 'RecordedAt__c > null';\n        else if (row == 'D18') predicate = 'RecordedAt__c > :emptyCutoff';\n        else if (row == 'Q01') predicate = 'NOT (RecordedAt__c > :cutoff)';\n            String orderBy = row == 'D15' ? 'RecordedAt__c DESC' : 'Name ASC';\n            phase = 'query';\n            List<String> labels = new List<String>();\n            String exceptionType;\n            String message;\n            try {\n                List<SObject> found;\n                if (row == 'Q01') found = Database.query('SELECT Name FROM SearchMoment__c WHERE '+predicate+' ORDER BY '+orderBy, AccessLevel.SYSTEM_MODE);\n                else found = Search.query('FIND {unindexedneedle} IN NAME FIELDS RETURNING SearchMoment__c(Name WHERE '+predicate+' ORDER BY '+orderBy+')', AccessLevel.SYSTEM_MODE)[0];\n                for (SObject record : found) labels.add((String)record.get('Name'));\n            } catch (Exception e) { exceptionType=e.getTypeName(); message=e.getMessage(); }\n            out.put('labels', labels); out.put('exceptionType', exceptionType); out.put('message', message);\n        } catch (Exception e) { out.put('outerExceptionType',e.getTypeName()); out.put('outerMessage',e.getMessage()); }\n        out.put('phase', phase);\n        return out;\n    }\n}\n",
+        "classes/DatetimeNullSearchProbe68.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "classes/DatetimeNullSearchSpec68.cls": "@IsTest private class DatetimeNullSearchSpec68 {\n    @IsTest static void rowD01(){System.assert(false,'SDN|D01|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D01')));}\n    @IsTest static void rowD02(){System.assert(false,'SDN|D02|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D02')));}\n    @IsTest static void rowD03(){System.assert(false,'SDN|D03|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D03')));}\n    @IsTest static void rowD04(){System.assert(false,'SDN|D04|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D04')));}\n    @IsTest static void rowD05(){System.assert(false,'SDN|D05|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D05')));}\n    @IsTest static void rowD06(){System.assert(false,'SDN|D06|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D06')));}\n    @IsTest static void rowD07(){System.assert(false,'SDN|D07|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D07')));}\n    @IsTest static void rowD08(){System.assert(false,'SDN|D08|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D08')));}\n    @IsTest static void rowD09(){System.assert(false,'SDN|D09|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D09')));}\n    @IsTest static void rowD10(){System.assert(false,'SDN|D10|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D10')));}\n    @IsTest static void rowD11(){System.assert(false,'SDN|D11|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D11')));}\n    @IsTest static void rowD12(){System.assert(false,'SDN|D12|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D12')));}\n    @IsTest static void rowD13(){System.assert(false,'SDN|D13|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D13')));}\n    @IsTest static void rowD14(){System.assert(false,'SDN|D14|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D14')));}\n    @IsTest static void rowD15(){System.assert(false,'SDN|D15|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D15')));}\n    @IsTest static void rowD16(){System.assert(false,'SDN|D16|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D16')));}\n    @IsTest static void rowD17(){System.assert(false,'SDN|D17|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D17')));}\n    @IsTest static void rowD18(){System.assert(false,'SDN|D18|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D18')));}\n    @IsTest static void rowQ01(){System.assert(false,'SDN|Q01|'+JSON.serialize(DatetimeNullSearchProbe68.observe('Q01')));}\n}\n",
+        "classes/DatetimeNullSearchSpec68.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "anonymous-context.apex": "Savepoint checkpoint=Database.setSavepoint();\nSystem.debug('SDN|D01|'+JSON.serialize(DatetimeNullSearchProbe68.observe('D01')));\nDatabase.rollback(checkpoint);\n"
+      },
+      "sourceSHA256": {
+        "classes/DatetimeNullSearchProbe68.cls": "4ca9f334c3d4585b1c4093385605a8037f5bbaef7c31dfaa3eacebf6bab6d209",
+        "classes/DatetimeNullSearchProbe68.cls-meta.xml": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "classes/DatetimeNullSearchSpec68.cls": "abbae68b54d67f907b0bd389811b3c4911b34e64e3c0f6960801702812cec653",
+        "classes/DatetimeNullSearchSpec68.cls-meta.xml": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "anonymous-context.apex": "fed38bcda7ad79e5ce84d0de6233bb4b09204022d10ccdc3dd1cd20a41c814f3"
+      }
+    }
+  },
+  "rows": [
+    "D01",
+    "D02",
+    "D03",
+    "D04",
+    "D05",
+    "D06",
+    "D07",
+    "D08",
+    "D09",
+    "D10",
+    "D11",
+    "D12",
+    "D13",
+    "D14",
+    "D15",
+    "D16",
+    "D17",
+    "D18",
+    "Q01"
+  ],
+  "enforcedRows": [
+    "D01",
+    "D02",
+    "D03",
+    "D04",
+    "D05",
+    "D06",
+    "D07",
+    "D08",
+    "D09",
+    "D10",
+    "D11",
+    "D12",
+    "D13",
+    "D14",
+    "D15",
+    "D16",
+    "D17"
+  ],
+  "carries": [
+    {
+      "id": "D18",
+      "reason": "Known native bound-null RHS returns all fixed candidates; type-preserving SOSL bind expansion is a separate path from null record operands and remains unchanged."
+    },
+    {
+      "id": "Q01",
+      "reason": "Known SOQL NOT ordered-null result excludes null; SOQL evaluator is outside this SOSL-only change and remains unchanged."
+    }
+  ],
+  "cells": [
+    {
+      "id": "D01",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D01"
+      },
+      "nativeSHA256": "f236945d7ad537f89c84ba25eafaf434a8d4402f96a9fca254bd2c73ae764235",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D02",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "CEqual",
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D02"
+      },
+      "nativeSHA256": "3966dc6ea489c2b6ed3e53f2df187a4b2c3424c26c29dece09f0440e9544f0e9",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D03",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly"
+        ],
+        "isTest": true,
+        "row": "D03"
+      },
+      "nativeSHA256": "1257d9da6ced40c7a4bec3e930db4f477ec527a4f402dd39389626ea8c3a1e82",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D04",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly",
+          "CEqual"
+        ],
+        "isTest": true,
+        "row": "D04"
+      },
+      "nativeSHA256": "dfa2212bbb04767c4f022e0846df27de26d5a8820926ba074d7ca0273904fe12",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D05",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly",
+          "CEqual"
+        ],
+        "isTest": true,
+        "row": "D05"
+      },
+      "nativeSHA256": "df78124ce98a5b914ece3219a8b439271b95d070deb171b2b47577ff396fe85d",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D06",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly"
+        ],
+        "isTest": true,
+        "row": "D06"
+      },
+      "nativeSHA256": "b0af58af648025bf7a1dcf486bef3de4675d42ff54d2a238e339af2bb4983bb9",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D07",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "CEqual",
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D07"
+      },
+      "nativeSHA256": "eacc9aaa5fc96180564ebf18881c537188a6e5a9fbf3195a2cfe327bc026d896",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D08",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D08"
+      },
+      "nativeSHA256": "3b08f1434ef8c3a5879c56d00215e1e0c13b8ec8225931b226403a1cf25f1a9f",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D09",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "ABlank"
+        ],
+        "isTest": true,
+        "row": "D09"
+      },
+      "nativeSHA256": "1a450018a45b30d6063e5206422fd7d3ec008c7e32109e38992d62531d524875",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D10",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly",
+          "CEqual",
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D10"
+      },
+      "nativeSHA256": "ffa9be74884641eec6dd12aba8f9d75e6b28c331361a5d0cb08117968b116691",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D11",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "ABlank",
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D11"
+      },
+      "nativeSHA256": "9d9094eb4fb0efb550707a0847198544e381aa64a5c6c46d3c4015630859d254",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D12",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly",
+          "CEqual"
+        ],
+        "isTest": true,
+        "row": "D12"
+      },
+      "nativeSHA256": "f6b42368cf19412b7e64d07b7dc934e0d073539d8934b5532b5406ed61cc7f34",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D13",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [],
+        "isTest": true,
+        "row": "D13"
+      },
+      "nativeSHA256": "3d58f8da16ab2cad7d448f76e9416bf6a3d713afe5c48ebe06c7a4a3f34f3fa8",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D14",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "ABlank",
+          "BEarly",
+          "CEqual"
+        ],
+        "isTest": true,
+        "row": "D14"
+      },
+      "nativeSHA256": "63335183254c6f4bfbf27fb0cd14927506c427fd8eeda3759798ea46e175b252",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D15",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "DLate",
+          "CEqual",
+          "BEarly"
+        ],
+        "isTest": true,
+        "row": "D15"
+      },
+      "nativeSHA256": "5e769771e484fe0d3330ddcf4ab69ef497ca279d8736b0208aefbda23af6d6e9",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D16",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [],
+        "isTest": true,
+        "row": "D16"
+      },
+      "nativeSHA256": "da571da73721593bde04bc79cd057142d5172e55b0c7e065a248158faef14f0d",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D17",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": "invalid operator",
+        "exceptionType": "System.QueryException",
+        "labels": [],
+        "isTest": true,
+        "row": "D17"
+      },
+      "nativeSHA256": "7748290945dadaf2313c02f7e8bca02bf5741357ad8044878ad63c5b5d60e568",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D18",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "ABlank",
+          "BEarly",
+          "CEqual",
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D18"
+      },
+      "nativeSHA256": "1b1dc99272286a7ac4baa70f8434f71255cd123362f8beeda45fb1e0d69ac000",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "Q01",
+      "api": "62.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly",
+          "CEqual"
+        ],
+        "isTest": true,
+        "row": "Q01"
+      },
+      "nativeSHA256": "3bdcc87edf0dee5de63b2d9f0d18cba9c8649642ce77f8104fa1865b06d5d1cc",
+      "rawReceiptSHA256": "024df721577eaf9d8c3600e07de7d04c54182e581655c2899a4675f8a0d00cd3"
+    },
+    {
+      "id": "D01",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D01"
+      },
+      "nativeSHA256": "f236945d7ad537f89c84ba25eafaf434a8d4402f96a9fca254bd2c73ae764235",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D02",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "CEqual",
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D02"
+      },
+      "nativeSHA256": "3966dc6ea489c2b6ed3e53f2df187a4b2c3424c26c29dece09f0440e9544f0e9",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D03",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly"
+        ],
+        "isTest": true,
+        "row": "D03"
+      },
+      "nativeSHA256": "1257d9da6ced40c7a4bec3e930db4f477ec527a4f402dd39389626ea8c3a1e82",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D04",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly",
+          "CEqual"
+        ],
+        "isTest": true,
+        "row": "D04"
+      },
+      "nativeSHA256": "dfa2212bbb04767c4f022e0846df27de26d5a8820926ba074d7ca0273904fe12",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D05",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly",
+          "CEqual"
+        ],
+        "isTest": true,
+        "row": "D05"
+      },
+      "nativeSHA256": "df78124ce98a5b914ece3219a8b439271b95d070deb171b2b47577ff396fe85d",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D06",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly"
+        ],
+        "isTest": true,
+        "row": "D06"
+      },
+      "nativeSHA256": "b0af58af648025bf7a1dcf486bef3de4675d42ff54d2a238e339af2bb4983bb9",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D07",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "CEqual",
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D07"
+      },
+      "nativeSHA256": "eacc9aaa5fc96180564ebf18881c537188a6e5a9fbf3195a2cfe327bc026d896",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D08",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D08"
+      },
+      "nativeSHA256": "3b08f1434ef8c3a5879c56d00215e1e0c13b8ec8225931b226403a1cf25f1a9f",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D09",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "ABlank"
+        ],
+        "isTest": true,
+        "row": "D09"
+      },
+      "nativeSHA256": "1a450018a45b30d6063e5206422fd7d3ec008c7e32109e38992d62531d524875",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D10",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly",
+          "CEqual",
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D10"
+      },
+      "nativeSHA256": "ffa9be74884641eec6dd12aba8f9d75e6b28c331361a5d0cb08117968b116691",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D11",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "ABlank",
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D11"
+      },
+      "nativeSHA256": "9d9094eb4fb0efb550707a0847198544e381aa64a5c6c46d3c4015630859d254",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D12",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly",
+          "CEqual"
+        ],
+        "isTest": true,
+        "row": "D12"
+      },
+      "nativeSHA256": "f6b42368cf19412b7e64d07b7dc934e0d073539d8934b5532b5406ed61cc7f34",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D13",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [],
+        "isTest": true,
+        "row": "D13"
+      },
+      "nativeSHA256": "3d58f8da16ab2cad7d448f76e9416bf6a3d713afe5c48ebe06c7a4a3f34f3fa8",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D14",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "ABlank",
+          "BEarly",
+          "CEqual"
+        ],
+        "isTest": true,
+        "row": "D14"
+      },
+      "nativeSHA256": "63335183254c6f4bfbf27fb0cd14927506c427fd8eeda3759798ea46e175b252",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D15",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "DLate",
+          "CEqual",
+          "BEarly"
+        ],
+        "isTest": true,
+        "row": "D15"
+      },
+      "nativeSHA256": "5e769771e484fe0d3330ddcf4ab69ef497ca279d8736b0208aefbda23af6d6e9",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D16",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [],
+        "isTest": true,
+        "row": "D16"
+      },
+      "nativeSHA256": "da571da73721593bde04bc79cd057142d5172e55b0c7e065a248158faef14f0d",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D17",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": "invalid operator",
+        "exceptionType": "System.QueryException",
+        "labels": [],
+        "isTest": true,
+        "row": "D17"
+      },
+      "nativeSHA256": "7748290945dadaf2313c02f7e8bca02bf5741357ad8044878ad63c5b5d60e568",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D18",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "ABlank",
+          "BEarly",
+          "CEqual",
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D18"
+      },
+      "nativeSHA256": "1b1dc99272286a7ac4baa70f8434f71255cd123362f8beeda45fb1e0d69ac000",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "Q01",
+      "api": "67.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly",
+          "CEqual"
+        ],
+        "isTest": true,
+        "row": "Q01"
+      },
+      "nativeSHA256": "3bdcc87edf0dee5de63b2d9f0d18cba9c8649642ce77f8104fa1865b06d5d1cc",
+      "rawReceiptSHA256": "0b0794545e7fdd86bb3d0ac588a65f1f2317683166e815ab460452e19625a44a"
+    },
+    {
+      "id": "D01",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D01"
+      },
+      "nativeSHA256": "f236945d7ad537f89c84ba25eafaf434a8d4402f96a9fca254bd2c73ae764235",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D02",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "CEqual",
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D02"
+      },
+      "nativeSHA256": "3966dc6ea489c2b6ed3e53f2df187a4b2c3424c26c29dece09f0440e9544f0e9",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D03",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly"
+        ],
+        "isTest": true,
+        "row": "D03"
+      },
+      "nativeSHA256": "1257d9da6ced40c7a4bec3e930db4f477ec527a4f402dd39389626ea8c3a1e82",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D04",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly",
+          "CEqual"
+        ],
+        "isTest": true,
+        "row": "D04"
+      },
+      "nativeSHA256": "dfa2212bbb04767c4f022e0846df27de26d5a8820926ba074d7ca0273904fe12",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D05",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly",
+          "CEqual"
+        ],
+        "isTest": true,
+        "row": "D05"
+      },
+      "nativeSHA256": "df78124ce98a5b914ece3219a8b439271b95d070deb171b2b47577ff396fe85d",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D06",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly"
+        ],
+        "isTest": true,
+        "row": "D06"
+      },
+      "nativeSHA256": "b0af58af648025bf7a1dcf486bef3de4675d42ff54d2a238e339af2bb4983bb9",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D07",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "CEqual",
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D07"
+      },
+      "nativeSHA256": "eacc9aaa5fc96180564ebf18881c537188a6e5a9fbf3195a2cfe327bc026d896",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D08",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D08"
+      },
+      "nativeSHA256": "3b08f1434ef8c3a5879c56d00215e1e0c13b8ec8225931b226403a1cf25f1a9f",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D09",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "ABlank"
+        ],
+        "isTest": true,
+        "row": "D09"
+      },
+      "nativeSHA256": "1a450018a45b30d6063e5206422fd7d3ec008c7e32109e38992d62531d524875",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D10",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly",
+          "CEqual",
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D10"
+      },
+      "nativeSHA256": "ffa9be74884641eec6dd12aba8f9d75e6b28c331361a5d0cb08117968b116691",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D11",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "ABlank",
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D11"
+      },
+      "nativeSHA256": "9d9094eb4fb0efb550707a0847198544e381aa64a5c6c46d3c4015630859d254",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D12",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly",
+          "CEqual"
+        ],
+        "isTest": true,
+        "row": "D12"
+      },
+      "nativeSHA256": "f6b42368cf19412b7e64d07b7dc934e0d073539d8934b5532b5406ed61cc7f34",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D13",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [],
+        "isTest": true,
+        "row": "D13"
+      },
+      "nativeSHA256": "3d58f8da16ab2cad7d448f76e9416bf6a3d713afe5c48ebe06c7a4a3f34f3fa8",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D14",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "ABlank",
+          "BEarly",
+          "CEqual"
+        ],
+        "isTest": true,
+        "row": "D14"
+      },
+      "nativeSHA256": "63335183254c6f4bfbf27fb0cd14927506c427fd8eeda3759798ea46e175b252",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D15",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "DLate",
+          "CEqual",
+          "BEarly"
+        ],
+        "isTest": true,
+        "row": "D15"
+      },
+      "nativeSHA256": "5e769771e484fe0d3330ddcf4ab69ef497ca279d8736b0208aefbda23af6d6e9",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D16",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [],
+        "isTest": true,
+        "row": "D16"
+      },
+      "nativeSHA256": "da571da73721593bde04bc79cd057142d5172e55b0c7e065a248158faef14f0d",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D17",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": "invalid operator",
+        "exceptionType": "System.QueryException",
+        "labels": [],
+        "isTest": true,
+        "row": "D17"
+      },
+      "nativeSHA256": "7748290945dadaf2313c02f7e8bca02bf5741357ad8044878ad63c5b5d60e568",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "D18",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "ABlank",
+          "BEarly",
+          "CEqual",
+          "DLate"
+        ],
+        "isTest": true,
+        "row": "D18"
+      },
+      "nativeSHA256": "1b1dc99272286a7ac4baa70f8434f71255cd123362f8beeda45fb1e0d69ac000",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    },
+    {
+      "id": "Q01",
+      "api": "68.0",
+      "route": "istest",
+      "native": {
+        "phase": "query",
+        "message": null,
+        "exceptionType": null,
+        "labels": [
+          "BEarly",
+          "CEqual"
+        ],
+        "isTest": true,
+        "row": "Q01"
+      },
+      "nativeSHA256": "3bdcc87edf0dee5de63b2d9f0d18cba9c8649642ce77f8104fa1865b06d5d1cc",
+      "rawReceiptSHA256": "ecf6d6d7aa2b94cdab04e68980b84d47a0ca021d5c9a9ed7186c017168be3cf2"
+    }
+  ],
+  "anonymousContexts": [
+    {
+      "api": "62.0",
+      "native": {
+        "phase": "fixedCandidates",
+        "outerMessage": "Test.setFixedSearchResults() can only be called from testMethods",
+        "outerExceptionType": "System.StringException",
+        "isTest": false,
+        "row": "D01"
+      },
+      "nativeSHA256": "e09f6ac7dcecb0ac269e3ee2d22a756691c0cadab95350ed6af61edd2c7af8e0",
+      "rawReceiptSHA256": "adf84c7728ba2e1ce0f85b255a239d871b98391d5ae74edccb445aa439259f87",
+      "expectedSemanticNative": null,
+      "reason": "Anonymous Test.setFixedSearchResults is unavailable; no deterministic indexed candidate filtering observation."
+    },
+    {
+      "api": "67.0",
+      "native": {
+        "phase": "fixedCandidates",
+        "outerMessage": "Test.setFixedSearchResults() can only be called from testMethods",
+        "outerExceptionType": "System.StringException",
+        "isTest": false,
+        "row": "D01"
+      },
+      "nativeSHA256": "e09f6ac7dcecb0ac269e3ee2d22a756691c0cadab95350ed6af61edd2c7af8e0",
+      "rawReceiptSHA256": "5b5b45b84685565ff9587a1944a336852647a63bbc7732a75f31a7e52b78b693",
+      "expectedSemanticNative": null,
+      "reason": "Anonymous Test.setFixedSearchResults is unavailable; no deterministic indexed candidate filtering observation."
+    },
+    {
+      "api": "68.0",
+      "native": {
+        "phase": "fixedCandidates",
+        "outerMessage": "Test.setFixedSearchResults() can only be called from testMethods",
+        "outerExceptionType": "System.StringException",
+        "isTest": false,
+        "row": "D01"
+      },
+      "nativeSHA256": "e09f6ac7dcecb0ac269e3ee2d22a756691c0cadab95350ed6af61edd2c7af8e0",
+      "rawReceiptSHA256": "d1be3fc77bec11d3da39437ed59d696cac1cf3354a068e55fa5a2569f797a6f2",
+      "expectedSemanticNative": null,
+      "reason": "Anonymous Test.setFixedSearchResults is unavailable; no deterministic indexed candidate filtering observation."
+    }
+  ]
+}

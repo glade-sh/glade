@@ -1,0 +1,17 @@
+source_api	method	observation
+62.0	custom_key_history	{"afterClear":0,"beforeClear":2,"changedHashFound":true}
+62.0	invalid_target	{"threw":false}
+62.0	key_alias	{"mapHasExtra":false,"keysHasThird":true,"mapHasFirst":false,"copySize":5,"keysSize":4,"mapSize":4,"equalKeys":true,"serializedThird":true,"constructedCount":3,"loopCount":3,"nestedOrder":true,"argumentOrder":true}
+62.0	key_consumers	{"hashMatches":true,"one":1,"both":2}
+62.0	key_view	{"size":1,"retained":false}
+62.0	notification_shape	{"longTitle":"returned","emptyRecipients":"returned","nullRecipients":"returned","badRecipients":"returned","badTarget":"returned","badType":"returned","empty":"returned"}
+62.0	xml_constructor	{"type":"System.XmlException","advanced":true,"constructed":true}
+62.0	xml_timing	{"type":"System.XmlException","outer":false,"inner":true}
+67.0	custom_key_history	{"afterClear":0,"beforeClear":2,"changedHashFound":true}
+67.0	invalid_target	{"threw":false}
+67.0	key_alias	{"mapHasExtra":false,"keysHasThird":true,"mapHasFirst":false,"copySize":5,"keysSize":4,"mapSize":4,"equalKeys":true,"serializedThird":true,"constructedCount":3,"loopCount":3,"nestedOrder":true,"argumentOrder":true}
+67.0	key_consumers	{"hashMatches":true,"one":1,"both":2}
+67.0	key_view	{"size":1,"retained":false}
+67.0	notification_shape	{"longTitle":"returned","emptyRecipients":"returned","nullRecipients":"returned","badRecipients":"returned","badTarget":"returned","badType":"returned","empty":"returned"}
+67.0	xml_constructor	{"type":"System.XmlException","advanced":true,"constructed":true}
+67.0	xml_timing	{"type":"System.XmlException","outer":false,"inner":true}

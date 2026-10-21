@@ -1,0 +1,1 @@
+<aura:component implements="lightning:isUrlAddressable" access="global"><span>Owned L14 URL destination</span></aura:component>

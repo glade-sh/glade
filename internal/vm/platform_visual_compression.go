@@ -802,7 +802,7 @@ func readCompressionZipEntries(data string) (Value, Value, error) {
 	dataBytes := []byte(data)
 	reader, err := zip.NewReader(bytes.NewReader(dataBytes), int64(len(dataBytes)))
 	if err != nil {
-		return Null, Null, newExceptionError("compression.ZipException", "Could not load Zip \nError on ZipFile unknown archive")
+		return Null, Null, newExceptionError("compression.ZipException", "Could not load Zip \nError reading Zip content from SeekableInMemoryByteChannel")
 	}
 	entries := typedList("List<compression.ZipEntry>")
 	names := typedList("List<String>")
@@ -898,5 +898,5 @@ func compressionNullPointerError() error {
 }
 
 func compressionZipLoadError() error {
-	return newExceptionError("compression.ZipException", "Could not load Zip \nError on ZipFile unknown archive")
+	return newExceptionError("compression.ZipException", "Could not load Zip \nError reading Zip content from SeekableInMemoryByteChannel")
 }

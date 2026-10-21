@@ -1,0 +1,495 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "controls",
+  "shapeCount": 5,
+  "nativeObservationCount": 24,
+  "apiDifferenceCount": 0,
+  "rows": [
+    {
+      "id": "E23C001",
+      "label": "positive marker",
+      "role": "transport-control",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "22fac1027dd197a4420ac21656f2495ebc60263eaabddf30dea6f7cfb54ef229"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23C001|'+packetJson);",
+          "classes": {}
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:ObserveE23C001Test": "217bf55fcfcfe9ff632dacba9ab95a155e8eeddea80fc1707f543dec239af812"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":7}"
+            }
+          },
+          "classes": {
+            "ObserveE23C001Test": "@IsTest private class ObserveE23C001Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{payload.put('value',7);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23C001|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23C001Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23C002",
+      "label": "compiler rejection",
+      "role": "compile-control",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "ee8e7a1c95261af5fab41bbdd12ec5e47c005b9b75f0944351a7b5c13ad47cf8"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "diagnostics": {
+                  "column": 65,
+                  "compileProblem": "Illegal assignment from String to Integer",
+                  "compiled": false,
+                  "exceptionMessage": null,
+                  "line": 1,
+                  "success": false
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Illegal assignment from String to Integer"
+            },
+            "67.0": {
+              "native": {
+                "diagnostics": {
+                  "column": 65,
+                  "compileProblem": "Illegal assignment from String to Integer",
+                  "compiled": false,
+                  "exceptionMessage": null,
+                  "line": 1,
+                  "success": false
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Illegal assignment from String to Integer"
+            },
+            "68.0": {
+              "native": {
+                "diagnostics": {
+                  "column": 65,
+                  "compileProblem": "Illegal assignment from String to Integer",
+                  "compiled": false,
+                  "exceptionMessage": null,
+                  "line": 1,
+                  "success": false
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Illegal assignment from String to Integer"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Integer wrong='synthetic';}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23C002|'+packetJson);",
+          "classes": {}
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:ObserveE23C002Test": "3b07f7a33ebed775216110ad7ed669704c6fa5b37db72a8f85fcd4d4fd306f1e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "diagnostics": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "PE23C002V62ObserveE23C002Test",
+                      "problem": "Illegal assignment from String to Integer",
+                      "problemType": "Error",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "coverageWarnings": [],
+                  "done": true,
+                  "errorMessage": null,
+                  "numberComponentErrors": 1,
+                  "status": "Failed",
+                  "success": false,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Illegal assignment from String to Integer"
+            },
+            "67.0": {
+              "native": {
+                "diagnostics": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "PE23C002V67ObserveE23C002Test",
+                      "problem": "Illegal assignment from String to Integer",
+                      "problemType": "Error",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "coverageWarnings": [],
+                  "done": true,
+                  "errorMessage": null,
+                  "numberComponentErrors": 1,
+                  "status": "Failed",
+                  "success": false,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Illegal assignment from String to Integer"
+            },
+            "68.0": {
+              "native": {
+                "diagnostics": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "PE23C002V68ObserveE23C002Test",
+                      "problem": "Illegal assignment from String to Integer",
+                      "problemType": "Error",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "coverageWarnings": [],
+                  "done": true,
+                  "errorMessage": null,
+                  "numberComponentErrors": 1,
+                  "status": "Failed",
+                  "success": false,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Illegal assignment from String to Integer"
+            }
+          },
+          "classes": {
+            "ObserveE23C002Test": "@IsTest private class ObserveE23C002Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Integer wrong='synthetic';}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23C002|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23C002Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23C003",
+      "label": "caught exception marker",
+      "role": "caught-control",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "63daee458898aa029aca8087de90f2273b367dce7c02e73691104821d0f440b1"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"exceptionType\":\"System.ListException\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"exceptionType\":\"System.ListException\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"exceptionType\":\"System.ListException\"}"
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{try{List<Integer> x=new List<Integer>();x.get(0);}catch(Exception e){payload.put('exceptionType',e.getTypeName());}}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23C003|'+packetJson);",
+          "classes": {}
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:ObserveE23C003Test": "663a31608531834ad862823cc0a551ca6293fcd59fce04c58d9a5ca0a9f96d1d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"exceptionType\":\"System.ListException\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"exceptionType\":\"System.ListException\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"exceptionType\":\"System.ListException\"}"
+            }
+          },
+          "classes": {
+            "ObserveE23C003Test": "@IsTest private class ObserveE23C003Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{try{List<Integer> x=new List<Integer>();x.get(0);}catch(Exception e){payload.put('exceptionType',e.getTypeName());}}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23C003|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23C003Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23C004",
+      "label": "named accepted declaration",
+      "role": "named-positive-control",
+      "routes": {
+        "named": {
+          "sourceSha256": {
+            "class:NamedControl": "b7de936c118f5463d1566c2764c7db61a6a60e523ff15a615ae001d9946558cf"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-accepted"
+              },
+              "outcome": "accept"
+            }
+          },
+          "classes": {
+            "NamedControl": "public class NamedControl {}"
+          },
+          "tests": []
+        }
+      }
+    },
+    {
+      "id": "E23C005",
+      "label": "named rejected declaration",
+      "role": "named-rejection-control",
+      "routes": {
+        "named": {
+          "sourceSha256": {
+            "class:NamedControl": "5c3c6f79d57325afccbbcf53d5e32556deafe966edbd3ca280bdd80c89e7cb2b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "diagnostics": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "PE23C005V62NamedControl",
+                      "problem": "Illegal assignment from String to Integer",
+                      "problemType": "Error",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "coverageWarnings": [],
+                  "done": true,
+                  "errorMessage": null,
+                  "numberComponentErrors": 1,
+                  "status": "Failed",
+                  "success": false,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Illegal assignment from String to Integer",
+              "gladeDisposition": "uncaptured-by-Glade/known gap",
+              "carryReason": "native rejects a String literal in an Integer field initializer; Glade sema does not check field initializers"
+            },
+            "67.0": {
+              "native": {
+                "diagnostics": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "PE23C005V67NamedControl",
+                      "problem": "Illegal assignment from String to Integer",
+                      "problemType": "Error",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "coverageWarnings": [],
+                  "done": true,
+                  "errorMessage": null,
+                  "numberComponentErrors": 1,
+                  "status": "Failed",
+                  "success": false,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Illegal assignment from String to Integer",
+              "gladeDisposition": "uncaptured-by-Glade/known gap",
+              "carryReason": "native rejects a String literal in an Integer field initializer; Glade sema does not check field initializers"
+            },
+            "68.0": {
+              "native": {
+                "diagnostics": {
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "line": 1,
+                      "name": "PE23C005V68NamedControl",
+                      "problem": "Illegal assignment from String to Integer",
+                      "problemType": "Error",
+                      "type": "ApexClass"
+                    }
+                  ],
+                  "coverageWarnings": [],
+                  "done": true,
+                  "errorMessage": null,
+                  "numberComponentErrors": 1,
+                  "status": "Failed",
+                  "success": false,
+                  "testFailures": [],
+                  "testPasses": []
+                },
+                "outcome": "compile-rejected"
+              },
+              "outcome": "reject",
+              "primary": "Illegal assignment from String to Integer",
+              "gladeDisposition": "uncaptured-by-Glade/known gap",
+              "carryReason": "native rejects a String literal in an Integer field initializer; Glade sema does not check field initializers"
+            }
+          },
+          "classes": {
+            "NamedControl": "public class NamedControl {public Integer value='synthetic';}"
+          },
+          "tests": []
+        }
+      }
+    }
+  ],
+  "assertedObservationCount": 21,
+  "carriedObservationCount": 3
+}

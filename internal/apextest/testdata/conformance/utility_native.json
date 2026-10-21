@@ -1,0 +1,1044 @@
+{
+  "family": "UtilityNative",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "nativeObservationCount": 6,
+  "orgIdSha256": "3de10bcc795b88483915fe171d14665ddd7943e535a8b28fbbeb34f2721d31f1",
+  "configuration": "Own Developer scratch; existing administrator; no permissions/sharing/settings changes; no data DML.",
+  "captureProtocol": "Exact matching source/metadata per API. Boundary method equality is accompanied by matching positive/negative assertion route, whose completion is required for payload.",
+  "carries": [
+    "Historical timezone behavior outside captured2026 instants is not asserted.",
+    "Datetime collection assertion equality and other scalar types are outside these rows.",
+    "Existing namespace and CPU carries remain separate."
+  ],
+  "sourcesByAPI": {
+    "62.0": {
+      "classes": {
+        "ClockSnapshot62": "public class ClockSnapshot62 {\n public static Map<String,Object> snapshot() {\n  Datetime precise=Datetime.newInstance(1538783039073L), whole=Datetime.newInstanceGmt(2018,10,5,23,43,59);\n  Boolean systemAssert=true,assertClass=true; try{System.assertEquals(whole,precise);}catch(Exception e){systemAssert=false;} try{Assert.areEqual(whole,precise);}catch(Exception e){assertClass=false;}\n  return new Map<String,Object>{'pairs'=>new List<Object>{pair(1538783039073L,1538783039999L),pair(1538783039999L,1538783040000L),pair(1538783039000L,1538783039000L),pair(1538783039073L,1538783038073L),pair(-1L,-999L),pair(-1L,0L),pair(-1000L,0L),pair(-999L,999L)},'systemAssert'=>systemAssert,'assertClass'=>assertClass,'epoch'=>precise.getTime(),'serialized'=>JSON.serialize(precise),'operatorEqual'=>precise==whole,'methodEqual'=>precise.equals(whole),'wholeEpoch'=>whole.getTime()};\n }\n public static List<Object> pair(Long a,Long b) {\n Datetime left=Datetime.newInstance(a), right=Datetime.newInstance(b); Boolean same=left.equals(right);\n if(same){System.assertEquals(left,right);Assert.areEqual(left,right);}\n else{System.assertNotEquals(left,right);Assert.areNotEqual(left,right);}\n return new List<Object>{a,b,left==right,same,true,true};\n }\n}\n",
+        "PrettySnapshot62": "public class PrettySnapshot62 {\n public static Map<String,Object> snapshot() {\n  Map<String,Object> empty=new Map<String,Object>(); List<Object> listEmpty=new List<Object>();\n  Map<String,Object> nested=new Map<String,Object>{'a'=>empty};\n  return new Map<String,Object>{'map'=>JSON.serializePretty(empty),'list'=>JSON.serializePretty(listEmpty),'nested'=>JSON.serializePretty(nested),'nestedList'=>JSON.serializePretty(new Map<String,Object>{'a'=>listEmpty}),'compact'=>JSON.serialize(nested),'quoted'=>JSON.serializePretty('{}[]'),'suppressed'=>JSON.serializePretty(empty,true),'kept'=>JSON.serializePretty(empty,false)};\n }\n}\n",
+        "SafeFieldSnapshot62": "public class SafeFieldSnapshot62 {\n static Schema.DescribeFieldResult describe(Boolean absent) {return absent?null:Account.Name.getDescribe();}\n static String pick(Integer size) {return size==null?'integer-null':'integer-'+size;}\n static String pick(SObjectField field) {return 'field';}\n public static Map<String,Object> snapshot() {\n  return new Map<String,Object>{'null'=>pick(describe(true)?.length),'present'=>pick(describe(false)?.length),'integerControl'=>pick((Integer)null),'fieldControl'=>pick(Account.Name)};\n }\n}\n",
+        "UtilityNativeSnapshot62": "public class UtilityNativeSnapshot62 {\n public static String snapshot(){return JSON.serialize(new Map<String,Object>{'zones'=>ZoneSnapshot62.snapshot(),'pretty'=>PrettySnapshot62.snapshot(),'safeField'=>SafeFieldSnapshot62.snapshot(),'clock'=>ClockSnapshot62.snapshot()});}\n}\n",
+        "UtilityNativeTest62": "@IsTest private class UtilityNativeTest62 {\n @IsTest static void capture(){System.assert(false,'OBS|'+UtilityNativeSnapshot62.snapshot());}\n}\n",
+        "ZoneSnapshot62": "public class ZoneSnapshot62 {\n public static Map<String,Object> snapshot() {\n  Map<String,Object> out=new Map<String,Object>();\n  Datetime jan=Datetime.newInstanceGmt(2026,1,15,23,30,0), jul=Datetime.newInstanceGmt(2026,7,15,23,30,0);\n  for(String id:new List<String>{'Africa/Johannesburg','Australia/Brisbane','GMT','Asia/Kolkata','America/New_York','africa/johannesburg','Not/AZone'}) {\n   TimeZone z=TimeZone.getTimeZone(id);\n   out.put(id,new List<Object>{z.getID(),z.getOffset(jan),z.getOffset(jul),z.getDisplayName()});\n  }\n  out.put('formatSouth',jan.format('yyyy-MM-dd HH:mm Z z','Africa/Johannesburg'));\n  out.put('formatEast',jul.format('yyyy-MM-dd HH:mm Z z','Australia/Brisbane'));\n  return out;\n }\n}\n"
+      },
+      "classMetadata": {
+        "ClockSnapshot62": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "PrettySnapshot62": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "SafeFieldSnapshot62": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "UtilityNativeSnapshot62": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "UtilityNativeTest62": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "ZoneSnapshot62": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+      },
+      "anonymous": "System.debug('OBS|'+UtilityNativeSnapshot62.snapshot());\n",
+      "testClass": "UtilityNativeTest62",
+      "testMethod": "capture",
+      "sourceSha256": {
+        "anonymous": "1e2526dc84a3048db3a954b7e5d5da62cd3ef19827ae94841634551c93c09dc3",
+        "class:ClockSnapshot62": "dd94bf60cfb9d047eee3fcefd08fd92d1cc4fbb9e75d181795c28fce0fcf4f2f",
+        "class:PrettySnapshot62": "70eb58bb469b48bafb49c6652f3da3487f65fdf3c223db486a2b7e9e5c408c21",
+        "class:SafeFieldSnapshot62": "46e77bfd9ab861abd660fc78a206eeff7a7223b8df59f98d1e5975300c6326fb",
+        "class:UtilityNativeSnapshot62": "9c761dade10d447f7dad93f16d79ad6c89f535b798e8ed529128688c1bbc088d",
+        "class:UtilityNativeTest62": "5c97617fd0a1634829c764cb1e3c30d2aa9355e36ab46c0f069f00f7872df99e",
+        "class:ZoneSnapshot62": "838b8aeed06426c68d7068dd7dbed9cc32f1749612bec4cc9e1f15855253107c",
+        "classMetadata:ClockSnapshot62": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "classMetadata:PrettySnapshot62": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "classMetadata:SafeFieldSnapshot62": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "classMetadata:UtilityNativeSnapshot62": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "classMetadata:UtilityNativeTest62": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "classMetadata:ZoneSnapshot62": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+      }
+    },
+    "67.0": {
+      "classes": {
+        "ClockSnapshot67": "public class ClockSnapshot67 {\n public static Map<String,Object> snapshot() {\n  Datetime precise=Datetime.newInstance(1538783039073L), whole=Datetime.newInstanceGmt(2018,10,5,23,43,59);\n  Boolean systemAssert=true,assertClass=true; try{System.assertEquals(whole,precise);}catch(Exception e){systemAssert=false;} try{Assert.areEqual(whole,precise);}catch(Exception e){assertClass=false;}\n  return new Map<String,Object>{'pairs'=>new List<Object>{pair(1538783039073L,1538783039999L),pair(1538783039999L,1538783040000L),pair(1538783039000L,1538783039000L),pair(1538783039073L,1538783038073L),pair(-1L,-999L),pair(-1L,0L),pair(-1000L,0L),pair(-999L,999L)},'systemAssert'=>systemAssert,'assertClass'=>assertClass,'epoch'=>precise.getTime(),'serialized'=>JSON.serialize(precise),'operatorEqual'=>precise==whole,'methodEqual'=>precise.equals(whole),'wholeEpoch'=>whole.getTime()};\n }\n public static List<Object> pair(Long a,Long b) {\n Datetime left=Datetime.newInstance(a), right=Datetime.newInstance(b); Boolean same=left.equals(right);\n if(same){System.assertEquals(left,right);Assert.areEqual(left,right);}\n else{System.assertNotEquals(left,right);Assert.areNotEqual(left,right);}\n return new List<Object>{a,b,left==right,same,true,true};\n }\n}\n",
+        "PrettySnapshot67": "public class PrettySnapshot67 {\n public static Map<String,Object> snapshot() {\n  Map<String,Object> empty=new Map<String,Object>(); List<Object> listEmpty=new List<Object>();\n  Map<String,Object> nested=new Map<String,Object>{'a'=>empty};\n  return new Map<String,Object>{'map'=>JSON.serializePretty(empty),'list'=>JSON.serializePretty(listEmpty),'nested'=>JSON.serializePretty(nested),'nestedList'=>JSON.serializePretty(new Map<String,Object>{'a'=>listEmpty}),'compact'=>JSON.serialize(nested),'quoted'=>JSON.serializePretty('{}[]'),'suppressed'=>JSON.serializePretty(empty,true),'kept'=>JSON.serializePretty(empty,false)};\n }\n}\n",
+        "SafeFieldSnapshot67": "public class SafeFieldSnapshot67 {\n static Schema.DescribeFieldResult describe(Boolean absent) {return absent?null:Account.Name.getDescribe();}\n static String pick(Integer size) {return size==null?'integer-null':'integer-'+size;}\n static String pick(SObjectField field) {return 'field';}\n public static Map<String,Object> snapshot() {\n  return new Map<String,Object>{'null'=>pick(describe(true)?.length),'present'=>pick(describe(false)?.length),'integerControl'=>pick((Integer)null),'fieldControl'=>pick(Account.Name)};\n }\n}\n",
+        "UtilityNativeSnapshot67": "public class UtilityNativeSnapshot67 {\n public static String snapshot(){return JSON.serialize(new Map<String,Object>{'zones'=>ZoneSnapshot67.snapshot(),'pretty'=>PrettySnapshot67.snapshot(),'safeField'=>SafeFieldSnapshot67.snapshot(),'clock'=>ClockSnapshot67.snapshot()});}\n}\n",
+        "UtilityNativeTest67": "@IsTest private class UtilityNativeTest67 {\n @IsTest static void capture(){System.assert(false,'OBS|'+UtilityNativeSnapshot67.snapshot());}\n}\n",
+        "ZoneSnapshot67": "public class ZoneSnapshot67 {\n public static Map<String,Object> snapshot() {\n  Map<String,Object> out=new Map<String,Object>();\n  Datetime jan=Datetime.newInstanceGmt(2026,1,15,23,30,0), jul=Datetime.newInstanceGmt(2026,7,15,23,30,0);\n  for(String id:new List<String>{'Africa/Johannesburg','Australia/Brisbane','GMT','Asia/Kolkata','America/New_York','africa/johannesburg','Not/AZone'}) {\n   TimeZone z=TimeZone.getTimeZone(id);\n   out.put(id,new List<Object>{z.getID(),z.getOffset(jan),z.getOffset(jul),z.getDisplayName()});\n  }\n  out.put('formatSouth',jan.format('yyyy-MM-dd HH:mm Z z','Africa/Johannesburg'));\n  out.put('formatEast',jul.format('yyyy-MM-dd HH:mm Z z','Australia/Brisbane'));\n  return out;\n }\n}\n"
+      },
+      "classMetadata": {
+        "ClockSnapshot67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "PrettySnapshot67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "SafeFieldSnapshot67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "UtilityNativeSnapshot67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "UtilityNativeTest67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "ZoneSnapshot67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+      },
+      "anonymous": "System.debug('OBS|'+UtilityNativeSnapshot67.snapshot());\n",
+      "testClass": "UtilityNativeTest67",
+      "testMethod": "capture",
+      "sourceSha256": {
+        "anonymous": "d86549dd23d855f843f3111cde1dfb0f7b2ee1b184f7e122c9da85fd96542773",
+        "class:ClockSnapshot67": "5494ae75bb9d6237df6bde0f4632202916c78e1f00dfa10811cf0d4c2e2f4a78",
+        "class:PrettySnapshot67": "f426858583199a1b6e932dde3c677b7fc774df73f5fcc2321859d8b5e254eaf6",
+        "class:SafeFieldSnapshot67": "9a0eb13e271a23f9b2d2f6da6d12b6d1fd86d3985541077114464bfa53e84ce2",
+        "class:UtilityNativeSnapshot67": "065ee42f24dca763029e7d1fbcef4c9bcf80563585b0a86021fb26d34afe47ce",
+        "class:UtilityNativeTest67": "acf87555bb46452831882f73e4f515a7245af7c945de839733fb0822880aac99",
+        "class:ZoneSnapshot67": "99f5f71912fc635904dc0732affded00daaeb3c82861c4d20ff3505443706ec4",
+        "classMetadata:ClockSnapshot67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "classMetadata:PrettySnapshot67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "classMetadata:SafeFieldSnapshot67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "classMetadata:UtilityNativeSnapshot67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "classMetadata:UtilityNativeTest67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "classMetadata:ZoneSnapshot67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+      }
+    },
+    "68.0": {
+      "classes": {
+        "ClockSnapshot68": "public class ClockSnapshot68 {\n public static Map<String,Object> snapshot() {\n  Datetime precise=Datetime.newInstance(1538783039073L), whole=Datetime.newInstanceGmt(2018,10,5,23,43,59);\n  Boolean systemAssert=true,assertClass=true; try{System.assertEquals(whole,precise);}catch(Exception e){systemAssert=false;} try{Assert.areEqual(whole,precise);}catch(Exception e){assertClass=false;}\n  return new Map<String,Object>{'pairs'=>new List<Object>{pair(1538783039073L,1538783039999L),pair(1538783039999L,1538783040000L),pair(1538783039000L,1538783039000L),pair(1538783039073L,1538783038073L),pair(-1L,-999L),pair(-1L,0L),pair(-1000L,0L),pair(-999L,999L)},'systemAssert'=>systemAssert,'assertClass'=>assertClass,'epoch'=>precise.getTime(),'serialized'=>JSON.serialize(precise),'operatorEqual'=>precise==whole,'methodEqual'=>precise.equals(whole),'wholeEpoch'=>whole.getTime()};\n }\n public static List<Object> pair(Long a,Long b) {\n Datetime left=Datetime.newInstance(a), right=Datetime.newInstance(b); Boolean same=left.equals(right);\n if(same){System.assertEquals(left,right);Assert.areEqual(left,right);}\n else{System.assertNotEquals(left,right);Assert.areNotEqual(left,right);}\n return new List<Object>{a,b,left==right,same,true,true};\n }\n}\n",
+        "PrettySnapshot68": "public class PrettySnapshot68 {\n public static Map<String,Object> snapshot() {\n  Map<String,Object> empty=new Map<String,Object>(); List<Object> listEmpty=new List<Object>();\n  Map<String,Object> nested=new Map<String,Object>{'a'=>empty};\n  return new Map<String,Object>{'map'=>JSON.serializePretty(empty),'list'=>JSON.serializePretty(listEmpty),'nested'=>JSON.serializePretty(nested),'nestedList'=>JSON.serializePretty(new Map<String,Object>{'a'=>listEmpty}),'compact'=>JSON.serialize(nested),'quoted'=>JSON.serializePretty('{}[]'),'suppressed'=>JSON.serializePretty(empty,true),'kept'=>JSON.serializePretty(empty,false)};\n }\n}\n",
+        "SafeFieldSnapshot68": "public class SafeFieldSnapshot68 {\n static Schema.DescribeFieldResult describe(Boolean absent) {return absent?null:Account.Name.getDescribe();}\n static String pick(Integer size) {return size==null?'integer-null':'integer-'+size;}\n static String pick(SObjectField field) {return 'field';}\n public static Map<String,Object> snapshot() {\n  return new Map<String,Object>{'null'=>pick(describe(true)?.length),'present'=>pick(describe(false)?.length),'integerControl'=>pick((Integer)null),'fieldControl'=>pick(Account.Name)};\n }\n}\n",
+        "UtilityNativeSnapshot68": "public class UtilityNativeSnapshot68 {\n public static String snapshot(){return JSON.serialize(new Map<String,Object>{'zones'=>ZoneSnapshot68.snapshot(),'pretty'=>PrettySnapshot68.snapshot(),'safeField'=>SafeFieldSnapshot68.snapshot(),'clock'=>ClockSnapshot68.snapshot()});}\n}\n",
+        "UtilityNativeTest68": "@IsTest private class UtilityNativeTest68 {\n @IsTest static void capture(){System.assert(false,'OBS|'+UtilityNativeSnapshot68.snapshot());}\n}\n",
+        "ZoneSnapshot68": "public class ZoneSnapshot68 {\n public static Map<String,Object> snapshot() {\n  Map<String,Object> out=new Map<String,Object>();\n  Datetime jan=Datetime.newInstanceGmt(2026,1,15,23,30,0), jul=Datetime.newInstanceGmt(2026,7,15,23,30,0);\n  for(String id:new List<String>{'Africa/Johannesburg','Australia/Brisbane','GMT','Asia/Kolkata','America/New_York','africa/johannesburg','Not/AZone'}) {\n   TimeZone z=TimeZone.getTimeZone(id);\n   out.put(id,new List<Object>{z.getID(),z.getOffset(jan),z.getOffset(jul),z.getDisplayName()});\n  }\n  out.put('formatSouth',jan.format('yyyy-MM-dd HH:mm Z z','Africa/Johannesburg'));\n  out.put('formatEast',jul.format('yyyy-MM-dd HH:mm Z z','Australia/Brisbane'));\n  return out;\n }\n}\n"
+      },
+      "classMetadata": {
+        "ClockSnapshot68": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "PrettySnapshot68": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "SafeFieldSnapshot68": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "UtilityNativeSnapshot68": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "UtilityNativeTest68": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "ZoneSnapshot68": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+      },
+      "anonymous": "System.debug('OBS|'+UtilityNativeSnapshot68.snapshot());\n",
+      "testClass": "UtilityNativeTest68",
+      "testMethod": "capture",
+      "sourceSha256": {
+        "anonymous": "3ebb297f9928eecfa102b5ed17fbd3970e46e4f2370848e3a67d34ebb4026d9d",
+        "class:ClockSnapshot68": "65668dbb58acb3ce4da575f5de29be8a3475fe44b7b9fc172a0ea912df695e83",
+        "class:PrettySnapshot68": "9383ed635d1885f65bfff5b784ff17d6fca20919a176fb86bae28deee938c4c2",
+        "class:SafeFieldSnapshot68": "e19cdbb18502486cfca604fb22a2a67a12bcb32eea5e6201c517f8c30162f917",
+        "class:UtilityNativeSnapshot68": "632a2eb1e07e3615e18c436c0051e0d79deee6131732c6fce7078c991c9fb794",
+        "class:UtilityNativeTest68": "af4327aaabc46b12e49295222226fc8f8b927aeeccae546eb8e83baac73a26fe",
+        "class:ZoneSnapshot68": "20a22174ea686c55ec9551bdf5aa31ae42d65bd68407190c701bea437b68ac73",
+        "classMetadata:ClockSnapshot68": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "classMetadata:PrettySnapshot68": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "classMetadata:SafeFieldSnapshot68": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "classMetadata:UtilityNativeSnapshot68": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "classMetadata:UtilityNativeTest68": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "classMetadata:ZoneSnapshot68": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147"
+      }
+    }
+  },
+  "cells": [
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "observation": {
+        "clock": {
+          "wholeEpoch": 1538783039000,
+          "methodEqual": true,
+          "operatorEqual": false,
+          "serialized": "\"2018-10-05T23:43:59.073Z\"",
+          "epoch": 1538783039073,
+          "assertClass": true,
+          "systemAssert": true,
+          "pairs": [
+            [
+              1538783039073,
+              1538783039999,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              1538783039999,
+              1538783040000,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              1538783039000,
+              1538783039000,
+              true,
+              true,
+              true,
+              true
+            ],
+            [
+              1538783039073,
+              1538783038073,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              -1,
+              -999,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              -1,
+              0,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              -1000,
+              0,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              -999,
+              999,
+              false,
+              true,
+              true,
+              true
+            ]
+          ]
+        },
+        "safeField": {
+          "fieldControl": "field",
+          "integerControl": "integer-null",
+          "present": "integer-255",
+          "null": "integer-null"
+        },
+        "pretty": {
+          "kept": "{ }",
+          "suppressed": "{ }",
+          "quoted": "\"{}[]\"",
+          "compact": "{\"a\":{}}",
+          "nestedList": "{\n  \"a\" : [ ]\n}",
+          "nested": "{\n  \"a\" : { }\n}",
+          "list": "[ ]",
+          "map": "{ }"
+        },
+        "zones": {
+          "formatEast": "2026-07-16 09:30 +1000 AEST",
+          "formatSouth": "2026-01-16 01:30 +0200 SAST",
+          "Not/AZone": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "africa/johannesburg": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "America/New_York": [
+            "America/New_York",
+            -18000000,
+            -14400000,
+            "(GMT-04:00) Eastern Daylight Time (America/New_York)"
+          ],
+          "Asia/Kolkata": [
+            "Asia/Kolkata",
+            19800000,
+            19800000,
+            "(GMT+05:30) India Standard Time (Asia/Kolkata)"
+          ],
+          "GMT": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "Australia/Brisbane": [
+            "Australia/Brisbane",
+            36000000,
+            36000000,
+            "(GMT+10:00) Australian Eastern Standard Time (Australia/Brisbane)"
+          ],
+          "Africa/Johannesburg": [
+            "Africa/Johannesburg",
+            7200000,
+            7200000,
+            "(GMT+02:00) South Africa Standard Time (Africa/Johannesburg)"
+          ]
+        }
+      },
+      "evidenceSha256": "9240daa9b74779660e0113934898294a3e224dbb03c9d9c74b5008aeedf057ee",
+      "command": "apex run --target-org scratch-org --api-version 62.0 --file native-capture --json",
+      "native": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "transport": "debug"
+      }
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "observation": {
+        "clock": {
+          "wholeEpoch": 1538783039000,
+          "methodEqual": true,
+          "operatorEqual": false,
+          "serialized": "\"2018-10-05T23:43:59.073Z\"",
+          "epoch": 1538783039073,
+          "assertClass": true,
+          "systemAssert": true,
+          "pairs": [
+            [
+              1538783039073,
+              1538783039999,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              1538783039999,
+              1538783040000,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              1538783039000,
+              1538783039000,
+              true,
+              true,
+              true,
+              true
+            ],
+            [
+              1538783039073,
+              1538783038073,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              -1,
+              -999,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              -1,
+              0,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              -1000,
+              0,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              -999,
+              999,
+              false,
+              true,
+              true,
+              true
+            ]
+          ]
+        },
+        "safeField": {
+          "fieldControl": "field",
+          "integerControl": "integer-null",
+          "present": "integer-255",
+          "null": "integer-null"
+        },
+        "pretty": {
+          "kept": "{ }",
+          "suppressed": "{ }",
+          "quoted": "\"{}[]\"",
+          "compact": "{\"a\":{}}",
+          "nestedList": "{\n  \"a\" : [ ]\n}",
+          "nested": "{\n  \"a\" : { }\n}",
+          "list": "[ ]",
+          "map": "{ }"
+        },
+        "zones": {
+          "formatEast": "2026-07-16 09:30 +1000 AEST",
+          "formatSouth": "2026-01-16 01:30 +0200 SAST",
+          "Not/AZone": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "africa/johannesburg": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "America/New_York": [
+            "America/New_York",
+            -18000000,
+            -14400000,
+            "(GMT-04:00) Eastern Daylight Time (America/New_York)"
+          ],
+          "Asia/Kolkata": [
+            "Asia/Kolkata",
+            19800000,
+            19800000,
+            "(GMT+05:30) India Standard Time (Asia/Kolkata)"
+          ],
+          "GMT": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "Australia/Brisbane": [
+            "Australia/Brisbane",
+            36000000,
+            36000000,
+            "(GMT+10:00) Australian Eastern Standard Time (Australia/Brisbane)"
+          ],
+          "Africa/Johannesburg": [
+            "Africa/Johannesburg",
+            7200000,
+            7200000,
+            "(GMT+02:00) South Africa Standard Time (Africa/Johannesburg)"
+          ]
+        }
+      },
+      "evidenceSha256": "cdf422c6a1838a3c6c1915842a136dc4c4b274a0809cf14f640b69e79426f199",
+      "command": "apex run test --target-org scratch-org --api-version 62.0 --class-names UtilityNativeTest62 --synchronous --json",
+      "native": {
+        "status": 100,
+        "outcome": "Fail",
+        "transport": "intentional OBS assertion"
+      }
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "observation": {
+        "clock": {
+          "wholeEpoch": 1538783039000,
+          "methodEqual": true,
+          "operatorEqual": false,
+          "serialized": "\"2018-10-05T23:43:59.073Z\"",
+          "epoch": 1538783039073,
+          "assertClass": true,
+          "systemAssert": true,
+          "pairs": [
+            [
+              1538783039073,
+              1538783039999,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              1538783039999,
+              1538783040000,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              1538783039000,
+              1538783039000,
+              true,
+              true,
+              true,
+              true
+            ],
+            [
+              1538783039073,
+              1538783038073,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              -1,
+              -999,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              -1,
+              0,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              -1000,
+              0,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              -999,
+              999,
+              false,
+              true,
+              true,
+              true
+            ]
+          ]
+        },
+        "safeField": {
+          "fieldControl": "field",
+          "integerControl": "integer-null",
+          "present": "integer-255",
+          "null": "integer-null"
+        },
+        "pretty": {
+          "kept": "{ }",
+          "suppressed": "{ }",
+          "quoted": "\"{}[]\"",
+          "compact": "{\"a\":{}}",
+          "nestedList": "{\n  \"a\" : [ ]\n}",
+          "nested": "{\n  \"a\" : { }\n}",
+          "list": "[ ]",
+          "map": "{ }"
+        },
+        "zones": {
+          "formatEast": "2026-07-16 09:30 +1000 AEST",
+          "formatSouth": "2026-01-16 01:30 +0200 SAST",
+          "Not/AZone": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "africa/johannesburg": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "America/New_York": [
+            "America/New_York",
+            -18000000,
+            -14400000,
+            "(GMT-04:00) Eastern Daylight Time (America/New_York)"
+          ],
+          "Asia/Kolkata": [
+            "Asia/Kolkata",
+            19800000,
+            19800000,
+            "(GMT+05:30) India Standard Time (Asia/Kolkata)"
+          ],
+          "GMT": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "Australia/Brisbane": [
+            "Australia/Brisbane",
+            36000000,
+            36000000,
+            "(GMT+10:00) Australian Eastern Standard Time (Australia/Brisbane)"
+          ],
+          "Africa/Johannesburg": [
+            "Africa/Johannesburg",
+            7200000,
+            7200000,
+            "(GMT+02:00) South Africa Standard Time (Africa/Johannesburg)"
+          ]
+        }
+      },
+      "evidenceSha256": "c2a6cb8501db29014f82275e2a489706bfb4c4ca5bf2692569067fe23954aeb1",
+      "command": "apex run --target-org scratch-org --api-version 67.0 --file native-capture --json",
+      "native": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "transport": "debug"
+      }
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "observation": {
+        "clock": {
+          "wholeEpoch": 1538783039000,
+          "methodEqual": true,
+          "operatorEqual": false,
+          "serialized": "\"2018-10-05T23:43:59.073Z\"",
+          "epoch": 1538783039073,
+          "assertClass": true,
+          "systemAssert": true,
+          "pairs": [
+            [
+              1538783039073,
+              1538783039999,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              1538783039999,
+              1538783040000,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              1538783039000,
+              1538783039000,
+              true,
+              true,
+              true,
+              true
+            ],
+            [
+              1538783039073,
+              1538783038073,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              -1,
+              -999,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              -1,
+              0,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              -1000,
+              0,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              -999,
+              999,
+              false,
+              true,
+              true,
+              true
+            ]
+          ]
+        },
+        "safeField": {
+          "fieldControl": "field",
+          "integerControl": "integer-null",
+          "present": "integer-255",
+          "null": "integer-null"
+        },
+        "pretty": {
+          "kept": "{ }",
+          "suppressed": "{ }",
+          "quoted": "\"{}[]\"",
+          "compact": "{\"a\":{}}",
+          "nestedList": "{\n  \"a\" : [ ]\n}",
+          "nested": "{\n  \"a\" : { }\n}",
+          "list": "[ ]",
+          "map": "{ }"
+        },
+        "zones": {
+          "formatEast": "2026-07-16 09:30 +1000 AEST",
+          "formatSouth": "2026-01-16 01:30 +0200 SAST",
+          "Not/AZone": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "africa/johannesburg": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "America/New_York": [
+            "America/New_York",
+            -18000000,
+            -14400000,
+            "(GMT-04:00) Eastern Daylight Time (America/New_York)"
+          ],
+          "Asia/Kolkata": [
+            "Asia/Kolkata",
+            19800000,
+            19800000,
+            "(GMT+05:30) India Standard Time (Asia/Kolkata)"
+          ],
+          "GMT": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "Australia/Brisbane": [
+            "Australia/Brisbane",
+            36000000,
+            36000000,
+            "(GMT+10:00) Australian Eastern Standard Time (Australia/Brisbane)"
+          ],
+          "Africa/Johannesburg": [
+            "Africa/Johannesburg",
+            7200000,
+            7200000,
+            "(GMT+02:00) South Africa Standard Time (Africa/Johannesburg)"
+          ]
+        }
+      },
+      "evidenceSha256": "56af87f7a968068b47ff7c6ec4e6a9ea3761aa4b7ec61fd0afc28a7bcfefed05",
+      "command": "apex run test --target-org scratch-org --api-version 67.0 --class-names UtilityNativeTest67 --synchronous --json",
+      "native": {
+        "status": 100,
+        "outcome": "Fail",
+        "transport": "intentional OBS assertion"
+      }
+    },
+    {
+      "apiVersion": "68.0",
+      "route": "anonymous",
+      "observation": {
+        "clock": {
+          "wholeEpoch": 1538783039000,
+          "methodEqual": true,
+          "operatorEqual": false,
+          "serialized": "\"2018-10-05T23:43:59.073Z\"",
+          "epoch": 1538783039073,
+          "assertClass": true,
+          "systemAssert": true,
+          "pairs": [
+            [
+              1538783039073,
+              1538783039999,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              1538783039999,
+              1538783040000,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              1538783039000,
+              1538783039000,
+              true,
+              true,
+              true,
+              true
+            ],
+            [
+              1538783039073,
+              1538783038073,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              -1,
+              -999,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              -1,
+              0,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              -1000,
+              0,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              -999,
+              999,
+              false,
+              true,
+              true,
+              true
+            ]
+          ]
+        },
+        "safeField": {
+          "fieldControl": "field",
+          "integerControl": "integer-null",
+          "present": "integer-255",
+          "null": "integer-null"
+        },
+        "pretty": {
+          "kept": "{ }",
+          "suppressed": "{ }",
+          "quoted": "\"{}[]\"",
+          "compact": "{\"a\":{}}",
+          "nestedList": "{\n  \"a\" : [ ]\n}",
+          "nested": "{\n  \"a\" : { }\n}",
+          "list": "[ ]",
+          "map": "{ }"
+        },
+        "zones": {
+          "formatEast": "2026-07-16 09:30 +1000 AEST",
+          "formatSouth": "2026-01-16 01:30 +0200 SAST",
+          "Not/AZone": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "africa/johannesburg": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "America/New_York": [
+            "America/New_York",
+            -18000000,
+            -14400000,
+            "(GMT-04:00) Eastern Daylight Time (America/New_York)"
+          ],
+          "Asia/Kolkata": [
+            "Asia/Kolkata",
+            19800000,
+            19800000,
+            "(GMT+05:30) India Standard Time (Asia/Kolkata)"
+          ],
+          "GMT": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "Australia/Brisbane": [
+            "Australia/Brisbane",
+            36000000,
+            36000000,
+            "(GMT+10:00) Australian Eastern Standard Time (Australia/Brisbane)"
+          ],
+          "Africa/Johannesburg": [
+            "Africa/Johannesburg",
+            7200000,
+            7200000,
+            "(GMT+02:00) South Africa Standard Time (Africa/Johannesburg)"
+          ]
+        }
+      },
+      "evidenceSha256": "c5ae06ec00820691a206b559f4acdec59d9a6ea6ffa12797ee1244e2b3833a74",
+      "command": "apex run --target-org scratch-org --api-version 68.0 --file native-capture --json",
+      "native": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "transport": "debug"
+      }
+    },
+    {
+      "apiVersion": "68.0",
+      "route": "isTest",
+      "observation": {
+        "clock": {
+          "wholeEpoch": 1538783039000,
+          "methodEqual": true,
+          "operatorEqual": false,
+          "serialized": "\"2018-10-05T23:43:59.073Z\"",
+          "epoch": 1538783039073,
+          "assertClass": true,
+          "systemAssert": true,
+          "pairs": [
+            [
+              1538783039073,
+              1538783039999,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              1538783039999,
+              1538783040000,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              1538783039000,
+              1538783039000,
+              true,
+              true,
+              true,
+              true
+            ],
+            [
+              1538783039073,
+              1538783038073,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              -1,
+              -999,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              -1,
+              0,
+              false,
+              true,
+              true,
+              true
+            ],
+            [
+              -1000,
+              0,
+              false,
+              false,
+              true,
+              true
+            ],
+            [
+              -999,
+              999,
+              false,
+              true,
+              true,
+              true
+            ]
+          ]
+        },
+        "safeField": {
+          "fieldControl": "field",
+          "integerControl": "integer-null",
+          "present": "integer-255",
+          "null": "integer-null"
+        },
+        "pretty": {
+          "kept": "{ }",
+          "suppressed": "{ }",
+          "quoted": "\"{}[]\"",
+          "compact": "{\"a\":{}}",
+          "nestedList": "{\n  \"a\" : [ ]\n}",
+          "nested": "{\n  \"a\" : { }\n}",
+          "list": "[ ]",
+          "map": "{ }"
+        },
+        "zones": {
+          "formatEast": "2026-07-16 09:30 +1000 AEST",
+          "formatSouth": "2026-01-16 01:30 +0200 SAST",
+          "Not/AZone": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "africa/johannesburg": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "America/New_York": [
+            "America/New_York",
+            -18000000,
+            -14400000,
+            "(GMT-04:00) Eastern Daylight Time (America/New_York)"
+          ],
+          "Asia/Kolkata": [
+            "Asia/Kolkata",
+            19800000,
+            19800000,
+            "(GMT+05:30) India Standard Time (Asia/Kolkata)"
+          ],
+          "GMT": [
+            "GMT",
+            0,
+            0,
+            "(GMT+00:00) Greenwich Mean Time (GMT)"
+          ],
+          "Australia/Brisbane": [
+            "Australia/Brisbane",
+            36000000,
+            36000000,
+            "(GMT+10:00) Australian Eastern Standard Time (Australia/Brisbane)"
+          ],
+          "Africa/Johannesburg": [
+            "Africa/Johannesburg",
+            7200000,
+            7200000,
+            "(GMT+02:00) South Africa Standard Time (Africa/Johannesburg)"
+          ]
+        }
+      },
+      "evidenceSha256": "b37482d7104f027cf5dfe5d3b84a6718cbe8e044b07739144d057fa96775a5dd",
+      "command": "apex run test --target-org scratch-org --api-version 68.0 --class-names UtilityNativeTest68 --synchronous --json",
+      "native": {
+        "status": 100,
+        "outcome": "Fail",
+        "transport": "intentional OBS assertion"
+      }
+    }
+  ],
+  "d7Evidence": {
+    "observationsTsv": "row\tapi\tcontext\tvalue\nUJS_62_A\t62\tanonymous\t{\"clock\":{\"wholeEpoch\":1538783039000,\"methodEqual\":true,\"operatorEqual\":false,\"serialized\":\"\\\"2018-10-05T23:43:59.073Z\\\"\",\"epoch\":1538783039073,\"assertClass\":true,\"systemAssert\":true,\"pairs\":[[1538783039073,1538783039999,false,true,true,true],[1538783039999,1538783040000,false,false,true,true],[1538783039000,1538783039000,true,true,true,true],[1538783039073,1538783038073,false,false,true,true],[-1,-999,false,true,true,true],[-1,0,false,true,true,true],[-1000,0,false,false,true,true],[-999,999,false,true,true,true]]},\"safeField\":{\"fieldControl\":\"field\",\"integerControl\":\"integer-null\",\"present\":\"integer-255\",\"null\":\"integer-null\"},\"pretty\":{\"kept\":\"{ }\",\"suppressed\":\"{ }\",\"quoted\":\"\\\"{}[]\\\"\",\"compact\":\"{\\\"a\\\":{}}\",\"nestedList\":\"{\\n  \\\"a\\\" : [ ]\\n}\",\"nested\":\"{\\n  \\\"a\\\" : { }\\n}\",\"list\":\"[ ]\",\"map\":\"{ }\"},\"zones\":{\"formatEast\":\"2026-07-16 09:30 +1000 AEST\",\"formatSouth\":\"2026-01-16 01:30 +0200 SAST\",\"Not/AZone\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"africa/johannesburg\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"America/New_York\":[\"America/New_York\",-18000000,-14400000,\"(GMT-04:00) Eastern Daylight Time (America/New_York)\"],\"Asia/Kolkata\":[\"Asia/Kolkata\",19800000,19800000,\"(GMT+05:30) India Standard Time (Asia/Kolkata)\"],\"GMT\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"Australia/Brisbane\":[\"Australia/Brisbane\",36000000,36000000,\"(GMT+10:00) Australian Eastern Standard Time (Australia/Brisbane)\"],\"Africa/Johannesburg\":[\"Africa/Johannesburg\",7200000,7200000,\"(GMT+02:00) South Africa Standard Time (Africa/Johannesburg)\"]}}\nUJS_62_T\t62\tistest\t{\"clock\":{\"wholeEpoch\":1538783039000,\"methodEqual\":true,\"operatorEqual\":false,\"serialized\":\"\\\"2018-10-05T23:43:59.073Z\\\"\",\"epoch\":1538783039073,\"assertClass\":true,\"systemAssert\":true,\"pairs\":[[1538783039073,1538783039999,false,true,true,true],[1538783039999,1538783040000,false,false,true,true],[1538783039000,1538783039000,true,true,true,true],[1538783039073,1538783038073,false,false,true,true],[-1,-999,false,true,true,true],[-1,0,false,true,true,true],[-1000,0,false,false,true,true],[-999,999,false,true,true,true]]},\"safeField\":{\"fieldControl\":\"field\",\"integerControl\":\"integer-null\",\"present\":\"integer-255\",\"null\":\"integer-null\"},\"pretty\":{\"kept\":\"{ }\",\"suppressed\":\"{ }\",\"quoted\":\"\\\"{}[]\\\"\",\"compact\":\"{\\\"a\\\":{}}\",\"nestedList\":\"{\\n  \\\"a\\\" : [ ]\\n}\",\"nested\":\"{\\n  \\\"a\\\" : { }\\n}\",\"list\":\"[ ]\",\"map\":\"{ }\"},\"zones\":{\"formatEast\":\"2026-07-16 09:30 +1000 AEST\",\"formatSouth\":\"2026-01-16 01:30 +0200 SAST\",\"Not/AZone\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"africa/johannesburg\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"America/New_York\":[\"America/New_York\",-18000000,-14400000,\"(GMT-04:00) Eastern Daylight Time (America/New_York)\"],\"Asia/Kolkata\":[\"Asia/Kolkata\",19800000,19800000,\"(GMT+05:30) India Standard Time (Asia/Kolkata)\"],\"GMT\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"Australia/Brisbane\":[\"Australia/Brisbane\",36000000,36000000,\"(GMT+10:00) Australian Eastern Standard Time (Australia/Brisbane)\"],\"Africa/Johannesburg\":[\"Africa/Johannesburg\",7200000,7200000,\"(GMT+02:00) South Africa Standard Time (Africa/Johannesburg)\"]}}\nUJS_67_A\t67\tanonymous\t{\"clock\":{\"wholeEpoch\":1538783039000,\"methodEqual\":true,\"operatorEqual\":false,\"serialized\":\"\\\"2018-10-05T23:43:59.073Z\\\"\",\"epoch\":1538783039073,\"assertClass\":true,\"systemAssert\":true,\"pairs\":[[1538783039073,1538783039999,false,true,true,true],[1538783039999,1538783040000,false,false,true,true],[1538783039000,1538783039000,true,true,true,true],[1538783039073,1538783038073,false,false,true,true],[-1,-999,false,true,true,true],[-1,0,false,true,true,true],[-1000,0,false,false,true,true],[-999,999,false,true,true,true]]},\"safeField\":{\"fieldControl\":\"field\",\"integerControl\":\"integer-null\",\"present\":\"integer-255\",\"null\":\"integer-null\"},\"pretty\":{\"kept\":\"{ }\",\"suppressed\":\"{ }\",\"quoted\":\"\\\"{}[]\\\"\",\"compact\":\"{\\\"a\\\":{}}\",\"nestedList\":\"{\\n  \\\"a\\\" : [ ]\\n}\",\"nested\":\"{\\n  \\\"a\\\" : { }\\n}\",\"list\":\"[ ]\",\"map\":\"{ }\"},\"zones\":{\"formatEast\":\"2026-07-16 09:30 +1000 AEST\",\"formatSouth\":\"2026-01-16 01:30 +0200 SAST\",\"Not/AZone\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"africa/johannesburg\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"America/New_York\":[\"America/New_York\",-18000000,-14400000,\"(GMT-04:00) Eastern Daylight Time (America/New_York)\"],\"Asia/Kolkata\":[\"Asia/Kolkata\",19800000,19800000,\"(GMT+05:30) India Standard Time (Asia/Kolkata)\"],\"GMT\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"Australia/Brisbane\":[\"Australia/Brisbane\",36000000,36000000,\"(GMT+10:00) Australian Eastern Standard Time (Australia/Brisbane)\"],\"Africa/Johannesburg\":[\"Africa/Johannesburg\",7200000,7200000,\"(GMT+02:00) South Africa Standard Time (Africa/Johannesburg)\"]}}\nUJS_67_T\t67\tistest\t{\"clock\":{\"wholeEpoch\":1538783039000,\"methodEqual\":true,\"operatorEqual\":false,\"serialized\":\"\\\"2018-10-05T23:43:59.073Z\\\"\",\"epoch\":1538783039073,\"assertClass\":true,\"systemAssert\":true,\"pairs\":[[1538783039073,1538783039999,false,true,true,true],[1538783039999,1538783040000,false,false,true,true],[1538783039000,1538783039000,true,true,true,true],[1538783039073,1538783038073,false,false,true,true],[-1,-999,false,true,true,true],[-1,0,false,true,true,true],[-1000,0,false,false,true,true],[-999,999,false,true,true,true]]},\"safeField\":{\"fieldControl\":\"field\",\"integerControl\":\"integer-null\",\"present\":\"integer-255\",\"null\":\"integer-null\"},\"pretty\":{\"kept\":\"{ }\",\"suppressed\":\"{ }\",\"quoted\":\"\\\"{}[]\\\"\",\"compact\":\"{\\\"a\\\":{}}\",\"nestedList\":\"{\\n  \\\"a\\\" : [ ]\\n}\",\"nested\":\"{\\n  \\\"a\\\" : { }\\n}\",\"list\":\"[ ]\",\"map\":\"{ }\"},\"zones\":{\"formatEast\":\"2026-07-16 09:30 +1000 AEST\",\"formatSouth\":\"2026-01-16 01:30 +0200 SAST\",\"Not/AZone\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"africa/johannesburg\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"America/New_York\":[\"America/New_York\",-18000000,-14400000,\"(GMT-04:00) Eastern Daylight Time (America/New_York)\"],\"Asia/Kolkata\":[\"Asia/Kolkata\",19800000,19800000,\"(GMT+05:30) India Standard Time (Asia/Kolkata)\"],\"GMT\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"Australia/Brisbane\":[\"Australia/Brisbane\",36000000,36000000,\"(GMT+10:00) Australian Eastern Standard Time (Australia/Brisbane)\"],\"Africa/Johannesburg\":[\"Africa/Johannesburg\",7200000,7200000,\"(GMT+02:00) South Africa Standard Time (Africa/Johannesburg)\"]}}\nUJS_68_A\t68\tanonymous\t{\"clock\":{\"wholeEpoch\":1538783039000,\"methodEqual\":true,\"operatorEqual\":false,\"serialized\":\"\\\"2018-10-05T23:43:59.073Z\\\"\",\"epoch\":1538783039073,\"assertClass\":true,\"systemAssert\":true,\"pairs\":[[1538783039073,1538783039999,false,true,true,true],[1538783039999,1538783040000,false,false,true,true],[1538783039000,1538783039000,true,true,true,true],[1538783039073,1538783038073,false,false,true,true],[-1,-999,false,true,true,true],[-1,0,false,true,true,true],[-1000,0,false,false,true,true],[-999,999,false,true,true,true]]},\"safeField\":{\"fieldControl\":\"field\",\"integerControl\":\"integer-null\",\"present\":\"integer-255\",\"null\":\"integer-null\"},\"pretty\":{\"kept\":\"{ }\",\"suppressed\":\"{ }\",\"quoted\":\"\\\"{}[]\\\"\",\"compact\":\"{\\\"a\\\":{}}\",\"nestedList\":\"{\\n  \\\"a\\\" : [ ]\\n}\",\"nested\":\"{\\n  \\\"a\\\" : { }\\n}\",\"list\":\"[ ]\",\"map\":\"{ }\"},\"zones\":{\"formatEast\":\"2026-07-16 09:30 +1000 AEST\",\"formatSouth\":\"2026-01-16 01:30 +0200 SAST\",\"Not/AZone\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"africa/johannesburg\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"America/New_York\":[\"America/New_York\",-18000000,-14400000,\"(GMT-04:00) Eastern Daylight Time (America/New_York)\"],\"Asia/Kolkata\":[\"Asia/Kolkata\",19800000,19800000,\"(GMT+05:30) India Standard Time (Asia/Kolkata)\"],\"GMT\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"Australia/Brisbane\":[\"Australia/Brisbane\",36000000,36000000,\"(GMT+10:00) Australian Eastern Standard Time (Australia/Brisbane)\"],\"Africa/Johannesburg\":[\"Africa/Johannesburg\",7200000,7200000,\"(GMT+02:00) South Africa Standard Time (Africa/Johannesburg)\"]}}\nUJS_68_T\t68\tistest\t{\"clock\":{\"wholeEpoch\":1538783039000,\"methodEqual\":true,\"operatorEqual\":false,\"serialized\":\"\\\"2018-10-05T23:43:59.073Z\\\"\",\"epoch\":1538783039073,\"assertClass\":true,\"systemAssert\":true,\"pairs\":[[1538783039073,1538783039999,false,true,true,true],[1538783039999,1538783040000,false,false,true,true],[1538783039000,1538783039000,true,true,true,true],[1538783039073,1538783038073,false,false,true,true],[-1,-999,false,true,true,true],[-1,0,false,true,true,true],[-1000,0,false,false,true,true],[-999,999,false,true,true,true]]},\"safeField\":{\"fieldControl\":\"field\",\"integerControl\":\"integer-null\",\"present\":\"integer-255\",\"null\":\"integer-null\"},\"pretty\":{\"kept\":\"{ }\",\"suppressed\":\"{ }\",\"quoted\":\"\\\"{}[]\\\"\",\"compact\":\"{\\\"a\\\":{}}\",\"nestedList\":\"{\\n  \\\"a\\\" : [ ]\\n}\",\"nested\":\"{\\n  \\\"a\\\" : { }\\n}\",\"list\":\"[ ]\",\"map\":\"{ }\"},\"zones\":{\"formatEast\":\"2026-07-16 09:30 +1000 AEST\",\"formatSouth\":\"2026-01-16 01:30 +0200 SAST\",\"Not/AZone\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"africa/johannesburg\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"America/New_York\":[\"America/New_York\",-18000000,-14400000,\"(GMT-04:00) Eastern Daylight Time (America/New_York)\"],\"Asia/Kolkata\":[\"Asia/Kolkata\",19800000,19800000,\"(GMT+05:30) India Standard Time (Asia/Kolkata)\"],\"GMT\":[\"GMT\",0,0,\"(GMT+00:00) Greenwich Mean Time (GMT)\"],\"Australia/Brisbane\":[\"Australia/Brisbane\",36000000,36000000,\"(GMT+10:00) Australian Eastern Standard Time (Australia/Brisbane)\"],\"Africa/Johannesburg\":[\"Africa/Johannesburg\",7200000,7200000,\"(GMT+02:00) South Africa Standard Time (Africa/Johannesburg)\"]}}\n",
+    "orgTsvSha256": "baed7c016420fd8dfc8d30d67574f33e17cf25f1a3a67bd8d2458b14778931de",
+    "runMetadata": "Owned Developer scratch org scratch-org from scratch-org, duration3days. Existing administrator; no grants/sharing/settings edits. No data DML, no namespace/package/corpus code or AWS network.\nOrg id SHA256: 3de10bcc795b88483915fe171d14665ddd7943e535a8b28fbbeb34f2721d31f1\nEvery command uses HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf.\nCreate: org create scratch --target-dev-hub scratch-org --alias scratch-org --duration-days 3 --edition developer --wait 15 --json, exit0.\nFinal deployed sources from <worktree>/probe/json_string_zone/source: project deploy start --source-dir force-app --target-org scratch-org --wait 15 --json, exit0; raw /tmp/b60-k9-json-zone-deploy-complete.json SHA256 5244349964986df696a35305212c614884238fecdc6bda1ecb8bb3374ed29603\nEach source class and named test has matching62/67/68 metadata; anonymous transport also sets its API.\nEarlier raw snapshots and failed boundary assertion transport preserved separately in ignored raw-initial/raw-assertions/raw-boundary-assertion-failure. Final cells use final exact source. Apex assertion failure is not caught by catch(Exception), so boundary probes use positive/negative assertion routes according to observed method equality; both must complete to emit payload.\nHOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org scratch-org --api-version 62.0 --file native-capture --json; observed status 0\nHOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org scratch-org --api-version 62.0 --class-names UtilityNativeTest62 --synchronous --json; observed status 100\nHOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org scratch-org --api-version 67.0 --file native-capture --json; observed status 0\nHOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org scratch-org --api-version 67.0 --class-names UtilityNativeTest67 --synchronous --json; observed status 100\nHOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org scratch-org --api-version 68.0 --file native-capture --json; observed status 0\nHOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org scratch-org --api-version 68.0 --class-names UtilityNativeTest68 --synchronous --json; observed status 100\nCleanup: org delete scratch --target-org scratch-org --no-prompt --json exit0; alias list --json exit0, own alias absent. Raw deletion SHA256 e5364827f4419dc9a26096c3a886918afb1600aedd2c6eb4f554c732a5e51627; alias-list SHA256 d7e8a53ea7779c7b2c259d72a9ed5d69d1014cdb8c08a8820e103b7aea9c1adb\n",
+    "orgRunSha256": "ba0c036a2ed6d0adcce3575f2ab4278494e65a16aa109ea8f597e445858cffb8",
+    "rawOrgRunSha256": "edb43e4da3790e0e044fc9d38658b71d158a05804e87881f8e03958bab743584",
+    "normalization": "Only local authentication HOME and worktree paths replaced by stable placeholders; raw D7 digest retained."
+  }
+}

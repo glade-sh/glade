@@ -1,0 +1,829 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 7,
+  "nativeObservationCount": 42,
+  "packetRowsSha256": "bdb07c4592ca774891f1569ddbb47b04d8979873883901e5e60ab5a6c6092167",
+  "nativeJsonSha256": "3371b4658cc7034d1461a6b1e24ebf443dbdfb588c66ae393a06296feaa30e65",
+  "sourceManifestSha256": "cd86500b7b47c95e1fe5992615a7f7169c90dd9d903e6776516d2162a3219255",
+  "rows": [
+    {
+      "id": "C126EMAIL_001",
+      "question": "Current User ID recipient",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EMAIL_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "e2e486d702275a769e31900e0547a91642c81d909abe8fbeba7d7fc6e0a1bac0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "d4c1b541d3aed37ab34a9842b4aaff4135f621632b8fa6f481492b5e60f55941",
+            "67.0": "ae5cd0a962fb1340cf295efe37f98c51e3cf2df1fdd421e31b612600a3d4f277",
+            "68.0": "da51735d35d7458917450c95ef670c43d351fca48071f7657774fd93d90276d9"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setSubject('Synthetic');m.setPlainTextBody('Synthetic');m.setToAddresses(new String[]{String.valueOf(UserInfo.getUserId())});Messaging.SendEmailResult[] r=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{m},false);o.put('success',r[0].isSuccess());o.put('errors',r[0].getErrors());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EMAIL_001|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126EMAIL_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "bc3dcf28e08365ab943e66863c380fdd4d7fc4406f9b6d1865c89f8c5eccd0f6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "8daf4bdc753fa5bdbce7b7c8c080cad6d9108919cd9c55bb5be975d43ee97d1d",
+            "67.0": "206cc2b3e0456cebccc3fac8f97c8d8869b1d40e611fb2955c2121d3857a15c9",
+            "68.0": "e835eb1787c931912832fe52d3db376a2f46b76bf743c11f7f50037ee6ea887c"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setSubject('Synthetic');m.setPlainTextBody('Synthetic');m.setToAddresses(new String[]{String.valueOf(UserInfo.getUserId())});Messaging.SendEmailResult[] r=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{m},false);o.put('success',r[0].isSuccess());o.put('errors',r[0].getErrors());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EMAIL_001|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126EMAIL_002",
+      "question": "Literal syntactically valid email",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EMAIL_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "0178b0c38b15e15ec38c5232acfeac651ae0d4b0d32863a43b5cdb8cc08baa0e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "b82a85ae7448bee6b747ee6a47f78d4e9654736d422de3081b8f73b1257eff0a",
+            "67.0": "ae0be88f5b3bb83733a11aedcf13e4295926894a7ae5a9c27e9d25acd9a7acbe",
+            "68.0": "cf9f4cd6a1574e343f97941ba3f5dfd7bfa84ab52c597854f20aea78cf556f87"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setSubject('Synthetic');m.setPlainTextBody('Synthetic');m.setToAddresses(new String[]{'synthetic@example.invalid'});Messaging.SendEmailResult[] r=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{m},false);o.put('success',r[0].isSuccess());o.put('errors',r[0].getErrors());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EMAIL_002|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126EMAIL_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "ac7ed06cd55d0b485aed15c3f47b136393e0bf46353f7edc9048cd2129f8f5c6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "d3734501eda22c89c277d86546accf401c076a8fd53b968c9e3a2b0a051e80f1",
+            "67.0": "af26caca577ef1067f9733779f9a0eb84ca1a574832e3c1683819c6a1d735aa5",
+            "68.0": "9ed425360fe2898efe55e56dc035e84d59588c27f69af78296059843047d8fff"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setSubject('Synthetic');m.setPlainTextBody('Synthetic');m.setToAddresses(new String[]{'synthetic@example.invalid'});Messaging.SendEmailResult[] r=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{m},false);o.put('success',r[0].isSuccess());o.put('errors',r[0].getErrors());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EMAIL_002|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126EMAIL_003",
+      "question": "Malformed literal recipient",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EMAIL_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "2574948dbe2ce8cc7e1aca8971d8a02768f11fa76bb237320bea29e172e77bd7"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_EMAIL_ADDRESS",
+                    "message": "Email address is invalid: c126-invalid-address",
+                    "fields": [
+                      "toAddresses",
+                      "c126-invalid-address"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_EMAIL_ADDRESS",
+                    "message": "Email address is invalid: c126-invalid-address",
+                    "fields": [
+                      "toAddresses",
+                      "c126-invalid-address"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_EMAIL_ADDRESS",
+                    "message": "Email address is invalid: c126-invalid-address",
+                    "fields": [
+                      "toAddresses",
+                      "c126-invalid-address"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "3799a50b2c4a40a8e703a5e852ddcf7044b5fed038d9977eafa8b9a8026b9aad",
+            "67.0": "52fc21deaf62d813e188630501afb8c76e832bbb2a1da74be7bea8788e1a2192",
+            "68.0": "9471631f49ae456664fea9fef1c77a9eef38bcf45295ae4fc404f179e7137a63"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setSubject('Synthetic');m.setPlainTextBody('Synthetic');m.setToAddresses(new String[]{'c126-invalid-address'});Messaging.SendEmailResult[] r=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{m},false);o.put('success',r[0].isSuccess());o.put('errors',r[0].getErrors());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EMAIL_003|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126EMAIL_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "2e3c077dd3f81288bd5afd3cfec92ba23d92c1cc1e1a1a1825d1c6808002be80"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_EMAIL_ADDRESS",
+                    "message": "Email address is invalid: c126-invalid-address",
+                    "fields": [
+                      "toAddresses",
+                      "c126-invalid-address"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_EMAIL_ADDRESS",
+                    "message": "Email address is invalid: c126-invalid-address",
+                    "fields": [
+                      "toAddresses",
+                      "c126-invalid-address"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_EMAIL_ADDRESS",
+                    "message": "Email address is invalid: c126-invalid-address",
+                    "fields": [
+                      "toAddresses",
+                      "c126-invalid-address"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "ddd4de50142270febdbde05b7e941a163f9953e42cbc25502d58c3e06f843843",
+            "67.0": "0fa7158829879bf8f7b6efefa259bbc74b52be5129ff0fc24696d678bff786ee",
+            "68.0": "179f3f239aed96ddbfa06786959aa004a053803b1c79a906a9319d69fbe06da9"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nMessaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setSubject('Synthetic');m.setPlainTextBody('Synthetic');m.setToAddresses(new String[]{'c126-invalid-address'});Messaging.SendEmailResult[] r=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{m},false);o.put('success',r[0].isSuccess());o.put('errors',r[0].getErrors());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EMAIL_003|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126EMAIL_004",
+      "question": "Unrelated Account ID recipient",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EMAIL_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "f68744979ff3990096ce6f191aa024eec9e044b279c0c47ac4e6b382f08255b6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_ID_FIELD",
+                    "message": "ID is invalid or you do not have access to the record.",
+                    "fields": [
+                      "toAddresses",
+                      "001iz000003n6KtAAI"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_ID_FIELD",
+                    "message": "ID is invalid or you do not have access to the record.",
+                    "fields": [
+                      "toAddresses",
+                      "001iz000003nweqAAA"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_ID_FIELD",
+                    "message": "ID is invalid or you do not have access to the record.",
+                    "fields": [
+                      "toAddresses",
+                      "001iz000003oRVCAA2"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "6fd9b5ac4654503610865d3eadd33a40c04ae4b0fba45cd915f518bb2e47669b",
+            "67.0": "8caee21b305c66b3a6db88b58fccb0b49b3502354c04916552dd1bd4e9b4c18a",
+            "68.0": "719ba4099ee112afffcce69476aa23bd54630b0cc9c941c26baef0b84c53d3aa"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=new Account(Name='Synthetic');insert a;Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setSubject('Synthetic');m.setPlainTextBody('Synthetic');m.setToAddresses(new String[]{String.valueOf(a.Id)});Messaging.SendEmailResult[] r=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{m},false);o.put('success',r[0].isSuccess());o.put('errors',r[0].getErrors());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EMAIL_004|'+JSON.serialize(o));",
+          "objects": {},
+          "comparison": "recipientID",
+          "recipientObject": "Account"
+        },
+        "isTest": {
+          "id": "C126EMAIL_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "7ac4ec7ca77d07cf7132a68a0ee24576423a6f13ffa29347e7f6843c29323a56"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_ID_FIELD",
+                    "message": "ID is invalid or you do not have access to the record.",
+                    "fields": [
+                      "toAddresses",
+                      "001iz000003o4qTAAQ"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_ID_FIELD",
+                    "message": "ID is invalid or you do not have access to the record.",
+                    "fields": [
+                      "toAddresses",
+                      "001iz000003mvUdAAI"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_ID_FIELD",
+                    "message": "ID is invalid or you do not have access to the record.",
+                    "fields": [
+                      "toAddresses",
+                      "001iz000003nRNlAAM"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "f82e7cdb79f0d938ea5fd9eff21964d28e1ff521e8cd1c9a22dea82b4ccdacc1",
+            "67.0": "dff18891b011d760ec07c5e90ac90b1950299482d6d22a25d2eebe45d42a2363",
+            "68.0": "42251bc8cf34cd25927cf003a93b8182cb46def76af0bfa4b67ef5618c962afe"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nAccount a=new Account(Name='Synthetic');insert a;Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setSubject('Synthetic');m.setPlainTextBody('Synthetic');m.setToAddresses(new String[]{String.valueOf(a.Id)});Messaging.SendEmailResult[] r=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{m},false);o.put('success',r[0].isSuccess());o.put('errors',r[0].getErrors());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EMAIL_004|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {},
+          "comparison": "recipientID",
+          "recipientObject": "Account"
+        }
+      }
+    },
+    {
+      "id": "C126EMAIL_005",
+      "question": "Contact ID recipient",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EMAIL_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "8cb83c2a18d4b2bcf9f0a14fd1ccb4c1e495f37c5a4a963b5edb2472b6a331fc"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "dd437e157f273a6d978165ba5719c8f880037b15fb3611f060be9fe59fa086af",
+            "67.0": "937b3270a49ee7a68e1a72bee024c44190679c21db1029be9348d65d631efc96",
+            "68.0": "8f618d5df6488a9066f436d6c3376816205f8ee854fcca8e8bd14f27e97feecb"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nContact c=new Contact(LastName='Synthetic',Email='synthetic@example.invalid');insert c;Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setSubject('Synthetic');m.setPlainTextBody('Synthetic');m.setToAddresses(new String[]{String.valueOf(c.Id)});Messaging.SendEmailResult[] r=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{m},false);o.put('success',r[0].isSuccess());o.put('errors',r[0].getErrors());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EMAIL_005|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126EMAIL_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "c3f5993f3e8914317fbc235862d47a497a526443b88906c22d3e7f3aed22f609"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "61ea2257df95480c9daea08b2008a5e37e1153bf6ddb1c56178f84458810fa74",
+            "67.0": "ef10721649942895d8277bba9988ebde9d4118bfb1d253e8b3e93d35e7ed6325",
+            "68.0": "1db237846084a74b4c0644be404b688133ba269397bf930d3f5d71317ad5d912"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nContact c=new Contact(LastName='Synthetic',Email='synthetic@example.invalid');insert c;Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setSubject('Synthetic');m.setPlainTextBody('Synthetic');m.setToAddresses(new String[]{String.valueOf(c.Id)});Messaging.SendEmailResult[] r=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{m},false);o.put('success',r[0].isSuccess());o.put('errors',r[0].getErrors());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EMAIL_005|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126EMAIL_006",
+      "question": "Lead ID recipient",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EMAIL_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "9d4f97dbce44021e2b02f3e5d3fb4d2fcc7f5998c80b3f5589f4a2776f96020b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "3e9efb8b79d6275c562c7a993b3266d7a8b821ec3105bdf4d24b188d97261dac",
+            "67.0": "b6dad07b2358fae57b5760ad008093c940f6acd69535da5a6d0843202f6e417b",
+            "68.0": "a587276e005a0c2e2ec888d53717ac9523b87f632fa84b7959f740ee6d3dd9be"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nLead l=new Lead(LastName='Synthetic',Company='Synthetic',Email='synthetic@example.invalid');insert l;Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setSubject('Synthetic');m.setPlainTextBody('Synthetic');m.setToAddresses(new String[]{String.valueOf(l.Id)});Messaging.SendEmailResult[] r=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{m},false);o.put('success',r[0].isSuccess());o.put('errors',r[0].getErrors());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EMAIL_006|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126EMAIL_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "8bc000d47435578514e006a490273991a1b702f20ca2540b70632995115e5a60"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [],
+                "success": true
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "f1c9a49a59dbed1e84a731b345b03c2e056e49ec3600ed73beded0e67d5e6004",
+            "67.0": "2af0a9ce28647eb16b29153e09c0f4acbc3b141cab04b332cccc916e3128eb6e",
+            "68.0": "198b06fb89fac4d0ee02acd2d732f8316f619cce9de14615ca824e85265a441d"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nLead l=new Lead(LastName='Synthetic',Company='Synthetic',Email='synthetic@example.invalid');insert l;Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setSubject('Synthetic');m.setPlainTextBody('Synthetic');m.setToAddresses(new String[]{String.valueOf(l.Id)});Messaging.SendEmailResult[] r=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{m},false);o.put('success',r[0].isSuccess());o.put('errors',r[0].getErrors());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EMAIL_006|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126EMAIL_007",
+      "question": "Contact ID without email",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EMAIL_007",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "03b7250ba8482f8b53bcddfcc06b94b9253d554d6bd7645544f5178316e60740"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_ID_FIELD",
+                    "message": "ID is invalid or you do not have access to the record.",
+                    "fields": [
+                      "toAddresses",
+                      "003iz000002JV47AAG"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_ID_FIELD",
+                    "message": "ID is invalid or you do not have access to the record.",
+                    "fields": [
+                      "toAddresses",
+                      "003iz000002K02jAAC"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_ID_FIELD",
+                    "message": "ID is invalid or you do not have access to the record.",
+                    "fields": [
+                      "toAddresses",
+                      "003iz000002K0qjAAC"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "3b27c57b1fcfc9f31c93e201b8e7b9d54d37cb7255b74a65d5e40bf8b15692d2",
+            "67.0": "38342fc2427bfd55bf7e764b547c39309034df86870ffa0c5ccecd93685086da",
+            "68.0": "7f25285d6739ff4a4a475524ebbd5f1f63336de6d0503226578a5c0a95701ff1"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nContact c=new Contact(LastName='Synthetic');insert c;Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setSubject('Synthetic');m.setPlainTextBody('Synthetic');m.setToAddresses(new String[]{String.valueOf(c.Id)});Messaging.SendEmailResult[] r=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{m},false);o.put('success',r[0].isSuccess());o.put('errors',r[0].getErrors());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EMAIL_007|'+JSON.serialize(o));",
+          "objects": {},
+          "comparison": "recipientID",
+          "recipientObject": "Contact"
+        },
+        "isTest": {
+          "id": "C126EMAIL_007",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "40f2049415ecf05e631a25138446d92637f692950d2a46fcfdf72cf5a43acb65"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_ID_FIELD",
+                    "message": "ID is invalid or you do not have access to the record.",
+                    "fields": [
+                      "toAddresses",
+                      "003iz000002Jp4DAAS"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_ID_FIELD",
+                    "message": "ID is invalid or you do not have access to the record.",
+                    "fields": [
+                      "toAddresses",
+                      "003iz000002Jz3TAAS"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "errors": [
+                  {
+                    "targetObjectId": null,
+                    "statusCode": "INVALID_ID_FIELD",
+                    "message": "ID is invalid or you do not have access to the record.",
+                    "fields": [
+                      "toAddresses",
+                      "003iz000002K0sLAAS"
+                    ]
+                  }
+                ],
+                "success": false
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "1d74bbbf0b5c5853913ac71ffee5f1ccd00f5a4ea9dd2fcbfb2d8631c6ce8ce2",
+            "67.0": "7b5349e581a70ffdb0d836efaa61ca83a8d771d026d04e84bc57a81654a52c57",
+            "68.0": "98047afceb8e07ca6761eace084d8ecbb234f0bb548942a3c1adadc0c7854261"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nContact c=new Contact(LastName='Synthetic');insert c;Messaging.SingleEmailMessage m=new Messaging.SingleEmailMessage();m.setSubject('Synthetic');m.setPlainTextBody('Synthetic');m.setToAddresses(new String[]{String.valueOf(c.Id)});Messaging.SendEmailResult[] r=Messaging.sendEmail(new Messaging.SingleEmailMessage[]{m},false);o.put('success',r[0].isSuccess());o.put('errors',r[0].getErrors());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EMAIL_007|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {},
+          "comparison": "recipientID",
+          "recipientObject": "Contact"
+        }
+      }
+    }
+  ]
+}

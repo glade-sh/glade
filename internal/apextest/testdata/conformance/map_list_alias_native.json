@@ -1,0 +1,249 @@
+{
+  "routes": [
+    "istest"
+  ],
+  "shapeCount": 4,
+  "nativeObservationCount": 8,
+  "fixtures": {
+    "helper48-test24": {
+      "project": "{\"sourceApiVersion\": \"48.0\", \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}]}",
+      "classes": {
+        "AliasStore": {
+          "source": "public class AliasStore {\n private Map<String,List<Integer>> groups=new Map<String,List<Integer>>{'items'=>new List<Integer>{1,2}};\n public List<Integer> read(){return groups.get('items');}\n public void drop(Integer index){groups.get('items').remove(index);}\n public static Map<String,Object> observe(String mode){\n  Map<String,Object> p=new Map<String,Object>{'mode'=>mode};\n  List<Integer> visited=new List<Integer>();p.put('visited',visited);\n  if(mode=='snapshot'){\n   Map<String,Integer> source=new Map<String,Integer>{'a'=>1,'b'=>2};\n   List<Integer> snapshot=source.values();\n   for(Integer item:snapshot){source.remove('a');visited.add(item);}\n   p.put('final',snapshot);p.put('mapSize',source.size());p.put('complete',true);return p;\n  }\n  AliasStore store=new AliasStore();List<Integer> cached=store.read();\n  p.put('final',cached);\n  try{\n   if(mode=='nested'){\n    List<Integer> targets=new List<Integer>{1,2};\n    for(Integer item:cached){visited.add(item);for(Integer target:targets){if(item==target)store.drop(cached.indexOf(item));}}\n   }else{\n    for(Integer item:cached){visited.add(item);if(item==1){store.drop(0);if(mode=='break')break;}}\n   }\n   p.put('complete',true);\n  }catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}\n  p.put('stored',store.read());return p;\n }\n}",
+          "sourceSHA256": "893226eae0cea1584abb8a4fcfeecedd38417b3de3e60e4eb0fc483684fc7417",
+          "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>48.0</apiVersion><status>Active</status></ApexClass>\n",
+          "metadataSHA256": "ebd9e33c9d7e3c60cd32496717b5ad00117558d18943281e93e944fcd98a53b4",
+          "sourceAPI": "48.0"
+        },
+        "AliasObservation": {
+          "source": "@IsTest private class AliasObservation {\n private static void emit(String mode){System.assertEquals('NATIVE_OBSERVATION',JSON.serialize(AliasStore.observe(mode)),'NATIVE_OBSERVATION');}\n @IsTest static void helperEnd(){emit('end');}\n @IsTest static void helperBreak(){emit('break');}\n @IsTest static void nestedEnd(){emit('nested');}\n @IsTest static void valuesSnapshot(){emit('snapshot');}\n}",
+          "sourceSHA256": "0921cf6ce50e98833ae696bfd38ea889b7859c621b16ecb5373dad85a30c25a4",
+          "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>24.0</apiVersion><status>Active</status></ApexClass>\n",
+          "metadataSHA256": "dff1ec6f4ed1fb7871ed8b8b2fed7fc20fe1628f7590f03c6d35781fb0cc6057",
+          "sourceAPI": "24.0"
+        }
+      },
+      "capture": {
+        "deploymentId": "0AfEc00000p1YwjKAE",
+        "transportAPI": "67.0",
+        "route": "istest",
+        "checkOnly": true,
+        "done": true,
+        "observedRows": 4
+      },
+      "projectSHA256": "94a5e458f83668a3d89c478faf23e1caca8b27eae3c6018bc32869bdb46af790"
+    },
+    "helper67-test67": {
+      "project": "{\"sourceApiVersion\": \"67.0\", \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}]}",
+      "classes": {
+        "AliasStore": {
+          "source": "public class AliasStore {\n private Map<String,List<Integer>> groups=new Map<String,List<Integer>>{'items'=>new List<Integer>{1,2}};\n public List<Integer> read(){return groups.get('items');}\n public void drop(Integer index){groups.get('items').remove(index);}\n public static Map<String,Object> observe(String mode){\n  Map<String,Object> p=new Map<String,Object>{'mode'=>mode};\n  List<Integer> visited=new List<Integer>();p.put('visited',visited);\n  if(mode=='snapshot'){\n   Map<String,Integer> source=new Map<String,Integer>{'a'=>1,'b'=>2};\n   List<Integer> snapshot=source.values();\n   for(Integer item:snapshot){source.remove('a');visited.add(item);}\n   p.put('final',snapshot);p.put('mapSize',source.size());p.put('complete',true);return p;\n  }\n  AliasStore store=new AliasStore();List<Integer> cached=store.read();\n  p.put('final',cached);\n  try{\n   if(mode=='nested'){\n    List<Integer> targets=new List<Integer>{1,2};\n    for(Integer item:cached){visited.add(item);for(Integer target:targets){if(item==target)store.drop(cached.indexOf(item));}}\n   }else{\n    for(Integer item:cached){visited.add(item);if(item==1){store.drop(0);if(mode=='break')break;}}\n   }\n   p.put('complete',true);\n  }catch(Exception e){p.put('type',e.getTypeName());p.put('message',e.getMessage());p.put('caught',true);}\n  p.put('stored',store.read());return p;\n }\n}",
+          "sourceSHA256": "893226eae0cea1584abb8a4fcfeecedd38417b3de3e60e4eb0fc483684fc7417",
+          "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "metadataSHA256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+          "sourceAPI": "67.0"
+        },
+        "AliasObservation": {
+          "source": "@IsTest private class AliasObservation {\n private static void emit(String mode){System.assertEquals('NATIVE_OBSERVATION',JSON.serialize(AliasStore.observe(mode)),'NATIVE_OBSERVATION');}\n @IsTest static void helperEnd(){emit('end');}\n @IsTest static void helperBreak(){emit('break');}\n @IsTest static void nestedEnd(){emit('nested');}\n @IsTest static void valuesSnapshot(){emit('snapshot');}\n}",
+          "sourceSHA256": "0921cf6ce50e98833ae696bfd38ea889b7859c621b16ecb5373dad85a30c25a4",
+          "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+          "metadataSHA256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+          "sourceAPI": "67.0"
+        }
+      },
+      "capture": {
+        "deploymentId": "0AfEc00000p1ZBFKA2",
+        "transportAPI": "67.0",
+        "route": "istest",
+        "checkOnly": true,
+        "done": true,
+        "observedRows": 4
+      },
+      "projectSHA256": "ce78f418ceccf69127cdf0f02647fa18082e7d03ffad6dec89785dc0cfe69f5f"
+    }
+  },
+  "cells": [
+    {
+      "fixture": "helper48-test24",
+      "route": "istest",
+      "method": "helperBreak",
+      "rawRow": "helperBreak\t{\"observation\":{\"complete\":true,\"final\":[2],\"mode\":\"break\",\"stored\":[2],\"visited\":[1]}}\n",
+      "rawRowSHA256": "f7966073a74eb6e58384c7e411eb70b560c5561c30856e39c6680d4c0d1f3df0",
+      "rawFailure": "{\"message\":\"System.AssertException: Assertion Failed: NATIVE_OBSERVATION: Expected: NATIVE_OBSERVATION, Actual: {\\\"stored\\\":[2],\\\"complete\\\":true,\\\"final\\\":[2],\\\"visited\\\":[1],\\\"mode\\\":\\\"break\\\"}\",\"stackTrace\":\"Class.AliasObservation.emit: line 2, column 1\\nClass.AliasObservation.helperBreak: line 4, column 1\"}",
+      "rawFailureSHA256": "3a4b90bbcdb3e288cf92022d396c35cad19d81a72e1790a3e4342bca8fddacbd",
+      "nativeType": "System.AssertException",
+      "nativeMessage": "Assertion Failed: NATIVE_OBSERVATION: Expected: NATIVE_OBSERVATION, Actual: {\"stored\":[2],\"complete\":true,\"final\":[2],\"visited\":[1],\"mode\":\"break\"}",
+      "nativeStackTrace": "Class.AliasObservation.emit: line 2, column 1\nClass.AliasObservation.helperBreak: line 4, column 1",
+      "native": {
+        "observation": {
+          "complete": true,
+          "final": [
+            2
+          ],
+          "mode": "break",
+          "stored": [
+            2
+          ],
+          "visited": [
+            1
+          ]
+        }
+      }
+    },
+    {
+      "fixture": "helper48-test24",
+      "route": "istest",
+      "method": "helperEnd",
+      "rawRow": "helperEnd\t{\"message\":\"System.FinalException: Cannot modify a collection while it is being iterated.\",\"stackTrace\":\"Class.AliasStore.observe: line 21, column 1\\nClass.AliasObservation.emit: line 2, column 1\\nClass.AliasObservation.helperEnd: line 3, column 1\"}\n",
+      "rawRowSHA256": "828d66fbef5dd37eb885d19f5f58795af7d373863a65d4fd9990d5ed7d2c744e",
+      "rawFailure": "{\"message\":\"System.FinalException: Cannot modify a collection while it is being iterated.\",\"stackTrace\":\"Class.AliasStore.observe: line 21, column 1\\nClass.AliasObservation.emit: line 2, column 1\\nClass.AliasObservation.helperEnd: line 3, column 1\"}",
+      "rawFailureSHA256": "3964cfb2517a0fae0a2258fc54b6f081566452033cff1f05d9799984630b5db3",
+      "nativeType": "System.FinalException",
+      "nativeMessage": "Cannot modify a collection while it is being iterated.",
+      "nativeStackTrace": "Class.AliasStore.observe: line 21, column 1\nClass.AliasObservation.emit: line 2, column 1\nClass.AliasObservation.helperEnd: line 3, column 1",
+      "native": {
+        "message": "System.FinalException: Cannot modify a collection while it is being iterated.",
+        "stackTrace": "Class.AliasStore.observe: line 21, column 1\nClass.AliasObservation.emit: line 2, column 1\nClass.AliasObservation.helperEnd: line 3, column 1"
+      }
+    },
+    {
+      "fixture": "helper48-test24",
+      "route": "istest",
+      "method": "nestedEnd",
+      "rawRow": "nestedEnd\t{\"message\":\"System.FinalException: Cannot modify a collection while it is being iterated.\",\"stackTrace\":\"Class.AliasStore.observe: line 19, column 1\\nClass.AliasObservation.emit: line 2, column 1\\nClass.AliasObservation.nestedEnd: line 5, column 1\"}\n",
+      "rawRowSHA256": "d6884a1fb5eeff6febbbdd155dc92a32bc6614e6b8bb0639c22184085b377a6f",
+      "rawFailure": "{\"message\":\"System.FinalException: Cannot modify a collection while it is being iterated.\",\"stackTrace\":\"Class.AliasStore.observe: line 19, column 1\\nClass.AliasObservation.emit: line 2, column 1\\nClass.AliasObservation.nestedEnd: line 5, column 1\"}",
+      "rawFailureSHA256": "8ba3dd705e7fd0e79b02d024fe6ecfc70a62a562fb3bd7b1a447c49a58fa58a2",
+      "nativeType": "System.FinalException",
+      "nativeMessage": "Cannot modify a collection while it is being iterated.",
+      "nativeStackTrace": "Class.AliasStore.observe: line 19, column 1\nClass.AliasObservation.emit: line 2, column 1\nClass.AliasObservation.nestedEnd: line 5, column 1",
+      "native": {
+        "message": "System.FinalException: Cannot modify a collection while it is being iterated.",
+        "stackTrace": "Class.AliasStore.observe: line 19, column 1\nClass.AliasObservation.emit: line 2, column 1\nClass.AliasObservation.nestedEnd: line 5, column 1"
+      }
+    },
+    {
+      "fixture": "helper48-test24",
+      "route": "istest",
+      "method": "valuesSnapshot",
+      "rawRow": "valuesSnapshot\t{\"observation\":{\"complete\":true,\"final\":[1,2],\"mapSize\":1,\"mode\":\"snapshot\",\"visited\":[1,2]}}\n",
+      "rawRowSHA256": "316100c2971201b009b524d17171f41f21feee31609387d8305b0ad58c66b66e",
+      "rawFailure": "{\"message\":\"System.AssertException: Assertion Failed: NATIVE_OBSERVATION: Expected: NATIVE_OBSERVATION, Actual: {\\\"complete\\\":true,\\\"mapSize\\\":1,\\\"final\\\":[1,2],\\\"visited\\\":[1,2],\\\"mode\\\":\\\"snapshot\\\"}\",\"stackTrace\":\"Class.AliasObservation.emit: line 2, column 1\\nClass.AliasObservation.valuesSnapshot: line 6, column 1\"}",
+      "rawFailureSHA256": "49144d6c29c958ef07b3935401fa8e964caa03789917cfbe147dad8e439eeb47",
+      "nativeType": "System.AssertException",
+      "nativeMessage": "Assertion Failed: NATIVE_OBSERVATION: Expected: NATIVE_OBSERVATION, Actual: {\"complete\":true,\"mapSize\":1,\"final\":[1,2],\"visited\":[1,2],\"mode\":\"snapshot\"}",
+      "nativeStackTrace": "Class.AliasObservation.emit: line 2, column 1\nClass.AliasObservation.valuesSnapshot: line 6, column 1",
+      "native": {
+        "observation": {
+          "complete": true,
+          "final": [
+            1,
+            2
+          ],
+          "mapSize": 1,
+          "mode": "snapshot",
+          "visited": [
+            1,
+            2
+          ]
+        }
+      }
+    },
+    {
+      "fixture": "helper67-test67",
+      "route": "istest",
+      "method": "helperBreak",
+      "rawRow": "helperBreak\t{\"observation\":{\"complete\":true,\"final\":[2],\"mode\":\"break\",\"stored\":[2],\"visited\":[1]}}\n",
+      "rawRowSHA256": "f7966073a74eb6e58384c7e411eb70b560c5561c30856e39c6680d4c0d1f3df0",
+      "rawFailure": "{\"message\":\"System.AssertException: Assertion Failed: NATIVE_OBSERVATION: Expected: NATIVE_OBSERVATION, Actual: {\\\"stored\\\":[2],\\\"complete\\\":true,\\\"final\\\":[2],\\\"visited\\\":[1],\\\"mode\\\":\\\"break\\\"}\",\"stackTrace\":\"Class.AliasObservation.emit: line 2, column 1\\nClass.AliasObservation.helperBreak: line 4, column 1\"}",
+      "rawFailureSHA256": "3a4b90bbcdb3e288cf92022d396c35cad19d81a72e1790a3e4342bca8fddacbd",
+      "nativeType": "System.AssertException",
+      "nativeMessage": "Assertion Failed: NATIVE_OBSERVATION: Expected: NATIVE_OBSERVATION, Actual: {\"stored\":[2],\"complete\":true,\"final\":[2],\"visited\":[1],\"mode\":\"break\"}",
+      "nativeStackTrace": "Class.AliasObservation.emit: line 2, column 1\nClass.AliasObservation.helperBreak: line 4, column 1",
+      "native": {
+        "observation": {
+          "complete": true,
+          "final": [
+            2
+          ],
+          "mode": "break",
+          "stored": [
+            2
+          ],
+          "visited": [
+            1
+          ]
+        }
+      }
+    },
+    {
+      "fixture": "helper67-test67",
+      "route": "istest",
+      "method": "helperEnd",
+      "rawRow": "helperEnd\t{\"message\":\"System.FinalException: Cannot modify a collection while it is being iterated.\",\"stackTrace\":\"Class.AliasStore.observe: line 21, column 1\\nClass.AliasObservation.emit: line 2, column 1\\nClass.AliasObservation.helperEnd: line 3, column 1\"}\n",
+      "rawRowSHA256": "828d66fbef5dd37eb885d19f5f58795af7d373863a65d4fd9990d5ed7d2c744e",
+      "rawFailure": "{\"message\":\"System.FinalException: Cannot modify a collection while it is being iterated.\",\"stackTrace\":\"Class.AliasStore.observe: line 21, column 1\\nClass.AliasObservation.emit: line 2, column 1\\nClass.AliasObservation.helperEnd: line 3, column 1\"}",
+      "rawFailureSHA256": "3964cfb2517a0fae0a2258fc54b6f081566452033cff1f05d9799984630b5db3",
+      "nativeType": "System.FinalException",
+      "nativeMessage": "Cannot modify a collection while it is being iterated.",
+      "nativeStackTrace": "Class.AliasStore.observe: line 21, column 1\nClass.AliasObservation.emit: line 2, column 1\nClass.AliasObservation.helperEnd: line 3, column 1",
+      "native": {
+        "message": "System.FinalException: Cannot modify a collection while it is being iterated.",
+        "stackTrace": "Class.AliasStore.observe: line 21, column 1\nClass.AliasObservation.emit: line 2, column 1\nClass.AliasObservation.helperEnd: line 3, column 1"
+      }
+    },
+    {
+      "fixture": "helper67-test67",
+      "route": "istest",
+      "method": "nestedEnd",
+      "rawRow": "nestedEnd\t{\"message\":\"System.FinalException: Cannot modify a collection while it is being iterated.\",\"stackTrace\":\"Class.AliasStore.observe: line 19, column 1\\nClass.AliasObservation.emit: line 2, column 1\\nClass.AliasObservation.nestedEnd: line 5, column 1\"}\n",
+      "rawRowSHA256": "d6884a1fb5eeff6febbbdd155dc92a32bc6614e6b8bb0639c22184085b377a6f",
+      "rawFailure": "{\"message\":\"System.FinalException: Cannot modify a collection while it is being iterated.\",\"stackTrace\":\"Class.AliasStore.observe: line 19, column 1\\nClass.AliasObservation.emit: line 2, column 1\\nClass.AliasObservation.nestedEnd: line 5, column 1\"}",
+      "rawFailureSHA256": "8ba3dd705e7fd0e79b02d024fe6ecfc70a62a562fb3bd7b1a447c49a58fa58a2",
+      "nativeType": "System.FinalException",
+      "nativeMessage": "Cannot modify a collection while it is being iterated.",
+      "nativeStackTrace": "Class.AliasStore.observe: line 19, column 1\nClass.AliasObservation.emit: line 2, column 1\nClass.AliasObservation.nestedEnd: line 5, column 1",
+      "native": {
+        "message": "System.FinalException: Cannot modify a collection while it is being iterated.",
+        "stackTrace": "Class.AliasStore.observe: line 19, column 1\nClass.AliasObservation.emit: line 2, column 1\nClass.AliasObservation.nestedEnd: line 5, column 1"
+      }
+    },
+    {
+      "fixture": "helper67-test67",
+      "route": "istest",
+      "method": "valuesSnapshot",
+      "rawRow": "valuesSnapshot\t{\"observation\":{\"complete\":true,\"final\":[1,2],\"mapSize\":1,\"mode\":\"snapshot\",\"visited\":[1,2]}}\n",
+      "rawRowSHA256": "316100c2971201b009b524d17171f41f21feee31609387d8305b0ad58c66b66e",
+      "rawFailure": "{\"message\":\"System.AssertException: Assertion Failed: NATIVE_OBSERVATION: Expected: NATIVE_OBSERVATION, Actual: {\\\"complete\\\":true,\\\"mapSize\\\":1,\\\"final\\\":[1,2],\\\"visited\\\":[1,2],\\\"mode\\\":\\\"snapshot\\\"}\",\"stackTrace\":\"Class.AliasObservation.emit: line 2, column 1\\nClass.AliasObservation.valuesSnapshot: line 6, column 1\"}",
+      "rawFailureSHA256": "49144d6c29c958ef07b3935401fa8e964caa03789917cfbe147dad8e439eeb47",
+      "nativeType": "System.AssertException",
+      "nativeMessage": "Assertion Failed: NATIVE_OBSERVATION: Expected: NATIVE_OBSERVATION, Actual: {\"complete\":true,\"mapSize\":1,\"final\":[1,2],\"visited\":[1,2],\"mode\":\"snapshot\"}",
+      "nativeStackTrace": "Class.AliasObservation.emit: line 2, column 1\nClass.AliasObservation.valuesSnapshot: line 6, column 1",
+      "native": {
+        "observation": {
+          "complete": true,
+          "final": [
+            1,
+            2
+          ],
+          "mapSize": 1,
+          "mode": "snapshot",
+          "visited": [
+            1,
+            2
+          ]
+        }
+      }
+    }
+  ],
+  "uncaptured": [
+    {
+      "scope": "anonymous",
+      "reason": "Not captured: the assigned named-test shapes were decisive. No anonymous outcome is inferred."
+    },
+    {
+      "scope": "API 62.0 and other class API combinations",
+      "reason": "Not captured: the exact helper48/test24 and helper67/test67 combinations decide the assigned named-test shapes. No other API behavior is inferred."
+    }
+  ]
+}

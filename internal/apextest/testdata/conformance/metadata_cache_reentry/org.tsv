@@ -1,0 +1,5 @@
+source_api	method	observation
+62.0	directBacking	{"active":false,"again":true,"builds":1,"calls":0,"read":true}
+62.0	reentrantMap	{"active":false,"again":true,"builds":2,"calls":1,"nested":true,"read":true}
+67.0	directBacking	{"active":false,"again":true,"builds":1,"calls":0,"read":true}
+67.0	reentrantMap	{"active":false,"again":true,"builds":2,"calls":1,"nested":true,"read":true}

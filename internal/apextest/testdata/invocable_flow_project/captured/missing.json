@@ -1,0 +1,1896 @@
+{
+  "group": "missing",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "shapeCount": 4,
+  "nativeObservationCount": 24,
+  "recoveredObservationCount": 0,
+  "notes": [
+    "Synthetic source-only project metadata, helper classes and triggers use the ordinary project loader.",
+    "Both independently captured routes compare complete reassembled payloads; named chunk envelopes are transport only.",
+    "Same-release APIs62/67/68; API59 has no rows.",
+    "API67/68 SOAP guide anchors compare by stable message parts; no org URL is produced or compared.",
+    "Rejected global-null metadata compares loader rejection plus the accepted modern runtime twin."
+  ],
+  "rows": [
+    {
+      "id": "C187MISSING_001",
+      "label": "missing output observed without caller exception",
+      "config": {
+        "stage": "beforeInsert",
+        "flow": "NoOutput",
+        "requireOutput": false
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeInsert','E32BA62NoOutput',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_001|'+encoded);",
+              "operationSHA256": "3ec96c2079750067500f3858a5bbce17c4da94d9e4e7bb7703f658237dea1848",
+              "captureSourceSHA256": {
+                "anonymous": "3ec96c2079750067500f3858a5bbce17c4da94d9e4e7bb7703f658237dea1848"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeInsert','E32BA62NoOutput',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_001|'+encoded);",
+              "operationSHA256": "3ec96c2079750067500f3858a5bbce17c4da94d9e4e7bb7703f658237dea1848",
+              "captureSourceSHA256": {
+                "E32BA62C187MISSING001": "318aed08dc536c395446418ed2895cd910755cbcb0428995f6c37161ac684cbd"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeInsert','E32BA67NoOutput',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_001|'+encoded);",
+              "operationSHA256": "b246a7ddc671b8429b7f4b2f38014b06af6bf0d66caf8d624a7dc344e1c14511",
+              "captureSourceSHA256": {
+                "anonymous": "b246a7ddc671b8429b7f4b2f38014b06af6bf0d66caf8d624a7dc344e1c14511"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeInsert','E32BA67NoOutput',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_001|'+encoded);",
+              "operationSHA256": "b246a7ddc671b8429b7f4b2f38014b06af6bf0d66caf8d624a7dc344e1c14511",
+              "captureSourceSHA256": {
+                "E32BA67C187MISSING001": "c68d511f1b369a325f174a02487f73df382953948bccfb4107a542ae67fff1d4"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeInsert','E32BA68NoOutput',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_001|'+encoded);",
+              "operationSHA256": "fa8feb6dd4b2d9d393ccaf9ee8dda03159bb7262c6dee2a3d5a96184ff5465a4",
+              "captureSourceSHA256": {
+                "anonymous": "fa8feb6dd4b2d9d393ccaf9ee8dda03159bb7262c6dee2a3d5a96184ff5465a4"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeInsert','E32BA68NoOutput',false,false,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_001|'+encoded);",
+              "operationSHA256": "fa8feb6dd4b2d9d393ccaf9ee8dda03159bb7262c6dee2a3d5a96184ff5465a4",
+              "captureSourceSHA256": {
+                "E32BA68C187MISSING001": "26bf76df427e5978576b9afc31c418467431a91f15f44efae36893b7e73b9dad"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187MISSING_002",
+      "label": "missing output caller explicit exception",
+      "config": {
+        "stage": "beforeInsert",
+        "flow": "NoOutput",
+        "requireOutput": true
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeInsert','E32BA62NoOutput',false,true,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_002|'+encoded);",
+              "operationSHA256": "f3f02ae7eae8863482c457eb352b830f3fdd8b5bf802cbe94292e628fa9c5563",
+              "captureSourceSHA256": {
+                "anonymous": "f3f02ae7eae8863482c457eb352b830f3fdd8b5bf802cbe94292e628fa9c5563"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "exceptionMessage": "Synthetic handler requires output record",
+                      "exceptionType": "E32BA62TriggerObserver.MissingOutputException",
+                      "callerException": "MissingOutputException",
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "exceptionMessage": "Insert failed. First exception on row 0; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, E32BA62TriggerContext: execution of BeforeInsert\n\ncaused by: E32BA62TriggerObserver.MissingOutputException: Synthetic handler requires output record\n\nClass.E32BA62TriggerObserver.invoke: line 58, column 1\nClass.E32BA62TriggerObserver.handle: line 74, column 1\nTrigger.E32BA62TriggerContext: line 1, column 1: []",
+                  "exceptionType": "System.DmlException",
+                  "dmlSuccess": false
+                },
+                "flow_execution_verified": false,
+                "native_guard": {
+                  "api": "62.0",
+                  "route": "anonymous",
+                  "activation_verified": true,
+                  "flow_control_verified": true,
+                  "activation_names": [
+                    "E32BA62NoOutput"
+                  ]
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeInsert','E32BA62NoOutput',false,true,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_002|'+encoded);",
+              "operationSHA256": "f3f02ae7eae8863482c457eb352b830f3fdd8b5bf802cbe94292e628fa9c5563",
+              "captureSourceSHA256": {
+                "E32BA62C187MISSING002": "c68601c7dee8577d0683f489b0312853f666eafed745118866da70e974f90afa"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "exceptionMessage": "Synthetic handler requires output record",
+                      "exceptionType": "E32BA62TriggerObserver.MissingOutputException",
+                      "callerException": "MissingOutputException",
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "exceptionMessage": "Insert failed. First exception on row 0; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, E32BA62TriggerContext: execution of BeforeInsert\n\ncaused by: E32BA62TriggerObserver.MissingOutputException: Synthetic handler requires output record\n\nClass.E32BA62TriggerObserver.invoke: line 58, column 1\nClass.E32BA62TriggerObserver.handle: line 74, column 1\nTrigger.E32BA62TriggerContext: line 1, column 1: []",
+                  "exceptionType": "System.DmlException",
+                  "dmlSuccess": false
+                },
+                "flow_execution_verified": false,
+                "native_guard": {
+                  "api": "62.0",
+                  "route": "istest",
+                  "activation_verified": true,
+                  "flow_control_verified": true,
+                  "activation_names": [
+                    "E32BA62NoOutput"
+                  ]
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeInsert','E32BA67NoOutput',false,true,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_002|'+encoded);",
+              "operationSHA256": "8856eeae88119d7a7b5bd2ec1c06d5a7d09c44984de88256d20046f491ed6666",
+              "captureSourceSHA256": {
+                "anonymous": "8856eeae88119d7a7b5bd2ec1c06d5a7d09c44984de88256d20046f491ed6666"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "exceptionMessage": "Synthetic handler requires output record",
+                      "exceptionType": "E32BA67TriggerObserver.MissingOutputException",
+                      "callerException": "MissingOutputException",
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "exceptionMessage": "Insert failed. First exception on row 0; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, E32BA67TriggerContext: execution of BeforeInsert\n\ncaused by: E32BA67TriggerObserver.MissingOutputException: Synthetic handler requires output record\n\nClass.E32BA67TriggerObserver.invoke: line 58, column 1\nClass.E32BA67TriggerObserver.handle: line 74, column 1\nTrigger.E32BA67TriggerContext: line 1, column 1: []",
+                  "exceptionType": "System.DmlException",
+                  "dmlSuccess": false
+                },
+                "flow_execution_verified": false,
+                "native_guard": {
+                  "api": "67.0",
+                  "route": "anonymous",
+                  "activation_verified": true,
+                  "flow_control_verified": true,
+                  "activation_names": [
+                    "E32BA67NoOutput"
+                  ]
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeInsert','E32BA67NoOutput',false,true,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_002|'+encoded);",
+              "operationSHA256": "8856eeae88119d7a7b5bd2ec1c06d5a7d09c44984de88256d20046f491ed6666",
+              "captureSourceSHA256": {
+                "E32BA67C187MISSING002": "2ca895a57e51acd4c50b954b625256509e60f8eabb48db8337d780aa21b3f28a"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "exceptionMessage": "Synthetic handler requires output record",
+                      "exceptionType": "E32BA67TriggerObserver.MissingOutputException",
+                      "callerException": "MissingOutputException",
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "exceptionMessage": "Insert failed. First exception on row 0; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, E32BA67TriggerContext: execution of BeforeInsert\n\ncaused by: E32BA67TriggerObserver.MissingOutputException: Synthetic handler requires output record\n\nClass.E32BA67TriggerObserver.invoke: line 58, column 1\nClass.E32BA67TriggerObserver.handle: line 74, column 1\nTrigger.E32BA67TriggerContext: line 1, column 1: []",
+                  "exceptionType": "System.DmlException",
+                  "dmlSuccess": false
+                },
+                "flow_execution_verified": false,
+                "native_guard": {
+                  "api": "67.0",
+                  "route": "istest",
+                  "activation_verified": true,
+                  "flow_control_verified": true,
+                  "activation_names": [
+                    "E32BA67NoOutput"
+                  ]
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeInsert','E32BA68NoOutput',false,true,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_002|'+encoded);",
+              "operationSHA256": "50c945a08347cc3087c03c53e2fcea0ec9c90e798bd8b4980d18810895370aba",
+              "captureSourceSHA256": {
+                "anonymous": "50c945a08347cc3087c03c53e2fcea0ec9c90e798bd8b4980d18810895370aba"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "exceptionMessage": "Synthetic handler requires output record",
+                      "exceptionType": "E32BA68TriggerObserver.MissingOutputException",
+                      "callerException": "MissingOutputException",
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "exceptionMessage": "Insert failed. First exception on row 0; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, E32BA68TriggerContext: execution of BeforeInsert\n\ncaused by: E32BA68TriggerObserver.MissingOutputException: Synthetic handler requires output record\n\nClass.E32BA68TriggerObserver.invoke: line 58, column 1\nClass.E32BA68TriggerObserver.handle: line 74, column 1\nTrigger.E32BA68TriggerContext: line 1, column 1: []",
+                  "exceptionType": "System.DmlException",
+                  "dmlSuccess": false
+                },
+                "flow_execution_verified": false,
+                "native_guard": {
+                  "api": "68.0",
+                  "route": "anonymous",
+                  "activation_verified": true,
+                  "flow_control_verified": true,
+                  "activation_names": [
+                    "E32BA68NoOutput"
+                  ]
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeInsert','E32BA68NoOutput',false,true,false,false);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_002|'+encoded);",
+              "operationSHA256": "50c945a08347cc3087c03c53e2fcea0ec9c90e798bd8b4980d18810895370aba",
+              "captureSourceSHA256": {
+                "E32BA68C187MISSING002": "e529b0d36b144c079317e4713a530ec37784de76833054f849f80ca7963c031e"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "exceptionMessage": "Synthetic handler requires output record",
+                      "exceptionType": "E32BA68TriggerObserver.MissingOutputException",
+                      "callerException": "MissingOutputException",
+                      "inputAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "null",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": null,
+                  "databaseCount": 0,
+                  "exceptionMessage": "Insert failed. First exception on row 0; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, E32BA68TriggerContext: execution of BeforeInsert\n\ncaused by: E32BA68TriggerObserver.MissingOutputException: Synthetic handler requires output record\n\nClass.E32BA68TriggerObserver.invoke: line 58, column 1\nClass.E32BA68TriggerObserver.handle: line 74, column 1\nTrigger.E32BA68TriggerContext: line 1, column 1: []",
+                  "exceptionType": "System.DmlException",
+                  "dmlSuccess": false
+                },
+                "flow_execution_verified": false,
+                "native_guard": {
+                  "api": "68.0",
+                  "route": "istest",
+                  "activation_verified": true,
+                  "flow_control_verified": true,
+                  "activation_names": [
+                    "E32BA68NoOutput"
+                  ]
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187MISSING_003",
+      "label": "beforeUpdate Database.update(subject,false), caller False",
+      "config": {
+        "stage": "beforeUpdate",
+        "flow": "NoOutput",
+        "partialUpdate": true,
+        "requireOutput": false
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeUpdate','E32BA62NoOutput',false,false,false,true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_003|'+encoded);",
+              "operationSHA256": "fde09928945ad14e8118f7d15906ba02e53cc091afc73ae523601729f65fb116",
+              "captureSourceSHA256": {
+                "anonymous": "fde09928945ad14e8118f7d15906ba02e53cc091afc73ae523601729f65fb116"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "saveResultErrors": [],
+                  "saveResultId": "same",
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeUpdate','E32BA62NoOutput',false,false,false,true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_003|'+encoded);",
+              "operationSHA256": "fde09928945ad14e8118f7d15906ba02e53cc091afc73ae523601729f65fb116",
+              "captureSourceSHA256": {
+                "E32BA62C187MISSING003": "5c8b0b87ea666b308d9b7b73f6847afc64bb8e8a46cd668064b60552cb79ac92"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "saveResultErrors": [],
+                  "saveResultId": "same",
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeUpdate','E32BA67NoOutput',false,false,false,true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_003|'+encoded);",
+              "operationSHA256": "3fe7e9540206e2fc24de43b9ab878debcede7ec8dc6898655f635a883aabf561",
+              "captureSourceSHA256": {
+                "anonymous": "3fe7e9540206e2fc24de43b9ab878debcede7ec8dc6898655f635a883aabf561"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "saveResultErrors": [],
+                  "saveResultId": "same",
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeUpdate','E32BA67NoOutput',false,false,false,true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_003|'+encoded);",
+              "operationSHA256": "3fe7e9540206e2fc24de43b9ab878debcede7ec8dc6898655f635a883aabf561",
+              "captureSourceSHA256": {
+                "E32BA67C187MISSING003": "550fc468285ded0a30de6bf33dcd7d5fd699a04c993857ea82301fb7c8db3127"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "saveResultErrors": [],
+                  "saveResultId": "same",
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeUpdate','E32BA68NoOutput',false,false,false,true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_003|'+encoded);",
+              "operationSHA256": "dfe4b2cb0bd7d1e6c1ce22db2a25a42e0bdd2674c4873e4f58938fbd5a6be412",
+              "captureSourceSHA256": {
+                "anonymous": "dfe4b2cb0bd7d1e6c1ce22db2a25a42e0bdd2674c4873e4f58938fbd5a6be412"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "saveResultErrors": [],
+                  "saveResultId": "same",
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeUpdate','E32BA68NoOutput',false,false,false,true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_003|'+encoded);",
+              "operationSHA256": "dfe4b2cb0bd7d1e6c1ce22db2a25a42e0bdd2674c4873e4f58938fbd5a6be412",
+              "captureSourceSHA256": {
+                "E32BA68C187MISSING003": "e825755ff2d2323c21c157a05beb6553c4e87be4fe6d7d2813f0251be9fe25b5"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "originalAfterCaller": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "saveResultErrors": [],
+                  "saveResultId": "same",
+                  "dmlSuccess": true
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C187MISSING_004",
+      "label": "beforeUpdate Database.update(subject,false), caller True",
+      "config": {
+        "stage": "beforeUpdate",
+        "flow": "NoOutput",
+        "partialUpdate": true,
+        "requireOutput": true
+      },
+      "byAPI": {
+        "62.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeUpdate','E32BA62NoOutput',false,true,false,true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_004|'+encoded);",
+              "operationSHA256": "dedabdc1a49160ee75a88e10af11d87538440a828fd75064b049afd68f315128",
+              "captureSourceSHA256": {
+                "anonymous": "dedabdc1a49160ee75a88e10af11d87538440a828fd75064b049afd68f315128"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "exceptionMessage": "Synthetic handler requires output record",
+                      "exceptionType": "E32BA62TriggerObserver.MissingOutputException",
+                      "callerException": "MissingOutputException",
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "saveResultErrors": [
+                    [
+                      "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+                      "E32BA62TriggerContext: execution of BeforeUpdate\n\ncaused by: E32BA62TriggerObserver.MissingOutputException: Synthetic handler requires output record\n\nClass.E32BA62TriggerObserver.invoke: line 58, column 1\nClass.E32BA62TriggerObserver.handle: line 74, column 1\nTrigger.E32BA62TriggerContext: line 1, column 1",
+                      []
+                    ]
+                  ],
+                  "saveResultId": "same",
+                  "dmlSuccess": false
+                },
+                "flow_execution_verified": false,
+                "native_guard": {
+                  "api": "62.0",
+                  "route": "anonymous",
+                  "activation_verified": true,
+                  "flow_control_verified": true,
+                  "activation_names": [
+                    "E32BA62NoOutput"
+                  ]
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA62TriggerObserver.triggerRun('beforeUpdate','E32BA62NoOutput',false,true,false,true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_004|'+encoded);",
+              "operationSHA256": "dedabdc1a49160ee75a88e10af11d87538440a828fd75064b049afd68f315128",
+              "captureSourceSHA256": {
+                "E32BA62C187MISSING004": "abd39862ca53fed251ab60ccbade0b3fe6e0677ba33160d23ef47c9238278532"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "exceptionMessage": "Synthetic handler requires output record",
+                      "exceptionType": "E32BA62TriggerObserver.MissingOutputException",
+                      "callerException": "MissingOutputException",
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "saveResultErrors": [
+                    [
+                      "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+                      "E32BA62TriggerContext: execution of BeforeUpdate\n\ncaused by: E32BA62TriggerObserver.MissingOutputException: Synthetic handler requires output record\n\nClass.E32BA62TriggerObserver.invoke: line 58, column 1\nClass.E32BA62TriggerObserver.handle: line 74, column 1\nTrigger.E32BA62TriggerContext: line 1, column 1",
+                      []
+                    ]
+                  ],
+                  "saveResultId": "same",
+                  "dmlSuccess": false
+                },
+                "flow_execution_verified": false,
+                "native_guard": {
+                  "api": "62.0",
+                  "route": "istest",
+                  "activation_verified": true,
+                  "flow_control_verified": true,
+                  "activation_names": [
+                    "E32BA62NoOutput"
+                  ]
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "67.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeUpdate','E32BA67NoOutput',false,true,false,true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_004|'+encoded);",
+              "operationSHA256": "183a9b02266228f1cb3da27f2ad6e8df883e62401c3898bfdb002ce3652620fa",
+              "captureSourceSHA256": {
+                "anonymous": "183a9b02266228f1cb3da27f2ad6e8df883e62401c3898bfdb002ce3652620fa"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "exceptionMessage": "Synthetic handler requires output record",
+                      "exceptionType": "E32BA67TriggerObserver.MissingOutputException",
+                      "callerException": "MissingOutputException",
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "saveResultErrors": [
+                    [
+                      "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+                      "E32BA67TriggerContext: execution of BeforeUpdate\n\ncaused by: E32BA67TriggerObserver.MissingOutputException: Synthetic handler requires output record\n\nClass.E32BA67TriggerObserver.invoke: line 58, column 1\nClass.E32BA67TriggerObserver.handle: line 74, column 1\nTrigger.E32BA67TriggerContext: line 1, column 1",
+                      []
+                    ]
+                  ],
+                  "saveResultId": "same",
+                  "dmlSuccess": false
+                },
+                "flow_execution_verified": false,
+                "native_guard": {
+                  "api": "67.0",
+                  "route": "anonymous",
+                  "activation_verified": true,
+                  "flow_control_verified": true,
+                  "activation_names": [
+                    "E32BA67NoOutput"
+                  ]
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA67TriggerObserver.triggerRun('beforeUpdate','E32BA67NoOutput',false,true,false,true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_004|'+encoded);",
+              "operationSHA256": "183a9b02266228f1cb3da27f2ad6e8df883e62401c3898bfdb002ce3652620fa",
+              "captureSourceSHA256": {
+                "E32BA67C187MISSING004": "8a2b2f5ff0151da8bcf07b4ea61e319b94b7e1b0d3bb788e8f8cf0daa31c73e6"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "exceptionMessage": "Synthetic handler requires output record",
+                      "exceptionType": "E32BA67TriggerObserver.MissingOutputException",
+                      "callerException": "MissingOutputException",
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "saveResultErrors": [
+                    [
+                      "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+                      "E32BA67TriggerContext: execution of BeforeUpdate\n\ncaused by: E32BA67TriggerObserver.MissingOutputException: Synthetic handler requires output record\n\nClass.E32BA67TriggerObserver.invoke: line 58, column 1\nClass.E32BA67TriggerObserver.handle: line 74, column 1\nTrigger.E32BA67TriggerContext: line 1, column 1",
+                      []
+                    ]
+                  ],
+                  "saveResultId": "same",
+                  "dmlSuccess": false
+                },
+                "flow_execution_verified": false,
+                "native_guard": {
+                  "api": "67.0",
+                  "route": "istest",
+                  "activation_verified": true,
+                  "flow_control_verified": true,
+                  "activation_names": [
+                    "E32BA67NoOutput"
+                  ]
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        },
+        "68.0": {
+          "routes": {
+            "anonymous": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeUpdate','E32BA68NoOutput',false,true,false,true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_004|'+encoded);",
+              "operationSHA256": "b06b0cce8d955150bb283de0086b3900e52766933bb253450bbdd0f47b563926",
+              "captureSourceSHA256": {
+                "anonymous": "b06b0cce8d955150bb283de0086b3900e52766933bb253450bbdd0f47b563926"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "exceptionMessage": "Synthetic handler requires output record",
+                      "exceptionType": "E32BA68TriggerObserver.MissingOutputException",
+                      "callerException": "MissingOutputException",
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "saveResultErrors": [
+                    [
+                      "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+                      "E32BA68TriggerContext: execution of BeforeUpdate\n\ncaused by: E32BA68TriggerObserver.MissingOutputException: Synthetic handler requires output record\n\nClass.E32BA68TriggerObserver.invoke: line 58, column 1\nClass.E32BA68TriggerObserver.handle: line 74, column 1\nTrigger.E32BA68TriggerContext: line 1, column 1",
+                      []
+                    ]
+                  ],
+                  "saveResultId": "same",
+                  "dmlSuccess": false
+                },
+                "flow_execution_verified": false,
+                "native_guard": {
+                  "api": "68.0",
+                  "route": "anonymous",
+                  "activation_verified": true,
+                  "flow_control_verified": true,
+                  "activation_names": [
+                    "E32BA68NoOutput"
+                  ]
+                }
+              },
+              "admission": "observed"
+            },
+            "istest": {
+              "code": "Map<String,Object> payload=E32BA68TriggerObserver.triggerRun('beforeUpdate','E32BA68NoOutput',false,true,false,true);String encoded=JSON.serialize(payload);System.assert(false,'C126_RESULT|C187MISSING_004|'+encoded);",
+              "operationSHA256": "b06b0cce8d955150bb283de0086b3900e52766933bb253450bbdd0f47b563926",
+              "captureSourceSHA256": {
+                "E32BA68C187MISSING004": "3224f0a50f2a51e2935014d57a4247168ea3e501800774b1ecce582d7b1369af"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flowFired": true,
+                  "frames": [
+                    {
+                      "exceptionMessage": "Synthetic handler requires output record",
+                      "exceptionType": "E32BA68TriggerObserver.MissingOutputException",
+                      "callerException": "MissingOutputException",
+                      "inputAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "originalAfter": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "fired": true,
+                      "output": null,
+                      "outputKeys": [
+                        "Flow__InterviewGuid",
+                        "Flow__InterviewStatus",
+                        "fired"
+                      ],
+                      "outputPresent": false,
+                      "errors": [],
+                      "isSuccess": true,
+                      "resultCount": 1,
+                      "inputBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ],
+                      "flowFired": true,
+                      "originalBefore": [
+                        "same",
+                        "E32 Original",
+                        "E32 seed",
+                        "Technology"
+                      ]
+                    }
+                  ],
+                  "triggerCalls": 1,
+                  "database": [
+                    "same",
+                    "E32 Original",
+                    "E32 seed",
+                    "Technology"
+                  ],
+                  "databaseCount": 1,
+                  "saveResultErrors": [
+                    [
+                      "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+                      "E32BA68TriggerContext: execution of BeforeUpdate\n\ncaused by: E32BA68TriggerObserver.MissingOutputException: Synthetic handler requires output record\n\nClass.E32BA68TriggerObserver.invoke: line 58, column 1\nClass.E32BA68TriggerObserver.handle: line 74, column 1\nTrigger.E32BA68TriggerContext: line 1, column 1",
+                      []
+                    ]
+                  ],
+                  "saveResultId": "same",
+                  "dmlSuccess": false
+                },
+                "flow_execution_verified": false,
+                "native_guard": {
+                  "api": "68.0",
+                  "route": "istest",
+                  "activation_verified": true,
+                  "flow_control_verified": true,
+                  "activation_names": [
+                    "E32BA68NoOutput"
+                  ]
+                }
+              },
+              "admission": "observed"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 package visualforce
 
 import (
+	"html"
 	"strconv"
 	"strings"
 )
@@ -62,6 +63,9 @@ function appendFormControlFields(data,form){
 function appendParams(data,params){
   (params||[]).forEach(function(param){if(param&&param.name){var value=param.value==null?"":String(param.value);data.set(param.name,value);if(param.assignTo){data.set(param.assignTo,value);}}});
 }
+function ajaxCallback(code,receiver,event){
+  if(code){return Function("event",code).call(receiver,event);}
+}
 function statusRoot(id){
   if(!id||!document.querySelectorAll){return null;}
   var nodes=document.querySelectorAll("[data-status]");
@@ -73,15 +77,16 @@ function setStatus(id,active){
   root.setAttribute("data-active",active?"true":"false");
   Array.prototype.forEach.call(root.querySelectorAll(".actionStatusStart"),function(el){el.hidden=!active;});
   Array.prototype.forEach.call(root.querySelectorAll(".actionStatusStop"),function(el){el.hidden=!!active;});
+  ajaxCallback(root.getAttribute(active?"data-vf-onstart":"data-vf-onstop"),root);
 }
 window.GLADEVF.submit=function(form,action,targets,options){
   if(!form){return false;}
-
-  if(form.reportValidity&&!form.reportValidity()){return false;}
   options=options||{};
+  if(ajaxCallback(options.onsubmit,options.source||form,options.event)===false){return false;}
   var data=new URLSearchParams();
   if(options.region){appendControls(data,options.region);appendFormControlFields(data,form);}else{appendControls(data,form);}
   appendParams(data,options.params);
+  if(options.command){data.set("__vf_command",options.command);}
   data.set("` + ViewStateActionFieldName() + `",action||"");
   data.set("__vf_ajax","1");
   data.set("__vf_rerender",targets||"");
@@ -89,20 +94,131 @@ window.GLADEVF.submit=function(form,action,targets,options){
   fetch(form.action,{method:"POST",body:data})
     .then(function(r){return r.json();})
     .then(function(p){
+      if(p.error){
+        var error=document.createElement("div");error.className="glade-vf-ajax-error";error.style.whiteSpace="pre-line";error.textContent=p.error;document.body.replaceChildren(error);
+        setStatus(options.status,false);return;
+      }
       if(p.redirect){setStatus(options.status,false);window.location.assign(p.redirect);return;}
       Object.keys(p.targets||{}).forEach(function(id){
         var el=document.getElementById(id); if(el){el.outerHTML=p.targets[id];}
       });
       (p.messages||[]).forEach(function(m){if(window.console&&console.warn){console.warn(m);}});
       var vs=form.elements["` + ViewStateFormFieldName() + `"]; if(vs&&p.viewState){vs.value=p.viewState;}
+      Object.keys(p.pollers||{}).forEach(function(id){
+        var poller=window.GLADEVF.pollers[id];if(poller){poller.enabled=p.pollers[id].enabled;poller.interval=p.pollers[id].interval;}
+      });
       setStatus(options.status,false);
+      ajaxCallback(options.oncomplete,options.source||form,options.event);
+      if(options.poller){schedulePoller(window.GLADEVF.pollers[options.poller]);}
     },function(err){
       setStatus(options.status,false);
       throw err;
     });
   return false;
 };
+window.GLADEVF.pollers=window.GLADEVF.pollers||{};
+function schedulePoller(poller){
+  if(!poller||!poller.enabled||!poller.node.isConnected){return;}
+  clearTimeout(poller.timer);
+  poller.timer=setTimeout(function(){
+    var form=poller.node.closest("form");var options=poller.options;
+    options.source=poller.node;options.poller=poller.node.id;
+    var region=poller.node.closest("[data-vf-region]");if(region){options.region=region;}
+    window.GLADEVF.submit(form,poller.node.getAttribute("data-action"),poller.node.getAttribute("data-rerender"),options);
+  },Number(poller.interval)*1000);
+}
+window.GLADEVF.poller=function(id,options){
+  var node=document.getElementById(id);if(!node){return;}
+  var prior=window.GLADEVF.pollers[id];if(prior){clearTimeout(prior.timer);}
+  var poller={node:node,options:options,enabled:node.getAttribute("data-enabled")==="true",interval:node.getAttribute("data-interval")};
+  window.GLADEVF.pollers[id]=poller;
+  if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",function(){schedulePoller(poller);},{once:true});}
+  else{schedulePoller(poller);}
+};
 </script>`
+}
+
+// Captured commands/support/function/poller share one callback and status
+// dispatch path. Code is a string, so an embedded closing script tag remains
+// data until the callback executes rather than ending the generated script.
+func visualforceAjaxComponentOptions(node *MarkupNode, ctx *RenderContext, params []VisualforceAjaxParam, submitAttribute string) (string, error) {
+	options := strings.TrimSuffix(jsAjaxOptionsLiteral(strings.TrimSpace(node.Attribute("status")), params), "}")
+	// The submitting component owns its immediate/region flags even when
+	// another control shares the action or left a command marker in the form.
+	if command := formCommandKey(node, ctx); command != "" {
+		if options != "{" {
+			options += ","
+		}
+		options += "command:" + ajaxScriptStringLiteral(command)
+	}
+	for _, attribute := range []struct{ source, option string }{{"oncomplete", "oncomplete"}, {submitAttribute, "onsubmit"}} {
+		if attribute.source == "" || node.Attribute(attribute.source) == "" {
+			continue
+		}
+		code, err := RenderExpressionTemplate(node.Attribute(attribute.source), ctx.Expression)
+		if err != nil {
+			return "", err
+		}
+		if options != "{" {
+			options += ","
+		}
+		options += attribute.option + ":" + ajaxScriptStringLiteral(code)
+	}
+	return options + "}", nil
+}
+
+func ajaxScriptStringLiteral(raw string) string {
+	return strings.NewReplacer("<", `\x3c`, ">", `\x3e`, "&", `\x26`, "\u2028", `\u2028`, "\u2029", `\u2029`).Replace(jsStringLiteral(raw))
+}
+
+func visualforceAjaxEventHook(node *MarkupNode, ctx *RenderContext, submitAttribute string) (string, error) {
+	options, err := visualforceAjaxComponentOptions(node, ctx, nil, submitAttribute)
+	if err != nil {
+		return "", err
+	}
+	return "var e=(typeof event!='undefined'&&event)||window.event;var n=this;var f=(this.closest&&this.closest('form'))||document.forms[0];var o=" + options +
+		";o.source=n;o.event=e;var r=n&&n.closest&&n.closest('[data-vf-region]');if(r){o.region=r;}return window.GLADEVF.submit(f," +
+		jsStringLiteral(strings.TrimSpace(node.Attribute("action"))) + "," + jsStringLiteral(strings.TrimSpace(node.Attribute("rerender"))) + ",o);", nil
+}
+
+func visualforceAjaxFunctionHook(node *MarkupNode, ctx *RenderContext, params []VisualforceAjaxParam) (string, error) {
+	options, err := visualforceAjaxComponentOptions(node, ctx, params, "")
+	if err != nil {
+		return "", err
+	}
+	// Capture parameter values before assigning helpers: n, f, o, and r are
+	// valid actionFunction argument names in the captured native controls.
+	return "var o=" + options + ";var n=document.getElementById(" + ajaxScriptStringLiteral(visualforceComponentClientID(node, ctx)) +
+		");var f=(n&&n.closest('form'))||document.forms[0];o.source=n;var r=n&&n.closest('[data-vf-region]');if(r){o.region=r;}return window.GLADEVF.submit(f," +
+		ajaxScriptStringLiteral(strings.TrimSpace(node.Attribute("action"))) + "," + ajaxScriptStringLiteral(strings.TrimSpace(node.Attribute("rerender"))) + ",o);", nil
+}
+
+// inputText's actionSupport is a child component but binds its event to the
+// input itself. Other input rendering and form lifecycle remain with forms and request lifecycle.
+func renderAjaxInputEventAttributes(node *MarkupNode, ctx *RenderContext) (string, error) {
+	if !isApexStructureTag(node, "inputText") {
+		return "", nil
+	}
+	var attributes strings.Builder
+	for _, child := range node.Children {
+		if !isApexActionSupportNode(child) || len(child.Children) != 0 {
+			continue
+		}
+		visible, err := visualforceComponentShouldRender(child, ctx)
+		if err != nil {
+			return "", err
+		}
+		if !visible {
+			continue
+		}
+		ctx.countComponent("apex:actionSupport")
+		hook, err := visualforceAjaxEventHook(child, ctx, "onsubmit")
+		if err != nil {
+			return "", err
+		}
+		attributes.WriteString(" " + html.EscapeString(visualforceEventAttributeName(child.Attribute("event"))) + `="` + html.EscapeString(hook) + `"`)
+	}
+	return attributes.String(), nil
 }
 
 func VisualforceAjaxSubmitHook(action, targets string) string {

@@ -1,0 +1,33 @@
+{
+  "status": "PENDING-ROWS",
+  "apiVersions": ["62.0", "67.0", "68.0"],
+  "routes": ["anonymous", "istest"],
+  "objectName": "OwnerNamePreference__c",
+  "label": "Owner name preference",
+  "capturedCore": {
+    "file": "native-core.json",
+    "scope": "HNO01/HNO02/HNO04 named check-only API62/67/68 observations; anonymous cells remain pending. Row templates below remain null because they do not represent a single API/route answer."
+  },
+  "knownControl": {
+    "file": "runtime_boundary_c02.json",
+    "row": "C02-09",
+    "scope": "Explicit organization owner and explicit metadata label; inherited getInstance Name is the label plus ' (Organization)'. The expanded payloads below have not been captured."
+  },
+  "transport": {
+    "chunkSize": 320,
+    "parts": 32,
+    "policy": "Measure once, commit the JSON in Account.Description, then retrieve hash-bound assertion chunks. Anonymous seed.apex must finish successfully before running part scripts. Named tests measure once in @TestSetup. Preserve deployment, compilation, measurement and transport errors separately."
+  },
+  "metadataPolicy": "Label-absent projects are isolated deployment controls. Record native metadata acceptance or rejection before attempting Apex. Local metadata parsing is not native deployment evidence. A deployed object cannot be assumed to model an offline definition with an empty Label.",
+  "rows": [
+    {"id":"HNO01","priority":"core","owner":"omitted","name":"omitted","labelPresent":true,"stage":"runtime","expectedNative":null},
+    {"id":"HNO02","priority":"core","owner":"organization","name":"omitted","labelPresent":true,"stage":"runtime","expectedNative":null},
+    {"id":"HNO03","priority":"expanded","owner":"organization","name":"explicit","labelPresent":true,"stage":"runtime","expectedNative":null},
+    {"id":"HNO04","priority":"core","owner":"omitted","name":"omitted","labelPresent":false,"stage":"deployment","expectedNative":null},
+    {"id":"HNO05","priority":"expanded","owner":"organization","name":"null","labelPresent":true,"stage":"runtime","expectedNative":null},
+    {"id":"HNO06","priority":"expanded","owner":"organization","name":"empty","labelPresent":true,"stage":"runtime","expectedNative":null},
+    {"id":"HNO07","priority":"expanded","owner":"user","name":"omitted","labelPresent":true,"stage":"runtime","expectedNative":null},
+    {"id":"HNO08","priority":"expanded","owner":"profile","name":"omitted","labelPresent":true,"stage":"runtime","expectedNative":null},
+    {"id":"HNO09","priority":"expanded","owner":"organization","name":"omitted","labelPresent":false,"stage":"deployment","expectedNative":null}
+  ]
+}

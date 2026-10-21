@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"context":"anonymous","different_key":[]}
+62.0	isTest	{"different_key":[],"explicit":"Owned replacement","thrown":"Script-thrown exception","wrapped":"Script-thrown exception"}
+67.0	anonymous	{"context":"anonymous","different_key":[]}
+67.0	isTest	{"different_key":[],"explicit":"Owned replacement","thrown":"Script-thrown exception","wrapped":"Script-thrown exception"}

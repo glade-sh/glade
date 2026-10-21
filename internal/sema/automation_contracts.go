@@ -39,6 +39,17 @@ func semaAutomationTypeMessage(typeName string, model *semaTypeMemberView) strin
 	return ""
 }
 
+func semaAutomationCallTypeMessage(typeName, method string, model *semaTypeMemberView) string {
+	// Publishing is available only in a Knowledge-enabled org. Static receiver
+	// visibility remains separate from declaring a variable of this type, and
+	// ordinary member resolution still checks the method's argument types.
+	if model != nil && model.state != nil && model.state.base != nil && model.state.base.knowledgeEnabled &&
+		strings.EqualFold(typeName, "KbManagement.PublishingService") && strings.EqualFold(method, "publishArticle") {
+		return ""
+	}
+	return semaAutomationTypeMessage(typeName, model)
+}
+
 // The invisible input type is the receiver of an inner
 // builder() call. Walk receivers for automation visibility checks.
 func semaAutomationChainedTypeMessage(expr ir.Expr, scope irSemaScope, model *semaTypeMemberView) string {
@@ -46,9 +57,9 @@ func semaAutomationChainedTypeMessage(expr ir.Expr, scope irSemaScope, model *se
 		if current.Kind != ir.ExprCall {
 			continue
 		}
-		receiver, _, qualified := splitSemaMethodPath(current.Callee)
+		receiver, method, qualified := splitSemaMethodPath(current.Callee)
 		if !qualified && current.Left != nil && current.Left.Kind == ir.ExprVariable {
-			receiver, qualified = current.Left.Name, true
+			receiver, method, qualified = current.Left.Name, current.Callee, true
 		}
 		if !qualified {
 			continue
@@ -57,7 +68,7 @@ func semaAutomationChainedTypeMessage(expr ir.Expr, scope irSemaScope, model *se
 		if _, scoped := scope.lookup(root); scoped {
 			continue
 		}
-		if message := semaAutomationTypeMessage(receiver, model); message != "" {
+		if message := semaAutomationCallTypeMessage(receiver, method, model); message != "" {
 			return message
 		}
 	}
@@ -112,7 +123,7 @@ func (a *Analyzer) semaAutomationCallMessage(receiverType, method string, args [
 	if semaAutomationSourceType(model, receiverType) {
 		return ""
 	}
-	if message := semaAutomationTypeMessage(receiverType, model); message != "" {
+	if message := semaAutomationCallTypeMessage(receiverType, method, model); message != "" {
 		return message
 	}
 	if strings.EqualFold(receiverType, "FSL.ScheduleService") {

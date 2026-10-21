@@ -1,0 +1,781 @@
+{
+  "cluster": "controls",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "shapeCount": 3,
+  "nativeObservationCount": 18,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "CONTROL_001",
+      "byAPI": {
+        "62.0": {
+          "files": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Unit__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Unit</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Text__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Text</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Other__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Other</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Flag__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Flag</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Gate__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Gate</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Whole__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Whole</ns0:label><ns0:precision>10</ns0:precision><ns0:required>false</ns0:required><ns0:scale>0</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Amount__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Amount</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Money__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Money</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Currency</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Result__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Result</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Trace__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Trace</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Fired__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Fired</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "<ns0:CustomObject xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:deploymentStatus>Deployed</ns0:deploymentStatus><ns0:label>FlowCoreCONTROLRecord__c Flow Record</ns0:label><ns0:nameField><ns0:label>FlowCoreCONTROLRecord__c Name</ns0:label><ns0:type>Text</ns0:type></ns0:nameField><ns0:pluralLabel>FlowCoreCONTROLRecord__c Flow Records</ns0:pluralLabel><ns0:sharingModel>ReadWrite</ns0:sharingModel></ns0:CustomObject>",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><assignments><name>MarkFired</name><label>MarkFired</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Fired__c</assignToReference><operator>Assign</operator><value><booleanValue>true</booleanValue></value></assignmentItems></assignments><interviewLabel>FlowCoreCONTROLEngineGuard {!$Flow.CurrentDateTime}</interviewLabel><label>FlowCoreCONTROLEngineGuard</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>MarkFired</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>subject</stringValue></value></filters><object>FlowCoreCONTROLRecord__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status></Flow>"
+          },
+          "sourceSha256": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "06f0bf0e56c799b25ace116e1cae68a22e3072408d020e1b1afab64acc2498bf",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "14d250a54ae638147ea8b7041c591fd0f87638c2e3926f3379fa652dc0640750",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "ab0a582cf0400ae71dfc2d8e8449ba775eceb2296891f4393bdfe12202b0d1e9",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "4a584f63daaefdea7fa556d31aebef864927b34d6488707416c322a736c6661f",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "f8c3bd02540f8a48dfb1cf38ec72b10b6e42f0bef2efacc5843d0b6a46781cea",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "a73af7a17c78048da9296ef99ad9ddb9d9b28123c2064b9596eb463c33c90181",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "95d9a9bcfeee9a27a1c1133f456db7cd61439c8a055744921b4a8ff897a876fc",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "fa5002fd2871a503edfe5b6a29375f2e0a1af3c380c8bb114bc153a52a4e9b34",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "7c2aa7c80f04ae9212537d71723375318993f6aaf44940f495e3f2361edfbd99",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "a94a59b8fb9af21ecf39534f3200b21af8ee5525ade97de40d98da342e338d00",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "61b13b508de2cb7691da5e4b2d7bee8ef034c1426b5c09937be6360268372ce6",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "fef25adc4fd1a4ae9a2f48db81c52d3c7e69e8bb6f3b04d3da74a96137bae5e2",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "7e3da02c020db0a955da24387678f8eeaba1af7b93083df45e481f12ae504d14"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();String step='init';try{payload.put('value',7);}catch(Exception e){payload.put('step',step);payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|CONTROL_001|'+JSON.serialize(payload));",
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "value": {
+                  "value": 7
+                }
+              },
+              "sourceSha256": {
+                "anonymous": "d684664e67db2e9b692061127ad154e7df6ac13132b396dcb9acf39ef9abf150"
+              },
+              "capturedSourceSha256": {
+                "anonymous": "ef7c6274004cc953d5271ac6cfb99fa1190dd6cdbfc2381300f0f3b6f598496a"
+              }
+            },
+            "istest": {
+              "classes": {
+                "CONTROL001Observe": "@IsTest private class CONTROL001Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();String step='init';try{payload.put('value',7);}catch(Exception e){payload.put('step',step);payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String markerEnvelope='FLOW_CORE_RESULT|CONTROL_001|'+JSON.serialize(payload);Integer fullEnvelopeLength=markerEnvelope.length();String overflowMessage=payload.get('exceptionMessage')==null?'':String.valueOf(payload.get('exceptionMessage'));String overflowType=payload.get('exceptionType')==null?'':String.valueOf(payload.get('exceptionType'));if(fullEnvelopeLength>620){overflowType=overflowType.replaceAll('[^A-Za-z0-9_.]','_');if(overflowType.length()>80){overflowType=overflowType.substring(0,80);}markerEnvelope='FLOW_CORE_RESULT|CONTROL_001|'+JSON.serialize(new Map<String,Object>{'markerOverflow'=>true,'fullEnvelopeLength'=>fullEnvelopeLength,'exceptionType'=>overflowType,'messageLength'=>overflowMessage.length(),'messageSha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(overflowMessage)))});}System.assert(false,markerEnvelope);}}"
+              },
+              "tests": [
+                "CONTROL001Observe"
+              ],
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "value": {
+                  "value": 7
+                }
+              },
+              "sourceSha256": {
+                "CONTROL001Observe": "158372d51d8b60fdc470ab71a4fa0b61dbdedb0ae703549e529bc575163fb996"
+              },
+              "capturedSourceSha256": {
+                "CONTROL001Observe": "a2b83482f46ab78a5fc18bbdcabdbce607d5381cdb4f8836cd8dd0b5389e1027"
+              }
+            }
+          }
+        },
+        "67.0": {
+          "files": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Unit__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Unit</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Text__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Text</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Other__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Other</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Flag__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Flag</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Gate__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Gate</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Whole__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Whole</ns0:label><ns0:precision>10</ns0:precision><ns0:required>false</ns0:required><ns0:scale>0</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Amount__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Amount</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Money__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Money</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Currency</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Result__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Result</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Trace__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Trace</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Fired__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Fired</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "<ns0:CustomObject xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:deploymentStatus>Deployed</ns0:deploymentStatus><ns0:label>FlowCoreCONTROLRecord__c Flow Record</ns0:label><ns0:nameField><ns0:label>FlowCoreCONTROLRecord__c Name</ns0:label><ns0:type>Text</ns0:type></ns0:nameField><ns0:pluralLabel>FlowCoreCONTROLRecord__c Flow Records</ns0:pluralLabel><ns0:sharingModel>ReadWrite</ns0:sharingModel></ns0:CustomObject>",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><assignments><name>MarkFired</name><label>MarkFired</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Fired__c</assignToReference><operator>Assign</operator><value><booleanValue>true</booleanValue></value></assignmentItems></assignments><interviewLabel>FlowCoreCONTROLEngineGuard {!$Flow.CurrentDateTime}</interviewLabel><label>FlowCoreCONTROLEngineGuard</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>MarkFired</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>subject</stringValue></value></filters><object>FlowCoreCONTROLRecord__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status></Flow>"
+          },
+          "sourceSha256": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "06f0bf0e56c799b25ace116e1cae68a22e3072408d020e1b1afab64acc2498bf",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "14d250a54ae638147ea8b7041c591fd0f87638c2e3926f3379fa652dc0640750",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "ab0a582cf0400ae71dfc2d8e8449ba775eceb2296891f4393bdfe12202b0d1e9",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "4a584f63daaefdea7fa556d31aebef864927b34d6488707416c322a736c6661f",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "f8c3bd02540f8a48dfb1cf38ec72b10b6e42f0bef2efacc5843d0b6a46781cea",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "a73af7a17c78048da9296ef99ad9ddb9d9b28123c2064b9596eb463c33c90181",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "95d9a9bcfeee9a27a1c1133f456db7cd61439c8a055744921b4a8ff897a876fc",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "fa5002fd2871a503edfe5b6a29375f2e0a1af3c380c8bb114bc153a52a4e9b34",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "7c2aa7c80f04ae9212537d71723375318993f6aaf44940f495e3f2361edfbd99",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "a94a59b8fb9af21ecf39534f3200b21af8ee5525ade97de40d98da342e338d00",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "61b13b508de2cb7691da5e4b2d7bee8ef034c1426b5c09937be6360268372ce6",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "fef25adc4fd1a4ae9a2f48db81c52d3c7e69e8bb6f3b04d3da74a96137bae5e2",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "ecfe754a8850c33e49117089da9f24f1df1094fed2ac5be9622568080b69b1f4"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();String step='init';try{payload.put('value',7);}catch(Exception e){payload.put('step',step);payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|CONTROL_001|'+JSON.serialize(payload));",
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "value": {
+                  "value": 7
+                }
+              },
+              "sourceSha256": {
+                "anonymous": "d684664e67db2e9b692061127ad154e7df6ac13132b396dcb9acf39ef9abf150"
+              },
+              "capturedSourceSha256": {
+                "anonymous": "ef7c6274004cc953d5271ac6cfb99fa1190dd6cdbfc2381300f0f3b6f598496a"
+              }
+            },
+            "istest": {
+              "classes": {
+                "CONTROL001Observe": "@IsTest private class CONTROL001Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();String step='init';try{payload.put('value',7);}catch(Exception e){payload.put('step',step);payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String markerEnvelope='FLOW_CORE_RESULT|CONTROL_001|'+JSON.serialize(payload);Integer fullEnvelopeLength=markerEnvelope.length();String overflowMessage=payload.get('exceptionMessage')==null?'':String.valueOf(payload.get('exceptionMessage'));String overflowType=payload.get('exceptionType')==null?'':String.valueOf(payload.get('exceptionType'));if(fullEnvelopeLength>620){overflowType=overflowType.replaceAll('[^A-Za-z0-9_.]','_');if(overflowType.length()>80){overflowType=overflowType.substring(0,80);}markerEnvelope='FLOW_CORE_RESULT|CONTROL_001|'+JSON.serialize(new Map<String,Object>{'markerOverflow'=>true,'fullEnvelopeLength'=>fullEnvelopeLength,'exceptionType'=>overflowType,'messageLength'=>overflowMessage.length(),'messageSha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(overflowMessage)))});}System.assert(false,markerEnvelope);}}"
+              },
+              "tests": [
+                "CONTROL001Observe"
+              ],
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "value": {
+                  "value": 7
+                }
+              },
+              "sourceSha256": {
+                "CONTROL001Observe": "158372d51d8b60fdc470ab71a4fa0b61dbdedb0ae703549e529bc575163fb996"
+              },
+              "capturedSourceSha256": {
+                "CONTROL001Observe": "a2b83482f46ab78a5fc18bbdcabdbce607d5381cdb4f8836cd8dd0b5389e1027"
+              }
+            }
+          }
+        },
+        "68.0": {
+          "files": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Unit__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Unit</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Text__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Text</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Other__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Other</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Flag__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Flag</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Gate__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Gate</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Whole__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Whole</ns0:label><ns0:precision>10</ns0:precision><ns0:required>false</ns0:required><ns0:scale>0</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Amount__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Amount</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Money__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Money</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Currency</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Result__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Result</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Trace__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Trace</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Fired__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Fired</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "<ns0:CustomObject xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:deploymentStatus>Deployed</ns0:deploymentStatus><ns0:label>FlowCoreCONTROLRecord__c Flow Record</ns0:label><ns0:nameField><ns0:label>FlowCoreCONTROLRecord__c Name</ns0:label><ns0:type>Text</ns0:type></ns0:nameField><ns0:pluralLabel>FlowCoreCONTROLRecord__c Flow Records</ns0:pluralLabel><ns0:sharingModel>ReadWrite</ns0:sharingModel></ns0:CustomObject>",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><assignments><name>MarkFired</name><label>MarkFired</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Fired__c</assignToReference><operator>Assign</operator><value><booleanValue>true</booleanValue></value></assignmentItems></assignments><interviewLabel>FlowCoreCONTROLEngineGuard {!$Flow.CurrentDateTime}</interviewLabel><label>FlowCoreCONTROLEngineGuard</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>MarkFired</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>subject</stringValue></value></filters><object>FlowCoreCONTROLRecord__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status></Flow>"
+          },
+          "sourceSha256": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "06f0bf0e56c799b25ace116e1cae68a22e3072408d020e1b1afab64acc2498bf",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "14d250a54ae638147ea8b7041c591fd0f87638c2e3926f3379fa652dc0640750",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "ab0a582cf0400ae71dfc2d8e8449ba775eceb2296891f4393bdfe12202b0d1e9",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "4a584f63daaefdea7fa556d31aebef864927b34d6488707416c322a736c6661f",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "f8c3bd02540f8a48dfb1cf38ec72b10b6e42f0bef2efacc5843d0b6a46781cea",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "a73af7a17c78048da9296ef99ad9ddb9d9b28123c2064b9596eb463c33c90181",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "95d9a9bcfeee9a27a1c1133f456db7cd61439c8a055744921b4a8ff897a876fc",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "fa5002fd2871a503edfe5b6a29375f2e0a1af3c380c8bb114bc153a52a4e9b34",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "7c2aa7c80f04ae9212537d71723375318993f6aaf44940f495e3f2361edfbd99",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "a94a59b8fb9af21ecf39534f3200b21af8ee5525ade97de40d98da342e338d00",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "61b13b508de2cb7691da5e4b2d7bee8ef034c1426b5c09937be6360268372ce6",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "fef25adc4fd1a4ae9a2f48db81c52d3c7e69e8bb6f3b04d3da74a96137bae5e2",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "094c5e5d9ac6655bfec99940f88fa0806afb6ad09bde52f1ccb966a1d7e7b32b"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();String step='init';try{payload.put('value',7);}catch(Exception e){payload.put('step',step);payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|CONTROL_001|'+JSON.serialize(payload));",
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "value": {
+                  "value": 7
+                }
+              },
+              "sourceSha256": {
+                "anonymous": "d684664e67db2e9b692061127ad154e7df6ac13132b396dcb9acf39ef9abf150"
+              },
+              "capturedSourceSha256": {
+                "anonymous": "ef7c6274004cc953d5271ac6cfb99fa1190dd6cdbfc2381300f0f3b6f598496a"
+              }
+            },
+            "istest": {
+              "classes": {
+                "CONTROL001Observe": "@IsTest private class CONTROL001Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();String step='init';try{payload.put('value',7);}catch(Exception e){payload.put('step',step);payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String markerEnvelope='FLOW_CORE_RESULT|CONTROL_001|'+JSON.serialize(payload);Integer fullEnvelopeLength=markerEnvelope.length();String overflowMessage=payload.get('exceptionMessage')==null?'':String.valueOf(payload.get('exceptionMessage'));String overflowType=payload.get('exceptionType')==null?'':String.valueOf(payload.get('exceptionType'));if(fullEnvelopeLength>620){overflowType=overflowType.replaceAll('[^A-Za-z0-9_.]','_');if(overflowType.length()>80){overflowType=overflowType.substring(0,80);}markerEnvelope='FLOW_CORE_RESULT|CONTROL_001|'+JSON.serialize(new Map<String,Object>{'markerOverflow'=>true,'fullEnvelopeLength'=>fullEnvelopeLength,'exceptionType'=>overflowType,'messageLength'=>overflowMessage.length(),'messageSha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(overflowMessage)))});}System.assert(false,markerEnvelope);}}"
+              },
+              "tests": [
+                "CONTROL001Observe"
+              ],
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "value": 7
+                  }
+                },
+                "value": {
+                  "value": 7
+                }
+              },
+              "sourceSha256": {
+                "CONTROL001Observe": "158372d51d8b60fdc470ab71a4fa0b61dbdedb0ae703549e529bc575163fb996"
+              },
+              "capturedSourceSha256": {
+                "CONTROL001Observe": "a2b83482f46ab78a5fc18bbdcabdbce607d5381cdb4f8836cd8dd0b5389e1027"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "CONTROL_002",
+      "byAPI": {
+        "62.0": {
+          "files": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Unit__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Unit</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Text__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Text</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Other__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Other</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Flag__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Flag</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Gate__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Gate</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Whole__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Whole</ns0:label><ns0:precision>10</ns0:precision><ns0:required>false</ns0:required><ns0:scale>0</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Amount__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Amount</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Money__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Money</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Currency</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Result__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Result</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Trace__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Trace</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Fired__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Fired</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "<ns0:CustomObject xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:deploymentStatus>Deployed</ns0:deploymentStatus><ns0:label>FlowCoreCONTROLRecord__c Flow Record</ns0:label><ns0:nameField><ns0:label>FlowCoreCONTROLRecord__c Name</ns0:label><ns0:type>Text</ns0:type></ns0:nameField><ns0:pluralLabel>FlowCoreCONTROLRecord__c Flow Records</ns0:pluralLabel><ns0:sharingModel>ReadWrite</ns0:sharingModel></ns0:CustomObject>",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><assignments><name>MarkFired</name><label>MarkFired</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Fired__c</assignToReference><operator>Assign</operator><value><booleanValue>true</booleanValue></value></assignmentItems></assignments><interviewLabel>FlowCoreCONTROLEngineGuard {!$Flow.CurrentDateTime}</interviewLabel><label>FlowCoreCONTROLEngineGuard</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>MarkFired</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>subject</stringValue></value></filters><object>FlowCoreCONTROLRecord__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status></Flow>"
+          },
+          "sourceSha256": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "06f0bf0e56c799b25ace116e1cae68a22e3072408d020e1b1afab64acc2498bf",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "14d250a54ae638147ea8b7041c591fd0f87638c2e3926f3379fa652dc0640750",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "ab0a582cf0400ae71dfc2d8e8449ba775eceb2296891f4393bdfe12202b0d1e9",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "4a584f63daaefdea7fa556d31aebef864927b34d6488707416c322a736c6661f",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "f8c3bd02540f8a48dfb1cf38ec72b10b6e42f0bef2efacc5843d0b6a46781cea",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "a73af7a17c78048da9296ef99ad9ddb9d9b28123c2064b9596eb463c33c90181",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "95d9a9bcfeee9a27a1c1133f456db7cd61439c8a055744921b4a8ff897a876fc",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "fa5002fd2871a503edfe5b6a29375f2e0a1af3c380c8bb114bc153a52a4e9b34",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "7c2aa7c80f04ae9212537d71723375318993f6aaf44940f495e3f2361edfbd99",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "a94a59b8fb9af21ecf39534f3200b21af8ee5525ade97de40d98da342e338d00",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "61b13b508de2cb7691da5e4b2d7bee8ef034c1426b5c09937be6360268372ce6",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "fef25adc4fd1a4ae9a2f48db81c52d3c7e69e8bb6f3b04d3da74a96137bae5e2",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "7e3da02c020db0a955da24387678f8eeaba1af7b93083df45e481f12ae504d14"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();String step='init';try{try{List<Integer> emptyItems=new List<Integer>();Integer unused=emptyItems[0];}catch(Exception caught){payload.put('exceptionType',caught.getTypeName());payload.put('exceptionMessage',caught.getMessage());}}catch(Exception e){payload.put('step',step);payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|CONTROL_002|'+JSON.serialize(payload));",
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "exceptionMessage": "List index out of bounds: 0",
+                    "exceptionType": "System.ListException"
+                  }
+                },
+                "value": {
+                  "exceptionMessage": "List index out of bounds: 0",
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "sourceSha256": {
+                "anonymous": "38747aeb6ac5e22a846810f5ac84e3d6adb5a3c345da116fdfffa7d1673f2a17"
+              },
+              "capturedSourceSha256": {
+                "anonymous": "0f8d78de280ee5f8c82adac2a32c7ef10534d4e29e969b41e878a188c0e47de2"
+              }
+            },
+            "istest": {
+              "classes": {
+                "CONTROL002Observe": "@IsTest private class CONTROL002Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();String step='init';try{try{List<Integer> emptyItems=new List<Integer>();Integer unused=emptyItems[0];}catch(Exception caught){payload.put('exceptionType',caught.getTypeName());payload.put('exceptionMessage',caught.getMessage());}}catch(Exception e){payload.put('step',step);payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String markerEnvelope='FLOW_CORE_RESULT|CONTROL_002|'+JSON.serialize(payload);Integer fullEnvelopeLength=markerEnvelope.length();String overflowMessage=payload.get('exceptionMessage')==null?'':String.valueOf(payload.get('exceptionMessage'));String overflowType=payload.get('exceptionType')==null?'':String.valueOf(payload.get('exceptionType'));if(fullEnvelopeLength>620){overflowType=overflowType.replaceAll('[^A-Za-z0-9_.]','_');if(overflowType.length()>80){overflowType=overflowType.substring(0,80);}markerEnvelope='FLOW_CORE_RESULT|CONTROL_002|'+JSON.serialize(new Map<String,Object>{'markerOverflow'=>true,'fullEnvelopeLength'=>fullEnvelopeLength,'exceptionType'=>overflowType,'messageLength'=>overflowMessage.length(),'messageSha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(overflowMessage)))});}System.assert(false,markerEnvelope);}}"
+              },
+              "tests": [
+                "CONTROL002Observe"
+              ],
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "exceptionMessage": "List index out of bounds: 0",
+                    "exceptionType": "System.ListException"
+                  }
+                },
+                "value": {
+                  "exceptionMessage": "List index out of bounds: 0",
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "sourceSha256": {
+                "CONTROL002Observe": "010cca2ebc3393cf73965b1f4bd48b2ef5f2390f18a3a0d9bbeca8782e396eaf"
+              },
+              "capturedSourceSha256": {
+                "CONTROL002Observe": "55c7a4bcc0f9ec598e3f80e01e2527f9cb1f73b713e17fec23f901b0c78f66e8"
+              }
+            }
+          }
+        },
+        "67.0": {
+          "files": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Unit__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Unit</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Text__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Text</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Other__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Other</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Flag__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Flag</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Gate__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Gate</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Whole__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Whole</ns0:label><ns0:precision>10</ns0:precision><ns0:required>false</ns0:required><ns0:scale>0</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Amount__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Amount</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Money__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Money</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Currency</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Result__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Result</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Trace__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Trace</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Fired__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Fired</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "<ns0:CustomObject xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:deploymentStatus>Deployed</ns0:deploymentStatus><ns0:label>FlowCoreCONTROLRecord__c Flow Record</ns0:label><ns0:nameField><ns0:label>FlowCoreCONTROLRecord__c Name</ns0:label><ns0:type>Text</ns0:type></ns0:nameField><ns0:pluralLabel>FlowCoreCONTROLRecord__c Flow Records</ns0:pluralLabel><ns0:sharingModel>ReadWrite</ns0:sharingModel></ns0:CustomObject>",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><assignments><name>MarkFired</name><label>MarkFired</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Fired__c</assignToReference><operator>Assign</operator><value><booleanValue>true</booleanValue></value></assignmentItems></assignments><interviewLabel>FlowCoreCONTROLEngineGuard {!$Flow.CurrentDateTime}</interviewLabel><label>FlowCoreCONTROLEngineGuard</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>MarkFired</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>subject</stringValue></value></filters><object>FlowCoreCONTROLRecord__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status></Flow>"
+          },
+          "sourceSha256": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "06f0bf0e56c799b25ace116e1cae68a22e3072408d020e1b1afab64acc2498bf",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "14d250a54ae638147ea8b7041c591fd0f87638c2e3926f3379fa652dc0640750",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "ab0a582cf0400ae71dfc2d8e8449ba775eceb2296891f4393bdfe12202b0d1e9",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "4a584f63daaefdea7fa556d31aebef864927b34d6488707416c322a736c6661f",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "f8c3bd02540f8a48dfb1cf38ec72b10b6e42f0bef2efacc5843d0b6a46781cea",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "a73af7a17c78048da9296ef99ad9ddb9d9b28123c2064b9596eb463c33c90181",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "95d9a9bcfeee9a27a1c1133f456db7cd61439c8a055744921b4a8ff897a876fc",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "fa5002fd2871a503edfe5b6a29375f2e0a1af3c380c8bb114bc153a52a4e9b34",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "7c2aa7c80f04ae9212537d71723375318993f6aaf44940f495e3f2361edfbd99",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "a94a59b8fb9af21ecf39534f3200b21af8ee5525ade97de40d98da342e338d00",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "61b13b508de2cb7691da5e4b2d7bee8ef034c1426b5c09937be6360268372ce6",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "fef25adc4fd1a4ae9a2f48db81c52d3c7e69e8bb6f3b04d3da74a96137bae5e2",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "ecfe754a8850c33e49117089da9f24f1df1094fed2ac5be9622568080b69b1f4"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();String step='init';try{try{List<Integer> emptyItems=new List<Integer>();Integer unused=emptyItems[0];}catch(Exception caught){payload.put('exceptionType',caught.getTypeName());payload.put('exceptionMessage',caught.getMessage());}}catch(Exception e){payload.put('step',step);payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|CONTROL_002|'+JSON.serialize(payload));",
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "exceptionMessage": "List index out of bounds: 0",
+                    "exceptionType": "System.ListException"
+                  }
+                },
+                "value": {
+                  "exceptionMessage": "List index out of bounds: 0",
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "sourceSha256": {
+                "anonymous": "38747aeb6ac5e22a846810f5ac84e3d6adb5a3c345da116fdfffa7d1673f2a17"
+              },
+              "capturedSourceSha256": {
+                "anonymous": "0f8d78de280ee5f8c82adac2a32c7ef10534d4e29e969b41e878a188c0e47de2"
+              }
+            },
+            "istest": {
+              "classes": {
+                "CONTROL002Observe": "@IsTest private class CONTROL002Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();String step='init';try{try{List<Integer> emptyItems=new List<Integer>();Integer unused=emptyItems[0];}catch(Exception caught){payload.put('exceptionType',caught.getTypeName());payload.put('exceptionMessage',caught.getMessage());}}catch(Exception e){payload.put('step',step);payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String markerEnvelope='FLOW_CORE_RESULT|CONTROL_002|'+JSON.serialize(payload);Integer fullEnvelopeLength=markerEnvelope.length();String overflowMessage=payload.get('exceptionMessage')==null?'':String.valueOf(payload.get('exceptionMessage'));String overflowType=payload.get('exceptionType')==null?'':String.valueOf(payload.get('exceptionType'));if(fullEnvelopeLength>620){overflowType=overflowType.replaceAll('[^A-Za-z0-9_.]','_');if(overflowType.length()>80){overflowType=overflowType.substring(0,80);}markerEnvelope='FLOW_CORE_RESULT|CONTROL_002|'+JSON.serialize(new Map<String,Object>{'markerOverflow'=>true,'fullEnvelopeLength'=>fullEnvelopeLength,'exceptionType'=>overflowType,'messageLength'=>overflowMessage.length(),'messageSha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(overflowMessage)))});}System.assert(false,markerEnvelope);}}"
+              },
+              "tests": [
+                "CONTROL002Observe"
+              ],
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "exceptionMessage": "List index out of bounds: 0",
+                    "exceptionType": "System.ListException"
+                  }
+                },
+                "value": {
+                  "exceptionMessage": "List index out of bounds: 0",
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "sourceSha256": {
+                "CONTROL002Observe": "010cca2ebc3393cf73965b1f4bd48b2ef5f2390f18a3a0d9bbeca8782e396eaf"
+              },
+              "capturedSourceSha256": {
+                "CONTROL002Observe": "55c7a4bcc0f9ec598e3f80e01e2527f9cb1f73b713e17fec23f901b0c78f66e8"
+              }
+            }
+          }
+        },
+        "68.0": {
+          "files": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Unit__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Unit</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Text__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Text</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Other__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Other</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Flag__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Flag</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Gate__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Gate</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Whole__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Whole</ns0:label><ns0:precision>10</ns0:precision><ns0:required>false</ns0:required><ns0:scale>0</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Amount__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Amount</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Money__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Money</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Currency</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Result__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Result</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Trace__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Trace</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Fired__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Fired</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "<ns0:CustomObject xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:deploymentStatus>Deployed</ns0:deploymentStatus><ns0:label>FlowCoreCONTROLRecord__c Flow Record</ns0:label><ns0:nameField><ns0:label>FlowCoreCONTROLRecord__c Name</ns0:label><ns0:type>Text</ns0:type></ns0:nameField><ns0:pluralLabel>FlowCoreCONTROLRecord__c Flow Records</ns0:pluralLabel><ns0:sharingModel>ReadWrite</ns0:sharingModel></ns0:CustomObject>",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><assignments><name>MarkFired</name><label>MarkFired</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Fired__c</assignToReference><operator>Assign</operator><value><booleanValue>true</booleanValue></value></assignmentItems></assignments><interviewLabel>FlowCoreCONTROLEngineGuard {!$Flow.CurrentDateTime}</interviewLabel><label>FlowCoreCONTROLEngineGuard</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>MarkFired</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>subject</stringValue></value></filters><object>FlowCoreCONTROLRecord__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status></Flow>"
+          },
+          "sourceSha256": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "06f0bf0e56c799b25ace116e1cae68a22e3072408d020e1b1afab64acc2498bf",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "14d250a54ae638147ea8b7041c591fd0f87638c2e3926f3379fa652dc0640750",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "ab0a582cf0400ae71dfc2d8e8449ba775eceb2296891f4393bdfe12202b0d1e9",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "4a584f63daaefdea7fa556d31aebef864927b34d6488707416c322a736c6661f",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "f8c3bd02540f8a48dfb1cf38ec72b10b6e42f0bef2efacc5843d0b6a46781cea",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "a73af7a17c78048da9296ef99ad9ddb9d9b28123c2064b9596eb463c33c90181",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "95d9a9bcfeee9a27a1c1133f456db7cd61439c8a055744921b4a8ff897a876fc",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "fa5002fd2871a503edfe5b6a29375f2e0a1af3c380c8bb114bc153a52a4e9b34",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "7c2aa7c80f04ae9212537d71723375318993f6aaf44940f495e3f2361edfbd99",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "a94a59b8fb9af21ecf39534f3200b21af8ee5525ade97de40d98da342e338d00",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "61b13b508de2cb7691da5e4b2d7bee8ef034c1426b5c09937be6360268372ce6",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "fef25adc4fd1a4ae9a2f48db81c52d3c7e69e8bb6f3b04d3da74a96137bae5e2",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "094c5e5d9ac6655bfec99940f88fa0806afb6ad09bde52f1ccb966a1d7e7b32b"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();String step='init';try{try{List<Integer> emptyItems=new List<Integer>();Integer unused=emptyItems[0];}catch(Exception caught){payload.put('exceptionType',caught.getTypeName());payload.put('exceptionMessage',caught.getMessage());}}catch(Exception e){payload.put('step',step);payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|CONTROL_002|'+JSON.serialize(payload));",
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "exceptionMessage": "List index out of bounds: 0",
+                    "exceptionType": "System.ListException"
+                  }
+                },
+                "value": {
+                  "exceptionMessage": "List index out of bounds: 0",
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "sourceSha256": {
+                "anonymous": "38747aeb6ac5e22a846810f5ac84e3d6adb5a3c345da116fdfffa7d1673f2a17"
+              },
+              "capturedSourceSha256": {
+                "anonymous": "0f8d78de280ee5f8c82adac2a32c7ef10534d4e29e969b41e878a188c0e47de2"
+              }
+            },
+            "istest": {
+              "classes": {
+                "CONTROL002Observe": "@IsTest private class CONTROL002Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();String step='init';try{try{List<Integer> emptyItems=new List<Integer>();Integer unused=emptyItems[0];}catch(Exception caught){payload.put('exceptionType',caught.getTypeName());payload.put('exceptionMessage',caught.getMessage());}}catch(Exception e){payload.put('step',step);payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}String markerEnvelope='FLOW_CORE_RESULT|CONTROL_002|'+JSON.serialize(payload);Integer fullEnvelopeLength=markerEnvelope.length();String overflowMessage=payload.get('exceptionMessage')==null?'':String.valueOf(payload.get('exceptionMessage'));String overflowType=payload.get('exceptionType')==null?'':String.valueOf(payload.get('exceptionType'));if(fullEnvelopeLength>620){overflowType=overflowType.replaceAll('[^A-Za-z0-9_.]','_');if(overflowType.length()>80){overflowType=overflowType.substring(0,80);}markerEnvelope='FLOW_CORE_RESULT|CONTROL_002|'+JSON.serialize(new Map<String,Object>{'markerOverflow'=>true,'fullEnvelopeLength'=>fullEnvelopeLength,'exceptionType'=>overflowType,'messageLength'=>overflowMessage.length(),'messageSha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(overflowMessage)))});}System.assert(false,markerEnvelope);}}"
+              },
+              "tests": [
+                "CONTROL002Observe"
+              ],
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "exceptionMessage": "List index out of bounds: 0",
+                    "exceptionType": "System.ListException"
+                  }
+                },
+                "value": {
+                  "exceptionMessage": "List index out of bounds: 0",
+                  "exceptionType": "System.ListException"
+                }
+              },
+              "sourceSha256": {
+                "CONTROL002Observe": "010cca2ebc3393cf73965b1f4bd48b2ef5f2390f18a3a0d9bbeca8782e396eaf"
+              },
+              "capturedSourceSha256": {
+                "CONTROL002Observe": "55c7a4bcc0f9ec598e3f80e01e2527f9cb1f73b713e17fec23f901b0c78f66e8"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "CONTROL_003",
+      "byAPI": {
+        "62.0": {
+          "files": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Unit__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Unit</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Text__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Text</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Other__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Other</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Flag__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Flag</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Gate__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Gate</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Whole__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Whole</ns0:label><ns0:precision>10</ns0:precision><ns0:required>false</ns0:required><ns0:scale>0</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Amount__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Amount</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Money__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Money</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Currency</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Result__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Result</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Trace__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Trace</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Fired__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Fired</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "<ns0:CustomObject xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:deploymentStatus>Deployed</ns0:deploymentStatus><ns0:label>FlowCoreCONTROLRecord__c Flow Record</ns0:label><ns0:nameField><ns0:label>FlowCoreCONTROLRecord__c Name</ns0:label><ns0:type>Text</ns0:type></ns0:nameField><ns0:pluralLabel>FlowCoreCONTROLRecord__c Flow Records</ns0:pluralLabel><ns0:sharingModel>ReadWrite</ns0:sharingModel></ns0:CustomObject>",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><assignments><name>MarkFired</name><label>MarkFired</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Fired__c</assignToReference><operator>Assign</operator><value><booleanValue>true</booleanValue></value></assignmentItems></assignments><interviewLabel>FlowCoreCONTROLEngineGuard {!$Flow.CurrentDateTime}</interviewLabel><label>FlowCoreCONTROLEngineGuard</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>MarkFired</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>subject</stringValue></value></filters><object>FlowCoreCONTROLRecord__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status></Flow>"
+          },
+          "sourceSha256": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "06f0bf0e56c799b25ace116e1cae68a22e3072408d020e1b1afab64acc2498bf",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "14d250a54ae638147ea8b7041c591fd0f87638c2e3926f3379fa652dc0640750",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "ab0a582cf0400ae71dfc2d8e8449ba775eceb2296891f4393bdfe12202b0d1e9",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "4a584f63daaefdea7fa556d31aebef864927b34d6488707416c322a736c6661f",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "f8c3bd02540f8a48dfb1cf38ec72b10b6e42f0bef2efacc5843d0b6a46781cea",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "a73af7a17c78048da9296ef99ad9ddb9d9b28123c2064b9596eb463c33c90181",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "95d9a9bcfeee9a27a1c1133f456db7cd61439c8a055744921b4a8ff897a876fc",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "fa5002fd2871a503edfe5b6a29375f2e0a1af3c380c8bb114bc153a52a4e9b34",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "7c2aa7c80f04ae9212537d71723375318993f6aaf44940f495e3f2361edfbd99",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "a94a59b8fb9af21ecf39534f3200b21af8ee5525ade97de40d98da342e338d00",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "61b13b508de2cb7691da5e4b2d7bee8ef034c1426b5c09937be6360268372ce6",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "fef25adc4fd1a4ae9a2f48db81c52d3c7e69e8bb6f3b04d3da74a96137bae5e2",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "7e3da02c020db0a955da24387678f8eeaba1af7b93083df45e481f12ae504d14"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "System.assertEquals(1,2,'FLOW_CORE_UNCAUGHT');",
+              "expected": {
+                "outcome": "uncaught",
+                "native": {
+                  "outcome": "uncaught_anonymous",
+                  "exceptionMessage": "System.AssertException: Assertion Failed: FLOW_CORE_UNCAUGHT: Expected: 1, Actual: 2",
+                  "exceptionType": "System.AssertException",
+                  "exceptionTypeSource": "returned_message_prefix"
+                },
+                "exceptionType": "System.AssertException",
+                "message": "Assertion Failed: FLOW_CORE_UNCAUGHT: Expected: 1, Actual: 2"
+              },
+              "sourceSha256": {
+                "anonymous": "28c42e8371b3b98ef95fe4dfc8f42305e39f89bdeceb0363a9b40f3fc0adb365"
+              },
+              "capturedSourceSha256": {
+                "anonymous": "bfe60b2431a8e8cb8de8c85acf6e8ea07ff31e6363fced2609bd6141e2e9fd81"
+              }
+            },
+            "istest": {
+              "classes": {
+                "CONTROL003Observe": "@IsTest private class CONTROL003Observe{@IsTest static void observe(){System.assertEquals(1,2,'FLOW_CORE_UNCAUGHT');}}"
+              },
+              "tests": [
+                "CONTROL003Observe"
+              ],
+              "expected": {
+                "outcome": "uncaught",
+                "native": {
+                  "outcome": "uncaught_test_failure",
+                  "testFailures": [
+                    {
+                      "cls": "CONTROL003Observe",
+                      "method": "observe",
+                      "message": "System.AssertException: Assertion Failed: FLOW_CORE_UNCAUGHT: Expected: 1, Actual: 2",
+                      "exceptionType": "System.AssertException",
+                      "exceptionTypeSource": "returned_message_prefix"
+                    }
+                  ]
+                },
+                "exceptionType": "System.AssertException",
+                "message": "Assertion Failed: FLOW_CORE_UNCAUGHT: Expected: 1, Actual: 2"
+              },
+              "sourceSha256": {
+                "CONTROL003Observe": "c44af855d55b6230e7c7c9383a51d264be038bbfc4a6f1d9f5ce7afd2d57cb9a"
+              },
+              "capturedSourceSha256": {
+                "CONTROL003Observe": "ca83ecfe3e6f29a1150a65d828104fdb1e7c7e081cf1566a0b454730d9bc5211"
+              }
+            }
+          }
+        },
+        "67.0": {
+          "files": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Unit__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Unit</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Text__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Text</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Other__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Other</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Flag__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Flag</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Gate__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Gate</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Whole__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Whole</ns0:label><ns0:precision>10</ns0:precision><ns0:required>false</ns0:required><ns0:scale>0</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Amount__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Amount</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Money__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Money</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Currency</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Result__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Result</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Trace__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Trace</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Fired__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Fired</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "<ns0:CustomObject xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:deploymentStatus>Deployed</ns0:deploymentStatus><ns0:label>FlowCoreCONTROLRecord__c Flow Record</ns0:label><ns0:nameField><ns0:label>FlowCoreCONTROLRecord__c Name</ns0:label><ns0:type>Text</ns0:type></ns0:nameField><ns0:pluralLabel>FlowCoreCONTROLRecord__c Flow Records</ns0:pluralLabel><ns0:sharingModel>ReadWrite</ns0:sharingModel></ns0:CustomObject>",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><assignments><name>MarkFired</name><label>MarkFired</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Fired__c</assignToReference><operator>Assign</operator><value><booleanValue>true</booleanValue></value></assignmentItems></assignments><interviewLabel>FlowCoreCONTROLEngineGuard {!$Flow.CurrentDateTime}</interviewLabel><label>FlowCoreCONTROLEngineGuard</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>MarkFired</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>subject</stringValue></value></filters><object>FlowCoreCONTROLRecord__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status></Flow>"
+          },
+          "sourceSha256": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "06f0bf0e56c799b25ace116e1cae68a22e3072408d020e1b1afab64acc2498bf",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "14d250a54ae638147ea8b7041c591fd0f87638c2e3926f3379fa652dc0640750",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "ab0a582cf0400ae71dfc2d8e8449ba775eceb2296891f4393bdfe12202b0d1e9",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "4a584f63daaefdea7fa556d31aebef864927b34d6488707416c322a736c6661f",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "f8c3bd02540f8a48dfb1cf38ec72b10b6e42f0bef2efacc5843d0b6a46781cea",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "a73af7a17c78048da9296ef99ad9ddb9d9b28123c2064b9596eb463c33c90181",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "95d9a9bcfeee9a27a1c1133f456db7cd61439c8a055744921b4a8ff897a876fc",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "fa5002fd2871a503edfe5b6a29375f2e0a1af3c380c8bb114bc153a52a4e9b34",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "7c2aa7c80f04ae9212537d71723375318993f6aaf44940f495e3f2361edfbd99",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "a94a59b8fb9af21ecf39534f3200b21af8ee5525ade97de40d98da342e338d00",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "61b13b508de2cb7691da5e4b2d7bee8ef034c1426b5c09937be6360268372ce6",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "fef25adc4fd1a4ae9a2f48db81c52d3c7e69e8bb6f3b04d3da74a96137bae5e2",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "ecfe754a8850c33e49117089da9f24f1df1094fed2ac5be9622568080b69b1f4"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "System.assertEquals(1,2,'FLOW_CORE_UNCAUGHT');",
+              "expected": {
+                "outcome": "uncaught",
+                "native": {
+                  "outcome": "uncaught_anonymous",
+                  "exceptionMessage": "System.AssertException: Assertion Failed: FLOW_CORE_UNCAUGHT: Expected: 1, Actual: 2",
+                  "exceptionType": "System.AssertException",
+                  "exceptionTypeSource": "returned_message_prefix"
+                },
+                "exceptionType": "System.AssertException",
+                "message": "Assertion Failed: FLOW_CORE_UNCAUGHT: Expected: 1, Actual: 2"
+              },
+              "sourceSha256": {
+                "anonymous": "28c42e8371b3b98ef95fe4dfc8f42305e39f89bdeceb0363a9b40f3fc0adb365"
+              },
+              "capturedSourceSha256": {
+                "anonymous": "bfe60b2431a8e8cb8de8c85acf6e8ea07ff31e6363fced2609bd6141e2e9fd81"
+              }
+            },
+            "istest": {
+              "classes": {
+                "CONTROL003Observe": "@IsTest private class CONTROL003Observe{@IsTest static void observe(){System.assertEquals(1,2,'FLOW_CORE_UNCAUGHT');}}"
+              },
+              "tests": [
+                "CONTROL003Observe"
+              ],
+              "expected": {
+                "outcome": "uncaught",
+                "native": {
+                  "outcome": "uncaught_test_failure",
+                  "testFailures": [
+                    {
+                      "cls": "CONTROL003Observe",
+                      "method": "observe",
+                      "message": "System.AssertException: Assertion Failed: FLOW_CORE_UNCAUGHT: Expected: 1, Actual: 2",
+                      "exceptionType": "System.AssertException",
+                      "exceptionTypeSource": "returned_message_prefix"
+                    }
+                  ]
+                },
+                "exceptionType": "System.AssertException",
+                "message": "Assertion Failed: FLOW_CORE_UNCAUGHT: Expected: 1, Actual: 2"
+              },
+              "sourceSha256": {
+                "CONTROL003Observe": "c44af855d55b6230e7c7c9383a51d264be038bbfc4a6f1d9f5ce7afd2d57cb9a"
+              },
+              "capturedSourceSha256": {
+                "CONTROL003Observe": "ca83ecfe3e6f29a1150a65d828104fdb1e7c7e081cf1566a0b454730d9bc5211"
+              }
+            }
+          }
+        },
+        "68.0": {
+          "files": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Unit__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Unit</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Text__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Text</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Other__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Other</ns0:label><ns0:length>80</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Flag__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Flag</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Gate__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Gate</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Whole__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Whole</ns0:label><ns0:precision>10</ns0:precision><ns0:required>false</ns0:required><ns0:scale>0</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Amount__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Amount</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Number</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Money__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Money</ns0:label><ns0:precision>16</ns0:precision><ns0:required>false</ns0:required><ns0:scale>2</ns0:scale><ns0:type>Currency</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Result__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Result</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Trace__c</ns0:fullName><ns0:label>FlowCoreCONTROLRecord__c Trace</ns0:label><ns0:length>255</ns0:length><ns0:required>false</ns0:required><ns0:type>Text</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "<ns0:CustomField xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:fullName>Fired__c</ns0:fullName><ns0:defaultValue>false</ns0:defaultValue><ns0:label>FlowCoreCONTROLRecord__c Fired</ns0:label><ns0:type>Checkbox</ns0:type></ns0:CustomField>",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "<ns0:CustomObject xmlns:ns0=\"http://soap.sforce.com/2006/04/metadata\"><ns0:deploymentStatus>Deployed</ns0:deploymentStatus><ns0:label>FlowCoreCONTROLRecord__c Flow Record</ns0:label><ns0:nameField><ns0:label>FlowCoreCONTROLRecord__c Name</ns0:label><ns0:type>Text</ns0:type></ns0:nameField><ns0:pluralLabel>FlowCoreCONTROLRecord__c Flow Records</ns0:pluralLabel><ns0:sharingModel>ReadWrite</ns0:sharingModel></ns0:CustomObject>",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><assignments><name>MarkFired</name><label>MarkFired</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Fired__c</assignToReference><operator>Assign</operator><value><booleanValue>true</booleanValue></value></assignmentItems></assignments><interviewLabel>FlowCoreCONTROLEngineGuard {!$Flow.CurrentDateTime}</interviewLabel><label>FlowCoreCONTROLEngineGuard</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>MarkFired</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>subject</stringValue></value></filters><object>FlowCoreCONTROLRecord__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status></Flow>"
+          },
+          "sourceSha256": {
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Unit__c.field-meta.xml": "06f0bf0e56c799b25ace116e1cae68a22e3072408d020e1b1afab64acc2498bf",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Text__c.field-meta.xml": "14d250a54ae638147ea8b7041c591fd0f87638c2e3926f3379fa652dc0640750",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Other__c.field-meta.xml": "ab0a582cf0400ae71dfc2d8e8449ba775eceb2296891f4393bdfe12202b0d1e9",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Flag__c.field-meta.xml": "4a584f63daaefdea7fa556d31aebef864927b34d6488707416c322a736c6661f",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Gate__c.field-meta.xml": "f8c3bd02540f8a48dfb1cf38ec72b10b6e42f0bef2efacc5843d0b6a46781cea",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Whole__c.field-meta.xml": "a73af7a17c78048da9296ef99ad9ddb9d9b28123c2064b9596eb463c33c90181",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Amount__c.field-meta.xml": "95d9a9bcfeee9a27a1c1133f456db7cd61439c8a055744921b4a8ff897a876fc",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Money__c.field-meta.xml": "fa5002fd2871a503edfe5b6a29375f2e0a1af3c380c8bb114bc153a52a4e9b34",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Result__c.field-meta.xml": "7c2aa7c80f04ae9212537d71723375318993f6aaf44940f495e3f2361edfbd99",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Trace__c.field-meta.xml": "a94a59b8fb9af21ecf39534f3200b21af8ee5525ade97de40d98da342e338d00",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/fields/Fired__c.field-meta.xml": "61b13b508de2cb7691da5e4b2d7bee8ef034c1426b5c09937be6360268372ce6",
+            "force-app/main/default/objects/FlowCoreCONTROLRecord__c/FlowCoreCONTROLRecord__c.object-meta.xml": "fef25adc4fd1a4ae9a2f48db81c52d3c7e69e8bb6f3b04d3da74a96137bae5e2",
+            "force-app/main/default/flows/FlowCoreCONTROLEngineGuard.flow-meta.xml": "094c5e5d9ac6655bfec99940f88fa0806afb6ad09bde52f1ccb966a1d7e7b32b"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "System.assertEquals(1,2,'FLOW_CORE_UNCAUGHT');",
+              "expected": {
+                "outcome": "uncaught",
+                "native": {
+                  "outcome": "uncaught_anonymous",
+                  "exceptionMessage": "System.AssertException: Assertion Failed: FLOW_CORE_UNCAUGHT: Expected: 1, Actual: 2",
+                  "exceptionType": "System.AssertException",
+                  "exceptionTypeSource": "returned_message_prefix"
+                },
+                "exceptionType": "System.AssertException",
+                "message": "Assertion Failed: FLOW_CORE_UNCAUGHT: Expected: 1, Actual: 2"
+              },
+              "sourceSha256": {
+                "anonymous": "28c42e8371b3b98ef95fe4dfc8f42305e39f89bdeceb0363a9b40f3fc0adb365"
+              },
+              "capturedSourceSha256": {
+                "anonymous": "bfe60b2431a8e8cb8de8c85acf6e8ea07ff31e6363fced2609bd6141e2e9fd81"
+              }
+            },
+            "istest": {
+              "classes": {
+                "CONTROL003Observe": "@IsTest private class CONTROL003Observe{@IsTest static void observe(){System.assertEquals(1,2,'FLOW_CORE_UNCAUGHT');}}"
+              },
+              "tests": [
+                "CONTROL003Observe"
+              ],
+              "expected": {
+                "outcome": "uncaught",
+                "native": {
+                  "outcome": "uncaught_test_failure",
+                  "testFailures": [
+                    {
+                      "cls": "CONTROL003Observe",
+                      "method": "observe",
+                      "message": "System.AssertException: Assertion Failed: FLOW_CORE_UNCAUGHT: Expected: 1, Actual: 2",
+                      "exceptionType": "System.AssertException",
+                      "exceptionTypeSource": "returned_message_prefix"
+                    }
+                  ]
+                },
+                "exceptionType": "System.AssertException",
+                "message": "Assertion Failed: FLOW_CORE_UNCAUGHT: Expected: 1, Actual: 2"
+              },
+              "sourceSha256": {
+                "CONTROL003Observe": "c44af855d55b6230e7c7c9383a51d264be038bbfc4a6f1d9f5ce7afd2d57cb9a"
+              },
+              "capturedSourceSha256": {
+                "CONTROL003Observe": "ca83ecfe3e6f29a1150a65d828104fdb1e7c7e081cf1566a0b454730d9bc5211"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

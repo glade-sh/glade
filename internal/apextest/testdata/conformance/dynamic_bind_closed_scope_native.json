@@ -1,0 +1,1344 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "shapeCount": 10,
+  "nativeCellCount": 60,
+  "caseTableSHA256": "563ed30a584a41d25f1285e736b0787e7693ddbc5d93fd9be0493ed460a40d3b",
+  "helpers": {
+    "P8Types": "public class P8Types{public static String queryText(){String wanted='P8 Bound Alpha';return 'SELECT Name FROM Account WHERE Name = :wanted';}}"
+  },
+  "helperSHA256": {
+    "P8Types": "d0193737a2f7a362fe814d093595a028c571f8e02a1479c94f6c774e32114262"
+  },
+  "rows": [
+    {
+      "id": "E01",
+      "source": "E.1 if/query",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;if(soql==null){String wanted='P8 Bound Alpha';soql='SELECT Name FROM Account WHERE Name = :wanted';}List<Account> values=Database.query(soql);List<String> names=new List<String>();for(Account a:values)names.add(a.Name);payload.put('names',names);payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "named": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;if(soql==null){String wanted='P8 Bound Alpha';soql='SELECT Name FROM Account WHERE Name = :wanted';}List<Account> values=Database.query(soql);List<String> names=new List<String>();for(Account a:values)names.add(a.Name);payload.put('names',names);payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "sourceSHA256": {
+        "anonymous": "6a5abae5e92f69505082bc186d5c246ad2ed4fbfd2af4fdad1376d10c903e22b",
+        "istest": "6a5abae5e92f69505082bc186d5c246ad2ed4fbfd2af4fdad1376d10c903e22b"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E01",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "02f69a9df2533b069657e066c7da0c1985873dee7cfc82644f7aaf672286c5dd"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E01",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "cfa8dd0ad0bc92374c70ba8ae65b7806674c6f01ed5c7519b51477a90a8247aa"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E01",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "be333152ee08d3f8f8dfb7ed5e6c7986fc57bb723b858904593bddfef0a3b089"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E01",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "47b38004dd83835fb2e309a10341b662d7bb06388f18ce27d3836dfb2b0389b0"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E01",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "414bd51709453152a45b056acb7f415472e950ed4fff81740ae0f144b4201858"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E01",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "7a0af170b481a4b8fad380cda71760ea1a4883f6f33663ed1af36be7d59b1675"
+        }
+      ]
+    },
+    {
+      "id": "E02",
+      "source": "E.2 if/queryLocator",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;if(soql==null){String wanted='P8 Bound Alpha';soql='SELECT Name FROM Account WHERE Name = :wanted';}Database.QueryLocator loc=Database.getQueryLocator(soql);Database.QueryLocatorIterator it=loc.iterator();List<String> names=new List<String>();while(it.hasNext())names.add(((Account)it.next()).Name);payload.put('names',names);payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "named": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;if(soql==null){String wanted='P8 Bound Alpha';soql='SELECT Name FROM Account WHERE Name = :wanted';}Database.QueryLocator loc=Database.getQueryLocator(soql);Database.QueryLocatorIterator it=loc.iterator();List<String> names=new List<String>();while(it.hasNext())names.add(((Account)it.next()).Name);payload.put('names',names);payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "sourceSHA256": {
+        "anonymous": "b190e684ec62ddb91cc14c4c232268118dd2e14459527adb62b077376f3bbdae",
+        "istest": "b190e684ec62ddb91cc14c4c232268118dd2e14459527adb62b077376f3bbdae"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E02",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "b1985d9256f75da1a7fab83c4d4099e0b437e9536745dc90b309c3d773fab8ad"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E02",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "1b8fbb2f1f33fdd1e208ba1436575c68d4236823d575f3aec0b3dbe8d7d9a4a6"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E02",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "de5e592a881d78a3c31d83f500d026c0d62c0ee98443ff7d8c933e2f619444b5"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E02",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "36695aaef6d798c00e5ae505fc7984b18787b8a797123c921b917cc3c6e56971"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E02",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "856190e3e29e260437aea4cf74386d479eb2936403d52814a463774f35840fd3"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E02",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "08a78c7e3c634395e7185165f6acda7df8645c5ffbf00fb2b8516d42bc3a2731"
+        }
+      ]
+    },
+    {
+      "id": "E03",
+      "source": "E.2 if/countQuery",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;if(soql==null){String wanted='P8 Bound Alpha';soql='SELECT COUNT() FROM Account WHERE Name = :wanted';}payload.put('count',Database.countQuery(soql));payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "named": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;if(soql==null){String wanted='P8 Bound Alpha';soql='SELECT COUNT() FROM Account WHERE Name = :wanted';}payload.put('count',Database.countQuery(soql));payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "sourceSHA256": {
+        "anonymous": "7e1301ccce8358b02651b45156aca07f47e4a96b9c60c214fc4f8acec3e625cb",
+        "istest": "7e1301ccce8358b02651b45156aca07f47e4a96b9c60c214fc4f8acec3e625cb"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E03",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "count": 1,
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "8dcefcc29527c70e88f79b6aed8b652966f52423fa8e53a347df54b28e0f42f7"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E03",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "count": 1,
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "0e8d56ab1d16feb45305fc1b4f0348656112cf2c0d5f08d1e998b7dccf477352"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E03",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "count": 1,
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "721ccf840c16fe1947f6a41face3f5bdbec9edb46a7eed98de36228b4505604f"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E03",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "count": 1,
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "467878f5ac0814ffbd91f97acf8aa0fc8190002cd93b23e3ca3a6a5843894904"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E03",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "count": 1,
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "2dfd8be2ec54513221f36c4fa0fcf30045b765902a47f226f10fca150b5078f2"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E03",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "count": 1,
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "b239a8eeaf4d234518f7939419e88ddec68fa85951da56daa809768441fd2984"
+        }
+      ]
+    },
+    {
+      "id": "E04",
+      "source": "E.2 if/queryWithBinds no map entry",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;if(soql==null){String wanted='P8 Bound Alpha';soql='SELECT Name FROM Account WHERE Name = :wanted';}List<SObject> values=Database.queryWithBinds(soql,new Map<String,Object>(),AccessLevel.USER_MODE);payload.put('count',values.size());payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "named": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;if(soql==null){String wanted='P8 Bound Alpha';soql='SELECT Name FROM Account WHERE Name = :wanted';}List<SObject> values=Database.queryWithBinds(soql,new Map<String,Object>(),AccessLevel.SYSTEM_MODE);payload.put('count',values.size());payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "sourceSHA256": {
+        "anonymous": "a642befc0e16201e3a4f69fe0ee34b9010af4cf3c1d87d77e8e272ea3448562c",
+        "istest": "a0a9917fada2b715c9a2f5a914b965a38a7e5e2291b8c5b3436c5115038b34d3"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E04",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": "Key 'wanted' does not exist in the bindMap",
+              "exceptionType": "System.QueryException",
+              "readBackComplete": false
+            }
+          },
+          "nativeSHA256": "1777d54e1f753112b3c9f17b75d4653cdfdd29d17a8dd7fcf07280402806ff8f"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E04",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": "Key 'wanted' does not exist in the bindMap",
+              "exceptionType": "System.QueryException",
+              "readBackComplete": false
+            }
+          },
+          "nativeSHA256": "3202c4b779559b786660d1c67d9e0092e71c3041fd4f636e2019827c04b80d67"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E04",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": "Key 'wanted' does not exist in the bindMap",
+              "exceptionType": "System.QueryException",
+              "readBackComplete": false
+            }
+          },
+          "nativeSHA256": "94cc534157d21416ba8077bb77942f041f124b3324f4ab636c2ee6b8d4eee994"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E04",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": "Key 'wanted' does not exist in the bindMap",
+              "exceptionType": "System.QueryException",
+              "readBackComplete": false
+            }
+          },
+          "nativeSHA256": "f914ec57f08241b96a5e17037fe87ec7ec27afbf004acf9415659f9359d34d63"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E04",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": "Key 'wanted' does not exist in the bindMap",
+              "exceptionType": "System.QueryException",
+              "readBackComplete": false
+            }
+          },
+          "nativeSHA256": "f15f4f347328bb1beaebfbb155d1dd47a365fde80d16f88ed532f8abe36fb6d4"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E04",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": "Key 'wanted' does not exist in the bindMap",
+              "exceptionType": "System.QueryException",
+              "readBackComplete": false
+            }
+          },
+          "nativeSHA256": "d52b9e5320aa3ae9a446d65237d6c1efc3fe3d80a54d25d8990b64a1b748f5e9"
+        }
+      ]
+    },
+    {
+      "id": "E05",
+      "source": "E.3 closed for body",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;for(Integer i=0;i<1;i++){String wanted='P8 Bound Alpha';soql='SELECT Name FROM Account WHERE Name = :wanted';}List<Account> values=Database.query(soql);List<String> names=new List<String>();for(Account a:values)names.add(a.Name);payload.put('names',names);payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "named": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;for(Integer i=0;i<1;i++){String wanted='P8 Bound Alpha';soql='SELECT Name FROM Account WHERE Name = :wanted';}List<Account> values=Database.query(soql);List<String> names=new List<String>();for(Account a:values)names.add(a.Name);payload.put('names',names);payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "sourceSHA256": {
+        "anonymous": "81fe70d8b70b6fc565ff55a489cf940b0f0b304c77b9d72e1f8d3c8b21aa76cd",
+        "istest": "81fe70d8b70b6fc565ff55a489cf940b0f0b304c77b9d72e1f8d3c8b21aa76cd"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E05",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "826e047a07fdb29e701e6ba84b83cfbfead5343f38d463378e86216e636aa8f5"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E05",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "33864c03c9daecf536414c4bb40d754cb189577a0f55e5ada72114583b030e20"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E05",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "5899528797a8235aba05018e1eb97da08e76723421feb8089bdeccfaa45305e3"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E05",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "fcca9c65e5f3da8ffee7622202f786e6d6686c4c548ad241e05a3e1c347d5d06"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E05",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "3e428bd7624ec126ce4a52bfc4a8ceace91345e6fe06905ff829d18c69c6190f"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E05",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "4d5ce9052911dbf7bb605527f871b9b9b6ea834b99f73240e4fd83dfe6ef47cc"
+        }
+      ]
+    },
+    {
+      "id": "E06",
+      "source": "E.3 sibling method",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;soql=P8Types.queryText();List<Account> values=Database.query(soql);List<String> names=new List<String>();for(Account a:values)names.add(a.Name);payload.put('names',names);payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "named": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;soql=P8Types.queryText();List<Account> values=Database.query(soql);List<String> names=new List<String>();for(Account a:values)names.add(a.Name);payload.put('names',names);payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "sourceSHA256": {
+        "anonymous": "b5a9755bf290fd549812cf79ad67ed2ad56f5ec6249b394a596be1d26e5117a5",
+        "istest": "b5a9755bf290fd549812cf79ad67ed2ad56f5ec6249b394a596be1d26e5117a5"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E06",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": "Variable does not exist: wanted",
+              "exceptionType": "System.QueryException",
+              "readBackComplete": false
+            }
+          },
+          "nativeSHA256": "5fd20ec505ecd890dbd482058afacb3b527458e8e264df9df4952e11b18a62ae"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E06",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": "Variable does not exist: wanted",
+              "exceptionType": "System.QueryException",
+              "readBackComplete": false
+            }
+          },
+          "nativeSHA256": "b6aff1dcc87fbbfed7a2d6fe8532fd6e843700fee70118a9cc16d0b17c2890ff"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E06",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": "Variable does not exist: wanted",
+              "exceptionType": "System.QueryException",
+              "readBackComplete": false
+            }
+          },
+          "nativeSHA256": "01767f8814faa84394b179737b01cd79a0022698b68a460c8c37ee05fc043b92"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E06",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": "Variable does not exist: wanted",
+              "exceptionType": "System.QueryException",
+              "readBackComplete": false
+            }
+          },
+          "nativeSHA256": "cc981a17eae57e75cd8a24f0200e7b9e8b36a894d60eaa487dcc73e42fe563b6"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E06",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": "Variable does not exist: wanted",
+              "exceptionType": "System.QueryException",
+              "readBackComplete": false
+            }
+          },
+          "nativeSHA256": "1369af273de1b16a3fa3383f7633f118818c058a89d13e74840d48c18eeeccd7"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E06",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": "Variable does not exist: wanted",
+              "exceptionType": "System.QueryException",
+              "readBackComplete": false
+            }
+          },
+          "nativeSHA256": "e2276a146f55faceeedcecfd99978f323797c0a15f6ef10220b582023222d97b"
+        }
+      ]
+    },
+    {
+      "id": "E07",
+      "source": "E.4 two closed blocks",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;if(soql==null){String wanted='P8 Bound Alpha';soql='SELECT Name FROM Account WHERE Name = :wanted';}if(soql!=null){String wanted='P8 Bound Beta';}List<Account> values=Database.query(soql);List<String> names=new List<String>();for(Account a:values)names.add(a.Name);payload.put('names',names);payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "named": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;if(soql==null){String wanted='P8 Bound Alpha';soql='SELECT Name FROM Account WHERE Name = :wanted';}if(soql!=null){String wanted='P8 Bound Beta';}List<Account> values=Database.query(soql);List<String> names=new List<String>();for(Account a:values)names.add(a.Name);payload.put('names',names);payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "sourceSHA256": {
+        "anonymous": "879257517b4662050e3490dd62bacdc01aa053c82419ee8c5c0105324d05dc4a",
+        "istest": "879257517b4662050e3490dd62bacdc01aa053c82419ee8c5c0105324d05dc4a"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E07",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Beta"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "5701af3fb61eb67f450b7ea009f923c6a8d8ea569b9ad288bc32b6b602968f6b"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E07",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Beta"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "de6878f852726d2fc7e6b9ade546c4e5cb1b9e7cb519799a7d2f10a7daa4d2de"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E07",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Beta"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "dd478148f6484c9e68a7429a871c5ba4ca28b847cc2f4118819bc28cc16513c8"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E07",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Beta"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "e5cc871b85ca3a72cfe265ba278fb7200882c3abd454c9903b4bf93d0dbdb8a0"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E07",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Beta"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "159cdb2565f3a0ca562eed68a9b75f43272d5b21cd06364c968a830acdcc3e15"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E07",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Beta"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "46321fc96afdcbf2798fdf4a9bc9d9b45c4b1b3911d0f5e857e019bfd469ecd1"
+        }
+      ]
+    },
+    {
+      "id": "E08",
+      "source": "E.5 case insensitive",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;if(soql==null){String wanted='P8 Bound Alpha';soql='SELECT Name FROM Account WHERE Name = :WANTED';}List<Account> values=Database.query(soql);List<String> names=new List<String>();for(Account a:values)names.add(a.Name);payload.put('names',names);payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "named": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;if(soql==null){String wanted='P8 Bound Alpha';soql='SELECT Name FROM Account WHERE Name = :WANTED';}List<Account> values=Database.query(soql);List<String> names=new List<String>();for(Account a:values)names.add(a.Name);payload.put('names',names);payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "sourceSHA256": {
+        "anonymous": "4d9230e15e87928f2be3b1d6a67b713fa486ebb438a506362e79a97c0373bfe9",
+        "istest": "4d9230e15e87928f2be3b1d6a67b713fa486ebb438a506362e79a97c0373bfe9"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E08",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "e9ae70d3a4040c1a3c3cd00e221c2848ca48ae171185a6ccb0d5fcac10fbbe0a"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E08",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "b770162e8eb0a6222637194e38c803c8a1355950c46ee439730a315ad6ffb811"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E08",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "daec87465bf7788d0c9b939bf80928e098a9e4946258bd8b2131ed4534893148"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E08",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "78f8f2ca94a3237ab1f4867fc47c6e561674fa078e8e811c86e8d334b87d965f"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E08",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "01a630b3d0552d4c72788b6abcedd71e703409c43a0ee31a953d501166321bf8"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E08",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "1b1e52ff425f4b93ad7f7c334618cfb2c966ba4eef2ba82ec9669b2e1ffa684f"
+        }
+      ]
+    },
+    {
+      "id": "E09",
+      "source": "E.6 null local",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;if(soql==null){String wanted=null;soql='SELECT Name FROM Account WHERE Name = :wanted';}List<Account> values=Database.query(soql);List<String> names=new List<String>();for(Account a:values)names.add(a.Name);payload.put('names',names);payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "named": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;if(soql==null){String wanted=null;soql='SELECT Name FROM Account WHERE Name = :wanted';}List<Account> values=Database.query(soql);List<String> names=new List<String>();for(Account a:values)names.add(a.Name);payload.put('names',names);payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "sourceSHA256": {
+        "anonymous": "48829daaa01c1b279ba1e553066403de0a251f57c20c07713b8a049457151d22",
+        "istest": "48829daaa01c1b279ba1e553066403de0a251f57c20c07713b8a049457151d22"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E09",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "ad71c9c37a794c23d6720a8b0ebd4d54d3d9591c92be0a5ba0b548ca98cb40a7"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E09",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "21cbc311bf9b09c481cff25ba5b51b9135059625c7763ee020a221e05d464f51"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E09",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "37c117550f2ae34208e4594d5b36edee6e8f21fb4fe39f6d6773c2c7b1ff674c"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E09",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "4c911950913e2887a294f3753eb6110509af2ff221040d538c1c3dfe2b37d497"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E09",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "7852f432f03b145d8fb5f9099b1eb90aa0e832164193db5689ce1fd9a4896fb1"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E09",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "33627fa247968f459bd86d2cf5e798505b0574b14481c3c5c26d9b2720bc0add"
+        }
+      ]
+    },
+    {
+      "id": "E10",
+      "source": "E.1 in-scope positive twin",
+      "anonymous": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;String wanted='P8 Bound Alpha';soql='SELECT Name FROM Account WHERE Name = :wanted';List<Account> values=Database.query(soql);List<String> names=new List<String>();for(Account a:values)names.add(a.Name);payload.put('names',names);payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "named": "Map<String,Object> payload=new Map<String,Object>{'effectAttempted'=>true,'readBackComplete'=>false,'exceptionType'=>null,'exceptionMessage'=>null};try{insert new List<Account>{new Account(Name='P8 Bound Alpha'),new Account(Name='P8 Bound Beta')};String soql;String wanted='P8 Bound Alpha';soql='SELECT Name FROM Account WHERE Name = :wanted';List<Account> values=Database.query(soql);List<String> names=new List<String>();for(Account a:values)names.add(a.Name);payload.put('names',names);payload.put('readBackComplete',true);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.debug('SCOPED_NATIVE|'+JSON.serialize(payload));",
+      "sourceSHA256": {
+        "anonymous": "b94818d134ee576bde1dcc0702946dd48ee34e1cbdbae268bb93c5e54c5d4ccd",
+        "istest": "b94818d134ee576bde1dcc0702946dd48ee34e1cbdbae268bb93c5e54c5d4ccd"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E10",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "25b717933a35e9ec9b17942c80e99890d49072ffc75164108846714d309af77a"
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "62.0",
+            "case_table_row_id": "E10",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "e6f938c7865c20a3242243be5c1302cbd087689118948c651490ef55d472d00c"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E10",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "37f718547af1a077cd4a97e989a692128de6456baab71e1376fdcf2f968d02bd"
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "67.0",
+            "case_table_row_id": "E10",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "6390a3a6b6dc0be25ea7d400c3bffe9117859b76d9508273fd2e732cf43b58a3"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E10",
+            "invocation_route": "executeAnonymous",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "a2f62ca1e5b6569a0bdc1092dcf71cc837cc0a6797dc8e8963d2c7965943e7b8"
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "api": "68.0",
+            "case_table_row_id": "E10",
+            "invocation_route": "metadata-check-only",
+            "outcome": "runtime",
+            "value": {
+              "effectAttempted": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "names": [
+                "P8 Bound Alpha"
+              ],
+              "readBackComplete": true
+            }
+          },
+          "nativeSHA256": "2afd47e9d204e1f680af84237df0a0af7e69dd97ecb601c2c945d15640ca7234"
+        }
+      ]
+    }
+  ],
+  "evidenceLimits": "Observed String and null closed-local bind shapes only; other types and block forms are unprobed. E04 anonymous uses USER_MODE and named uses SYSTEM_MODE: the cells establish the missing bind-map key error, not access-mode equivalence. Terminal assertion transport is replaced by a tagged debug line. Helper exports retain only declarations used by this group.",
+  "stillPendingCellCount": 0
+}

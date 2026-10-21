@@ -1,0 +1,4 @@
+ResourceReplyMissingConcrete	{"stage":"respond","exceptionMessage":"Static Resource not found: AbsentReply","exceptionType":"System.NullPointerException","caught":true}
+ResourceReplyMissingInterface	{"stage":"respond","exceptionMessage":"Static Resource not found: AbsentReply","exceptionType":"System.NullPointerException","caught":true}
+ResourceReplyPresentConcrete	{"stage":"complete","header":"configured","status":"Configured reply","statusCode":203,"body":"present response","responseIsNull":false,"caught":false}
+ResourceReplyPresentInterface	{"stage":"complete","header":"configured","status":"Configured reply","statusCode":203,"body":"present response","responseIsNull":false,"caught":false}

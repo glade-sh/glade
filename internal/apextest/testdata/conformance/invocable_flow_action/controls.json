@@ -1,0 +1,225 @@
+{
+  "cluster": "controls",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "nativeObservationCount": 18,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C187IA_001",
+      "routes": {
+        "anonymous": {
+          "code": "payload.put('value',7);",
+          "operationSHA256": "d92060141ec3e2ffd5cde6ff5b4843f30604a767ff144be995e842d1153e5382",
+          "captureSourceSHA256": {
+            "anonymous": "ac8612e7191b3784a0825cafe8ce2c4bbc86c78997238fddfac23b705d4e743d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "start",
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "start",
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "start",
+                "value": 7
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "payload.put('value',7);",
+          "operationSHA256": "d92060141ec3e2ffd5cde6ff5b4843f30604a767ff144be995e842d1153e5382",
+          "captureSourceSHA256": {
+            "C187Observe001": "cb16183cff1c0d25bd0f453859437a15267339445a3cf2d265e8843e71cd5407"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "start",
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "start",
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "start",
+                "value": 7
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_019",
+      "routes": {
+        "anonymous": {
+          "code": "step='caught';try{List<Integer> empty=new List<Integer>();Integer missing=empty[0];}catch(Exception caught){payload.put('exceptionType',caught.getTypeName());}",
+          "operationSHA256": "36b105330289464e2d21499b239b10a8d8f8f2223de913088257bd1871847ac6",
+          "captureSourceSHA256": {
+            "anonymous": "d30f28bdfe0fdbdeab6d115acd4e832a6a61e6b4c3f2faeb22e826757acb2703"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "caught",
+                "exceptionType": "System.ListException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "caught",
+                "exceptionType": "System.ListException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "caught",
+                "exceptionType": "System.ListException"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "step='caught';try{List<Integer> empty=new List<Integer>();Integer missing=empty[0];}catch(Exception caught){payload.put('exceptionType',caught.getTypeName());}",
+          "operationSHA256": "36b105330289464e2d21499b239b10a8d8f8f2223de913088257bd1871847ac6",
+          "captureSourceSHA256": {
+            "C187Observe019": "3c008181164a32a6a4d24f478f4b50211b36b12f75bf3535d904bfcfd2247a40"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "caught",
+                "exceptionType": "System.ListException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "caught",
+                "exceptionType": "System.ListException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "step": "caught",
+                "exceptionType": "System.ListException"
+              }
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C187IA_020",
+      "routes": {
+        "anonymous": {
+          "code": "List<Integer> empty=new List<Integer>();Integer missing=empty[0];",
+          "operationSHA256": "ae28288119bdf9b769cc51d4971283305d2a1476d22b7659bbf5164de2012d65",
+          "captureSourceSHA256": {
+            "anonymous": "ae28288119bdf9b769cc51d4971283305d2a1476d22b7659bbf5164de2012d65"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "uncaught_anonymous",
+              "exceptionMessage": "System.ListException: List index out of bounds: 0",
+              "exceptionType": "System.ListException",
+              "exceptionTypeSource": "returned_message_prefix"
+            },
+            "67.0": {
+              "outcome": "uncaught_anonymous",
+              "exceptionMessage": "System.ListException: List index out of bounds: 0",
+              "exceptionType": "System.ListException",
+              "exceptionTypeSource": "returned_message_prefix"
+            },
+            "68.0": {
+              "outcome": "uncaught_anonymous",
+              "exceptionMessage": "System.ListException: List index out of bounds: 0",
+              "exceptionType": "System.ListException",
+              "exceptionTypeSource": "returned_message_prefix"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "istest": {
+          "code": "List<Integer> empty=new List<Integer>();Integer missing=empty[0];",
+          "operationSHA256": "ae28288119bdf9b769cc51d4971283305d2a1476d22b7659bbf5164de2012d65",
+          "captureSourceSHA256": {
+            "C187Observe020": "4b8bbf01129a08c92378d63228f9cdfbdec71a2e547f2ed6d573e0aaf96e414f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "uncaught_test_failure",
+              "testFailures": [
+                {
+                  "cls": "C187Observe020",
+                  "method": "observe",
+                  "message": "System.ListException: List index out of bounds: 0",
+                  "exceptionType": "System.ListException",
+                  "exceptionTypeSource": "returned_message_prefix"
+                }
+              ]
+            },
+            "67.0": {
+              "outcome": "uncaught_test_failure",
+              "testFailures": [
+                {
+                  "cls": "C187Observe020",
+                  "method": "observe",
+                  "message": "System.ListException: List index out of bounds: 0",
+                  "exceptionType": "System.ListException",
+                  "exceptionTypeSource": "returned_message_prefix"
+                }
+              ]
+            },
+            "68.0": {
+              "outcome": "uncaught_test_failure",
+              "testFailures": [
+                {
+                  "cls": "C187Observe020",
+                  "method": "observe",
+                  "message": "System.ListException: List index out of bounds: 0",
+                  "exceptionType": "System.ListException",
+                  "exceptionTypeSource": "returned_message_prefix"
+                }
+              ]
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    }
+  ]
+}

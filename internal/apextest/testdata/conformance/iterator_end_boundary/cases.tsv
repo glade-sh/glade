@@ -1,0 +1,5 @@
+case	shape
+set_partial	Explicit Set iterator scalar removal succeeds before continuation
+set_end	Set iterator exhaustion permits removal
+list_end	List iterator exhaustion permits removal
+continued_mutation	Explicit Set iterator continuation after removal fails uncatchably

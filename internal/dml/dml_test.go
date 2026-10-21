@@ -210,7 +210,7 @@ func TestInsertCustomRelationshipFieldRequiresMetadata(t *testing.T) {
 	}
 }
 
-func TestInsertAdvancesSystemTimestampsWhenClockIsFixed(t *testing.T) {
+func TestInsertSystemTimestampsUseFixedClock(t *testing.T) {
 	org := testOrg()
 	engine := NewEngine(&org)
 	engine.Now = func() time.Time { return time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC) }
@@ -232,7 +232,7 @@ func TestInsertAdvancesSystemTimestampsWhenClockIsFixed(t *testing.T) {
 	if firstStamp != "2026-05-02T12:00:00Z" {
 		t.Fatalf("first CreatedDate = %q", firstStamp)
 	}
-	if secondStamp != "2026-05-02T12:00:01Z" {
+	if secondStamp != firstStamp {
 		t.Fatalf("second CreatedDate = %q", secondStamp)
 	}
 }
@@ -266,12 +266,12 @@ func TestBulkInsertUsesOneSystemTimestampWhenClockIsFixed(t *testing.T) {
 	if !next[0].Success {
 		t.Fatalf("next insert = %#v", next)
 	}
-	if got := org.Objects["Account"].Records[next[0].ID].System.CreatedDate; got != "2026-05-02T12:00:01Z" {
+	if got := org.Objects["Account"].Records[next[0].ID].System.CreatedDate; got != first.System.CreatedDate {
 		t.Fatalf("next CreatedDate = %q", got)
 	}
 }
 
-func TestInsertSystemTimestampDoesNotMoveBackwardWhenClockBaseChanges(t *testing.T) {
+func TestInsertSystemTimestampFollowsAdvancingClock(t *testing.T) {
 	org := testOrg()
 	engine := NewEngine(&org)
 	base := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
@@ -300,6 +300,9 @@ func TestInsertSystemTimestampDoesNotMoveBackwardWhenClockBaseChanges(t *testing
 		t.Fatalf("later insert = %#v", results[0])
 	}
 	nextStamp := org.Objects["Account"].Records[results[0].ID].System.CreatedDate
+	if nextStamp != "2026-05-02T12:00:05Z" {
+		t.Fatalf("next CreatedDate = %q, want current clock", nextStamp)
+	}
 	if nextStamp <= previousStamp {
 		t.Fatalf("next CreatedDate = %q, want after %q", nextStamp, previousStamp)
 	}
@@ -1715,7 +1718,7 @@ func TestInsertOrganizationAccountInPersonAccountOrgRequiresName(t *testing.T) {
 	insert := engine.Insert([]storage.Record{{
 		Object: "Account",
 		Fields: map[string]storage.Value{
-			"OwnerId": storage.IDValue("005000000000001"),
+			"OwnerId": storage.IDValue(storage.DefaultUserID),
 		},
 	}})
 
@@ -1941,7 +1944,7 @@ func TestInsertEmailMessageCreatesToRelations(t *testing.T) {
 			"Subject":         storage.StringValue("Test Email"),
 			"FromAddress":     storage.StringValue("sender@example.invalid"),
 			"ToAddress":       storage.StringValue("system@example.invalid"),
-			"ToIds":           storage.ListValue(storage.IDValue("005000000000001AAA")),
+			"ToIds":           storage.ListValue(storage.IDValue(storage.DefaultUserID)),
 			"Incoming":        storage.BooleanValue(true),
 			"Status":          storage.StringValue("3"),
 			"IsClientManaged": storage.BooleanValue(true),
@@ -1962,7 +1965,7 @@ func TestInsertEmailMessageCreatesToRelations(t *testing.T) {
 		if got := relation.Fields["EmailMessageId"].ID; got != insert[0].ID {
 			t.Fatalf("EmailMessageId = %q, want %q", got, insert[0].ID)
 		}
-		if got := relation.Fields["RelationId"].ID; got != "005000000000001AAA" {
+		if got := relation.Fields["RelationId"].ID; got != storage.DefaultUserID {
 			t.Fatalf("RelationId = %q", got)
 		}
 		if got := relation.Fields["RelationType"].String; got != "ToAddress" {
@@ -2472,18 +2475,24 @@ func TestDMLAppliesLocalUserRequiredDefaults(t *testing.T) {
 	insert := engine.Insert([]storage.Record{{
 		Object: "User",
 		Fields: map[string]storage.Value{
-			"FirstName": storage.StringValue("Local"),
-			"LastName":  storage.StringValue("Provider"),
+			"FirstName":      storage.StringValue("Local"),
+			"LastName":       storage.StringValue("Provider"),
+			"TimeZoneSidKey": storage.StringValue("America/Los_Angeles"),
 		},
 	}})
 	if !insert[0].Success {
 		t.Fatalf("insert = %#v", insert[0])
 	}
 	user := org.Objects["User"].Records[insert[0].ID]
-	for _, fieldName := range []string{"Alias", "Email", "EmailEncodingKey", "IsActive", "LanguageLocaleKey", "LocaleSidKey", "ProfileId", "TimeZoneSidKey", "Username"} {
+	// These remaining defaults are local conveniences. Native user-zone
+	// rows 051/053 reject an omitted/null zone; it is supplied explicitly here.
+	for _, fieldName := range []string{"Alias", "Email", "EmailEncodingKey", "IsActive", "LanguageLocaleKey", "LocaleSidKey", "ProfileId", "Username"} {
 		if value, ok := user.Fields[fieldName]; !ok || value.Kind == "" {
 			t.Fatalf("User.%s default = %#v, %v", fieldName, value, ok)
 		}
+	}
+	if got := user.Fields["TimeZoneSidKey"].String; got != "America/Los_Angeles" {
+		t.Fatalf("explicit TimeZoneSidKey = %q", got)
 	}
 	if !user.Fields["IsActive"].Boolean {
 		t.Fatalf("IsActive = %#v", user.Fields["IsActive"])
@@ -2491,7 +2500,7 @@ func TestDMLAppliesLocalUserRequiredDefaults(t *testing.T) {
 	if got := user.Fields["Name"].String; got != "Local Provider" {
 		t.Fatalf("Name = %q", got)
 	}
-	if got := user.Fields["ProfileId"]; got.Kind != storage.ValueID || got.ID != "00e000000000001" {
+	if got := user.Fields["ProfileId"]; got.Kind != storage.ValueID || got.ID != storage.DefaultProfileID {
 		t.Fatalf("ProfileId = %#v", got)
 	}
 	foundLogin := false
@@ -2535,9 +2544,10 @@ func TestDMLDefaultsUserAccountFromContact(t *testing.T) {
 	insert := engine.Insert([]storage.Record{{
 		Object: "User",
 		Fields: map[string]storage.Value{
-			"FirstName": storage.StringValue("Local"),
-			"LastName":  storage.StringValue("Member"),
-			"ContactId": storage.IDValue("003000000000777"),
+			"FirstName":      storage.StringValue("Local"),
+			"LastName":       storage.StringValue("Member"),
+			"ContactId":      storage.IDValue("003000000000777"),
+			"TimeZoneSidKey": storage.StringValue("America/Los_Angeles"),
 		},
 	}})
 	if !insert[0].Success {
@@ -2559,7 +2569,8 @@ func TestInsertReplacesGeneratedPlaceholderID(t *testing.T) {
 		ID:     "#a#b#c#d#e#f#",
 		Object: "User",
 		Fields: map[string]storage.Value{
-			"LastName": storage.StringValue("Local"),
+			"LastName":       storage.StringValue("Local"),
+			"TimeZoneSidKey": storage.StringValue("America/Los_Angeles"),
 		},
 	}})
 	if !insert[0].Success || !strings.HasPrefix(string(insert[0].ID), "005") {
@@ -4576,7 +4587,7 @@ TEXT(ParentBundleSubtype__c) != 'Assembled')`, &org, childDefinition, storage.Re
 				ID:     "a0s000000000001",
 				Object: "ManagedAppPublicSettings__c",
 				Fields: map[string]storage.Value{
-					"Name":                     storage.StringValue("00D000000000001"),
+					"Name":                     storage.StringValue("00D000000000mH2"),
 					"CanBackorderStaffView__c": storage.BooleanValue(true),
 				},
 			},
@@ -7102,7 +7113,7 @@ func TestWorkflowTaskCreationOnInsert(t *testing.T) {
 	if createdTask.Fields["OwnerId"].String != "" {
 		t.Fatalf("task OwnerId should not be in Fields map, got %q", createdTask.Fields["OwnerId"].String)
 	}
-	if createdTask.System.OwnerID != "005000000000001" {
+	if createdTask.System.OwnerID != storage.DefaultUserID {
 		t.Fatalf("task System.OwnerID = %q", createdTask.System.OwnerID)
 	}
 }
@@ -7409,7 +7420,7 @@ func TestAttachmentParentCanReferenceCurrentUser(t *testing.T) {
 		Object: "Attachment",
 		Fields: map[string]storage.Value{
 			"Name":     storage.StringValue("user-note.txt"),
-			"ParentId": storage.IDValue("005000000000001"),
+			"ParentId": storage.IDValue(storage.DefaultUserID),
 			"Body":     storage.BlobValue("hello user"),
 		},
 	}})
@@ -7417,7 +7428,7 @@ func TestAttachmentParentCanReferenceCurrentUser(t *testing.T) {
 		t.Fatalf("attachment insert = %#v", attachment)
 	}
 	stored := org.Objects["Attachment"].Records[attachment[0].ID]
-	if stored.Fields["ParentId"].ID != "005000000000001" {
+	if stored.Fields["ParentId"].ID != storage.DefaultUserID {
 		t.Fatalf("parent id = %#v", stored.Fields["ParentId"])
 	}
 }
@@ -7443,7 +7454,7 @@ func TestDocumentBodyDMLAndDelete(t *testing.T) {
 	if row.Fields["Body"].Kind != storage.ValueBlob || row.Fields["Body"].String != "document bytes" || row.Fields["ContentType"].String != "application/pdf" || !row.Fields["IsPublic"].Boolean {
 		t.Fatalf("document row = %#v", row)
 	}
-	if folderID := org.Objects["Document"].Records[document[0].ID].Fields["FolderId"].ID; folderID != "005000000000001" {
+	if folderID := org.Objects["Document"].Records[document[0].ID].Fields["FolderId"].ID; folderID != storage.DefaultUserID {
 		t.Fatalf("document folder id = %q", folderID)
 	}
 	deleted := engine.Delete([]storage.Record{{Object: "Document", ID: document[0].ID}})

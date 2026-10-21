@@ -1,0 +1,7 @@
+api=62.0
+context=anonymous
+rows=8
+native_complete=true
+deployment_success=true
+captured_utc=2026-10-19T07:02:12.523299+00:00
+transport=debug observation; savepoint rolled back

@@ -76,7 +76,7 @@ func TestRunExecCanceledDuringProjectLoadJoinsAndPreservesErrors(t *testing.T) {
 		{name: "project before org", projectErr: projectErr, orgErr: orgErr, wantError: true},
 		{name: "successful load"},
 		{name: "DB error after successful load", dbError: true, wantError: true},
-		{name: "source version error after successful load", apiVersion: "68.0", wantError: true},
+		{name: "source version error after successful load", apiVersion: "69.0", wantError: true},
 		{name: "anonymous compilation error after successful load", source: "Integer value = ;", wantError: true},
 	} {
 		t.Run(test.name, func(t *testing.T) {

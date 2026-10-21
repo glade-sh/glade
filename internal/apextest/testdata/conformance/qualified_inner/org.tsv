@@ -1,0 +1,3 @@
+api	class	line	problem
+62.0	BRG2DepInherit	3	Invalid type: BRG2BadSub.BaseInner
+67.0	BRG2DepInherit	3	Invalid type: BRG2BadSub.BaseInner

@@ -177,6 +177,7 @@ func buildStandardPlatformSymbols() []TypeSymbol {
 	specs = append(specs, plan7SFDWSymbolSpecs...)
 	specs = append(specs, dataSourcePlatformSymbolOverlays...)
 	specs = append(specs, standardPlatformSymbolOverlays...)
+	specs = append(specs, paymentPlatformSymbolOverlays...)
 	known := make(map[string]struct{}, len(specs)+len(standardPlatformTypeNames))
 	for _, spec := range specs {
 		known[strings.ToLower(spec.Name)] = struct{}{}
@@ -897,6 +898,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	// carry the platform exception superclass.
 	{Name: "VisualforceException", SuperClass: "Exception"},
 	{Name: "FlowException", SuperClass: "Exception"},
+	{Name: "FormulaEvaluationException", SuperClass: "Exception"},
 	{Name: "DuplicateMessageException", SuperClass: "Exception"},
 	{Name: "EmailException", SuperClass: "Exception"},
 	{Name: "EmailTemplateRenderException", SuperClass: "Exception"},
@@ -1330,9 +1332,65 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 }
 
 var standardPlatformSymbolOverlays = []StandardSymbolSpec{
+	// Native assignment and constructor-argument captures retain the platform
+	// mocks' HttpCalloutMock ancestry without replacing their generated members.
+	{Name: "StaticResourceCalloutMock", SuperClass: "Object", Interfaces: []string{"HttpCalloutMock"}},
+	{Name: "MultiStaticResourceCalloutMock", SuperClass: "Object", Interfaces: []string{"HttpCalloutMock"}},
 	{Name: "Database.DeleteFilter", Kind: apexast.DeclarationEnum},
 	{Name: "Database.DeletedRecord", Methods: []StandardMethodSpec{{Name: "getDeletedDate", ReturnType: "Datetime", Force: true}}},
 	{Name: "SObject", Methods: []StandardMethodSpec{{Name: "addError", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "exceptionError", Type: "Exception"}, {Name: "escape", Type: "Boolean"}}}}},
+	// Native API 62/67 compilation retains these overridable entry points and
+	// abstract types. CartCalculate's delegation helpers remain non-virtual.
+	{Name: "CartExtension.CartCalculate", Modifiers: []string{"virtual"}, Methods: []StandardMethodSpec{
+		{Name: "calculate", ReturnType: "void", Parameters: []string{"CartExtension.CartCalculateOrchestratorRequest"}, Modifiers: []string{"virtual"}},
+	}},
+	{Name: "CartExtension.PricingCartCalculator", Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{
+		{Name: "calculate", ReturnType: "void", Parameters: []string{"CartExtension.CartCalculateCalculatorRequest"}, Modifiers: []string{"virtual"}},
+	}},
+	{Name: "CartExtension.PromotionsCartCalculator", Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{
+		{Name: "calculate", ReturnType: "void", Parameters: []string{"CartExtension.CartCalculateCalculatorRequest"}, Modifiers: []string{"virtual"}},
+	}},
+	{Name: "CartExtension.ShippingCartCalculator", Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{
+		{Name: "calculate", ReturnType: "void", Parameters: []string{"CartExtension.CartCalculateCalculatorRequest"}, Modifiers: []string{"virtual"}},
+	}},
+	{Name: "CartExtension.TaxCartCalculator", Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{
+		{Name: "calculate", ReturnType: "void", Parameters: []string{"CartExtension.CartCalculateCalculatorRequest"}, Modifiers: []string{"virtual"}},
+	}},
+	{Name: "CartExtension.CheckoutCreateOrder", Modifiers: []string{"virtual"}, Methods: []StandardMethodSpec{
+		{Name: "createOrder", ReturnType: "CartExtension.CreateOrderResponse", Parameters: []string{"CartExtension.CreateOrderRequest"}, Modifiers: []string{"virtual"}},
+	}},
+	{Name: "CartExtension.SplitShipmentService", Modifiers: []string{"virtual"}, Methods: []StandardMethodSpec{
+		{Name: "arrangeItems", ReturnType: "void", Parameters: []string{"CartExtension.ItemArrangementRequest"}, Modifiers: []string{"virtual"}},
+	}},
+	{Name: "CartExtension.SplitShipmentServiceMock", Modifiers: []string{"abstract"}, Methods: []StandardMethodSpec{
+		{Name: "arrangeItems", ReturnType: "void", Parameters: []string{"CartExtension.ItemArrangementRequest"}, Modifiers: []string{"abstract"}},
+	}},
+	// Native API 62/67/68 subclasses can override checkout validation.
+	{Name: "CartExtension.CheckoutPlaceOrder", Methods: []StandardMethodSpec{
+		{Name: "validate", ReturnType: "CartExtension.PlaceOrderResponse", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: "CartExtension.PlaceOrderRequest"}, {Name: "domainList", Type: "List<String>"}}, Modifiers: []string{"public", "virtual"}},
+	}},
+	// API 65 native compilation confirms this custom collection has a typed add
+	// method but is not assignable to List<T> or Iterable<T>.
+	{Name: "CartExtension.CartDeliveryGroupMethodList", SuperClass: "Object", Methods: []StandardMethodSpec{
+		{Name: "add", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "cartDeliveryGroupMethod", Type: "CartExtension.CartDeliveryGroupMethod"}}},
+	}},
+	// API 65 native compilation confirms these CartCalculateExecutorMock
+	// callbacks are global virtual override points; the generated system stubs
+	// omit their virtual modifiers and the shippingPromotions signature.
+	{Name: "CartExtension.CartCalculateExecutorMock", Methods: []StandardMethodSpec{
+		{Name: "defaultInventory", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: "CartExtension.CartCalculateCalculatorRequest"}}, Modifiers: []string{"global", "virtual"}},
+		{Name: "defaultPrices", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: "CartExtension.CartCalculateCalculatorRequest"}}, Modifiers: []string{"global", "virtual"}},
+		{Name: "defaultPromotions", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: "CartExtension.CartCalculateCalculatorRequest"}}, Modifiers: []string{"global", "virtual"}},
+		{Name: "defaultShipping", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: "CartExtension.CartCalculateCalculatorRequest"}}, Modifiers: []string{"global", "virtual"}},
+		{Name: "defaultTax", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: "CartExtension.CartCalculateCalculatorRequest"}}, Modifiers: []string{"global", "virtual"}},
+		{Name: "inventory", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: "CartExtension.CartCalculateCalculatorRequest"}}, Modifiers: []string{"global", "virtual"}},
+		{Name: "postShipping", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: "CartExtension.CartCalculateCalculatorRequest"}}, Modifiers: []string{"global", "virtual"}},
+		{Name: "prices", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: "CartExtension.CartCalculateCalculatorRequest"}}, Modifiers: []string{"global", "virtual"}},
+		{Name: "promotions", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: "CartExtension.CartCalculateCalculatorRequest"}}, Modifiers: []string{"global", "virtual"}},
+		{Name: "shipping", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: "CartExtension.CartCalculateCalculatorRequest"}}, Modifiers: []string{"global", "virtual"}},
+		{Name: "shippingPromotions", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: "CartExtension.CartCalculateCalculatorRequest"}}, Modifiers: []string{"global", "virtual"}},
+		{Name: "tax", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "request", Type: "CartExtension.CartCalculateCalculatorRequest"}}, Modifiers: []string{"global", "virtual"}},
+	}},
 	{Name: "commercepayments.PostAuthorizationResponse", Methods: []StandardMethodSpec{
 		{Name: "setCardPaymentMethodResponse", ReturnType: "void", Parameters: []string{"commercepayments.CardPaymentMethodResponse"}},
 		{Name: "setPaymentMethodDetailsResponse", ReturnType: "void", Parameters: []string{"commercepayments.PaymentMethodDetailsResponse"}},

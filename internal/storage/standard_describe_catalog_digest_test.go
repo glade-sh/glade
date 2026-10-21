@@ -10,7 +10,9 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	"os"
 	"reflect"
+	"regexp"
 	"sort"
 	"testing"
 )
@@ -56,7 +58,7 @@ func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
 		childRowCount += len(describe.ChildRelationships)
 		recordTypeCount += len(describe.RecordTypeInfos)
 	}
-	if got := []int{len(typedBundle.Describes), fieldCount, childRowCount, recordTypeCount}; !reflect.DeepEqual(got, []int{5323, 81918, 43473, 820}) {
+	if got := []int{len(typedBundle.Describes), fieldCount, childRowCount, recordTypeCount}; !reflect.DeepEqual(got, []int{5323, 81896, 43445, 766}) {
 		t.Fatalf("raw counts objects/fields/childRows/recordTypes = %v", got)
 	}
 
@@ -121,7 +123,7 @@ func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
 		data []byte
 	}
 	reverseMembers := make([]reverseDigestMember, 0, len(standardDescribeChildRelationshipsV2Index))
-	v2Reverse := make(map[string]standardDescribeChildRelationshipInfo, 3705)
+	v2Reverse := make(map[string]standardDescribeChildRelationshipInfo, 3697)
 	for _, indexEntry := range standardDescribeChildRelationshipsV2Index {
 		member, err := decodeStandardDescribeCatalogV2MemberBytes(standardDescribeChildRelationshipsV2Pack, indexEntry, standardDescribeChildRelationshipsV2Magic, len(standardDescribeChildRelationshipsV2Index))
 		if err != nil {
@@ -148,8 +150,8 @@ func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
 			conflictCount++
 		}
 	}
-	if len(v2Reverse) != 3705 || conflictCount != 52 {
-		t.Fatalf("reverse key/conflict counts = %d/%d, want 3705/52", len(v2Reverse), conflictCount)
+	if len(v2Reverse) != 3697 || conflictCount != 52 {
+		t.Fatalf("reverse key/conflict counts = %d/%d, want 3697/52", len(v2Reverse), conflictCount)
 	}
 	legacyReverse := legacyStandardDescribeReverseOracle(typedBundle.Describes)
 	if len(legacyReverse) != len(v2Reverse) {
@@ -216,11 +218,14 @@ func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
 	// A23 native API 62/67 rows R113/R114 and R179-R182 qualify the
 	// PROJECTED-BROAD-v1 Time mapping: 35 captured time fields in 14 objects
 	// now project type TIME and displayType TIME, replacing ANY and omission.
+	// The broad catalog carries no source-org residue: no custom fields, no
+	// custom reference targets, no custom child rows, no non-master record types,
+	// and only reviewed standard picklist values.
 	wantDigests := map[string]string{
-		"RAW-BROAD-v1":       "6754592676cd3f24c3ee2e982fe09a8df1ed777b11653b71198f874b8a34d85c",
-		"PROJECTED-BROAD-v1": "93e166160d395aedc3bd9e111933d2219b5139a46a34cc403f0ae5df8e60124e",
-		"RICH-v1":            "4c121c235850254a920bb4efd52d842fb8e382dd41aed4f40205587488fd9c3e",
-		"REVERSE-v1":         "aa015ff86cdbf7a2ccb15e0c5e3bd1cbc3429ea1be2e08345f1e6332c42c049a",
+		"RAW-BROAD-v1":       "fcb457806c54f1a2fd7f9fc5d7177b7848ab6ee2f97b4516ecf27701c4fa5ee9",
+		"PROJECTED-BROAD-v1": "44968fb8942c59f149326850b8d8b53aa4adef378d3145c491efa121715a0783",
+		"RICH-v1":            "2fead4dbf85b3eaacb82a5fd14bfd558dc6f9d9d97795f4caaa6062859383456",
+		"REVERSE-v1":         "a7010fc13d96f894dfc7c3efd5e8fe9b23e1a40984f78f972cf161fa59a4cf6f",
 	}
 	for _, section := range []string{"RAW-BROAD-v1", "PROJECTED-BROAD-v1", "RICH-v1", "REVERSE-v1"} {
 		if gotDigests[section] != wantDigests[section] {
@@ -229,6 +234,66 @@ func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
 	}
 	if got := standardDescribeCatalogV2CacheEntryCount(freshCache); got != 0 {
 		t.Fatalf("complete digest oracle retained %d V2 objects, want 0", got)
+	}
+}
+
+func TestStandardDescribeCatalogCarriesNoSourceOrgResidue(t *testing.T) {
+	file, err := standardDescribeCatalogFS.Open("standard_describe_catalog.json.gz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	decompressor, err := gzip.NewReader(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var bundle struct {
+		Describes map[string]struct {
+			Fields []struct {
+				Name        string   `json:"name"`
+				Custom      *bool    `json:"custom"`
+				ReferenceTo []string `json:"referenceTo"`
+			} `json:"fields"`
+			ChildRelationships []struct {
+				ChildSObject     string  `json:"childSObject"`
+				Field            string  `json:"field"`
+				RelationshipName *string `json:"relationshipName"`
+			} `json:"childRelationships"`
+			RecordTypeInfos []struct {
+				DeveloperName string `json:"developerName"`
+				Master        bool   `json:"master"`
+			} `json:"recordTypeInfos"`
+		} `json:"describes"`
+	}
+	if err := json.NewDecoder(decompressor).Decode(&bundle); err != nil {
+		t.Fatal(err)
+	}
+	custom := func(value string) bool { return bytes.Contains([]byte(value), []byte("__")) }
+	for objectName, describe := range bundle.Describes {
+		for _, field := range describe.Fields {
+			if (field.Custom != nil && *field.Custom) || custom(field.Name) {
+				t.Errorf("%s.%s is a custom field", objectName, field.Name)
+			}
+			for _, target := range field.ReferenceTo {
+				if custom(target) {
+					t.Errorf("%s.%s references custom object %s", objectName, field.Name, target)
+				}
+			}
+		}
+		for _, relationship := range describe.ChildRelationships {
+			name := ""
+			if relationship.RelationshipName != nil {
+				name = *relationship.RelationshipName
+			}
+			if custom(relationship.ChildSObject) || custom(relationship.Field) || custom(name) {
+				t.Errorf("%s child relationship %s.%s is custom", objectName, relationship.ChildSObject, relationship.Field)
+			}
+		}
+		for _, recordType := range describe.RecordTypeInfos {
+			if !recordType.Master {
+				t.Errorf("%s carries non-master record type %s", objectName, recordType.DeveloperName)
+			}
+		}
 	}
 }
 
@@ -243,13 +308,13 @@ func TestStandardDescribeCatalogV2ReverseOracleCoversNonCatalogChildren(t *testi
 			reverseOnly++
 		}
 	}
-	if reverseOnly != 92 {
-		t.Fatalf("reverse-only child objects = %d, want 92 covered by the complete reverse oracle", reverseOnly)
+	if reverseOnly != 90 {
+		t.Fatalf("reverse-only child objects = %d, want 90 covered by the complete reverse oracle", reverseOnly)
 	}
 }
 
 func legacyStandardDescribeReverseOracle(describes map[string]standardDescribeObject) map[string]standardDescribeChildRelationshipInfo {
-	out := make(map[string]standardDescribeChildRelationshipInfo, 3705)
+	out := make(map[string]standardDescribeChildRelationshipInfo, 3697)
 	for _, describe := range describes {
 		for _, relationship := range describe.ChildRelationships {
 			if relationship.DeprecatedAndHidden || relationship.ChildSObject == "" || relationship.Field == "" || relationship.RelationshipName == "" {
@@ -429,5 +494,82 @@ func firstStandardDescribeJSONMismatch(path string, left, right any) (string, bo
 			return fmt.Sprintf("%s (%v/%v)", path, left, right), false
 		}
 		return "", true
+	}
+}
+
+// The allowlist uses the reviewed public catalog and cited standard field
+// documentation, with custom entity suffixes excluded. Keep failure output free
+// of source-org values.
+func TestStandardDescribeCatalogStandardPicklistValues(t *testing.T) {
+	allowedFile, err := os.Open("testdata/standard_picklist_values.json.gz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer allowedFile.Close()
+	allowedReader, err := gzip.NewReader(allowedFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer allowedReader.Close()
+	var values []string
+	if err := json.NewDecoder(allowedReader).Decode(&values); err != nil {
+		t.Fatal(err)
+	}
+	allowed := make(map[string]bool, len(values))
+	custom := regexp.MustCompile(`__(c|e|mdt|x)$`)
+	for _, value := range values {
+		if custom.MatchString(value) {
+			t.Fatal("allowlist contains custom entity values")
+		}
+		allowed[value] = true
+	}
+	if len(allowed) != 59042 || len(values) != len(allowed) {
+		t.Fatalf("allowlist count = %d/%d", len(values), len(allowed))
+	}
+	file, err := standardDescribeCatalogFS.Open("standard_describe_catalog.json.gz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	reader, err := gzip.NewReader(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reader.Close()
+	var bundle struct {
+		Describes map[string]struct {
+			Fields []struct {
+				PicklistValues []struct {
+					Value string `json:"value"`
+				} `json:"picklistValues"`
+			} `json:"fields"`
+		} `json:"describes"`
+	}
+	if err := json.NewDecoder(reader).Decode(&bundle); err != nil {
+		t.Fatal(err)
+	}
+	entries, fields, objects := 0, 0, 0
+	distinct := map[string]bool{}
+	for _, object := range bundle.Describes {
+		objectInvalid := false
+		for _, field := range object.Fields {
+			fieldInvalid := false
+			for _, picklist := range field.PicklistValues {
+				if custom.MatchString(picklist.Value) || !allowed[picklist.Value] {
+					entries++
+					distinct[picklist.Value] = true
+					fieldInvalid, objectInvalid = true, true
+				}
+			}
+			if fieldInvalid {
+				fields++
+			}
+		}
+		if objectInvalid {
+			objects++
+		}
+	}
+	if entries != 0 {
+		t.Fatalf("non-standard picklists: entries=%d distinct=%d fields=%d objects=%d", entries, len(distinct), fields, objects)
 	}
 }

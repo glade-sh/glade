@@ -1,0 +1,12 @@
+api	id	accepted	problems
+67.0	account	false	["Class ParcelBatchAccount67 must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"]
+67.0	sobject	true	[]
+67.0	object	true	[]
+67.0	custom	false	["Class ParcelBatchCustom67 must implement the method: System.Iterable<ParcelBatchRow__c> Database.Batchable<ParcelBatchRow__c>.start(Database.BatchableContext)"]
+67.0	iterableAccount	true	[]
+67.0	accountIterableScope	false	["Class ParcelBatchAccountIterableScope67 must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"]
+67.0	iterableScope	true	[]
+67.0	customIterableScope	true	[]
+67.0	string	false	["Class ParcelBatchString67 must implement the method: System.Iterable<String> Database.Batchable<String>.start(Database.BatchableContext)"]
+67.0	inlineAccount	false	["Class ParcelBatchInlineAccount67 must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"]
+67.0	nullAccount	false	["Class ParcelBatchNullAccount67 must implement the method: System.Iterable<Account> Database.Batchable<Account>.start(Database.BatchableContext)"]

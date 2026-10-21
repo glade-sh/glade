@@ -1,0 +1,151 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 1,
+  "nativeObservationCount": 6,
+  "packetRowsSha256": "1b3b9e49047b3a8b156268d7d4fcdef858b43ce15190b0202e5e42846f48ea9f",
+  "sourceManifestSha256": "9bcfac705a75ce2d060e88f587fa1a45f7dc07bc55723a7648aea87f13192392",
+  "completionSha256": "184fc9ac1c9d038ac782179333a620c31838c860dbf93004d4ca73aac94a2aff",
+  "evidenceByAPI": {
+    "62.0": {
+      "anonymous": {
+        "orgTsvSha256": "b892f47513c97daa56d854673ff384bc90784c7070d81284fe50dbaa2136fa50",
+        "orgRunSha256": "154f6ea6ac83559cfc1c3a5115ece17eec3d64ed9f8827487dd611ce0697b88f",
+        "observations": 69
+      },
+      "isTest": {
+        "orgTsvSha256": "a5d75d995cc300e1b26bdd0ff3089d3624e19b32e59b130334de93f0153a89df",
+        "orgRunSha256": "3867aeef5e38191a4a16594a73a94dae4ddc67ee0f40e4ef3f0e68fe4a3fac1e",
+        "observations": 69
+      }
+    },
+    "67.0": {
+      "anonymous": {
+        "orgTsvSha256": "b892f47513c97daa56d854673ff384bc90784c7070d81284fe50dbaa2136fa50",
+        "orgRunSha256": "73b6a4a7fe1e8ad0ae4ebee48057ae9f2b5c133efb5dfb054ef5e6f40ee9d31b",
+        "observations": 69
+      },
+      "isTest": {
+        "orgTsvSha256": "a5d75d995cc300e1b26bdd0ff3089d3624e19b32e59b130334de93f0153a89df",
+        "orgRunSha256": "9ed2202ac056b46a4b721d1c875f11c6c3a0eb9fa10e782bd0c1f06ad068ede0",
+        "observations": 69
+      }
+    },
+    "68.0": {
+      "anonymous": {
+        "orgTsvSha256": "b892f47513c97daa56d854673ff384bc90784c7070d81284fe50dbaa2136fa50",
+        "orgRunSha256": "636b3ece624236a1324464abe52d8d056d4d18227b7d59fed06ccb8039fa83e5",
+        "observations": 69
+      },
+      "isTest": {
+        "orgTsvSha256": "a5d75d995cc300e1b26bdd0ff3089d3624e19b32e59b130334de93f0153a89df",
+        "orgRunSha256": "30f324b07072a9d6187f460ba9bd787b737f6e690188eda2338e54d5fb35ae3f",
+        "observations": 69
+      }
+    }
+  },
+  "rows": [
+    {
+      "id": "C157SJ_000",
+      "question": "transport-and-populated-baseline",
+      "query": "Read-only Account/Contact COUNT baseline",
+      "variant": "control",
+      "routes": {
+        "anonymous": {
+          "id": "C157SJ_000",
+          "stage": "observed",
+          "objects": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "contactBaseline": 0,
+                "accountBaseline": 1,
+                "transport": "C157-transport-ok",
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "contactBaseline": 0,
+                "accountBaseline": 1,
+                "transport": "C157-transport-ok",
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "contactBaseline": 0,
+                "accountBaseline": 1,
+                "transport": "C157-transport-ok",
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "anonymous": "31cefccee6ee81a596762de67ca145c7b2cc45ce8e675c90a791682a46895768"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{v.put('phase','query');v.put('transport','C157-transport-ok');v.put('accountBaseline',[SELECT COUNT() FROM Account]);v.put('contactBaseline',[SELECT COUNT() FROM Contact]);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_000|'+JSON.serialize(v));",
+          "comparison": "transportOnly",
+          "note": "Baseline counts are native org state, not a local conformance expectation."
+        },
+        "isTest": {
+          "id": "C157SJ_000",
+          "stage": "observed",
+          "objects": {},
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "contactBaseline": 0,
+                "accountBaseline": 0,
+                "transport": "C157-transport-ok",
+                "phase": "query"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "contactBaseline": 0,
+                "accountBaseline": 0,
+                "transport": "C157-transport-ok",
+                "phase": "query"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "contactBaseline": 0,
+                "accountBaseline": 0,
+                "transport": "C157-transport-ok",
+                "phase": "query"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "sourceSha256": {
+            "class:C157SJ000Test": "9df87a14f9c00bec3cb3cc37ba93c1480e6ecfd9582a4976cfe86c07b1511dd5"
+          },
+          "classes": {
+            "C157SJ000Test": "@IsTest private class C157SJ000Test{@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup'};try{v.put('phase','query');v.put('transport','C157-transport-ok');v.put('accountBaseline',[SELECT COUNT() FROM Account]);v.put('contactBaseline',[SELECT COUNT() FROM Contact]);}catch(Exception e){v.put('exceptionType',e.getTypeName());v.put('exceptionMessage',e.getMessage());}System.assert(false,'C157_RESULT|C157SJ_000|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C157SJ000Test"
+          ],
+          "comparison": "transportOnly",
+          "note": "Baseline counts are native org state, not a local conformance expectation."
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+id	route	observation
+I001	both	first generated User differs from running user
+I002	both	first generated Profile differs from running profile
+I003	both	fabricated User query count
+I004	both	fabricated Profile query count
+I005	both	generated User SObject type
+I006	both	generated Profile SObject type
+I007	istest	runAs fabricated User outcome
+I008	istest	runAs unsaved User with fabricated Profile outcome

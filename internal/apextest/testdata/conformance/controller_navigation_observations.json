@@ -1,0 +1,798 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "shapeCount": 8,
+  "nativeObservationCount": 48,
+  "provenance": "Owned synthetic Account observations on a Developer scratch org, with caller source API matching each cell. Raw observed navigation paths are retained. Persisted record IDs differ between executions; conformance compares path width, redirect, input ID width and exact binding to the input record through matches15/matches18. No Salesforce access from CI.",
+  "uncapturedControls": [
+    {
+      "id": "save",
+      "reason": "No native save URL observation in this packet; preserve existing local behavior."
+    },
+    {
+      "id": "edit",
+      "reason": "No native edit URL observation in this packet; preserve existing local behavior."
+    },
+    {
+      "id": "request_only",
+      "reason": "No native navigation observation for a record without its own Id and an Id supplied only by the current page; preserve existing local behavior."
+    }
+  ],
+  "rows": [
+    {
+      "id": "inserted_cancel",
+      "apex": "Account a=new Account(Name='Navigation seed');insert a;PageReference nav=new ApexPages.StandardController(a).cancel();String path=nav.getUrl();String recordText=String.valueOf(a.Id);payload.put('path',path);payload.put('pathLength',path.length());payload.put('inputIdLength',recordText.length());payload.put('redirect',nav.getRedirect());payload.put('matches15',path=='/'+recordText.substring(0,15));payload.put('matches18',path=='/'+recordText);",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003JABl",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003J5vK",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003JBr0",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003IGJe",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003JWUJ",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003JS06",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "id": "inserted_view",
+      "apex": "Account a=new Account(Name='Navigation seed');insert a;PageReference nav=new ApexPages.StandardController(a).view();String path=nav.getUrl();String recordText=String.valueOf(a.Id);payload.put('path',path);payload.put('pathLength',path.length());payload.put('inputIdLength',recordText.length());payload.put('redirect',nav.getRedirect());payload.put('matches15',path=='/'+recordText.substring(0,15));payload.put('matches18',path=='/'+recordText);",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003IMep",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003IieY",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003JBr1",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003ImoM",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003I7Bu",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003IpvW",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "id": "manual_short_cancel",
+      "apex": "Account a=new Account(Id='001000000000001');PageReference nav=new ApexPages.StandardController(a).cancel();String path=nav.getUrl();String recordText=String.valueOf(a.Id);payload.put('path',path);payload.put('pathLength',path.length());payload.put('inputIdLength',recordText.length());payload.put('redirect',nav.getRedirect());payload.put('matches15',path=='/'+recordText.substring(0,15));payload.put('matches18',path=='/'+recordText);",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "id": "manual_short_view",
+      "apex": "Account a=new Account(Id='001000000000001');PageReference nav=new ApexPages.StandardController(a).view();String path=nav.getUrl();String recordText=String.valueOf(a.Id);payload.put('path',path);payload.put('pathLength',path.length());payload.put('inputIdLength',recordText.length());payload.put('redirect',nav.getRedirect());payload.put('matches15',path=='/'+recordText.substring(0,15));payload.put('matches18',path=='/'+recordText);",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "id": "manual_long_cancel",
+      "apex": "Account a=new Account(Id='001000000000001AAA');PageReference nav=new ApexPages.StandardController(a).cancel();String path=nav.getUrl();String recordText=String.valueOf(a.Id);payload.put('path',path);payload.put('pathLength',path.length());payload.put('inputIdLength',recordText.length());payload.put('redirect',nav.getRedirect());payload.put('matches15',path=='/'+recordText.substring(0,15));payload.put('matches18',path=='/'+recordText);",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "id": "manual_long_view",
+      "apex": "Account a=new Account(Id='001000000000001AAA');PageReference nav=new ApexPages.StandardController(a).view();String path=nav.getUrl();String recordText=String.valueOf(a.Id);payload.put('path',path);payload.put('pathLength',path.length());payload.put('inputIdLength',recordText.length());payload.put('redirect',nav.getRedirect());payload.put('matches15',path=='/'+recordText.substring(0,15));payload.put('matches18',path=='/'+recordText);",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001000000000001",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "id": "queried_cancel",
+      "apex": "Account a=new Account(Name='Navigation seed');insert a;a=[SELECT Id FROM Account WHERE Id=:a.Id];PageReference nav=new ApexPages.StandardController(a).cancel();String path=nav.getUrl();String recordText=String.valueOf(a.Id);payload.put('path',path);payload.put('pathLength',path.length());payload.put('inputIdLength',recordText.length());payload.put('redirect',nav.getRedirect());payload.put('matches15',path=='/'+recordText.substring(0,15));payload.put('matches18',path=='/'+recordText);",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003IgGq",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003JUbq",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003Itq9",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003I81c",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003J0PS",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003JWaq",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    },
+    {
+      "id": "queried_view",
+      "apex": "Account a=new Account(Name='Navigation seed');insert a;a=[SELECT Id FROM Account WHERE Id=:a.Id];PageReference nav=new ApexPages.StandardController(a).view();String path=nav.getUrl();String recordText=String.valueOf(a.Id);payload.put('path',path);payload.put('pathLength',path.length());payload.put('inputIdLength',recordText.length());payload.put('redirect',nav.getRedirect());payload.put('matches15',path=='/'+recordText.substring(0,15));payload.put('matches18',path=='/'+recordText);",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003JBsn",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003IJXr",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003IFZe",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003I6ev",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003IqY8",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "matches18": false,
+            "matches15": true,
+            "redirect": true,
+            "inputIdLength": 18,
+            "pathLength": 16,
+            "path": "/001h1000003JT6N",
+            "readBackComplete": true,
+            "stage": "effect"
+          }
+        }
+      ]
+    }
+  ]
+}

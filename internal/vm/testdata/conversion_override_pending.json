@@ -1,0 +1,166 @@
+{
+  "status": "PENDING-ROWS",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "@IsTest"
+  ],
+  "namespaceTwins": [
+    "",
+    "prism"
+  ],
+  "helpers": {
+    "framework_QualifiedMethod": "public class framework_QualifiedMethod {\n    public override String toString() {\n        return 'prism.Orbit__sfdc_ApexStub.pulse(String)';\n    }\n}\n",
+    "framework_MethodVerifier": "public class framework_MethodVerifier {\n    public class DisplayException extends Exception {}\n    public static String direct(Object item) {\n        return item.toString();\n    }\n    public static String implicit(Object item) {\n        return '' + item;\n    }\n    public static String viaValue(Object item) {\n        return String.valueOf(item);\n    }\n    public static String viaPattern(Object item) {\n        return String.format('{0}', new List<Object>{item});\n    }\n    public static void raise(Object item) {\n        throw new DisplayException('Missing call: ' + item + '.');\n    }\n}\n",
+    "Orbit": "public virtual class Orbit {public virtual void pulse(String tone){}}",
+    "EchoProvider": "public class EchoProvider implements System.StubProvider {public Object handleMethodCall(Object receiver,String method,Type returnType,List<Type> parameterTypes,List<String> parameterNames,List<Object> arguments){return null;}}"
+  },
+  "rows": [
+    {
+      "id": "C01",
+      "apex": "Object observed=new framework_QualifiedMethod().toString();",
+      "observe": "Compilation, JSON-encoded value, exception type and exact message; do not normalize namespace."
+    },
+    {
+      "id": "C02",
+      "apex": "Object observed=''+new framework_QualifiedMethod();",
+      "observe": "Compilation, JSON-encoded value, exception type and exact message; do not normalize namespace."
+    },
+    {
+      "id": "C03",
+      "apex": "Object observed=framework_MethodVerifier.direct(new framework_QualifiedMethod());",
+      "observe": "Compilation, JSON-encoded value, exception type and exact message; do not normalize namespace."
+    },
+    {
+      "id": "C04",
+      "apex": "Object observed=framework_MethodVerifier.implicit(new framework_QualifiedMethod());",
+      "observe": "Compilation, JSON-encoded value, exception type and exact message; do not normalize namespace."
+    },
+    {
+      "id": "C05",
+      "apex": "Object observed=String.valueOf(new framework_QualifiedMethod());",
+      "observe": "Compilation, JSON-encoded value, exception type and exact message; do not normalize namespace."
+    },
+    {
+      "id": "C06",
+      "apex": "Object observed=framework_MethodVerifier.viaValue(new framework_QualifiedMethod());",
+      "observe": "Compilation, JSON-encoded value, exception type and exact message; do not normalize namespace."
+    },
+    {
+      "id": "C07",
+      "apex": "Object observed=String.format('{0}',new List<Object>{new framework_QualifiedMethod()});",
+      "observe": "Compilation, JSON-encoded value, exception type and exact message; do not normalize namespace."
+    },
+    {
+      "id": "C08",
+      "apex": "Object observed=framework_MethodVerifier.viaPattern(new framework_QualifiedMethod());",
+      "observe": "Compilation, JSON-encoded value, exception type and exact message; do not normalize namespace."
+    },
+    {
+      "id": "C09",
+      "apex": "Object observed=framework_MethodVerifier.viaPattern(new framework_QualifiedMethod().toString());",
+      "observe": "Compilation, JSON-encoded value, exception type and exact message; do not normalize namespace."
+    },
+    {
+      "id": "C10",
+      "apex": "Object observed=String.format('{0}',new List<String>{new framework_QualifiedMethod().toString()});",
+      "observe": "Compilation, JSON-encoded value, exception type and exact message; do not normalize namespace."
+    },
+    {
+      "id": "C11",
+      "apex": "framework_MethodVerifier.raise(new framework_QualifiedMethod());",
+      "observe": "Exact caught exception type and message; compare explicit override twin C12."
+    },
+    {
+      "id": "C12",
+      "apex": "throw new framework_MethodVerifier.DisplayException('Missing call: '+new framework_QualifiedMethod().toString()+'.');",
+      "observe": "Exact caught exception type and message."
+    },
+    {
+      "id": "T01",
+      "sourceVariant": "Rename only framework_MethodVerifier to NeutralRelay",
+      "apex": "Object observed=NeutralRelay.viaValue(new framework_QualifiedMethod());",
+      "observe": "Exact conversion text; compare C06. The T08 verifier is further up the call stack."
+    },
+    {
+      "id": "T02",
+      "sourceVariant": "Rename only framework_QualifiedMethod to PlainGlyph",
+      "apex": "Object observed=framework_MethodVerifier.viaValue(new PlainGlyph());",
+      "observe": "Exact conversion text; compare C06. The T08 verifier is further up the call stack."
+    },
+    {
+      "id": "T03",
+      "sourceVariant": "Rename both helpers as in T01/T02",
+      "apex": "Object observed=NeutralRelay.viaValue(new PlainGlyph());",
+      "observe": "Exact conversion text; compare C06. The T08 verifier is further up the call stack."
+    },
+    {
+      "id": "T08",
+      "sourceVariant": "Add RelayGlyph.encodeGlyph(Object item) returning String.valueOf(item); add framework_MethodVerifier.viaRelay(Object item) returning RelayGlyph.encodeGlyph(item)",
+      "apex": "Object observed=framework_MethodVerifier.viaRelay(new framework_QualifiedMethod());",
+      "observe": "Exact conversion text; compare C06. The T08 verifier is further up the call stack."
+    },
+    {
+      "id": "T06_direct",
+      "sourceVariant": "Replace the override body with throw new framework_MethodVerifier.DisplayException('override reached');",
+      "apex": "Object observed=new framework_QualifiedMethod().toString();",
+      "observe": "Exact exception type/message and whether override executes."
+    },
+    {
+      "id": "T06_implicit",
+      "sourceVariant": "Replace the override body with throw new framework_MethodVerifier.DisplayException('override reached');",
+      "apex": "Object observed=framework_MethodVerifier.viaValue(new framework_QualifiedMethod());",
+      "observe": "Exact exception type/message and whether override executes."
+    },
+    {
+      "id": "F01_outside",
+      "sourceVariant": "Replace framework_QualifiedMethod with fields typeName='prism.Orbit__sfdc_ApexStub', methodName='pulse', methodArgTypes=new List<Type>{String.class}, and remove its toString override.",
+      "apex": "Object observed=String.valueOf(new framework_QualifiedMethod());",
+      "observe": "Exact default-object display; no predicted native value."
+    },
+    {
+      "id": "F01_inside",
+      "sourceVariant": "Same no-override fields as F01_outside.",
+      "apex": "Object observed=framework_MethodVerifier.viaValue(new framework_QualifiedMethod());",
+      "observe": "Exact verifier-frame display versus default; existing fallback is preserved by candidate, not asserted as native parity."
+    },
+    {
+      "id": "S01",
+      "apex": "Orbit proxy=(Orbit)Test.createStub(Orbit.class,new EchoProvider()); Object observed=String.valueOf(proxy);",
+      "observe": "Creation boundary in anonymous; exact genuine proxy text in test."
+    },
+    {
+      "id": "S02",
+      "apex": "Orbit proxy=(Orbit)Test.createStub(Orbit.class,new EchoProvider()); Object observed=framework_MethodVerifier.viaValue(proxy);",
+      "observe": "Exact proxy text inside verifier versus S01."
+    },
+    {
+      "id": "S03",
+      "apex": "Orbit proxy=(Orbit)Test.createStub(Orbit.class,new EchoProvider()); Object observed=String.valueOf(proxy).substringBefore(':');",
+      "observe": "Exact generated type name; packaged and unpackaged twins."
+    },
+    {
+      "id": "S09",
+      "apex": "Orbit proxy=(Orbit)Test.createStub(Orbit.class,new EchoProvider()); throw new framework_MethodVerifier.DisplayException('Missing call: '+String.valueOf(proxy).substringBefore(':')+'.pulse(String).');",
+      "observe": "Exact generated-name exception type/message."
+    },
+    {
+      "id": "S_override_outside",
+      "sourceVariant": "Add public override String toString(){return 'declared-proxy';} to Orbit.",
+      "apex": "Orbit proxy=(Orbit)Test.createStub(Orbit.class,new EchoProvider()); Object observed=String.valueOf(proxy);",
+      "observe": "Proxy versus declared override rendering; candidate retains dedicated proxy path."
+    },
+    {
+      "id": "S_override_inside",
+      "sourceVariant": "Same Orbit override as S_override_outside.",
+      "apex": "Orbit proxy=(Orbit)Test.createStub(Orbit.class,new EchoProvider()); Object observed=framework_MethodVerifier.viaValue(proxy);",
+      "observe": "Verifier-frame proxy twin."
+    }
+  ],
+  "evidence": "Owned test_runner.json J094/J095 capture ordinary user toString overrides in conversions. Exact caller-frame/namespace shapes remain unobserved. No predicted value is a native assertion.",
+  "transport": "Capture each row independently. Retain compile diagnostics or JSON-encoded observed value, caught type and exact message. Deploy helper and caller metadata at the row API. A namespaced Salesforce org/package is required for the prism twin; local project namespace configuration is insufficient."
+}

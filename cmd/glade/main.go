@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime/debug"
+	"syscall"
 
 	"github.com/glade-sh/glade/internal/gladecli"
 )
@@ -27,5 +28,12 @@ func tuneExecGC(args []string) {
 }
 
 func rootContext() (context.Context, context.CancelFunc) {
-	return signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-ctx.Done()
+		// Restore default handling so a second signal can terminate work
+		// that has not yet reached a cooperative cancellation boundary.
+		stop()
+	}()
+	return ctx, stop
 }

@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "cases": [
     {
@@ -716,6 +717,7 @@
       "group": "normal/pow/Decimal",
       "code": "Decimal x=2; Decimal z=3; Object y=Math.pow(x,z); r=String.valueOf(y)+'|Integer='+(y instanceof Integer)+'|Long='+(y instanceof Long)+'|Double='+(y instanceof Double)+'|Decimal='+(y instanceof Decimal);",
       "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void pow(Decimal, Decimal) from the type System.Math",
+      "expected68": "COMPILE_ERROR\tline 7: Method does not exist or incorrect signature: void pow(Decimal, Decimal) from the type System.Math",
       "compile": false
     },
     {
@@ -1192,6 +1194,7 @@
       "group": "null/pow/Decimal/left",
       "code": "Decimal x=null; Decimal z=2; r=Math.pow(x,z);",
       "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void pow(Decimal, Decimal) from the type System.Math",
+      "expected68": "COMPILE_ERROR\tline 25: Method does not exist or incorrect signature: void pow(Decimal, Decimal) from the type System.Math",
       "compile": false
     },
     {
@@ -1199,6 +1202,7 @@
       "group": "null/pow/Decimal/right",
       "code": "Decimal x=2; Decimal z=null; r=Math.pow(x,z);",
       "expected": "COMPILE_ERROR\tline 6: Method does not exist or incorrect signature: void pow(Decimal, Decimal) from the type System.Math",
+      "expected68": "COMPILE_ERROR\tline 25: Method does not exist or incorrect signature: void pow(Decimal, Decimal) from the type System.Math",
       "compile": false
     },
     {
@@ -2115,6 +2119,7 @@
       "id": "K003",
       "code": "r=Math.signum(1).toPlainString();",
       "expected": "COMPILE_ERROR\tline 2: Method does not exist or incorrect signature: void toPlainString() from the type Double",
+      "expected68": "COMPILE_ERROR\tline 8: Method does not exist or incorrect signature: void toPlainString() from the type Double",
       "compile": false
     },
     {

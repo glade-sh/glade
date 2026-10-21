@@ -87,6 +87,10 @@ func TestReadSharingDoesNotGrantRecordWrites(t *testing.T) {
     System.assertEquals(true,access.HasReadAccess);
     System.assertEquals(false,access.HasEditAccess);
     System.assertEquals(false,access.HasDeleteAccess);
+    Account projected=[SELECT UserRecordAccess.HasReadAccess,UserRecordAccess.HasEditAccess,UserRecordAccess.HasDeleteAccess FROM Account WHERE Id=:recordId];
+    System.assertEquals(access.HasReadAccess,projected.UserRecordAccess.HasReadAccess);
+    System.assertEquals(access.HasEditAccess,projected.UserRecordAccess.HasEditAccess);
+    System.assertEquals(access.HasDeleteAccess,projected.UserRecordAccess.HasDeleteAccess);
     Database.SaveResult updated=Database.update(new Account(Id=recordId,Name='Forbidden'),false);
     System.assertEquals(false,updated.isSuccess());
     Database.DeleteResult removed=Database.delete(new Account(Id=recordId),false);

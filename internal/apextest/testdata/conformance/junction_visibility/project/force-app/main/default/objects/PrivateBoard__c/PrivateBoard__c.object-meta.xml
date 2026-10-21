@@ -1,0 +1,1 @@
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><deploymentStatus>Deployed</deploymentStatus><label>Private Board</label><pluralLabel>Private Boards</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><sharingModel>Private</sharingModel></CustomObject>

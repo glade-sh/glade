@@ -1,0 +1,14 @@
+[
+  {
+    "id": "P01",
+    "shape": "Lookup record fields receive triggering record text values"
+  },
+  {
+    "id": "P02",
+    "shape": "Null triggering field clears existing lookup field"
+  },
+  {
+    "id": "P03",
+    "shape": "Nonnull triggering fields replace explicit null fetched fields"
+  }
+]

@@ -23,17 +23,7 @@ func (s *Server) handleCompositeBreadth(w http.ResponseWriter, r *http.Request, 
 	if len(parts) == 0 {
 		switch r.Method {
 		case http.MethodGet:
-			base := "/services/data/" + version + "/composite"
-			writeJSON(w, http.StatusOK, map[string]any{
-				"resources": map[string]string{
-					"composite": base,
-					"batch":     base + "/batch",
-					"graph":     base + "/graph",
-					"sobjects":  base + "/sobjects",
-					"tree":      base + "/tree/{object}",
-				},
-				"unsupported": []string{},
-			})
+			writeJSON(w, http.StatusOK, compositeDiscoveryPayload(version))
 		case http.MethodPost:
 			body, ok := decodeCompositeRequestEnvelope(w, r)
 			if !ok {

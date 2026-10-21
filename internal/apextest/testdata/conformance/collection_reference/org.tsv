@@ -1,0 +1,7 @@
+source_api	route	observation
+62.0	anonymous	{"callbackSize":2,"callbackValues":[6,12],"childElement":true,"queryCount":1,"queryPresent":true,"schemaIterable":true,"schemaList":true,"stringList":true}
+62.0	isTest	{"callbackSize":2,"callbackValues":[6,12],"childElement":true,"queryCount":1,"queryPresent":true,"schemaIterable":true,"schemaList":true,"stringList":true}
+67.0	anonymous	{"callbackSize":2,"callbackValues":[6,12],"childElement":true,"queryCount":1,"queryPresent":true,"schemaIterable":true,"schemaList":true,"stringList":true}
+67.0	isTest	{"callbackSize":2,"callbackValues":[6,12],"childElement":true,"queryCount":1,"queryPresent":true,"schemaIterable":true,"schemaList":true,"stringList":true}
+68.0	anonymous	{"callbackSize":2,"callbackValues":[6,12],"childElement":true,"queryCount":1,"queryPresent":true,"schemaIterable":true,"schemaList":true,"stringList":true}
+68.0	isTest	{"callbackSize":2,"callbackValues":[6,12],"childElement":true,"queryCount":1,"queryPresent":true,"schemaIterable":true,"schemaList":true,"stringList":true}

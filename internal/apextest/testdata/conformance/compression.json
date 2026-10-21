@@ -2,9 +2,10 @@
   "family": "Compression",
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
-  "oracle": "Owned Salesforce observations at both API endpoints.",
+  "oracle": "Owned Salesforce observations at API 62.0, 67.0 and 68.0; API 68 is captured on the anonymous route only.",
   "declarations": {},
   "cases": [
     {
@@ -1315,7 +1316,7 @@
       "id": "R164",
       "group": "null/arguments",
       "code": "try{Compression.ZipWriter w=new Compression.ZipWriter(); Blob b=null; Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntries().size();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
-      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError reading Zip content from SeekableInMemoryByteChannel",
       "compile": false,
       "nativeNull": false
     },
@@ -1379,7 +1380,7 @@
       "id": "R172",
       "group": "invalid-archives/empty",
       "code": "try{Blob b=EncodingUtil.convertFromHex(''); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
-      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError reading Zip content from SeekableInMemoryByteChannel",
       "compile": false,
       "nativeNull": false
     },
@@ -1387,7 +1388,7 @@
       "id": "R173",
       "group": "invalid-archives/text",
       "code": "try{Blob b=EncodingUtil.convertFromHex('6e6f742061207a6970'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
-      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError reading Zip content from SeekableInMemoryByteChannel",
       "compile": false,
       "nativeNull": false
     },
@@ -1395,7 +1396,7 @@
       "id": "R174",
       "group": "invalid-archives/signature-only",
       "code": "try{Blob b=EncodingUtil.convertFromHex('504b0304'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
-      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError reading Zip content from SeekableInMemoryByteChannel",
       "compile": false,
       "nativeNull": false
     },
@@ -1411,7 +1412,7 @@
       "id": "R176",
       "group": "invalid-archives/truncated-local",
       "code": "try{Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e0700'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
-      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError reading Zip content from SeekableInMemoryByteChannel",
       "compile": false,
       "nativeNull": false
     },
@@ -1419,7 +1420,7 @@
       "id": "R177",
       "group": "invalid-archives/truncated-directory",
       "code": "try{Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
-      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError reading Zip content from SeekableInMemoryByteChannel",
       "compile": false,
       "nativeNull": false
     },
@@ -1427,7 +1428,7 @@
       "id": "R178",
       "group": "invalid-archives/truncated-eocd",
       "code": "try{Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000070000000b0000000f00000000000000800100000000666978747572652e62696e666978747572652d636f6d6d656e74504b05060000000001000100480000003000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
-      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError reading Zip content from SeekableInMemoryByteChannel",
       "compile": false,
       "nativeNull": false
     },
@@ -1563,7 +1564,7 @@
       "id": "R195",
       "group": "invalid-archives/bad-local-offset",
       "code": "try{Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000070000000b0000000f0000000000000080013f420f00666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=z.getEntryNames();}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
-      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError reading Zip content from SeekableInMemoryByteChannel",
       "compile": false,
       "nativeNull": false
     },
@@ -1571,7 +1572,7 @@
       "id": "R196",
       "group": "invalid-archives/extract/bad-local-offset",
       "code": "try{Blob b=EncodingUtil.convertFromHex('504b0304140000000000a3204350a216197e07000000070000000b000000666978747572652e62696e00616c706861ff504b01021403140000000000a3204350a216197e07000000070000000b0000000f0000000000000080013f420f00666978747572652e62696e666978747572652d636f6d6d656e74504b0506000000000100010048000000300000000000'); Compression.ZipReader z=new Compression.ZipReader(b); r=EncodingUtil.convertToHex(z.extract('fixture.bin'));}catch(Exception x){r='EXC|'+x.getTypeName()+'|'+x.getMessage().replace('\\n','\\\\n');}",
-      "expected": "EXC|compression.ZipException|Could not load Zip \\nError on ZipFile unknown archive",
+      "expected": "EXC|compression.ZipException|Could not load Zip \\nError reading Zip content from SeekableInMemoryByteChannel",
       "compile": false,
       "nativeNull": false
     },
@@ -2174,5 +2175,27 @@
       ]
     }
   ],
-  "ticketRows": {}
+  "ticketRows": {},
+  "api68Capture": {
+    "serverRelease": "Winter '27",
+    "nativeRoute": "anonymous",
+    "rows": 263,
+    "nativeNamedRows": 0,
+    "orgTSVSHA256": "2a77c2e28798e7def0442a7d28dcf0f8ff28d31422309ba8284dc7438a1be333",
+    "orgRunSHA256": "c40d70e50a22d6be9baff406f132ddda42a239889adcf3463b6aa2ea29951af3",
+    "caseTableSHA256": "40b77ce8bc01ec7ef58ca77de8dd2c5eba236e593a00aa94c41791e621f2df8b",
+    "qualification": "All 263 captured answers equal the existing post-ZIPTEXT expectations. The 18 compiler diagnostic carries retain their exact native text but assert rejection only. API 68 named checks are anonymous-backed local assertions, not native named-route observations.",
+    "winter27MessageRows": [
+      "R164",
+      "R172",
+      "R173",
+      "R174",
+      "R176",
+      "R177",
+      "R178",
+      "R195",
+      "R196"
+    ],
+    "winter27MessageScope": "The nine unreadable-Zip messages were already updated in the accepted baseline across API versions; this export makes no runtime change."
+  }
 }

@@ -1,0 +1,12 @@
+id	shape
+A01	direct text
+A02	direct picklist
+A03	parent text
+A04	concat formula Add
+A05	date field control
+A06	null initial Add
+A07	null operand Add
+A08	calculated text Assign
+A09	direct text null
+A10	parent absent
+A11	picklist null

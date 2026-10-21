@@ -50,7 +50,9 @@ func TestMethodReturnAliasBookkeepingAvoidsEagerSliceAllocation(t *testing.T) {
 			t.Fatal("method return did not refresh the caller's map insertion order")
 		}
 	})
-	if oneTargetAllocs > 115 {
-		t.Fatalf("one-target method allocated %.0f objects, want at most 115 without an alias target slice", oneTargetAllocs)
+	// Each measured call creates a fresh VM; its first collection mutation
+	// allocates the reference map used by nested-alias refresh checks.
+	if oneTargetAllocs > 116 {
+		t.Fatalf("one-target method allocated %.0f objects, want at most 116 without an alias target slice", oneTargetAllocs)
 	}
 }

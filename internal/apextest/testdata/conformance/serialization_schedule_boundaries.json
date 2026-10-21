@@ -1,0 +1,512 @@
+{
+  "schemaVersion": 1,
+  "fixtures": {
+    "62.0": {
+      "files": {
+        "force-app/main/default/classes/BoundaryObservationTest.cls": "@IsTest private class BoundaryObservationTest {\n @IsTest static void serialization(){System.assert(false,'NATIVE_SERIALIZATION|'+JSON.serialize(SerializationBoundaryProbe.observe()));}\n @IsTest static void schedule(){Test.startTest();String key=ScheduleAuditProbe.enqueue();Map<String,Object> before=ScheduleAuditProbe.snapshot(key);Test.stopTest();Map<String,Object> after=ScheduleAuditProbe.snapshot(key);System.assert(false,'NATIVE_SCHEDULE|'+JSON.serialize(new Map<String,Object>{'before'=>before,'after'=>after}));}\n}\n",
+        "force-app/main/default/classes/BoundaryObservationTest.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/ScheduleAuditProbe.cls": "public class ScheduleAuditProbe implements Database.Batchable<SObject> {\n public Database.QueryLocator start(Database.BatchableContext c){return Database.getQueryLocator('SELECT Id FROM Account WHERE Name=\\'audit-empty-owned\\'');}\n public void execute(Database.BatchableContext c,List<SObject> rows){} public void finish(Database.BatchableContext c){}\n public static String enqueue(){return System.scheduleBatch(new ScheduleAuditProbe(),'owned-audit-delay',5,1);}\n public static Map<String,Object> snapshot(String key){\n  List<CronTrigger> rows=[SELECT CreatedDate,NextFireTime,StartTime,CronExpression FROM CronTrigger WHERE Id=:key];Map<String,Object> r=new Map<String,Object>{'rows'=>rows.size()};\n  if(rows.isEmpty())return r;CronTrigger c=rows[0];r.put('createdPresent',c.CreatedDate!=null);r.put('createdMilliseconds',c.CreatedDate==null?null:c.CreatedDate.formatGmt('SSS'));r.put('createdNearClock',c.CreatedDate!=null&&Math.abs(System.now().getTime()-c.CreatedDate.getTime())<60000);\n  r.put('nextPresent',c.NextFireTime!=null);r.put('nextMilliseconds',c.NextFireTime==null?null:c.NextFireTime.formatGmt('SSS'));r.put('minuteMatches',c.CreatedDate!=null&&c.NextFireTime!=null&&c.CreatedDate.addMinutes(5).minute()==c.NextFireTime.minute());\n  r.put('simpleTrigger',c.CronExpression=='SimpleTrigger');return r;\n }\n public static Map<String,Object> anonymous(){String key=enqueue();Map<String,Object> r=snapshot(key);System.abortJob(key);return r;}\n}\n",
+        "force-app/main/default/classes/ScheduleAuditProbe.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/SerializationBoundaryProbe.cls": "public class SerializationBoundaryProbe {\n public abstract class Base implements Queueable,Comparable {public void execute(QueueableContext c){} public Integer compareTo(Object x){return 0;}}\n public class SelfNode extends Base {public SelfNode self;}\n public class TreeNode {public String label;public TreeNode parent;public List<TreeNode> children;}\n public interface Marker {String value();}\n public class Leaf extends Base implements Marker {public String label='leaf';public String value(){return label;}}\n public class InterfaceHolder extends Base {public Comparable held;}\n public class CustomInterfaceHolder {public Marker held;}\n public class AbstractHolder {public Base held;}\n public class ConcreteHolder {public Leaf held;}\n public class TransientHolder {public transient Comparable held;}\n private static Map<String,Object> failure(Exception e){return new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()};}\n public static Map<String,Object> observe(){\n  Map<String,Object> r=new Map<String,Object>();SelfNode cycle=new SelfNode();cycle.self=cycle;\n  try{r.put('selfCycle',new Map<String,Object>{'json'=>JSON.serialize(cycle)});}catch(Exception e){r.put('selfCycle',failure(e));}\n  try{r.put('prettyCycle',new Map<String,Object>{'json'=>JSON.serializePretty(cycle)});}catch(Exception e){r.put('prettyCycle',failure(e));}\n  try{r.put('suppressedCycle',new Map<String,Object>{'json'=>JSON.serialize(cycle,true)});}catch(Exception e){r.put('suppressedCycle',failure(e));}\n  TreeNode parent=new TreeNode();parent.label='root';TreeNode child=new TreeNode();child.label='child';child.parent=parent;parent.children=new List<TreeNode>{child};\n  try{r.put('treeCycle',new Map<String,Object>{'json'=>JSON.serialize(new Map<String,TreeNode>{'root'=>parent})});}catch(Exception e){r.put('treeCycle',failure(e));}\n  Leaf leaf=new Leaf();InterfaceHolder holder=new InterfaceHolder();holder.held=leaf;\n  try{JSON.deserialize(JSON.serialize(holder),InterfaceHolder.class);r.put('interfaceField',new Map<String,Object>{'accepted'=>true});}catch(Exception e){r.put('interfaceField',failure(e));}\n  CustomInterfaceHolder custom=new CustomInterfaceHolder();custom.held=leaf;\n  try{JSON.deserialize(JSON.serialize(custom),CustomInterfaceHolder.class);r.put('customInterfaceField',new Map<String,Object>{'accepted'=>true});}catch(Exception e){r.put('customInterfaceField',failure(e));}\n  AbstractHolder abstractHolder=new AbstractHolder();abstractHolder.held=leaf;\n  try{JSON.deserialize(JSON.serialize(abstractHolder),AbstractHolder.class);r.put('abstractField',new Map<String,Object>{'accepted'=>true});}catch(Exception e){r.put('abstractField',failure(e));}\n  InterfaceHolder nullHolder=(InterfaceHolder)JSON.deserialize(JSON.serialize(new InterfaceHolder()),InterfaceHolder.class);r.put('nullInterfaceControl',nullHolder.held==null);\n  TransientHolder transientHolder=new TransientHolder();transientHolder.held=leaf;TransientHolder transientCopy=(TransientHolder)JSON.deserialize(JSON.serialize(transientHolder),TransientHolder.class);r.put('transientControl',transientCopy.held==null);\n  ConcreteHolder concrete=new ConcreteHolder();concrete.held=leaf;ConcreteHolder concreteCopy=(ConcreteHolder)JSON.deserialize(JSON.serialize(concrete),ConcreteHolder.class);r.put('concreteControl',concreteCopy.held.label);\n  List<Object> shared=(List<Object>)JSON.deserializeUntyped(JSON.serialize(new List<Leaf>{leaf,leaf}));r.put('sharedAliasControl',shared.size()==2&&((Map<String,Object>)shared[0]).get('label')=='leaf'&&((Map<String,Object>)shared[1]).get('label')=='leaf');\n  Map<String,Object> acyclic=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(new SelfNode()));r.put('acyclicControl',acyclic.containsKey('self')&&acyclic.get('self')==null);\n  return r;\n }\n}\n",
+        "force-app/main/default/classes/SerializationBoundaryProbe.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "schedule.apex": "System.debug('NATIVE_SCHEDULE|'+JSON.serialize(ScheduleAuditProbe.anonymous()));\n",
+        "serialization.apex": "System.debug('NATIVE_SERIALIZATION|'+JSON.serialize(SerializationBoundaryProbe.observe()));\n",
+        "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n"
+      },
+      "sha256": {
+        "force-app/main/default/classes/BoundaryObservationTest.cls": "7cfffc11639d3308a37a1ace3c421842913b73403eb33ce67af90bbc38231372",
+        "force-app/main/default/classes/BoundaryObservationTest.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "force-app/main/default/classes/ScheduleAuditProbe.cls": "9bff1c23750928823ae23976feb0ddd38e4c3f7ca2b4da96221150f6ce8befad",
+        "force-app/main/default/classes/ScheduleAuditProbe.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "force-app/main/default/classes/SerializationBoundaryProbe.cls": "0c644321487beac43c5da9354cb3261bdd75432a3c68fb769c5788090912a576",
+        "force-app/main/default/classes/SerializationBoundaryProbe.cls-meta.xml": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "schedule.apex": "188fcd90c713ffecddba27f517a2ce65ae2252e1c587be1c34fd0e185da5b92b",
+        "serialization.apex": "2a6becbb67dc6c7b0c96fb9eea5f690f784444257591917b9a240989a0409931",
+        "sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+      }
+    },
+    "66.0": {
+      "files": {
+        "force-app/main/default/classes/BoundaryObservationTest.cls": "@IsTest private class BoundaryObservationTest {\n @IsTest static void serialization(){System.assert(false,'NATIVE_SERIALIZATION|'+JSON.serialize(SerializationBoundaryProbe.observe()));}\n @IsTest static void schedule(){Test.startTest();String key=ScheduleAuditProbe.enqueue();Map<String,Object> before=ScheduleAuditProbe.snapshot(key);Test.stopTest();Map<String,Object> after=ScheduleAuditProbe.snapshot(key);System.assert(false,'NATIVE_SCHEDULE|'+JSON.serialize(new Map<String,Object>{'before'=>before,'after'=>after}));}\n}\n",
+        "force-app/main/default/classes/BoundaryObservationTest.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>66.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/ScheduleAuditProbe.cls": "public class ScheduleAuditProbe implements Database.Batchable<SObject> {\n public Database.QueryLocator start(Database.BatchableContext c){return Database.getQueryLocator('SELECT Id FROM Account WHERE Name=\\'audit-empty-owned\\'');}\n public void execute(Database.BatchableContext c,List<SObject> rows){} public void finish(Database.BatchableContext c){}\n public static String enqueue(){return System.scheduleBatch(new ScheduleAuditProbe(),'owned-audit-delay',5,1);}\n public static Map<String,Object> snapshot(String key){\n  List<CronTrigger> rows=[SELECT CreatedDate,NextFireTime,StartTime,CronExpression FROM CronTrigger WHERE Id=:key];Map<String,Object> r=new Map<String,Object>{'rows'=>rows.size()};\n  if(rows.isEmpty())return r;CronTrigger c=rows[0];r.put('createdPresent',c.CreatedDate!=null);r.put('createdMilliseconds',c.CreatedDate==null?null:c.CreatedDate.formatGmt('SSS'));r.put('createdNearClock',c.CreatedDate!=null&&Math.abs(System.now().getTime()-c.CreatedDate.getTime())<60000);\n  r.put('nextPresent',c.NextFireTime!=null);r.put('nextMilliseconds',c.NextFireTime==null?null:c.NextFireTime.formatGmt('SSS'));r.put('minuteMatches',c.CreatedDate!=null&&c.NextFireTime!=null&&c.CreatedDate.addMinutes(5).minute()==c.NextFireTime.minute());\n  r.put('simpleTrigger',c.CronExpression=='SimpleTrigger');return r;\n }\n public static Map<String,Object> anonymous(){String key=enqueue();Map<String,Object> r=snapshot(key);System.abortJob(key);return r;}\n}\n",
+        "force-app/main/default/classes/ScheduleAuditProbe.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>66.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/SerializationBoundaryProbe.cls": "public class SerializationBoundaryProbe {\n public abstract class Base implements Queueable,Comparable {public void execute(QueueableContext c){} public Integer compareTo(Object x){return 0;}}\n public class SelfNode extends Base {public SelfNode self;}\n public class TreeNode {public String label;public TreeNode parent;public List<TreeNode> children;}\n public interface Marker {String value();}\n public class Leaf extends Base implements Marker {public String label='leaf';public String value(){return label;}}\n public class InterfaceHolder extends Base {public Comparable held;}\n public class CustomInterfaceHolder {public Marker held;}\n public class AbstractHolder {public Base held;}\n public class ConcreteHolder {public Leaf held;}\n public class TransientHolder {public transient Comparable held;}\n private static Map<String,Object> failure(Exception e){return new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()};}\n public static Map<String,Object> observe(){\n  Map<String,Object> r=new Map<String,Object>();SelfNode cycle=new SelfNode();cycle.self=cycle;\n  try{r.put('selfCycle',new Map<String,Object>{'json'=>JSON.serialize(cycle)});}catch(Exception e){r.put('selfCycle',failure(e));}\n  try{r.put('prettyCycle',new Map<String,Object>{'json'=>JSON.serializePretty(cycle)});}catch(Exception e){r.put('prettyCycle',failure(e));}\n  try{r.put('suppressedCycle',new Map<String,Object>{'json'=>JSON.serialize(cycle,true)});}catch(Exception e){r.put('suppressedCycle',failure(e));}\n  TreeNode parent=new TreeNode();parent.label='root';TreeNode child=new TreeNode();child.label='child';child.parent=parent;parent.children=new List<TreeNode>{child};\n  try{r.put('treeCycle',new Map<String,Object>{'json'=>JSON.serialize(new Map<String,TreeNode>{'root'=>parent})});}catch(Exception e){r.put('treeCycle',failure(e));}\n  Leaf leaf=new Leaf();InterfaceHolder holder=new InterfaceHolder();holder.held=leaf;\n  try{JSON.deserialize(JSON.serialize(holder),InterfaceHolder.class);r.put('interfaceField',new Map<String,Object>{'accepted'=>true});}catch(Exception e){r.put('interfaceField',failure(e));}\n  CustomInterfaceHolder custom=new CustomInterfaceHolder();custom.held=leaf;\n  try{JSON.deserialize(JSON.serialize(custom),CustomInterfaceHolder.class);r.put('customInterfaceField',new Map<String,Object>{'accepted'=>true});}catch(Exception e){r.put('customInterfaceField',failure(e));}\n  AbstractHolder abstractHolder=new AbstractHolder();abstractHolder.held=leaf;\n  try{JSON.deserialize(JSON.serialize(abstractHolder),AbstractHolder.class);r.put('abstractField',new Map<String,Object>{'accepted'=>true});}catch(Exception e){r.put('abstractField',failure(e));}\n  InterfaceHolder nullHolder=(InterfaceHolder)JSON.deserialize(JSON.serialize(new InterfaceHolder()),InterfaceHolder.class);r.put('nullInterfaceControl',nullHolder.held==null);\n  TransientHolder transientHolder=new TransientHolder();transientHolder.held=leaf;TransientHolder transientCopy=(TransientHolder)JSON.deserialize(JSON.serialize(transientHolder),TransientHolder.class);r.put('transientControl',transientCopy.held==null);\n  ConcreteHolder concrete=new ConcreteHolder();concrete.held=leaf;ConcreteHolder concreteCopy=(ConcreteHolder)JSON.deserialize(JSON.serialize(concrete),ConcreteHolder.class);r.put('concreteControl',concreteCopy.held.label);\n  List<Object> shared=(List<Object>)JSON.deserializeUntyped(JSON.serialize(new List<Leaf>{leaf,leaf}));r.put('sharedAliasControl',shared.size()==2&&((Map<String,Object>)shared[0]).get('label')=='leaf'&&((Map<String,Object>)shared[1]).get('label')=='leaf');\n  Map<String,Object> acyclic=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(new SelfNode()));r.put('acyclicControl',acyclic.containsKey('self')&&acyclic.get('self')==null);\n  return r;\n }\n}\n",
+        "force-app/main/default/classes/SerializationBoundaryProbe.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>66.0</apiVersion><status>Active</status></ApexClass>\n",
+        "schedule.apex": "System.debug('NATIVE_SCHEDULE|'+JSON.serialize(ScheduleAuditProbe.anonymous()));\n",
+        "serialization.apex": "System.debug('NATIVE_SERIALIZATION|'+JSON.serialize(SerializationBoundaryProbe.observe()));\n",
+        "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"66.0\"\n}\n"
+      },
+      "sha256": {
+        "force-app/main/default/classes/BoundaryObservationTest.cls": "7cfffc11639d3308a37a1ace3c421842913b73403eb33ce67af90bbc38231372",
+        "force-app/main/default/classes/BoundaryObservationTest.cls-meta.xml": "6e7e3ea4968d9baea543af6e7732d975c9e968c47ed5132fd136108646187c02",
+        "force-app/main/default/classes/ScheduleAuditProbe.cls": "9bff1c23750928823ae23976feb0ddd38e4c3f7ca2b4da96221150f6ce8befad",
+        "force-app/main/default/classes/ScheduleAuditProbe.cls-meta.xml": "6e7e3ea4968d9baea543af6e7732d975c9e968c47ed5132fd136108646187c02",
+        "force-app/main/default/classes/SerializationBoundaryProbe.cls": "0c644321487beac43c5da9354cb3261bdd75432a3c68fb769c5788090912a576",
+        "force-app/main/default/classes/SerializationBoundaryProbe.cls-meta.xml": "6e7e3ea4968d9baea543af6e7732d975c9e968c47ed5132fd136108646187c02",
+        "schedule.apex": "188fcd90c713ffecddba27f517a2ce65ae2252e1c587be1c34fd0e185da5b92b",
+        "serialization.apex": "2a6becbb67dc6c7b0c96fb9eea5f690f784444257591917b9a240989a0409931",
+        "sfdx-project.json": "b15fda053c888e1b85f4b6633e6b3fb625e12f6e2b06c1432b24314e59c35b86"
+      }
+    },
+    "67.0": {
+      "files": {
+        "force-app/main/default/classes/BoundaryObservationTest.cls": "@IsTest private class BoundaryObservationTest {\n @IsTest static void serialization(){System.assert(false,'NATIVE_SERIALIZATION|'+JSON.serialize(SerializationBoundaryProbe.observe()));}\n @IsTest static void schedule(){Test.startTest();String key=ScheduleAuditProbe.enqueue();Map<String,Object> before=ScheduleAuditProbe.snapshot(key);Test.stopTest();Map<String,Object> after=ScheduleAuditProbe.snapshot(key);System.assert(false,'NATIVE_SCHEDULE|'+JSON.serialize(new Map<String,Object>{'before'=>before,'after'=>after}));}\n}\n",
+        "force-app/main/default/classes/BoundaryObservationTest.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/ScheduleAuditProbe.cls": "public class ScheduleAuditProbe implements Database.Batchable<SObject> {\n public Database.QueryLocator start(Database.BatchableContext c){return Database.getQueryLocator('SELECT Id FROM Account WHERE Name=\\'audit-empty-owned\\'');}\n public void execute(Database.BatchableContext c,List<SObject> rows){} public void finish(Database.BatchableContext c){}\n public static String enqueue(){return System.scheduleBatch(new ScheduleAuditProbe(),'owned-audit-delay',5,1);}\n public static Map<String,Object> snapshot(String key){\n  List<CronTrigger> rows=[SELECT CreatedDate,NextFireTime,StartTime,CronExpression FROM CronTrigger WHERE Id=:key];Map<String,Object> r=new Map<String,Object>{'rows'=>rows.size()};\n  if(rows.isEmpty())return r;CronTrigger c=rows[0];r.put('createdPresent',c.CreatedDate!=null);r.put('createdMilliseconds',c.CreatedDate==null?null:c.CreatedDate.formatGmt('SSS'));r.put('createdNearClock',c.CreatedDate!=null&&Math.abs(System.now().getTime()-c.CreatedDate.getTime())<60000);\n  r.put('nextPresent',c.NextFireTime!=null);r.put('nextMilliseconds',c.NextFireTime==null?null:c.NextFireTime.formatGmt('SSS'));r.put('minuteMatches',c.CreatedDate!=null&&c.NextFireTime!=null&&c.CreatedDate.addMinutes(5).minute()==c.NextFireTime.minute());\n  r.put('simpleTrigger',c.CronExpression=='SimpleTrigger');return r;\n }\n public static Map<String,Object> anonymous(){String key=enqueue();Map<String,Object> r=snapshot(key);System.abortJob(key);return r;}\n}\n",
+        "force-app/main/default/classes/ScheduleAuditProbe.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/SerializationBoundaryProbe.cls": "public class SerializationBoundaryProbe {\n public abstract class Base implements Queueable,Comparable {public void execute(QueueableContext c){} public Integer compareTo(Object x){return 0;}}\n public class SelfNode extends Base {public SelfNode self;}\n public class TreeNode {public String label;public TreeNode parent;public List<TreeNode> children;}\n public interface Marker {String value();}\n public class Leaf extends Base implements Marker {public String label='leaf';public String value(){return label;}}\n public class InterfaceHolder extends Base {public Comparable held;}\n public class CustomInterfaceHolder {public Marker held;}\n public class AbstractHolder {public Base held;}\n public class ConcreteHolder {public Leaf held;}\n public class TransientHolder {public transient Comparable held;}\n private static Map<String,Object> failure(Exception e){return new Map<String,Object>{'type'=>e.getTypeName(),'message'=>e.getMessage()};}\n public static Map<String,Object> observe(){\n  Map<String,Object> r=new Map<String,Object>();SelfNode cycle=new SelfNode();cycle.self=cycle;\n  try{r.put('selfCycle',new Map<String,Object>{'json'=>JSON.serialize(cycle)});}catch(Exception e){r.put('selfCycle',failure(e));}\n  try{r.put('prettyCycle',new Map<String,Object>{'json'=>JSON.serializePretty(cycle)});}catch(Exception e){r.put('prettyCycle',failure(e));}\n  try{r.put('suppressedCycle',new Map<String,Object>{'json'=>JSON.serialize(cycle,true)});}catch(Exception e){r.put('suppressedCycle',failure(e));}\n  TreeNode parent=new TreeNode();parent.label='root';TreeNode child=new TreeNode();child.label='child';child.parent=parent;parent.children=new List<TreeNode>{child};\n  try{r.put('treeCycle',new Map<String,Object>{'json'=>JSON.serialize(new Map<String,TreeNode>{'root'=>parent})});}catch(Exception e){r.put('treeCycle',failure(e));}\n  Leaf leaf=new Leaf();InterfaceHolder holder=new InterfaceHolder();holder.held=leaf;\n  try{JSON.deserialize(JSON.serialize(holder),InterfaceHolder.class);r.put('interfaceField',new Map<String,Object>{'accepted'=>true});}catch(Exception e){r.put('interfaceField',failure(e));}\n  CustomInterfaceHolder custom=new CustomInterfaceHolder();custom.held=leaf;\n  try{JSON.deserialize(JSON.serialize(custom),CustomInterfaceHolder.class);r.put('customInterfaceField',new Map<String,Object>{'accepted'=>true});}catch(Exception e){r.put('customInterfaceField',failure(e));}\n  AbstractHolder abstractHolder=new AbstractHolder();abstractHolder.held=leaf;\n  try{JSON.deserialize(JSON.serialize(abstractHolder),AbstractHolder.class);r.put('abstractField',new Map<String,Object>{'accepted'=>true});}catch(Exception e){r.put('abstractField',failure(e));}\n  InterfaceHolder nullHolder=(InterfaceHolder)JSON.deserialize(JSON.serialize(new InterfaceHolder()),InterfaceHolder.class);r.put('nullInterfaceControl',nullHolder.held==null);\n  TransientHolder transientHolder=new TransientHolder();transientHolder.held=leaf;TransientHolder transientCopy=(TransientHolder)JSON.deserialize(JSON.serialize(transientHolder),TransientHolder.class);r.put('transientControl',transientCopy.held==null);\n  ConcreteHolder concrete=new ConcreteHolder();concrete.held=leaf;ConcreteHolder concreteCopy=(ConcreteHolder)JSON.deserialize(JSON.serialize(concrete),ConcreteHolder.class);r.put('concreteControl',concreteCopy.held.label);\n  List<Object> shared=(List<Object>)JSON.deserializeUntyped(JSON.serialize(new List<Leaf>{leaf,leaf}));r.put('sharedAliasControl',shared.size()==2&&((Map<String,Object>)shared[0]).get('label')=='leaf'&&((Map<String,Object>)shared[1]).get('label')=='leaf');\n  Map<String,Object> acyclic=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(new SelfNode()));r.put('acyclicControl',acyclic.containsKey('self')&&acyclic.get('self')==null);\n  return r;\n }\n}\n",
+        "force-app/main/default/classes/SerializationBoundaryProbe.cls-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "schedule.apex": "System.debug('NATIVE_SCHEDULE|'+JSON.serialize(ScheduleAuditProbe.anonymous()));\n",
+        "serialization.apex": "System.debug('NATIVE_SERIALIZATION|'+JSON.serialize(SerializationBoundaryProbe.observe()));\n",
+        "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n"
+      },
+      "sha256": {
+        "force-app/main/default/classes/BoundaryObservationTest.cls": "7cfffc11639d3308a37a1ace3c421842913b73403eb33ce67af90bbc38231372",
+        "force-app/main/default/classes/BoundaryObservationTest.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "force-app/main/default/classes/ScheduleAuditProbe.cls": "9bff1c23750928823ae23976feb0ddd38e4c3f7ca2b4da96221150f6ce8befad",
+        "force-app/main/default/classes/ScheduleAuditProbe.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "force-app/main/default/classes/SerializationBoundaryProbe.cls": "0c644321487beac43c5da9354cb3261bdd75432a3c68fb769c5788090912a576",
+        "force-app/main/default/classes/SerializationBoundaryProbe.cls-meta.xml": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "schedule.apex": "188fcd90c713ffecddba27f517a2ce65ae2252e1c587be1c34fd0e185da5b92b",
+        "serialization.apex": "2a6becbb67dc6c7b0c96fb9eea5f690f784444257591917b9a240989a0409931",
+        "sfdx-project.json": "2bc58206d0b9c401181c61264ca1a7084dff5c8afdec3c0d7edeea86a65d9484"
+      }
+    }
+  },
+  "cells": [
+    {
+      "id": "BOUNDARY_62_SERIALIZATION_ANONYMOUS",
+      "api": "62.0",
+      "context": "anonymous",
+      "topic": "serialization",
+      "fixture": "62.0",
+      "receipt": "api62-serialization-anonymous.json",
+      "receiptSHA256": "907804948f2b481a76f51370db72ded10313cad1ab8f590fb1b0be79ae909353",
+      "orgIDHash": "c517a1868b08270b0475db5405cfe794fc1ab26f6bc3206f2a14daabbba6ab32",
+      "native": {
+        "acyclicControl": true,
+        "sharedAliasControl": true,
+        "concreteControl": "leaf",
+        "transientControl": true,
+        "nullInterfaceControl": true,
+        "abstractField": {
+          "message": "Cannot deserialize JSON as abstract type: SerializationBoundaryProbe.Base",
+          "type": "System.TypeException"
+        },
+        "customInterfaceField": {
+          "message": "Cannot deserialize JSON as abstract type: SerializationBoundaryProbe.Marker",
+          "type": "System.TypeException"
+        },
+        "interfaceField": {
+          "message": "Cannot deserialize JSON as abstract type: System.Comparable",
+          "type": "System.TypeException"
+        },
+        "treeCycle": {
+          "message": "Cycle detected. Multiple references to ...ildren=(TreeNode:[children=null, label=child, parent=(already output)]), label=root, parent=null]",
+          "type": "System.JSONException"
+        },
+        "suppressedCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        },
+        "prettyCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        },
+        "selfCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        }
+      }
+    },
+    {
+      "id": "BOUNDARY_62_SERIALIZATION_ISTEST",
+      "api": "62.0",
+      "context": "istest",
+      "topic": "serialization",
+      "fixture": "62.0",
+      "receipt": "api62-istest.json",
+      "receiptSHA256": "2ea2673baf21d4be0a029c34a826cfa92a1765d3b4e72985498e9d3e1f64584c",
+      "orgIDHash": "c517a1868b08270b0475db5405cfe794fc1ab26f6bc3206f2a14daabbba6ab32",
+      "native": {
+        "acyclicControl": true,
+        "sharedAliasControl": true,
+        "concreteControl": "leaf",
+        "transientControl": true,
+        "nullInterfaceControl": true,
+        "abstractField": {
+          "message": "Cannot deserialize JSON as abstract type: SerializationBoundaryProbe.Base",
+          "type": "System.TypeException"
+        },
+        "customInterfaceField": {
+          "message": "Cannot deserialize JSON as abstract type: SerializationBoundaryProbe.Marker",
+          "type": "System.TypeException"
+        },
+        "interfaceField": {
+          "message": "Cannot deserialize JSON as abstract type: System.Comparable",
+          "type": "System.TypeException"
+        },
+        "treeCycle": {
+          "message": "Cycle detected. Multiple references to ...ildren=(TreeNode:[children=null, label=child, parent=(already output)]), label=root, parent=null]",
+          "type": "System.JSONException"
+        },
+        "suppressedCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        },
+        "prettyCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        },
+        "selfCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        }
+      }
+    },
+    {
+      "id": "BOUNDARY_62_SCHEDULE_ANONYMOUS",
+      "api": "62.0",
+      "context": "anonymous",
+      "topic": "schedule",
+      "fixture": "62.0",
+      "receipt": "api62-schedule-anonymous.json",
+      "receiptSHA256": "23d48aaab29997efdedcfc6f9b937095b6c98ba25ad8c68d770fbdf7fb630204",
+      "orgIDHash": "c517a1868b08270b0475db5405cfe794fc1ab26f6bc3206f2a14daabbba6ab32",
+      "native": {
+        "simpleTrigger": true,
+        "minuteMatches": true,
+        "nextMilliseconds": "000",
+        "nextPresent": true,
+        "createdNearClock": true,
+        "createdMilliseconds": "000",
+        "createdPresent": true,
+        "rows": 1
+      }
+    },
+    {
+      "id": "BOUNDARY_62_SCHEDULE_ISTEST",
+      "api": "62.0",
+      "context": "istest",
+      "topic": "schedule",
+      "fixture": "62.0",
+      "receipt": "api62-istest.json",
+      "receiptSHA256": "2ea2673baf21d4be0a029c34a826cfa92a1765d3b4e72985498e9d3e1f64584c",
+      "orgIDHash": "c517a1868b08270b0475db5405cfe794fc1ab26f6bc3206f2a14daabbba6ab32",
+      "native": {
+        "after": {
+          "simpleTrigger": true,
+          "minuteMatches": true,
+          "nextMilliseconds": "000",
+          "nextPresent": true,
+          "createdNearClock": true,
+          "createdMilliseconds": "000",
+          "createdPresent": true,
+          "rows": 1
+        },
+        "before": {
+          "simpleTrigger": true,
+          "minuteMatches": true,
+          "nextMilliseconds": "000",
+          "nextPresent": true,
+          "createdNearClock": true,
+          "createdMilliseconds": "000",
+          "createdPresent": true,
+          "rows": 1
+        }
+      }
+    },
+    {
+      "id": "BOUNDARY_66_SERIALIZATION_ANONYMOUS",
+      "api": "66.0",
+      "context": "anonymous",
+      "topic": "serialization",
+      "fixture": "66.0",
+      "receipt": "api66-serialization-anonymous.json",
+      "receiptSHA256": "2a7f31e165e0224ba4c6b6e3cba5f9ada0818d3843d320f8f96de4280e43b5e7",
+      "orgIDHash": "c517a1868b08270b0475db5405cfe794fc1ab26f6bc3206f2a14daabbba6ab32",
+      "native": {
+        "acyclicControl": true,
+        "sharedAliasControl": true,
+        "concreteControl": "leaf",
+        "transientControl": true,
+        "nullInterfaceControl": true,
+        "abstractField": {
+          "message": "Cannot deserialize JSON as abstract type: SerializationBoundaryProbe.Base",
+          "type": "System.TypeException"
+        },
+        "customInterfaceField": {
+          "message": "Cannot deserialize JSON as abstract type: SerializationBoundaryProbe.Marker",
+          "type": "System.TypeException"
+        },
+        "interfaceField": {
+          "message": "Cannot deserialize JSON as abstract type: System.Comparable",
+          "type": "System.TypeException"
+        },
+        "treeCycle": {
+          "message": "Cycle detected. Multiple references to ...ildren=(TreeNode:[children=null, label=child, parent=(already output)]), label=root, parent=null]",
+          "type": "System.JSONException"
+        },
+        "suppressedCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        },
+        "prettyCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        },
+        "selfCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        }
+      }
+    },
+    {
+      "id": "BOUNDARY_66_SERIALIZATION_ISTEST",
+      "api": "66.0",
+      "context": "istest",
+      "topic": "serialization",
+      "fixture": "66.0",
+      "receipt": "api66-istest.json",
+      "receiptSHA256": "1773e50aab6abbc49e8e539c14b0ee82593be9935467eed0bf78ef8045a301d6",
+      "orgIDHash": "c517a1868b08270b0475db5405cfe794fc1ab26f6bc3206f2a14daabbba6ab32",
+      "native": {
+        "acyclicControl": true,
+        "sharedAliasControl": true,
+        "concreteControl": "leaf",
+        "transientControl": true,
+        "nullInterfaceControl": true,
+        "abstractField": {
+          "message": "Cannot deserialize JSON as abstract type: SerializationBoundaryProbe.Base",
+          "type": "System.TypeException"
+        },
+        "customInterfaceField": {
+          "message": "Cannot deserialize JSON as abstract type: SerializationBoundaryProbe.Marker",
+          "type": "System.TypeException"
+        },
+        "interfaceField": {
+          "message": "Cannot deserialize JSON as abstract type: System.Comparable",
+          "type": "System.TypeException"
+        },
+        "treeCycle": {
+          "message": "Cycle detected. Multiple references to ...ildren=(TreeNode:[children=null, label=child, parent=(already output)]), label=root, parent=null]",
+          "type": "System.JSONException"
+        },
+        "suppressedCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        },
+        "prettyCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        },
+        "selfCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        }
+      }
+    },
+    {
+      "id": "BOUNDARY_66_SCHEDULE_ANONYMOUS",
+      "api": "66.0",
+      "context": "anonymous",
+      "topic": "schedule",
+      "fixture": "66.0",
+      "receipt": "api66-schedule-anonymous.json",
+      "receiptSHA256": "31b392201caf4b38b804dc2f91d353c75ba001b94c1368af3e47a9f87042a328",
+      "orgIDHash": "c517a1868b08270b0475db5405cfe794fc1ab26f6bc3206f2a14daabbba6ab32",
+      "native": {
+        "simpleTrigger": true,
+        "minuteMatches": true,
+        "nextMilliseconds": "000",
+        "nextPresent": true,
+        "createdNearClock": true,
+        "createdMilliseconds": "000",
+        "createdPresent": true,
+        "rows": 1
+      }
+    },
+    {
+      "id": "BOUNDARY_66_SCHEDULE_ISTEST",
+      "api": "66.0",
+      "context": "istest",
+      "topic": "schedule",
+      "fixture": "66.0",
+      "receipt": "api66-istest.json",
+      "receiptSHA256": "1773e50aab6abbc49e8e539c14b0ee82593be9935467eed0bf78ef8045a301d6",
+      "orgIDHash": "c517a1868b08270b0475db5405cfe794fc1ab26f6bc3206f2a14daabbba6ab32",
+      "native": {
+        "after": {
+          "simpleTrigger": true,
+          "minuteMatches": true,
+          "nextMilliseconds": "000",
+          "nextPresent": true,
+          "createdNearClock": true,
+          "createdMilliseconds": "000",
+          "createdPresent": true,
+          "rows": 1
+        },
+        "before": {
+          "simpleTrigger": true,
+          "minuteMatches": true,
+          "nextMilliseconds": "000",
+          "nextPresent": true,
+          "createdNearClock": true,
+          "createdMilliseconds": "000",
+          "createdPresent": true,
+          "rows": 1
+        }
+      }
+    },
+    {
+      "id": "BOUNDARY_67_SERIALIZATION_ANONYMOUS",
+      "api": "67.0",
+      "context": "anonymous",
+      "topic": "serialization",
+      "fixture": "67.0",
+      "receipt": "api67-serialization-anonymous.json",
+      "receiptSHA256": "323d746c76362505d9cf6880447b44c1f9d9d2d7ac1f90a487a5d412248d0d78",
+      "orgIDHash": "c517a1868b08270b0475db5405cfe794fc1ab26f6bc3206f2a14daabbba6ab32",
+      "native": {
+        "acyclicControl": true,
+        "sharedAliasControl": true,
+        "concreteControl": "leaf",
+        "transientControl": true,
+        "nullInterfaceControl": true,
+        "abstractField": {
+          "message": "Cannot deserialize JSON as abstract type: SerializationBoundaryProbe.Base",
+          "type": "System.TypeException"
+        },
+        "customInterfaceField": {
+          "message": "Cannot deserialize JSON as abstract type: SerializationBoundaryProbe.Marker",
+          "type": "System.TypeException"
+        },
+        "interfaceField": {
+          "message": "Cannot deserialize JSON as abstract type: System.Comparable",
+          "type": "System.TypeException"
+        },
+        "treeCycle": {
+          "message": "Cycle detected. Multiple references to ...ildren=(TreeNode:[children=null, label=child, parent=(already output)]), label=root, parent=null]",
+          "type": "System.JSONException"
+        },
+        "suppressedCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        },
+        "prettyCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        },
+        "selfCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        }
+      }
+    },
+    {
+      "id": "BOUNDARY_67_SERIALIZATION_ISTEST",
+      "api": "67.0",
+      "context": "istest",
+      "topic": "serialization",
+      "fixture": "67.0",
+      "receipt": "api67-istest.json",
+      "receiptSHA256": "13f0335b4b27d2bef4fac52c50eb75e719d68deb1cd5524d49e2b0f3aa89c3d1",
+      "orgIDHash": "c517a1868b08270b0475db5405cfe794fc1ab26f6bc3206f2a14daabbba6ab32",
+      "native": {
+        "acyclicControl": true,
+        "sharedAliasControl": true,
+        "concreteControl": "leaf",
+        "transientControl": true,
+        "nullInterfaceControl": true,
+        "abstractField": {
+          "message": "Cannot deserialize JSON as abstract type: SerializationBoundaryProbe.Base",
+          "type": "System.TypeException"
+        },
+        "customInterfaceField": {
+          "message": "Cannot deserialize JSON as abstract type: SerializationBoundaryProbe.Marker",
+          "type": "System.TypeException"
+        },
+        "interfaceField": {
+          "message": "Cannot deserialize JSON as abstract type: System.Comparable",
+          "type": "System.TypeException"
+        },
+        "treeCycle": {
+          "message": "Cycle detected. Multiple references to ...ildren=(TreeNode:[children=null, label=child, parent=(already output)]), label=root, parent=null]",
+          "type": "System.JSONException"
+        },
+        "suppressedCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        },
+        "prettyCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        },
+        "selfCycle": {
+          "message": "Cycle detected. Multiple references to SelfNode:[self=(already output)]",
+          "type": "System.JSONException"
+        }
+      }
+    },
+    {
+      "id": "BOUNDARY_67_SCHEDULE_ANONYMOUS",
+      "api": "67.0",
+      "context": "anonymous",
+      "topic": "schedule",
+      "fixture": "67.0",
+      "receipt": "api67-schedule-anonymous.json",
+      "receiptSHA256": "a1e248b3b522805324297a77c7decde00b07e9c128b6ca943070185ee164c64b",
+      "orgIDHash": "c517a1868b08270b0475db5405cfe794fc1ab26f6bc3206f2a14daabbba6ab32",
+      "native": {
+        "simpleTrigger": true,
+        "minuteMatches": true,
+        "nextMilliseconds": "000",
+        "nextPresent": true,
+        "createdNearClock": true,
+        "createdMilliseconds": "000",
+        "createdPresent": true,
+        "rows": 1
+      }
+    },
+    {
+      "id": "BOUNDARY_67_SCHEDULE_ISTEST",
+      "api": "67.0",
+      "context": "istest",
+      "topic": "schedule",
+      "fixture": "67.0",
+      "receipt": "api67-istest.json",
+      "receiptSHA256": "13f0335b4b27d2bef4fac52c50eb75e719d68deb1cd5524d49e2b0f3aa89c3d1",
+      "orgIDHash": "c517a1868b08270b0475db5405cfe794fc1ab26f6bc3206f2a14daabbba6ab32",
+      "native": {
+        "after": {
+          "simpleTrigger": true,
+          "minuteMatches": true,
+          "nextMilliseconds": "000",
+          "nextPresent": true,
+          "createdNearClock": true,
+          "createdMilliseconds": "000",
+          "createdPresent": true,
+          "rows": 1
+        },
+        "before": {
+          "simpleTrigger": true,
+          "minuteMatches": true,
+          "nextMilliseconds": "000",
+          "nextPresent": true,
+          "createdNearClock": true,
+          "createdMilliseconds": "000",
+          "createdPresent": true,
+          "rows": 1
+        }
+      }
+    }
+  ],
+  "cycleMessagePrefix": "Cycle detected.",
+  "carriedDiagnostics": "Native cycle dump text is retained verbatim; this boundary fix asserts exception type and the observed stable prefix, not object-dump formatting.",
+  "carries": [
+    "API68, namespaces, root/scalar interface or abstract targets, and strict deserialization are unobserved.",
+    "First-cap and CD139/CD140 ordering remain outside this fixture.",
+    "Anonymous schedule native audit values are captured, but the local helper cannot return them because its final scratch-cleanup System.abortJob is unsupported outside test context. Carry those 24 values until that separate boundary is owned. Named pre/post audit values remain asserted."
+  ]
+}

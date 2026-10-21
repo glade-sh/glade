@@ -1,0 +1,104 @@
+[
+  {
+    "api": "62.0",
+    "deployment": "0Afdq00000EcYOnCAN",
+    "result": {
+      "status": 0,
+      "message": null,
+      "compiled": true,
+      "success": true,
+      "compileProblem": "",
+      "exceptionMessage": "",
+      "rows": [
+        "ROW|custom-column|State__c",
+        "ROW|standard-column|Rating",
+        "ROW|entity|MeadowEntry__c",
+        "ROW|filtered-groups|true"
+      ]
+    },
+    "named": {
+      "status": 0,
+      "summary": {
+        "outcome": "Passed",
+        "testsRan": 1,
+        "passing": 1,
+        "failing": 0
+      },
+      "tests": [
+        {
+          "MethodName": "verifyRows",
+          "Outcome": "Pass",
+          "Message": ""
+        }
+      ]
+    }
+  },
+  {
+    "api": "67.0",
+    "deployment": "0Afdq00000EcYS1CAN",
+    "result": {
+      "status": 0,
+      "message": null,
+      "compiled": true,
+      "success": true,
+      "compileProblem": "",
+      "exceptionMessage": "",
+      "rows": [
+        "ROW|custom-column|State__c",
+        "ROW|standard-column|Rating",
+        "ROW|entity|MeadowEntry__c",
+        "ROW|filtered-groups|true"
+      ]
+    },
+    "named": {
+      "status": 0,
+      "summary": {
+        "outcome": "Passed",
+        "testsRan": 1,
+        "passing": 1,
+        "failing": 0
+      },
+      "tests": [
+        {
+          "MethodName": "verifyRows",
+          "Outcome": "Pass",
+          "Message": ""
+        }
+      ]
+    }
+  },
+  {
+    "api": "68.0",
+    "deployment": "0Afdq00000EcYVFCA3",
+    "result": {
+      "status": 0,
+      "message": null,
+      "compiled": true,
+      "success": true,
+      "compileProblem": "",
+      "exceptionMessage": "",
+      "rows": [
+        "ROW|custom-column|State__c",
+        "ROW|standard-column|Rating",
+        "ROW|entity|MeadowEntry__c",
+        "ROW|filtered-groups|true"
+      ]
+    },
+    "named": {
+      "status": 0,
+      "summary": {
+        "outcome": "Passed",
+        "testsRan": 1,
+        "passing": 1,
+        "failing": 0
+      },
+      "tests": [
+        {
+          "MethodName": "verifyRows",
+          "Outcome": "Pass",
+          "Message": ""
+        }
+      ]
+    }
+  }
+]

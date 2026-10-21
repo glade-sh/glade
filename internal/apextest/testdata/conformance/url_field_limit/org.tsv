@@ -1,0 +1,9 @@
+source_api	method	observation
+62.0	hierarchy255	{"status":"success","storedLength":255,"describeLength":255,"inputLength":255}
+62.0	hierarchy256	{"status":"STRING_TOO_LONG","describeLength":255,"inputLength":256}
+62.0	record255	{"status":"success","storedLength":255,"describeLength":255,"inputLength":255}
+62.0	record256	{"status":"STRING_TOO_LONG","describeLength":255,"inputLength":256}
+67.0	hierarchy255	{"status":"success","storedLength":255,"describeLength":255,"inputLength":255}
+67.0	hierarchy256	{"status":"STRING_TOO_LONG","describeLength":255,"inputLength":256}
+67.0	record255	{"status":"success","storedLength":255,"describeLength":255,"inputLength":255}
+67.0	record256	{"status":"STRING_TOO_LONG","describeLength":255,"inputLength":256}

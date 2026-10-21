@@ -124,7 +124,7 @@ services, or parity were validated.
 
 Install or inspect the global LWC toolchain used by local Lightning Out routes.
 Release installs populate it for normal use; source checkouts can refresh it
-from the current tree.
+from the current tree. DataWeave is unsupported in Glade.
 
 ```bash
 glade toolchain status
@@ -321,6 +321,11 @@ glade report refactor-proof --project . --since origin/main --format html --out 
 
 Run execute-anonymous Apex against local source and storage.
 Default output summarizes debug lines and limit counters, then writes the raw log under `.glade/logs`.
+The default local running user uses `America/Los_Angeles`; local Datetime
+construction and formatting follow that user, while GMT methods retain GMT
+semantics. Use explicit `TimeZoneSidKey` values for `System.runAs` users.
+`URL.getOrgDomainUrl()` uses the configured canonical org origin from
+`org.domainUrl`, defaulting to `https://local.glade.example`.
 
 ```bash
 glade exec --project . "System.debug('hello from glade');"
@@ -346,6 +351,32 @@ Useful flags include `changed --since <ref>`,
 `--shard-count`, `--shard-index`, `--duration-history`,
 `--write-class-shards`, `--test-timeout`, `--gc-aggressive`, `--json`,
 `--junit`, and `--limit-mode`.
+
+The per-test wall-clock cap defaults to **10 minutes** and also applies to
+`@TestSetup`. Choose a Go duration such as `90s` or `15m` with
+`GLADE_TEST_TIMEOUT`; `--test-timeout` takes precedence over the environment,
+then the default. Invalid or negative settings are errors. `0` disables the
+per-test cap. This policy also applies to daemon, watch, and `glade dev`
+test/watch runs. CPU and governor limits are independent and unchanged.
+Timeout failures name the applied setting and explain how to raise or disable it.
+The VM checks cancellation every 64 Apex statements. A long native operation
+(such as a SOQL/DML scan, JSON conversion, regex or sort) can run beyond the
+cap before reaching the next cancellation check.
+Caller deadlines and the connected daemon's one-hour request timeout remain
+separate; `--test-timeout 0` disables the per-test cap only.
+
+Keep an explicit cap in CI:
+
+```bash
+glade test --test-timeout 2m
+```
+
+For a longer local run or to disable the cap:
+
+```bash
+GLADE_TEST_TIMEOUT=15m glade test
+GLADE_TEST_TIMEOUT=0 glade test
+```
 
 `--cpu-profile <path>` writes a CPU profile, `--mem-profile <path>` writes a
 heap profile, and `--perf-json <path>` writes opt-in performance counters. CPU
@@ -391,6 +422,19 @@ glade test --project . --daemon --watch
 glade test --project . --limit-mode permissive --json
 glade test daemon stop --project .
 ```
+
+The persistent test server uses daemon protocol **3**. Stop a server started by
+an older binary before upgrading, then restart it with the new binary:
+
+```bash
+glade test daemon stop --project .
+glade test serve --project .
+```
+
+If the new client reports a protocol mismatch, stop the old foreground server
+with Ctrl-C (or use its original binary's stop command), then start the new
+server. A newer client's stop command may only remove stale socket/PID files
+when it cannot speak the old protocol; that does not prove the old process exited.
 
 For daemon-backed watch loops, eligible Apex-only edits update incrementally.
 Metadata, configuration, project-topology, uncertain, and recovery changes

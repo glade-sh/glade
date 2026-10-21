@@ -71,8 +71,8 @@ for (Integer i = 0; i < %d; i++) {
 						t.Fatalf("n=%d: row %d lost populated fields: %#v", size, i, row.Fields)
 					}
 				}
-				if stats.Calls == 0 || stats.Roots == 0 {
-					t.Fatalf("n=%d: alias recorder did not observe the loop: %#v", size, stats)
+				if stats.Calls != 0 || stats.Roots != 0 || stats.ElisionFallbackWalks != 0 {
+					t.Fatalf("n=%d: same-backing local loop performed scope work: %#v", size, stats)
 				}
 			}
 			// A fully local loop performs no recursive visits at either size.
@@ -326,12 +326,13 @@ func TestDynamicObjectLocalOnlyAliasPreservesConstructorAndSetterEscapes(t *test
 		name        string
 		expr        string
 		constructor bool
+		published   bool
 	}{
-		{"newInstanceConstructor", "Type.forName('AliasRoot').newInstance()", true},
-		{"deserializeConstructor", "JSON.deserialize('{}', AliasRoot.class)", true},
-		{"deserializeStrictConstructor", "JSON.deserializeStrict('{}', AliasRoot.class)", true},
-		{"deserializeSetter", `JSON.deserialize('{"Publish":"initial"}', AliasRoot.class)`, false},
-		{"deserializeStrictSetter", `JSON.deserializeStrict('{"Publish":"initial"}', AliasRoot.class)`, false},
+		{"newInstanceConstructor", "Type.forName('AliasRoot').newInstance()", true, true},
+		{"deserializeConstructor", "JSON.deserialize('{}', AliasRoot.class)", true, false},
+		{"deserializeStrictConstructor", "JSON.deserializeStrict('{}', AliasRoot.class)", true, false},
+		{"deserializeSetter", `JSON.deserialize('{"Publish":"initial"}', AliasRoot.class)`, false, true},
+		{"deserializeStrictSetter", `JSON.deserializeStrict('{"Publish":"initial"}', AliasRoot.class)`, false, true},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			class := Class{
@@ -350,18 +351,26 @@ func TestDynamicObjectLocalOnlyAliasPreservesConstructorAndSetterEscapes(t *test
 			if test.constructor {
 				class.Constructors = []Method{{Name: "AliasRoot.<init>", ClassName: "AliasRoot", IsConstructor: true, Program: constructor}}
 			}
+			// JSON_ALIAS_PUBLICATION/SETTER/NEWINSTANCE at APIs 62/67/68,
+			// anonymous route, distinguish skipped constructors from setter escapes.
+			// See internal/apextest/testdata/conformance/json_alias_allocation.
+			checks := `System.assertEquals(null, AliasRoot.Published);`
+			if test.published {
+				checks = `System.assertNotEquals(null, AliasRoot.Published);
+System.assertEquals('after', AliasRoot.Published.Name);`
+			}
 			machine, _ := runDynamicObjectAliasProgram(t, fmt.Sprintf(`
 AliasRoot root = (AliasRoot)%s;
-System.assertNotEquals(null, AliasRoot.Published);
 root.Name = 'after';
-System.assertEquals('after', AliasRoot.Published.Name);
-`, test.expr), class)
+System.assertEquals('after', root.Name);
+%s
+`, test.expr, checks), class)
 			root := machine.Globals["root"]
 			if root.Kind != ValueObject || root.Ref == 0 {
 				t.Fatalf("factory did not return an object: %#v", root)
 			}
-			if machine.localOnlyObjectRefs[root.Ref] {
-				t.Fatal("factory re-registered an object published to a static during construction or deserialization")
+			if localOnly := machine.localOnlyObjectRefs[root.Ref]; localOnly == test.published {
+				t.Fatalf("factory root local-only = %t, published = %t", localOnly, test.published)
 			}
 		})
 	}

@@ -1,0 +1,7 @@
+source_api	method	observation
+62.0	accountConstruction	{"createable":true,"reflection":{"accepted":true,"objectName":"Account","tokenName":"Account"},"schema":{"accepted":true,"objectName":"Account"}}
+62.0	profileConstruction	{"createable":false,"reflection":{"accepted":true,"objectName":"Profile","tokenName":"Profile"},"schema":{"accepted":true,"objectName":"Profile"}}
+62.0	standardIntegerField	{"createable":true,"displayType":"INTEGER","nillable":false,"soapType":"INTEGER"}
+67.0	accountConstruction	{"createable":true,"reflection":{"accepted":true,"objectName":"Account","tokenName":"Account"},"schema":{"accepted":true,"objectName":"Account"}}
+67.0	profileConstruction	{"createable":false,"reflection":{"accepted":true,"objectName":"Profile","tokenName":"Profile"},"schema":{"accepted":true,"objectName":"Profile"}}
+67.0	standardIntegerField	{"createable":true,"displayType":"INTEGER","nillable":false,"soapType":"INTEGER"}

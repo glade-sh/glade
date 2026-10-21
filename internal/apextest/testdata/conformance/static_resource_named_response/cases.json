@@ -1,0 +1,215 @@
+{
+  "apis": [
+    "62.0",
+    "66.0",
+    "67.0",
+    "68.0"
+  ],
+  "route": "istest",
+  "classes": {
+    "ResourceReplyMissingConcrete": "@IsTest private class ResourceReplyMissingConcrete{@IsTest static void observe(){Map<String,Object> p=new Map<String,Object>{'caught'=>false};String stage='construct';try{StaticResourceCalloutMock configured=new StaticResourceCalloutMock();stage='set-resource';configured.setStaticResource('AbsentReply');StaticResourceCalloutMock mock=configured;HttpRequest request=new HttpRequest();request.setEndpoint('callout:ReplyService/status');request.setMethod('GET');stage='respond';HttpResponse response=mock.respond(request);p.put('responseIsNull',response==null);if(response!=null){stage='read-response';p.put('body',response.getBody());p.put('statusCode',response.getStatusCode());p.put('status',response.getStatus());p.put('header',response.getHeader('X-Reply'));}stage='complete';}catch(Exception error){p.put('caught',true);p.put('exceptionType',error.getTypeName());p.put('exceptionMessage',error.getMessage());}p.put('stage',stage);System.assert(false,'RESOURCE_REPLY_OBSERVATION|'+JSON.serialize(p));}}",
+    "ResourceReplyMissingInterface": "@IsTest private class ResourceReplyMissingInterface{@IsTest static void observe(){Map<String,Object> p=new Map<String,Object>{'caught'=>false};String stage='construct';try{StaticResourceCalloutMock configured=new StaticResourceCalloutMock();stage='set-resource';configured.setStaticResource('AbsentReply');HttpCalloutMock mock=configured;HttpRequest request=new HttpRequest();request.setEndpoint('callout:ReplyService/status');request.setMethod('GET');stage='respond';HttpResponse response=mock.respond(request);p.put('responseIsNull',response==null);if(response!=null){stage='read-response';p.put('body',response.getBody());p.put('statusCode',response.getStatusCode());p.put('status',response.getStatus());p.put('header',response.getHeader('X-Reply'));}stage='complete';}catch(Exception error){p.put('caught',true);p.put('exceptionType',error.getTypeName());p.put('exceptionMessage',error.getMessage());}p.put('stage',stage);System.assert(false,'RESOURCE_REPLY_OBSERVATION|'+JSON.serialize(p));}}",
+    "ResourceReplyPresentConcrete": "@IsTest private class ResourceReplyPresentConcrete{@IsTest static void observe(){Map<String,Object> p=new Map<String,Object>{'caught'=>false};String stage='construct';try{StaticResourceCalloutMock configured=new StaticResourceCalloutMock();stage='set-resource';configured.setStaticResource('PresentReply');configured.setStatusCode(203);configured.setStatus('Configured reply');configured.setHeader('X-Reply','configured');StaticResourceCalloutMock mock=configured;HttpRequest request=new HttpRequest();request.setEndpoint('callout:ReplyService/status');request.setMethod('GET');stage='respond';HttpResponse response=mock.respond(request);p.put('responseIsNull',response==null);if(response!=null){stage='read-response';p.put('body',response.getBody());p.put('statusCode',response.getStatusCode());p.put('status',response.getStatus());p.put('header',response.getHeader('X-Reply'));}stage='complete';}catch(Exception error){p.put('caught',true);p.put('exceptionType',error.getTypeName());p.put('exceptionMessage',error.getMessage());}p.put('stage',stage);System.assert(false,'RESOURCE_REPLY_OBSERVATION|'+JSON.serialize(p));}}",
+    "ResourceReplyPresentInterface": "@IsTest private class ResourceReplyPresentInterface{@IsTest static void observe(){Map<String,Object> p=new Map<String,Object>{'caught'=>false};String stage='construct';try{StaticResourceCalloutMock configured=new StaticResourceCalloutMock();stage='set-resource';configured.setStaticResource('PresentReply');configured.setStatusCode(203);configured.setStatus('Configured reply');configured.setHeader('X-Reply','configured');HttpCalloutMock mock=configured;HttpRequest request=new HttpRequest();request.setEndpoint('callout:ReplyService/status');request.setMethod('GET');stage='respond';HttpResponse response=mock.respond(request);p.put('responseIsNull',response==null);if(response!=null){stage='read-response';p.put('body',response.getBody());p.put('statusCode',response.getStatusCode());p.put('status',response.getStatus());p.put('header',response.getHeader('X-Reply'));}stage='complete';}catch(Exception error){p.put('caught',true);p.put('exceptionType',error.getTypeName());p.put('exceptionMessage',error.getMessage());}p.put('stage',stage);System.assert(false,'RESOURCE_REPLY_OBSERVATION|'+JSON.serialize(p));}}"
+  },
+  "resource": "present response",
+  "resourceName": "PresentReply",
+  "cells": [
+    {
+      "api": "62.0",
+      "className": "ResourceReplyMissingConcrete",
+      "native": {
+        "stage": "respond",
+        "exceptionMessage": "Static Resource not found: AbsentReply",
+        "exceptionType": "System.NullPointerException",
+        "caught": true
+      }
+    },
+    {
+      "api": "62.0",
+      "className": "ResourceReplyMissingInterface",
+      "native": {
+        "stage": "respond",
+        "exceptionMessage": "Static Resource not found: AbsentReply",
+        "exceptionType": "System.NullPointerException",
+        "caught": true
+      }
+    },
+    {
+      "api": "62.0",
+      "className": "ResourceReplyPresentConcrete",
+      "native": {
+        "stage": "complete",
+        "header": "configured",
+        "status": "Configured reply",
+        "statusCode": 203,
+        "body": "present response",
+        "responseIsNull": false,
+        "caught": false
+      }
+    },
+    {
+      "api": "62.0",
+      "className": "ResourceReplyPresentInterface",
+      "native": {
+        "stage": "complete",
+        "header": "configured",
+        "status": "Configured reply",
+        "statusCode": 203,
+        "body": "present response",
+        "responseIsNull": false,
+        "caught": false
+      }
+    },
+    {
+      "api": "66.0",
+      "className": "ResourceReplyMissingConcrete",
+      "native": {
+        "stage": "respond",
+        "exceptionMessage": "Static Resource not found: AbsentReply",
+        "exceptionType": "System.NullPointerException",
+        "caught": true
+      }
+    },
+    {
+      "api": "66.0",
+      "className": "ResourceReplyMissingInterface",
+      "native": {
+        "stage": "respond",
+        "exceptionMessage": "Static Resource not found: AbsentReply",
+        "exceptionType": "System.NullPointerException",
+        "caught": true
+      }
+    },
+    {
+      "api": "66.0",
+      "className": "ResourceReplyPresentConcrete",
+      "native": {
+        "stage": "complete",
+        "header": "configured",
+        "status": "Configured reply",
+        "statusCode": 203,
+        "body": "present response",
+        "responseIsNull": false,
+        "caught": false
+      }
+    },
+    {
+      "api": "66.0",
+      "className": "ResourceReplyPresentInterface",
+      "native": {
+        "stage": "complete",
+        "header": "configured",
+        "status": "Configured reply",
+        "statusCode": 203,
+        "body": "present response",
+        "responseIsNull": false,
+        "caught": false
+      }
+    },
+    {
+      "api": "67.0",
+      "className": "ResourceReplyMissingConcrete",
+      "native": {
+        "stage": "respond",
+        "exceptionMessage": "Static Resource not found: AbsentReply",
+        "exceptionType": "System.NullPointerException",
+        "caught": true
+      }
+    },
+    {
+      "api": "67.0",
+      "className": "ResourceReplyMissingInterface",
+      "native": {
+        "stage": "respond",
+        "exceptionMessage": "Static Resource not found: AbsentReply",
+        "exceptionType": "System.NullPointerException",
+        "caught": true
+      }
+    },
+    {
+      "api": "67.0",
+      "className": "ResourceReplyPresentConcrete",
+      "native": {
+        "stage": "complete",
+        "header": "configured",
+        "status": "Configured reply",
+        "statusCode": 203,
+        "body": "present response",
+        "responseIsNull": false,
+        "caught": false
+      }
+    },
+    {
+      "api": "67.0",
+      "className": "ResourceReplyPresentInterface",
+      "native": {
+        "stage": "complete",
+        "header": "configured",
+        "status": "Configured reply",
+        "statusCode": 203,
+        "body": "present response",
+        "responseIsNull": false,
+        "caught": false
+      }
+    },
+    {
+      "api": "68.0",
+      "className": "ResourceReplyMissingConcrete",
+      "native": {
+        "stage": "respond",
+        "exceptionMessage": "Static Resource not found: AbsentReply",
+        "exceptionType": "System.NullPointerException",
+        "caught": true
+      }
+    },
+    {
+      "api": "68.0",
+      "className": "ResourceReplyMissingInterface",
+      "native": {
+        "stage": "respond",
+        "exceptionMessage": "Static Resource not found: AbsentReply",
+        "exceptionType": "System.NullPointerException",
+        "caught": true
+      }
+    },
+    {
+      "api": "68.0",
+      "className": "ResourceReplyPresentConcrete",
+      "native": {
+        "stage": "complete",
+        "header": "configured",
+        "status": "Configured reply",
+        "statusCode": 203,
+        "body": "present response",
+        "responseIsNull": false,
+        "caught": false
+      }
+    },
+    {
+      "api": "68.0",
+      "className": "ResourceReplyPresentInterface",
+      "native": {
+        "stage": "complete",
+        "header": "configured",
+        "status": "Configured reply",
+        "statusCode": 203,
+        "body": "present response",
+        "responseIsNull": false,
+        "caught": false
+      }
+    }
+  ],
+  "carries": [
+    {
+      "count": 12,
+      "reason": "Original API62/67/68 anonymous receiver twins have no native observations; missing-resource recovery remains restricted to test context. API66 named twins are the exact source-version discriminator."
+    }
+  ],
+  "sourceSHA256": {
+    "ResourceReplyMissingConcrete": "e44ffd2facc3f1e39e36fbac35d19202aae2d6150b55be5ce265a6a7ede0e1fb",
+    "ResourceReplyMissingInterface": "27e40c5f71b8d739604d49257f0eb76139a12dbb2dec1735d110496d4bf3db5b",
+    "ResourceReplyPresentConcrete": "d62bc44924c2ffb86bebbbf183bd9e02248021d0413ec63f3a8335d6996b5b26",
+    "ResourceReplyPresentInterface": "87ab9629161f3424015b637f06253809a39fbe7d8181ba64a7e23071d0fb4034"
+  }
+}

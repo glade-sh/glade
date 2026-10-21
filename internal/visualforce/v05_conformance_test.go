@@ -3,6 +3,7 @@ package visualforce_test
 import (
 	"encoding/csv"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"os"
@@ -38,21 +39,22 @@ import (
 // GLADE_V05_CLONE_REPORT, GLADE_V05_NATIVE_PAGE_REPORT and
 // GLADE_V05_BOUND_PAGE_REPORT select per-row TSV outputs.
 func TestV05SalesforceConformance(t *testing.T) {
-	v05RunConformance(t, "testdata/v05_salesforce.json", "Owned standard-set controller observations at API 59.0 and 67.0.", "Standard set controller", 125, 106, 3, []string{"paging", "filters", "selection", "construction", "save"}, "GLADE_V05_REPORT")
+	accessContext := v05AccessContext(t)
+	v05RunConformance(t, accessContext, "testdata/v05_salesforce.json", "Owned standard-set controller observations at API 59.0 and 67.0.", "Standard set controller", 125, 106, 3, []string{"paging", "filters", "selection", "construction", "save"}, "GLADE_V05_REPORT")
 	t.Run("controls", func(t *testing.T) {
-		v05RunConformance(t, "testdata/v05_controls_salesforce.json", "Owned standard-set controller mutation controls at API 59.0 and 67.0.", "Standard set controller controls", 42, 37, 4, []string{"paging", "filters", "construction"}, "GLADE_V05_CONTROLS_REPORT")
+		v05RunConformance(t, accessContext, "testdata/v05_controls_salesforce.json", "Owned standard-set controller mutation controls at API 59.0 and 67.0.", "Standard set controller controls", 42, 37, 4, []string{"paging", "filters", "construction"}, "GLADE_V05_CONTROLS_REPORT")
 	})
 	t.Run("defaults", func(t *testing.T) {
-		v05RunConformance(t, "testdata/v05_default_salesforce.json", "Owned standard-set controller default-ordering controls at API 59.0 and 67.0.", "Standard set controller defaults", 8, 7, 5, []string{"paging", "filters"}, "GLADE_V05_DEFAULT_REPORT")
+		v05RunConformance(t, accessContext, "testdata/v05_default_salesforce.json", "Owned standard-set controller default-ordering controls at API 59.0 and 67.0.", "Standard set controller defaults", 8, 7, 5, []string{"paging", "filters"}, "GLADE_V05_DEFAULT_REPORT")
 	})
 	t.Run("clones", func(t *testing.T) {
-		v05RunConformance(t, "testdata/v05_clone_salesforce.json", "Owned standard-set controller clone controls at API 59.0 and 67.0.", "Standard set controller clones", 8, 7, 4, []string{"paging", "construction", "filters"}, "GLADE_V05_CLONE_REPORT")
+		v05RunConformance(t, accessContext, "testdata/v05_clone_salesforce.json", "Owned standard-set controller clone controls at API 59.0 and 67.0.", "Standard set controller clones", 8, 7, 4, []string{"paging", "construction", "filters"}, "GLADE_V05_CLONE_REPORT")
 	})
 	t.Run("native_page", func(t *testing.T) {
-		v05RunConformance(t, "testdata/v05_native_page_salesforce.json", "Owned standard-set controller native-page controls at API 59.0 and 67.0.", "Standard set controller native page", 8, 7, 4, []string{"paging", "filters"}, "GLADE_V05_NATIVE_PAGE_REPORT")
+		v05RunConformance(t, accessContext, "testdata/v05_native_page_salesforce.json", "Owned standard-set controller native-page controls at API 59.0 and 67.0.", "Standard set controller native page", 8, 7, 4, []string{"paging", "filters"}, "GLADE_V05_NATIVE_PAGE_REPORT")
 	})
 	t.Run("bound_page", func(t *testing.T) {
-		v05RunConformance(t, "testdata/v05_bound_page_salesforce.json", "Owned standard-set controller bound-page controls at API 59.0 and 67.0.", "Standard set controller bound page", 10, 9, 5, []string{"paging", "filters"}, "GLADE_V05_BOUND_PAGE_REPORT")
+		v05RunConformance(t, accessContext, "testdata/v05_bound_page_salesforce.json", "Owned standard-set controller bound-page controls at API 59.0 and 67.0.", "Standard set controller bound page", 10, 9, 5, []string{"paging", "filters"}, "GLADE_V05_BOUND_PAGE_REPORT")
 	})
 }
 
@@ -71,7 +73,7 @@ type v05RemovedCase struct {
 	NativeExpected map[string]string `json:"native_expected"`
 }
 
-func v05RunConformance(t *testing.T, fixture, source, label string, compileRows, runtimeRows, metadataFiles int, requiredGroups []string, reportVariable string) {
+func v05RunConformance(t *testing.T, accessContext map[string]map[string]string, fixture, source, label string, compileRows, runtimeRows, metadataFiles int, requiredGroups []string, reportVariable string) {
 	capture := os.Getenv("GLADE_V05_CAPTURE") != ""
 	data, err := os.ReadFile(fixture)
 	if err != nil {
@@ -192,6 +194,9 @@ func v05RunConformance(t *testing.T, fixture, source, label string, compileRows,
 					v05WriteFiles(t, root, table.RuntimeFiles[api])
 				}
 				v05WriteFiles(t, root, input.Files)
+				if c.Kind == "compile" {
+					v05WriteAccessContext(t, root, accessContext[api])
+				}
 				got, diagnostics := v05Execute(t, root, input.Name, c, table.ListViewCreationOrder)
 				want := c.Expected[api]
 				if c.Kind == "runtime" {
@@ -307,6 +312,100 @@ func v05Execute(t *testing.T, root, name string, c v05Case, creationOrder []stri
 		return fail(err)
 	}
 	return v05Render(t, p, vf, index, name, c, creationOrder), diagnostics
+}
+
+// Permission sets cover the entire native bundle, including prior capture
+// controls and components whose DOM observations were removed. Their deployed
+// sources provide compilation context without reintroducing any removed answer.
+func v05AccessContext(t *testing.T) map[string]map[string]string {
+	t.Helper()
+	context := map[string]map[string]string{"59.0": {}, "67.0": {}}
+	for _, path := range []string{"testdata/v05_salesforce.json", "testdata/v05_controls_salesforce.json", "testdata/v05_default_salesforce.json", "testdata/v05_clone_salesforce.json", "testdata/v05_native_page_salesforce.json", "testdata/v05_bound_page_salesforce.json", "testdata/v05_unobservable_access_context.json"} {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var captured struct {
+			Cases []v04Case                    `json:"cases"`
+			Files map[string]map[string]string `json:"files"`
+		}
+		if err := json.Unmarshal(data, &captured); err != nil {
+			t.Fatal(err)
+		}
+		merge := func(api string, files map[string]string) {
+			for name, source := range files {
+				if !strings.HasPrefix(name, "force-app/main/default/classes/") && !strings.HasPrefix(name, "force-app/main/default/pages/") {
+					continue
+				}
+				if existing, present := context[api][name]; present && existing != source {
+					t.Fatalf("conflicting captured V05 source at API %s: %s", api, name)
+				}
+				context[api][name] = source
+			}
+		}
+		for _, api := range []string{"59.0", "67.0"} {
+			merge(api, captured.Files[api])
+			for _, c := range captured.Cases {
+				merge(api, c.Inputs[api].Files)
+			}
+		}
+	}
+	return context
+}
+
+// Install referenced companion sources, retaining every byte of the row's
+// original files, including its complete captured permission set. The product
+// compiler and strict loader still validate all source and access metadata.
+func v05WriteAccessContext(t *testing.T, root string, context map[string]string) {
+	t.Helper()
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	files := map[string]string{}
+	add := func(directory, name, extension string) {
+		if name == "" {
+			return
+		}
+		for _, suffix := range []string{"", "-meta.xml"} {
+			path := "force-app/main/default/" + directory + "/" + name + extension + suffix
+			if _, err := os.Stat(filepath.Join(root, path)); err == nil {
+				continue
+			} else if !os.IsNotExist(err) {
+				t.Fatal(err)
+			}
+			source, present := context[path]
+			if !present {
+				t.Fatalf("missing captured V05 access dependency: %s", path)
+			}
+			files[path] = source
+		}
+	}
+	for _, path := range p.PermissionSetFiles {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var metadata struct {
+			Entries []struct {
+				XMLName xml.Name
+				Class   string `xml:"apexClass"`
+				Page    string `xml:"apexPage"`
+			} `xml:",any"`
+		}
+		if err := xml.Unmarshal(data, &metadata); err != nil {
+			t.Fatal(err)
+		}
+		for _, entry := range metadata.Entries {
+			switch entry.XMLName.Local {
+			case "classAccesses":
+				add("classes", strings.TrimSpace(entry.Class), ".cls")
+			case "pageAccesses":
+				add("pages", strings.TrimSpace(entry.Page), ".page")
+			}
+		}
+	}
+	v05WriteFiles(t, root, files)
 }
 
 func v05Org(t *testing.T, p project.Project, creationOrder []string) (storage.OrgState, storage.Record) {

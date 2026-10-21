@@ -1,0 +1,416 @@
+{
+  "classes": {
+    "PopulatedMapProbe62": "@IsTest private class PopulatedMapProbe62 {\n@IsTest static void observeSnapshot() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); a.Name='second'; a.Description='added'; out.put('mapName',m.get('Name')); out.put('recordName',a.Name); out.put('hasAdded',m.containsKey('Description')); out.put('freshAdded',a.getPopulatedFieldsAsMap().containsKey('Description')); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|snapshot|'+JSON.serialize(out)); }\n@IsTest static void observePut() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.put('Name','second'); out.put('mapName',m.get('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|put|'+JSON.serialize(out)); }\n@IsTest static void observeRemove() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.remove('Name'); out.put('hasName',m.containsKey('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|remove|'+JSON.serialize(out)); }\n@IsTest static void observeClear() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.clear(); out.put('size',m.size()); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|clear|'+JSON.serialize(out)); }\n@IsTest static void observePutall() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.putAll(new Map<String,Object>{'Name'=>'second'}); out.put('mapName',m.get('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|putAll|'+JSON.serialize(out)); }\n@IsTest static void observeCopy() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=new Map<String,Object>(a.getPopulatedFieldsAsMap()); m.put('Name','second'); m.remove('Name'); out.put('size',m.size()); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|copy|'+JSON.serialize(out)); }\n@IsTest static void observeKeys() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); Set<String> keys=m.keySet(); keys.remove('Name'); out.put('hasName',m.containsKey('Name')); out.put('keyHasName',keys.contains('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|keys|'+JSON.serialize(out)); }\n@IsTest static void observeRelationship() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Contact c=new Contact(LastName='sample',Account=a); Map<String,Object> m=c.getPopulatedFieldsAsMap(); a.Name='second'; out.put('mapName',((Account)m.get('Account')).Name); out.put('recordName',c.Account.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|relationship|'+JSON.serialize(out)); }\n@IsTest static void observeClone() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap().clone(); m.put('Name','second'); out.put('mapName',m.get('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|clone|'+JSON.serialize(out)); }\n}\n",
+    "PopulatedMapProbe67": "@IsTest private class PopulatedMapProbe67 {\n@IsTest static void observeSnapshot() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); a.Name='second'; a.Description='added'; out.put('mapName',m.get('Name')); out.put('recordName',a.Name); out.put('hasAdded',m.containsKey('Description')); out.put('freshAdded',a.getPopulatedFieldsAsMap().containsKey('Description')); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|snapshot|'+JSON.serialize(out)); }\n@IsTest static void observePut() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.put('Name','second'); out.put('mapName',m.get('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|put|'+JSON.serialize(out)); }\n@IsTest static void observeRemove() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.remove('Name'); out.put('hasName',m.containsKey('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|remove|'+JSON.serialize(out)); }\n@IsTest static void observeClear() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.clear(); out.put('size',m.size()); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|clear|'+JSON.serialize(out)); }\n@IsTest static void observePutall() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.putAll(new Map<String,Object>{'Name'=>'second'}); out.put('mapName',m.get('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|putAll|'+JSON.serialize(out)); }\n@IsTest static void observeCopy() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=new Map<String,Object>(a.getPopulatedFieldsAsMap()); m.put('Name','second'); m.remove('Name'); out.put('size',m.size()); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|copy|'+JSON.serialize(out)); }\n@IsTest static void observeKeys() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); Set<String> keys=m.keySet(); keys.remove('Name'); out.put('hasName',m.containsKey('Name')); out.put('keyHasName',keys.contains('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|keys|'+JSON.serialize(out)); }\n@IsTest static void observeRelationship() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Contact c=new Contact(LastName='sample',Account=a); Map<String,Object> m=c.getPopulatedFieldsAsMap(); a.Name='second'; out.put('mapName',((Account)m.get('Account')).Name); out.put('recordName',c.Account.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|relationship|'+JSON.serialize(out)); }\n@IsTest static void observeClone() { Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap().clone(); m.put('Name','second'); out.put('mapName',m.get('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|clone|'+JSON.serialize(out)); }\n}\n"
+  },
+  "rows": [
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "snapshot",
+      "outcome": "observation",
+      "expected": {
+        "freshAdded": true,
+        "hasAdded": false,
+        "recordName": "second",
+        "mapName": "first"
+      },
+      "sourceSha256": "8ff15a8d692bc0b27b1884deb9620c8efd341415513d6929ebed2b2de78b36d4",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); a.Name='second'; a.Description='added'; out.put('mapName',m.get('Name')); out.put('recordName',a.Name); out.put('hasAdded',m.containsKey('Description')); out.put('freshAdded',a.getPopulatedFieldsAsMap().containsKey('Description')); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|snapshot|'+JSON.serialize(out));"
+    },
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "put",
+      "outcome": "fatal",
+      "expected": "System.FinalException: Collection is read-only",
+      "sourceSha256": "c196d674c35bf2b285f55df836187c3e8781f75f04c3803c04d94aa7def77e07",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.put('Name','second'); out.put('mapName',m.get('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.debug('MAP|put|'+JSON.serialize(out));"
+    },
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "remove",
+      "outcome": "fatal",
+      "expected": "System.FinalException: Collection is read-only",
+      "sourceSha256": "ca2ddbb4818f0f0a373b431e7a49be251a2690fd02af62e310a39126b28272e9",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.remove('Name'); out.put('hasName',m.containsKey('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.debug('MAP|remove|'+JSON.serialize(out));"
+    },
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "clear",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "first",
+        "size": 0
+      },
+      "sourceSha256": "69ad995e5ddbec592acd0232e52594ee42c05bad18293c4c98809ac79d186bf2",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.clear(); out.put('size',m.size()); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|clear|'+JSON.serialize(out));"
+    },
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "putAll",
+      "outcome": "fatal",
+      "expected": "System.FinalException: Collection is read-only",
+      "sourceSha256": "23208f6a6441b850af72bfcf3cedcc4e066e59fef8e0935ffec3788ec37d4e38",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.putAll(new Map<String,Object>{'Name'=>'second'}); out.put('mapName',m.get('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.debug('MAP|putAll|'+JSON.serialize(out));"
+    },
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "copy",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "first",
+        "size": 0
+      },
+      "sourceSha256": "0f53c238d1212f2470b439f1d7e7941afd0c54f63984eb43d901d05f62440750",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=new Map<String,Object>(a.getPopulatedFieldsAsMap()); m.put('Name','second'); m.remove('Name'); out.put('size',m.size()); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|copy|'+JSON.serialize(out));"
+    },
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "relationship",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "second",
+        "mapName": "second"
+      },
+      "sourceSha256": "7e4e0bd54f7a6f0d93dae8a52a644825c283d8d6b2e45a2dc95e73a64a3e3899",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Contact c=new Contact(LastName='sample',Account=a); Map<String,Object> m=c.getPopulatedFieldsAsMap(); a.Name='second'; out.put('mapName',((Account)m.get('Account')).Name); out.put('recordName',c.Account.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|relationship|'+JSON.serialize(out));"
+    },
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "clone",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "first",
+        "mapName": "second"
+      },
+      "sourceSha256": "61cd71337e1f673dda3f38ea5f0f39d81614c822c1193d9a6d6d180e1c4e03cb",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap().clone(); m.put('Name','second'); out.put('mapName',m.get('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|clone|'+JSON.serialize(out));"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "clear",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "first",
+        "size": 0
+      },
+      "sourceSha256": "899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519",
+      "className": "PopulatedMapProbe62",
+      "method": "observeClear"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "clone",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "first",
+        "mapName": "second"
+      },
+      "sourceSha256": "899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519",
+      "className": "PopulatedMapProbe62",
+      "method": "observeClone"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "copy",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "first",
+        "size": 0
+      },
+      "sourceSha256": "899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519",
+      "className": "PopulatedMapProbe62",
+      "method": "observeCopy"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "put",
+      "outcome": "fatal",
+      "expected": "System.FinalException: Collection is read-only",
+      "sourceSha256": "899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519",
+      "className": "PopulatedMapProbe62",
+      "method": "observePut"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "putAll",
+      "outcome": "fatal",
+      "expected": "System.FinalException: Collection is read-only",
+      "sourceSha256": "899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519",
+      "className": "PopulatedMapProbe62",
+      "method": "observePutall"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "relationship",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "second",
+        "mapName": "second"
+      },
+      "sourceSha256": "899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519",
+      "className": "PopulatedMapProbe62",
+      "method": "observeRelationship"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "remove",
+      "outcome": "fatal",
+      "expected": "System.FinalException: Collection is read-only",
+      "sourceSha256": "899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519",
+      "className": "PopulatedMapProbe62",
+      "method": "observeRemove"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "snapshot",
+      "outcome": "observation",
+      "expected": {
+        "freshAdded": true,
+        "hasAdded": false,
+        "recordName": "second",
+        "mapName": "first"
+      },
+      "sourceSha256": "899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519",
+      "className": "PopulatedMapProbe62",
+      "method": "observeSnapshot"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "snapshot",
+      "outcome": "observation",
+      "expected": {
+        "freshAdded": true,
+        "hasAdded": false,
+        "recordName": "second",
+        "mapName": "first"
+      },
+      "sourceSha256": "8ff15a8d692bc0b27b1884deb9620c8efd341415513d6929ebed2b2de78b36d4",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); a.Name='second'; a.Description='added'; out.put('mapName',m.get('Name')); out.put('recordName',a.Name); out.put('hasAdded',m.containsKey('Description')); out.put('freshAdded',a.getPopulatedFieldsAsMap().containsKey('Description')); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|snapshot|'+JSON.serialize(out));"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "put",
+      "outcome": "fatal",
+      "expected": "System.FinalException: Collection is read-only",
+      "sourceSha256": "c196d674c35bf2b285f55df836187c3e8781f75f04c3803c04d94aa7def77e07",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.put('Name','second'); out.put('mapName',m.get('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.debug('MAP|put|'+JSON.serialize(out));"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "remove",
+      "outcome": "fatal",
+      "expected": "System.FinalException: Collection is read-only",
+      "sourceSha256": "ca2ddbb4818f0f0a373b431e7a49be251a2690fd02af62e310a39126b28272e9",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.remove('Name'); out.put('hasName',m.containsKey('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.debug('MAP|remove|'+JSON.serialize(out));"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "clear",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "first",
+        "size": 0
+      },
+      "sourceSha256": "69ad995e5ddbec592acd0232e52594ee42c05bad18293c4c98809ac79d186bf2",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.clear(); out.put('size',m.size()); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|clear|'+JSON.serialize(out));"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "putAll",
+      "outcome": "fatal",
+      "expected": "System.FinalException: Collection is read-only",
+      "sourceSha256": "23208f6a6441b850af72bfcf3cedcc4e066e59fef8e0935ffec3788ec37d4e38",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.putAll(new Map<String,Object>{'Name'=>'second'}); out.put('mapName',m.get('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.debug('MAP|putAll|'+JSON.serialize(out));"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "copy",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "first",
+        "size": 0
+      },
+      "sourceSha256": "0f53c238d1212f2470b439f1d7e7941afd0c54f63984eb43d901d05f62440750",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=new Map<String,Object>(a.getPopulatedFieldsAsMap()); m.put('Name','second'); m.remove('Name'); out.put('size',m.size()); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|copy|'+JSON.serialize(out));"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "relationship",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "second",
+        "mapName": "second"
+      },
+      "sourceSha256": "7e4e0bd54f7a6f0d93dae8a52a644825c283d8d6b2e45a2dc95e73a64a3e3899",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Contact c=new Contact(LastName='sample',Account=a); Map<String,Object> m=c.getPopulatedFieldsAsMap(); a.Name='second'; out.put('mapName',((Account)m.get('Account')).Name); out.put('recordName',c.Account.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|relationship|'+JSON.serialize(out));"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "clone",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "first",
+        "mapName": "second"
+      },
+      "sourceSha256": "61cd71337e1f673dda3f38ea5f0f39d81614c822c1193d9a6d6d180e1c4e03cb",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap().clone(); m.put('Name','second'); out.put('mapName',m.get('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|clone|'+JSON.serialize(out));"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "clear",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "first",
+        "size": 0
+      },
+      "sourceSha256": "cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d",
+      "className": "PopulatedMapProbe67",
+      "method": "observeClear"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "clone",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "first",
+        "mapName": "second"
+      },
+      "sourceSha256": "cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d",
+      "className": "PopulatedMapProbe67",
+      "method": "observeClone"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "copy",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "first",
+        "size": 0
+      },
+      "sourceSha256": "cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d",
+      "className": "PopulatedMapProbe67",
+      "method": "observeCopy"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "put",
+      "outcome": "fatal",
+      "expected": "System.FinalException: Collection is read-only",
+      "sourceSha256": "cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d",
+      "className": "PopulatedMapProbe67",
+      "method": "observePut"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "putAll",
+      "outcome": "fatal",
+      "expected": "System.FinalException: Collection is read-only",
+      "sourceSha256": "cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d",
+      "className": "PopulatedMapProbe67",
+      "method": "observePutall"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "relationship",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "second",
+        "mapName": "second"
+      },
+      "sourceSha256": "cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d",
+      "className": "PopulatedMapProbe67",
+      "method": "observeRelationship"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "remove",
+      "outcome": "fatal",
+      "expected": "System.FinalException: Collection is read-only",
+      "sourceSha256": "cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d",
+      "className": "PopulatedMapProbe67",
+      "method": "observeRemove"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "snapshot",
+      "outcome": "observation",
+      "expected": {
+        "freshAdded": true,
+        "hasAdded": false,
+        "recordName": "second",
+        "mapName": "first"
+      },
+      "sourceSha256": "cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d",
+      "className": "PopulatedMapProbe67",
+      "method": "observeSnapshot"
+    },
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "emptyPut",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.put('Name','second'); out.put('mapName',m.get('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|emptyPut|'+JSON.serialize(out));",
+      "sourceSha256": "625a16af679de763455e3307e8416f9e59131c690182684f187ef1f2a3ad3765",
+      "outcome": "fatal",
+      "expected": "System.FinalException: Collection is read-only"
+    },
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "clearThenPut",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.clear(); m.put('Name','second'); out.put('mapName',m.get('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|clearThenPut|'+JSON.serialize(out));",
+      "sourceSha256": "b137a7669d465b65c2d7c1fd876da2bd8bc9997f5de82d07fdd793ab3876fa22",
+      "outcome": "fatal",
+      "expected": "System.FinalException: Collection is read-only"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "emptyPut",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.put('Name','second'); out.put('mapName',m.get('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|emptyPut|'+JSON.serialize(out));",
+      "sourceSha256": "625a16af679de763455e3307e8416f9e59131c690182684f187ef1f2a3ad3765",
+      "outcome": "fatal",
+      "expected": "System.FinalException: Collection is read-only"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "clearThenPut",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); m.clear(); m.put('Name','second'); out.put('mapName',m.get('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|clearThenPut|'+JSON.serialize(out));",
+      "sourceSha256": "b137a7669d465b65c2d7c1fd876da2bd8bc9997f5de82d07fdd793ab3876fa22",
+      "outcome": "fatal",
+      "expected": "System.FinalException: Collection is read-only"
+    }
+  ]
+}

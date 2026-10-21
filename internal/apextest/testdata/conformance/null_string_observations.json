@@ -1,0 +1,5041 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "shapeCount": 42,
+  "plannedCellCount": 252,
+  "nativeObservationCount": 246,
+  "exactCellCount": 234,
+  "partialCellCount": 6,
+  "carriedCellCount": 12,
+  "unansweredCellCount": 6,
+  "evidence": "Owned top-level synthetic helpers and measured Apex; independent Tooling anonymous and named test observations. Sources and diagnostics use semantic helper/class labels. Native wrapper coordinates are retained as framing evidence. Six anonymous cells lack runtime answers because their helper is rejected natively.",
+  "helperClasses": {
+    "OptionalDisplay": "public class OptionalDisplay {public String output;public override String toString(){return output;}}",
+    "RelayDisplay": "public class RelayDisplay {public Object input;public override String toString(){String converted=String.valueOf(input);return converted;}}",
+    "OverloadedDisplay": "public class OverloadedDisplay {public override String toString(){return null;}public String toString(String suffix){return 'explicit:'+suffix;}}",
+    "MixedCaseDisplay": "public class MixedCaseDisplay {public String output;public override String ToString(){return output;}}",
+    "ImplicitAccessDisplay": "public class ImplicitAccessDisplay {public String output;override String toString(){return output;}}"
+  },
+  "rows": [
+    {
+      "id": "control_value",
+      "apex": "payload.put('value',7);payload.put('outsideCount',0);",
+      "helpers": [],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "outsideCount": 0,
+              "value": 7,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": false,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "outsideCount": 0,
+              "value": 7,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": false,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "outsideCount": 0,
+              "value": 7,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": false,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "outsideCount": 0,
+              "value": 7,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": false,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "outsideCount": 0,
+              "value": 7,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": false,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "outsideCount": 0,
+              "value": 7,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": false,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "control_caught_math",
+      "apex": "try{Integer zero=0;Integer quotient=1/zero;}catch(Exception e){payload.put('caught',e.getTypeName());payload.put('message',e.getMessage());}",
+      "helpers": [],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "message": "Divide by 0",
+              "caught": "System.MathException",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": false,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "message": "Divide by 0",
+              "caught": "System.MathException",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": false,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "message": "Divide by 0",
+              "caught": "System.MathException",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": false,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "message": "Divide by 0",
+              "caught": "System.MathException",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": false,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "message": "Divide by 0",
+              "caught": "System.MathException",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": false,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "message": "Divide by 0",
+              "caught": "System.MathException",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": false,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "control_uncaught_math",
+      "apex": "Integer zero=0;Integer quotient=1/zero;",
+      "helpers": [],
+      "kind": "uncaught",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "uncaught_anonymous",
+            "exceptionType": "System.MathException",
+            "exceptionMessage": "System.MathException: Divide by 0"
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "uncaught_test_failure",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "uncaught_test_failure",
+            "exceptionType": "System.MathException",
+            "exceptionMessage": "System.MathException: Divide by 0"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "uncaught_anonymous",
+            "exceptionType": "System.MathException",
+            "exceptionMessage": "System.MathException: Divide by 0"
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "uncaught_test_failure",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "uncaught_test_failure",
+            "exceptionType": "System.MathException",
+            "exceptionMessage": "System.MathException: Divide by 0"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "uncaught_anonymous",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "uncaught_anonymous",
+            "exceptionType": "System.MathException",
+            "exceptionMessage": "System.MathException: Divide by 0"
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "uncaught_test_failure",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "uncaught_test_failure",
+            "exceptionType": "System.MathException",
+            "exceptionMessage": "System.MathException: Divide by 0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "control_invalid_assignment",
+      "apex": "Integer badValue='synthetic wrong type';",
+      "helpers": [],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "compile-rejected",
+          "disposition": "partial",
+          "observation": {
+            "outcome": "compile-rejected",
+            "diagnostics": {
+              "compileProblem": "Illegal assignment from String to Integer",
+              "line": 1,
+              "column": 194
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "compile-rejected",
+          "disposition": "partial",
+          "observation": {
+            "outcome": "compile-rejected",
+            "diagnostics": [
+              {
+                "name": "NullStringSpec",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Illegal assignment from String to Integer",
+                "column": 265
+              }
+            ]
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "compile-rejected",
+          "disposition": "partial",
+          "observation": {
+            "outcome": "compile-rejected",
+            "diagnostics": {
+              "compileProblem": "Illegal assignment from String to Integer",
+              "line": 1,
+              "column": 194
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "compile-rejected",
+          "disposition": "partial",
+          "observation": {
+            "outcome": "compile-rejected",
+            "diagnostics": [
+              {
+                "name": "NullStringSpec",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Illegal assignment from String to Integer",
+                "column": 265
+              }
+            ]
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "compile-rejected",
+          "disposition": "partial",
+          "observation": {
+            "outcome": "compile-rejected",
+            "diagnostics": {
+              "compileProblem": "Illegal assignment from String to Integer",
+              "line": 1,
+              "column": 194
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "compile-rejected",
+          "disposition": "partial",
+          "observation": {
+            "outcome": "compile-rejected",
+            "diagnostics": [
+              {
+                "name": "NullStringSpec",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Illegal assignment from String to Integer",
+                "column": 265
+              }
+            ]
+          }
+        }
+      ],
+      "carryReason": "Native wrapper coordinates and dependent diagnostic framing are retained; only compiler rejection and primary problem text are replayed."
+    },
+    {
+      "id": "override_direct_null",
+      "apex": "String r=new OptionalDisplay().toString();payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "object_concat_null_override",
+      "apex": "Object x=new OptionalDisplay();String r=x+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "list_concat_null_override",
+      "apex": "String r=new List<Object>{new OptionalDisplay()}+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "valueof_null_override",
+      "apex": "String r=String.valueOf(new OptionalDisplay());payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "format_null_override",
+      "apex": "String r=String.format('{0}',new List<Object>{new OptionalDisplay()});payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "list_concat_empty_override",
+      "apex": "OptionalDisplay x=new OptionalDisplay();x.output='';String r=new List<Object>{x}+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 2,
+              "text": "()",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 2,
+              "text": "()",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 2,
+              "text": "()",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 2,
+              "text": "()",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 2,
+              "text": "()",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 2,
+              "text": "()",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "list_concat_text_override",
+      "apex": "OptionalDisplay x=new OptionalDisplay();x.output='amber';String r=new List<Object>{x}+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 7,
+              "text": "(amber)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 7,
+              "text": "(amber)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 7,
+              "text": "(amber)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 7,
+              "text": "(amber)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 7,
+              "text": "(amber)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 7,
+              "text": "(amber)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "valueof_null_object",
+      "apex": "Object x=null;String r=String.valueOf(x);payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "list_concat_null_element",
+      "apex": "String r=new List<Object>{null}+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "relay_direct_null",
+      "apex": "String r=new RelayDisplay().toString();payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "RelayDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "relay_list_null",
+      "apex": "String r=new List<Object>{new RelayDisplay()}+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "RelayDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "override_direct_empty",
+      "apex": "OptionalDisplay x=new OptionalDisplay();x.output='';String r=x.toString();payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "override_direct_text",
+      "apex": "OptionalDisplay x=new OptionalDisplay();x.output='amber';String r=x.toString();payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "object_concat_empty_override",
+      "apex": "OptionalDisplay x=new OptionalDisplay();x.output='';String r=((Object)x)+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "object_concat_text_override",
+      "apex": "OptionalDisplay x=new OptionalDisplay();x.output='amber';String r=((Object)x)+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "valueof_empty_override",
+      "apex": "OptionalDisplay x=new OptionalDisplay();x.output='';String r=String.valueOf(x);payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "valueof_text_override",
+      "apex": "OptionalDisplay x=new OptionalDisplay();x.output='amber';String r=String.valueOf(x);payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "format_empty_override",
+      "apex": "OptionalDisplay x=new OptionalDisplay();x.output='';String r=String.format('{0}',new List<Object>{x});payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 0,
+              "text": "",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "format_text_override",
+      "apex": "OptionalDisplay x=new OptionalDisplay();x.output='amber';String r=String.format('{0}',new List<Object>{x});payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "relay_direct_text",
+      "apex": "RelayDisplay x=new RelayDisplay();x.input='amber';String r=x.toString();payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "RelayDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 5,
+              "text": "amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "relay_list_text",
+      "apex": "RelayDisplay x=new RelayDisplay();x.input='amber';String r=new List<Object>{x}+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "RelayDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 7,
+              "text": "(amber)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 7,
+              "text": "(amber)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 7,
+              "text": "(amber)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 7,
+              "text": "(amber)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 7,
+              "text": "(amber)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 7,
+              "text": "(amber)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "valueof_literal_object_null",
+      "apex": "String r=String.valueOf((Object)null);payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "object_concat_null_reference",
+      "apex": "Object x=null;String r=x+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "valueof_null_string",
+      "apex": "String x=null;String r=String.valueOf(x);payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "empty_list_concat",
+      "apex": "String r=new List<Object>()+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 2,
+              "text": "()",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 2,
+              "text": "()",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 2,
+              "text": "()",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 2,
+              "text": "()",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 2,
+              "text": "()",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 2,
+              "text": "()",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "typed_list_null_override",
+      "apex": "String r=new List<OptionalDisplay>{new OptionalDisplay()}+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "singleton_set_null_override",
+      "apex": "String r=new Set<OptionalDisplay>{new OptionalDisplay()}+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "{null}",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "{null}",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "{null}",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "{null}",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "{null}",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "{null}",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "prefix_list_null_override",
+      "apex": "String r='before:'+new List<Object>{new OptionalDisplay()}+':after';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 19,
+              "text": "before:(null):after",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 19,
+              "text": "before:(null):after",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 19,
+              "text": "before:(null):after",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 19,
+              "text": "before:(null):after",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 19,
+              "text": "before:(null):after",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 19,
+              "text": "before:(null):after",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "mixed_list_null_override",
+      "apex": "String r=new List<Object>{'amber',new OptionalDisplay(),null}+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 19,
+              "text": "(amber, null, null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 19,
+              "text": "(amber, null, null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 19,
+              "text": "(amber, null, null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 19,
+              "text": "(amber, null, null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 19,
+              "text": "(amber, null, null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 19,
+              "text": "(amber, null, null)",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "overload_implicit_null",
+      "apex": "String r=new OverloadedDisplay()+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OverloadedDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 4,
+              "text": "null",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "overload_explicit_text",
+      "apex": "String r=new OverloadedDisplay().toString('amber');payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OverloadedDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 14,
+              "text": "explicit:amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 14,
+              "text": "explicit:amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 14,
+              "text": "explicit:amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 14,
+              "text": "explicit:amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 14,
+              "text": "explicit:amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 14,
+              "text": "explicit:amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "overload_case_call_text",
+      "apex": "String r=new OverloadedDisplay().TOSTRING('amber');payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OverloadedDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 14,
+              "text": "explicit:amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 14,
+              "text": "explicit:amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 14,
+              "text": "explicit:amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 14,
+              "text": "explicit:amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 14,
+              "text": "explicit:amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 14,
+              "text": "explicit:amber",
+              "isNull": false,
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "override_case_call_null",
+      "apex": "try{OptionalDisplay positiveSeed=new OptionalDisplay();positiveSeed.output='amber';String positiveText=positiveSeed.TOSTRING();payload.put('positiveControlText',positiveText);payload.put('positiveControlComplete',true);}catch(Exception positiveError){payload.put('positiveControlComplete',false);payload.put('positiveExceptionType',positiveError.getTypeName());payload.put('positiveExceptionMessage',positiveError.getMessage());}String r=new OptionalDisplay().TOSTRING();payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "OptionalDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "valueof_case_call_null",
+      "apex": "try{Object positiveInput='amber';String positiveText=sTrInG.vAlUeOf(positiveInput);payload.put('positiveControlText',positiveText);payload.put('positiveControlComplete',true);}catch(Exception positiveError){payload.put('positiveControlComplete',false);payload.put('positiveExceptionType',positiveError.getTypeName());payload.put('positiveExceptionMessage',positiveError.getMessage());}Object x=null;String r=sTrInG.vAlUeOf(x);payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "override_case_declaration_list",
+      "apex": "try{MixedCaseDisplay positiveSeed=new MixedCaseDisplay();positiveSeed.output='amber';String positiveText=new List<Object>{positiveSeed}+'';payload.put('positiveControlText',positiveText);payload.put('positiveControlComplete',true);}catch(Exception positiveError){payload.put('positiveControlComplete',false);payload.put('positiveExceptionType',positiveError.getTypeName());payload.put('positiveExceptionMessage',positiveError.getMessage());}String r=new List<Object>{new MixedCaseDisplay()}+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "MixedCaseDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "positiveControlComplete": true,
+              "positiveControlText": "(amber)",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "positiveControlComplete": true,
+              "positiveControlText": "(amber)",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "positiveControlComplete": true,
+              "positiveControlText": "(amber)",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "positiveControlComplete": true,
+              "positiveControlText": "(amber)",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "positiveControlComplete": true,
+              "positiveControlText": "(amber)",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": 6,
+              "text": "(null)",
+              "isNull": false,
+              "positiveControlComplete": true,
+              "positiveControlText": "(amber)",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "override_case_declaration_valueof",
+      "apex": "try{MixedCaseDisplay positiveSeed=new MixedCaseDisplay();positiveSeed.output='amber';String positiveText=String.valueOf(positiveSeed);payload.put('positiveControlText',positiveText);payload.put('positiveControlComplete',true);}catch(Exception positiveError){payload.put('positiveControlComplete',false);payload.put('positiveExceptionType',positiveError.getTypeName());payload.put('positiveExceptionMessage',positiveError.getMessage());}String r=String.valueOf(new MixedCaseDisplay());payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "MixedCaseDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "disposition": "exact",
+          "observation": {
+            "outcome": "runtime",
+            "value": {
+              "length": null,
+              "text": null,
+              "isNull": true,
+              "positiveControlComplete": true,
+              "positiveControlText": "amber",
+              "exceptionMessage": null,
+              "exceptionType": null,
+              "readBackComplete": true,
+              "effectStarted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "implicit_access_list",
+      "apex": "try{ImplicitAccessDisplay positiveSeed=new ImplicitAccessDisplay();positiveSeed.output='amber';String positiveText=new List<Object>{positiveSeed}+'';payload.put('positiveControlText',positiveText);payload.put('positiveControlComplete',true);}catch(Exception positiveError){payload.put('positiveControlComplete',false);payload.put('positiveExceptionType',positiveError.getTypeName());payload.put('positiveExceptionMessage',positiveError.getMessage());}String r=new List<Object>{new ImplicitAccessDisplay()}+'';payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "ImplicitAccessDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "FIXTURE_ERROR",
+          "disposition": "carried",
+          "observation": {
+            "outcome": "FIXTURE_ERROR",
+            "signature": "helper-setup",
+            "helpers": [
+              "ImplicitAccessDisplay"
+            ]
+          },
+          "helperDiagnostics": [
+            {
+              "name": "ImplicitAccessDisplay",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+              "column": 68
+            }
+          ]
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "compile-rejected",
+          "disposition": "carried",
+          "observation": {
+            "outcome": "compile-rejected",
+            "diagnostics": [
+              {
+                "name": "ImplicitAccessDisplay",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+                "column": 68
+              },
+              {
+                "name": "NullStringSpec",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ImplicitAccessDisplay : Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+                "column": 68
+              }
+            ]
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "FIXTURE_ERROR",
+          "disposition": "carried",
+          "observation": {
+            "outcome": "FIXTURE_ERROR",
+            "signature": "helper-setup",
+            "helpers": [
+              "ImplicitAccessDisplay"
+            ]
+          },
+          "helperDiagnostics": [
+            {
+              "name": "ImplicitAccessDisplay",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+              "column": 68
+            }
+          ]
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "compile-rejected",
+          "disposition": "carried",
+          "observation": {
+            "outcome": "compile-rejected",
+            "diagnostics": [
+              {
+                "name": "ImplicitAccessDisplay",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+                "column": 68
+              },
+              {
+                "name": "ImplicitAccessDisplay",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "override methods require at least one of the following global, public, protected",
+                "column": 68
+              },
+              {
+                "name": "NullStringSpec",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ImplicitAccessDisplay : Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+                "column": 68
+              }
+            ]
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "FIXTURE_ERROR",
+          "disposition": "carried",
+          "observation": {
+            "outcome": "FIXTURE_ERROR",
+            "signature": "helper-setup",
+            "helpers": [
+              "ImplicitAccessDisplay"
+            ]
+          },
+          "helperDiagnostics": [
+            {
+              "name": "ImplicitAccessDisplay",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+              "column": 68
+            }
+          ]
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "compile-rejected",
+          "disposition": "carried",
+          "observation": {
+            "outcome": "compile-rejected",
+            "diagnostics": [
+              {
+                "name": "ImplicitAccessDisplay",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+                "column": 68
+              },
+              {
+                "name": "ImplicitAccessDisplay",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "override methods require at least one of the following global, public, protected",
+                "column": 68
+              },
+              {
+                "name": "NullStringSpec",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ImplicitAccessDisplay : Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+                "column": 68
+              }
+            ]
+          }
+        }
+      ],
+      "carryReason": "Native rejects the helper override for reduced visibility. Compiler access-diagnostic matching is outside this string-conversion change; anonymous execution has no runtime answer because helper deployment failed."
+    },
+    {
+      "id": "implicit_access_valueof",
+      "apex": "try{ImplicitAccessDisplay positiveSeed=new ImplicitAccessDisplay();positiveSeed.output='amber';String positiveText=String.valueOf(positiveSeed);payload.put('positiveControlText',positiveText);payload.put('positiveControlComplete',true);}catch(Exception positiveError){payload.put('positiveControlComplete',false);payload.put('positiveExceptionType',positiveError.getTypeName());payload.put('positiveExceptionMessage',positiveError.getMessage());}String r=String.valueOf(new ImplicitAccessDisplay());payload.put('isNull',r==null);payload.put('text',r);payload.put('length',r==null?null:r.length());payload.put('readBackComplete',true);",
+      "helpers": [
+        "ImplicitAccessDisplay"
+      ],
+      "kind": "observed",
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "FIXTURE_ERROR",
+          "disposition": "carried",
+          "observation": {
+            "outcome": "FIXTURE_ERROR",
+            "signature": "helper-setup",
+            "helpers": [
+              "ImplicitAccessDisplay"
+            ]
+          },
+          "helperDiagnostics": [
+            {
+              "name": "ImplicitAccessDisplay",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+              "column": 68
+            }
+          ]
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "compile-rejected",
+          "disposition": "carried",
+          "observation": {
+            "outcome": "compile-rejected",
+            "diagnostics": [
+              {
+                "name": "ImplicitAccessDisplay",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+                "column": 68
+              },
+              {
+                "name": "NullStringSpec",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ImplicitAccessDisplay : Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+                "column": 68
+              }
+            ]
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "FIXTURE_ERROR",
+          "disposition": "carried",
+          "observation": {
+            "outcome": "FIXTURE_ERROR",
+            "signature": "helper-setup",
+            "helpers": [
+              "ImplicitAccessDisplay"
+            ]
+          },
+          "helperDiagnostics": [
+            {
+              "name": "ImplicitAccessDisplay",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+              "column": 68
+            }
+          ]
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "compile-rejected",
+          "disposition": "carried",
+          "observation": {
+            "outcome": "compile-rejected",
+            "diagnostics": [
+              {
+                "name": "ImplicitAccessDisplay",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+                "column": 68
+              },
+              {
+                "name": "ImplicitAccessDisplay",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "override methods require at least one of the following global, public, protected",
+                "column": 68
+              },
+              {
+                "name": "NullStringSpec",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ImplicitAccessDisplay : Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+                "column": 68
+              }
+            ]
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "FIXTURE_ERROR",
+          "disposition": "carried",
+          "observation": {
+            "outcome": "FIXTURE_ERROR",
+            "signature": "helper-setup",
+            "helpers": [
+              "ImplicitAccessDisplay"
+            ]
+          },
+          "helperDiagnostics": [
+            {
+              "name": "ImplicitAccessDisplay",
+              "type": "ApexClass",
+              "line": 1,
+              "problem": "Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+              "column": 68
+            }
+          ]
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "compile-rejected",
+          "disposition": "carried",
+          "observation": {
+            "outcome": "compile-rejected",
+            "diagnostics": [
+              {
+                "name": "ImplicitAccessDisplay",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+                "column": 68
+              },
+              {
+                "name": "ImplicitAccessDisplay",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "override methods require at least one of the following global, public, protected",
+                "column": 68
+              },
+              {
+                "name": "NullStringSpec",
+                "type": "ApexClass",
+                "line": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ImplicitAccessDisplay : Cannot reduce the visibility of method: String ImplicitAccessDisplay.toString()",
+                "column": 68
+              }
+            ]
+          }
+        }
+      ],
+      "carryReason": "Native rejects the helper override for reduced visibility. Compiler access-diagnostic matching is outside this string-conversion change; anonymous execution has no runtime answer because helper deployment failed."
+    }
+  ]
+}

@@ -1,0 +1,281 @@
+{
+  "disposition": "PENDING-ROWS",
+  "scope": "Assert List<SObject> views to List<Account> and List<Opportunity>, separating concrete runtime identity from the declared view. Only exact plain runtime List<SObject> assertion pairs are candidates; no operator change.",
+  "apiVersions": [
+    "61.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "contexts": [
+    "anonymous",
+    "@IsTest(SeeAllData=false)"
+  ],
+  "metadataCells": [
+    {
+      "helperApi": "61.0",
+      "callerApi": "61.0"
+    },
+    {
+      "helperApi": "62.0",
+      "callerApi": "62.0"
+    },
+    {
+      "helperApi": "67.0",
+      "callerApi": "67.0"
+    },
+    {
+      "helperApi": "68.0",
+      "callerApi": "68.0"
+    },
+    {
+      "helperApi": "61.0",
+      "callerApi": "62.0"
+    },
+    {
+      "helperApi": "61.0",
+      "callerApi": "67.0"
+    },
+    {
+      "helperApi": "61.0",
+      "callerApi": "68.0"
+    }
+  ],
+  "classes": {
+    "ListIdentityProbe": "public class ListIdentityProbe {\n public static List<SObject> reflected(Boolean populated){Type concrete=Type.forName('List<Account>');List<SObject> values=(List<SObject>)concrete.newInstance();if(populated)values.add(new Account(Name='First'));return values;}\n}"
+  },
+  "rows": [
+    {
+      "id": "PLAIN_EMPTY_OPERATOR_ACCOUNT",
+      "shape": "PLAIN_EMPTY",
+      "operation": "OPERATOR_ACCOUNT",
+      "body": "List<SObject> values=new List<SObject>();payload.put('size',values.size());payload.put('operator',values instanceof List<Account>);"
+    },
+    {
+      "id": "PLAIN_EMPTY_OPERATOR_OPPORTUNITY",
+      "shape": "PLAIN_EMPTY",
+      "operation": "OPERATOR_OPPORTUNITY",
+      "body": "List<SObject> values=new List<SObject>();payload.put('size',values.size());payload.put('operator',values instanceof List<Opportunity>);"
+    },
+    {
+      "id": "PLAIN_EMPTY_ASSERT_ACCOUNT",
+      "shape": "PLAIN_EMPTY",
+      "operation": "ASSERT_ACCOUNT",
+      "body": "List<SObject> values=new List<SObject>();payload.put('size',values.size());Assert.isInstanceOfType(values,List<Account>.class,'positive');payload.put('assert','returned');"
+    },
+    {
+      "id": "PLAIN_EMPTY_ASSERT_NOT_ACCOUNT",
+      "shape": "PLAIN_EMPTY",
+      "operation": "ASSERT_NOT_ACCOUNT",
+      "body": "List<SObject> values=new List<SObject>();payload.put('size',values.size());Assert.isNotInstanceOfType(values,List<Account>.class,'negative');payload.put('assert','returned');"
+    },
+    {
+      "id": "PLAIN_EMPTY_ASSERT_OPPORTUNITY",
+      "shape": "PLAIN_EMPTY",
+      "operation": "ASSERT_OPPORTUNITY",
+      "body": "List<SObject> values=new List<SObject>();payload.put('size',values.size());Assert.isInstanceOfType(values,List<Opportunity>.class,'positive');payload.put('assert','returned');"
+    },
+    {
+      "id": "PLAIN_EMPTY_ASSERT_NOT_OPPORTUNITY",
+      "shape": "PLAIN_EMPTY",
+      "operation": "ASSERT_NOT_OPPORTUNITY",
+      "body": "List<SObject> values=new List<SObject>();payload.put('size',values.size());Assert.isNotInstanceOfType(values,List<Opportunity>.class,'negative');payload.put('assert','returned');"
+    },
+    {
+      "id": "PLAIN_ACCOUNT_OPERATOR_ACCOUNT",
+      "shape": "PLAIN_ACCOUNT",
+      "operation": "OPERATOR_ACCOUNT",
+      "body": "List<SObject> values=new List<SObject>{new Account(Name='First')};payload.put('size',values.size());payload.put('operator',values instanceof List<Account>);"
+    },
+    {
+      "id": "PLAIN_ACCOUNT_OPERATOR_OPPORTUNITY",
+      "shape": "PLAIN_ACCOUNT",
+      "operation": "OPERATOR_OPPORTUNITY",
+      "body": "List<SObject> values=new List<SObject>{new Account(Name='First')};payload.put('size',values.size());payload.put('operator',values instanceof List<Opportunity>);"
+    },
+    {
+      "id": "PLAIN_ACCOUNT_ASSERT_ACCOUNT",
+      "shape": "PLAIN_ACCOUNT",
+      "operation": "ASSERT_ACCOUNT",
+      "body": "List<SObject> values=new List<SObject>{new Account(Name='First')};payload.put('size',values.size());Assert.isInstanceOfType(values,List<Account>.class,'positive');payload.put('assert','returned');"
+    },
+    {
+      "id": "PLAIN_ACCOUNT_ASSERT_NOT_ACCOUNT",
+      "shape": "PLAIN_ACCOUNT",
+      "operation": "ASSERT_NOT_ACCOUNT",
+      "body": "List<SObject> values=new List<SObject>{new Account(Name='First')};payload.put('size',values.size());Assert.isNotInstanceOfType(values,List<Account>.class,'negative');payload.put('assert','returned');"
+    },
+    {
+      "id": "PLAIN_ACCOUNT_ASSERT_OPPORTUNITY",
+      "shape": "PLAIN_ACCOUNT",
+      "operation": "ASSERT_OPPORTUNITY",
+      "body": "List<SObject> values=new List<SObject>{new Account(Name='First')};payload.put('size',values.size());Assert.isInstanceOfType(values,List<Opportunity>.class,'positive');payload.put('assert','returned');"
+    },
+    {
+      "id": "PLAIN_ACCOUNT_ASSERT_NOT_OPPORTUNITY",
+      "shape": "PLAIN_ACCOUNT",
+      "operation": "ASSERT_NOT_OPPORTUNITY",
+      "body": "List<SObject> values=new List<SObject>{new Account(Name='First')};payload.put('size',values.size());Assert.isNotInstanceOfType(values,List<Opportunity>.class,'negative');payload.put('assert','returned');"
+    },
+    {
+      "id": "TYPED_ACCOUNT_EMPTY_OPERATOR_ACCOUNT",
+      "shape": "TYPED_ACCOUNT_EMPTY",
+      "operation": "OPERATOR_ACCOUNT",
+      "body": "List<SObject> values=ListIdentityProbe.reflected(false);payload.put('size',values.size());payload.put('operator',values instanceof List<Account>);"
+    },
+    {
+      "id": "TYPED_ACCOUNT_EMPTY_OPERATOR_OPPORTUNITY",
+      "shape": "TYPED_ACCOUNT_EMPTY",
+      "operation": "OPERATOR_OPPORTUNITY",
+      "body": "List<SObject> values=ListIdentityProbe.reflected(false);payload.put('size',values.size());payload.put('operator',values instanceof List<Opportunity>);"
+    },
+    {
+      "id": "TYPED_ACCOUNT_EMPTY_ASSERT_ACCOUNT",
+      "shape": "TYPED_ACCOUNT_EMPTY",
+      "operation": "ASSERT_ACCOUNT",
+      "body": "List<SObject> values=ListIdentityProbe.reflected(false);payload.put('size',values.size());Assert.isInstanceOfType(values,List<Account>.class,'positive');payload.put('assert','returned');"
+    },
+    {
+      "id": "TYPED_ACCOUNT_EMPTY_ASSERT_NOT_ACCOUNT",
+      "shape": "TYPED_ACCOUNT_EMPTY",
+      "operation": "ASSERT_NOT_ACCOUNT",
+      "body": "List<SObject> values=ListIdentityProbe.reflected(false);payload.put('size',values.size());Assert.isNotInstanceOfType(values,List<Account>.class,'negative');payload.put('assert','returned');"
+    },
+    {
+      "id": "TYPED_ACCOUNT_EMPTY_ASSERT_OPPORTUNITY",
+      "shape": "TYPED_ACCOUNT_EMPTY",
+      "operation": "ASSERT_OPPORTUNITY",
+      "body": "List<SObject> values=ListIdentityProbe.reflected(false);payload.put('size',values.size());Assert.isInstanceOfType(values,List<Opportunity>.class,'positive');payload.put('assert','returned');"
+    },
+    {
+      "id": "TYPED_ACCOUNT_EMPTY_ASSERT_NOT_OPPORTUNITY",
+      "shape": "TYPED_ACCOUNT_EMPTY",
+      "operation": "ASSERT_NOT_OPPORTUNITY",
+      "body": "List<SObject> values=ListIdentityProbe.reflected(false);payload.put('size',values.size());Assert.isNotInstanceOfType(values,List<Opportunity>.class,'negative');payload.put('assert','returned');"
+    },
+    {
+      "id": "TYPED_ACCOUNT_POPULATED_OPERATOR_ACCOUNT",
+      "shape": "TYPED_ACCOUNT_POPULATED",
+      "operation": "OPERATOR_ACCOUNT",
+      "body": "List<SObject> values=ListIdentityProbe.reflected(true);payload.put('size',values.size());payload.put('operator',values instanceof List<Account>);"
+    },
+    {
+      "id": "TYPED_ACCOUNT_POPULATED_OPERATOR_OPPORTUNITY",
+      "shape": "TYPED_ACCOUNT_POPULATED",
+      "operation": "OPERATOR_OPPORTUNITY",
+      "body": "List<SObject> values=ListIdentityProbe.reflected(true);payload.put('size',values.size());payload.put('operator',values instanceof List<Opportunity>);"
+    },
+    {
+      "id": "TYPED_ACCOUNT_POPULATED_ASSERT_ACCOUNT",
+      "shape": "TYPED_ACCOUNT_POPULATED",
+      "operation": "ASSERT_ACCOUNT",
+      "body": "List<SObject> values=ListIdentityProbe.reflected(true);payload.put('size',values.size());Assert.isInstanceOfType(values,List<Account>.class,'positive');payload.put('assert','returned');"
+    },
+    {
+      "id": "TYPED_ACCOUNT_POPULATED_ASSERT_NOT_ACCOUNT",
+      "shape": "TYPED_ACCOUNT_POPULATED",
+      "operation": "ASSERT_NOT_ACCOUNT",
+      "body": "List<SObject> values=ListIdentityProbe.reflected(true);payload.put('size',values.size());Assert.isNotInstanceOfType(values,List<Account>.class,'negative');payload.put('assert','returned');"
+    },
+    {
+      "id": "TYPED_ACCOUNT_POPULATED_ASSERT_OPPORTUNITY",
+      "shape": "TYPED_ACCOUNT_POPULATED",
+      "operation": "ASSERT_OPPORTUNITY",
+      "body": "List<SObject> values=ListIdentityProbe.reflected(true);payload.put('size',values.size());Assert.isInstanceOfType(values,List<Opportunity>.class,'positive');payload.put('assert','returned');"
+    },
+    {
+      "id": "TYPED_ACCOUNT_POPULATED_ASSERT_NOT_OPPORTUNITY",
+      "shape": "TYPED_ACCOUNT_POPULATED",
+      "operation": "ASSERT_NOT_OPPORTUNITY",
+      "body": "List<SObject> values=ListIdentityProbe.reflected(true);payload.put('size',values.size());Assert.isNotInstanceOfType(values,List<Opportunity>.class,'negative');payload.put('assert','returned');"
+    },
+    {
+      "id": "PLAIN_OPPORTUNITY_OPERATOR_ACCOUNT",
+      "shape": "PLAIN_OPPORTUNITY",
+      "operation": "OPERATOR_ACCOUNT",
+      "body": "List<SObject> values=new List<SObject>{new Opportunity(Name='Second')};payload.put('size',values.size());payload.put('operator',values instanceof List<Account>);"
+    },
+    {
+      "id": "PLAIN_OPPORTUNITY_OPERATOR_OPPORTUNITY",
+      "shape": "PLAIN_OPPORTUNITY",
+      "operation": "OPERATOR_OPPORTUNITY",
+      "body": "List<SObject> values=new List<SObject>{new Opportunity(Name='Second')};payload.put('size',values.size());payload.put('operator',values instanceof List<Opportunity>);"
+    },
+    {
+      "id": "PLAIN_OPPORTUNITY_ASSERT_ACCOUNT",
+      "shape": "PLAIN_OPPORTUNITY",
+      "operation": "ASSERT_ACCOUNT",
+      "body": "List<SObject> values=new List<SObject>{new Opportunity(Name='Second')};payload.put('size',values.size());Assert.isInstanceOfType(values,List<Account>.class,'positive');payload.put('assert','returned');"
+    },
+    {
+      "id": "PLAIN_OPPORTUNITY_ASSERT_NOT_ACCOUNT",
+      "shape": "PLAIN_OPPORTUNITY",
+      "operation": "ASSERT_NOT_ACCOUNT",
+      "body": "List<SObject> values=new List<SObject>{new Opportunity(Name='Second')};payload.put('size',values.size());Assert.isNotInstanceOfType(values,List<Account>.class,'negative');payload.put('assert','returned');"
+    },
+    {
+      "id": "PLAIN_OPPORTUNITY_ASSERT_OPPORTUNITY",
+      "shape": "PLAIN_OPPORTUNITY",
+      "operation": "ASSERT_OPPORTUNITY",
+      "body": "List<SObject> values=new List<SObject>{new Opportunity(Name='Second')};payload.put('size',values.size());Assert.isInstanceOfType(values,List<Opportunity>.class,'positive');payload.put('assert','returned');"
+    },
+    {
+      "id": "PLAIN_OPPORTUNITY_ASSERT_NOT_OPPORTUNITY",
+      "shape": "PLAIN_OPPORTUNITY",
+      "operation": "ASSERT_NOT_OPPORTUNITY",
+      "body": "List<SObject> values=new List<SObject>{new Opportunity(Name='Second')};payload.put('size',values.size());Assert.isNotInstanceOfType(values,List<Opportunity>.class,'negative');payload.put('assert','returned');"
+    },
+    {
+      "id": "PLAIN_MIXED_OPERATOR_ACCOUNT",
+      "shape": "PLAIN_MIXED",
+      "operation": "OPERATOR_ACCOUNT",
+      "body": "List<SObject> values=new List<SObject>{new Account(Name='First'),new Opportunity(Name='Second')};payload.put('size',values.size());payload.put('operator',values instanceof List<Account>);"
+    },
+    {
+      "id": "PLAIN_MIXED_OPERATOR_OPPORTUNITY",
+      "shape": "PLAIN_MIXED",
+      "operation": "OPERATOR_OPPORTUNITY",
+      "body": "List<SObject> values=new List<SObject>{new Account(Name='First'),new Opportunity(Name='Second')};payload.put('size',values.size());payload.put('operator',values instanceof List<Opportunity>);"
+    },
+    {
+      "id": "PLAIN_MIXED_ASSERT_ACCOUNT",
+      "shape": "PLAIN_MIXED",
+      "operation": "ASSERT_ACCOUNT",
+      "body": "List<SObject> values=new List<SObject>{new Account(Name='First'),new Opportunity(Name='Second')};payload.put('size',values.size());Assert.isInstanceOfType(values,List<Account>.class,'positive');payload.put('assert','returned');"
+    },
+    {
+      "id": "PLAIN_MIXED_ASSERT_NOT_ACCOUNT",
+      "shape": "PLAIN_MIXED",
+      "operation": "ASSERT_NOT_ACCOUNT",
+      "body": "List<SObject> values=new List<SObject>{new Account(Name='First'),new Opportunity(Name='Second')};payload.put('size',values.size());Assert.isNotInstanceOfType(values,List<Account>.class,'negative');payload.put('assert','returned');"
+    },
+    {
+      "id": "PLAIN_MIXED_ASSERT_OPPORTUNITY",
+      "shape": "PLAIN_MIXED",
+      "operation": "ASSERT_OPPORTUNITY",
+      "body": "List<SObject> values=new List<SObject>{new Account(Name='First'),new Opportunity(Name='Second')};payload.put('size',values.size());Assert.isInstanceOfType(values,List<Opportunity>.class,'positive');payload.put('assert','returned');"
+    },
+    {
+      "id": "PLAIN_MIXED_ASSERT_NOT_OPPORTUNITY",
+      "shape": "PLAIN_MIXED",
+      "operation": "ASSERT_NOT_OPPORTUNITY",
+      "body": "List<SObject> values=new List<SObject>{new Account(Name='First'),new Opportunity(Name='Second')};payload.put('size',values.size());Assert.isNotInstanceOfType(values,List<Opportunity>.class,'negative');payload.put('assert','returned');"
+    }
+  ],
+  "anonymousEnvelope": "Map<String,Object> payload=new Map<String,Object>();try{BODY}catch(Exception error){payload.put('outerType',error.getTypeName());payload.put('outerMessage',error.getMessage());}System.assert(false,'LISTIDENTITY|ROW|'+JSON.serialize(payload));",
+  "namedEnvelope": "@IsTest private class ListIdentityCapture {@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{BODY}catch(Exception error){payload.put('outerType',error.getTypeName());payload.put('outerMessage',error.getMessage());}System.assert(false,'LISTIDENTITY|ROW|'+JSON.serialize(payload));}}",
+  "knownEvidence": [
+    "test_runner.json T199/T200: exact List<Integer> positive and negative assertion outcomes.",
+    "type_system.json R129: populated List<SObject> with Account is instanceof List<Account>, operator only."
+  ],
+  "expectedNative": "UNKNOWN for these assertion pairs. Record compilation, operator booleans, independent positive/negative assertion outcome and exact exception messages. Preserve declaration metadata and route. No local candidate output is a native oracle.",
+  "candidatePolicy": "PENDING runtime allowance is limited to actual runtime List<SObject> targeting standard Account or Opportunity, at helper API61..68. It ignores contents and excludes typed Account runtime viewed as SObject, other targets, maps/sets, primitive/user-class lists, user declarations shadowing target names, and API69+. Await native rows before promoting.",
+  "controls": [
+    "Assert.isInstanceOfType(new List<Integer>(),List<Integer>.class,'type check');",
+    "Caught Assert.isNotInstanceOfType(new List<Integer>(),List<Integer>.class,'type check') with exact captured message",
+    "Negative primitive and user-class list assertions to List<Account> and List<Opportunity>; target user declarations named Account/Opportunity must not activate candidate",
+    "API60 and69 matched-version candidate exclusion controls",
+    "Integer value17 and caught/uncaught List<Integer> index0"
+  ],
+  "transport": "Capture each row independently. A failed Assert can terminate the invocation without the JSON marker; preserve native failure outcome/type/message rather than expecting an Apex catch to recover. Operator rows and successful assertion rows emit payload marker. Never combine positive and negative assertion rows in one invocation."
+}

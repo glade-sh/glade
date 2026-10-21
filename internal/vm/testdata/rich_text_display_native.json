@@ -1,0 +1,104 @@
+{
+  "scope": "Source61 standard rich LiveChatTranscript.Body and plain Account.Description describe facets in named @IsTest and anonymous contexts. This captures field observations, not the availability of every standard field or custom Html metadata import.",
+  "primaryDocumentation": "https://developer.salesforce.com/docs/platform/api/guide/sforce-api-calls-describesobjects-describesobjectresult.html",
+  "helperSource": "public class RichFacetProbe {\n public static Map<String,Object> run(){\n  Map<String,Object> result=new Map<String,Object>();\n  Map<String,Schema.SObjectType> objects=Schema.getGlobalDescribe();\n  for(String path:new List<String>{'CaseComment.CommentBodyRichtext','LiveChatTranscript.Body','Account.Description'}){\n   List<String> names=path.split('\\\\.');\n   Schema.SObjectType token=objects.get(names[0]);\n   Schema.SObjectField field=token==null ? null : token.getDescribe().fields.getMap().get(names[1]);\n   if(field==null){result.put(path,new Map<String,Object>{'available'=>false});}\n   else{Schema.DescribeFieldResult detail=field.getDescribe(); result.put(path,new Map<String,Object>{'available'=>true,'type'=>String.valueOf(detail.getType()),'htmlFormatted'=>detail.isHtmlFormatted(),'length'=>detail.getLength()});}\n  }\n  return result;\n }\n}\n",
+  "helperSourceSha256": "35ba463e5c707c5456a80778ee23f5aceb66c616e777d354256fb7f09ee73bb6",
+  "helperMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>61.0</apiVersion><status>Active</status></ApexClass>\n",
+  "helperMetadataSha256": "6b398a48cac611870f1cfdd5b252f5585bd3bee5ca998f8da5e9df434601166b",
+  "captures": [
+    {
+      "context": "istest",
+      "sourceAPI": "61.0",
+      "transportAPI": "67.0",
+      "orgIdSha256": "04a58dd26a83c1ec339870c9385318efaa66874b9cbd1c01a7a7855820655dc4",
+      "deploymentID": "0AfE200000r02OIKAY",
+      "deploymentStatus": "Succeeded",
+      "helperSourceSha256": "35ba463e5c707c5456a80778ee23f5aceb66c616e777d354256fb7f09ee73bb6",
+      "observerSource": "@IsTest private class RichFacetObservation { @IsTest static void observe(){ System.assert(false,'RICH_FACET_RESULT|'+JSON.serialize(RichFacetProbe.run()));}}\n",
+      "observerSourceSha256": "674ca86d16f84e0320f8cc0de4786a9e55f43ebf9eb20eb46a70a1959f81df93",
+      "observerMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>61.0</apiVersion><status>Active</status></ApexClass>\n",
+      "observerMetadataSha256": "6b398a48cac611870f1cfdd5b252f5585bd3bee5ca998f8da5e9df434601166b",
+      "rawResponseSha256": "0c2895ec18ccc1051ff94d8d198d4bf573fe92e910d040f5f8372757da7ae059",
+      "answerJSON": "[\n  {\n    \"Account.Description\": {\n      \"length\": 32000,\n      \"htmlFormatted\": false,\n      \"type\": \"TEXTAREA\",\n      \"available\": true\n    },\n    \"LiveChatTranscript.Body\": {\n      \"length\": 131072,\n      \"htmlFormatted\": true,\n      \"type\": \"TEXTAREA\",\n      \"available\": true\n    },\n    \"CaseComment.CommentBodyRichtext\": {\n      \"available\": false\n    }\n  }\n]\n",
+      "answerSha256": "82ee1b2a973d873a8a6265fbb8d2839185b3d94c64466c05f09717c5b5fecd1b"
+    },
+    {
+      "context": "anonymous",
+      "sourceAPI": "61.0",
+      "transportAPI": "61.0",
+      "orgIdSha256": "04a58dd26a83c1ec339870c9385318efaa66874b9cbd1c01a7a7855820655dc4",
+      "deploymentID": "0AfE200000r02OIKAY",
+      "deploymentStatus": "Succeeded",
+      "helperSourceSha256": "35ba463e5c707c5456a80778ee23f5aceb66c616e777d354256fb7f09ee73bb6",
+      "observerSource": "System.debug('RICH_FACET_RESULT|'+JSON.serialize(RichFacetProbe.run()));\n",
+      "observerSourceSha256": "ea4ffa67c3277719288522e015b895edbd7dc541ffc2d2795cd725f9403bbdf5",
+      "observerMetadata": "",
+      "observerMetadataSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "rawResponseSha256": "f6080b2beeecb27e58553f1e56900615492a05c7f4fe16d528d9a7ce9e8f98d2",
+      "answerJSON": "[\n  {\n    \"Account.Description\": {\n      \"length\": 32000,\n      \"htmlFormatted\": false,\n      \"type\": \"TEXTAREA\",\n      \"available\": true\n    },\n    \"LiveChatTranscript.Body\": {\n      \"length\": 131072,\n      \"htmlFormatted\": true,\n      \"type\": \"TEXTAREA\",\n      \"available\": true\n    },\n    \"CaseComment.CommentBodyRichtext\": {\n      \"available\": false\n    }\n  }\n]\n",
+      "answerSha256": "82ee1b2a973d873a8a6265fbb8d2839185b3d94c64466c05f09717c5b5fecd1b"
+    }
+  ],
+  "rows": [
+    {
+      "sourceAPI": "61.0",
+      "context": "istest",
+      "path": "Account.Description",
+      "expected": {
+        "length": 32000,
+        "htmlFormatted": false,
+        "type": "TEXTAREA",
+        "available": true
+      }
+    },
+    {
+      "sourceAPI": "61.0",
+      "context": "istest",
+      "path": "LiveChatTranscript.Body",
+      "expected": {
+        "length": 131072,
+        "htmlFormatted": true,
+        "type": "TEXTAREA",
+        "available": true
+      }
+    },
+    {
+      "sourceAPI": "61.0",
+      "context": "anonymous",
+      "path": "Account.Description",
+      "expected": {
+        "length": 32000,
+        "htmlFormatted": false,
+        "type": "TEXTAREA",
+        "available": true
+      }
+    },
+    {
+      "sourceAPI": "61.0",
+      "context": "anonymous",
+      "path": "LiveChatTranscript.Body",
+      "expected": {
+        "length": 131072,
+        "htmlFormatted": true,
+        "type": "TEXTAREA",
+        "available": true
+      }
+    }
+  ],
+  "carries": [
+    {
+      "sourceAPI": "61.0",
+      "context": "istest",
+      "path": "CaseComment.CommentBodyRichtext",
+      "nativeAvailable": false,
+      "reason": "Field unavailable in this authorized scratch org; provision-dependent absence is retained as evidence, not asserted against the local standard catalog."
+    },
+    {
+      "sourceAPI": "61.0",
+      "context": "anonymous",
+      "path": "CaseComment.CommentBodyRichtext",
+      "nativeAvailable": false,
+      "reason": "Field unavailable in this authorized scratch org; provision-dependent absence is retained as evidence, not asserted against the local standard catalog."
+    }
+  ]
+}

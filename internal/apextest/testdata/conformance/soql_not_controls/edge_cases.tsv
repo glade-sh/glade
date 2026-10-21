@@ -1,0 +1,7 @@
+variant	query_shape
+standalone_not_semi	NOT (Id IN semi_join); observe only newly inserted scope records
+semi_empty	grouped NOT semi_join with empty inner result and full outer scope
+semi_scope_no_matches	grouped NOT semi_join restricted to outer rows absent from inner result
+semi_scope_all_matches	grouped NOT semi_join restricted to outer rows present in inner result
+semi_not_in	grouped NOT anti_join restricted to full outer scope
+semi_and_false	grouped NOT semi_join AND a false scalar predicate AND full outer scope

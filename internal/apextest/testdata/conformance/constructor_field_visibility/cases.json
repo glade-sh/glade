@@ -1,0 +1,18 @@
+[
+  {
+    "id": "original",
+    "source": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\ntry{Object r;Contact contact=new Contact(HasOptedOutOfEmail=Contact.Email); r=contact.HasOptedOutOfEmail; pq.out('S117',r);}catch(Exception e){pq.err('S117',e);}\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n"
+  },
+  {
+    "id": "constructor_token",
+    "source": "Contact value = new Contact(HasOptedOutOfEmail=Contact.Email);\n"
+  },
+  {
+    "id": "constructor_boolean",
+    "source": "Contact value = new Contact(HasOptedOutOfEmail='text');\n"
+  },
+  {
+    "id": "control_constructor",
+    "source": "Contact value = new Contact(HasOptedOutOfEmail=true);\n"
+  }
+]

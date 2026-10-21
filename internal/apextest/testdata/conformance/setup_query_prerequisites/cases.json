@@ -1,0 +1,21 @@
+{
+  "source_apis": [
+    "62.0",
+    "67.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "methods": [
+    "metadata",
+    "community",
+    "packageLicenses"
+  ],
+  "context": "Fresh Developer scratch definition with no requested features or settings; zero installed packages. Deployed synthetic permission set and group only.",
+  "observations": {
+    "metadata": "Deployed permission set and group; absent group singleton exception.",
+    "community": "Non-login customer license and linked profile identity.",
+    "packageLicenses": "Standard and advanced-approval license identity, capacity and status; no package behavior inferred."
+  }
+}

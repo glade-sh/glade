@@ -1,0 +1,4 @@
+case	observation
+R01	explicit record and collection lookup outputs with queried fields
+R02	explicit field output assignment with matching and absent lookup records
+R03	record delete by Id from an interview String input

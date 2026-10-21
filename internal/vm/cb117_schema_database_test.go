@@ -9,7 +9,8 @@ import (
 func TestCB117DescribeMatchesRetainedAPI67Shape(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeSObjectResult describe = Probe__c.SObjectType.getDescribe();
-System.assertEquals(29, describe.fields.getMap().size());
+System.assertEquals(false, describe.fields.getMap().containsKey('LastReferencedDate'));
+System.assertEquals(false, describe.fields.getMap().containsKey('LastViewedDate'));
 System.assertEquals(1, describe.fieldSets.getMap().size());
 System.assertEquals(2, describe.getRecordTypeInfos().size());
 System.assertEquals(SObjectDescribeOptions.DEFERRED, describe.getSObjectDescribeOption());

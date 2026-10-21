@@ -28,6 +28,41 @@ node scripts/generate-standard-schema.mjs tmp/standard-describes ../glade/intern
 The generator writes `internal/storage/standard_schema_generated.go`. Do not
 edit that file by hand.
 
+## Broad Describe Catalog Sanitization
+
+The embedded `standard_describe_catalog.json.gz` is the authoritative input for
+`standard_describe_catalog_v2.pack` and its generated Go index. Before packing a
+new export from an authorized clean scratch org, run the first-party sanitizer
+with the reviewed public picklist allowlist. It removes custom fields, custom reference targets and child rows,
+non-master record types, and unreviewed picklist values. Platform namespace
+values remain supported when present in the allowlist.
+
+From the Glade checkout, with a sibling tools checkout:
+
+```sh
+node ../glade-tools/scripts/sanitize-standard-describe-catalog.mjs /tmp/standard-describe-export.json.gz internal/storage/testdata/standard_picklist_values.json.gz internal/storage/standard_describe_catalog.json.gz
+node ../glade-tools/scripts/generate-standard-describe-pack.mjs internal/storage/standard_describe_catalog.json.gz internal/storage/standard_describe_catalog_v2.pack internal/storage/standard_describe_child_relationships_v2.pack internal/storage/standard_describe_catalog_v2_index_generated.go
+```
+
+See `internal/storage/testdata/standard_picklist_values.md` for the allowlist's
+public provenance and regeneration. Review changes to the allowlist separately
+from new org exports; never derive additions from the export being sanitized.
+Both generators are deterministic. Run the storage catalog/digest tests and
+update digest pins only after inspecting the intended data changes.
+
+## Catalog boundaries
+
+A clean-org export and the public picklist allowlist are separate inputs.
+Neither an exported describe response nor a shape count proves runtime
+behavior. Preserve the reviewed public allowlist provenance; do not promote
+org-specific picklists, custom entities, or non-master record types into the
+standard baseline.
+
+The catalog can expose shape for excluded products. DataWeave, ConnectApi,
+and Slack remain unsupported regardless of a generated object row. Local Files
+behavior includes `ContentDocumentLinks` child queries on linked records;
+relationship shape alone does not provide the hosted Files service.
+
 ## Stub Field Overlay
 
 The describe baseline is the authoritative source for rich metadata such as key

@@ -11,8 +11,19 @@ var accountDMLPolicy = objectDMLPolicy{
 	defaultRecordTypeID:    accountDefaultRecordTypeID,
 }
 
-func applyAccountBeforeDMLDerivedFields(_ *VM, record *storage.Record) {
-	if record == nil || !accountRecordHasPersonAccountSignal(*record) {
+func applyAccountBeforeDMLDerivedFields(vm *VM, record *storage.Record) {
+	if vm == nil || vm.Org == nil || record == nil || !accountRecordHasPersonAccountSignal(*record) {
+		return
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, record.Object)
+	if !ok {
+		return
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return
+	}
+	if _, enabled := storage.ResolveFieldName(object.Definition, "", "IsPersonAccount"); !enabled {
 		return
 	}
 	if record.Fields == nil {

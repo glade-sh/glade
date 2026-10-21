@@ -1,0 +1,5 @@
+source_api	method	observation
+62.0	customizableFilter	{"names":["Account","Contact","User"]}
+62.0	customizableFlags	{"Account":[true,true],"ApexClass":[false,false],"Contact":[true,true],"EntityDefinition":[false,false],"PricebookEntry":[true,false],"User":[true,true],"UserLogin":[false,false]}
+67.0	customizableFilter	{"names":["Account","Contact","User"]}
+67.0	customizableFlags	{"Account":[true,true],"ApexClass":[false,false],"Contact":[true,true],"EntityDefinition":[false,false],"PricebookEntry":[true,false],"User":[true,true],"UserLogin":[false,false]}

@@ -1,0 +1,1 @@
+@IsTest private class MetadataOwner62R010 { @IsTest static void observed(){List<String> keys=new List<String>(gladens001__OwnerFlag__mdt.getAll().keySet());keys.sort();Object value=keys;System.assert(false,'METADATA_OWNER|R010|'+JSON.serialize(value));} }

@@ -310,7 +310,7 @@ for (Object member : members) {
 					// shared Go maps cannot hide a missed alias replacement.
 					for name, value := range machine.Globals {
 						if name != "original" {
-							machine.Globals[name] = cloneValuePreserveRefs(value)
+							machine.Globals[name] = machine.cloneValuePreserveRefs(value)
 						}
 					}
 				}

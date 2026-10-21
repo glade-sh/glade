@@ -90,6 +90,28 @@ count, and actual count. Share only source and diagnostics you are authorized
 to publish. Security reports use the existing [private
 route](/guide/security-trust#report-a-vulnerability).
 
+## Test server refuses to connect after an upgrade
+
+The persistent test server uses daemon protocol **3**. Stop a server started by
+an older binary before upgrading, then restart it with the new binary:
+
+```bash
+glade test daemon stop --project .
+glade test serve --project .
+```
+
+If the new client reports a protocol mismatch, stop the old foreground server
+with Ctrl-C (or use its original binary's stop command), then start the new
+server. A newer client's stop command may only remove stale socket/PID files
+when it cannot speak the old protocol; that does not prove the old process exited.
+
+## Test results changed time zone
+
+The default local running user uses `America/Los_Angeles`. Check expectations
+that assume UTC for `Datetime.format()` or local date components. Use GMT
+methods when that is the intended contract, or set `TimeZoneSidKey` explicitly
+on a test user and run the code inside `System.runAs`.
+
 ## Local and Salesforce results differ
 
 Record the exact Glade command and result, then check the capability in [What

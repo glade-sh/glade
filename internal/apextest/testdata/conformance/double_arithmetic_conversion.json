@@ -1,0 +1,184 @@
+{
+  "fixtures": {
+    "61.0": {
+      "files": {
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"61.0\"}",
+        "force-app/main/default/classes/NumericPromotionProbe.cls": "public class NumericPromotionProbe {\n public class Sample {public Double quantity {get;set;}}\n public static String observe(){\n  Sample sample=new Sample();sample.quantity=13.25;Double divisor=2.5;Long whole=2L;\n  Map<String,Object> out=new Map<String,Object>();\n  out.put('addition',String.valueOf(Decimal.valueOf(sample.quantity+2).setScale(2)));\n  out.put('subtraction',String.valueOf(Decimal.valueOf(sample.quantity-2).setScale(2)));\n  out.put('multiplication',String.valueOf(Decimal.valueOf(sample.quantity*2).setScale(2)));\n  out.put('division',String.valueOf(Decimal.valueOf(sample.quantity/2).setScale(2)));\n  out.put('doubleDivision',String.valueOf(Decimal.valueOf(sample.quantity/divisor).setScale(2)));\n  out.put('longDivision',String.valueOf(Decimal.valueOf(sample.quantity/whole).setScale(2)));\n  out.put('reversedDivision',String.valueOf(Decimal.valueOf(2/sample.quantity).setScale(2)));\n  out.put('nestedDivision',String.valueOf(Decimal.valueOf((sample.quantity+2)/2).setScale(2)));\n  out.put('direct',String.valueOf(Decimal.valueOf(sample.quantity).setScale(2)));\n  out.put('string',String.valueOf(Decimal.valueOf('1.50')));\n  out.put('integralDivision',String.valueOf(Decimal.valueOf(50/4).setScale(2)));\n  return JSON.serialize(out);\n }\n}",
+        "force-app/main/default/classes/NumericPromotionProbeTest.cls": "@IsTest private class NumericPromotionProbeTest {@IsTest static void observe(){System.assert(false,'NATIVE_PROMOTION|'+NumericPromotionProbe.observe());}}",
+        "force-app/main/default/classes/NumericPromotionProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>61.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/NumericPromotionProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>61.0</apiVersion><status>Active</status></ApexClass>",
+        "anonymous.apex": "System.debug('NATIVE_PROMOTION|'+NumericPromotionProbe.observe());"
+      },
+      "sha256": {
+        "sfdx-project.json": "27b851c56fc0c5fbb0fb064645f8fba2279ee71de4aeaa5b6c09d71289e448aa",
+        "force-app/main/default/classes/NumericPromotionProbe.cls": "40c895278d3807aa815b0e18baec86b29379032a3cc9441206a99d79f53a3f51",
+        "force-app/main/default/classes/NumericPromotionProbeTest.cls": "24ebc86c8bab31b4dd672916abb0194358e0f988069864c63b5e9ff27eae1adb",
+        "force-app/main/default/classes/NumericPromotionProbe.cls-meta.xml": "3acf2a7ec5a30ebb32ec274889d5ceaa212a1cfaf9aafd42619a0ada1f8218b8",
+        "force-app/main/default/classes/NumericPromotionProbeTest.cls-meta.xml": "3acf2a7ec5a30ebb32ec274889d5ceaa212a1cfaf9aafd42619a0ada1f8218b8",
+        "anonymous.apex": "0f9fa535b5e3eec02ef5fd5cd4bf73e06f62e2c7cb3d9dba98f5562ede07fe34"
+      }
+    },
+    "62.0": {
+      "files": {
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"62.0\"}",
+        "force-app/main/default/classes/NumericPromotionProbe.cls": "public class NumericPromotionProbe {\n public class Sample {public Double quantity {get;set;}}\n public static String observe(){\n  Sample sample=new Sample();sample.quantity=13.25;Double divisor=2.5;Long whole=2L;\n  Map<String,Object> out=new Map<String,Object>();\n  out.put('addition',String.valueOf(Decimal.valueOf(sample.quantity+2).setScale(2)));\n  out.put('subtraction',String.valueOf(Decimal.valueOf(sample.quantity-2).setScale(2)));\n  out.put('multiplication',String.valueOf(Decimal.valueOf(sample.quantity*2).setScale(2)));\n  out.put('division',String.valueOf(Decimal.valueOf(sample.quantity/2).setScale(2)));\n  out.put('doubleDivision',String.valueOf(Decimal.valueOf(sample.quantity/divisor).setScale(2)));\n  out.put('longDivision',String.valueOf(Decimal.valueOf(sample.quantity/whole).setScale(2)));\n  out.put('reversedDivision',String.valueOf(Decimal.valueOf(2/sample.quantity).setScale(2)));\n  out.put('nestedDivision',String.valueOf(Decimal.valueOf((sample.quantity+2)/2).setScale(2)));\n  out.put('direct',String.valueOf(Decimal.valueOf(sample.quantity).setScale(2)));\n  out.put('string',String.valueOf(Decimal.valueOf('1.50')));\n  out.put('integralDivision',String.valueOf(Decimal.valueOf(50/4).setScale(2)));\n  return JSON.serialize(out);\n }\n}",
+        "force-app/main/default/classes/NumericPromotionProbeTest.cls": "@IsTest private class NumericPromotionProbeTest {@IsTest static void observe(){System.assert(false,'NATIVE_PROMOTION|'+NumericPromotionProbe.observe());}}",
+        "force-app/main/default/classes/NumericPromotionProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/NumericPromotionProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "anonymous.apex": "System.debug('NATIVE_PROMOTION|'+NumericPromotionProbe.observe());"
+      },
+      "sha256": {
+        "sfdx-project.json": "3f6415903c25e013895eb93fa7fbec23956f74b06460f5266f9d0ac53b80ddbc",
+        "force-app/main/default/classes/NumericPromotionProbe.cls": "40c895278d3807aa815b0e18baec86b29379032a3cc9441206a99d79f53a3f51",
+        "force-app/main/default/classes/NumericPromotionProbeTest.cls": "24ebc86c8bab31b4dd672916abb0194358e0f988069864c63b5e9ff27eae1adb",
+        "force-app/main/default/classes/NumericPromotionProbe.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "force-app/main/default/classes/NumericPromotionProbeTest.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "anonymous.apex": "0f9fa535b5e3eec02ef5fd5cd4bf73e06f62e2c7cb3d9dba98f5562ede07fe34"
+      }
+    },
+    "67.0": {
+      "files": {
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"67.0\"}",
+        "force-app/main/default/classes/NumericPromotionProbe.cls": "public class NumericPromotionProbe {\n public class Sample {public Double quantity {get;set;}}\n public static String observe(){\n  Sample sample=new Sample();sample.quantity=13.25;Double divisor=2.5;Long whole=2L;\n  Map<String,Object> out=new Map<String,Object>();\n  out.put('addition',String.valueOf(Decimal.valueOf(sample.quantity+2).setScale(2)));\n  out.put('subtraction',String.valueOf(Decimal.valueOf(sample.quantity-2).setScale(2)));\n  out.put('multiplication',String.valueOf(Decimal.valueOf(sample.quantity*2).setScale(2)));\n  out.put('division',String.valueOf(Decimal.valueOf(sample.quantity/2).setScale(2)));\n  out.put('doubleDivision',String.valueOf(Decimal.valueOf(sample.quantity/divisor).setScale(2)));\n  out.put('longDivision',String.valueOf(Decimal.valueOf(sample.quantity/whole).setScale(2)));\n  out.put('reversedDivision',String.valueOf(Decimal.valueOf(2/sample.quantity).setScale(2)));\n  out.put('nestedDivision',String.valueOf(Decimal.valueOf((sample.quantity+2)/2).setScale(2)));\n  out.put('direct',String.valueOf(Decimal.valueOf(sample.quantity).setScale(2)));\n  out.put('string',String.valueOf(Decimal.valueOf('1.50')));\n  out.put('integralDivision',String.valueOf(Decimal.valueOf(50/4).setScale(2)));\n  return JSON.serialize(out);\n }\n}",
+        "force-app/main/default/classes/NumericPromotionProbeTest.cls": "@IsTest private class NumericPromotionProbeTest {@IsTest static void observe(){System.assert(false,'NATIVE_PROMOTION|'+NumericPromotionProbe.observe());}}",
+        "force-app/main/default/classes/NumericPromotionProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/NumericPromotionProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "anonymous.apex": "System.debug('NATIVE_PROMOTION|'+NumericPromotionProbe.observe());"
+      },
+      "sha256": {
+        "sfdx-project.json": "58a7912dda14c3c2fba252a12fd198a98556f0c44971080e7acdfe0d673c847b",
+        "force-app/main/default/classes/NumericPromotionProbe.cls": "40c895278d3807aa815b0e18baec86b29379032a3cc9441206a99d79f53a3f51",
+        "force-app/main/default/classes/NumericPromotionProbeTest.cls": "24ebc86c8bab31b4dd672916abb0194358e0f988069864c63b5e9ff27eae1adb",
+        "force-app/main/default/classes/NumericPromotionProbe.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "force-app/main/default/classes/NumericPromotionProbeTest.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "anonymous.apex": "0f9fa535b5e3eec02ef5fd5cd4bf73e06f62e2c7cb3d9dba98f5562ede07fe34"
+      }
+    }
+  },
+  "cells": [
+    {
+      "api": "61.0",
+      "context": "anonymous",
+      "fixture": "61.0",
+      "receiptSHA256": "2e65e9ed85d0b17593f96ed0b16a982f08917e38017b698ff37e486498394a7e",
+      "orgIDHash": "8aec4fa9ba264d43ebb6e707d94fa17bba702c01c5d8b3bb5f5e002af88fa520",
+      "native": {
+        "integralDivision": "12.00",
+        "string": "1.50",
+        "direct": "13.25",
+        "nestedDivision": "7.62",
+        "reversedDivision": "0.15",
+        "longDivision": "6.62",
+        "doubleDivision": "5.30",
+        "division": "6.62",
+        "multiplication": "26.50",
+        "subtraction": "11.25",
+        "addition": "15.25"
+      }
+    },
+    {
+      "api": "61.0",
+      "context": "istest",
+      "fixture": "61.0",
+      "receiptSHA256": "31a476d5e407e8562eec76752fc3ddfa6ab97d33354b983ac10d877eed032446",
+      "orgIDHash": "8aec4fa9ba264d43ebb6e707d94fa17bba702c01c5d8b3bb5f5e002af88fa520",
+      "native": {
+        "integralDivision": "12.00",
+        "string": "1.50",
+        "direct": "13.25",
+        "nestedDivision": "7.62",
+        "reversedDivision": "0.15",
+        "longDivision": "6.62",
+        "doubleDivision": "5.30",
+        "division": "6.62",
+        "multiplication": "26.50",
+        "subtraction": "11.25",
+        "addition": "15.25"
+      }
+    },
+    {
+      "api": "62.0",
+      "context": "anonymous",
+      "fixture": "62.0",
+      "receiptSHA256": "7c1ea76e490b2d02f4ab5a9eeb31254e88e904d9c54f017bd01661c1787861a8",
+      "orgIDHash": "8aec4fa9ba264d43ebb6e707d94fa17bba702c01c5d8b3bb5f5e002af88fa520",
+      "native": {
+        "integralDivision": "12.00",
+        "string": "1.50",
+        "direct": "13.25",
+        "nestedDivision": "7.62",
+        "reversedDivision": "0.15",
+        "longDivision": "6.62",
+        "doubleDivision": "5.30",
+        "division": "6.62",
+        "multiplication": "26.50",
+        "subtraction": "11.25",
+        "addition": "15.25"
+      }
+    },
+    {
+      "api": "62.0",
+      "context": "istest",
+      "fixture": "62.0",
+      "receiptSHA256": "34f8330e2c48aa116a55a4d3901ed7b30fdc0cf457a2ccc63fdc643b1d1bcc6d",
+      "orgIDHash": "8aec4fa9ba264d43ebb6e707d94fa17bba702c01c5d8b3bb5f5e002af88fa520",
+      "native": {
+        "integralDivision": "12.00",
+        "string": "1.50",
+        "direct": "13.25",
+        "nestedDivision": "7.62",
+        "reversedDivision": "0.15",
+        "longDivision": "6.62",
+        "doubleDivision": "5.30",
+        "division": "6.62",
+        "multiplication": "26.50",
+        "subtraction": "11.25",
+        "addition": "15.25"
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "anonymous",
+      "fixture": "67.0",
+      "receiptSHA256": "0da54fc644cb8d89c640da76e348e5e73a66ba2177daade38e7a97e28d03a78a",
+      "orgIDHash": "8aec4fa9ba264d43ebb6e707d94fa17bba702c01c5d8b3bb5f5e002af88fa520",
+      "native": {
+        "integralDivision": "12.00",
+        "string": "1.50",
+        "direct": "13.25",
+        "nestedDivision": "7.62",
+        "reversedDivision": "0.15",
+        "longDivision": "6.62",
+        "doubleDivision": "5.30",
+        "division": "6.62",
+        "multiplication": "26.50",
+        "subtraction": "11.25",
+        "addition": "15.25"
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "istest",
+      "fixture": "67.0",
+      "receiptSHA256": "7f43d881c73bbb7e63363f5040170d011f11837312bf4d326c65162e991b04e8",
+      "orgIDHash": "8aec4fa9ba264d43ebb6e707d94fa17bba702c01c5d8b3bb5f5e002af88fa520",
+      "native": {
+        "integralDivision": "12.00",
+        "string": "1.50",
+        "direct": "13.25",
+        "nestedDivision": "7.62",
+        "reversedDivision": "0.15",
+        "longDivision": "6.62",
+        "doubleDivision": "5.30",
+        "division": "6.62",
+        "multiplication": "26.50",
+        "subtraction": "11.25",
+        "addition": "15.25"
+      }
+    }
+  ],
+  "carries": [
+    "API68 and namespace deployment variants unprobed; source61/62/67 plain arithmetic only.",
+    "Actual Decimal arguments retain the existing owned rejected-call contract."
+  ]
+}

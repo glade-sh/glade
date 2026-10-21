@@ -1,0 +1,129 @@
+{
+  "api": "67.0",
+  "utc": "2026-10-19T02:54:50.929992+00:00",
+  "deployId": "0Afhs000000lvIzCAI",
+  "deployStatus": "Succeeded",
+  "testRunId": "",
+  "rows": [
+    {
+      "api": "67.0",
+      "id": "batch_committed",
+      "outcome": "Fail",
+      "observed": {
+        "testSeed": 7,
+        "testHits": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": -1,
+        "triggerSawAfter": 1,
+        "triggerPublishing": 0,
+        "triggerSeed": 7,
+        "publisherSeed": 7
+      }
+    },
+    {
+      "api": "67.0",
+      "id": "batch_immediate",
+      "outcome": "Fail",
+      "observed": {
+        "testSeed": 7,
+        "testHits": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": -1,
+        "triggerSawAfter": 1,
+        "triggerPublishing": 0,
+        "triggerSeed": 7,
+        "publisherSeed": 7
+      }
+    },
+    {
+      "api": "67.0",
+      "id": "direct_committed",
+      "outcome": "Fail",
+      "observed": {
+        "testSeed": 7,
+        "testHits": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": -1,
+        "triggerSawAfter": 1,
+        "triggerPublishing": 0,
+        "triggerSeed": 7,
+        "publisherSeed": 7
+      }
+    },
+    {
+      "api": "67.0",
+      "id": "direct_immediate",
+      "outcome": "Fail",
+      "observed": {
+        "testSeed": 7,
+        "testHits": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": -1,
+        "triggerSawAfter": 1,
+        "triggerPublishing": 0,
+        "triggerSeed": 7,
+        "publisherSeed": 7
+      }
+    },
+    {
+      "api": "67.0",
+      "id": "future_committed",
+      "outcome": "Fail",
+      "observed": {
+        "testSeed": 7,
+        "testHits": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": -1,
+        "triggerSawAfter": 1,
+        "triggerPublishing": 0,
+        "triggerSeed": 7,
+        "publisherSeed": 7
+      }
+    },
+    {
+      "api": "67.0",
+      "id": "future_immediate",
+      "outcome": "Fail",
+      "observed": {
+        "testSeed": 7,
+        "testHits": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": -1,
+        "triggerSawAfter": 1,
+        "triggerPublishing": 0,
+        "triggerSeed": 7,
+        "publisherSeed": 7
+      }
+    },
+    {
+      "api": "67.0",
+      "id": "queue_committed",
+      "outcome": "Fail",
+      "observed": {
+        "testSeed": 7,
+        "testHits": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": -1,
+        "triggerSawAfter": 1,
+        "triggerPublishing": 0,
+        "triggerSeed": 7,
+        "publisherSeed": 7
+      }
+    },
+    {
+      "api": "67.0",
+      "id": "queue_immediate",
+      "outcome": "Fail",
+      "observed": {
+        "testSeed": 7,
+        "testHits": 1,
+        "publishSuccess": 1,
+        "publisherSawTrigger": -1,
+        "triggerSawAfter": 1,
+        "triggerPublishing": 0,
+        "triggerSeed": 7,
+        "publisherSeed": 7
+      }
+    }
+  ]
+}

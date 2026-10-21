@@ -1,0 +1,15 @@
+api	class	accepted	problem
+62.0	GardenRecord	true	-
+62.0	GardenMail	true	-
+62.0	GardenFields	true	-
+62.0	GardenMulti	true	-
+62.0	GardenBadNumber	false	Illegal assignment from String to Integer
+62.0	GardenBadList	false	Illegal assignment from List<String> to List<Integer>
+67.0	GardenRecord	true	-
+67.0	GardenMail	true	-
+67.0	GardenFields	true	-
+67.0	GardenMulti	true	-
+67.0	GardenBadNumber	false	Illegal assignment from String to Integer
+67.0	GardenBadList	false	Illegal assignment from List<String> to List<Integer>
+62.0	GardenTrade	true	-
+67.0	GardenTrade	true	-

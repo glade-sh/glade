@@ -1,0 +1,7 @@
+id	group	route	status	value
+eventFieldType	activity_fields	istest	OBSERVED	"PICKLIST"
+eventPicklist	activity_fields	istest	OBSERVED	"Ready"
+eventText	activity_fields	istest	OBSERVED	"BETA"
+taskFieldType	activity_fields	istest	OBSERVED	"STRING"
+taskPicklist	activity_fields	istest	OBSERVED	"Ready"
+taskText	activity_fields	istest	OBSERVED	"ALPHA"

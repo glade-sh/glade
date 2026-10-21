@@ -32,7 +32,7 @@ func (s *Server) handleSObjects(w http.ResponseWriter, r *http.Request, version 
 			"recentItems": base + name + "/recent",
 		})
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"sobjects": objects})
+	writeJSON(w, http.StatusOK, map[string]any{"encoding": "UTF-8", "maxBatchSize": 200, "sobjects": objects})
 }
 
 func (s *Server) handleRecent(w http.ResponseWriter, r *http.Request, version string) {
@@ -151,7 +151,7 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			writeSalesforceError(w, errUnknownObject)
 			return
 		}
-		writeJSON(w, http.StatusOK, objectResourcePayload(object.Definition, version))
+		writeJSON(w, http.StatusOK, objectResourcePayload(object, version))
 	case len(parts) == 1 && r.Method == http.MethodPost:
 		record, err := decodeRecord(r, objectName, "")
 		if err != nil {

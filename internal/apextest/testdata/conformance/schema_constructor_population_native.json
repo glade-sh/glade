@@ -1,0 +1,831 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "shapeCount": 1,
+  "nativeCellCount": 6,
+  "nativeFacetCount": 240,
+  "replayedNativeFacetCount": 228,
+  "stillPendingCellCount": 12,
+  "helpers": {},
+  "helperSHA256": {},
+  "capture": {
+    "capturedBody": "Id recordId = '001000000000001AAA';\nMap<String,Object> cells = new Map<String,Object>();\ntry {\n SObject value = Account.SObjectType.newSObject();\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('empty.keys', keys);\n cells.put('empty.containsId', populated.containsKey('Id'));\n cells.put('empty.idEquals', value.get('Id') == recordId);\n cells.put('empty.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('empty.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Account.SObjectType.newSObject(null);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('nullArgument.keys', keys);\n cells.put('nullArgument.containsId', populated.containsKey('Id'));\n cells.put('nullArgument.idEquals', value.get('Id') == recordId);\n cells.put('nullArgument.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('nullArgument.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Account.SObjectType.newSObject(recordId);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('seeded.keys', keys);\n cells.put('seeded.containsId', populated.containsKey('Id'));\n cells.put('seeded.idEquals', value.get('Id') == recordId);\n cells.put('seeded.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('seeded.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = new Account(Id=recordId);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('ordinary.keys', keys);\n cells.put('ordinary.containsId', populated.containsKey('Id'));\n cells.put('ordinary.idEquals', value.get('Id') == recordId);\n cells.put('ordinary.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('ordinary.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = new Account();\n value.put('Id',recordId);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('assigned.keys', keys);\n cells.put('assigned.containsId', populated.containsKey('Id'));\n cells.put('assigned.idEquals', value.get('Id') == recordId);\n cells.put('assigned.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('assigned.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Contact.SObjectType.newSObject('003000000000001AAA');\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n Id controlId='003000000000001AAA';\n cells.put('contactSeeded.keys', keys);\n cells.put('contactSeeded.containsId', populated.containsKey('Id'));\n cells.put('contactSeeded.idEquals', value.get('Id') == controlId);\n cells.put('contactSeeded.mapIdEquals', populated.get('Id') == controlId);\n} catch(Exception e) { cells.put('contactSeeded.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Account.SObjectType.newSObject(null,false);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('nullRecordType.keys', keys);\n cells.put('nullRecordType.containsId', populated.containsKey('Id'));\n cells.put('nullRecordType.idEquals', value.get('Id') == recordId);\n cells.put('nullRecordType.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('nullRecordType.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Account.SObjectType.newSObject('012000000000000AAA',false);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('masterRecordType.keys', keys);\n cells.put('masterRecordType.containsId', populated.containsKey('Id'));\n cells.put('masterRecordType.idEquals', value.get('Id') == recordId);\n cells.put('masterRecordType.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('masterRecordType.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Account.SObjectType.newSObject(recordId);\n Map<String,Object> payload = new Map<String,Object>(value.getPopulatedFieldsAsMap());\n payload.put('Name','Cedar Account');\n payload.put('BillingAddress',new Map<String,Object>{'street'=>'17 Oak Lane','postalCode'=>'90210'});\n payload.put('CreatedDate',Datetime.newInstanceGmt(2024,1,2,3,4,5));\n Account restored=(Account)JSON.deserialize(JSON.serialize(payload),Account.class);\n Map<String,Object> populated=restored.getPopulatedFieldsAsMap();\n List<String> keys=new List<String>(populated.keySet()); keys.sort();\n cells.put('roundTrip.keys',keys);\n cells.put('roundTrip.containsId',populated.containsKey('Id'));\n cells.put('roundTrip.idEquals',restored.Id==recordId);\n cells.put('roundTrip.mapIdEquals',populated.get('Id')==recordId);\n cells.put('roundTrip.name',restored.Name);\n cells.put('roundTrip.street',((Address)restored.get('BillingAddress')).getStreet());\n cells.put('roundTrip.postalCode',((Address)restored.get('BillingAddress')).getPostalCode());\n cells.put('roundTrip.createdDate',restored.CreatedDate==Datetime.newInstanceGmt(2024,1,2,3,4,5));\n} catch(Exception e) { cells.put('roundTrip.error',e.getTypeName()+': '+e.getMessage()); }\nSystem.assert(false,'SCOPED_NATIVE|'+JSON.serialize(cells));\n",
+    "capturedBodySHA256": "1affbc5b9b96588530c76f95b34a1adfb83faa6ca662ca611724d52f001ed6c4",
+    "replayTransformation": "Replace the final intentional observation assertion with removal of only masterRecordType.keys and nullRecordType.keys and one SCOPED_NATIVE debug statement. The remainder of the captured anonymous and named method bodies is unchanged.",
+    "excludedFacets": [
+      "masterRecordType.keys",
+      "nullRecordType.keys"
+    ]
+  },
+  "rows": [
+    {
+      "id": "P01",
+      "source": "Supplied identity and populated-field projection",
+      "anonymous": "Id recordId = '001000000000001AAA';\nMap<String,Object> cells = new Map<String,Object>();\ntry {\n SObject value = Account.SObjectType.newSObject();\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('empty.keys', keys);\n cells.put('empty.containsId', populated.containsKey('Id'));\n cells.put('empty.idEquals', value.get('Id') == recordId);\n cells.put('empty.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('empty.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Account.SObjectType.newSObject(null);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('nullArgument.keys', keys);\n cells.put('nullArgument.containsId', populated.containsKey('Id'));\n cells.put('nullArgument.idEquals', value.get('Id') == recordId);\n cells.put('nullArgument.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('nullArgument.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Account.SObjectType.newSObject(recordId);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('seeded.keys', keys);\n cells.put('seeded.containsId', populated.containsKey('Id'));\n cells.put('seeded.idEquals', value.get('Id') == recordId);\n cells.put('seeded.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('seeded.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = new Account(Id=recordId);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('ordinary.keys', keys);\n cells.put('ordinary.containsId', populated.containsKey('Id'));\n cells.put('ordinary.idEquals', value.get('Id') == recordId);\n cells.put('ordinary.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('ordinary.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = new Account();\n value.put('Id',recordId);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('assigned.keys', keys);\n cells.put('assigned.containsId', populated.containsKey('Id'));\n cells.put('assigned.idEquals', value.get('Id') == recordId);\n cells.put('assigned.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('assigned.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Contact.SObjectType.newSObject('003000000000001AAA');\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n Id controlId='003000000000001AAA';\n cells.put('contactSeeded.keys', keys);\n cells.put('contactSeeded.containsId', populated.containsKey('Id'));\n cells.put('contactSeeded.idEquals', value.get('Id') == controlId);\n cells.put('contactSeeded.mapIdEquals', populated.get('Id') == controlId);\n} catch(Exception e) { cells.put('contactSeeded.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Account.SObjectType.newSObject(null,false);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('nullRecordType.keys', keys);\n cells.put('nullRecordType.containsId', populated.containsKey('Id'));\n cells.put('nullRecordType.idEquals', value.get('Id') == recordId);\n cells.put('nullRecordType.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('nullRecordType.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Account.SObjectType.newSObject('012000000000000AAA',false);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('masterRecordType.keys', keys);\n cells.put('masterRecordType.containsId', populated.containsKey('Id'));\n cells.put('masterRecordType.idEquals', value.get('Id') == recordId);\n cells.put('masterRecordType.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('masterRecordType.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Account.SObjectType.newSObject(recordId);\n Map<String,Object> payload = new Map<String,Object>(value.getPopulatedFieldsAsMap());\n payload.put('Name','Cedar Account');\n payload.put('BillingAddress',new Map<String,Object>{'street'=>'17 Oak Lane','postalCode'=>'90210'});\n payload.put('CreatedDate',Datetime.newInstanceGmt(2024,1,2,3,4,5));\n Account restored=(Account)JSON.deserialize(JSON.serialize(payload),Account.class);\n Map<String,Object> populated=restored.getPopulatedFieldsAsMap();\n List<String> keys=new List<String>(populated.keySet()); keys.sort();\n cells.put('roundTrip.keys',keys);\n cells.put('roundTrip.containsId',populated.containsKey('Id'));\n cells.put('roundTrip.idEquals',restored.Id==recordId);\n cells.put('roundTrip.mapIdEquals',populated.get('Id')==recordId);\n cells.put('roundTrip.name',restored.Name);\n cells.put('roundTrip.street',((Address)restored.get('BillingAddress')).getStreet());\n cells.put('roundTrip.postalCode',((Address)restored.get('BillingAddress')).getPostalCode());\n cells.put('roundTrip.createdDate',restored.CreatedDate==Datetime.newInstanceGmt(2024,1,2,3,4,5));\n} catch(Exception e) { cells.put('roundTrip.error',e.getTypeName()+': '+e.getMessage()); }\ncells.remove('masterRecordType.keys');\ncells.remove('nullRecordType.keys');\nSystem.debug('SCOPED_NATIVE|'+JSON.serialize(cells));\n",
+      "named": "Id recordId = '001000000000001AAA';\nMap<String,Object> cells = new Map<String,Object>();\ntry {\n SObject value = Account.SObjectType.newSObject();\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('empty.keys', keys);\n cells.put('empty.containsId', populated.containsKey('Id'));\n cells.put('empty.idEquals', value.get('Id') == recordId);\n cells.put('empty.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('empty.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Account.SObjectType.newSObject(null);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('nullArgument.keys', keys);\n cells.put('nullArgument.containsId', populated.containsKey('Id'));\n cells.put('nullArgument.idEquals', value.get('Id') == recordId);\n cells.put('nullArgument.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('nullArgument.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Account.SObjectType.newSObject(recordId);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('seeded.keys', keys);\n cells.put('seeded.containsId', populated.containsKey('Id'));\n cells.put('seeded.idEquals', value.get('Id') == recordId);\n cells.put('seeded.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('seeded.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = new Account(Id=recordId);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('ordinary.keys', keys);\n cells.put('ordinary.containsId', populated.containsKey('Id'));\n cells.put('ordinary.idEquals', value.get('Id') == recordId);\n cells.put('ordinary.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('ordinary.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = new Account();\n value.put('Id',recordId);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('assigned.keys', keys);\n cells.put('assigned.containsId', populated.containsKey('Id'));\n cells.put('assigned.idEquals', value.get('Id') == recordId);\n cells.put('assigned.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('assigned.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Contact.SObjectType.newSObject('003000000000001AAA');\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n Id controlId='003000000000001AAA';\n cells.put('contactSeeded.keys', keys);\n cells.put('contactSeeded.containsId', populated.containsKey('Id'));\n cells.put('contactSeeded.idEquals', value.get('Id') == controlId);\n cells.put('contactSeeded.mapIdEquals', populated.get('Id') == controlId);\n} catch(Exception e) { cells.put('contactSeeded.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Account.SObjectType.newSObject(null,false);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('nullRecordType.keys', keys);\n cells.put('nullRecordType.containsId', populated.containsKey('Id'));\n cells.put('nullRecordType.idEquals', value.get('Id') == recordId);\n cells.put('nullRecordType.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('nullRecordType.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Account.SObjectType.newSObject('012000000000000AAA',false);\n Map<String,Object> populated = value.getPopulatedFieldsAsMap();\n List<String> keys = new List<String>(populated.keySet()); keys.sort();\n cells.put('masterRecordType.keys', keys);\n cells.put('masterRecordType.containsId', populated.containsKey('Id'));\n cells.put('masterRecordType.idEquals', value.get('Id') == recordId);\n cells.put('masterRecordType.mapIdEquals', populated.get('Id') == recordId);\n} catch(Exception e) { cells.put('masterRecordType.error', e.getTypeName()+': '+e.getMessage()); }\ntry {\n SObject value = Account.SObjectType.newSObject(recordId);\n Map<String,Object> payload = new Map<String,Object>(value.getPopulatedFieldsAsMap());\n payload.put('Name','Cedar Account');\n payload.put('BillingAddress',new Map<String,Object>{'street'=>'17 Oak Lane','postalCode'=>'90210'});\n payload.put('CreatedDate',Datetime.newInstanceGmt(2024,1,2,3,4,5));\n Account restored=(Account)JSON.deserialize(JSON.serialize(payload),Account.class);\n Map<String,Object> populated=restored.getPopulatedFieldsAsMap();\n List<String> keys=new List<String>(populated.keySet()); keys.sort();\n cells.put('roundTrip.keys',keys);\n cells.put('roundTrip.containsId',populated.containsKey('Id'));\n cells.put('roundTrip.idEquals',restored.Id==recordId);\n cells.put('roundTrip.mapIdEquals',populated.get('Id')==recordId);\n cells.put('roundTrip.name',restored.Name);\n cells.put('roundTrip.street',((Address)restored.get('BillingAddress')).getStreet());\n cells.put('roundTrip.postalCode',((Address)restored.get('BillingAddress')).getPostalCode());\n cells.put('roundTrip.createdDate',restored.CreatedDate==Datetime.newInstanceGmt(2024,1,2,3,4,5));\n} catch(Exception e) { cells.put('roundTrip.error',e.getTypeName()+': '+e.getMessage()); }\ncells.remove('masterRecordType.keys');\ncells.remove('nullRecordType.keys');\nSystem.debug('SCOPED_NATIVE|'+JSON.serialize(cells));\n",
+      "sourceSHA256": {
+        "anonymous": "b8f19fe3c098dd5c5479769fdaf802e4aff2fa6739901d2d89308328e3efec2d",
+        "istest": "b8f19fe3c098dd5c5479769fdaf802e4aff2fa6739901d2d89308328e3efec2d"
+      },
+      "cells": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "value": {
+              "assigned.containsId": true,
+              "assigned.idEquals": true,
+              "assigned.keys": [
+                "Id"
+              ],
+              "assigned.mapIdEquals": true,
+              "contactSeeded.containsId": true,
+              "contactSeeded.idEquals": true,
+              "contactSeeded.keys": [
+                "Id"
+              ],
+              "contactSeeded.mapIdEquals": true,
+              "empty.containsId": false,
+              "empty.idEquals": false,
+              "empty.keys": [],
+              "empty.mapIdEquals": false,
+              "masterRecordType.containsId": false,
+              "masterRecordType.idEquals": false,
+              "masterRecordType.mapIdEquals": false,
+              "nullArgument.containsId": false,
+              "nullArgument.idEquals": false,
+              "nullArgument.keys": [],
+              "nullArgument.mapIdEquals": false,
+              "nullRecordType.containsId": false,
+              "nullRecordType.idEquals": false,
+              "nullRecordType.mapIdEquals": false,
+              "ordinary.containsId": true,
+              "ordinary.idEquals": true,
+              "ordinary.keys": [
+                "Id"
+              ],
+              "ordinary.mapIdEquals": true,
+              "roundTrip.containsId": true,
+              "roundTrip.createdDate": true,
+              "roundTrip.idEquals": true,
+              "roundTrip.keys": [
+                "BillingAddress",
+                "CreatedDate",
+                "Id",
+                "Name"
+              ],
+              "roundTrip.mapIdEquals": true,
+              "roundTrip.name": "Cedar Account",
+              "roundTrip.postalCode": "90210",
+              "roundTrip.street": "17 Oak Lane",
+              "seeded.containsId": true,
+              "seeded.idEquals": true,
+              "seeded.keys": [
+                "Id"
+              ],
+              "seeded.mapIdEquals": true
+            }
+          },
+          "nativeSHA256": "713f9bf2216184a0998c0cbcf5e6babc3260c9a7e542fb0ab78cac81050d1a46",
+          "provenance": {
+            "sourceApi": "62.0",
+            "transportApi": "62.0",
+            "context": "anonymous",
+            "transport": "intentional assertion containing observation JSON",
+            "orgIdSHA256": "00d712f1ddde6d268581a5fb4c2f8cac6f0141e9658a008fe42088717f36ed08",
+            "rawAnswerSHA256": "713f9bf2216184a0998c0cbcf5e6babc3260c9a7e542fb0ab78cac81050d1a46",
+            "capturedBodySHA256": "1affbc5b9b96588530c76f95b34a1adfb83faa6ca662ca611724d52f001ed6c4",
+            "originalNativeFacetCount": 40,
+            "originalNative": {
+              "assigned.containsId": true,
+              "assigned.idEquals": true,
+              "assigned.keys": [
+                "Id"
+              ],
+              "assigned.mapIdEquals": true,
+              "contactSeeded.containsId": true,
+              "contactSeeded.idEquals": true,
+              "contactSeeded.keys": [
+                "Id"
+              ],
+              "contactSeeded.mapIdEquals": true,
+              "empty.containsId": false,
+              "empty.idEquals": false,
+              "empty.keys": [],
+              "empty.mapIdEquals": false,
+              "masterRecordType.containsId": false,
+              "masterRecordType.idEquals": false,
+              "masterRecordType.keys": [],
+              "masterRecordType.mapIdEquals": false,
+              "nullArgument.containsId": false,
+              "nullArgument.idEquals": false,
+              "nullArgument.keys": [],
+              "nullArgument.mapIdEquals": false,
+              "nullRecordType.containsId": false,
+              "nullRecordType.idEquals": false,
+              "nullRecordType.keys": [],
+              "nullRecordType.mapIdEquals": false,
+              "ordinary.containsId": true,
+              "ordinary.idEquals": true,
+              "ordinary.keys": [
+                "Id"
+              ],
+              "ordinary.mapIdEquals": true,
+              "roundTrip.containsId": true,
+              "roundTrip.createdDate": true,
+              "roundTrip.idEquals": true,
+              "roundTrip.keys": [
+                "BillingAddress",
+                "CreatedDate",
+                "Id",
+                "Name"
+              ],
+              "roundTrip.mapIdEquals": true,
+              "roundTrip.name": "Cedar Account",
+              "roundTrip.postalCode": "90210",
+              "roundTrip.street": "17 Oak Lane",
+              "seeded.containsId": true,
+              "seeded.idEquals": true,
+              "seeded.keys": [
+                "Id"
+              ],
+              "seeded.mapIdEquals": true
+            }
+          }
+        },
+        {
+          "api": "62.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "value": {
+              "assigned.containsId": true,
+              "assigned.idEquals": true,
+              "assigned.keys": [
+                "Id"
+              ],
+              "assigned.mapIdEquals": true,
+              "contactSeeded.containsId": true,
+              "contactSeeded.idEquals": true,
+              "contactSeeded.keys": [
+                "Id"
+              ],
+              "contactSeeded.mapIdEquals": true,
+              "empty.containsId": false,
+              "empty.idEquals": false,
+              "empty.keys": [],
+              "empty.mapIdEquals": false,
+              "masterRecordType.containsId": false,
+              "masterRecordType.idEquals": false,
+              "masterRecordType.mapIdEquals": false,
+              "nullArgument.containsId": false,
+              "nullArgument.idEquals": false,
+              "nullArgument.keys": [],
+              "nullArgument.mapIdEquals": false,
+              "nullRecordType.containsId": false,
+              "nullRecordType.idEquals": false,
+              "nullRecordType.mapIdEquals": false,
+              "ordinary.containsId": true,
+              "ordinary.idEquals": true,
+              "ordinary.keys": [
+                "Id"
+              ],
+              "ordinary.mapIdEquals": true,
+              "roundTrip.containsId": true,
+              "roundTrip.createdDate": true,
+              "roundTrip.idEquals": true,
+              "roundTrip.keys": [
+                "BillingAddress",
+                "CreatedDate",
+                "Id",
+                "Name"
+              ],
+              "roundTrip.mapIdEquals": true,
+              "roundTrip.name": "Cedar Account",
+              "roundTrip.postalCode": "90210",
+              "roundTrip.street": "17 Oak Lane",
+              "seeded.containsId": true,
+              "seeded.idEquals": true,
+              "seeded.keys": [
+                "Id"
+              ],
+              "seeded.mapIdEquals": true
+            }
+          },
+          "nativeSHA256": "e0589870fe3e2dbd7d65459f56c8a5bac5029fa0a6e0030d4816b756afd04341",
+          "provenance": {
+            "sourceApi": "62.0",
+            "transportApi": "62.0",
+            "context": "istest",
+            "transport": "intentional assertion containing observation JSON",
+            "orgIdSHA256": "00d712f1ddde6d268581a5fb4c2f8cac6f0141e9658a008fe42088717f36ed08",
+            "rawAnswerSHA256": "e0589870fe3e2dbd7d65459f56c8a5bac5029fa0a6e0030d4816b756afd04341",
+            "capturedBodySHA256": "1affbc5b9b96588530c76f95b34a1adfb83faa6ca662ca611724d52f001ed6c4",
+            "originalNativeFacetCount": 40,
+            "originalNative": {
+              "assigned.containsId": true,
+              "assigned.idEquals": true,
+              "assigned.keys": [
+                "Id"
+              ],
+              "assigned.mapIdEquals": true,
+              "contactSeeded.containsId": true,
+              "contactSeeded.idEquals": true,
+              "contactSeeded.keys": [
+                "Id"
+              ],
+              "contactSeeded.mapIdEquals": true,
+              "empty.containsId": false,
+              "empty.idEquals": false,
+              "empty.keys": [],
+              "empty.mapIdEquals": false,
+              "masterRecordType.containsId": false,
+              "masterRecordType.idEquals": false,
+              "masterRecordType.keys": [],
+              "masterRecordType.mapIdEquals": false,
+              "nullArgument.containsId": false,
+              "nullArgument.idEquals": false,
+              "nullArgument.keys": [],
+              "nullArgument.mapIdEquals": false,
+              "nullRecordType.containsId": false,
+              "nullRecordType.idEquals": false,
+              "nullRecordType.keys": [],
+              "nullRecordType.mapIdEquals": false,
+              "ordinary.containsId": true,
+              "ordinary.idEquals": true,
+              "ordinary.keys": [
+                "Id"
+              ],
+              "ordinary.mapIdEquals": true,
+              "roundTrip.containsId": true,
+              "roundTrip.createdDate": true,
+              "roundTrip.idEquals": true,
+              "roundTrip.keys": [
+                "BillingAddress",
+                "CreatedDate",
+                "Id",
+                "Name"
+              ],
+              "roundTrip.mapIdEquals": true,
+              "roundTrip.name": "Cedar Account",
+              "roundTrip.postalCode": "90210",
+              "roundTrip.street": "17 Oak Lane",
+              "seeded.containsId": true,
+              "seeded.idEquals": true,
+              "seeded.keys": [
+                "Id"
+              ],
+              "seeded.mapIdEquals": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "value": {
+              "assigned.containsId": true,
+              "assigned.idEquals": true,
+              "assigned.keys": [
+                "Id"
+              ],
+              "assigned.mapIdEquals": true,
+              "contactSeeded.containsId": true,
+              "contactSeeded.idEquals": true,
+              "contactSeeded.keys": [
+                "Id"
+              ],
+              "contactSeeded.mapIdEquals": true,
+              "empty.containsId": false,
+              "empty.idEquals": false,
+              "empty.keys": [],
+              "empty.mapIdEquals": false,
+              "masterRecordType.containsId": false,
+              "masterRecordType.idEquals": false,
+              "masterRecordType.mapIdEquals": false,
+              "nullArgument.containsId": false,
+              "nullArgument.idEquals": false,
+              "nullArgument.keys": [],
+              "nullArgument.mapIdEquals": false,
+              "nullRecordType.containsId": false,
+              "nullRecordType.idEquals": false,
+              "nullRecordType.mapIdEquals": false,
+              "ordinary.containsId": true,
+              "ordinary.idEquals": true,
+              "ordinary.keys": [
+                "Id"
+              ],
+              "ordinary.mapIdEquals": true,
+              "roundTrip.containsId": true,
+              "roundTrip.createdDate": true,
+              "roundTrip.idEquals": true,
+              "roundTrip.keys": [
+                "BillingAddress",
+                "CreatedDate",
+                "Id",
+                "Name"
+              ],
+              "roundTrip.mapIdEquals": true,
+              "roundTrip.name": "Cedar Account",
+              "roundTrip.postalCode": "90210",
+              "roundTrip.street": "17 Oak Lane",
+              "seeded.containsId": true,
+              "seeded.idEquals": true,
+              "seeded.keys": [
+                "Id"
+              ],
+              "seeded.mapIdEquals": true
+            }
+          },
+          "nativeSHA256": "25c040ed6cbe4a35a74409ff7f3549b2821de8180bf381c805e8d52df2cf2da4",
+          "provenance": {
+            "sourceApi": "67.0",
+            "transportApi": "67.0",
+            "context": "anonymous",
+            "transport": "intentional assertion containing observation JSON",
+            "orgIdSHA256": "00d712f1ddde6d268581a5fb4c2f8cac6f0141e9658a008fe42088717f36ed08",
+            "rawAnswerSHA256": "25c040ed6cbe4a35a74409ff7f3549b2821de8180bf381c805e8d52df2cf2da4",
+            "capturedBodySHA256": "1affbc5b9b96588530c76f95b34a1adfb83faa6ca662ca611724d52f001ed6c4",
+            "originalNativeFacetCount": 40,
+            "originalNative": {
+              "assigned.containsId": true,
+              "assigned.idEquals": true,
+              "assigned.keys": [
+                "Id"
+              ],
+              "assigned.mapIdEquals": true,
+              "contactSeeded.containsId": true,
+              "contactSeeded.idEquals": true,
+              "contactSeeded.keys": [
+                "Id"
+              ],
+              "contactSeeded.mapIdEquals": true,
+              "empty.containsId": false,
+              "empty.idEquals": false,
+              "empty.keys": [],
+              "empty.mapIdEquals": false,
+              "masterRecordType.containsId": false,
+              "masterRecordType.idEquals": false,
+              "masterRecordType.keys": [],
+              "masterRecordType.mapIdEquals": false,
+              "nullArgument.containsId": false,
+              "nullArgument.idEquals": false,
+              "nullArgument.keys": [],
+              "nullArgument.mapIdEquals": false,
+              "nullRecordType.containsId": false,
+              "nullRecordType.idEquals": false,
+              "nullRecordType.keys": [],
+              "nullRecordType.mapIdEquals": false,
+              "ordinary.containsId": true,
+              "ordinary.idEquals": true,
+              "ordinary.keys": [
+                "Id"
+              ],
+              "ordinary.mapIdEquals": true,
+              "roundTrip.containsId": true,
+              "roundTrip.createdDate": true,
+              "roundTrip.idEquals": true,
+              "roundTrip.keys": [
+                "BillingAddress",
+                "CreatedDate",
+                "Id",
+                "Name"
+              ],
+              "roundTrip.mapIdEquals": true,
+              "roundTrip.name": "Cedar Account",
+              "roundTrip.postalCode": "90210",
+              "roundTrip.street": "17 Oak Lane",
+              "seeded.containsId": true,
+              "seeded.idEquals": true,
+              "seeded.keys": [
+                "Id"
+              ],
+              "seeded.mapIdEquals": true
+            }
+          }
+        },
+        {
+          "api": "67.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "value": {
+              "assigned.containsId": true,
+              "assigned.idEquals": true,
+              "assigned.keys": [
+                "Id"
+              ],
+              "assigned.mapIdEquals": true,
+              "contactSeeded.containsId": true,
+              "contactSeeded.idEquals": true,
+              "contactSeeded.keys": [
+                "Id"
+              ],
+              "contactSeeded.mapIdEquals": true,
+              "empty.containsId": false,
+              "empty.idEquals": false,
+              "empty.keys": [],
+              "empty.mapIdEquals": false,
+              "masterRecordType.containsId": false,
+              "masterRecordType.idEquals": false,
+              "masterRecordType.mapIdEquals": false,
+              "nullArgument.containsId": false,
+              "nullArgument.idEquals": false,
+              "nullArgument.keys": [],
+              "nullArgument.mapIdEquals": false,
+              "nullRecordType.containsId": false,
+              "nullRecordType.idEquals": false,
+              "nullRecordType.mapIdEquals": false,
+              "ordinary.containsId": true,
+              "ordinary.idEquals": true,
+              "ordinary.keys": [
+                "Id"
+              ],
+              "ordinary.mapIdEquals": true,
+              "roundTrip.containsId": true,
+              "roundTrip.createdDate": true,
+              "roundTrip.idEquals": true,
+              "roundTrip.keys": [
+                "BillingAddress",
+                "CreatedDate",
+                "Id",
+                "Name"
+              ],
+              "roundTrip.mapIdEquals": true,
+              "roundTrip.name": "Cedar Account",
+              "roundTrip.postalCode": "90210",
+              "roundTrip.street": "17 Oak Lane",
+              "seeded.containsId": true,
+              "seeded.idEquals": true,
+              "seeded.keys": [
+                "Id"
+              ],
+              "seeded.mapIdEquals": true
+            }
+          },
+          "nativeSHA256": "7a2171e9976912c90619243070932b6a01332e6359f2533cd7f24b1c745e682e",
+          "provenance": {
+            "sourceApi": "67.0",
+            "transportApi": "67.0",
+            "context": "istest",
+            "transport": "intentional assertion containing observation JSON",
+            "orgIdSHA256": "00d712f1ddde6d268581a5fb4c2f8cac6f0141e9658a008fe42088717f36ed08",
+            "rawAnswerSHA256": "7a2171e9976912c90619243070932b6a01332e6359f2533cd7f24b1c745e682e",
+            "capturedBodySHA256": "1affbc5b9b96588530c76f95b34a1adfb83faa6ca662ca611724d52f001ed6c4",
+            "originalNativeFacetCount": 40,
+            "originalNative": {
+              "assigned.containsId": true,
+              "assigned.idEquals": true,
+              "assigned.keys": [
+                "Id"
+              ],
+              "assigned.mapIdEquals": true,
+              "contactSeeded.containsId": true,
+              "contactSeeded.idEquals": true,
+              "contactSeeded.keys": [
+                "Id"
+              ],
+              "contactSeeded.mapIdEquals": true,
+              "empty.containsId": false,
+              "empty.idEquals": false,
+              "empty.keys": [],
+              "empty.mapIdEquals": false,
+              "masterRecordType.containsId": false,
+              "masterRecordType.idEquals": false,
+              "masterRecordType.keys": [],
+              "masterRecordType.mapIdEquals": false,
+              "nullArgument.containsId": false,
+              "nullArgument.idEquals": false,
+              "nullArgument.keys": [],
+              "nullArgument.mapIdEquals": false,
+              "nullRecordType.containsId": false,
+              "nullRecordType.idEquals": false,
+              "nullRecordType.keys": [],
+              "nullRecordType.mapIdEquals": false,
+              "ordinary.containsId": true,
+              "ordinary.idEquals": true,
+              "ordinary.keys": [
+                "Id"
+              ],
+              "ordinary.mapIdEquals": true,
+              "roundTrip.containsId": true,
+              "roundTrip.createdDate": true,
+              "roundTrip.idEquals": true,
+              "roundTrip.keys": [
+                "BillingAddress",
+                "CreatedDate",
+                "Id",
+                "Name"
+              ],
+              "roundTrip.mapIdEquals": true,
+              "roundTrip.name": "Cedar Account",
+              "roundTrip.postalCode": "90210",
+              "roundTrip.street": "17 Oak Lane",
+              "seeded.containsId": true,
+              "seeded.idEquals": true,
+              "seeded.keys": [
+                "Id"
+              ],
+              "seeded.mapIdEquals": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "status": "runtime",
+          "native": {
+            "value": {
+              "assigned.containsId": true,
+              "assigned.idEquals": true,
+              "assigned.keys": [
+                "Id"
+              ],
+              "assigned.mapIdEquals": true,
+              "contactSeeded.containsId": true,
+              "contactSeeded.idEquals": true,
+              "contactSeeded.keys": [
+                "Id"
+              ],
+              "contactSeeded.mapIdEquals": true,
+              "empty.containsId": false,
+              "empty.idEquals": false,
+              "empty.keys": [],
+              "empty.mapIdEquals": false,
+              "masterRecordType.containsId": false,
+              "masterRecordType.idEquals": false,
+              "masterRecordType.mapIdEquals": false,
+              "nullArgument.containsId": false,
+              "nullArgument.idEquals": false,
+              "nullArgument.keys": [],
+              "nullArgument.mapIdEquals": false,
+              "nullRecordType.containsId": false,
+              "nullRecordType.idEquals": false,
+              "nullRecordType.mapIdEquals": false,
+              "ordinary.containsId": true,
+              "ordinary.idEquals": true,
+              "ordinary.keys": [
+                "Id"
+              ],
+              "ordinary.mapIdEquals": true,
+              "roundTrip.containsId": true,
+              "roundTrip.createdDate": true,
+              "roundTrip.idEquals": true,
+              "roundTrip.keys": [
+                "BillingAddress",
+                "CreatedDate",
+                "Id",
+                "Name"
+              ],
+              "roundTrip.mapIdEquals": true,
+              "roundTrip.name": "Cedar Account",
+              "roundTrip.postalCode": "90210",
+              "roundTrip.street": "17 Oak Lane",
+              "seeded.containsId": true,
+              "seeded.idEquals": true,
+              "seeded.keys": [
+                "Id"
+              ],
+              "seeded.mapIdEquals": true
+            }
+          },
+          "nativeSHA256": "1a44c61a553fa97cada9a2aa44b10330956b1b70480da40d263fa6e92457ff93",
+          "provenance": {
+            "sourceApi": "68.0",
+            "transportApi": "68.0",
+            "context": "anonymous",
+            "transport": "intentional assertion containing observation JSON",
+            "orgIdSHA256": "00d712f1ddde6d268581a5fb4c2f8cac6f0141e9658a008fe42088717f36ed08",
+            "rawAnswerSHA256": "1a44c61a553fa97cada9a2aa44b10330956b1b70480da40d263fa6e92457ff93",
+            "capturedBodySHA256": "1affbc5b9b96588530c76f95b34a1adfb83faa6ca662ca611724d52f001ed6c4",
+            "originalNativeFacetCount": 40,
+            "originalNative": {
+              "assigned.containsId": true,
+              "assigned.idEquals": true,
+              "assigned.keys": [
+                "Id"
+              ],
+              "assigned.mapIdEquals": true,
+              "contactSeeded.containsId": true,
+              "contactSeeded.idEquals": true,
+              "contactSeeded.keys": [
+                "Id"
+              ],
+              "contactSeeded.mapIdEquals": true,
+              "empty.containsId": false,
+              "empty.idEquals": false,
+              "empty.keys": [],
+              "empty.mapIdEquals": false,
+              "masterRecordType.containsId": false,
+              "masterRecordType.idEquals": false,
+              "masterRecordType.keys": [],
+              "masterRecordType.mapIdEquals": false,
+              "nullArgument.containsId": false,
+              "nullArgument.idEquals": false,
+              "nullArgument.keys": [],
+              "nullArgument.mapIdEquals": false,
+              "nullRecordType.containsId": false,
+              "nullRecordType.idEquals": false,
+              "nullRecordType.keys": [],
+              "nullRecordType.mapIdEquals": false,
+              "ordinary.containsId": true,
+              "ordinary.idEquals": true,
+              "ordinary.keys": [
+                "Id"
+              ],
+              "ordinary.mapIdEquals": true,
+              "roundTrip.containsId": true,
+              "roundTrip.createdDate": true,
+              "roundTrip.idEquals": true,
+              "roundTrip.keys": [
+                "BillingAddress",
+                "CreatedDate",
+                "Id",
+                "Name"
+              ],
+              "roundTrip.mapIdEquals": true,
+              "roundTrip.name": "Cedar Account",
+              "roundTrip.postalCode": "90210",
+              "roundTrip.street": "17 Oak Lane",
+              "seeded.containsId": true,
+              "seeded.idEquals": true,
+              "seeded.keys": [
+                "Id"
+              ],
+              "seeded.mapIdEquals": true
+            }
+          }
+        },
+        {
+          "api": "68.0",
+          "route": "istest",
+          "status": "runtime",
+          "native": {
+            "value": {
+              "assigned.containsId": true,
+              "assigned.idEquals": true,
+              "assigned.keys": [
+                "Id"
+              ],
+              "assigned.mapIdEquals": true,
+              "contactSeeded.containsId": true,
+              "contactSeeded.idEquals": true,
+              "contactSeeded.keys": [
+                "Id"
+              ],
+              "contactSeeded.mapIdEquals": true,
+              "empty.containsId": false,
+              "empty.idEquals": false,
+              "empty.keys": [],
+              "empty.mapIdEquals": false,
+              "masterRecordType.containsId": false,
+              "masterRecordType.idEquals": false,
+              "masterRecordType.mapIdEquals": false,
+              "nullArgument.containsId": false,
+              "nullArgument.idEquals": false,
+              "nullArgument.keys": [],
+              "nullArgument.mapIdEquals": false,
+              "nullRecordType.containsId": false,
+              "nullRecordType.idEquals": false,
+              "nullRecordType.mapIdEquals": false,
+              "ordinary.containsId": true,
+              "ordinary.idEquals": true,
+              "ordinary.keys": [
+                "Id"
+              ],
+              "ordinary.mapIdEquals": true,
+              "roundTrip.containsId": true,
+              "roundTrip.createdDate": true,
+              "roundTrip.idEquals": true,
+              "roundTrip.keys": [
+                "BillingAddress",
+                "CreatedDate",
+                "Id",
+                "Name"
+              ],
+              "roundTrip.mapIdEquals": true,
+              "roundTrip.name": "Cedar Account",
+              "roundTrip.postalCode": "90210",
+              "roundTrip.street": "17 Oak Lane",
+              "seeded.containsId": true,
+              "seeded.idEquals": true,
+              "seeded.keys": [
+                "Id"
+              ],
+              "seeded.mapIdEquals": true
+            }
+          },
+          "nativeSHA256": "08ee28ef771b86746e986e86d213990869cd87c7e9aa9b96a2e3cc6be666cd40",
+          "provenance": {
+            "sourceApi": "68.0",
+            "transportApi": "68.0",
+            "context": "istest",
+            "transport": "intentional assertion containing observation JSON",
+            "orgIdSHA256": "00d712f1ddde6d268581a5fb4c2f8cac6f0141e9658a008fe42088717f36ed08",
+            "rawAnswerSHA256": "08ee28ef771b86746e986e86d213990869cd87c7e9aa9b96a2e3cc6be666cd40",
+            "capturedBodySHA256": "1affbc5b9b96588530c76f95b34a1adfb83faa6ca662ca611724d52f001ed6c4",
+            "originalNativeFacetCount": 40,
+            "originalNative": {
+              "assigned.containsId": true,
+              "assigned.idEquals": true,
+              "assigned.keys": [
+                "Id"
+              ],
+              "assigned.mapIdEquals": true,
+              "contactSeeded.containsId": true,
+              "contactSeeded.idEquals": true,
+              "contactSeeded.keys": [
+                "Id"
+              ],
+              "contactSeeded.mapIdEquals": true,
+              "empty.containsId": false,
+              "empty.idEquals": false,
+              "empty.keys": [],
+              "empty.mapIdEquals": false,
+              "masterRecordType.containsId": false,
+              "masterRecordType.idEquals": false,
+              "masterRecordType.keys": [],
+              "masterRecordType.mapIdEquals": false,
+              "nullArgument.containsId": false,
+              "nullArgument.idEquals": false,
+              "nullArgument.keys": [],
+              "nullArgument.mapIdEquals": false,
+              "nullRecordType.containsId": false,
+              "nullRecordType.idEquals": false,
+              "nullRecordType.keys": [],
+              "nullRecordType.mapIdEquals": false,
+              "ordinary.containsId": true,
+              "ordinary.idEquals": true,
+              "ordinary.keys": [
+                "Id"
+              ],
+              "ordinary.mapIdEquals": true,
+              "roundTrip.containsId": true,
+              "roundTrip.createdDate": true,
+              "roundTrip.idEquals": true,
+              "roundTrip.keys": [
+                "BillingAddress",
+                "CreatedDate",
+                "Id",
+                "Name"
+              ],
+              "roundTrip.mapIdEquals": true,
+              "roundTrip.name": "Cedar Account",
+              "roundTrip.postalCode": "90210",
+              "roundTrip.street": "17 Oak Lane",
+              "seeded.containsId": true,
+              "seeded.idEquals": true,
+              "seeded.keys": [
+                "Id"
+              ],
+              "seeded.mapIdEquals": true
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "unobservedShapes": [
+    {
+      "id": "MasterRecordTypePopulation",
+      "apex": "Account.SObjectType.newSObject('012000000000000AAA',false).getPopulatedFieldsAsMap().keySet()",
+      "nativeControl": "P01",
+      "reason": "Observed, not implemented: native Master RecordTypeId two-argument construction exposes no populated keys; the existing local runtime exposes RecordTypeId. This pre-existing two-argument projection boundary is outside the supplied record Id one-argument fix. All six native values are retained below; pending means implementation parity, not missing native evidence.",
+      "observationStatus": "observed-not-implemented",
+      "facet": "masterRecordType.keys",
+      "nativeByCell": {
+        "62.0/anonymous": [],
+        "62.0/istest": [],
+        "67.0/anonymous": [],
+        "67.0/istest": [],
+        "68.0/anonymous": [],
+        "68.0/istest": []
+      }
+    },
+    {
+      "id": "NullRecordTypePopulation",
+      "apex": "Account.SObjectType.newSObject(null,false).getPopulatedFieldsAsMap().keySet()",
+      "nativeControl": "P01",
+      "reason": "Observed, not implemented: native null RecordTypeId two-argument construction exposes no populated keys; the existing local standard-object runtime exposes IsCustomerPortal. This pre-existing two-argument checkbox projection boundary is outside the supplied record Id one-argument fix. All six native values are retained below; pending means implementation parity, not missing native evidence.",
+      "observationStatus": "observed-not-implemented",
+      "facet": "nullRecordType.keys",
+      "nativeByCell": {
+        "62.0/anonymous": [],
+        "62.0/istest": [],
+        "67.0/anonymous": [],
+        "67.0/istest": [],
+        "68.0/anonymous": [],
+        "68.0/istest": []
+      }
+    }
+  ]
+}

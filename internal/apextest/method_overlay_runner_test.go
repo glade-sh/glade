@@ -36,46 +36,70 @@ func mapPointer(value any) uintptr {
 	return reflect.ValueOf(value).Pointer()
 }
 
-// snapshotMethodTable copies every map entry and nested mutable value, including
-// overload slices, parameters, modifiers and the method program's IR tree.
-// Immutable scalar values can be retained without aliasing the live tables.
-func snapshotMethodTable(value reflect.Value) reflect.Value {
+type methodTableSnapshot struct {
+	typ   reflect.Type
+	value any
+}
+
+// snapshotMethodTable records every field in the acyclic method/IR tree, including
+// unexported fields. Kind-specific readers avoid Interface/Set restrictions on
+// those fields, without unsafe access or retaining mutable aliases. DeepEqual
+// compares these structural snapshots, preserving types and nil/empty distinctions.
+func snapshotMethodTable(value reflect.Value) methodTableSnapshot {
+	out := methodTableSnapshot{typ: value.Type()}
 	switch value.Kind() {
 	case reflect.Map:
-		if value.IsNil() {
-			return value
+		// Method tables and nested IR maps have string keys. Reject other shapes
+		// rather than silently omitting newly introduced state.
+		if value.Type().Key().Kind() != reflect.String {
+			panic(fmt.Sprintf("unsupported method table map key: %s", value.Type().Key()))
 		}
-		out := reflect.MakeMapWithSize(value.Type(), value.Len())
+		if value.IsNil() {
+			break
+		}
+		entriesBefore := make(map[string]methodTableSnapshot, value.Len())
 		entries := value.MapRange()
 		for entries.Next() {
-			out.SetMapIndex(entries.Key(), snapshotMethodTable(entries.Value()))
+			entriesBefore[entries.Key().String()] = snapshotMethodTable(entries.Value())
 		}
-		return out
-	case reflect.Slice:
-		if value.IsNil() {
-			return value
+		out.value = entriesBefore
+	case reflect.Slice, reflect.Array, reflect.Struct:
+		if value.Kind() == reflect.Slice && value.IsNil() {
+			break
 		}
-		out := reflect.MakeSlice(value.Type(), value.Len(), value.Len())
-		for i := 0; i < value.Len(); i++ {
-			out.Index(i).Set(snapshotMethodTable(value.Index(i)))
+		if value.Kind() == reflect.Struct {
+			fields := make([]methodTableSnapshot, value.NumField())
+			for i := range fields {
+				fields[i] = snapshotMethodTable(value.Field(i))
+			}
+			out.value = fields
+		} else {
+			elements := make([]methodTableSnapshot, value.Len())
+			for i := range elements {
+				elements[i] = snapshotMethodTable(value.Index(i))
+			}
+			out.value = elements
 		}
-		return out
-	case reflect.Pointer:
-		if value.IsNil() {
-			return value
+	case reflect.Pointer, reflect.Interface:
+		if !value.IsNil() {
+			out.value = snapshotMethodTable(value.Elem())
 		}
-		out := reflect.New(value.Type().Elem())
-		out.Elem().Set(snapshotMethodTable(value.Elem()))
-		return out
-	case reflect.Struct:
-		out := reflect.New(value.Type()).Elem()
-		for i := 0; i < value.NumField(); i++ {
-			out.Field(i).Set(snapshotMethodTable(value.Field(i)))
-		}
-		return out
+	case reflect.Bool:
+		out.value = value.Bool()
+	case reflect.String:
+		out.value = value.String()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		out.value = value.Int()
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		out.value = value.Uint()
+	case reflect.Float32, reflect.Float64:
+		out.value = value.Float()
+	case reflect.Complex64, reflect.Complex128:
+		out.value = value.Complex()
 	default:
-		return value
+		panic(fmt.Sprintf("unsupported method table snapshot type: %s", value.Type()))
 	}
+	return out
 }
 
 // runCase registers the test method on a per-case clone. The frozen base's
@@ -85,9 +109,9 @@ func TestRunCaseLeavesBaseMethodTablesIdentical(t *testing.T) {
 	methodsPtr := mapPointer(base.Methods)
 	overloadsPtr := mapPointer(base.MethodOverloads)
 	foldedPtr := mapPointer(base.MethodFolded)
-	methodsBefore := snapshotMethodTable(reflect.ValueOf(base.Methods)).Interface()
-	overloadsBefore := snapshotMethodTable(reflect.ValueOf(base.MethodOverloads)).Interface()
-	foldedBefore := snapshotMethodTable(reflect.ValueOf(base.MethodFolded)).Interface()
+	methodsBefore := snapshotMethodTable(reflect.ValueOf(base.Methods))
+	overloadsBefore := snapshotMethodTable(reflect.ValueOf(base.MethodOverloads))
+	foldedBefore := snapshotMethodTable(reflect.ValueOf(base.MethodFolded))
 
 	body, err := vm.CompileAnonymous("Integer value = Lib0.call(); System.assertEquals(1, value);")
 	if err != nil {
@@ -108,13 +132,13 @@ func TestRunCaseLeavesBaseMethodTablesIdentical(t *testing.T) {
 	if mapPointer(base.Methods) != methodsPtr || mapPointer(base.MethodOverloads) != overloadsPtr || mapPointer(base.MethodFolded) != foldedPtr {
 		t.Fatalf("runCase replaced the base method maps")
 	}
-	if !reflect.DeepEqual(base.Methods, methodsBefore) {
+	if !reflect.DeepEqual(snapshotMethodTable(reflect.ValueOf(base.Methods)), methodsBefore) {
 		t.Fatal("runCase changed the base Methods snapshot")
 	}
-	if !reflect.DeepEqual(base.MethodOverloads, overloadsBefore) {
+	if !reflect.DeepEqual(snapshotMethodTable(reflect.ValueOf(base.MethodOverloads)), overloadsBefore) {
 		t.Fatal("runCase changed the base MethodOverloads snapshot")
 	}
-	if !reflect.DeepEqual(base.MethodFolded, foldedBefore) {
+	if !reflect.DeepEqual(snapshotMethodTable(reflect.ValueOf(base.MethodFolded)), foldedBefore) {
 		t.Fatal("runCase changed the base MethodFolded snapshot")
 	}
 }

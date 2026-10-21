@@ -11,7 +11,7 @@ import (
 
 // TestL17ShadowAccessSalesforceConformance distinguishes a raw null shadowRoot
 // from a visible or opaque root using the captured component itself. The three
-// observations come from native API 59/67, and the local side uses the same
+// observations come from native API 59/67/68, and the local side uses the same
 // production tab adapter as the complete resource conformance table.
 func TestL17ShadowAccessSalesforceConformance(t *testing.T) {
 	raw, err := os.ReadFile("testdata/l17_shadow_access_controls.json")
@@ -28,14 +28,14 @@ func TestL17ShadowAccessSalesforceConformance(t *testing.T) {
 	}
 	if data.Source == "" || filepath.IsAbs(data.Source) ||
 		data.Case.ID == "" || data.Case.Kind != "runtime" ||
-		data.Case.JS == "" || data.Case.Template == "" || len(data.Captured) != 2 {
+		data.Case.JS == "" || data.Case.Template == "" || len(data.Captured) != 3 {
 		t.Fatal("incomplete native shadow-access control export")
 	}
 	dependencies, err := gladehome.EnsureRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, api := range []string{"59.0", "67.0"} {
+	for _, api := range []string{"59.0", "67.0", "68.0"} {
 		t.Run(api, func(t *testing.T) {
 			native, ok := data.Captured[api]
 			if !ok {

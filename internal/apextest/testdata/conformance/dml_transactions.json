@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "Declarations": {
     "A36": "public class A36 {\n public String errors(List<Database.Error> es){\n  List<String> xs=new List<String>();\n  for(Database.Error e:es) xs.add(String.valueOf(e.getStatusCode())+':'+String.join(e.getFields(),','));\n  return String.join(xs,';');\n }\n public String save(Database.SaveResult s){return s.isSuccess()+'|'+(s.getId()!=null)+'|'+errors(s.getErrors());}\n public String up(Database.UpsertResult s){return s.isSuccess()+'|'+s.isCreated()+'|'+(s.getId()!=null)+'|'+errors(s.getErrors());}\n public String del(Database.DeleteResult s){return s.isSuccess()+'|'+(s.getId()!=null)+'|'+errors(s.getErrors());}\n public String undel(Database.UndeleteResult s){return s.isSuccess()+'|'+(s.getId()!=null)+'|'+errors(s.getErrors());}\n public String merged(Database.MergeResult s){return s.isSuccess()+'|'+(s.getId()!=null)+'|'+errors(s.getErrors());}\n public String converted(Database.LeadConvertResult s){return s.isSuccess()+'|'+(s.getLeadId()!=null)+'|'+(s.getAccountId()!=null)+'|'+(s.getContactId()!=null)+'|'+(s.getOpportunityId()!=null)+'|'+errors(s.getErrors());}\n}"
@@ -2185,5 +2186,52 @@
       "NativeNull": false
     }
   ],
-  "Remaining": []
+  "Remaining": [],
+  "api68OverrideProvenance": "API 68 anonymous exception capture: the capture probe; native packet at capture-revision-038922242939171818483227610950169864242628534922311775415491496155028953450663, native-capture Five-line exception helper + 15-line RUNTIME_PRELUDE + 11 preceding T008-T018 rows; splits and removal of rejected rows retain source layout. Raw diagnostics differ only in source coordinates; API 62/67 values remain unchanged.",
+  "api68Overrides": {
+    "U001": {
+      "Expected": "COMPILE_ERROR\tline 32: Method does not exist or incorrect signature: void upsert(Object, Schema.SObjectField, Boolean) from the type Database",
+      "NativeLine": 32
+    },
+    "U002": {
+      "Expected": "COMPILE_ERROR\tline 32: Method does not exist or incorrect signature: void upsert(Object, Schema.SObjectField, Boolean) from the type Database",
+      "NativeLine": 32
+    },
+    "U003": {
+      "Expected": "COMPILE_ERROR\tline 32: Method does not exist or incorrect signature: void upsert(Object, Schema.SObjectField, System.AccessLevel) from the type Database",
+      "NativeLine": 32
+    },
+    "U004": {
+      "Expected": "COMPILE_ERROR\tline 32: Method does not exist or incorrect signature: void upsert(Object, Schema.SObjectField, Boolean, System.AccessLevel) from the type Database",
+      "NativeLine": 32
+    },
+    "U005": {
+      "Expected": "COMPILE_ERROR\tline 32: Method does not exist or incorrect signature: void upsert(List<Object>, Schema.SObjectField, Boolean) from the type Database",
+      "NativeLine": 32
+    },
+    "U006": {
+      "Expected": "COMPILE_ERROR\tline 32: Method does not exist or incorrect signature: void upsert(List<Object>, Schema.SObjectField, Boolean) from the type Database",
+      "NativeLine": 32
+    },
+    "U007": {
+      "Expected": "COMPILE_ERROR\tline 32: Method does not exist or incorrect signature: void upsert(List<Object>, Schema.SObjectField, System.AccessLevel) from the type Database",
+      "NativeLine": 32
+    },
+    "U008": {
+      "Expected": "COMPILE_ERROR\tline 32: Method does not exist or incorrect signature: void upsert(List<Object>, Schema.SObjectField, Boolean, System.AccessLevel) from the type Database",
+      "NativeLine": 32
+    },
+    "U011": {
+      "Expected": "COMPILE_ERROR\tline 34: Method does not exist or incorrect signature: void upsert(List<Object>, Schema.SObjectField, Boolean) from the type Database",
+      "NativeLine": 34
+    },
+    "U013": {
+      "Expected": "COMPILE_ERROR\tline 35: Method does not exist or incorrect signature: void upsert(Object, Schema.SObjectField) from the type Database",
+      "NativeLine": 35
+    },
+    "U014": {
+      "Expected": "COMPILE_ERROR\tline 35: Method does not exist or incorrect signature: void upsert(List<Object>, Schema.SObjectField) from the type Database",
+      "NativeLine": 35
+    }
+  }
 }

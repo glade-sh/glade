@@ -1,0 +1,641 @@
+{
+  "provenance": "Owned Developer scratch, class-only Invocable.Action Apex record-input observations. Original source67 named transport62 first, followed by source62/67/68 anonymous and named controls. Each reply is an intentional assertion observation or debug payload; no hosted configuration or schema/permission changes. CI never calls Salesforce. Salesforce Apex Actions documentation distinguishes direct lists of sObjects from user-defined request wrappers.",
+  "source": "https://developer.salesforce.com/docs/platform/api-action/guide/actions-obj-apex.html",
+  "orgIdHash": "032fbebac2a0619f11b0ec499a511cd5cee12bf8b93712305d2b089ed362f172",
+  "classes": {
+    "InputContact62": "public class InputContact62 {\n @InvocableMethod public static List<String> apply(List<Contact> records) {\n  Contact record=records[0];\n  Map<String,Object> observed=new Map<String,Object>{'size'=>records.size(),'type'=>String.valueOf(record.getSObjectType()),'label'=>record.LastName,'idPresent'=>record.Id!=null,'syntheticField'=>record.getPopulatedFieldsAsMap().containsKey('records')};\n  Contact copied=record.clone(false,true,false,false); copied.LastName='owned copied'; insert copied;\n  observed.put('persisted',copied.Id!=null); delete copied;\n  return new List<String>{JSON.serialize(observed)};\n }\n}",
+    "InputContact67": "public class InputContact67 {\n @InvocableMethod public static List<String> apply(List<Contact> records) {\n  Contact record=records[0];\n  Map<String,Object> observed=new Map<String,Object>{'size'=>records.size(),'type'=>String.valueOf(record.getSObjectType()),'label'=>record.LastName,'idPresent'=>record.Id!=null,'syntheticField'=>record.getPopulatedFieldsAsMap().containsKey('records')};\n  Contact copied=record.clone(false,true,false,false); copied.LastName='owned copied'; insert copied;\n  observed.put('persisted',copied.Id!=null); delete copied;\n  return new List<String>{JSON.serialize(observed)};\n }\n}",
+    "InputContact68": "public class InputContact68 {\n @InvocableMethod public static List<String> apply(List<Contact> records) {\n  Contact record=records[0];\n  Map<String,Object> observed=new Map<String,Object>{'size'=>records.size(),'type'=>String.valueOf(record.getSObjectType()),'label'=>record.LastName,'idPresent'=>record.Id!=null,'syntheticField'=>record.getPopulatedFieldsAsMap().containsKey('records')};\n  Contact copied=record.clone(false,true,false,false); copied.LastName='owned copied'; insert copied;\n  observed.put('persisted',copied.Id!=null); delete copied;\n  return new List<String>{JSON.serialize(observed)};\n }\n}",
+    "InputRecord62": "public class InputRecord62 {\n @InvocableMethod public static List<String> apply(List<Account> records) {\n  Account record=records[0];\n  Map<String,Object> observed=new Map<String,Object>{'size'=>records.size(),'type'=>String.valueOf(record.getSObjectType()),'label'=>record.Name,'idPresent'=>record.Id!=null,'syntheticField'=>record.getPopulatedFieldsAsMap().containsKey('records')};\n  Account copied=record.clone(false,true,false,false); copied.Name='owned copied'; insert copied;\n  observed.put('persisted',copied.Id!=null); delete copied;\n  return new List<String>{JSON.serialize(observed)};\n }\n}",
+    "InputRecord67": "public class InputRecord67 {\n @InvocableMethod public static List<String> apply(List<Account> records) {\n  Account record=records[0];\n  Map<String,Object> observed=new Map<String,Object>{'size'=>records.size(),'type'=>String.valueOf(record.getSObjectType()),'label'=>record.Name,'idPresent'=>record.Id!=null,'syntheticField'=>record.getPopulatedFieldsAsMap().containsKey('records')};\n  Account copied=record.clone(false,true,false,false); copied.Name='owned copied'; insert copied;\n  observed.put('persisted',copied.Id!=null); delete copied;\n  return new List<String>{JSON.serialize(observed)};\n }\n}",
+    "InputRecord68": "public class InputRecord68 {\n @InvocableMethod public static List<String> apply(List<Account> records) {\n  Account record=records[0];\n  Map<String,Object> observed=new Map<String,Object>{'size'=>records.size(),'type'=>String.valueOf(record.getSObjectType()),'label'=>record.Name,'idPresent'=>record.Id!=null,'syntheticField'=>record.getPopulatedFieldsAsMap().containsKey('records')};\n  Account copied=record.clone(false,true,false,false); copied.Name='owned copied'; insert copied;\n  observed.put('persisted',copied.Id!=null); delete copied;\n  return new List<String>{JSON.serialize(observed)};\n }\n}",
+    "InputText62": "public class InputText62 { @InvocableMethod public static List<String> apply(List<String> records) {return new List<String>{JSON.serialize(new Map<String,Object>{'size'=>records.size(),'label'=>records[0]})};}}",
+    "InputText67": "public class InputText67 { @InvocableMethod public static List<String> apply(List<String> records) {return new List<String>{JSON.serialize(new Map<String,Object>{'size'=>records.size(),'label'=>records[0]})};}}",
+    "InputText68": "public class InputText68 { @InvocableMethod public static List<String> apply(List<String> records) {return new List<String>{JSON.serialize(new Map<String,Object>{'size'=>records.size(),'label'=>records[0]})};}}",
+    "InputWrapper62": "public class InputWrapper62 {\n public class Request { @InvocableVariable public Account records; }\n @InvocableMethod public static List<String> apply(List<Request> requests) {return new List<String>{JSON.serialize(new Map<String,Object>{'size'=>requests.size(),'label'=>requests[0].records.Name,'type'=>String.valueOf(requests[0].records.getSObjectType())})};}\n}",
+    "InputWrapper67": "public class InputWrapper67 {\n public class Request { @InvocableVariable public Account records; }\n @InvocableMethod public static List<String> apply(List<Request> requests) {return new List<String>{JSON.serialize(new Map<String,Object>{'size'=>requests.size(),'label'=>requests[0].records.Name,'type'=>String.valueOf(requests[0].records.getSObjectType())})};}\n}",
+    "InputWrapper68": "public class InputWrapper68 {\n public class Request { @InvocableVariable public Account records; }\n @InvocableMethod public static List<String> apply(List<Request> requests) {return new List<String>{JSON.serialize(new Map<String,Object>{'size'=>requests.size(),'label'=>requests[0].records.Name,'type'=>String.valueOf(requests[0].records.getSObjectType())})};}\n}",
+    "RecordInputObserve62": "public class RecordInputObserve62 {\n public static String observe() {\n  Map<String,Object> result=new Map<String,Object>{'isTest'=>Test.isRunningTest()};\n  Account saved=new Account(Name='owned saved'); insert saved;\n  for(String id:new List<String>{'RI01','RI02','RI03','RI04','RI05'}) {\n   try {\n    String target; String parameter='records'; Object value;\n    if(id=='RI01'){target='InputRecord62';value=new Account(Name='owned transient');}\n    else if(id=='RI02'){target='InputRecord62';value=saved;}\n    else if(id=='RI03'){target='InputContact62';value=new Contact(LastName='owned contact');}\n    else if(id=='RI04'){target='InputWrapper62';value=new Account(Name='owned wrapped');}\n    else {target='InputText62';value='owned scalar';}\n    Invocable.Action action=Invocable.Action.createCustomAction('apex',target);\n    action.setInvocationParameter(parameter,value);\n    List<Invocable.Action.Result> replies=action.invoke();\n    Map<String,Object> cell=new Map<String,Object>{'resultCount'=>replies.size(),'success'=>replies[0].isSuccess()};\n    if(replies[0].isSuccess()) {cell.put('output',JSON.deserializeUntyped((String)replies[0].getOutputParameters().get('output')));}\n    else {cell.put('errors',String.valueOf(replies[0].getErrors()));}\n    result.put(id,cell);\n   } catch(Exception e){result.put(id,new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()});}\n  }\n  delete saved;\n  return JSON.serialize(result);\n }\n}",
+    "RecordInputObserve62Test": "@IsTest private class RecordInputObserve62Test { @IsTest static void observe(){System.assert(false,'RECORD_INPUT|62.0|'+RecordInputObserve62.observe());}}",
+    "RecordInputObserve67": "public class RecordInputObserve67 {\n public static String observe() {\n  Map<String,Object> result=new Map<String,Object>{'isTest'=>Test.isRunningTest()};\n  Account saved=new Account(Name='owned saved'); insert saved;\n  for(String id:new List<String>{'RI01','RI02','RI03','RI04','RI05'}) {\n   try {\n    String target; String parameter='records'; Object value;\n    if(id=='RI01'){target='InputRecord67';value=new Account(Name='owned transient');}\n    else if(id=='RI02'){target='InputRecord67';value=saved;}\n    else if(id=='RI03'){target='InputContact67';value=new Contact(LastName='owned contact');}\n    else if(id=='RI04'){target='InputWrapper67';value=new Account(Name='owned wrapped');}\n    else {target='InputText67';value='owned scalar';}\n    Invocable.Action action=Invocable.Action.createCustomAction('apex',target);\n    action.setInvocationParameter(parameter,value);\n    List<Invocable.Action.Result> replies=action.invoke();\n    Map<String,Object> cell=new Map<String,Object>{'resultCount'=>replies.size(),'success'=>replies[0].isSuccess()};\n    if(replies[0].isSuccess()) {cell.put('output',JSON.deserializeUntyped((String)replies[0].getOutputParameters().get('output')));}\n    else {cell.put('errors',String.valueOf(replies[0].getErrors()));}\n    result.put(id,cell);\n   } catch(Exception e){result.put(id,new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()});}\n  }\n  delete saved;\n  return JSON.serialize(result);\n }\n}",
+    "RecordInputObserve67Test": "@IsTest private class RecordInputObserve67Test { @IsTest static void observe(){System.assert(false,'RECORD_INPUT|67.0|'+RecordInputObserve67.observe());}}",
+    "RecordInputObserve68": "public class RecordInputObserve68 {\n public static String observe() {\n  Map<String,Object> result=new Map<String,Object>{'isTest'=>Test.isRunningTest()};\n  Account saved=new Account(Name='owned saved'); insert saved;\n  for(String id:new List<String>{'RI01','RI02','RI03','RI04','RI05'}) {\n   try {\n    String target; String parameter='records'; Object value;\n    if(id=='RI01'){target='InputRecord68';value=new Account(Name='owned transient');}\n    else if(id=='RI02'){target='InputRecord68';value=saved;}\n    else if(id=='RI03'){target='InputContact68';value=new Contact(LastName='owned contact');}\n    else if(id=='RI04'){target='InputWrapper68';value=new Account(Name='owned wrapped');}\n    else {target='InputText68';value='owned scalar';}\n    Invocable.Action action=Invocable.Action.createCustomAction('apex',target);\n    action.setInvocationParameter(parameter,value);\n    List<Invocable.Action.Result> replies=action.invoke();\n    Map<String,Object> cell=new Map<String,Object>{'resultCount'=>replies.size(),'success'=>replies[0].isSuccess()};\n    if(replies[0].isSuccess()) {cell.put('output',JSON.deserializeUntyped((String)replies[0].getOutputParameters().get('output')));}\n    else {cell.put('errors',String.valueOf(replies[0].getErrors()));}\n    result.put(id,cell);\n   } catch(Exception e){result.put(id,new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()});}\n  }\n  delete saved;\n  return JSON.serialize(result);\n }\n}",
+    "RecordInputObserve68Test": "@IsTest private class RecordInputObserve68Test { @IsTest static void observe(){System.assert(false,'RECORD_INPUT|68.0|'+RecordInputObserve68.observe());}}"
+  },
+  "classApis": {
+    "InputContact62": "62.0",
+    "InputContact67": "67.0",
+    "InputContact68": "68.0",
+    "InputRecord62": "62.0",
+    "InputRecord67": "67.0",
+    "InputRecord68": "68.0",
+    "InputText62": "62.0",
+    "InputText67": "67.0",
+    "InputText68": "68.0",
+    "InputWrapper62": "62.0",
+    "InputWrapper67": "67.0",
+    "InputWrapper68": "68.0",
+    "RecordInputObserve62": "62.0",
+    "RecordInputObserve62Test": "62.0",
+    "RecordInputObserve67": "67.0",
+    "RecordInputObserve67Test": "67.0",
+    "RecordInputObserve68": "68.0",
+    "RecordInputObserve68Test": "68.0"
+  },
+  "observations": [
+    {
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "native": {
+        "isTest": true,
+        "RI01": {
+          "output": {
+            "idPresent": false,
+            "label": "owned transient",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI02": {
+          "output": {
+            "idPresent": true,
+            "label": "owned saved",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI03": {
+          "output": {
+            "idPresent": false,
+            "label": "owned contact",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Contact"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI04": {
+          "output": {
+            "label": "owned wrapped",
+            "size": 1,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI05": {
+          "output": {
+            "label": "owned scalar",
+            "size": 1
+          },
+          "resultCount": 1,
+          "success": true
+        }
+      },
+      "sourceSha256": {
+        "InputContact67": "ca31ffb02011351602145d615ebf04942af25372149fda744bd0f114f4079e77",
+        "InputRecord67": "ccb7729a136ac6f18e6708e88a12fc81adc30bd383e122e8d01d96a808d6ba8a",
+        "InputText67": "d50c2ec9a974e7fa9d4cf14e812aa86b80e64882c32b9479f62476ca9952a7f4",
+        "InputWrapper67": "51757f81fbb5feee1984fcd6a64bc9cf36ee5f512d0e3f0ad4b8742fc98cd6b8",
+        "RecordInputObserve67": "cb75fcb57a3dbe45ddae13684963486e650510e842852083a52dcd304890cc1d",
+        "RecordInputObserve67Test": "1e17d541d3fc52703e7468391680a1f39c5aaee06f143dfb570c53ebf9dd1597"
+      }
+    },
+    {
+      "sourceApi": "67.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "native": {
+        "isTest": false,
+        "RI01": {
+          "output": {
+            "idPresent": false,
+            "label": "owned transient",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI02": {
+          "output": {
+            "idPresent": true,
+            "label": "owned saved",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI03": {
+          "output": {
+            "idPresent": false,
+            "label": "owned contact",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Contact"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI04": {
+          "output": {
+            "label": "owned wrapped",
+            "size": 1,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI05": {
+          "output": {
+            "label": "owned scalar",
+            "size": 1
+          },
+          "resultCount": 1,
+          "success": true
+        }
+      },
+      "sourceSha256": {
+        "InputContact67": "ca31ffb02011351602145d615ebf04942af25372149fda744bd0f114f4079e77",
+        "InputRecord67": "ccb7729a136ac6f18e6708e88a12fc81adc30bd383e122e8d01d96a808d6ba8a",
+        "InputText67": "d50c2ec9a974e7fa9d4cf14e812aa86b80e64882c32b9479f62476ca9952a7f4",
+        "InputWrapper67": "51757f81fbb5feee1984fcd6a64bc9cf36ee5f512d0e3f0ad4b8742fc98cd6b8",
+        "RecordInputObserve67": "cb75fcb57a3dbe45ddae13684963486e650510e842852083a52dcd304890cc1d",
+        "RecordInputObserve67Test": "1e17d541d3fc52703e7468391680a1f39c5aaee06f143dfb570c53ebf9dd1597"
+      }
+    },
+    {
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "istest",
+      "native": {
+        "isTest": true,
+        "RI01": {
+          "output": {
+            "idPresent": false,
+            "label": "owned transient",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI02": {
+          "output": {
+            "idPresent": true,
+            "label": "owned saved",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI03": {
+          "output": {
+            "idPresent": false,
+            "label": "owned contact",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Contact"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI04": {
+          "output": {
+            "label": "owned wrapped",
+            "size": 1,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI05": {
+          "output": {
+            "label": "owned scalar",
+            "size": 1
+          },
+          "resultCount": 1,
+          "success": true
+        }
+      },
+      "sourceSha256": {
+        "InputContact62": "ef60250563ec3f1db848e714a2bf74501b7ccca3e555cb19f0e9b4fa88364776",
+        "InputRecord62": "770af157d5aa56e999e3afed624ce94e3c2e59b4e6110d45ff67dfcd0bb4981a",
+        "InputText62": "49b1236fe1126ce0adb245c7be3a24a524749d966972ac87c14fb9f920aec274",
+        "InputWrapper62": "93e6fa559795ca6aae87af6ac6b628456776558c5dc1326b7ec7c3f269b5d055",
+        "RecordInputObserve62": "1960f909e0ff7518a90b489ded47fe769d0c9b40565106c7d949dc3c03a954b2",
+        "RecordInputObserve62Test": "7dd8ba701be27c077cfb71a1460d78720c5cc2054bc3b51c688e7450119720e5"
+      }
+    },
+    {
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "native": {
+        "isTest": false,
+        "RI01": {
+          "output": {
+            "idPresent": false,
+            "label": "owned transient",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI02": {
+          "output": {
+            "idPresent": true,
+            "label": "owned saved",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI03": {
+          "output": {
+            "idPresent": false,
+            "label": "owned contact",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Contact"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI04": {
+          "output": {
+            "label": "owned wrapped",
+            "size": 1,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI05": {
+          "output": {
+            "label": "owned scalar",
+            "size": 1
+          },
+          "resultCount": 1,
+          "success": true
+        }
+      },
+      "sourceSha256": {
+        "InputContact62": "ef60250563ec3f1db848e714a2bf74501b7ccca3e555cb19f0e9b4fa88364776",
+        "InputRecord62": "770af157d5aa56e999e3afed624ce94e3c2e59b4e6110d45ff67dfcd0bb4981a",
+        "InputText62": "49b1236fe1126ce0adb245c7be3a24a524749d966972ac87c14fb9f920aec274",
+        "InputWrapper62": "93e6fa559795ca6aae87af6ac6b628456776558c5dc1326b7ec7c3f269b5d055",
+        "RecordInputObserve62": "1960f909e0ff7518a90b489ded47fe769d0c9b40565106c7d949dc3c03a954b2",
+        "RecordInputObserve62Test": "7dd8ba701be27c077cfb71a1460d78720c5cc2054bc3b51c688e7450119720e5"
+      }
+    },
+    {
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "istest",
+      "native": {
+        "isTest": true,
+        "RI01": {
+          "output": {
+            "idPresent": false,
+            "label": "owned transient",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI02": {
+          "output": {
+            "idPresent": true,
+            "label": "owned saved",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI03": {
+          "output": {
+            "idPresent": false,
+            "label": "owned contact",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Contact"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI04": {
+          "output": {
+            "label": "owned wrapped",
+            "size": 1,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI05": {
+          "output": {
+            "label": "owned scalar",
+            "size": 1
+          },
+          "resultCount": 1,
+          "success": true
+        }
+      },
+      "sourceSha256": {
+        "InputContact67": "ca31ffb02011351602145d615ebf04942af25372149fda744bd0f114f4079e77",
+        "InputRecord67": "ccb7729a136ac6f18e6708e88a12fc81adc30bd383e122e8d01d96a808d6ba8a",
+        "InputText67": "d50c2ec9a974e7fa9d4cf14e812aa86b80e64882c32b9479f62476ca9952a7f4",
+        "InputWrapper67": "51757f81fbb5feee1984fcd6a64bc9cf36ee5f512d0e3f0ad4b8742fc98cd6b8",
+        "RecordInputObserve67": "cb75fcb57a3dbe45ddae13684963486e650510e842852083a52dcd304890cc1d",
+        "RecordInputObserve67Test": "1e17d541d3fc52703e7468391680a1f39c5aaee06f143dfb570c53ebf9dd1597"
+      }
+    },
+    {
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "anonymous",
+      "native": {
+        "isTest": false,
+        "RI01": {
+          "output": {
+            "idPresent": false,
+            "label": "owned transient",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI02": {
+          "output": {
+            "idPresent": true,
+            "label": "owned saved",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI03": {
+          "output": {
+            "idPresent": false,
+            "label": "owned contact",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Contact"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI04": {
+          "output": {
+            "label": "owned wrapped",
+            "size": 1,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI05": {
+          "output": {
+            "label": "owned scalar",
+            "size": 1
+          },
+          "resultCount": 1,
+          "success": true
+        }
+      },
+      "sourceSha256": {
+        "InputContact67": "ca31ffb02011351602145d615ebf04942af25372149fda744bd0f114f4079e77",
+        "InputRecord67": "ccb7729a136ac6f18e6708e88a12fc81adc30bd383e122e8d01d96a808d6ba8a",
+        "InputText67": "d50c2ec9a974e7fa9d4cf14e812aa86b80e64882c32b9479f62476ca9952a7f4",
+        "InputWrapper67": "51757f81fbb5feee1984fcd6a64bc9cf36ee5f512d0e3f0ad4b8742fc98cd6b8",
+        "RecordInputObserve67": "cb75fcb57a3dbe45ddae13684963486e650510e842852083a52dcd304890cc1d",
+        "RecordInputObserve67Test": "1e17d541d3fc52703e7468391680a1f39c5aaee06f143dfb570c53ebf9dd1597"
+      }
+    },
+    {
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "istest",
+      "native": {
+        "isTest": true,
+        "RI01": {
+          "output": {
+            "idPresent": false,
+            "label": "owned transient",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI02": {
+          "output": {
+            "idPresent": true,
+            "label": "owned saved",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI03": {
+          "output": {
+            "idPresent": false,
+            "label": "owned contact",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Contact"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI04": {
+          "output": {
+            "label": "owned wrapped",
+            "size": 1,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI05": {
+          "output": {
+            "label": "owned scalar",
+            "size": 1
+          },
+          "resultCount": 1,
+          "success": true
+        }
+      },
+      "sourceSha256": {
+        "InputContact68": "ecfb50da8b6a0bcefc323c6e9418acce3af05963216d5d7b722930834a695401",
+        "InputRecord68": "24bb0d9af1ea77628e536f07b6e262b22632541026b6eaed7b9fa069f460d303",
+        "InputText68": "d9c102ea2efffa36a84f7a6d87ba134ec91dd038f9b007f886dc8beef9e8e706",
+        "InputWrapper68": "69b6417c579a44ccef42dc1c9d856bf4fddbf94d56ae2e27a60e09434adabdc4",
+        "RecordInputObserve68": "49c9f15caa949374befcda56fa6bae17847d137d9c36e08ec750748752d2df0a",
+        "RecordInputObserve68Test": "3d992b9da4a9e61397f9d25bedc4bc89c907fc9df333bd05ff84f6f46a6be47c"
+      }
+    },
+    {
+      "sourceApi": "68.0",
+      "callerApi": "68.0",
+      "transportApi": "68.0",
+      "route": "anonymous",
+      "native": {
+        "isTest": false,
+        "RI01": {
+          "output": {
+            "idPresent": false,
+            "label": "owned transient",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI02": {
+          "output": {
+            "idPresent": true,
+            "label": "owned saved",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI03": {
+          "output": {
+            "idPresent": false,
+            "label": "owned contact",
+            "persisted": true,
+            "size": 1,
+            "syntheticField": false,
+            "type": "Contact"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI04": {
+          "output": {
+            "label": "owned wrapped",
+            "size": 1,
+            "type": "Account"
+          },
+          "resultCount": 1,
+          "success": true
+        },
+        "RI05": {
+          "output": {
+            "label": "owned scalar",
+            "size": 1
+          },
+          "resultCount": 1,
+          "success": true
+        }
+      },
+      "sourceSha256": {
+        "InputContact68": "ecfb50da8b6a0bcefc323c6e9418acce3af05963216d5d7b722930834a695401",
+        "InputRecord68": "24bb0d9af1ea77628e536f07b6e262b22632541026b6eaed7b9fa069f460d303",
+        "InputText68": "d9c102ea2efffa36a84f7a6d87ba134ec91dd038f9b007f886dc8beef9e8e706",
+        "InputWrapper68": "69b6417c579a44ccef42dc1c9d856bf4fddbf94d56ae2e27a60e09434adabdc4",
+        "RecordInputObserve68": "49c9f15caa949374befcda56fa6bae17847d137d9c36e08ec750748752d2df0a",
+        "RecordInputObserve68Test": "3d992b9da4a9e61397f9d25bedc4bc89c907fc9df333bd05ff84f6f46a6be47c"
+      }
+    }
+  ],
+  "carried": [
+    {
+      "id": "generic_sobject_input",
+      "reason": "Generic SObject signatures were not captured; the fix applies only to a declared concrete schema object.",
+      "nativeControl": {
+        "output": {
+          "idPresent": false,
+          "label": "owned transient",
+          "persisted": true,
+          "size": 1,
+          "syntheticField": false,
+          "type": "Account"
+        },
+        "resultCount": 1,
+        "success": true
+      }
+    },
+    {
+      "id": "other_record_input_values",
+      "reason": "Null, mismatched-record and collection-valued inputs were not captured; existing handling is retained.",
+      "nativeControl": {
+        "output": {
+          "idPresent": false,
+          "label": "owned transient",
+          "persisted": true,
+          "size": 1,
+          "syntheticField": false,
+          "type": "Account"
+        },
+        "resultCount": 1,
+        "success": true
+      }
+    }
+  ]
+}

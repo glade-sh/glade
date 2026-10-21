@@ -1,0 +1,6 @@
+id	outcome	value
+split	compile-rejected	Invalid type: MeadowWords__mdt
+upperA	compile-rejected	Invalid type: Schema.MeadowNorth__mdt
+upperB	compile-rejected	Invalid type: Schema.MeadowSouth__mdt
+lower	compile-rejected	Invalid type: Schema.MeadowClient__mdt
+event	compile-rejected	Invalid type: MeadowPulse__e

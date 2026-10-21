@@ -31,11 +31,13 @@ func NewExecutionException(message string) error {
 	return newExceptionError("ExecutionException", message)
 }
 
-func (vm *VM) ConstructController(className string) (Value, error) {
+func (vm *VM) ConstructController(className string) (_ Value, err error) {
+	defer recoverJSONConversionError(&err)
 	return vm.constructValue(className, nil, nil, nil)
 }
 
-func (vm *VM) ConstructControllerWithArgs(className string, args []Value) (Value, error) {
+func (vm *VM) ConstructControllerWithArgs(className string, args []Value) (_ Value, err error) {
+	defer recoverJSONConversionError(&err)
 	for _, value := range args {
 		vm.registerSObjectAliasRecord(value)
 	}
@@ -44,7 +46,8 @@ func (vm *VM) ConstructControllerWithArgs(className string, args []Value) (Value
 
 // ReadInstanceProperty resolves a controller property against a live instance,
 // invoking Apex getters when field metadata defines them.
-func (vm *VM) ReadInstanceProperty(receiver Value, name string) (Value, bool, error) {
+func (vm *VM) ReadInstanceProperty(receiver Value, name string) (_ Value, _ bool, err error) {
+	defer recoverJSONConversionError(&err)
 	if vm == nil || receiver.Kind != ValueObject || strings.TrimSpace(name) == "" {
 		return Null, false, nil
 	}
@@ -144,7 +147,8 @@ func (vm *VM) InstancePropertyType(receiver Value, name string) (string, bool, e
 
 // AssignInstanceProperty applies a value through the VM's ordinary typed
 // property assignment and setter path, returning the possibly updated receiver.
-func (vm *VM) AssignInstanceProperty(receiver Value, name string, value Value) (Value, error) {
+func (vm *VM) AssignInstanceProperty(receiver Value, name string, value Value) (_ Value, err error) {
+	defer recoverJSONConversionError(&err)
 	if vm == nil {
 		return receiver, fmt.Errorf("cannot assign Visualforce property without a VM")
 	}

@@ -1,0 +1,3185 @@
+{
+  "APIVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "Cluster": "request_names",
+  "CellCount": 48,
+  "ObservedCount": 48,
+  "AssertedCount": 30,
+  "CarriedCount": 18,
+  "Cells": [
+    {
+      "ID": "NL01",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(Request.getCurrent().getRequestId() != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL01|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "543bb2458b634a32306caf604350acada1399de06ad786ccfbf234044fdd89b7",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL01",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcNL01A62Test": "@IsTest private class PcNL01A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(Request.getCurrent().getRequestId() != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL01|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL01A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcNL01A62Test": "e5adf2cf57a6dbcc6136befd5ac2ee589670b0ba0a65b1d08c8ca25273713b2a"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL02",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(System.Request.getCurrent().getQuiddity() != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL02|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "adeb5c3c40bb1fbe9e714557164707d8e18a0e24c33490669b1fc1e965645f75",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL02",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcNL02A62Test": "@IsTest private class PcNL02A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(System.Request.getCurrent().getQuiddity() != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL02|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL02A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcNL02A62Test": "2f5c367472d5628ccfd07867f9f57e0901e016edb11bf31ea82e6af6a2e85f2a"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL03",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(PcRequestSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL03|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestSelf": "public class PcRequestSelf { public class Request { } public static Object run() { return Request.getCurrent(); } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "5978bd8e78393a85e6656d4b00c6e61a523b1b8a7068e6b441bf83d63151be24",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestSelf": "a368aaf7e35d7a6941fa78f760461ffb393dccb8d285059a6b0a03dd37e70374"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcRequestSelf",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.Request"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.Request",
+      "RejectUnit": "PcRequestSelf"
+    },
+    {
+      "ID": "NL03",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestSelf": "public class PcRequestSelf { public class Request { } public static Object run() { return Request.getCurrent(); } }",
+          "PcNL03A62Test": "@IsTest private class PcNL03A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(PcRequestSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL03|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL03A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestSelf": "a368aaf7e35d7a6941fa78f760461ffb393dccb8d285059a6b0a03dd37e70374",
+        "class:PcNL03A62Test": "5c45452cceebc9b72d7d870fe246cdf9c6e993fc88547b817d1688591c9337fc"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcNL03A62Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Dependent class is invalid and needs recompilation:\n Class PcRequestSelf : Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.Request"
+          },
+          {
+            "name": "PcRequestSelf",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.Request"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.Request",
+      "RejectUnit": "PcRequestSelf"
+    },
+    {
+      "ID": "NL04",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { PcRequestHolder.Request h = new PcRequestHolder.Request(); r = String.valueOf(h != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL04|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "817e7238df00023e1e1bc15f398b1873532fa9439c35bb542115088025451348",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL04",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcNL04A62Test": "@IsTest private class PcNL04A62Test { @IsTest static void observe(){String r; try { PcRequestHolder.Request h = new PcRequestHolder.Request(); r = String.valueOf(h != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL04|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL04A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcNL04A62Test": "ffabe6c4d6db6c28a8f54550173ebad9351adec0033ee0de24fc91782e027709"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL05",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { Request x = new Request(); r = String.valueOf(x != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL05|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "d63e5ac7ce6cc2752192e055ce6c31ecc6e114b113b4783f6452abe76ed72380",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "message": "Abstract classes cannot be constructed: System.Request",
+        "line": 1,
+        "column": 29,
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Abstract classes cannot be constructed: System.Request",
+      "RejectUnit": "anonymous",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL05",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcNL05A62Test": "@IsTest private class PcNL05A62Test { @IsTest static void observe(){String r; try { Request x = new Request(); r = String.valueOf(x != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL05|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL05A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcNL05A62Test": "3b3a16778693562e225a9d709fb7c3bc21947f65c473807340c6fa96521ae057"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcNL05A62Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Abstract classes cannot be constructed: System.Request"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Abstract classes cannot be constructed: System.Request",
+      "RejectUnit": "PcNL05A62Test",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL06",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(Limits.getQueries()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL06|'+pcWire);",
+        "Classes": {
+          "PcLimitsHolder": "public class PcLimitsHolder { public class Limits { } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "dd9684642c1188a51fc675c68372d08fa0768698aaf07b8230eb4f264dc8603d",
+        "class:PcLimitsHolder": "4b735589022fd472465a80a80f8c29d9e3843c6914050cd5e084d68cae398bb9"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "0",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "0",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL06",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcLimitsHolder": "public class PcLimitsHolder { public class Limits { } }",
+          "PcNL06A62Test": "@IsTest private class PcNL06A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(Limits.getQueries()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL06|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL06A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcLimitsHolder": "4b735589022fd472465a80a80f8c29d9e3843c6914050cd5e084d68cae398bb9",
+        "class:PcNL06A62Test": "a4225254ceb890d1833fbf4d7f4da1183560c1868d23fd2273e60eafbe41f3b5"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "0",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "0",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL07",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(PcRequestQualified.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL07|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestQualified": "public class PcRequestQualified { public class Request { } public static Object run() { return System.Request.getCurrent().getQuiddity() != null; } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "45b87bad5b239e9d177b1f811975c2e7e4a6bf11d3072c38b1e7c523ccc581df",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestQualified": "0e2c73687f3393f8572b758f1e4275fd9dee9a7d27ac8ff8469dfd163f849da4"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL07",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestQualified": "public class PcRequestQualified { public class Request { } public static Object run() { return System.Request.getCurrent().getQuiddity() != null; } }",
+          "PcNL07A62Test": "@IsTest private class PcNL07A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(PcRequestQualified.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL07|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL07A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestQualified": "0e2c73687f3393f8572b758f1e4275fd9dee9a7d27ac8ff8469dfd163f849da4",
+        "class:PcNL07A62Test": "d4bbc670137eb35d9572c09280d6e92bc19dac31298d8d8c8e04b4c172c9123c"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL08",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(PcRequestSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL08|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestSelf": "public class PcRequestSelf { public class request { } public static Object run() { return Request.getCurrent(); } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "9d3a81462888927d4521515652445bfa4adb68f29a3ca9d8a52c4c219803dd68",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestSelf": "87de043c2047d309622565509e66a6f3dd648268359440235d318ecebd27b5d3"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcRequestSelf",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.request"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.request",
+      "RejectUnit": "PcRequestSelf"
+    },
+    {
+      "ID": "NL08",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestSelf": "public class PcRequestSelf { public class request { } public static Object run() { return Request.getCurrent(); } }",
+          "PcNL08A62Test": "@IsTest private class PcNL08A62Test { @IsTest static void observe(){String r; try { r = String.valueOf(PcRequestSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL08|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL08A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestSelf": "87de043c2047d309622565509e66a6f3dd648268359440235d318ecebd27b5d3",
+        "class:PcNL08A62Test": "f84da77f148d42e5f79824cbd226c09f0dd400c19382d58aef52cd2a4b5101e6"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcNL08A62Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Dependent class is invalid and needs recompilation:\n Class PcRequestSelf : Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.request"
+          },
+          {
+            "name": "PcRequestSelf",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.request"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.request",
+      "RejectUnit": "PcRequestSelf"
+    },
+    {
+      "ID": "NL01",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(Request.getCurrent().getRequestId() != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL01|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "543bb2458b634a32306caf604350acada1399de06ad786ccfbf234044fdd89b7",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL01",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcNL01A67Test": "@IsTest private class PcNL01A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(Request.getCurrent().getRequestId() != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL01|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL01A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcNL01A67Test": "89d97beb208baad84040ce3c3f3ff8020893768d7a0854ee791a7329dea3c70a"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL02",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(System.Request.getCurrent().getQuiddity() != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL02|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "adeb5c3c40bb1fbe9e714557164707d8e18a0e24c33490669b1fc1e965645f75",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL02",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcNL02A67Test": "@IsTest private class PcNL02A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(System.Request.getCurrent().getQuiddity() != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL02|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL02A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcNL02A67Test": "f7780e816f1f12a60ef5c3257002a8141796acfbd8f13d83c491d1152a7e89cc"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL03",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(PcRequestSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL03|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestSelf": "public class PcRequestSelf { public class Request { } public static Object run() { return Request.getCurrent(); } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "5978bd8e78393a85e6656d4b00c6e61a523b1b8a7068e6b441bf83d63151be24",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestSelf": "a368aaf7e35d7a6941fa78f760461ffb393dccb8d285059a6b0a03dd37e70374"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcRequestSelf",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.Request"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.Request",
+      "RejectUnit": "PcRequestSelf"
+    },
+    {
+      "ID": "NL03",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestSelf": "public class PcRequestSelf { public class Request { } public static Object run() { return Request.getCurrent(); } }",
+          "PcNL03A67Test": "@IsTest private class PcNL03A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(PcRequestSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL03|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL03A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestSelf": "a368aaf7e35d7a6941fa78f760461ffb393dccb8d285059a6b0a03dd37e70374",
+        "class:PcNL03A67Test": "f807904fc921b2c914e878334de94aa44ac9923385ba601ae200ca83bcd56ae9"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcNL03A67Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Dependent class is invalid and needs recompilation:\n Class PcRequestSelf : Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.Request"
+          },
+          {
+            "name": "PcRequestSelf",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.Request"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.Request",
+      "RejectUnit": "PcRequestSelf"
+    },
+    {
+      "ID": "NL04",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { PcRequestHolder.Request h = new PcRequestHolder.Request(); r = String.valueOf(h != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL04|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "817e7238df00023e1e1bc15f398b1873532fa9439c35bb542115088025451348",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL04",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcNL04A67Test": "@IsTest private class PcNL04A67Test { @IsTest static void observe(){String r; try { PcRequestHolder.Request h = new PcRequestHolder.Request(); r = String.valueOf(h != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL04|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL04A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcNL04A67Test": "d49049b25d316e530eb00fada21075fb72aba1881abb385997fa01e1d7306f00"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL05",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { Request x = new Request(); r = String.valueOf(x != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL05|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "d63e5ac7ce6cc2752192e055ce6c31ecc6e114b113b4783f6452abe76ed72380",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "message": "Abstract classes cannot be constructed: System.Request",
+        "line": 1,
+        "column": 29,
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Abstract classes cannot be constructed: System.Request",
+      "RejectUnit": "anonymous",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL05",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcNL05A67Test": "@IsTest private class PcNL05A67Test { @IsTest static void observe(){String r; try { Request x = new Request(); r = String.valueOf(x != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL05|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL05A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcNL05A67Test": "b0ec3454c89a3ccc67d94597d3683463b550d5eec1e50b7bc6c0f052fc50c482"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcNL05A67Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Abstract classes cannot be constructed: System.Request"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Abstract classes cannot be constructed: System.Request",
+      "RejectUnit": "PcNL05A67Test",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL06",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(Limits.getQueries()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL06|'+pcWire);",
+        "Classes": {
+          "PcLimitsHolder": "public class PcLimitsHolder { public class Limits { } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "dd9684642c1188a51fc675c68372d08fa0768698aaf07b8230eb4f264dc8603d",
+        "class:PcLimitsHolder": "4b735589022fd472465a80a80f8c29d9e3843c6914050cd5e084d68cae398bb9"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "0",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "0",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL06",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcLimitsHolder": "public class PcLimitsHolder { public class Limits { } }",
+          "PcNL06A67Test": "@IsTest private class PcNL06A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(Limits.getQueries()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL06|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL06A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcLimitsHolder": "4b735589022fd472465a80a80f8c29d9e3843c6914050cd5e084d68cae398bb9",
+        "class:PcNL06A67Test": "3d29e22942c94703bded548503eee601d808cfc434869e11b545e1abccf90cf5"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "0",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "0",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL07",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(PcRequestQualified.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL07|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestQualified": "public class PcRequestQualified { public class Request { } public static Object run() { return System.Request.getCurrent().getQuiddity() != null; } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "45b87bad5b239e9d177b1f811975c2e7e4a6bf11d3072c38b1e7c523ccc581df",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestQualified": "0e2c73687f3393f8572b758f1e4275fd9dee9a7d27ac8ff8469dfd163f849da4"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL07",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestQualified": "public class PcRequestQualified { public class Request { } public static Object run() { return System.Request.getCurrent().getQuiddity() != null; } }",
+          "PcNL07A67Test": "@IsTest private class PcNL07A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(PcRequestQualified.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL07|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL07A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestQualified": "0e2c73687f3393f8572b758f1e4275fd9dee9a7d27ac8ff8469dfd163f849da4",
+        "class:PcNL07A67Test": "49134481a93eb700d4b20169f1ac34fcf23ecca9279d2982ec99b32c67c9c963"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL08",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(PcRequestSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL08|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestSelf": "public class PcRequestSelf { public class request { } public static Object run() { return Request.getCurrent(); } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "9d3a81462888927d4521515652445bfa4adb68f29a3ca9d8a52c4c219803dd68",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestSelf": "87de043c2047d309622565509e66a6f3dd648268359440235d318ecebd27b5d3"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcRequestSelf",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.request"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.request",
+      "RejectUnit": "PcRequestSelf"
+    },
+    {
+      "ID": "NL08",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestSelf": "public class PcRequestSelf { public class request { } public static Object run() { return Request.getCurrent(); } }",
+          "PcNL08A67Test": "@IsTest private class PcNL08A67Test { @IsTest static void observe(){String r; try { r = String.valueOf(PcRequestSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL08|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL08A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestSelf": "87de043c2047d309622565509e66a6f3dd648268359440235d318ecebd27b5d3",
+        "class:PcNL08A67Test": "f3235e5bca5bd2771749536fe3f519dd88497208c6e1002a503343514261b4e5"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcNL08A67Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Dependent class is invalid and needs recompilation:\n Class PcRequestSelf : Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.request"
+          },
+          {
+            "name": "PcRequestSelf",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.request"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.request",
+      "RejectUnit": "PcRequestSelf"
+    },
+    {
+      "ID": "NL01",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(Request.getCurrent().getRequestId() != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL01|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "543bb2458b634a32306caf604350acada1399de06ad786ccfbf234044fdd89b7",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL01",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcNL01A68Test": "@IsTest private class PcNL01A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(Request.getCurrent().getRequestId() != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL01|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL01A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcNL01A68Test": "919af8253b18b57776783a881174cbaaedd57765a98f9d645b2543d68b20610e"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL02",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(System.Request.getCurrent().getQuiddity() != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL02|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "adeb5c3c40bb1fbe9e714557164707d8e18a0e24c33490669b1fc1e965645f75",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL02",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcNL02A68Test": "@IsTest private class PcNL02A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(System.Request.getCurrent().getQuiddity() != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL02|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL02A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcNL02A68Test": "852f7775ddbaaa253870f03171435ef969dd6f695e8987398e0dfb18456f34f8"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL03",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(PcRequestSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL03|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestSelf": "public class PcRequestSelf { public class Request { } public static Object run() { return Request.getCurrent(); } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "5978bd8e78393a85e6656d4b00c6e61a523b1b8a7068e6b441bf83d63151be24",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestSelf": "a368aaf7e35d7a6941fa78f760461ffb393dccb8d285059a6b0a03dd37e70374"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcRequestSelf",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.Request"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.Request",
+      "RejectUnit": "PcRequestSelf"
+    },
+    {
+      "ID": "NL03",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestSelf": "public class PcRequestSelf { public class Request { } public static Object run() { return Request.getCurrent(); } }",
+          "PcNL03A68Test": "@IsTest private class PcNL03A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(PcRequestSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL03|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL03A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestSelf": "a368aaf7e35d7a6941fa78f760461ffb393dccb8d285059a6b0a03dd37e70374",
+        "class:PcNL03A68Test": "efcea89056c409e432efe7cf70efc9a8a60f8a7479ce4aefd7176eb4971349a8"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcNL03A68Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Dependent class is invalid and needs recompilation:\n Class PcRequestSelf : Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.Request"
+          },
+          {
+            "name": "PcRequestSelf",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.Request"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.Request",
+      "RejectUnit": "PcRequestSelf"
+    },
+    {
+      "ID": "NL04",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { PcRequestHolder.Request h = new PcRequestHolder.Request(); r = String.valueOf(h != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL04|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "817e7238df00023e1e1bc15f398b1873532fa9439c35bb542115088025451348",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL04",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcNL04A68Test": "@IsTest private class PcNL04A68Test { @IsTest static void observe(){String r; try { PcRequestHolder.Request h = new PcRequestHolder.Request(); r = String.valueOf(h != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL04|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL04A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcNL04A68Test": "d6f53c0338a7f62d42b301bd2cb02c50834a8e13a90017e06e9e37646ec03488"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL05",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { Request x = new Request(); r = String.valueOf(x != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL05|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "d63e5ac7ce6cc2752192e055ce6c31ecc6e114b113b4783f6452abe76ed72380",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "message": "Abstract classes cannot be constructed: System.Request",
+        "line": 1,
+        "column": 29,
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Abstract classes cannot be constructed: System.Request",
+      "RejectUnit": "anonymous",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL05",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcNL05A68Test": "@IsTest private class PcNL05A68Test { @IsTest static void observe(){String r; try { Request x = new Request(); r = String.valueOf(x != null); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL05|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL05A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcNL05A68Test": "a3028f388655daaab72ea93842440c5f371fa09f1427f6b6b67779636f4555fa"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcNL05A68Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Abstract classes cannot be constructed: System.Request"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Abstract classes cannot be constructed: System.Request",
+      "RejectUnit": "PcNL05A68Test",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL06",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(Limits.getQueries()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL06|'+pcWire);",
+        "Classes": {
+          "PcLimitsHolder": "public class PcLimitsHolder { public class Limits { } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "dd9684642c1188a51fc675c68372d08fa0768698aaf07b8230eb4f264dc8603d",
+        "class:PcLimitsHolder": "4b735589022fd472465a80a80f8c29d9e3843c6914050cd5e084d68cae398bb9"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "0",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "0",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL06",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcLimitsHolder": "public class PcLimitsHolder { public class Limits { } }",
+          "PcNL06A68Test": "@IsTest private class PcNL06A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(Limits.getQueries()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL06|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL06A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcLimitsHolder": "4b735589022fd472465a80a80f8c29d9e3843c6914050cd5e084d68cae398bb9",
+        "class:PcNL06A68Test": "9efe951a73841af7ba0db0349c885a5f35605c8e1cdb6a99fa310090f4527a3f"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "0",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "0",
+      "CarryReason": "Unqualified platform receiver and constructor binding remains unverified after the scoped alias resolver change."
+    },
+    {
+      "ID": "NL07",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(PcRequestQualified.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL07|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestQualified": "public class PcRequestQualified { public class Request { } public static Object run() { return System.Request.getCurrent().getQuiddity() != null; } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "45b87bad5b239e9d177b1f811975c2e7e4a6bf11d3072c38b1e7c523ccc581df",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestQualified": "0e2c73687f3393f8572b758f1e4275fd9dee9a7d27ac8ff8469dfd163f849da4"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL07",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestQualified": "public class PcRequestQualified { public class Request { } public static Object run() { return System.Request.getCurrent().getQuiddity() != null; } }",
+          "PcNL07A68Test": "@IsTest private class PcNL07A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(PcRequestQualified.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL07|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL07A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestQualified": "0e2c73687f3393f8572b758f1e4275fd9dee9a7d27ac8ff8469dfd163f849da4",
+        "class:PcNL07A68Test": "dfbaa1ef65756c07cf3838f1606c791a2bdcec7f946a182c8bc666de8cd4b94c"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "true",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "true"
+    },
+    {
+      "ID": "NL08",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r = String.valueOf(PcRequestSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|NL08|'+pcWire);",
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestSelf": "public class PcRequestSelf { public class request { } public static Object run() { return Request.getCurrent(); } }"
+        }
+      },
+      "SourceSHA256": {
+        "anonymous": "9d3a81462888927d4521515652445bfa4adb68f29a3ca9d8a52c4c219803dd68",
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestSelf": "87de043c2047d309622565509e66a6f3dd648268359440235d318ecebd27b5d3"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcRequestSelf",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.request"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.request",
+      "RejectUnit": "PcRequestSelf"
+    },
+    {
+      "ID": "NL08",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcRequestHolder": "public class PcRequestHolder { public class Request { public String path; } }",
+          "PcRequestSelf": "public class PcRequestSelf { public class request { } public static Object run() { return Request.getCurrent(); } }",
+          "PcNL08A68Test": "@IsTest private class PcNL08A68Test { @IsTest static void observe(){String r; try { r = String.valueOf(PcRequestSelf.run()); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+18>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|NL08|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcNL08A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcRequestHolder": "013a216a7eb799a883cb9ba424a03bea6fb9a616ab42832369cfa12882586754",
+        "class:PcRequestSelf": "87de043c2047d309622565509e66a6f3dd648268359440235d318ecebd27b5d3",
+        "class:PcNL08A68Test": "29a098e15a8c498f0084be3d84cd1a32c107a4fe247c98d9f8154b6e601275a0"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "compile-error",
+        "components": [
+          {
+            "name": "PcNL08A68Test",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Dependent class is invalid and needs recompilation:\n Class PcRequestSelf : Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.request"
+          },
+          {
+            "name": "PcRequestSelf",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.request"
+          }
+        ],
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "reject",
+      "Primary": "Method does not exist or incorrect signature: void getCurrent() from the type PcRequestSelf.request",
+      "RejectUnit": "PcRequestSelf"
+    }
+  ]
+}

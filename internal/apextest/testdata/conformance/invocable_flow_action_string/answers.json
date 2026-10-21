@@ -1,0 +1,109 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "rows": [
+    {
+      "id": "echo",
+      "code": "Invocable.Action action=Invocable.Action.createCustomAction('flow','ProbeTextEcho');action.setInvocationParameter('inputText','native text');List<Invocable.Action.Result> results=action.invoke();Invocable.Action.Result result=results[0];Map<String,Object> output=result.getOutputParameters();List<Invocable.Action.Error> errors=result.getErrors();Map<String,Object> payload=new Map<String,Object>{'count'=>results.size(),'success'=>result.isSuccess(),'outputMapNull'=>output==null,'errorCount'=>errors==null?-1:errors.size()};if(output!=null){payload.put('outputText',output.get('outputText'));}System.assert(false,'FLOW_CELL|echo|'+JSON.serialize(payload));",
+      "expected": {
+        "62.0/anonymous": {
+          "count": 1,
+          "success": true,
+          "outputText": "native text",
+          "errorCount": 0,
+          "outputMapNull": false
+        },
+        "62.0/istest": {
+          "count": 1,
+          "success": true,
+          "outputText": "native text",
+          "errorCount": 0,
+          "outputMapNull": false
+        },
+        "67.0/anonymous": {
+          "count": 1,
+          "success": true,
+          "outputText": "native text",
+          "errorCount": 0,
+          "outputMapNull": false
+        },
+        "67.0/istest": {
+          "count": 1,
+          "success": true,
+          "outputText": "native text",
+          "errorCount": 0,
+          "outputMapNull": false
+        },
+        "68.0/anonymous": {
+          "count": 1,
+          "success": true,
+          "outputText": "native text",
+          "errorCount": 0,
+          "outputMapNull": false
+        },
+        "68.0/istest": {
+          "count": 1,
+          "success": true,
+          "outputText": "native text",
+          "errorCount": 0,
+          "outputMapNull": false
+        }
+      }
+    },
+    {
+      "id": "omitted",
+      "code": "Invocable.Action action=Invocable.Action.createCustomAction('flow','ProbeTextEcho');List<Invocable.Action.Result> results=action.invoke();Invocable.Action.Result result=results[0];Map<String,Object> output=result.getOutputParameters();List<Invocable.Action.Error> errors=result.getErrors();Map<String,Object> payload=new Map<String,Object>{'count'=>results.size(),'success'=>result.isSuccess(),'outputMapNull'=>output==null,'errorCount'=>errors==null?-1:errors.size()};if(output!=null){payload.put('outputText',output.get('outputText'));}System.assert(false,'FLOW_CELL|omitted|'+JSON.serialize(payload));",
+      "expected": {
+        "62.0/anonymous": {
+          "count": 1,
+          "success": true,
+          "outputText": null,
+          "errorCount": 0,
+          "outputMapNull": false
+        },
+        "62.0/istest": {
+          "count": 1,
+          "success": true,
+          "outputText": null,
+          "errorCount": 0,
+          "outputMapNull": false
+        },
+        "67.0/anonymous": {
+          "count": 1,
+          "success": true,
+          "outputText": null,
+          "errorCount": 0,
+          "outputMapNull": false
+        },
+        "67.0/istest": {
+          "count": 1,
+          "success": true,
+          "outputText": null,
+          "errorCount": 0,
+          "outputMapNull": false
+        },
+        "68.0/anonymous": {
+          "count": 1,
+          "success": true,
+          "outputText": null,
+          "errorCount": 0,
+          "outputMapNull": false
+        },
+        "68.0/istest": {
+          "count": 1,
+          "success": true,
+          "outputText": null,
+          "errorCount": 0,
+          "outputMapNull": false
+        }
+      }
+    }
+  ]
+}

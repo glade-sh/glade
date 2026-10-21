@@ -1,0 +1,68 @@
+[
+  {
+    "api": "62.0",
+    "id": "growth",
+    "route": "anonymous",
+    "source": "List<String> parts=new List<String>();\nString chunk='x'.repeat(100000);\nfor(Integer i=0;i<600;i++){parts.add(chunk+i);}\nSystem.assert(false,'OBS|completed');\n",
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "-1",
+      "column": "-1",
+      "exceptionMessage": "System.LimitException: Apex heap size too large: 52504553",
+      "exceptionStackTrace": "External entry point"
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "growth",
+    "route": "queueable",
+    "className": "HeapObservation62",
+    "source": "@IsTest private class HeapObservation62 {\n@IsTest static void observe(){\nTest.startTest();System.enqueueJob(new HeapSample());Test.stopTest();\n}\n}\n",
+    "classes": {
+      "HeapSample": "public class HeapSample implements Queueable {\n    public void execute(QueueableContext context) {\n        List<String> parts=new List<String>();\n        String chunk='x'.repeat(100000);\n        for(Integer i=0;i<600;i++){parts.add(chunk+i);}\n        System.assert(false,'OBS|completed');\n    }\n}"
+    },
+    "native": [
+      {
+        "MethodName": "observe",
+        "Outcome": "Fail",
+        "Message": "System.LimitException: Apex heap size too large: 52504707",
+        "StackTrace": "External entry point"
+      }
+    ]
+  },
+  {
+    "api": "67.0",
+    "id": "growth",
+    "route": "anonymous",
+    "source": "List<String> parts=new List<String>();\nString chunk='x'.repeat(100000);\nfor(Integer i=0;i<600;i++){parts.add(chunk+i);}\nSystem.assert(false,'OBS|completed');\n",
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "-1",
+      "column": "-1",
+      "exceptionMessage": "System.LimitException: Apex heap size too large: 52504553",
+      "exceptionStackTrace": "External entry point"
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "growth",
+    "route": "queueable",
+    "className": "HeapObservation67",
+    "source": "@IsTest private class HeapObservation67 {\n@IsTest static void observe(){\nTest.startTest();System.enqueueJob(new HeapSample());Test.stopTest();\n}\n}\n",
+    "classes": {
+      "HeapSample": "public class HeapSample implements Queueable {\n    public void execute(QueueableContext context) {\n        List<String> parts=new List<String>();\n        String chunk='x'.repeat(100000);\n        for(Integer i=0;i<600;i++){parts.add(chunk+i);}\n        System.assert(false,'OBS|completed');\n    }\n}"
+    },
+    "native": [
+      {
+        "MethodName": "observe",
+        "Outcome": "Fail",
+        "Message": "System.LimitException: Apex heap size too large: 52504712",
+        "StackTrace": "External entry point"
+      }
+    ]
+  }
+]

@@ -1,0 +1,138 @@
+{
+  "fixtures": {
+    "49.0": {
+      "observer": "StubTypeIdentityObservation",
+      "classes": {
+        "IdentityEchoTarget": "public class IdentityEchoTarget {\n    public List<Account> echo(List<Account> records) { return records; }\n    public String text(String value) { return value; }\n    public Integer number(Integer value) { return value; }\n}\n",
+        "IdentityEchoProvider": "public class IdentityEchoProvider implements System.StubProvider {\n    public Map<String,Boolean> observed = new Map<String,Boolean>();\n    public Object handleMethodCall(Object receiver, String methodName, Type returnType, List<Type> parameterTypes, List<String> parameterNames, List<Object> arguments) {\n        Type expected;\n        if (methodName == 'echo') expected = List<Account>.class;\n        if (methodName == 'text') expected = String.class;\n        if (methodName == 'number') expected = Integer.class;\n        observed.put(methodName + '.return', returnType.equals(expected));\n        observed.put(methodName + '.parameter', parameterTypes[0].equals(expected));\n        return arguments[0];\n    }\n}\n",
+        "StubTypeIdentityProbe": "public class StubTypeIdentityProbe {\n    public static Map<String,Boolean> run() {\n        IdentityEchoProvider provider = new IdentityEchoProvider();\n        IdentityEchoTarget target = (IdentityEchoTarget)Test.createStub(IdentityEchoTarget.class, provider);\n        List<Account> records = new List<Account>{new Account(Name='Echo')};\n        List<Account> echoed = target.echo(records);\n        provider.observed.put('echo.value', echoed[0].Name == 'Echo');\n        provider.observed.put('text.value', target.text('stable') == 'stable');\n        provider.observed.put('number.value', target.number(7) == 7);\n        return provider.observed;\n    }\n}\n",
+        "StubTypeIdentityObservation": "@IsTest private class StubTypeIdentityObservation {\n    @IsTest static void observe() {\n        System.assert(false, 'STUB_TYPE_IDENTITY|' + JSON.serialize(StubTypeIdentityProbe.run()));\n    }\n}\n"
+      },
+      "sourceSHA256": {
+        "IdentityEchoTarget": "7f19652e8f8c67cb01ea5ef954dc57a35392b81301d3d087cbc4050e426787a2",
+        "IdentityEchoProvider": "0b4232a10a1c6d9c73a8ba86efa24657e7420be14d248fe621cc66f08fec134d",
+        "StubTypeIdentityProbe": "e1c8852d5d9b558bf3ee97486acb738536b59b9cbbd647829e1b62fa9cba6613",
+        "StubTypeIdentityObservation": "db351aa13a1ce92081b4e9f0b31d3b743e3d9af7c2a50c6cf954ab5bef7781ee"
+      },
+      "metadata": {
+        "IdentityEchoTarget": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>49.0</apiVersion><status>Active</status></ApexClass>\n",
+        "IdentityEchoProvider": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>49.0</apiVersion><status>Active</status></ApexClass>\n",
+        "StubTypeIdentityProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>49.0</apiVersion><status>Active</status></ApexClass>\n",
+        "StubTypeIdentityObservation": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>49.0</apiVersion><status>Active</status></ApexClass>\n"
+      },
+      "metadataSHA256": {
+        "IdentityEchoTarget": "470669cbb959a46f94421506e13ca9aef7a965584031ed5fac45ec163d030e81",
+        "IdentityEchoProvider": "470669cbb959a46f94421506e13ca9aef7a965584031ed5fac45ec163d030e81",
+        "StubTypeIdentityProbe": "470669cbb959a46f94421506e13ca9aef7a965584031ed5fac45ec163d030e81",
+        "StubTypeIdentityObservation": "470669cbb959a46f94421506e13ca9aef7a965584031ed5fac45ec163d030e81"
+      },
+      "anonymous": "try {\n    System.debug('STUB_TYPE_IDENTITY|' + JSON.serialize(StubTypeIdentityProbe.run()));\n} catch (Exception fault) {\n    System.debug('STUB_TYPE_IDENTITY|' + JSON.serialize(new Map<String,Object>{'exceptionType'=>fault.getTypeName(),'exceptionMessage'=>fault.getMessage()}));\n}\n",
+      "anonymousSHA256": "15f156369c4e86084e70cfea1df6f9a9c0e1b870fd00bb13089dea4419927786"
+    },
+    "67.0": {
+      "observer": "StubTypeIdentityObservation67",
+      "classes": {
+        "IdentityEchoTarget67": "public class IdentityEchoTarget67 {\n    public List<Account> echo(List<Account> records) { return records; }\n    public String text(String value) { return value; }\n    public Integer number(Integer value) { return value; }\n}\n",
+        "IdentityEchoProvider67": "public class IdentityEchoProvider67 implements System.StubProvider {\n    public Map<String,Boolean> observed = new Map<String,Boolean>();\n    public Object handleMethodCall(Object receiver, String methodName, Type returnType, List<Type> parameterTypes, List<String> parameterNames, List<Object> arguments) {\n        Type expected;\n        if (methodName == 'echo') expected = List<Account>.class;\n        if (methodName == 'text') expected = String.class;\n        if (methodName == 'number') expected = Integer.class;\n        observed.put(methodName + '.return', returnType.equals(expected));\n        observed.put(methodName + '.parameter', parameterTypes[0].equals(expected));\n        return arguments[0];\n    }\n}\n",
+        "StubTypeIdentityProbe67": "public class StubTypeIdentityProbe67 {\n    public static Map<String,Boolean> run() {\n        IdentityEchoProvider67 provider = new IdentityEchoProvider67();\n        IdentityEchoTarget67 target = (IdentityEchoTarget67)Test.createStub(IdentityEchoTarget67.class, provider);\n        List<Account> records = new List<Account>{new Account(Name='Echo')};\n        List<Account> echoed = target.echo(records);\n        provider.observed.put('echo.value', echoed[0].Name == 'Echo');\n        provider.observed.put('text.value', target.text('stable') == 'stable');\n        provider.observed.put('number.value', target.number(7) == 7);\n        return provider.observed;\n    }\n}\n",
+        "StubTypeIdentityObservation67": "@IsTest private class StubTypeIdentityObservation67 {\n    @IsTest static void observe() {\n        System.assert(false, 'STUB_TYPE_IDENTITY|' + JSON.serialize(StubTypeIdentityProbe67.run()));\n    }\n}\n"
+      },
+      "sourceSHA256": {
+        "IdentityEchoTarget67": "ebba4f769c118089bdf548c87b68ea090941645c1a9830a1096c89bd9f8001fa",
+        "IdentityEchoProvider67": "793a84d2cc95e002ee85ae3b2a0a89b89c2203033b8454e820ba7140c3c19a90",
+        "StubTypeIdentityProbe67": "f6ddf5e1c65ac247193dc41a7bf21ad9394d7f2f96729a4198165c50fd321ff2",
+        "StubTypeIdentityObservation67": "93d675e551e6136e497f54bca943de85afecc7dadcb38c8b163ac631bc517a26"
+      },
+      "metadata": {
+        "IdentityEchoTarget67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "IdentityEchoProvider67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "StubTypeIdentityProbe67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "StubTypeIdentityObservation67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+      },
+      "metadataSHA256": {
+        "IdentityEchoTarget67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "IdentityEchoProvider67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "StubTypeIdentityProbe67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "StubTypeIdentityObservation67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+      },
+      "anonymous": "try {\n    System.debug('STUB_TYPE_IDENTITY|' + JSON.serialize(StubTypeIdentityProbe67.run()));\n} catch (Exception fault) {\n    System.debug('STUB_TYPE_IDENTITY|' + JSON.serialize(new Map<String,Object>{'exceptionType'=>fault.getTypeName(),'exceptionMessage'=>fault.getMessage()}));\n}\n",
+      "anonymousSHA256": "c13d4b121772566e012a7bc647996bfb5920ec165e0c6caa1380f59ddc86e3a8"
+    }
+  },
+  "cells": [
+    {
+      "api": "49.0",
+      "context": "istest",
+      "transportAPI": "67.0",
+      "rawAnswerSHA256": "d6316039e083b416ac1f19b53af0c407e343efaea05a587241d2e3bb6274c652",
+      "rawResponseSHA256": "f8ca82ab76171741757ba2e0aa7d6cd0cc3ed137e88abaf6a86e177fc4a472e8",
+      "answers": {
+        "number.value": true,
+        "number.parameter": true,
+        "number.return": true,
+        "text.value": true,
+        "text.parameter": true,
+        "text.return": true,
+        "echo.value": true,
+        "echo.parameter": true,
+        "echo.return": true
+      }
+    },
+    {
+      "api": "49.0",
+      "context": "anonymous",
+      "transportAPI": "49.0",
+      "rawAnswerSHA256": "ff504d7fd7f6ddb1500e532289e246467862407c997d63ab49cfdd8a09ecc404",
+      "rawResponseSHA256": "5c3990f064909875f9c5013e012a4d55e119cbf4afc2764fca1d0ccebd1fa4ab",
+      "answers": {
+        "exceptionMessage": "Test.createStub() can only be called from test methods",
+        "exceptionType": "System.TypeException"
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "istest",
+      "transportAPI": "67.0",
+      "rawAnswerSHA256": "d6316039e083b416ac1f19b53af0c407e343efaea05a587241d2e3bb6274c652",
+      "rawResponseSHA256": "7fd881caa0e576ed80db6104b3c8db1cc0f7f482b018d5fa9e09a51cd100bfd6",
+      "answers": {
+        "number.value": true,
+        "number.parameter": true,
+        "number.return": true,
+        "text.value": true,
+        "text.parameter": true,
+        "text.return": true,
+        "echo.value": true,
+        "echo.parameter": true,
+        "echo.return": true
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "anonymous",
+      "transportAPI": "67.0",
+      "rawAnswerSHA256": "ff504d7fd7f6ddb1500e532289e246467862407c997d63ab49cfdd8a09ecc404",
+      "rawResponseSHA256": "fb6c0549da21f239981ce70542e42ea704acf8228450603119f466db557df830",
+      "answers": {
+        "exceptionMessage": "Test.createStub() can only be called from test methods",
+        "exceptionType": "System.TypeException"
+      }
+    }
+  ],
+  "provenance": {
+    "orgIdSHA256": "04a58dd26a83c1ec339870c9385318efaa66874b9cbd1c01a7a7855820655dc4",
+    "deploymentId": "0AfE200000r0NPWKA2",
+    "deploymentTransportAPI": "67.0",
+    "scope": "Nonnamespaced declared List<Account>, String, Integer stub callback metadata; anonymous outside-test guard."
+  },
+  "uncaptured": [
+    {
+      "scope": "Unresolved-method dynamic callback metadata",
+      "reason": "No dynamic fallback metadata is inferred; that runtime path remains unchanged."
+    },
+    {
+      "scope": "Namespace and display text",
+      "reason": "Only nonnamespaced Type equality is observed; no display text or namespace packaging behavior changes."
+    }
+  ]
+}

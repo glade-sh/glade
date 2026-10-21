@@ -1,0 +1,1 @@
+System.debug('OBSERVED|numberText|'+JSON.serialize(ScalarObservation.observe()));

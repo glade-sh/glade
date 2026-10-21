@@ -12,13 +12,10 @@ func isRemoteActionMethod(member typesys.MemberSymbol) bool {
 	return member.Kind == apexast.DeclarationMethod && hasAnnotation(member.Annotations, "RemoteAction")
 }
 
-// The e_annotation_duplicate_method case also covers an unannotated duplicate of
-// the annotated original. Ordinary duplicates retain their existing text.
+// Ordinary and remoted duplicate methods share the native signature format.
 func remoteActionDuplicateMethodDiagnostic(typ typesys.TypeSymbol, member, previous typesys.MemberSymbol) diagnostic.Diagnostic {
 	d := duplicateMemberDiagnostic(typ, member, previous.Kind)
-	if isRemoteActionMethod(member) || isRemoteActionMethod(previous) {
-		d.NativeMessage = fmt.Sprintf("Method already defined: %s %s from the type %s", member.Name, nativeLifecycleSignature(typ.Name, member), typ.Name)
-	}
+	d.NativeMessage = fmt.Sprintf("Method already defined: %s %s from the type %s", member.Name, nativeLifecycleSignature(typ.Name, member), typ.Name)
 	return d
 }
 

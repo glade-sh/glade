@@ -110,7 +110,7 @@ func (vm *VM) executeDataWeaveSource(receiver, inputs Value) (Value, error) {
 	}
 	runtime, err := gladehome.DataWeaveRuntime()
 	if err != nil {
-		return Null, &dataweave.HostError{Kind: "toolchain", Detail: "DataWeave toolchain is unavailable; run glade toolchain install dataweave", Cause: err}
+		return Null, &RuntimeError{Type: "UnsupportedFeature", Message: "DataWeave is unsupported in Glade"}
 	}
 	ctx := vm.ctx
 	if ctx == nil {

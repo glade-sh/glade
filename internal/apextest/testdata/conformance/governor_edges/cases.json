@@ -1,0 +1,37 @@
+[
+  {
+    "id": "C300",
+    "shape": "children",
+    "count": 75
+  },
+  {
+    "id": "C304",
+    "shape": "children",
+    "count": 76
+  },
+  {
+    "id": "Q100",
+    "shape": "queries",
+    "count": 100
+  },
+  {
+    "id": "Q101",
+    "shape": "queries",
+    "count": 101
+  },
+  {
+    "id": "D150",
+    "shape": "dml",
+    "count": 150
+  },
+  {
+    "id": "D151",
+    "shape": "dml",
+    "count": 151
+  },
+  {
+    "id": "D000",
+    "shape": "emptyDml",
+    "count": 151
+  }
+]

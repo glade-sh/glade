@@ -1,0 +1,4 @@
+<apex:component controller="AssetPageController">
+ <apex:outputText value="{!caption}"/>
+ <apex:outputText value="{!URLFOR($Asset.SLDS, 'assets/styles/salesforce-lightning-design-system.min.css')}"/>
+</apex:component>

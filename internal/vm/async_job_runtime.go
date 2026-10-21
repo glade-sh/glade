@@ -5,10 +5,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -87,10 +89,12 @@ func (vm *VM) drainTestWork(result *Result) error {
 	if vm.testContext == nil {
 		return nil
 	}
-	previousPreserve := vm.testContext.PreserveAsyncStatics
+	previousPreserve, previousStopDraining := vm.testContext.PreserveAsyncStatics, vm.testContext.StopDraining
 	vm.testContext.PreserveAsyncStatics = true
+	vm.testContext.StopDraining = true
 	defer func() {
 		vm.testContext.PreserveAsyncStatics = previousPreserve
+		vm.testContext.StopDraining = previousStopDraining
 	}()
 	for iteration := 0; iteration < maxLoopIterations; iteration++ {
 		beforeAsync := len(vm.testContext.AsyncJobs)
@@ -123,12 +127,30 @@ func (vm *VM) drainTestWork(result *Result) error {
 			return nil
 		}
 		if len(vm.testContext.AsyncJobs) == beforeAsync && len(vm.testContext.PlatformEvents) == beforeEvents && len(vm.testContext.EventPublishes) == beforePublishes &&
-			vm.nextDrainableAsyncJobIndex(vm.testContext.AsyncJobs, startIndex) < 0 {
+			vm.nextDrainableAsyncJobIndex(vm.testContext.AsyncJobs, startIndex) < 0 && !vm.hasPendingTestQueueable(startIndex) {
 			return nil
 		}
 	}
 	return fmt.Errorf("Test.stopTest async/event drain exceeded %d iterations", maxLoopIterations)
 }
+
+// hasPendingTestQueueable keeps stopTest draining when a finalizer replaces the
+// only ready job with a delayed retry. The per-pass drain has already restored
+// Draining here, so asyncJobDue alone would treat the retry as future work.
+// Preserve the ordinary delay barrier and admission of deferred jobs.
+func (vm *VM) hasPendingTestQueueable(startIndex int) bool {
+	if vm.testContext == nil || !vm.testContext.Stopped {
+		return false
+	}
+	for i := max(0, startIndex); i < len(vm.testContext.AsyncJobs); i++ {
+		job := vm.testContext.AsyncJobs[i]
+		if job.Kind == "Queueable" && !job.Deferred && !job.ScheduledAborted {
+			return true
+		}
+	}
+	return false
+}
+
 func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return Null, fmt.Errorf("System.enqueueJob expects Queueable[, Integer|AsyncOptions]")
@@ -141,15 +163,18 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 		return Null, fmt.Errorf("System.enqueueJob expects Queueable object")
 	}
 	delayMinutes := 0
+	delaySet := false
 	if len(args) == 2 {
 		switch {
 		case args[1].Kind == ValueNull:
 			return Null, newExceptionError("System.NullPointerException", "Argument 2 cannot be null")
 		case args[1].Kind == ValueInt:
 			delayMinutes = int(args[1].Int)
+			delaySet = true
 		case args[1].Kind == ValueObject && strings.EqualFold(args[1].Type, "AsyncOptions"):
 			if delay, ok := asyncOptionsInt(args[1], "minimumQueueableDelayInMinutes"); ok {
 				delayMinutes = delay
+				delaySet = true
 			}
 		default:
 			return Null, fmt.Errorf("System.enqueueJob options expects Integer or AsyncOptions")
@@ -167,6 +192,11 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 		if hasMaxDepth && maxDepth < 0 {
 			return Null, newExceptionError("System.InvalidParameterValueException", "System.InvalidParameterValueException: Stack depth must be greater than 0")
 		}
+		// F11/F12 capture rejection with an existing cap. Keep previously
+		// uncapped dispatch chains on their prior submission path.
+		if hasMaxDepth && maxDepth > 0 && vm.currentAsyncKind == "Queueable" && vm.currentQueueableDepth > 0 && vm.currentQueueableMaxDepth > 0 {
+			return Null, newExceptionError("System.AsyncException", "Cannot reset Maximum Queueable Stack Depth in a queueable")
+		}
 		depth := 1
 		if vm.currentAsyncKind == "Queueable" {
 			depth = vm.currentQueueableDepth + 1
@@ -180,7 +210,7 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 		duplicateSignature = asyncOptionsQueueableDuplicateSignature(args[1])
 		if duplicateSignature != "" {
 			if existingJobID := vm.queueableDuplicateSignatures[duplicateSignature]; existingJobID != "" {
-				return Null, newExceptionError("System.AsyncException", fmt.Sprintf("Duplicate queueable signature already enqueued by job %s", existingJobID))
+				return Null, newExceptionError("System.DuplicateMessageException", "Attempt to enqueue job with duplicate queueable signature")
 			}
 		}
 	}
@@ -199,7 +229,7 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 	// its object graph. A Queueable may attach a Finalizer that is also stored
 	// in one of its fields; both references must observe the Queueable's
 	// mutations when the finalizer runs after the async body.
-	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "Queueable", Object: cloneValueDetachedPreserveRefs(args[0]), QueueableDelayMinutes: delayMinutes, QueueableDuplicateSignature: duplicateSignature}
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "Queueable", Object: cloneValueDetachedPreserveRefs(args[0]), QueueableDelayMinutes: delayMinutes, QueueableDelaySet: delaySet, QueueableDuplicateSignature: duplicateSignature}
 	if delayMinutes > 0 {
 		job.NotBefore = vm.fakeNow.Add(time.Duration(delayMinutes) * time.Minute)
 	}
@@ -268,7 +298,7 @@ func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 	if err := vm.incrementLimit("batchJobs", 1); err != nil {
 		return Null, err
 	}
-	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "BatchApex", Object: cloneValueDetachedPreserveRefs(args[0]), BatchSize: batchSize}
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "BatchApex", Object: cloneValueDetachedPreserveRefs(args[0]), BatchSize: batchSize, DirectBatchSubmission: vm.currentAsyncKind == ""}
 	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
 	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
@@ -324,18 +354,21 @@ func (vm *VM) scheduleJob(args []Value, result *Result) (Value, error) {
 	if vm.hasWaitingScheduledJob(args[0].Text) {
 		return Null, newExceptionError("System.AsyncException", fmt.Sprintf("The Apex job named \"%s\" is already scheduled for execution.", args[0].Text))
 	}
+	var notBefore time.Time
+	if cronHasExplicitYear(args[1].Text) {
+		if nextFire, ok := cronNextFireDate(args[1].Text, vm.cronClock()); ok {
+			notBefore = nextFire
+		} else if cronIsFixedDate(args[1].Text) {
+			return Null, newExceptionError("System.AsyncException", "Based on configured schedule, the given trigger 'SCHEDULED_APEX_JOB_TYPE.000000000000000' will never fire.")
+		}
+	}
 	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
 	}
 	if err := vm.incrementLimit("scheduledJobs", 1); err != nil {
 		return Null, err
 	}
-	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "ScheduledApex", Object: cloneValue(args[2]), Name: args[0].Text, Cron: args[1].Text}
-	if cronHasExplicitYear(args[1].Text) {
-		if nextFire, ok := cronNextFireDate(args[1].Text, vm.fakeNow); ok {
-			job.NotBefore = nextFire
-		}
-	}
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "ScheduledApex", Object: cloneValue(args[2]), Name: args[0].Text, Cron: args[1].Text, NotBefore: notBefore}
 	vm.bindTestScheduledReuse(&job)
 	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
@@ -662,12 +695,59 @@ func (vm *VM) drainTestEventPublishes(result *Result) error {
 		if !ok {
 			return fmt.Errorf("event publish callback %s has no %s method", publish.Callback.Type, methodName)
 		}
-		if _, err := vm.callMethodWithReceiver(method, publish.Callback, []Value{callbackResult}, result); err != nil {
+		if _, err := vm.callEventPublishEntry(method, publish.Callback, []Value{callbackResult}, result, publish.Fail); err != nil {
 			return err
 		}
 	}
 	return nil
 }
+
+func (vm *VM) callEventPublishEntry(method Method, receiver Value, args []Value, result *Result, failure bool) (Value, error) {
+	call := func() (Value, error) { return vm.callAsyncEntry(method, receiver, args, result, false) }
+	// E rows capture omitted-sharing success callbacks. Their user is
+	// AutomatedProcess, including in explicit with-sharing helpers. Failure
+	// callbacks and declared sharing retain their unprobed existing path.
+	// Extending the API62/67 observations to other APIs is a generalization.
+	if failure {
+		return call()
+	}
+	mode := strings.TrimSpace(method.SharingMode)
+	if !method.SourceContextBound {
+		// Ordinary callback methods use the class registry. Inspect declarations,
+		// not classSharingMode's API67 effective secure-default "with sharing".
+		mode = ""
+		seen := map[string]bool{}
+		for name := method.ClassName; strings.TrimSpace(name) != "" && !seen[strings.ToLower(name)]; {
+			seen[strings.ToLower(name)] = true
+			class, ok := vm.lookupClass(name)
+			if !ok {
+				return call()
+			}
+			for _, declaration := range []string{"with sharing", "without sharing", "inherited sharing"} {
+				if methodHasModifier(class.Modifiers, declaration) {
+					return call()
+				}
+			}
+			name = vm.resolvedSuperClassName(class)
+		}
+	}
+	if mode != "" {
+		return call()
+	}
+	user := vm.automatedProcessUser()
+	if user.Kind == "" {
+		return call()
+	}
+	previousUser, previousReadUser := vm.testContext.CurrentUser, vm.eventPublishReadUserID
+	vm.testContext.CurrentUser = user
+	vm.eventPublishReadUserID = vm.currentUserID()
+	defer func() {
+		vm.testContext.CurrentUser = previousUser
+		vm.eventPublishReadUserID = previousReadUser
+	}()
+	return call()
+}
+
 func (vm *VM) drainTestPlatformEvents(result *Result) error {
 	if vm.testContext == nil {
 		return nil
@@ -708,13 +788,24 @@ func (vm *VM) drainTestPlatformEventsFrom(result *Result, startIndex int, stopTi
 				if user := vm.automatedProcessUser(); user.Kind != "" {
 					vm.testContext.CurrentUser = user
 				}
-				_, err := vm.runWithFreshStatics(func() (Value, error) {
-					_, err := vm.runTriggers(triggerTimingAfter, "insert", grouped[objectName], nil, result)
-					return Null, err
-				})
+				// Native named tests at APIs 62/67/68 retain test statics in
+				// subscribers, including writes visible after stopTest returns.
+				err := func() error {
+					restoreCreations := vm.beginRecordCreationTransaction()
+					defer restoreCreations()
+					return vm.deliverPlatformEventSubscribers(grouped[objectName], result)
+				}()
 				vm.testContext.Draining = wasDraining
 				vm.testContext.CurrentUser = previousUser
 				if err != nil {
+					var subscriber *eventBusTriggerRetryError
+					var thrown *apexThrowError
+					if errors.As(err, &subscriber) && !subscriber.handled && errors.As(subscriber.cause, &thrown) {
+						// Native stopTest delivery consumes ordinary subscriber
+						// exceptions without failing the test or rolling back prior
+						// writes. Keep retries/checkpoints and VM errors separate.
+						continue
+					}
 					if vm.requeueEventBusRetry(err) {
 						preserveLaterGroups()
 						return nil
@@ -723,7 +814,7 @@ func (vm *VM) drainTestPlatformEventsFrom(result *Result, startIndex int, stopTi
 				}
 				continue
 			}
-			if _, err := vm.runTriggers(triggerTimingAfter, "insert", grouped[objectName], nil, result); err != nil {
+			if err := vm.deliverPlatformEventSubscribers(grouped[objectName], result); err != nil {
 				if vm.requeueEventBusRetry(err) {
 					preserveLaterGroups()
 					return nil
@@ -772,17 +863,6 @@ func (vm *VM) automatedProcessUser() Value {
 		}
 	}
 	return Value{}
-}
-func (vm *VM) runWithFreshStatics(fn func() (Value, error)) (Value, error) {
-	snapshot := vm.staticFieldSnapshot()
-	staticInitSnapshot := copyStaticInitStateMap(vm.staticInitState)
-	if err := vm.ResetStatics(); err != nil {
-		return Null, err
-	}
-	value, err := fn()
-	vm.restoreStaticFieldSnapshot(snapshot)
-	vm.staticInitState = copyStaticInitStateMap(staticInitSnapshot)
-	return value, err
 }
 func (vm *VM) drainLocalAsync(result *Result) error {
 	return vm.drainAsyncJobs(result, &vm.localAsyncJobs, &vm.localAsyncDrain, &vm.localAsyncChain)
@@ -850,31 +930,42 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 			}
 		}
 		*chainEnqueued = false
-		if !job.ScheduledAborted {
+		// Native test callbacks observe their scheduled job as Queued.
+		if !job.ScheduledAborted && !(vm.testContext != nil && vm.testContext.Stopped && job.Kind == "ScheduledApex") {
 			vm.recordAsyncJob(job, "Processing", "")
 		}
 		appendTrace(result, "apex.async.run", "apex.async", map[string]any{
 			"kind":  job.Kind,
 			"jobId": job.ID,
 		})
-		err := vm.runAsyncJob(job, result)
+		batchProjection := false
+		err := vm.runAsyncJob(job, result, &batchProjection)
 		if asyncStaticSnapshot != nil {
 			vm.restoreStaticFieldSnapshot(asyncStaticSnapshot)
 			vm.staticInitState = copyStaticInitStateMap(asyncStaticInitSnapshot)
 		}
 		if err != nil {
-			if !job.ScheduledAborted {
+			if !job.ScheduledAborted && !batchProjection {
 				vm.recordAsyncJob(job, "Failed", err.Error())
 			}
 			return err
+		}
+		if batchProjection {
+			// The captured batch path has already recorded its phase-specific
+			// status and totals, including Completed jobs with errors.
+			continue
 		}
 		if job.ScheduledAborted {
 			// Retained callback execution does not resurrect its aborted job row.
 			continue
 		}
+		if vm.testContext != nil && vm.testContext.Stopped && job.Kind == "ScheduledApex" && vm.asyncJobRecordStatus(job.ID) == "Aborted" {
+			// A callback can abort its own trigger after leaving the pending
+			// queue. Preserve that recorded status when the callback returns.
+			continue
+		}
 		if vm.testContext != nil && job.Kind == "BatchApex" {
 			vm.recordAsyncJob(job, "Completed", "")
-			vm.markCompletedBatchJobVisiblePendingInTest(job)
 		} else if job.Kind == "ScheduledApex" {
 			vm.recordAsyncJob(job, "Queued", "")
 		} else {
@@ -915,6 +1006,9 @@ func (vm *VM) nextDrainableAsyncJobIndex(jobs []AsyncJob, startIndex int) int {
 func (vm *VM) asyncJobDue(job AsyncJob) bool {
 	if job.ScheduledAborted && !vm.activeTestScheduledReuse(job) {
 		return false
+	}
+	if vm.testContext != nil && vm.testContext.Stopped && job.Kind == "ScheduledApex" && job.RunAtTestStop {
+		return true
 	}
 	if vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining &&
 		job.Kind == "ScheduledApex" && vm.activeTestScheduledReuse(job) {
@@ -994,11 +1088,18 @@ func (vm *VM) markAsyncChainEnqueued() {
 }
 func (vm *VM) enqueueAsyncJob(job AsyncJob) {
 	if vm.testContext != nil {
-		vm.recordApexClass(asyncClassName(job))
+		vm.recordApexClass(vm.asyncClassName(job))
 		if vm.testContext.Draining && job.Kind == "ScheduledBatch" {
 			job.Deferred = true
 		}
-		if vm.testContext.Draining && job.Kind != "Queueable" && job.Kind != "BatchApex" && job.Kind != "ScheduledBatch" {
+		// The owned batch_finish_lifecycle observations run schedules created
+		// by finish at stopTest, while other nested schedule origins retain
+		// their existing admission boundary.
+		finishSchedule := vm.testContext.Stopped && job.Kind == "ScheduledApex" && vm.currentAsyncKind == "BatchApex" && vm.inBatchFinish
+		if vm.testContext.Draining && finishSchedule {
+			job.RunAtTestStop = true
+		}
+		if vm.testContext.Draining && job.Kind != "Queueable" && job.Kind != "BatchApex" && job.Kind != "ScheduledBatch" && !finishSchedule {
 			return
 		}
 		if vm.testContext.Draining && job.Kind == "Queueable" && !vm.canDrainQueueableJob(job) {
@@ -1006,6 +1107,11 @@ func (vm *VM) enqueueAsyncJob(job AsyncJob) {
 		}
 		if vm.testContext.Draining && job.Kind == "BatchApex" && vm.currentAsyncKind != "" {
 			job.SuppressWorkerRecords = true
+			// A scheduled callback submits a pending batch but stopTest does
+			// not execute that descendant. Queueable-to-batch stays drainable.
+			if vm.testContext.Stopped && vm.currentAsyncKind == "ScheduledApex" {
+				job.Deferred = true
+			}
 		}
 		vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs, job)
 		return
@@ -1053,6 +1159,11 @@ func (vm *VM) canDrainQueueableJob(job AsyncJob) bool {
 	if vm.currentAsyncKind == "BatchApex" {
 		return true
 	}
+	// Owned API 62/67 F04/F12: a future's explicit-depth Queueable starts
+	// during stopTest. Uncapped future descendants retain their boundary.
+	if vm.currentAsyncKind == "Future" {
+		return job.QueueableDepth == 1 && job.QueueableMaxDepth >= job.QueueableDepth
+	}
 	if vm.currentAsyncKind != "Queueable" {
 		return false
 	}
@@ -1069,19 +1180,19 @@ func (vm *VM) canDrainQueueableJob(job AsyncJob) bool {
 	}
 	return job.QueueableDepth > 0 && job.QueueableDepth <= job.QueueableMaxDepth
 }
-func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
+func (vm *VM) runAsyncJob(job AsyncJob, result *Result, batchProjection ...*bool) error {
 	_, err := vm.withQueueableDuplicateSignatureTransaction(func() (Value, error) {
-		return Null, vm.runAsyncJobInTransaction(job, result)
+		return Null, vm.runAsyncJobInTransaction(job, result, batchProjection...)
 	})
 	return err
 }
 
-func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result) error {
+func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjection ...*bool) error {
 	switch job.Kind {
 	case "Future":
 		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
 			return vm.withAsyncKind("Future", func() (Value, error) {
-				return vm.callMethod(job.Method, job.Args, result)
+				return vm.callAsyncEntry(job.Method, Null, job.Args, result, false)
 			})
 		})
 		return err
@@ -1121,9 +1232,9 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result) error {
 		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
 			return vm.withQueueableJob(job, func() (Value, error) {
 				if staticExecute {
-					return vm.callMethod(target, args, result)
+					return vm.callAsyncEntry(target, Null, args, result, true)
 				}
-				return vm.callMethodWithReceiver(target, job.Object, args, result)
+				return vm.callAsyncEntry(target, job.Object, args, result, true)
 			})
 		})
 		finalizer := vm.currentFinalizer
@@ -1137,7 +1248,7 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result) error {
 		return err
 	case "BatchApex":
 		_, err := vm.withAsyncKind("BatchApex", func() (Value, error) {
-			return Null, vm.runBatchJob(job, result)
+			return Null, vm.runBatchJob(job, result, batchProjection...)
 		})
 		return err
 	case "ScheduledBatch":
@@ -1172,9 +1283,9 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result) error {
 		if len(target.Params) == 0 {
 			args = nil
 		}
-		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
+		_, err := vm.withScheduledLimitWindow(func() (Value, error) {
 			return vm.withAsyncKind("ScheduledApex", func() (Value, error) {
-				return vm.callMethodWithReceiver(target, job.Object, args, result)
+				return vm.callAsyncEntry(target, job.Object, args, result, false)
 			})
 		})
 		// The synchronous test callback leaves its cron row WAITING.
@@ -1187,6 +1298,27 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result) error {
 		return fmt.Errorf("unsupported async job kind %s", job.Kind)
 	}
 }
+
+// Override only the callback's caller frame; helpers retain normal dispatch.
+func (vm *VM) callAsyncEntry(method Method, receiver Value, args []Value, result *Result, queueable bool) (Value, error) {
+	sharing := ""
+	mode := strings.ToLower(strings.TrimSpace(method.SharingMode))
+	if !method.SourceContextBound {
+		mode, _ = vm.classSharingMode(method.ClassName)
+	}
+	entry := vm.testExecutionEntry
+	inheritedTestEntry := mode == "inherited sharing" && entry != nil &&
+		strings.EqualFold(vm.currentClass, entry.className) && len(vm.callStack) == entry.depth &&
+		vm.currentMethod.SourceContextBound && strings.TrimSpace(vm.currentMethod.SharingMode) == ""
+	if mode == "" || inheritedTestEntry {
+		sharing = "without sharing"
+	}
+	if inheritedTestEntry && !queueable && apexversion.Enabled(vm.currentMethod.APIVersion, apexversion.SecureDefaults) {
+		sharing = "with sharing"
+	}
+	return vm.callMethodWithReceiver(method, receiver, args, result, sharing)
+}
+
 func (vm *VM) withQueueableDuplicateSignatureTransaction(run func() (Value, error)) (Value, error) {
 	previous := vm.queueableDuplicateSignatures
 	vm.queueableDuplicateSignatures = make(map[string]string)
@@ -1196,6 +1328,8 @@ func (vm *VM) withQueueableDuplicateSignatureTransaction(run func() (Value, erro
 	return run()
 }
 func (vm *VM) runQueueableFinalizer(finalizer Value, job AsyncJob, result *Result, parentErr error) error {
+	restoreCreations := vm.beginRecordCreationTransaction()
+	defer restoreCreations()
 	args := []Value{finalizerContext(job.ID, parentErr)}
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(finalizer.Type, "execute", args)
 	if ambiguous {
@@ -1207,8 +1341,21 @@ func (vm *VM) runQueueableFinalizer(finalizer Value, job AsyncJob, result *Resul
 	if len(target.Params) == 0 {
 		args = nil
 	}
-	_, err := vm.withAsyncKind("Queueable", func() (Value, error) {
-		return vm.callMethodWithReceiver(target, finalizer, args, result)
+	_, err := vm.withQueueableDelay(job, func() (Value, error) {
+		return vm.withAsyncKind("Queueable", func() (Value, error) {
+			// B44X01Z/02Z/05Z: omitted finalizers enter with sharing at API
+			// 62/67 even when the Queueable parent runs without sharing. Keep
+			// declared sharing on its existing path; those shapes are unprobed.
+			// Applying the omitted-entry rule at other APIs is a generalization.
+			mode := strings.ToLower(strings.TrimSpace(target.SharingMode))
+			if !target.SourceContextBound {
+				mode, _ = vm.classSharingMode(target.ClassName)
+			}
+			if mode == "" {
+				return vm.callMethodWithReceiver(target, finalizer, args, result, "with sharing")
+			}
+			return vm.callAsyncEntry(target, finalizer, args, result, false)
+		})
 	})
 	return err
 }
@@ -1224,19 +1371,28 @@ func (vm *VM) withQueueableJob(job AsyncJob, run func() (Value, error)) (Value, 
 	previousKind := vm.currentAsyncKind
 	previousDepth := vm.currentQueueableDepth
 	previousMaxDepth := vm.currentQueueableMaxDepth
-	previousDelay := vm.currentQueueableDelay
 	vm.currentAsyncKind = "Queueable"
 	vm.currentQueueableDepth = job.QueueableDepth
 	if vm.currentQueueableDepth <= 0 {
 		vm.currentQueueableDepth = 1
 	}
 	vm.currentQueueableMaxDepth = job.QueueableMaxDepth
-	vm.currentQueueableDelay = job.QueueableDelayMinutes
 	defer func() {
 		vm.currentAsyncKind = previousKind
 		vm.currentQueueableDepth = previousDepth
 		vm.currentQueueableMaxDepth = previousMaxDepth
-		vm.currentQueueableDelay = previousDelay
+	}()
+	return vm.withQueueableDelay(job, run)
+}
+
+// Native source62/67 observations retain a nullable submission delay in both
+// the Queueable body and its finalizer. Scope only delay here: finalizers keep
+// their separate stack-depth and public async-predicate behavior.
+func (vm *VM) withQueueableDelay(job AsyncJob, run func() (Value, error)) (Value, error) {
+	previousDelay, previousSet := vm.currentQueueableDelay, vm.currentQueueableDelaySet
+	vm.currentQueueableDelay, vm.currentQueueableDelaySet = job.QueueableDelayMinutes, job.QueueableDelaySet
+	defer func() {
+		vm.currentQueueableDelay, vm.currentQueueableDelaySet = previousDelay, previousSet
 	}()
 	return run()
 }
@@ -1247,30 +1403,64 @@ func (vm *VM) isAsyncKind(callee string) bool {
 	case "System.isFuture":
 		return vm.currentAsyncKind == "Future"
 	case "System.isQueueable":
-		return vm.currentAsyncKind == "Queueable"
+		// Finalizers reuse the Queueable bookkeeping kind at depth zero, but
+		// native source62/66/67 reports this predicate only for the body.
+		return vm.currentAsyncKind == "Queueable" && vm.currentQueueableDepth > 0
 	case "System.isScheduled":
 		return vm.currentAsyncKind == "ScheduledApex"
 	default:
 		return false
 	}
 }
-func (vm *VM) runBatchJob(job AsyncJob, result *Result) error {
+func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool) error {
 	var scope []Value
+	projectNative := vm.capturedBatchFaultJob(job)
+	parentStackDepth := len(vm.callStack)
+	markProjection := func() {
+		if len(batchProjection) != 0 && batchProjection[0] != nil {
+			*batchProjection[0] = true
+		}
+	}
 	stateful := vm.isStatefulBatchObject(job.Object)
 	baseObject := cloneValueDetachedPreserveRefs(job.Object)
 	statefulObject := cloneValueDetachedPreserveRefs(job.Object)
+	itemType := ""
 	if vm.requiresDatabaseBatchableContract(job.Object) {
-		itemType := vm.databaseBatchableItemType(job.Object)
+		itemType = vm.databaseBatchableItemType(job.Object)
 		if err := vm.validateDatabaseBatchableContract(job.Object.Type, itemType); err != nil {
 			return err
 		}
 	}
+	locatorStart := false
 	if start, ok := vm.resolveInstanceMethod(job.Object.Type, "start"); ok {
 		receiver := batchTransactionReceiver(baseObject, stateful, &statefulObject)
 		value, err := vm.withAsyncLimitWindow(func() (Value, error) {
-			return vm.callMethodWithReceiver(start, receiver, batchArgs(start, "Database.BatchableContext", job.ID), result)
+			return vm.callAsyncEntry(start, receiver, batchArgs(start, "Database.BatchableContext", job.ID), result, false)
 		})
 		if err != nil {
+			if projectNative && vm.capturedBatchFaultException(job, "START", err) {
+				err = projectBatchFaultExceptionStack(err, parentStackDepth)
+				if vm.testContext != nil {
+					vm.recordAsyncJob(job, "Preparing", "")
+					vm.recordAsyncJobTotals(job, 0, 0, 0)
+				} else {
+					vm.recordAsyncJob(job, "Failed", err.Error())
+					vm.recordAsyncJobTotals(job, 0, 1, 1)
+				}
+				if eventErr := vm.emitBatchApexErrorEvent(job, nil, 0, "START", err, result, true); eventErr != nil {
+					return eventErr
+				}
+				markProjection()
+				if vm.testContext != nil {
+					return err
+				}
+				return nil
+			}
+			vm.recordAsyncJobTotals(job, 0, 0, 1)
+			vm.recordAsyncJob(job, "Failed", err.Error())
+			if eventErr := vm.emitBatchApexErrorEvent(job, nil, 0, "START", err, result); eventErr != nil {
+				return eventErr
+			}
 			return err
 		}
 		scopeValues, err := vm.batchScopeValues(value, result)
@@ -1278,7 +1468,10 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result) error {
 			return err
 		}
 		scope = append(scope, scopeValues...)
+		locatorStart = value.Kind == ValueObject && value.Type == "Database.QueryLocator"
 	}
+	projectNative = projectNative && !locatorStart && vm.capturedBatchFaultScope(scope)
+	projectedErrors := 0
 	chunks := batchChunks(scope, job.BatchSize)
 	executeArgs := []Value{asyncContext("Database.BatchableContext", job.ID), List()}
 	execute, ok, ambiguous := vm.resolveInstanceMethodForArgs(job.Object.Type, "execute", executeArgs)
@@ -1306,10 +1499,14 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result) error {
 			rollbackMark, rollbackEnabled := vm.beginBatchChunkTransaction()
 			receiver := batchTransactionReceiver(baseObject, stateful, &statefulObject)
 			_, err := vm.withAsyncLimitWindow(func() (Value, error) {
-				return vm.callMethodWithReceiver(execute, receiver, batchExecuteArgs(execute, chunk, job.ID), result)
+				return vm.callAsyncEntry(execute, receiver, batchExecuteArgs(execute, chunk, job.ID, batchChunkType(itemType, locatorStart, execute)), result, false)
 			})
 			if err != nil {
-				if rollbackEnabled {
+				// F06/F07/F09: named stopTest executes this callback in the test
+				// transaction. Catching its error retains preceding DML, including
+				// explicitly delivered immediate events. Real async still rolls back.
+				retainTestEffects := len(scope) == 1 && vm.capturedNamedBatchExecuteEffects(job, chunk, err)
+				if rollbackEnabled && !retainTestEffects {
 					if rollbackErr := vm.rollbackBatchChunkTransaction(rollbackMark); rollbackErr != nil {
 						return rollbackErr
 					}
@@ -1317,9 +1514,28 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result) error {
 				if !job.SuppressWorkerRecords {
 					vm.recordBatchWorkerJob(job, processed+1, processedItems, chunk, "Failed", err.Error())
 				}
+				if projectNative && vm.capturedBatchFaultException(job, "EXECUTE", err) {
+					err = projectBatchFaultExceptionStack(err, parentStackDepth)
+					if vm.testContext != nil {
+						vm.recordAsyncJob(job, "Processing", "")
+						vm.recordAsyncJobTotals(job, 1, 0, 0)
+					} else {
+						projectedErrors++
+					}
+					if eventErr := vm.emitBatchApexErrorEvent(job, chunk, len(scope), "EXECUTE", err, result, true); eventErr != nil {
+						return eventErr
+					}
+					if vm.testContext != nil {
+						markProjection()
+						return err
+					}
+					// Native anonymous execution still invokes finish after this
+					// singleton chunk fails; stopTest instead rethrows above.
+					continue
+				}
 				vm.recordAsyncJobTotals(job, len(chunks), processed, 1)
 				vm.recordAsyncJob(job, "Failed", err.Error())
-				if eventErr := vm.emitBatchApexErrorEvent(job, chunk, "EXECUTE", err, result); eventErr != nil {
+				if eventErr := vm.emitBatchApexErrorEvent(job, chunk, len(scope), "EXECUTE", err, result); eventErr != nil {
 					return eventErr
 				}
 				return err
@@ -1336,7 +1552,10 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result) error {
 		receiver := batchTransactionReceiver(baseObject, stateful, &statefulObject)
 		rollbackMark, rollbackEnabled := vm.beginBatchChunkTransaction()
 		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
-			return vm.callMethodWithReceiver(finish, receiver, batchArgs(finish, "Database.BatchableContext", job.ID), result)
+			previous := vm.inBatchFinish
+			vm.inBatchFinish = true
+			defer func() { vm.inBatchFinish = previous }()
+			return vm.callAsyncEntry(finish, receiver, batchArgs(finish, "Database.BatchableContext", job.ID), result, false)
 		})
 		if err != nil {
 			if rollbackEnabled {
@@ -1344,12 +1563,149 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result) error {
 					return rollbackErr
 				}
 			}
+			if projectNative && projectedErrors == 0 && vm.capturedBatchFaultException(job, "FINISH", err) {
+				err = projectBatchFaultExceptionStack(err, parentStackDepth)
+				vm.recordAsyncJob(job, "Completed", "")
+				errors := 0
+				if vm.testContext == nil {
+					errors = projectedErrors + 1
+				}
+				vm.recordAsyncJobTotals(job, 1, 1, errors)
+				if eventErr := vm.emitBatchApexErrorEvent(job, nil, len(scope), "FINISH", err, result, true); eventErr != nil {
+					return eventErr
+				}
+				markProjection()
+				if vm.testContext != nil {
+					return err
+				}
+				return nil
+			}
 			vm.recordAsyncJobTotals(job, len(chunks), len(chunks), 1)
 			vm.recordAsyncJob(job, "Failed", err.Error())
+			if eventErr := vm.emitBatchApexErrorEvent(job, nil, len(scope), "FINISH", err, result); eventErr != nil {
+				return eventErr
+			}
 			return err
 		}
 	}
+	if projectNative {
+		markProjection()
+		vm.recordAsyncJob(job, "Completed", "")
+		vm.recordAsyncJobTotals(job, 1, 1, projectedErrors)
+	}
 	return nil
+}
+
+// F06/F07/F09 cover singleton stateless iterable batches at source API 62/67.
+// Other batch shapes and finish failures retain their existing rollback path.
+func (vm *VM) capturedNamedBatchExecuteEffects(job AsyncJob, scope []Value, cause error) bool {
+	if vm.testContext == nil || !vm.testContext.Stopped || !vm.testContext.Draining ||
+		vm.Org == nil || vm.Org.Namespace != "" || job.Kind != "BatchApex" || job.BatchSize != 1 || len(scope) != 1 ||
+		scope[0].Kind != ValueObject || scope[0].projectClass || vm.isStatefulBatchObject(job.Object) {
+		return false
+	}
+	var thrown *apexThrowError
+	if !errors.As(cause, &thrown) {
+		return false
+	}
+	if _, ok := vm.resolveObjectName(runtimeObjectType(scope[0])); !ok {
+		return false
+	}
+	class, ok := vm.lookupClass(job.Object.Type)
+	if !ok || class.Namespace != "" || class.SuperClass != "" {
+		return false
+	}
+	version := class.APIVersion
+	if version == "" {
+		version = vm.Org.APIVersion
+	}
+	major, ok := apexversion.Major(version)
+	if !ok || (major != 62 && major != 67) {
+		return false
+	}
+	item := vm.databaseBatchableItemType(job.Object)
+	if !strings.EqualFold(item, "SObject") && !strings.EqualFold(item, "Object") {
+		return false
+	}
+	start, ok := vm.resolveInstanceMethod(job.Object.Type, "start")
+	return ok && runtimeBatchableSameType(start.ReturnType, "Iterable<"+item+">")
+}
+
+// Native API 62/67/68 fault observations cover direct Batchable<SObject>
+// jobs with an Iterable<SObject> start and batch size 1. The returned scope
+// further bounds execute/finish projection to one unsaved Account. Other
+// iterables, scopes, batch sizes and APIs retain their existing behavior.
+func (vm *VM) capturedBatchFaultJob(job AsyncJob) bool {
+	if job.Kind != "BatchApex" || job.BatchSize != 1 || vm.Org == nil || vm.Org.Namespace != "" {
+		return false
+	}
+	class, ok := vm.lookupClass(job.Object.Type)
+	if !ok || class.Namespace != "" || class.SuperClass != "" || vm.isStatefulBatchObject(job.Object) ||
+		!strings.EqualFold(vm.databaseBatchableItemType(job.Object), "SObject") {
+		return false
+	}
+	version := class.APIVersion
+	if version == "" {
+		version = vm.Org.APIVersion
+	}
+	major, ok := apexversion.Major(version)
+	if !ok || (major != 62 && major != 67 && major != 68) {
+		return false
+	}
+	start, ok := vm.resolveInstanceMethod(job.Object.Type, "start")
+	return ok && runtimeBatchableSameType(start.ReturnType, "Iterable<SObject>")
+}
+
+func (vm *VM) capturedBatchFaultScope(scope []Value) bool {
+	if len(scope) != 1 || scope[0].Kind != ValueObject || scope[0].projectClass {
+		return false
+	}
+	name, ok := storage.ResolveObjectName(*vm.Org, runtimeObjectType(scope[0]))
+	if !ok || !strings.EqualFold(name, "Account") {
+		return false
+	}
+	return sObjectIDFromFields(scope[0].Fields) == ""
+}
+
+func (vm *VM) capturedBatchFaultException(job AsyncJob, phase string, err error) bool {
+	typeName, _, _ := vm.batchErrorExceptionDetails(err)
+	if !strings.EqualFold(typeName, "System.IllegalArgumentException") {
+		return false
+	}
+	// The opt-out witness covers execute only. Its start/finish faults were
+	// not captured and retain the existing path.
+	if phase == "EXECUTE" {
+		return true
+	}
+	class, ok := vm.lookupClass(job.Object.Type)
+	if !ok {
+		return false
+	}
+	for _, iface := range vm.resolvedInterfaceNamesInHierarchy(class) {
+		if strings.EqualFold(iface, "Database.RaisesPlatformEvents") || strings.EqualFold(iface, "RaisesPlatformEvents") {
+			return true
+		}
+	}
+	return false
+}
+
+// The captured batch fault text starts at the asynchronous entry, even when
+// stopTest is called by a named setup method. Project only the synchronous
+// prefix out of Apex text; retain batch-internal calls and all diagnostic
+// frames, source positions and the original exception value.
+func projectBatchFaultExceptionStack(err error, parentDepth int) error {
+	thrown, ok := err.(*apexThrowError)
+	if !ok || parentDepth <= 0 || parentDepth >= len(thrown.stack) {
+		return err
+	}
+	value := thrown.value
+	value.Fields = make(map[string]Value, len(thrown.value.Fields))
+	for field, fieldValue := range thrown.value.Fields {
+		value.Fields[field] = fieldValue
+	}
+	value.Fields["__stackTrace"] = String(stackTraceString(thrown.stack[parentDepth:]))
+	value.exceptionAnonymousCallerLine = 0
+	return &apexThrowError{value: value, stack: thrown.stack}
 }
 
 func batchTransactionReceiver(base Value, stateful bool, statefulObject *Value) Value {
@@ -1527,6 +1883,21 @@ func (vm *VM) runtimeTypeImplementsIterableOf(typeName, itemType string) bool {
 }
 
 func (vm *VM) runtimeBatchableScopeTypeCompatible(itemType, scopeType string) bool {
+	// The captured Iterable scopes match sema's semaBatchableIterableScopeCaptured:
+	// (T, E) = Object/Object, String/String, SObject/SObject and SObject/Object
+	// (PB01, H1K1PC, H1K1M1C, H1K1S, H1K1M2C, H1K1M3 at API 62.0 and 67.0).
+	if strings.EqualFold(collectionBase(scopeType), "Iterable") {
+		element, ok := collectionElementType(scopeType)
+		if !ok {
+			return false
+		}
+		for _, pair := range [][2]string{{"Object", "Object"}, {"String", "String"}, {"SObject", "SObject"}, {"SObject", "Object"}} {
+			if runtimeBatchableSameType(itemType, pair[0]) && runtimeBatchableSameType(element, pair[1]) {
+				return true
+			}
+		}
+		return false
+	}
 	if !strings.EqualFold(collectionBase(scopeType), "List") {
 		return false
 	}
@@ -1637,28 +2008,26 @@ func (vm *VM) rollbackBatchChunkTransaction(mark storage.IsolationMark) error {
 }
 
 func (vm *VM) withAsyncLimitWindow(run func() (Value, error)) (Value, error) {
+	restoreCreations := vm.beginRecordCreationTransaction()
+	defer restoreCreations()
+	parentSingleReserved, parentMassReserved := vm.singleEmailReserved, vm.massEmailReserved
+	vm.singleEmailReserved, vm.massEmailReserved = 0, 0
 	parentLimits := vm.limits
 	parentCaps := vm.limitCaps
 	parentViolations := append([]LimitViolation(nil), vm.limitViolations...)
 	parentCPUBudget := vm.cpuBudgetUsed
 	parentCPUStartedAt := vm.cpuStartedAt
 	parentCPURunning := vm.cpuRunning
-	if asyncCaps, ok := LimitCapsForProfile("strict-async"); ok {
-		// Async Apex has a larger query, heap, and CPU budget. Preserve
-		// explicitly narrowed counters so local limit profiles remain useful.
-		defaults := defaultLimitCaps()
-		if vm.limitCaps.Queries == defaults.Queries {
-			vm.limitCaps.Queries = asyncCaps.Queries
-		}
-		if vm.limitCaps.HeapSize == defaults.HeapSize {
-			vm.limitCaps.HeapSize = asyncCaps.HeapSize
-		}
-		if vm.limitCaps.CPUTimeMS == defaults.CPUTimeMS {
-			vm.limitCaps.CPUTimeMS = asyncCaps.CPUTimeMS
-		}
+	if asyncCaps, ok := LimitCapsForProfile("strict-async"); ok && vm.limitCaps.nativeDefaults {
+		// Only native defaults widen. Complete explicit caps remain local,
+		// including query and CPU values equal to the synchronous defaults.
+		vm.limitCaps.Queries = asyncCaps.Queries
+		vm.limitCaps.HeapSize = asyncCaps.HeapSize
+		vm.limitCaps.CPUTimeMS = asyncCaps.CPUTimeMS
 	}
 	vm.ResetLimits()
 	defer func() {
+		vm.singleEmailReserved, vm.massEmailReserved = parentSingleReserved, parentMassReserved
 		vm.limits = parentLimits
 		vm.limitCaps = parentCaps
 		vm.limitViolations = parentViolations
@@ -1768,22 +2137,60 @@ func (vm *VM) collectIteratorValues(iterator Value, result *Result) ([]Value, er
 		values = append(values, value)
 	}
 }
-func (vm *VM) emitBatchApexErrorEvent(job AsyncJob, scope []Value, phase string, cause error, result *Result) error {
+func (vm *VM) emitBatchApexErrorEvent(job AsyncJob, scope []Value, totalScopeCount int, phase string, cause error, result *Result, nativeProjection ...bool) error {
 	if vm.Org == nil || cause == nil {
+		return nil
+	}
+	// Salesforce's BatchApexErrorEvent reference documents START, EXECUTE and
+	// FINISH faults for batches opting in through Database.RaisesPlatformEvents.
+	class, ok := vm.lookupClass(job.Object.Type)
+	if !ok {
+		return nil
+	}
+	raisesEvents := false
+	for _, iface := range vm.resolvedInterfaceNamesInHierarchy(class) {
+		if strings.EqualFold(iface, "Database.RaisesPlatformEvents") || strings.EqualFold(iface, "RaisesPlatformEvents") {
+			raisesEvents = true
+			break
+		}
+	}
+	if !raisesEvents {
 		return nil
 	}
 	vm.ensureAsyncObjects()
 	vm.ensureBatchApexErrorEventObject()
+	exceptionType, message, stack := vm.batchErrorExceptionDetails(cause)
+	jobScope := storage.StringValue(batchErrorJobScope(scope))
+	jobID := storage.IDValue(storage.ID(job.ID))
+	if len(nativeProjection) != 0 && nativeProjection[0] {
+		// The captured event exposes the original 15-character job text to
+		// String.valueOf, rather than widening it through an Apex Id scalar.
+		jobID = storage.StringValue(job.ID)
+		if (phase == "START" || phase == "FINISH") && scope == nil {
+			jobScope = storage.NullValue()
+		} else if phase == "EXECUTE" && vm.capturedBatchFaultScope(scope) {
+			// The captured Iterable<SObject> yields an unsaved record: the
+			// execute event contains its null Id as text, not the record text.
+			jobScope = storage.StringValue("null")
+		}
+	}
 	record := storage.Record{
 		Object: "BatchApexErrorEvent",
 		Fields: map[string]storage.Value{
-			"AsyncApexJobId": storage.IDValue(storage.ID(job.ID)),
-			"JobScope":       storage.StringValue(batchErrorJobScope(scope)),
-			"ExceptionType":  storage.StringValue(batchErrorExceptionType(cause)),
-			"Message":        storage.StringValue(cause.Error()),
+			"AsyncApexJobId": jobID,
+			"JobScope":       jobScope,
+			"ExceptionType":  storage.StringValue(exceptionType),
+			"Message":        storage.StringValue(message),
 			"Phase":          storage.StringValue(phase),
-			"StackTrace":     storage.StringValue(cause.Error()),
+			"StackTrace":     storage.StringValue(stack),
 		},
+	}
+	// F06/F07: after stopTest rethrows, the error event remains pending until
+	// the test explicitly delivers it. The failed callback's own immediate
+	// events can already have been delivered before its throw.
+	if phase == "EXECUTE" && totalScopeCount == 1 && vm.capturedNamedBatchExecuteEffects(job, scope, cause) {
+		vm.testContext.PlatformEvents = append(vm.testContext.PlatformEvents, record)
+		return nil
 	}
 	_, err := vm.runTriggers(triggerTimingAfter, "insert", []storage.Record{record}, nil, result)
 	return err
@@ -1828,12 +2235,59 @@ func batchErrorJobScope(scope []Value) string {
 	}
 	return strings.Join(parts, ",")
 }
+func (vm *VM) batchErrorExceptionDetails(err error) (exceptionType, message, stack string) {
+	var thrown *apexThrowError
+	if errors.As(err, &thrown) {
+		value := annotateException(thrown.value, thrown.stack)
+		return vm.exceptionQualifiedTypeName(value.Type), exceptionMessage(value), value.Fields["__stackTrace"].Text
+	}
+	var runtimeErr *RuntimeError
+	if errors.As(err, &runtimeErr) {
+		exceptionType = "Exception"
+		if runtimeErr.Type != "" {
+			exceptionType = vm.exceptionQualifiedTypeName(runtimeErr.Type)
+		}
+		return exceptionType, runtimeErr.ExceptionMessage(), apexStackTraceString(runtimeErr.Stack)
+	}
+	return "Exception", err.Error(), ""
+}
+
 func batchErrorExceptionType(err error) string {
+	var thrown *apexThrowError
+	if errors.As(err, &thrown) && thrown.value.Type != "" {
+		return exceptionQualifiedTypeName(thrown.value.Type)
+	}
 	var runtimeErr *RuntimeError
 	if errors.As(err, &runtimeErr) && runtimeErr.Type != "" {
 		return runtimeErr.Type
 	}
 	return "Exception"
+}
+
+func batchErrorMessage(err error) string {
+	var thrown *apexThrowError
+	if errors.As(err, &thrown) {
+		if _, message, ok := objectFieldValue(thrown.value, "message"); ok {
+			return message.String()
+		}
+		return "Script-thrown exception"
+	}
+	var runtimeErr *RuntimeError
+	if errors.As(err, &runtimeErr) {
+		return runtimeErr.ExceptionMessage()
+	}
+	return err.Error()
+}
+
+func batchErrorStackTrace(err error) string {
+	var thrown *apexThrowError
+	if errors.As(err, &thrown) {
+		if trace := thrown.value.Fields["__stackTrace"]; trace.Kind == ValueString {
+			return trace.Text
+		}
+		return stackTraceString(thrown.stack)
+	}
+	return err.Error()
 }
 func batchChunks(values []Value, size int) [][]Value {
 	if size <= 0 {
@@ -1858,14 +2312,45 @@ func batchArgs(method Method, contextType, jobID string) []Value {
 	}
 	return []Value{asyncContext(contextType, jobID)}
 }
-func batchExecuteArgs(method Method, scope []Value, jobID string) []Value {
+
+// batchChunkType is the runtime list type of one execute chunk, or "" to let
+// the scope parameter type it. Native API 62.0 and 67.0, values of
+// "instanceof List<Object>|instanceof List<SObject>":
+//   - a QueryLocator start under Batchable<Object> or Batchable<SObject> gives
+//     a List<SObject> for List and Iterable scopes: H1K1L, H1K1LC, H1K1S,
+//     H1K1SC (true|true);
+//   - another start with an Iterable scope gives a List<T>: PB01, H1K1PC,
+//     H1K1P1, H1K1P2 (Object, true|false), H1K1M1C (String, true|false),
+//     H1K1M2C, H1K1M3 (SObject, true|true).
+//
+// Other Batchable types have no captured row and keep the parameter's type.
+func batchChunkType(itemType string, locatorStart bool, method Method) string {
+	if len(method.Params) == 0 {
+		return ""
+	}
+	item := strings.ToLower(canonicalRuntimePlatformType(itemType))
+	if locatorStart && (item == "object" || item == "sobject") {
+		return "List<SObject>"
+	}
+	if strings.EqualFold(collectionBase(method.Params[len(method.Params)-1].Type), "Iterable") {
+		switch item {
+		case "object", "string", "sobject":
+			return "List<" + canonicalRuntimePlatformType(itemType) + ">"
+		}
+	}
+	return ""
+}
+
+func batchExecuteArgs(method Method, scope []Value, jobID, chunkType string) []Value {
+	chunk := List(scope...)
+	chunk.Type = chunkType
 	switch len(method.Params) {
 	case 0:
 		return nil
 	case 1:
-		return []Value{List(scope...)}
+		return []Value{chunk}
 	default:
-		return []Value{asyncContext("Database.BatchableContext", jobID), List(scope...)}
+		return []Value{asyncContext("Database.BatchableContext", jobID), chunk}
 	}
 }
 func asyncContext(typeName, jobID string) Value {
@@ -1883,6 +2368,12 @@ func finalizerContext(jobID string, parentErr error) Value {
 		ctx.Fields["Result"] = parentJobResultValue("UNHANDLED_EXCEPTION")
 		exception := Object("Exception")
 		exception.Fields["message"] = String(parentErr.Error())
+		// F01/F02: FinalizerContext retains the thrown exception's concrete
+		// type, message and stack, for custom and runtime-generated exceptions.
+		var thrown *apexThrowError
+		if errors.As(parentErr, &thrown) {
+			exception = annotateException(cloneValueDetachedPreserveRefs(thrown.value), thrown.stack)
+		}
 		ctx.Fields["Exception"] = exception
 	}
 	return ctx
@@ -1929,18 +2420,24 @@ func (vm *VM) recordAsyncJob(job AsyncJob, status, detail string) {
 		record.System.CreatedDate = vm.fakeNow.Format(time.RFC3339)
 	}
 	if record.System.CreatedByID == "" {
-		record.System.CreatedByID = storage.ID(vm.currentUserInfoField("Id", "005000000000001"))
+		record.System.CreatedByID = storage.ID(vm.currentUserInfoField("Id", storage.DefaultUserID))
 	}
 	record.System.LastModifiedDate = vm.fakeNow.Format(time.RFC3339)
 	record.System.LastModifiedByID = record.System.CreatedByID
 	record.System.SystemModstamp = record.System.LastModifiedDate
-	className := asyncClassName(job)
+	className := vm.asyncClassName(job)
 	apexClassID := vm.recordApexClass(className)
 	record.Fields["Status"] = storage.StringValue(status)
 	record.Fields["JobType"] = storage.StringValue(asyncJobType(job))
 	record.Fields["ApexClassId"] = storage.IDValue(apexClassID)
 	record.Fields["ApexClassName"] = storage.StringValue(className)
 	record.Fields["MethodName"] = storage.StringValue(asyncMethodName(job))
+	// Queueable dispatch still uses execute; its catalog method facet is a
+	// separate, nullable value. Keep this candidate confined to Queueable
+	// until native method-facet rows establish the other job kinds.
+	if job.Kind == "Queueable" {
+		record.Fields["MethodName"] = storage.NullValue()
+	}
 	if job.Kind == "ScheduledApex" || job.Kind == "ScheduledBatch" {
 		record.Fields["CronTriggerId"] = storage.IDValue(storage.ID(cronTriggerID(job.ID)))
 	} else {
@@ -2042,21 +2539,6 @@ func batchWorkerErrorCount(status string) int {
 	return 0
 }
 
-func (vm *VM) markCompletedBatchJobVisiblePendingInTest(job AsyncJob) {
-	if vm.Org == nil {
-		return
-	}
-	object := vm.Org.Objects["AsyncApexJob"]
-	id := storage.ID(job.ID)
-	record, exists := object.Records[id]
-	if record.ID == "" {
-		return
-	}
-	vm.recordIsolationJournalMutation("AsyncApexJob", id, record, exists)
-	record.Fields["__GLADETestPendingStatus"] = storage.StringValue("Queued")
-	object.Records[record.ID] = record
-	vm.Org.Objects["AsyncApexJob"] = object
-}
 func (vm *VM) recordAsyncJobTotals(job AsyncJob, total, processed, errors int) {
 	if vm.Org == nil {
 		return
@@ -2091,7 +2573,31 @@ func (vm *VM) recordCronTrigger(job AsyncJob, state string) {
 	record.Fields["CronExpression"] = storage.StringValue(job.Cron)
 	record.Fields["CronJobDetailId"] = storage.IDValue(storage.ID(cronJobDetailID(job.Name)))
 	record.Fields["TimesTriggered"] = storage.IntegerValue(0)
-	if nextFireTime, ok := cronNextFireTime(job.Cron, vm.fakeNow); ok {
+	if !exists {
+		if ownerID := vm.currentUserID(); ownerID != "" {
+			record.Fields["OwnerId"] = storage.IDValue(storage.ID(ownerID))
+		}
+		if job.Kind == "ScheduledBatch" {
+			// Native scheduled-batch audit dates have second precision.
+			record.System.CreatedDate = vm.fakeNow.Format(time.RFC3339)
+		}
+		record.Fields["StartTime"] = storage.DateTimeValue(formatPlatformDatetime(vm.fakeNow.Truncate(time.Second)))
+		record.Fields["TimeZoneSidKey"] = storage.StringValue(vm.currentUserTimeZoneID())
+	}
+	if job.Kind == "ScheduledBatch" {
+		record.Fields["CronExpression"] = storage.StringValue("SimpleTrigger")
+		record.Fields["TimeZoneSidKey"] = storage.StringValue("GMT")
+		if !exists {
+			parts := strings.Fields(job.Cron)
+			if len(parts) == 3 && parts[0] == "after" && parts[2] == "minutes" {
+				if minutes, err := strconv.Atoi(parts[1]); err == nil {
+					next := formatPlatformDatetime(vm.fakeNow.Add(time.Duration(minutes) * time.Minute).Truncate(time.Second))
+					record.Fields["NextFireTime"] = storage.DateTimeValue(next)
+					record.Fields["StartTime"] = storage.DateTimeValue(next)
+				}
+			}
+		}
+	} else if nextFireTime, ok := cronNextFireTime(job.Cron, vm.cronClock()); ok {
 		record.Fields["NextFireTime"] = storage.DateTimeValue(nextFireTime)
 	}
 	if strings.EqualFold(state, "Deleted") {
@@ -2101,6 +2607,19 @@ func (vm *VM) recordCronTrigger(job AsyncJob, state string) {
 	vm.Org.Objects["CronTrigger"] = object
 	vm.recordCronJobDetail(job)
 }
+
+// cronClock returns the VM clock expressed in the running user's time zone,
+// the zone in which scheduled cron expressions are evaluated.
+func (vm *VM) cronClock() time.Time {
+	location := time.UTC
+	if zoneID := strings.TrimSpace(vm.currentUserTimeZoneID()); zoneID != "" {
+		if loaded, err := time.LoadLocation(zoneID); err == nil {
+			location = loaded
+		}
+	}
+	return vm.fakeNow.In(location)
+}
+
 func cronNextFireTime(expr string, now time.Time) (string, bool) {
 	candidate, ok := cronNextFireDate(expr, now)
 	if !ok {
@@ -2130,7 +2649,14 @@ func validateScheduleCron(expr string) error {
 				return stringError("Hour values must be between 0 and 23")
 			}
 		} else if strings.IndexFunc(part, func(r rune) bool { return r >= 'A' && r <= 'Z' }) >= 0 {
+			if len(part) > 3 {
+				part = part[:3]
+			}
 			return stringError("Illegal characters for this position: '" + part + "'")
+		} else if i < 2 {
+			// Native scheduling rows require fixed seconds and minutes, even
+			// when the hour is recurring.
+			return stringError("Seconds and minutes must be specified as integers: " + expr)
 		}
 	}
 	if len(parts) < 6 {
@@ -2157,83 +2683,181 @@ func validateScheduleCron(expr string) error {
 	return nil
 }
 
+// cronIsFixedDate identifies the numeric, one-shot date form.
+func cronIsFixedDate(expr string) bool {
+	parts := strings.Fields(expr)
+	if len(parts) != 7 || (parts[5] != "?" && parts[5] != "*") {
+		return false
+	}
+	for _, i := range []int{0, 1, 2, 3, 4, 6} {
+		if _, err := strconv.Atoi(parts[i]); err != nil {
+			return false
+		}
+	}
+	return true
+}
+
 func cronNextFireDate(expr string, now time.Time) (time.Time, bool) {
 	parts := strings.Fields(expr)
 	if len(parts) != 6 && len(parts) != 7 {
 		return time.Time{}, false
 	}
+	// The documented scheduler grammar keeps seconds and minutes fixed.
 	sec, err := strconv.Atoi(parts[0])
-	if err != nil {
+	if err != nil || sec < 0 || sec > 59 {
 		return time.Time{}, false
 	}
-	min, err := strconv.Atoi(parts[1])
-	if err != nil {
+	minute, err := strconv.Atoi(parts[1])
+	if err != nil || minute < 0 || minute > 59 {
 		return time.Time{}, false
 	}
-	hour, err := strconv.Atoi(parts[2])
-	if err != nil {
-		return time.Time{}, false
-	}
-	if sec < 0 || sec > 59 || min < 0 || min > 59 || hour < 0 || hour > 23 {
-		return time.Time{}, false
-	}
-	day, anyDay, ok := cronField(parts[3], 1, 31, true)
+	hours, ok := cronFieldValues(parts[2], 0, 23, false, nil)
 	if !ok {
 		return time.Time{}, false
 	}
-	month, anyMonth, ok := cronField(parts[4], 1, 12, false)
+	// L in the day-of-month field selects the last day of each month.
+	lastDay := strings.EqualFold(parts[3], "L")
+	dayPart := parts[3]
+	if lastDay {
+		dayPart = "*"
+	}
+	days, ok := cronFieldValues(dayPart, 1, 31, true, nil)
 	if !ok {
 		return time.Time{}, false
 	}
-	weekday, anyWeekday, ok := cronField(parts[5], 1, 7, true)
+	months, ok := cronFieldValues(parts[4], 1, 12, false, []string{"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"})
 	if !ok {
 		return time.Time{}, false
 	}
-	year, anyYear := 0, true
+	weekdays, ok := cronFieldValues(parts[5], 1, 7, true, []string{"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"})
+	if !ok {
+		return time.Time{}, false
+	}
+	yearPart := "*"
 	if len(parts) == 7 {
-		year, anyYear, ok = cronField(parts[6], 1970, 9999, false)
-		if !ok {
-			return time.Time{}, false
-		}
+		yearPart = parts[6]
 	}
-	if !anyYear && !anyMonth && !anyDay && anyWeekday {
-		candidate := time.Date(year, time.Month(month), day, hour, min, sec, 0, time.UTC)
-		if candidate.After(now.UTC()) {
-			return candidate, true
-		}
+	// Preserve the existing year domain, including fixed dates beyond 2099.
+	years, ok := cronFieldValues(yearPart, 1970, 9999, false, nil)
+	if !ok {
 		return time.Time{}, false
 	}
-	start := now.UTC().Truncate(24 * time.Hour)
-	for offset := 0; offset < 3660; offset++ {
-		candidateDay := start.AddDate(0, 0, offset)
-		if !anyYear && candidateDay.Year() != year {
+	location := now.Location()
+	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, location)
+	// Keep the existing search horizon for recurring schedules. Explicit year
+	// sets can be sparse and must be searched even beyond that horizon.
+	end := start.AddDate(0, 0, 3660)
+	for _, year := range years {
+		if year < now.Year() {
 			continue
 		}
-		if !anyMonth && int(candidateDay.Month()) != month {
-			continue
+		if yearPart == "*" && year > end.Year() {
+			break
 		}
-		if !anyDay && candidateDay.Day() != day {
-			continue
-		}
-		if !anyWeekday && salesforceCronWeekday(candidateDay) != weekday {
-			continue
-		}
-		candidate := time.Date(candidateDay.Year(), candidateDay.Month(), candidateDay.Day(), hour, min, sec, 0, time.UTC)
-		if candidate.After(now.UTC()) {
-			return candidate, true
+		for _, month := range months {
+			for _, day := range days {
+				candidateDay := time.Date(year, time.Month(month), day, 0, 0, 0, 0, location)
+				if candidateDay.Month() != time.Month(month) || candidateDay.Before(start) {
+					continue
+				}
+				if yearPart == "*" && !candidateDay.Before(end) {
+					continue
+				}
+				if lastDay && candidateDay.AddDate(0, 0, 1).Month() == candidateDay.Month() {
+					continue
+				}
+				if !slices.Contains(weekdays, salesforceCronWeekday(candidateDay)) {
+					continue
+				}
+				for _, hour := range hours {
+					candidate, exists := cronWallTime(year, time.Month(month), day, hour, minute, sec, location)
+					if exists && candidate.After(now) {
+						return candidate, true
+					}
+				}
+			}
 		}
 	}
 	return time.Time{}, false
 }
-func cronField(part string, min, max int, questionWildcard bool) (int, bool, bool) {
-	if part == "*" || (questionWildcard && part == "?") {
-		return 0, true, true
+
+// A missing local time does not fire. An overlapping local time uses the later
+// instant, which is standard time at the Los Angeles autumn transition.
+func cronWallTime(year int, month time.Month, day, hour, minute, second int, location *time.Location) (time.Time, bool) {
+	wall := time.Date(year, month, day, hour, minute, second, 0, time.UTC)
+	if wall.Year() != year || wall.Month() != month || wall.Day() != day {
+		return time.Time{}, false
 	}
-	value, err := strconv.Atoi(part)
-	if err != nil || value < min || value > max {
-		return 0, false, false
+	guess := time.Date(year, month, day, hour, minute, second, 0, location)
+	var latest time.Time
+	for _, delta := range []time.Duration{-24 * time.Hour, 0, 24 * time.Hour} {
+		_, offset := guess.Add(delta).Zone()
+		candidate := wall.Add(-time.Duration(offset) * time.Second).In(location)
+		if candidate.Year() == year && candidate.Month() == month && candidate.Day() == day && candidate.Hour() == hour && candidate.Minute() == minute && candidate.Second() == second && (latest.IsZero() || candidate.After(latest)) {
+			latest = candidate
+		}
 	}
-	return value, false, true
+	return latest, !latest.IsZero()
+}
+
+// cronFieldValues evaluates the documented list, range, wildcard and increment
+// operators into an ordered set. Calendar-relative W/# selectors are outside
+// this field-domain evaluator; the caller handles day-of-month L. Registration
+// validation is deliberately separate.
+// https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_scheduler.htm
+func cronFieldValues(part string, minValue, maxValue int, questionWildcard bool, names []string) ([]int, bool) {
+	part = strings.ToUpper(part)
+	if questionWildcard && part == "?" {
+		part = "*"
+	}
+	valueOf := func(text string) (int, bool) {
+		for i, name := range names {
+			if text == name {
+				return minValue + i, true
+			}
+		}
+		value, err := strconv.Atoi(text)
+		return value, err == nil && value >= minValue && value <= maxValue
+	}
+	selected := make([]bool, maxValue+1)
+	for _, item := range strings.Split(part, ",") {
+		base, increment, stepped := strings.Cut(item, "/")
+		step := 1
+		if stepped {
+			var err error
+			step, err = strconv.Atoi(increment)
+			if err != nil || step < 1 || step > maxValue-minValue+1 {
+				return nil, false
+			}
+		}
+		first, last := minValue, maxValue
+		if base != "*" {
+			left, right, ranged := strings.Cut(base, "-")
+			var ok bool
+			first, ok = valueOf(left)
+			if !ok {
+				return nil, false
+			}
+			if ranged {
+				last, ok = valueOf(right)
+				if !ok || last < first {
+					return nil, false
+				}
+			} else if !stepped {
+				last = first
+			}
+		}
+		for value := first; value <= last; value += step {
+			selected[value] = true
+		}
+	}
+	var values []int
+	for value := minValue; value <= maxValue; value++ {
+		if selected[value] {
+			values = append(values, value)
+		}
+	}
+	return values, len(values) != 0
 }
 func salesforceCronWeekday(value time.Time) int {
 	weekday := int(value.Weekday()) + 1
@@ -2267,6 +2891,34 @@ func asyncClassName(job AsyncJob) string {
 		return job.Method.ClassName
 	}
 	return job.Object.Type
+}
+
+// Catalog ownership is separate from the receiver used for method dispatch.
+func (vm *VM) asyncClassName(job AsyncJob) string {
+	name := asyncClassName(job)
+	if job.Kind != "Queueable" {
+		return name
+	}
+	class, known := vm.lookupClass(name)
+	if !known && job.Object.Type != "" {
+		class, known = vm.lookupClass(job.Object.Type)
+	}
+	if !known {
+		return name
+	}
+	lexical := runtimeClassName(class)
+	prefix := ""
+	if class.Namespace != "" && hasPrefixFold(lexical, class.Namespace+".") {
+		prefix = lexical[:len(class.Namespace)+1]
+		lexical = lexical[len(prefix):]
+	}
+	if dot := strings.Index(lexical, "."); dot >= 0 {
+		owner := prefix + lexical[:dot]
+		if _, known := vm.lookupClass(owner); known {
+			return owner
+		}
+	}
+	return name
 }
 func asyncJobType(job AsyncJob) string {
 	if job.Kind == "ScheduledBatch" {

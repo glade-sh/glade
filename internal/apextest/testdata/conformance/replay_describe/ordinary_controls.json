@@ -1,0 +1,668 @@
+{
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "ordinary_controls",
+  "shapeCount": 5,
+  "nativeObservationCount": 40,
+  "assertedObservationCount": 40,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C168RP_073",
+      "group": "ordinary-control",
+      "role": "must-not-apply",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "Schema.DescribeFieldResult d=RpRecord__c.CreatedDate.getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));",
+          "originalApexSha256": "ff460bb7d84830bfced6420a4041450c70276b05f028f916183aee7735ce034f",
+          "sourceSha256": {
+            "anonymous": "7b238da213030a1efc4163a58454212ea9288fb900c57db45c0903bfa3f0a31f"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001110000100|DATETIME"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001110000100|DATETIME\"}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001110000100|DATETIME"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001110000100|DATETIME\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001110000100|DATETIME"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001110000100|DATETIME\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001110000100|DATETIME"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001110000100|DATETIME\"}"
+            }
+          },
+          "anonymous": "Object v;try{Schema.DescribeFieldResult d=RpRecord__c.CreatedDate.getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_073');"
+        },
+        "isTest": {
+          "originalApex": "Schema.DescribeFieldResult d=RpRecord__c.CreatedDate.getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));",
+          "originalApexSha256": "ff460bb7d84830bfced6420a4041450c70276b05f028f916183aee7735ce034f",
+          "sourceSha256": {
+            "class:C168C168RP073Test": "0b5c7bad0f4d0c4d93f394bd9bb26261760ff40940fb5e8c41c9113c13f0516d"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001110000100|DATETIME"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001110000100|DATETIME\"}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001110000100|DATETIME"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001110000100|DATETIME\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001110000100|DATETIME"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001110000100|DATETIME\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001110000100|DATETIME"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001110000100|DATETIME\"}"
+            }
+          },
+          "classes": {
+            "C168C168RP073Test": "@IsTest private class C168C168RP073Test{@IsTest static void observe(){Object v;try{Schema.DescribeFieldResult d=RpRecord__c.CreatedDate.getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_073');}}"
+          },
+          "tests": [
+            "C168C168RP073Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_074",
+      "group": "ordinary-control",
+      "role": "must-not-apply",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "Schema.DescribeFieldResult d=RpRecord__c.CreatedById.getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));",
+          "originalApexSha256": "0276a7f5187e26c1b3a00f996873406438ac01f892545661256f08b46317608a",
+          "sourceSha256": {
+            "anonymous": "74225978fbd50c65845a8ec02143914d4100fb8091d31d1ed5e625f8de5cad8e"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001110000100|REFERENCE"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001110000100|REFERENCE\"}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001110000100|REFERENCE"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001110000100|REFERENCE\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001110000100|REFERENCE"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001110000100|REFERENCE\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001110000100|REFERENCE"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001110000100|REFERENCE\"}"
+            }
+          },
+          "anonymous": "Object v;try{Schema.DescribeFieldResult d=RpRecord__c.CreatedById.getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_074');"
+        },
+        "isTest": {
+          "originalApex": "Schema.DescribeFieldResult d=RpRecord__c.CreatedById.getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));",
+          "originalApexSha256": "0276a7f5187e26c1b3a00f996873406438ac01f892545661256f08b46317608a",
+          "sourceSha256": {
+            "class:C168C168RP074Test": "01e2b3c661d02c9527d1323fb1fbcce976cea5305724e22287747ef86739b7a5"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001110000100|REFERENCE"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001110000100|REFERENCE\"}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001110000100|REFERENCE"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001110000100|REFERENCE\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001110000100|REFERENCE"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001110000100|REFERENCE\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001110000100|REFERENCE"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001110000100|REFERENCE\"}"
+            }
+          },
+          "classes": {
+            "C168C168RP074Test": "@IsTest private class C168C168RP074Test{@IsTest static void observe(){Object v;try{Schema.DescribeFieldResult d=RpRecord__c.CreatedById.getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_074');}}"
+          },
+          "tests": [
+            "C168C168RP074Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_075",
+      "group": "ordinary-control",
+      "role": "must-not-apply",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "Schema.DescribeFieldResult d=RpRecord__c.Text__c.getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));",
+          "originalApexSha256": "5cc3f72c14f94ab915ea2438d07d343329687d0a833c6f64a37dabd00ed498d1",
+          "sourceSha256": {
+            "anonymous": "16b9f70cd7287d33b86015506b81aac6ec379eeacddfbb815015736593804fec"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "111111100010|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"111111100010|STRING\"}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "111111100010|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"111111100010|STRING\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "111111100010|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"111111100010|STRING\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "111111100010|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"111111100010|STRING\"}"
+            }
+          },
+          "anonymous": "Object v;try{Schema.DescribeFieldResult d=RpRecord__c.Text__c.getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_075');"
+        },
+        "isTest": {
+          "originalApex": "Schema.DescribeFieldResult d=RpRecord__c.Text__c.getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));",
+          "originalApexSha256": "5cc3f72c14f94ab915ea2438d07d343329687d0a833c6f64a37dabd00ed498d1",
+          "sourceSha256": {
+            "class:C168C168RP075Test": "e6b0bd9bccedd1cbca913d58bba235a617ab86c7884dded40d665cbd170b46da"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "111111100010|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"111111100010|STRING\"}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "111111100010|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"111111100010|STRING\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "111111100010|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"111111100010|STRING\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "111111100010|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"111111100010|STRING\"}"
+            }
+          },
+          "classes": {
+            "C168C168RP075Test": "@IsTest private class C168C168RP075Test{@IsTest static void observe(){Object v;try{Schema.DescribeFieldResult d=RpRecord__c.Text__c.getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_075');}}"
+          },
+          "tests": [
+            "C168C168RP075Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_076",
+      "group": "ordinary-control",
+      "role": "positive",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('RpRecord__c').newSObject();Object before=s.get('Text__c');s.put('Text__c','text');v=new Map<String,Object>{'before'=>before,'after'=>s.get('Text__c'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('Text__c')=='text'};",
+          "originalApexSha256": "8867fc005588bc2a8fa6bfcad39a38c5fa83bee8de8722da38e07777806d9916",
+          "sourceSha256": {
+            "anonymous": "5e7af3499cfcfb805654b3706680469b013b5513ae4c7bef1dd1109761c3a875"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "before": null,
+                    "after": "text",
+                    "populated": {
+                      "Text__c": "text"
+                    },
+                    "equalsSupplied": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"before\":null,\"after\":\"text\",\"populated\":{\"Text__c\":\"text\"},\"equalsSupplied\":true}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "before": null,
+                    "after": "text",
+                    "populated": {
+                      "Text__c": "text"
+                    },
+                    "equalsSupplied": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"before\":null,\"after\":\"text\",\"populated\":{\"Text__c\":\"text\"},\"equalsSupplied\":true}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "before": null,
+                    "after": "text",
+                    "populated": {
+                      "Text__c": "text"
+                    },
+                    "equalsSupplied": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"before\":null,\"after\":\"text\",\"populated\":{\"Text__c\":\"text\"},\"equalsSupplied\":true}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "before": null,
+                    "after": "text",
+                    "populated": {
+                      "Text__c": "text"
+                    },
+                    "equalsSupplied": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"before\":null,\"after\":\"text\",\"populated\":{\"Text__c\":\"text\"},\"equalsSupplied\":true}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=Schema.getGlobalDescribe().get('RpRecord__c').newSObject();Object before=s.get('Text__c');s.put('Text__c','text');v=new Map<String,Object>{'before'=>before,'after'=>s.get('Text__c'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('Text__c')=='text'};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_076');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('RpRecord__c').newSObject();Object before=s.get('Text__c');s.put('Text__c','text');v=new Map<String,Object>{'before'=>before,'after'=>s.get('Text__c'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('Text__c')=='text'};",
+          "originalApexSha256": "8867fc005588bc2a8fa6bfcad39a38c5fa83bee8de8722da38e07777806d9916",
+          "sourceSha256": {
+            "class:C168C168RP076Test": "83243138404c9a450d6f976762fd5d80dfed66f5e89e1736a4cd38fd61e5a39d"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "before": null,
+                    "after": "text",
+                    "populated": {
+                      "Text__c": "text"
+                    },
+                    "equalsSupplied": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"before\":null,\"after\":\"text\",\"populated\":{\"Text__c\":\"text\"},\"equalsSupplied\":true}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "before": null,
+                    "after": "text",
+                    "populated": {
+                      "Text__c": "text"
+                    },
+                    "equalsSupplied": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"before\":null,\"after\":\"text\",\"populated\":{\"Text__c\":\"text\"},\"equalsSupplied\":true}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "before": null,
+                    "after": "text",
+                    "populated": {
+                      "Text__c": "text"
+                    },
+                    "equalsSupplied": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"before\":null,\"after\":\"text\",\"populated\":{\"Text__c\":\"text\"},\"equalsSupplied\":true}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "before": null,
+                    "after": "text",
+                    "populated": {
+                      "Text__c": "text"
+                    },
+                    "equalsSupplied": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"before\":null,\"after\":\"text\",\"populated\":{\"Text__c\":\"text\"},\"equalsSupplied\":true}}"
+            }
+          },
+          "classes": {
+            "C168C168RP076Test": "@IsTest private class C168C168RP076Test{@IsTest static void observe(){Object v;try{SObject s=Schema.getGlobalDescribe().get('RpRecord__c').newSObject();Object before=s.get('Text__c');s.put('Text__c','text');v=new Map<String,Object>{'before'=>before,'after'=>s.get('Text__c'),'populated'=>s.getPopulatedFieldsAsMap(),'equalsSupplied'=>s.get('Text__c')=='text'};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_076');}}"
+          },
+          "tests": [
+            "C168C168RP076Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_077",
+      "group": "ordinary-control",
+      "role": "positive",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "RpRecord__c s=new RpRecord__c(Name='C168-'+String.valueOf(Crypto.getRandomLong()),Text__c='text');insert s;RpRecord__c got=[SELECT Text__c,CreatedDate,CreatedById FROM RpRecord__c WHERE Id=:s.Id];v=new Map<String,Object>{'text'=>got.Text__c,'dateNonNull'=>got.CreatedDate!=null,'creatorIsRunningUser'=>got.CreatedById==UserInfo.getUserId()};",
+          "originalApexSha256": "d0c5a3ce22e12ef45ab553107295ac7b5e56fd72fae09e09c874cc683d3b40d4",
+          "sourceSha256": {
+            "anonymous": "e5091cce7e5d693213e98603875e1621be71a216b2389a26186f682030cb8321"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "text": "text",
+                    "dateNonNull": true,
+                    "creatorIsRunningUser": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"text\":\"text\",\"dateNonNull\":true,\"creatorIsRunningUser\":true}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "text": "text",
+                    "dateNonNull": true,
+                    "creatorIsRunningUser": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"text\":\"text\",\"dateNonNull\":true,\"creatorIsRunningUser\":true}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "text": "text",
+                    "dateNonNull": true,
+                    "creatorIsRunningUser": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"text\":\"text\",\"dateNonNull\":true,\"creatorIsRunningUser\":true}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "text": "text",
+                    "dateNonNull": true,
+                    "creatorIsRunningUser": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"text\":\"text\",\"dateNonNull\":true,\"creatorIsRunningUser\":true}}"
+            }
+          },
+          "anonymous": "Object v;try{RpRecord__c s=new RpRecord__c(Name='C168-'+String.valueOf(Crypto.getRandomLong()),Text__c='text');insert s;RpRecord__c got=[SELECT Text__c,CreatedDate,CreatedById FROM RpRecord__c WHERE Id=:s.Id];v=new Map<String,Object>{'text'=>got.Text__c,'dateNonNull'=>got.CreatedDate!=null,'creatorIsRunningUser'=>got.CreatedById==UserInfo.getUserId()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_077');"
+        },
+        "isTest": {
+          "originalApex": "RpRecord__c s=new RpRecord__c(Name='C168-'+String.valueOf(Crypto.getRandomLong()),Text__c='text');insert s;RpRecord__c got=[SELECT Text__c,CreatedDate,CreatedById FROM RpRecord__c WHERE Id=:s.Id];v=new Map<String,Object>{'text'=>got.Text__c,'dateNonNull'=>got.CreatedDate!=null,'creatorIsRunningUser'=>got.CreatedById==UserInfo.getUserId()};",
+          "originalApexSha256": "d0c5a3ce22e12ef45ab553107295ac7b5e56fd72fae09e09c874cc683d3b40d4",
+          "sourceSha256": {
+            "class:C168C168RP077Test": "5433c69b7ce6528969587c3fe5501308974c6580d7587b5f0ff79fa55cf8624f"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "text": "text",
+                    "dateNonNull": true,
+                    "creatorIsRunningUser": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"text\":\"text\",\"dateNonNull\":true,\"creatorIsRunningUser\":true}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "text": "text",
+                    "dateNonNull": true,
+                    "creatorIsRunningUser": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"text\":\"text\",\"dateNonNull\":true,\"creatorIsRunningUser\":true}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "text": "text",
+                    "dateNonNull": true,
+                    "creatorIsRunningUser": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"text\":\"text\",\"dateNonNull\":true,\"creatorIsRunningUser\":true}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "text": "text",
+                    "dateNonNull": true,
+                    "creatorIsRunningUser": true
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"text\":\"text\",\"dateNonNull\":true,\"creatorIsRunningUser\":true}}"
+            }
+          },
+          "classes": {
+            "C168C168RP077Test": "@IsTest private class C168C168RP077Test{@IsTest static void observe(){Object v;try{RpRecord__c s=new RpRecord__c(Name='C168-'+String.valueOf(Crypto.getRandomLong()),Text__c='text');insert s;RpRecord__c got=[SELECT Text__c,CreatedDate,CreatedById FROM RpRecord__c WHERE Id=:s.Id];v=new Map<String,Object>{'text'=>got.Text__c,'dateNonNull'=>got.CreatedDate!=null,'creatorIsRunningUser'=>got.CreatedById==UserInfo.getUserId()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_077');}}"
+          },
+          "tests": [
+            "C168C168RP077Test"
+          ]
+        }
+      }
+    }
+  ]
+}

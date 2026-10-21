@@ -1,0 +1,194 @@
+{
+  "source": "public class FileRevisionOracle {\n public static String observe() {\n  List<Object> rows=new List<Object>();\n  for(String path:new List<String>{'specimen','specimen.txt'}) {\n   ContentVersion v=new ContentVersion(Title='Owned specimen',PathOnClient=path,VersionData=Blob.valueOf('owned bytes'),IsMajorVersion=false);insert v;\n   ContentVersion q=[SELECT Id,UploadToken__c,ContentDocument.Title,ContentDocumentId,VersionData FROM ContentVersion WHERE Id=:v.Id];\n   ContentVersion extensionView=[SELECT FileExtension FROM ContentVersion WHERE Id=:v.Id];\n   Map<String,Object> r=new Map<String,Object>{'path'=>path,'extension'=>extensionView.FileExtension,'extensionNull'=>extensionView.FileExtension==null};\n   try{q.UploadToken__c='queried';update q;r.put('queried','accepted');}catch(Exception e){r.put('queriedType',e.getTypeName());r.put('queriedMessage',e.getMessage());}\n   try{update new ContentVersion(Id=v.Id,UploadToken__c='sparse');r.put('sparse','accepted');}catch(Exception e){r.put('sparseType',e.getTypeName());r.put('sparseMessage',e.getMessage());}\n   try{ContentVersion denied=new ContentVersion(Id=v.Id);denied.put('FileExtension','changed');update denied;r.put('explicit','accepted');}catch(Exception e){r.put('explicitType',e.getTypeName());r.put('explicitMessage',e.getMessage());}\n   try{ContentDocument doc=[SELECT Id,Title FROM ContentDocument WHERE Id=:q.ContentDocumentId];doc.Title='Updated specimen';update doc;r.put('documentUpdate','accepted');}catch(Exception e){r.put('documentType',e.getTypeName());r.put('documentMessage',e.getMessage());}\n   try{ContentVersion replacement=new ContentVersion(ContentDocumentId=q.ContentDocumentId,Title='Replacement',PathOnClient='replacement',VersionData=Blob.valueOf('new owned bytes'));insert replacement;ContentDocument doc=[SELECT FileExtension FROM ContentDocument WHERE Id=:q.ContentDocumentId];r.put('replacementExtension',doc.FileExtension);r.put('replacementExtensionNull',doc.FileExtension==null);}catch(Exception e){r.put('replacementType',e.getTypeName());r.put('replacementMessage',e.getMessage());}\n   rows.add(r);\n  }\n  return JSON.serialize(rows);\n }\n}\n",
+  "fieldMetadata": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>UploadToken__c</fullName><label>Upload Token</label><type>Text</type><length>64</length></CustomField>",
+  "cells": [
+    {
+      "api": "62.0",
+      "context": "anonymous",
+      "native": [
+        {
+          "replacementExtensionNull": true,
+          "replacementExtension": null,
+          "documentUpdate": "accepted",
+          "explicitMessage": "Field FileExtension is not editable",
+          "explicitType": "System.SObjectException",
+          "sparse": "accepted",
+          "queried": "accepted",
+          "extensionNull": true,
+          "extension": null,
+          "path": "specimen"
+        },
+        {
+          "replacementExtensionNull": true,
+          "replacementExtension": null,
+          "documentUpdate": "accepted",
+          "explicitMessage": "Field FileExtension is not editable",
+          "explicitType": "System.SObjectException",
+          "sparse": "accepted",
+          "queried": "accepted",
+          "extensionNull": false,
+          "extension": "txt",
+          "path": "specimen.txt"
+        }
+      ]
+    },
+    {
+      "api": "62.0",
+      "context": "istest",
+      "native": [
+        {
+          "replacementExtensionNull": true,
+          "replacementExtension": null,
+          "documentUpdate": "accepted",
+          "explicitMessage": "Field FileExtension is not editable",
+          "explicitType": "System.SObjectException",
+          "sparse": "accepted",
+          "queried": "accepted",
+          "extensionNull": true,
+          "extension": null,
+          "path": "specimen"
+        },
+        {
+          "replacementExtensionNull": true,
+          "replacementExtension": null,
+          "documentUpdate": "accepted",
+          "explicitMessage": "Field FileExtension is not editable",
+          "explicitType": "System.SObjectException",
+          "sparse": "accepted",
+          "queried": "accepted",
+          "extensionNull": false,
+          "extension": "txt",
+          "path": "specimen.txt"
+        }
+      ]
+    },
+    {
+      "api": "67.0",
+      "context": "anonymous",
+      "native": [
+        {
+          "replacementExtensionNull": true,
+          "replacementExtension": null,
+          "documentUpdate": "accepted",
+          "explicitMessage": "Field FileExtension is not editable",
+          "explicitType": "System.SObjectException",
+          "sparse": "accepted",
+          "queriedMessage": "Operation failed due to fields being inaccessible on Sobject ContentVersion, check errors on Exception or Result! ",
+          "queriedType": "System.DmlException",
+          "extensionNull": true,
+          "extension": null,
+          "path": "specimen"
+        },
+        {
+          "replacementExtensionNull": true,
+          "replacementExtension": null,
+          "documentUpdate": "accepted",
+          "explicitMessage": "Field FileExtension is not editable",
+          "explicitType": "System.SObjectException",
+          "sparse": "accepted",
+          "queriedMessage": "Operation failed due to fields being inaccessible on Sobject ContentVersion, check errors on Exception or Result! ",
+          "queriedType": "System.DmlException",
+          "extensionNull": false,
+          "extension": "txt",
+          "path": "specimen.txt"
+        }
+      ]
+    },
+    {
+      "api": "67.0",
+      "context": "istest",
+      "native": [
+        {
+          "replacementExtensionNull": true,
+          "replacementExtension": null,
+          "documentUpdate": "accepted",
+          "explicitMessage": "Field FileExtension is not editable",
+          "explicitType": "System.SObjectException",
+          "sparse": "accepted",
+          "queriedMessage": "Operation failed due to fields being inaccessible on Sobject ContentVersion, check errors on Exception or Result! ",
+          "queriedType": "System.DmlException",
+          "extensionNull": true,
+          "extension": null,
+          "path": "specimen"
+        },
+        {
+          "replacementExtensionNull": true,
+          "replacementExtension": null,
+          "documentUpdate": "accepted",
+          "explicitMessage": "Field FileExtension is not editable",
+          "explicitType": "System.SObjectException",
+          "sparse": "accepted",
+          "queriedMessage": "Operation failed due to fields being inaccessible on Sobject ContentVersion, check errors on Exception or Result! ",
+          "queriedType": "System.DmlException",
+          "extensionNull": false,
+          "extension": "txt",
+          "path": "specimen.txt"
+        }
+      ]
+    },
+    {
+      "api": "68.0",
+      "context": "anonymous",
+      "native": [
+        {
+          "replacementExtensionNull": true,
+          "replacementExtension": null,
+          "documentUpdate": "accepted",
+          "explicitMessage": "Field FileExtension is not editable",
+          "explicitType": "System.SObjectException",
+          "sparse": "accepted",
+          "queriedMessage": "Operation failed due to fields being inaccessible on Sobject ContentVersion, check errors on Exception or Result! ",
+          "queriedType": "System.DmlException",
+          "extensionNull": true,
+          "extension": null,
+          "path": "specimen"
+        },
+        {
+          "replacementExtensionNull": true,
+          "replacementExtension": null,
+          "documentUpdate": "accepted",
+          "explicitMessage": "Field FileExtension is not editable",
+          "explicitType": "System.SObjectException",
+          "sparse": "accepted",
+          "queriedMessage": "Operation failed due to fields being inaccessible on Sobject ContentVersion, check errors on Exception or Result! ",
+          "queriedType": "System.DmlException",
+          "extensionNull": false,
+          "extension": "txt",
+          "path": "specimen.txt"
+        }
+      ]
+    },
+    {
+      "api": "68.0",
+      "context": "istest",
+      "native": [
+        {
+          "replacementExtensionNull": true,
+          "replacementExtension": null,
+          "documentUpdate": "accepted",
+          "explicitMessage": "Field FileExtension is not editable",
+          "explicitType": "System.SObjectException",
+          "sparse": "accepted",
+          "queriedMessage": "Operation failed due to fields being inaccessible on Sobject ContentVersion, check errors on Exception or Result! ",
+          "queriedType": "System.DmlException",
+          "extensionNull": true,
+          "extension": null,
+          "path": "specimen"
+        },
+        {
+          "replacementExtensionNull": true,
+          "replacementExtension": null,
+          "documentUpdate": "accepted",
+          "explicitMessage": "Field FileExtension is not editable",
+          "explicitType": "System.SObjectException",
+          "sparse": "accepted",
+          "queriedMessage": "Operation failed due to fields being inaccessible on Sobject ContentVersion, check errors on Exception or Result! ",
+          "queriedType": "System.DmlException",
+          "extensionNull": false,
+          "extension": "txt",
+          "path": "specimen.txt"
+        }
+      ]
+    }
+  ]
+}

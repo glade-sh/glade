@@ -45,23 +45,23 @@ func TestStatementContractsRejectUnreachableInstructions(t *testing.T) {
 	}
 }
 
-func TestStatementContractsAllowInstructionsAfterThrow(t *testing.T) {
+func TestStatementContractsRejectInstructionsAfterThrow(t *testing.T) {
 	t.Parallel()
-	result := analyzeDeclarationProject(t, map[string]string{
+	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
 		"Probe.cls": `public class Probe { public void run() { throw new NullPointerException(); Integer value = 1; } }`,
-	})
-	if result.HasErrors() {
-		t.Fatalf("instructions after throw must remain compiler-compatible: %#v", result.Diagnostics)
+	}, "62.0")
+	if !result.HasErrors() {
+		t.Fatalf("native direct_throw rejects the successor: %#v", result.Diagnostics)
 	}
 }
 
-func TestStatementContractsAllowFallbackAfterTerminatingTry(t *testing.T) {
+func TestStatementContractsRejectFallbackAfterTerminatingTry(t *testing.T) {
 	t.Parallel()
-	result := analyzeDeclarationProject(t, map[string]string{
+	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
 		"Probe.cls": `public class Probe { private String load(String value) { try { return value; } catch (Exception error) { return 'fallback'; } return null; } }`,
-	})
-	if result.HasErrors() {
-		t.Fatalf("fallback after a terminating try must remain compiler-compatible: %#v", result.Diagnostics)
+	}, "62.0")
+	if !result.HasErrors() {
+		t.Fatalf("native catch_return rejects the successor: %#v", result.Diagnostics)
 	}
 }
 

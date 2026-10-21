@@ -128,7 +128,8 @@ func TestLoadPreservesValidApexSourceAPIVersion(t *testing.T) {
 		{raw: "43.0", want: "43.0"},
 		{raw: "61.0", want: "61.0"},
 		{raw: "67.0", want: "67.0"},
-		{raw: "68.0", wantError: true},
+		{raw: "68.0", want: "68.0"},
+		{raw: "69.0", wantError: true},
 	} {
 		t.Run(test.raw, func(t *testing.T) {
 			root := t.TempDir()
@@ -1071,7 +1072,7 @@ func TestLoadReportsManagedPackageArtifactSourceAPIVersion(t *testing.T) {
 		},
 		{
 			name:     "future",
-			artifact: `{"schemaVersion":2,"namespace":"pkg","version":"1.0","sourceHash":"abc","sourceApiVersion":"68.0"}`,
+			artifact: `{"schemaVersion":2,"namespace":"pkg","version":"1.0","sourceHash":"abc","sourceApiVersion":"69.0"}`,
 			want:     "unsupported source API version",
 		},
 	} {

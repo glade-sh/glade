@@ -1,0 +1,2 @@
+case	shape
+bulk_insert_update	200 Accounts; before insert/update trigger; ledger with 200 nested lists; query persisted descriptions

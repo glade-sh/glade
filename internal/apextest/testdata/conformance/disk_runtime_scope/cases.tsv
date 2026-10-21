@@ -1,0 +1,4 @@
+api_version	route	class_name	method_name	observation
+67.0	anonymous	-	-	Child.Parent__c after deleting its SetNull parent
+62.0	apex_test	DiskScopeProbe62Test	lookupIsNullAfterParentDelete	Child.Parent__c in a SeeAllData test
+67.0	apex_test	DiskScopeProbe67Test	lookupIsNullAfterParentDelete	Child.Parent__c in a SeeAllData test

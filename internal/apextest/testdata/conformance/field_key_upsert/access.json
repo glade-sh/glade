@@ -1,0 +1,647 @@
+{
+  "cluster": "access",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 1,
+  "nativeObservationCount": 6,
+  "rows": [
+    {
+      "id": "C183ID_133",
+      "group": "ACCESS_LEVEL",
+      "label": "Opportunity.Id four-argument upsert user/system modes",
+      "role": "boundary",
+      "twin": "C183ID_003",
+      "comparison": "exact",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{{Schema.SObjectField key=Opportunity.Id;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{Opportunity rec=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));rec.put('Id',keyValue);List<Opportunity> records=new List<Opportunity>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false,AccessLevel.USER_MODE)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{keyValue=previousId;Opportunity rec=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));rec.put('Id',keyValue);List<Opportunity> records=new List<Opportunity>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false,AccessLevel.USER_MODE)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('u',steps);}{Schema.SObjectField key=Opportunity.Id;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{Opportunity rec=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));rec.put('Id',keyValue);List<Opportunity> records=new List<Opportunity>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false,AccessLevel.SYSTEM_MODE)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{keyValue=previousId;Opportunity rec=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));rec.put('Id',keyValue);List<Opportunity> records=new List<Opportunity>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false,AccessLevel.SYSTEM_MODE)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('y',steps);}}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_133|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "30b94b5b5df15233a63892dca5e83d36159ec40063ed367cb5268d1076977a5c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "AccessLevel.USER_MODE": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ],
+                  "AccessLevel.SYSTEM_MODE": [
+                    {
+                      "exceptionType": "System.SecurityException",
+                      "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                      "phase": "first"
+                    },
+                    {
+                      "exceptionType": "System.SecurityException",
+                      "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                      "phase": "second"
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "AccessLevel.USER_MODE": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ],
+                "AccessLevel.SYSTEM_MODE": [
+                  {
+                    "exceptionType": "System.SecurityException",
+                    "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                    "phase": "first"
+                  },
+                  {
+                    "exceptionType": "System.SecurityException",
+                    "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                    "phase": "second"
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "AccessLevel.USER_MODE": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ],
+                  "AccessLevel.SYSTEM_MODE": [
+                    {
+                      "exceptionType": "System.SecurityException",
+                      "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                      "phase": "first"
+                    },
+                    {
+                      "exceptionType": "System.SecurityException",
+                      "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                      "phase": "second"
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "AccessLevel.USER_MODE": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ],
+                "AccessLevel.SYSTEM_MODE": [
+                  {
+                    "exceptionType": "System.SecurityException",
+                    "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                    "phase": "first"
+                  },
+                  {
+                    "exceptionType": "System.SecurityException",
+                    "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                    "phase": "second"
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "AccessLevel.USER_MODE": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ],
+                  "AccessLevel.SYSTEM_MODE": [
+                    {
+                      "exceptionType": "System.SecurityException",
+                      "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                      "phase": "first"
+                    },
+                    {
+                      "exceptionType": "System.SecurityException",
+                      "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                      "phase": "second"
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "AccessLevel.USER_MODE": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ],
+                "AccessLevel.SYSTEM_MODE": [
+                  {
+                    "exceptionType": "System.SecurityException",
+                    "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                    "phase": "first"
+                  },
+                  {
+                    "exceptionType": "System.SecurityException",
+                    "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                    "phase": "second"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID133Test": "@IsTest private class KeyObserveC183ID133Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{{Schema.SObjectField key=Opportunity.Id;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{Opportunity rec=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));rec.put('Id',keyValue);List<Opportunity> records=new List<Opportunity>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false,AccessLevel.USER_MODE)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{keyValue=previousId;Opportunity rec=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));rec.put('Id',keyValue);List<Opportunity> records=new List<Opportunity>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false,AccessLevel.USER_MODE)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('u',steps);}{Schema.SObjectField key=Opportunity.Id;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{Opportunity rec=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));rec.put('Id',keyValue);List<Opportunity> records=new List<Opportunity>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false,AccessLevel.SYSTEM_MODE)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{keyValue=previousId;Opportunity rec=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));rec.put('Id',keyValue);List<Opportunity> records=new List<Opportunity>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false,AccessLevel.SYSTEM_MODE)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('y',steps);}}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_133|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID133Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID133Test": "7bf04df87a974d1d839f7fb9709004570efcee56fc995ecd592f20f73546f433"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "AccessLevel.USER_MODE": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ],
+                  "AccessLevel.SYSTEM_MODE": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "AccessLevel.USER_MODE": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ],
+                "AccessLevel.SYSTEM_MODE": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "AccessLevel.USER_MODE": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ],
+                  "AccessLevel.SYSTEM_MODE": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "AccessLevel.USER_MODE": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ],
+                "AccessLevel.SYSTEM_MODE": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "AccessLevel.USER_MODE": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ],
+                  "AccessLevel.SYSTEM_MODE": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": true,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": false,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "AccessLevel.USER_MODE": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ],
+                "AccessLevel.SYSTEM_MODE": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": true,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": false,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

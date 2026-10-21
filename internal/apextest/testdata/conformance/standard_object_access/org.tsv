@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"Account":[true,true,true],"Organization":[false,false,false],"Profile":[false,false,false],"RecordType":[false,false,false]}
+62.0	isTest	{"Account":[true,true,true],"Organization":[false,false,false],"Profile":[false,false,false],"RecordType":[false,false,false]}
+67.0	anonymous	{"Account":[true,true,true],"Organization":[false,false,false],"Profile":[false,false,false],"RecordType":[false,false,false]}
+67.0	isTest	{"Account":[true,true,true],"Organization":[false,false,false],"Profile":[false,false,false],"RecordType":[false,false,false]}

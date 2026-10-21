@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "Declarations": {
     "AsyncA38Batch": "public class AsyncA38Batch implements Database.Batchable<Integer>,Database.Stateful,Database.AllowsCallouts {\n public List<Integer> values;\n public Integer total=0;\n public Boolean finished=false;\n public AsyncA38Batch(List<Integer> xs){values=xs;}\n public Iterable<Integer> start(Database.BatchableContext c){return values;}\n public void execute(Database.BatchableContext c,List<Integer> scope){\n  for(Integer n:scope) if(n!=null) total+=n;\n }\n public void finish(Database.BatchableContext c){\n  finished=true;\n  if(c!=null) insert new Account(Name='A38-batch',Description=String.valueOf(total));\n }\n public static Boolean submit(Integer scope){\n  Savepoint s=Database.setSavepoint();\n  try { return Database.executeBatch(new AsyncA38Batch(new List<Integer>{1}),scope)!=null; }\n  finally { Database.rollback(s); Database.releaseSavepoint(s); }\n }\n public static Boolean submitNull(){\n  Savepoint s=Database.setSavepoint();\n  try { return Database.executeBatch(null)!=null; }\n  finally { Database.rollback(s); Database.releaseSavepoint(s); }\n }\n}\n",
@@ -2223,7 +2224,7 @@
     }
   ],
   "Remaining": [],
-  "Oracle": "Owned asynchronous execution observations at API 62.0 and 67.0, including native tests, signatures, boundaries, limits and execution stages.",
+  "Oracle": "Owned asynchronous execution observations at API 62.0 and 67.0, including native tests, signatures, boundaries, limits and execution stages. API 68 primary observations are retained from the native capture; API 68 adjacent, native named, Cron, shadow and drain observations were captured separately.",
   "Controls": [
     {
       "ID": "Q001",

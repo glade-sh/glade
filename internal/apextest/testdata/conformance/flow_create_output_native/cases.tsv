@@ -1,0 +1,4 @@
+case	observation
+C01	Flow Record Create assigns inserted record ID to explicit String output reference
+C02	Flow Record Create reads numeric scalar input for AnnualRevenue
+C03	Flow Record Create numeric literal control remains unchanged

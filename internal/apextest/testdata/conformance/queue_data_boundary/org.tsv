@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"account":{"ok":true},"group":{"ok":true},"member":{"ok":false,"status":"MIXED_DML_OPERATION","type":"System.DmlException"},"queue_object":{"ok":false,"status":"MIXED_DML_OPERATION","type":"System.DmlException"}}
+62.0	isTest	{"account":{"ok":true},"group":{"ok":true},"member":{"ok":false,"status":"MIXED_DML_OPERATION","type":"System.DmlException"},"queue_object":{"ok":false,"status":"MIXED_DML_OPERATION","type":"System.DmlException"}}
+67.0	anonymous	{"account":{"ok":true},"group":{"ok":true},"member":{"ok":false,"status":"MIXED_DML_OPERATION","type":"System.DmlException"},"queue_object":{"ok":false,"status":"MIXED_DML_OPERATION","type":"System.DmlException"}}
+67.0	isTest	{"account":{"ok":true},"group":{"ok":true},"member":{"ok":false,"status":"MIXED_DML_OPERATION","type":"System.DmlException"},"queue_object":{"ok":false,"status":"MIXED_DML_OPERATION","type":"System.DmlException"}}

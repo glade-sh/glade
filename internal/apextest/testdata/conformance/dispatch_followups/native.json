@@ -1,0 +1,120 @@
+{
+  "62.0": {
+    "observations": [
+      "ROW|iterator|Aster|false",
+      "ROW|permission-id|System.SecurityException|Custom AccessLevel usage requires ApexUserModeWithPermset enabled in a scratch org.",
+      "ROW|permission-string|System.SecurityException|Custom AccessLevel usage requires ApexUserModeWithPermset enabled in a scratch org.",
+      "ROW|bind-var$0|ok|1",
+      "ROW|bind-$var|System.QueryException|unexpected token: '$'",
+      "ROW|bind-var$$1|ok|1",
+      "ROW|bind-var_0|ok|1",
+      "ROW|iterator-projection|Aster|false",
+      "ROW|permission-equivalence|true"
+    ],
+    "named": {
+      "exit": 0,
+      "summary": {
+        "outcome": "Passed",
+        "testsRan": 7,
+        "passing": 7,
+        "failing": 0
+      },
+      "tests": [
+        {
+          "MethodName": "bind0",
+          "Outcome": "Pass",
+          "Message": ""
+        },
+        {
+          "MethodName": "bind1",
+          "Outcome": "Pass",
+          "Message": ""
+        },
+        {
+          "MethodName": "bind2",
+          "Outcome": "Pass",
+          "Message": ""
+        },
+        {
+          "MethodName": "iteratorReturn",
+          "Outcome": "Pass",
+          "Message": ""
+        },
+        {
+          "MethodName": "leadingDollar",
+          "Outcome": "Pass",
+          "Message": ""
+        },
+        {
+          "MethodName": "permissionEquivalence",
+          "Outcome": "Pass",
+          "Message": ""
+        },
+        {
+          "MethodName": "projectedReturn",
+          "Outcome": "Pass",
+          "Message": ""
+        }
+      ]
+    }
+  },
+  "67.0": {
+    "observations": [
+      "ROW|iterator|Aster|false",
+      "ROW|permission-id|System.SecurityException|Custom AccessLevel usage requires ApexUserModeWithPermset enabled in a scratch org.",
+      "ROW|permission-string|System.SecurityException|Custom AccessLevel usage requires ApexUserModeWithPermset enabled in a scratch org.",
+      "ROW|bind-var$0|ok|1",
+      "ROW|bind-$var|System.QueryException|unexpected token: '$'",
+      "ROW|bind-var$$1|ok|1",
+      "ROW|bind-var_0|ok|1",
+      "ROW|iterator-projection|Aster|false",
+      "ROW|permission-equivalence|true"
+    ],
+    "named": {
+      "exit": 0,
+      "summary": {
+        "outcome": "Passed",
+        "testsRan": 7,
+        "passing": 7,
+        "failing": 0
+      },
+      "tests": [
+        {
+          "MethodName": "bind0",
+          "Outcome": "Pass",
+          "Message": ""
+        },
+        {
+          "MethodName": "bind1",
+          "Outcome": "Pass",
+          "Message": ""
+        },
+        {
+          "MethodName": "bind2",
+          "Outcome": "Pass",
+          "Message": ""
+        },
+        {
+          "MethodName": "iteratorReturn",
+          "Outcome": "Pass",
+          "Message": ""
+        },
+        {
+          "MethodName": "leadingDollar",
+          "Outcome": "Pass",
+          "Message": ""
+        },
+        {
+          "MethodName": "permissionEquivalence",
+          "Outcome": "Pass",
+          "Message": ""
+        },
+        {
+          "MethodName": "projectedReturn",
+          "Outcome": "Pass",
+          "Message": ""
+        }
+      ]
+    }
+  }
+}

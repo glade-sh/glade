@@ -30,6 +30,16 @@ func (e *MetadataValidationError) Error() string {
 	return strings.Join(e.Messages, "\n")
 }
 
+// UnknownMetadataElementError retains the metadata-route diagnostic. The
+// compiler reports the same rejection on the component's JavaScript route.
+type UnknownMetadataElementError struct {
+	Element string
+}
+
+func (e *UnknownMetadataElementError) Error() string {
+	return "Error parsing file: LWC Metadata Xml Parser: Unhandled XML element: " + e.Element
+}
+
 func (m *ComponentMeta) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	var raw struct {
 		APIVersion    string         `xml:"apiVersion"`
@@ -49,7 +59,7 @@ func (m *ComponentMeta) UnmarshalXML(d *xml.Decoder, start xml.StartElement) err
 		switch element.XMLName.Local {
 		case "description": // Valid metadata text unused by the local renderer.
 		default:
-			return fmt.Errorf("Error parsing file: LWC Metadata Xml Parser: Unhandled XML element: %s", element.XMLName.Local)
+			return &UnknownMetadataElementError{Element: element.XMLName.Local}
 		}
 	}
 	// Metadata compilation does not reject non-boolean exposure text.

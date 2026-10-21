@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -23,21 +24,38 @@ type Schema struct {
 }
 
 type Object struct {
-	Name               string           `json:"name"`
-	Partial            bool             `json:"partial,omitempty"`
-	Label              string           `json:"label,omitempty"`
-	PluralLabel        string           `json:"pluralLabel,omitempty"`
-	SharingModel       string           `json:"sharingModel,omitempty"`
-	EnableSharing      bool             `json:"enableSharing,omitempty"`
-	SharingReasons     []string         `json:"sharingReasons,omitempty"`
-	CustomSettingsType string           `json:"customSettingsType,omitempty"`
-	PublishBehavior    string           `json:"publishBehavior,omitempty"`
-	EnableSearch       bool             `json:"enableSearch,omitempty"`
-	Triggerable        *bool            `json:"triggerable,omitempty"`
-	NameField          NameField        `json:"nameField,omitempty"`
-	Fields             []Field          `json:"fields,omitempty"`
-	RecordTypes        []RecordType     `json:"recordTypes,omitempty"`
-	ValidationRules    []ValidationRule `json:"validationRules,omitempty"`
+	Name                   string            `json:"name"`
+	Partial                bool              `json:"partial,omitempty"`
+	Label                  string            `json:"label,omitempty"`
+	PluralLabel            string            `json:"pluralLabel,omitempty"`
+	SharingModel           string            `json:"sharingModel,omitempty"`
+	EnableActivities       bool              `json:"enableActivities,omitempty"`
+	EnableHistory          bool              `json:"enableHistory,omitempty"`
+	GeneratedHistoryParent string            `json:"-"`
+	EnableSharing          bool              `json:"enableSharing,omitempty"`
+	SharingReasons         []string          `json:"sharingReasons,omitempty"`
+	SharingReasonLabels    map[string]string `json:"sharingReasonLabels,omitempty"`
+	CustomSettingsType     string            `json:"customSettingsType,omitempty"`
+	PublishBehavior        string            `json:"publishBehavior,omitempty"`
+	EnableSearch           bool              `json:"enableSearch,omitempty"`
+	Triggerable            *bool             `json:"triggerable,omitempty"`
+	NameField              NameField         `json:"nameField,omitempty"`
+	Fields                 []Field           `json:"fields,omitempty"`
+	RecordTypes            []RecordType      `json:"recordTypes,omitempty"`
+	ValidationRules        []ValidationRule  `json:"validationRules,omitempty"`
+}
+
+// SharingReasonLabel returns the authored label without substituting its token.
+func (o Object) SharingReasonLabel(name string) string {
+	if label, ok := o.SharingReasonLabels[name]; ok {
+		return label
+	}
+	for token, label := range o.SharingReasonLabels {
+		if strings.EqualFold(token, name) {
+			return label
+		}
+	}
+	return ""
 }
 
 // SupportsTriggers reports whether the object accepts Apex triggers, and
@@ -59,6 +77,7 @@ type NameField struct {
 
 type Field struct {
 	Name                          string             `json:"name"`
+	GeneratedRecentAccess         bool               `json:"generatedRecentAccess,omitempty"`
 	Label                         string             `json:"label,omitempty"`
 	InlineHelpText                string             `json:"inlineHelpText,omitempty"`
 	Type                          string             `json:"type,omitempty"`
@@ -76,6 +95,10 @@ type Field struct {
 	DeleteConstraint              string             `json:"deleteConstraint,omitempty"`
 	DefaultValue                  string             `json:"defaultValue,omitempty"`
 	Required                      bool               `json:"required,omitempty"`
+	Nillable                      *bool              `json:"nillable,omitempty"`
+	DefaultedOnCreate             *bool              `json:"defaultedOnCreate,omitempty"`
+	Createable                    *bool              `json:"createable,omitempty"`
+	Updateable                    *bool              `json:"updateable,omitempty"`
 	ExternalID                    bool               `json:"externalId,omitempty"`
 	IDLookup                      bool               `json:"idLookup,omitempty"`
 	Filterable                    *bool              `json:"filterable,omitempty"`
@@ -84,6 +107,7 @@ type Field struct {
 	Aggregatable                  *bool              `json:"aggregatable,omitempty"`
 	Unique                        bool               `json:"unique,omitempty"`
 	CaseSensitive                 bool               `json:"caseSensitive,omitempty"`
+	DescribeCaseSensitive         *bool              `json:"describeCaseSensitive,omitempty"`
 	Encrypted                     bool               `json:"encrypted,omitempty"`
 	Formula                       string             `json:"formula,omitempty"`
 	FormulaTreatBlanksAs          string             `json:"formulaTreatBlanksAs,omitempty"`
@@ -97,6 +121,8 @@ type Field struct {
 	ValueSetName                  string             `json:"valueSetName,omitempty"`
 	RestrictedPicklist            bool               `json:"restrictedPicklist,omitempty"`
 	PicklistValues                []PicklistValue    `json:"picklistValues,omitempty"`
+
+	MetadataRelationshipControllingField string `json:"metadataRelationshipControllingField,omitempty"`
 }
 
 type FilteredLookupInfo struct {
@@ -153,13 +179,17 @@ type ValidationRule struct {
 }
 
 type CustomMetadataRecord struct {
-	FullName      string                `json:"fullName"`
-	ObjectName    string                `json:"objectName"`
-	DeveloperName string                `json:"developerName"`
-	Label         string                `json:"label,omitempty"`
-	Protected     bool                  `json:"protected,omitempty"`
-	Values        []CustomMetadataValue `json:"values,omitempty"`
-	File          string                `json:"file,omitempty"`
+	SourceUnit string `json:"sourceUnit,omitempty"`
+	// OwnerNamespace comes from the producing project, independently of the type.
+	// Nil preserves the legacy interpretation for records without provenance.
+	OwnerNamespace *string               `json:"ownerNamespace,omitempty"`
+	FullName       string                `json:"fullName"`
+	ObjectName     string                `json:"objectName"`
+	DeveloperName  string                `json:"developerName"`
+	Label          string                `json:"label,omitempty"`
+	Protected      bool                  `json:"protected,omitempty"`
+	Values         []CustomMetadataValue `json:"values,omitempty"`
+	File           string                `json:"file,omitempty"`
 }
 
 type CustomMetadataValue struct {
@@ -173,7 +203,9 @@ type customObjectXML struct {
 	Label              string              `xml:"label"`
 	PluralLabel        string              `xml:"pluralLabel"`
 	SharingModel       string              `xml:"sharingModel"`
+	EnableActivities   bool                `xml:"enableActivities"`
 	EnableSharing      bool                `xml:"enableSharing"`
+	EnableHistory      bool                `xml:"enableHistory"`
 	CustomSettingsType string              `xml:"customSettingsType"`
 	PublishBehavior    string              `xml:"publishBehavior"`
 	EnableSearch       bool                `xml:"enableSearch"`
@@ -191,34 +223,36 @@ type nameFieldXML struct {
 }
 
 type customFieldXML struct {
-	FullName              string             `xml:"fullName"`
-	Label                 string             `xml:"label"`
-	InlineHelpText        string             `xml:"inlineHelpText"`
-	Type                  string             `xml:"type"`
-	DisplayFormat         string             `xml:"displayFormat"`
-	Length                int                `xml:"length"`
-	Precision             int                `xml:"precision"`
-	Scale                 *int               `xml:"scale"`
-	ReferenceTo           []string           `xml:"referenceTo"`
-	RelationshipName      string             `xml:"relationshipName"`
-	RelationshipOrder     *int               `xml:"relationshipOrder"`
-	ReparentableMasterDetail bool             `xml:"reparentableMasterDetail"`
-	ChildRelationshipName string             `xml:"childRelationshipName"`
-	DeleteConstraint      string             `xml:"deleteConstraint"`
-	DefaultValue          string             `xml:"defaultValue"`
-	Required              bool               `xml:"required"`
-	ExternalID            bool               `xml:"externalId"`
-	IDLookup              bool               `xml:"idLookup"`
-	Unique                bool               `xml:"unique"`
-	CaseSensitive         bool               `xml:"caseSensitive"`
-	Formula               string             `xml:"formula"`
-	FormulaTreatBlanksAs  string             `xml:"formulaTreatBlanksAs"`
-	SummarizedField       string             `xml:"summarizedField"`
-	SummaryForeignKey     string             `xml:"summaryForeignKey"`
-	SummaryOperation      string             `xml:"summaryOperation"`
-	SummaryFilterItems    []summaryFilterXML `xml:"summaryFilterItems"`
-	LookupFilter          lookupFilterXML    `xml:"lookupFilter"`
-	ValueSet              valueSetXML        `xml:"valueSet"`
+	FullName                 string             `xml:"fullName"`
+	Label                    string             `xml:"label"`
+	InlineHelpText           string             `xml:"inlineHelpText"`
+	Type                     string             `xml:"type"`
+	DisplayFormat            string             `xml:"displayFormat"`
+	Length                   int                `xml:"length"`
+	Precision                int                `xml:"precision"`
+	Scale                    *int               `xml:"scale"`
+	ReferenceTo              []string           `xml:"referenceTo"`
+	RelationshipName         string             `xml:"relationshipName"`
+	RelationshipOrder        *int               `xml:"relationshipOrder"`
+	ReparentableMasterDetail bool               `xml:"reparentableMasterDetail"`
+	ChildRelationshipName    string             `xml:"childRelationshipName"`
+	DeleteConstraint         string             `xml:"deleteConstraint"`
+	DefaultValue             string             `xml:"defaultValue"`
+	Required                 bool               `xml:"required"`
+	ExternalID               bool               `xml:"externalId"`
+	IDLookup                 bool               `xml:"idLookup"`
+	Unique                   bool               `xml:"unique"`
+	CaseSensitive            *bool              `xml:"caseSensitive"`
+	Formula                  string             `xml:"formula"`
+	FormulaTreatBlanksAs     string             `xml:"formulaTreatBlanksAs"`
+	SummarizedField          string             `xml:"summarizedField"`
+	SummaryForeignKey        string             `xml:"summaryForeignKey"`
+	SummaryOperation         string             `xml:"summaryOperation"`
+	SummaryFilterItems       []summaryFilterXML `xml:"summaryFilterItems"`
+	LookupFilter             lookupFilterXML    `xml:"lookupFilter"`
+	ValueSet                 valueSetXML        `xml:"valueSet"`
+
+	MetadataRelationshipControllingField string `xml:"metadataRelationshipControllingField"`
 }
 
 type lookupFilterXML struct {
@@ -316,6 +350,7 @@ type customMetadataTextXML struct {
 
 type sharingReasonXML struct {
 	FullName string `xml:"fullName"`
+	Label    string `xml:"label"`
 }
 
 func LoadProject(p project.Project) (Schema, error) {
@@ -417,6 +452,9 @@ func LoadProject(p project.Project) (Schema, error) {
 		}
 	}
 
+	if err := addCustomTabAccessFields(p, byName); err != nil {
+		return Schema{}, err
+	}
 	addReferencedCustomObjects(byName)
 
 	records := make([]CustomMetadataRecord, 0, len(p.CustomMetadataFiles))
@@ -498,10 +536,35 @@ func mergeObjectMetadata(dst *Object, src Object) {
 	if src.EnableSharing {
 		dst.EnableSharing = true
 	}
+	if src.EnableActivities {
+		dst.EnableActivities = true
+	}
+	if src.EnableHistory {
+		dst.EnableHistory = true
+	}
 	for _, reason := range src.SharingReasons {
 		if !stringSliceContainsFold(dst.SharingReasons, reason) {
 			dst.SharingReasons = append(dst.SharingReasons, reason)
 		}
+	}
+	if len(dst.SharingReasonLabels)+len(src.SharingReasonLabels) > 0 {
+		labels := maps.Clone(dst.SharingReasonLabels)
+		if labels == nil {
+			labels = make(map[string]string, len(src.SharingReasonLabels))
+		}
+		for name, label := range src.SharingReasonLabels {
+			if dst.SharingReasonLabel(name) != "" {
+				continue
+			}
+			for _, token := range dst.SharingReasons {
+				if strings.EqualFold(token, name) {
+					name = token
+					break
+				}
+			}
+			labels[name] = label
+		}
+		dst.SharingReasonLabels = labels
 	}
 	if dst.PublishBehavior == "" {
 		dst.PublishBehavior = src.PublishBehavior
@@ -720,7 +783,9 @@ func loadObject(path string, p project.Project) (Object, error) {
 		Label:              raw.Label,
 		PluralLabel:        raw.PluralLabel,
 		SharingModel:       raw.SharingModel,
+		EnableActivities:   raw.EnableActivities,
 		EnableSharing:      raw.EnableSharing,
+		EnableHistory:      raw.EnableHistory,
 		CustomSettingsType: strings.TrimSpace(raw.CustomSettingsType),
 		PublishBehavior:    strings.TrimSpace(raw.PublishBehavior),
 		EnableSearch:       raw.EnableSearch,
@@ -731,7 +796,7 @@ func loadObject(path string, p project.Project) (Object, error) {
 			Length:        raw.NameField.Length,
 		},
 	}
-	object.SharingReasons = loadSharingReasons(path, p)
+	object.SharingReasons, object.SharingReasonLabels = loadSharingReasons(path, p)
 	for _, rawField := range raw.Fields {
 		field := fieldFromXML(rawField, "")
 		if field.Name != "" {
@@ -756,13 +821,14 @@ func loadObject(path string, p project.Project) (Object, error) {
 	return object, nil
 }
 
-func loadSharingReasons(objectPath string, p project.Project) []string {
+func loadSharingReasons(objectPath string, p project.Project) ([]string, map[string]string) {
 	dir := filepath.Join(filepath.Dir(objectPath), "sharingReasons")
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return nil
+		return nil, nil
 	}
 	reasons := make([]string, 0, len(entries))
+	var labels map[string]string
 	seen := make(map[string]bool, len(entries))
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".sharingreason-meta.xml") {
@@ -787,9 +853,15 @@ func loadSharingReasons(objectPath string, p project.Project) []string {
 		}
 		seen[strings.ToLower(name)] = true
 		reasons = append(reasons, name)
+		if label := strings.TrimSpace(raw.Label); label != "" {
+			if labels == nil {
+				labels = make(map[string]string)
+			}
+			labels[name] = label
+		}
 	}
 	sort.Strings(reasons)
-	return reasons
+	return reasons, labels
 }
 
 func loadField(path string) (Field, error) {
@@ -809,6 +881,10 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 	if name == "" {
 		name = fallback
 	}
+	length := raw.Length
+	if length == 0 && strings.EqualFold(strings.TrimSpace(raw.Type), "Url") {
+		length = 255
+	}
 	relationshipName := raw.RelationshipName
 	childRelationshipName := raw.ChildRelationshipName
 	childRelationshipNameInferred := false
@@ -819,13 +895,22 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		}
 		relationshipName = strings.TrimSuffix(name, "__c") + "__r"
 	}
+	// Only custom fields can be master-detail. Retrieved source can still
+	// carry <type>MasterDetail</type> on a standard relationship field such as
+	// ContactPointAddress.ParentId; Salesforce keeps that field lookup-shaped
+	// and optional, so the declared type must not change it.
+	fieldType := raw.Type
+	if strings.EqualFold(fieldType, "MasterDetail") && !strings.Contains(name, "__") {
+		fieldType = ""
+		raw.ReparentableMasterDetail = false
+	}
 	return Field{
 		Name:                          name,
 		Label:                         raw.Label,
 		InlineHelpText:                strings.TrimSpace(raw.InlineHelpText),
-		Type:                          raw.Type,
+		Type:                          fieldType,
 		DisplayFormat:                 strings.TrimSpace(raw.DisplayFormat),
-		Length:                        raw.Length,
+		Length:                        length,
 		Precision:                     raw.Precision,
 		Scale:                         metadataScale(raw.Scale),
 		ScaleSpecified:                raw.Scale != nil,
@@ -841,7 +926,8 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		ExternalID:                    raw.ExternalID,
 		IDLookup:                      raw.IDLookup,
 		Unique:                        raw.Unique,
-		CaseSensitive:                 raw.CaseSensitive,
+		CaseSensitive:                 fieldKeyCaseSensitive(raw),
+		DescribeCaseSensitive:         fieldKeyDescribeCaseSensitive(raw),
 		Encrypted:                     strings.EqualFold(raw.Type, "EncryptedText"),
 		Formula:                       strings.TrimSpace(raw.Formula),
 		FormulaTreatBlanksAs:          strings.TrimSpace(raw.FormulaTreatBlanksAs),
@@ -855,6 +941,8 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		ValueSetName:                  strings.TrimSpace(raw.ValueSet.Name),
 		RestrictedPicklist:            raw.ValueSet.Restricted,
 		PicklistValues:                picklistValues(raw.ValueSet.Definition.Values),
+
+		MetadataRelationshipControllingField: raw.MetadataRelationshipControllingField,
 	}
 }
 
@@ -896,6 +984,8 @@ func remapProjectValidationRule(p project.Project, rule ValidationRule) Validati
 }
 
 func remapProjectCustomMetadataRecord(p project.Project, record CustomMetadataRecord) CustomMetadataRecord {
+	namespace := namespaceremap.ApplyNamespace(p.NamespaceRemaps, p.Namespace)
+	record.OwnerNamespace = &namespace
 	record.FullName = remapProjectAPIName(p, record.FullName)
 	record.ObjectName = remapProjectAPIName(p, record.ObjectName)
 	for i, value := range record.Values {
@@ -907,7 +997,9 @@ func remapProjectCustomMetadataRecord(p project.Project, record CustomMetadataRe
 
 func namespaceObjectField(projectNamespace, objectName string, field Field) Field {
 	namespace := namespaceFromAPIName(objectName)
-	if projectNamespace != "" && namespace != "" && !strings.EqualFold(namespace, projectNamespace) {
+	// The producing project owns extension metadata even when its standard
+	// object name supplies no namespace. Explicit foreign qualifiers survive.
+	if projectNamespace != "" && (namespace == "" || !strings.EqualFold(namespace, projectNamespace)) {
 		namespace = projectNamespace
 	}
 	if namespace == "" {

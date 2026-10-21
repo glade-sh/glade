@@ -1,0 +1,7 @@
+workflow	package	test	seconds
+CI	github.com/glade-sh/glade/internal/lwc/compile	TestL10SalesforceConformance	1166.17
+CI	github.com/glade-sh/glade/internal/lwc/compile	TestL11SalesforceConformance	1178.38
+CI	github.com/glade-sh/glade/internal/lwc/compile	TestL19SalesforceConformance	1077.8
+CI	github.com/glade-sh/glade/internal/lwc/compile	TestL21SalesforceConformance	618.45
+CI	github.com/glade-sh/glade/internal/visualforce	TestV04SalesforceConformance	356.75
+CI	github.com/glade-sh/glade/internal/visualforce	TestV13SalesforceConformance	347.8

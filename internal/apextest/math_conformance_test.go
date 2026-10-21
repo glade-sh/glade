@@ -17,10 +17,11 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Owned Salesforce observations at both API endpoints. CI needs no org or tools.
+// Owned Salesforce observations at API 62, 67 and 68. CI needs no org or tools.
 func TestMathOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected string
+		Expected68         string
 		Compile            bool
 	}
 	var data struct {
@@ -38,7 +39,7 @@ func TestMathOrgConformance(t *testing.T) {
 	if len(data.Cases) != 299 || len(data.Controls) != 27 {
 		t.Fatalf("oracle rows: %d + %d", len(data.Cases), len(data.Controls))
 	}
-	if strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle versions: %v", data.APIVersions)
 	}
 	// The Math export excludes Decimal.round(null), covered by Decimal.
@@ -83,6 +84,15 @@ func TestMathOrgConformance(t *testing.T) {
 	}
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
+			rows := append([]familyCase(nil), rows...)
+			if api == "68.0" {
+				// Retain raw native wrapper coordinates; rejection checks remain categorical.
+				for i := range rows {
+					if rows[i].Expected68 != "" {
+						rows[i].Expected = rows[i].Expected68
+					}
+				}
+			}
 			counts := newConformanceCountLog(t, "math", api)
 			root := t.TempDir()
 			names := make([]string, 0, len(data.Declarations)+1)
@@ -106,7 +116,7 @@ func TestMathOrgConformance(t *testing.T) {
 				if extra != "" {
 					files = append(files, extra)
 				}
-				return typesys.Build(project.Project{Root: root, ApexFiles: files}, gladeschema.Schema{})
+				return typesys.Build(project.Project{Root: root, ApexFiles: files, SourceAPIVersion: api}, gladeschema.Schema{})
 			}
 			index := buildIndex("")
 			if index.HasErrors() {

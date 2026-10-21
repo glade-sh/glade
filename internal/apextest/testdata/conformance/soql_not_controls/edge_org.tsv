@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"semi_and_false":[],"semi_empty":[],"semi_not_in":[],"semi_scope_all_matches":[],"semi_scope_no_matches":[],"standalone_not_semi":{"message":"'NOT' operator cannot be combined with semi/anti join subqueries","type":"System.QueryException"}}
+62.0	isTest	{"semi_and_false":[],"semi_empty":[],"semi_not_in":[],"semi_scope_all_matches":[],"semi_scope_no_matches":[],"standalone_not_semi":{"message":"'NOT' operator cannot be combined with semi/anti join subqueries","type":"System.QueryException"}}
+67.0	anonymous	{"semi_and_false":[],"semi_empty":[],"semi_not_in":[],"semi_scope_all_matches":[],"semi_scope_no_matches":[],"standalone_not_semi":{"message":"'NOT' operator cannot be combined with semi/anti join subqueries","type":"System.QueryException"}}
+67.0	isTest	{"semi_and_false":[],"semi_empty":[],"semi_not_in":[],"semi_scope_all_matches":[],"semi_scope_no_matches":[],"standalone_not_semi":{"message":"'NOT' operator cannot be combined with semi/anti join subqueries","type":"System.QueryException"}}

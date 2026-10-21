@@ -1,0 +1,3 @@
+source_api	method	observation
+62.0	conditionalQuery	{"second":true,"first":true}
+67.0	conditionalQuery	{"second":true,"first":true}

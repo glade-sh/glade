@@ -53,6 +53,9 @@ func validateVisualforceFileStructure(path, expected string) error {
 	if err := validateRemoteObjectsSource(string(source), nameFromPath(path, filepath.Ext(path))); err != nil {
 		return err
 	}
+	if err := validateAjaxSource(string(source), nameFromPath(path, filepath.Ext(path))); err != nil {
+		return err
+	}
 	root, err := parseMarkupTree(string(source), nameFromPath(path, filepath.Ext(path)))
 	if err != nil {
 		return err
@@ -61,6 +64,12 @@ func validateVisualforceFileStructure(path, expected string) error {
 		return err
 	}
 	if err := validateFormPlacement(root); err != nil {
+		return err
+	}
+	if err := validateAjaxPlacement(root); err != nil {
+		return err
+	}
+	if err := validateComponentClientIDs(root); err != nil {
 		return err
 	}
 	return validateMarkupComponents(root, nil, "")

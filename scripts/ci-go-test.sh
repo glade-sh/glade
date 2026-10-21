@@ -185,7 +185,11 @@ run_json_with_heartbeat() {
 		if [[ "${CI_LOCAL_RELEASE_METRICS:-0}" == "1" && "${label}" == "go test local-release "* ]]; then
 			test_command=(/usr/bin/time -l -o "${artifact%.json}.time.txt" go)
 		fi
-		"${test_command[@]}" test -json -vet=off "$@" | tee "${artifact}" | run_testlog_renderer
+		if [[ -n "${CI_TEST_BIN_DIR:-}" ]]; then
+			python3 "${script_dir}/ci-test-binary.py" test -json -vet=off "$@"
+		else
+			"${test_command[@]}" test -json -vet=off "$@"
+		fi | tee "${artifact}" | run_testlog_renderer
 		pipeline_status=("${PIPESTATUS[@]}")
 		printf '%s %s %s\n' "${pipeline_status[0]}" "${pipeline_status[1]}" "${pipeline_status[2]}" >"${status_file}"
 	) &
@@ -1137,7 +1141,11 @@ run_test_matrix_shard() {
 	fi
 
 	set +e
-	GOFLAGS="${GOFLAGS:+${GOFLAGS} }-vet=off" go test -list '^Test' "${package_arg}" >"${discovery_raw}" 2>"${discovery_stderr}"
+	if [[ -n "${CI_TEST_BIN_DIR:-}" ]]; then
+		python3 "${script_dir}/ci-test-binary.py" test -list '^Test' "${package_arg}"
+	else
+		GOFLAGS="${GOFLAGS:+${GOFLAGS} }-vet=off" go test -list '^Test' "${package_arg}"
+	fi >"${discovery_raw}" 2>"${discovery_stderr}"
 	discovery_rc="$?"
 	set -e
 	if [[ -s "${discovery_stderr}" ]]; then

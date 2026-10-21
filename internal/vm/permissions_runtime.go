@@ -82,6 +82,13 @@ func storagePermissionValueMatches(value storage.Value, permission string) bool 
 	return false
 }
 func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
+	if method == "isCreateable" || method == "isUpdateable" || method == "isDeletable" {
+		// These objects have no Apex object write access, including
+		// for administrators. Profile privileges cannot enable this surface.
+		if strings.EqualFold(objectName, "Organization") || strings.EqualFold(objectName, "Profile") || strings.EqualFold(objectName, "RecordType") || strings.EqualFold(objectName, "ApexLog") {
+			return false
+		}
+	}
 	if strings.EqualFold(objectName, "User") && method == "isDeletable" {
 		return false
 	}
@@ -126,13 +133,35 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	if allowed, ok := vm.explicitObjectPermission(profileID, objectName, method); ok {
 		return allowed
 	}
+	if vm.profileHasCapturedAccountLicenseRestriction(profileID, objectName) {
+		return false
+	}
 	if vm.profileHasLicense(profileID, "Chatter External") && !isSetupObject(objectName) {
 		return false
 	}
 	if vm.currentProfileHasUserType(profileID, "Guest") {
 		return false
 	}
+	if method == "isAccessible" && vm.configuredUserDirectoryReadable(objectName, profileID) {
+		return true
+	}
 	switch profileName {
+	case "Standard User":
+		// Owned user_field_permission_fallback observations have no custom
+		// object CRUD without an effective profile or permission-set grant.
+		if vm.ordinaryCustomPermissionObject(objectName) || strings.EqualFold(objectName, "AccountBrand") {
+			return false
+		}
+		if method == "isUpdateable" {
+			_, definition, known := vm.describeObjectDefinition(objectName)
+			if known && storage.IsCustomSettingDefinition(definition) &&
+				strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") &&
+				!vm.customSettingManagementPermission(user, profilePermissionSetID) {
+				// Management requires Customize Application. The exact describe
+				// facet is pending native hierarchy-setting permission rows.
+				return false
+			}
+		}
 	case "Minimum Access - Salesforce":
 		return method == "isAccessible" && isBaselineReadableObject(objectName)
 	case "Standard Platform User":
@@ -141,6 +170,27 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 		return method == "isAccessible"
 	}
 	return true
+}
+
+// Owned user_visibility_current_configuration observations permit User reads
+// for internal Standard/SFDC actors with explicit User Read sharing. Keep this
+// after explicit CRUD checks; other models, licenses and write facets are not
+// implied. Existing field permissions and record sharing still apply.
+func (vm *VM) configuredUserDirectoryReadable(objectName, profileID string) bool {
+	if !strings.EqualFold(objectName, "User") || !vm.currentProfileHasUserType(profileID, "Standard") {
+		return false
+	}
+	canonical, ok := vm.resolveObjectName(objectName)
+	if !ok || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[canonical].Definition.SharingModel), "Read") {
+		return false
+	}
+	profile, ok := vm.findOrgRecord("Profile", storage.ID(profileID))
+	if !ok {
+		return false
+	}
+	licenseID := storageValueIDText(profile.Fields["UserLicenseId"])
+	license, ok := vm.findOrgRecord("UserLicense", storage.ID(licenseID))
+	return ok && storageStringValueEquals(license.Fields["LicenseDefinitionKey"], "SFDC")
 }
 
 func (vm *VM) apexMetadataObjectReadable(objectName string) bool {
@@ -157,6 +207,74 @@ func (vm *VM) apexMetadataObjectReadable(objectName string) bool {
 	return storage.IsCustomMetadataDefinition(vm.Org.Objects[resolved].Definition)
 }
 
+func (vm *VM) ordinaryCustomPermissionObject(objectName string) bool {
+	name, definition, ok := vm.describeObjectDefinition(objectName)
+	return ok && hasSuffixFold(name, "__c") && !storage.IsCustomSettingDefinition(definition)
+}
+
+// Universally required custom fields override FLS (Salesforce Help, What
+// Determines Field Access?). Owned user_field_permission_fallback observations
+// also establish RecordTypeId on an ordinary custom object as non-permissionable.
+// Both still require object CRUD; record-type availability is a separate fact.
+func (vm *VM) customFieldHasIntrinsicAccess(objectName, fieldName string) bool {
+	name, definition, ok := vm.describeObjectDefinition(objectName)
+	if !ok || storage.IsCustomSettingDefinition(definition) {
+		return false
+	}
+	namespace := ""
+	if vm.Org != nil {
+		namespace = vm.Org.Namespace
+	}
+	canonical, ok := storage.ResolveFieldName(definition, namespace, fieldName)
+	if !ok {
+		return false
+	}
+	field := definition.Fields[canonical]
+	// A universally required custom field is always accessible, on standard
+	// objects too (scratch-org row: User.ReqU__c under a profile that lists
+	// another User field).
+	if field.Required && isCustomSchemaName(canonical) {
+		return true
+	}
+	if !hasSuffixFold(name, "__c") {
+		return false
+	}
+	// Name (Text) and OwnerId on an ordinary custom object are not
+	// permissionable: a profile that lists other fields of the object does not
+	// hide them. Object CRUD still gates them (native rows, API 62 and 67).
+	if strings.EqualFold(canonical, "Name") && strings.EqualFold(definition.Metadata["nameFieldType"], "Text") {
+		return true
+	}
+	if strings.EqualFold(canonical, "OwnerId") && !storage.IsMasterDetailCustomObject(definition) {
+		return true
+	}
+	if strings.EqualFold(canonical, "RecordTypeId") && field.Type == storage.FieldReference {
+		for _, target := range field.ReferenceTo {
+			if strings.EqualFold(target, "RecordType") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (vm *VM) customSettingManagementPermission(user Value, profilePermissionSetID string) bool {
+	if userHasPermission(user, "CustomizeApplication") {
+		return true
+	}
+	parents := append([]string{profilePermissionSetID}, vm.assignedPermissionSetIDs(stringField(user, "Id"))...)
+	for _, id := range parents {
+		record, ok := vm.findOrgRecord("PermissionSet", storage.ID(id))
+		if !ok {
+			continue
+		}
+		if flag, ok := record.GetField("PermissionsCustomizeApplication"); ok && flag.Kind == storage.ValueBoolean && flag.Boolean {
+			return true
+		}
+	}
+	return false
+}
+
 func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) bool {
 	if vm.Org == nil {
 		return true
@@ -170,7 +288,9 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	if profileName == "System Administrator" {
 		return true
 	}
-	if method == "isAccessible" && isBaselineSystemFieldReadableWithoutObjectAccess(fieldName) {
+	intrinsicAccess := vm.customFieldHasIntrinsicAccess(objectName, fieldName)
+	if method == "isAccessible" && isBaselineSystemFieldReadableWithoutObjectAccess(fieldName) && !intrinsicAccess &&
+		(!vm.profileHasCapturedAccountLicenseRestriction(profileID, objectName) || vm.currentUserObjectPermission(objectName, "isAccessible")) {
 		return true
 	}
 	if objectMethod := fieldPermissionObjectMethod(method); objectMethod != "" && !vm.currentUserObjectPermission(objectName, objectMethod) {
@@ -184,12 +304,32 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 		if allowed, ok := vm.explicitFieldPermission(permissionSetID, objectName, fieldName, method); ok && allowed {
 			return true
 		}
+		// CR-039: assigned object CRUD grants apply to schema-designated,
+		// non-permissionable Name fields without a FieldPermissions row.
+		// Keep this observed runAs path subject to intrinsic write limits.
+		if vm.testContext != nil && vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth &&
+			vm.nameFieldHasNoFieldLevelPermissions(objectName, fieldName) {
+			if allowed, ok := vm.explicitObjectPermission(permissionSetID, objectName, fieldPermissionObjectMethod(method)); ok && allowed {
+				return vm.stripInaccessibleIntrinsicFieldPermission(objectName, fieldName, method)
+			}
+		}
 	}
 	if allowed, ok := vm.explicitFieldPermission(profilePermissionSetID, objectName, fieldName, method); ok {
 		return allowed
 	}
 	if allowed, ok := vm.explicitFieldPermission(profileID, objectName, fieldName, method); ok {
 		return allowed
+	}
+	if intrinsicAccess {
+		return true
+	}
+	if method == "isAccessible" && strings.EqualFold(objectName, "User") {
+		// These standard User fields remain readable under a custom profile
+		// that lists other User field permissions (owned API 62/67 rows).
+		switch strings.ToLower(fieldName) {
+		case "name", "email", "phone", "alias", "isactive", "lastname", "managerid":
+			return true
+		}
 	}
 	if profilePermissionSetID != "" && vm.parentHasFieldPermissionsForObject(profilePermissionSetID, objectName) {
 		return false
@@ -204,6 +344,20 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 		return true
 	}
 	switch profileName {
+	case "Standard User":
+		if vm.ordinaryCustomPermissionObject(objectName) && (method != "isUpdateable" || isCustomSchemaName(fieldName)) {
+			return false
+		}
+		// Object CRUD does not grant access to optional, permissionable custom
+		// fields on standard objects. Explicit field grants above still combine.
+		if canonical, definition, ok := vm.describeObjectDefinition(objectName); ok && storage.IsKnownStandardObject(canonical) {
+			if field, found := storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName); found && isCustomSchemaName(field) {
+				metadata := definition.Fields[field]
+				if !metadata.Required && storage.FieldFlagValue(metadata.Permissionable, true) {
+					return false
+				}
+			}
+		}
 	case "Minimum Access - Salesforce":
 		return false
 	case "Standard Platform User":
@@ -219,6 +373,30 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 
 func isBaselineSystemFieldReadableWithoutObjectAccess(fieldName string) bool {
 	return strings.EqualFold(fieldName, "Id") || isBaselineSystemReadableField(fieldName)
+}
+
+func (vm *VM) nameFieldHasNoFieldLevelPermissions(objectName, fieldName string) bool {
+	canonical, ok := vm.resolveObjectName(objectName)
+	if !ok {
+		return false
+	}
+	definition := vm.Org.Objects[canonical].Definition
+	fieldName, ok = storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
+	if !ok {
+		return false
+	}
+	field := definition.Fields[fieldName]
+	if !storage.IsKnownStandardObject(canonical) {
+		nameType := definition.Metadata["nameFieldType"]
+		if !strings.EqualFold(nameType, "Text") && !strings.EqualFold(nameType, "AutoNumber") {
+			return false
+		}
+	}
+	// Activity COMBOBOX name fields are outside the captured shapes.
+	if !isNameFieldDescribe(field) || strings.EqualFold(field.DisplayType, "COMBOBOX") {
+		return false
+	}
+	return field.Permissionable != nil && !*field.Permissionable
 }
 
 func fieldPermissionObjectMethod(method string) string {
@@ -289,6 +467,9 @@ func (vm *VM) enforceUserModeDMLAccess(op string, value Value, accessLevel Value
 		}
 		for field := range record.Fields {
 			if fieldPermission == "" || isInternalSObjectField(field) || isSObjectSystemField(field) || isDefaultedSObjectField(record, field) {
+				continue
+			}
+			if record.Fields[field].Kind == ValueList && vm.childRelationshipLookup(objectName, field).ChildType != "" {
 				continue
 			}
 			canonicalField := vm.resolveSObjectFieldName(objectName, field)
@@ -404,13 +585,51 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 		return false, newExceptionError("NoAccessException", "No access to entity: "+objectName)
 	}
 	fieldPermission := stripInaccessibleFieldPermission(accessType)
+	// Disabling root CRUD enforcement suppresses the exception; it does not
+	// retain readable fields of an inaccessible object. Id is handled separately.
+	readableObject := accessType != "READABLE" || vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", scopedPermissionSetID)
 	for _, field := range orderedSObjectFieldIteration(*record) {
 		value, ok := record.Fields[field]
 		if !ok {
 			continue
 		}
-		if isInternalSObjectField(field) || isSObjectSystemField(field) && !isExplicitSObjectField(*record, field) {
+		// Schema defaults expose OwnerId to callers just like an explicit
+		// assignment. Its read permission still applies when root CRUD is disabled.
+		readableOwner := accessType == "READABLE" && strings.EqualFold(field, "OwnerId")
+		if isInternalSObjectField(field) || isSObjectSystemField(field) && !isExplicitSObjectField(*record, field) && !readableOwner {
 			continue
+		}
+		// Pending native rows cover only a fresh ordinary custom record's
+		// implicit false checkbox default, not explicit or queried values.
+		_, queriedRecord := record.Fields[sobjectQueriedFieldsField]
+		_, clonedRecord := record.Fields[sobjectCloneMarkerField]
+		// Omitted checkbox defaults stay unpopulated during stripping on
+		// standard objects and ordinary custom-object updates.
+		// Explicit and queried values still require field permissions.
+		if (accessType == "CREATABLE" || accessType == "UPDATABLE") && scopedPermissionSetID == "" &&
+			value.Kind == ValueBool && !value.Bool && (!queriedRecord || dmlAccessibleSObject(*record)) && !isTriggerSObject(*record) &&
+			isDefaultedSObjectField(*record, field) && !isExplicitSObjectField(*record, field) &&
+			!isUserSetSObjectField(*record, field) &&
+			(storage.IsKnownStandardObject(objectName) || accessType == "UPDATABLE" && vm.ordinaryCustomPermissionObject(objectName)) {
+			canonicalField := vm.resolveSObjectFieldName(objectName, field)
+			_, definition, declared := vm.sObjectFieldDefinition(objectName, canonicalField)
+			if declared && isCustomSchemaName(canonicalField) && definition.Type == storage.FieldBoolean &&
+				strings.EqualFold(strings.TrimSpace(definition.DefaultValue), "false") {
+				continue
+			}
+		}
+		if accessType == "CREATABLE" && scopedPermissionSetID == "" && sObjectIDFromFields(record.Fields) == "" &&
+			value.Kind == ValueBool && !value.Bool && !queriedRecord && !clonedRecord && !isTriggerSObject(*record) &&
+			isDefaultedSObjectField(*record, field) && !isExplicitSObjectField(*record, field) &&
+			!isUserSetSObjectField(*record, field) && !vm.queriedSObjectFieldsIncludes(*record, field) &&
+			vm.ordinaryCustomPermissionObject(objectName) &&
+			vm.currentUserFieldPermissionWithScope(objectName, vm.resolveSObjectFieldName(objectName, field), "isAccessible", scopedPermissionSetID) {
+			_, definition, declared := vm.sObjectFieldDefinition(objectName, field)
+			if declared && storage.FieldFlagValue(definition.Accessible, true) && definition.Type == storage.FieldBoolean &&
+				strings.EqualFold(strings.TrimSpace(definition.DefaultValue), "false") &&
+				vm.stripInaccessibleIntrinsicFieldPermission(objectName, vm.resolveSObjectFieldName(objectName, field), "isCreateable") {
+				continue
+			}
 		}
 		if value.Kind == ValueList {
 			if childObjectName := sObjectListObjectName(value); childObjectName != "" {
@@ -454,7 +673,7 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 		if strings.EqualFold(canonicalField, "Id") {
 			continue
 		}
-		fieldAllowed := vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID)
+		fieldAllowed := readableObject && vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID)
 		if scopedPermissionSetID == "" {
 			fieldAllowed = fieldAllowed || vm.stripInaccessibleKeepsBaselineWritableField(accessType, objectName, canonicalField)
 		}
@@ -483,7 +702,7 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 				continue
 			}
 			canonicalField := vm.resolveSObjectFieldName(objectName, field)
-			fieldAllowed := vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID)
+			fieldAllowed := readableObject && vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID)
 			if scopedPermissionSetID == "" {
 				fieldAllowed = fieldAllowed || vm.stripInaccessibleKeepsBaselineWritableField(accessType, objectName, canonicalField)
 			}
@@ -676,7 +895,7 @@ func (vm *VM) explicitObjectPermission(parentID, objectName, method string) (boo
 		if parentIDValue, ok := record.GetField("ParentId"); !ok || !storageIDValueEquals(parentIDValue, parentID) {
 			continue
 		}
-		if sObjectTypeValue, ok := record.GetField("SObjectType"); !ok || !storageStringValueEquals(sObjectTypeValue, objectName) {
+		if sObjectTypeValue, ok := record.GetField("SObjectType"); !ok || (sObjectTypeValue.Kind != storage.ValueString || !vm.permissionMetadataNameMatches(objectName, sObjectTypeValue.String)) {
 			continue
 		}
 		value, ok := record.GetField(field)
@@ -703,7 +922,7 @@ func (vm *VM) explicitFieldPermission(parentID, objectName, fieldName, method st
 		if parentIDValue, ok := record.GetField("ParentId"); !ok || !storageIDValueEquals(parentIDValue, parentID) {
 			continue
 		}
-		if sObjectTypeValue, ok := record.GetField("SObjectType"); !ok || !storageStringValueEquals(sObjectTypeValue, objectName) {
+		if sObjectTypeValue, ok := record.GetField("SObjectType"); !ok || (sObjectTypeValue.Kind != storage.ValueString || !vm.permissionMetadataNameMatches(objectName, sObjectTypeValue.String)) {
 			continue
 		}
 		if fieldValue, ok := record.GetField("Field"); !ok || !vm.fieldPermissionFieldMatches(fieldValue, objectName, fieldName) {
@@ -729,11 +948,24 @@ func (vm *VM) parentHasFieldPermissionsForObject(parentID, objectName string) bo
 		if parentIDValue, ok := record.GetField("ParentId"); !ok || !storageIDValueEquals(parentIDValue, parentID) {
 			continue
 		}
-		if sObjectTypeValue, ok := record.GetField("SObjectType"); ok && storageStringValueEquals(sObjectTypeValue, objectName) {
+		if sObjectTypeValue, ok := record.GetField("SObjectType"); ok && sObjectTypeValue.Kind == storage.ValueString && vm.permissionMetadataNameMatches(objectName, sObjectTypeValue.String) {
 			return true
 		}
 	}
 	return false
+}
+func (vm *VM) permissionMetadataNameMatches(canonical, candidate string) bool {
+	if strings.EqualFold(canonical, candidate) {
+		return true
+	}
+	if !strings.HasSuffix(strings.ToLower(canonical), "__c") || !strings.HasSuffix(strings.ToLower(candidate), "__c") {
+		return false
+	}
+	namespace := ""
+	if vm.Org != nil {
+		namespace = vm.Org.Namespace
+	}
+	return metadataObjectNameMatches(namespace, canonical, candidate)
 }
 func (vm *VM) fieldPermissionFieldMatches(value storage.Value, objectName, fieldName string) bool {
 	if value.Kind != storage.ValueString {
@@ -741,12 +973,12 @@ func (vm *VM) fieldPermissionFieldMatches(value storage.Value, objectName, field
 	}
 	text := value.String
 	if dot := strings.LastIndexByte(text, '.'); dot >= 0 {
-		return strings.EqualFold(text[:dot], objectName) && vm.fieldPermissionNameMatches(objectName, text[dot+1:], fieldName)
+		return vm.permissionMetadataNameMatches(objectName, text[:dot]) && vm.fieldPermissionNameMatches(objectName, text[dot+1:], fieldName)
 	}
 	return vm.fieldPermissionNameMatches(objectName, text, fieldName)
 }
 func (vm *VM) fieldPermissionNameMatches(objectName, permissionField, fieldName string) bool {
-	if strings.EqualFold(permissionField, fieldName) {
+	if vm.permissionMetadataNameMatches(fieldName, permissionField) {
 		return true
 	}
 	for _, component := range vm.compoundFieldPermissionComponents(objectName, permissionField) {
@@ -809,9 +1041,14 @@ func (vm *VM) assignedPermissionSetIDs(userID string) []string {
 	}
 	var out []string
 	for _, record := range state.Records {
-		if assigneeValue, ok := record.GetField("AssigneeId"); ok && storageIDValueEquals(assigneeValue, userID) {
+		if assigneeValue, ok := record.GetField("AssigneeId"); ok && storage.IDsEqual(storage.ID(storageValueIDText(assigneeValue)), storage.ID(userID)) {
 			if permissionSetValue, ok := record.GetField("PermissionSetId"); ok {
 				if id := storageValueIDText(permissionSetValue); id != "" {
+					// Text conversion can expand an Id to eighteen characters.
+					// Existing permission rows still refer to the stored set key.
+					if storedID, _, found := storage.LookupRecordByID(vm.Org.Objects["PermissionSet"].Records, storage.ID(id)); found {
+						id = string(storedID)
+					}
 					out = append(out, id)
 				}
 			}
@@ -917,7 +1154,7 @@ func (vm *VM) isBaselineReadableField(objectName, fieldName string) bool {
 }
 func isBaselineSystemReadableField(fieldName string) bool {
 	switch strings.ToLower(strings.TrimSpace(fieldName)) {
-	case "createdbyid", "createddate", "isdeleted", "lastmodifiedbyid", "lastmodifieddate", "ownerid", "recordtypeid", "systemmodstamp":
+	case "createdbyid", "createddate", "isdeleted", "lastmodifiedbyid", "lastmodifieddate", "lastreferenceddate", "lastvieweddate", "ownerid", "recordtypeid", "systemmodstamp":
 		return true
 	default:
 		return false

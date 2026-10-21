@@ -1,9 +1,42 @@
 package visualforce
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
+
+// and partial rendering's duplicate/whitespace target controls use the same naming-container
+// identities as the renderer. Keep allocation in the shared resolver.
+func validateComponentClientIDs(root *MarkupNode) error {
+	refs := newComponentReferenceResolver(root, nil)
+	seen := map[string]bool{}
+	var walk func(*MarkupNode) error
+	walk = func(node *MarkupNode) error {
+		if node == nil {
+			return nil
+		}
+		if node.Namespace == "apex" && node.HasAttribute("id") {
+			id := node.Attribute("id")
+			if strings.Contains(id, " ") {
+				return fmt.Errorf("%s", id)
+			}
+			if clientID := refs.clientIDs[node]; clientID != "" {
+				if seen[clientID] {
+					return fmt.Errorf("Duplicate ids have been detected: '%s'", clientID)
+				}
+				seen[clientID] = true
+			}
+		}
+		for _, child := range node.Children {
+			if err := walk(child); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	return walk(root)
+}
 
 type componentReferenceResolver struct {
 	root      *componentReferenceNode
@@ -56,14 +89,14 @@ func newComponentReferenceResolver(root *MarkupNode, inherited *componentReferen
 				resolver.indexPage(child, page, pageScope)
 				continue
 			}
-			resolver.indexNode(child, page, page, pageScope, &literal)
+			resolver.indexNode(child, page, page, page, pageScope, &literal)
 		}
 		if literal {
 			resolver.root.nextGeneratedID()
 		}
 		return resolver
 	}
-	resolver.indexChildren(&MarkupNode{Children: []*MarkupNode{root}}, page, page, pageScope)
+	resolver.indexChildren(&MarkupNode{Children: []*MarkupNode{root}}, page, page, page, pageScope)
 	return resolver
 }
 
@@ -77,22 +110,22 @@ func (resolver *componentReferenceResolver) indexPage(page *MarkupNode, componen
 	}
 	resolver.scopes[page] = pageScope
 	resolver.clientIDs[page] = componentParent.clientID
-	resolver.indexChildren(page, componentParent, componentParent, pageScope)
+	resolver.indexChildren(page, componentParent, componentParent, componentParent, pageScope)
 }
 
 // Native required-ID controls show a page-wide sequence. A contiguous run of
 // plain markup is one anonymous component, including nested HTML and its text.
-func (resolver *componentReferenceResolver) indexChildren(node *MarkupNode, componentParent, namingContainer *componentReferenceNode, scope *componentReferenceScope) {
+func (resolver *componentReferenceResolver) indexChildren(node *MarkupNode, componentParent, namingContainer, clientParent *componentReferenceNode, scope *componentReferenceScope) {
 	literal := false
 	for _, child := range node.Children {
-		resolver.indexNode(child, componentParent, namingContainer, scope, &literal)
+		resolver.indexNode(child, componentParent, namingContainer, clientParent, scope, &literal)
 	}
 	if literal {
 		resolver.root.nextGeneratedID()
 	}
 }
 
-func (resolver *componentReferenceResolver) indexNode(node *MarkupNode, componentParent, namingContainer *componentReferenceNode, scope *componentReferenceScope, literal *bool) {
+func (resolver *componentReferenceResolver) indexNode(node *MarkupNode, componentParent, namingContainer, clientParent *componentReferenceNode, scope *componentReferenceScope, literal *bool) {
 	if node == nil {
 		return
 	}
@@ -118,7 +151,7 @@ func (resolver *componentReferenceResolver) indexNode(node *MarkupNode, componen
 		}
 		ref := &componentReferenceNode{
 			localID:         localID,
-			clientID:        joinComponentClientID(namingContainer.clientID, localID),
+			clientID:        joinComponentClientID(clientParent.clientID, localID),
 			children:        map[string]*componentReferenceNode{},
 			namingContainer: strings.EqualFold(node.Name, "form") || strings.EqualFold(node.Name, "repeat"),
 		}
@@ -128,8 +161,14 @@ func (resolver *componentReferenceResolver) indexNode(node *MarkupNode, componen
 		if ref.namingContainer {
 			childContainer = ref
 		}
+		// Captured field widgets include block and section identifiers in their
+		// client IDs. These prefixes do not create $Component lookup boundaries.
+		childClientParent := clientParent
+		if ref.namingContainer || strings.EqualFold(node.Name, "pageBlock") || strings.EqualFold(node.Name, "pageBlockSection") {
+			childClientParent = ref
+		}
 		childScope := &componentReferenceScope{resolver: resolver, container: childContainer}
-		resolver.indexChildren(node, ref, childContainer, childScope)
+		resolver.indexChildren(node, ref, childContainer, childClientParent, childScope)
 		if strings.EqualFold(node.Name, "pageMessages") {
 			// No/one/two pageMessages controls allocate 0/26/52 automatic
 			// IDs: the component above plus its 25 internal components.
@@ -139,7 +178,7 @@ func (resolver *componentReferenceResolver) indexNode(node *MarkupNode, componen
 	}
 	*literal = true // Opening HTML is part of the current literal run.
 	for _, child := range node.Children {
-		resolver.indexNode(child, componentParent, namingContainer, scope, literal)
+		resolver.indexNode(child, componentParent, namingContainer, clientParent, scope, literal)
 	}
 	if !isVoidHTMLElement(node.Name) {
 		*literal = true

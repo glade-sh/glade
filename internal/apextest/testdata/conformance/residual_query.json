@@ -1,0 +1,4090 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 21,
+  "runtimeObservationCount": 66,
+  "carriedObservationCount": 30,
+  "provenance": "Owned black-box Salesforce observations on the current release, captured at each source API. Unsuffixed query rows run as the administrator. Restricted actor fixtures were verified, but every restricted query wrapper was rejected before its query body executed.",
+  "normalization": "Outer assertion/chunk transport is replaced with a short synthetic observer. Measured administrator bodies and runtime payloads are unchanged. Compiler component names are omitted from carried diagnostics; diagnostic type, line, column and problem text remain exact. No rejected wrapper is treated as a query-language rejection. Synthetic fixture label identity is renamed consistently from the capture label to Synthetic query seed in sources and payloads; no measured behavior, type, nullness or diagnostic changes.",
+  "restrictedFixture": {
+    "actorProfile": "Minimum Access - Salesforce",
+    "actorLicense": "Salesforce",
+    "accountRead": true,
+    "contactRead": true,
+    "contactIdRead": true,
+    "contactNameRead": true,
+    "contactBirthdateRead": false,
+    "scope": "Only named runAs; restricted anonymous rows were unavailable. Actor creation, identity and Contact-read permission preflight succeeded independently of rejected query wrappers.",
+    "requiredCaseRead": false,
+    "casePermissionPreflight": "Case denial was guarded inside each rejected wrapper and was not observed by these cells."
+  },
+  "rows": [
+    {
+      "id": "C03",
+      "routes": {
+        "anonymous": {
+          "id": "C03",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C03|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "C03",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "classes": {
+            "ResidualQueryObserver": "@IsTest(SeeAllData=false) private without sharing class ResidualQueryObserver{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C03|'+JSON.serialize(payload));}}"
+          },
+          "tests": [
+            "ResidualQueryObserver"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C04",
+      "routes": {
+        "anonymous": {
+          "id": "C04",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Priority": "Medium",
+                    "Status": "New",
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH USER_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Priority": "Medium",
+                    "Status": "New",
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH USER_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Priority": "Medium",
+                    "Status": "New",
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH USER_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH USER_MODE ORDER BY Subject ASC NULLS FIRST';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C04|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "C04",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Priority": "Medium",
+                    "Status": "New",
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH USER_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Priority": "Medium",
+                    "Status": "New",
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH USER_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Priority": "Medium",
+                    "Status": "New",
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH USER_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "classes": {
+            "ResidualQueryObserver": "@IsTest(SeeAllData=false) private without sharing class ResidualQueryObserver{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH USER_MODE ORDER BY Subject ASC NULLS FIRST';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C04|'+JSON.serialize(payload));}}"
+          },
+          "tests": [
+            "ResidualQueryObserver"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C05",
+      "routes": {
+        "anonymous": {
+          "id": "C05",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "seedCount": 1,
+                "query": "SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH SYSTEM_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "exceptionType": "System.SecurityException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "seedCount": 1,
+                "query": "SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH SYSTEM_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "exceptionType": "System.SecurityException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "seedCount": 1,
+                "query": "SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH SYSTEM_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.",
+                "exceptionType": "System.SecurityException"
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH SYSTEM_MODE ORDER BY Subject ASC NULLS FIRST';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: readable control hidden');}}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C05|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "C05",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Priority": "Medium",
+                    "Status": "New",
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH SYSTEM_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Priority": "Medium",
+                    "Status": "New",
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH SYSTEM_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Priority": "Medium",
+                    "Status": "New",
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH SYSTEM_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "classes": {
+            "ResidualQueryObserver": "@IsTest(SeeAllData=false) private without sharing class ResidualQueryObserver{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH SYSTEM_MODE ORDER BY Subject ASC NULLS FIRST';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: readable control hidden');}}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C05|'+JSON.serialize(payload));}}"
+          },
+          "tests": [
+            "ResidualQueryObserver"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C06",
+      "routes": {
+        "anonymous": {
+          "id": "C06",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "System.runAs can only be used within a test method: ",
+                "exceptionType": "System.TypeException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "System.runAs can only be used within a test method: ",
+                "exceptionType": "System.TypeException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "System.runAs can only be used within a test method: ",
+                "exceptionType": "System.TypeException"
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{System.runAs(new User(Id=UserInfo.getUserId())){payload.put('entered',true);payload.put('sameUser',true);}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C06|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "C06",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "sameUser": true,
+                "entered": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "sameUser": true,
+                "entered": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "sameUser": true,
+                "entered": true,
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "classes": {
+            "ResidualQueryObserver": "@IsTest(SeeAllData=false) private without sharing class ResidualQueryObserver{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{System.runAs(new User(Id=UserInfo.getUserId())){payload.put('entered',true);payload.put('sameUser',true);}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C06|'+JSON.serialize(payload));}}"
+          },
+          "tests": [
+            "ResidualQueryObserver"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C07",
+      "routes": {
+        "anonymous": {
+          "id": "C07",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Birthdate": "2024-02-03",
+                    "Name": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Name,Birthdate FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Birthdate": "2024-02-03",
+                    "Name": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Name,Birthdate FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Birthdate": "2024-02-03",
+                    "Name": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Name,Birthdate FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Contact seed=new Contact(LastName='Synthetic query seed',Birthdate=Date.newInstance(2024,2,3),OwnerId=UserInfo.getUserId());insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Name,Birthdate FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: readable control hidden');}}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C07|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "C07",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Birthdate": "2024-02-03",
+                    "Name": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Name,Birthdate FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Birthdate": "2024-02-03",
+                    "Name": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Name,Birthdate FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Birthdate": "2024-02-03",
+                    "Name": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Name,Birthdate FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "classes": {
+            "ResidualQueryObserver": "@IsTest(SeeAllData=false) private without sharing class ResidualQueryObserver{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Contact seed=new Contact(LastName='Synthetic query seed',Birthdate=Date.newInstance(2024,2,3),OwnerId=UserInfo.getUserId());insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Name,Birthdate FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: readable control hidden');}}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C07|'+JSON.serialize(payload));}}"
+          },
+          "tests": [
+            "ResidualQueryObserver"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C08",
+      "routes": {
+        "anonymous": {
+          "id": "C08",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Name": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Name FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Name": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Name FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Name": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Name FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Contact seed=new Contact(LastName='Synthetic query seed',Birthdate=Date.newInstance(2024,2,3),OwnerId=UserInfo.getUserId());insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Name FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: readable control hidden');}}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C08|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "C08",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Name": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Name FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Name": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Name FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Name": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Name FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "classes": {
+            "ResidualQueryObserver": "@IsTest(SeeAllData=false) private without sharing class ResidualQueryObserver{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Contact seed=new Contact(LastName='Synthetic query seed',Birthdate=Date.newInstance(2024,2,3),OwnerId=UserInfo.getUserId());insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Name FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: readable control hidden');}}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C08|'+JSON.serialize(payload));}}"
+          },
+          "tests": [
+            "ResidualQueryObserver"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C10",
+      "routes": {
+        "anonymous": {
+          "id": "C10",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Subject,Id FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Subject,Id FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Subject,Id FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Subject,Id FROM Case WHERE Id=:k WITH USER_MODE';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C10|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "C10",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Subject,Id FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Subject,Id FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Subject,Id FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "classes": {
+            "ResidualQueryObserver": "@IsTest(SeeAllData=false) private without sharing class ResidualQueryObserver{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Subject,Id FROM Case WHERE Id=:k WITH USER_MODE';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C10|'+JSON.serialize(payload));}}"
+          },
+          "tests": [
+            "ResidualQueryObserver"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C11",
+      "routes": {
+        "anonymous": {
+          "id": "C11",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Status": "New",
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject,Status FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Status": "New",
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject,Status FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Status": "New",
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject,Status FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Subject,Status FROM Case WHERE Id=:k WITH USER_MODE';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C11|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "C11",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Status": "New",
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject,Status FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Status": "New",
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject,Status FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Status": "New",
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject,Status FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "classes": {
+            "ResidualQueryObserver": "@IsTest(SeeAllData=false) private without sharing class ResidualQueryObserver{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Subject,Status FROM Case WHERE Id=:k WITH USER_MODE';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C11|'+JSON.serialize(payload));}}"
+          },
+          "tests": [
+            "ResidualQueryObserver"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C12",
+      "routes": {
+        "anonymous": {
+          "id": "C12",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "IsClosed": false,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject,IsClosed FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "IsClosed": false,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject,IsClosed FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "IsClosed": false,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject,IsClosed FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Subject,IsClosed FROM Case WHERE Id=:k WITH USER_MODE';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C12|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "C12",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "IsClosed": false,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject,IsClosed FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "IsClosed": false,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject,IsClosed FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "IsClosed": false,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject,IsClosed FROM Case WHERE Id=:k WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "classes": {
+            "ResidualQueryObserver": "@IsTest(SeeAllData=false) private without sharing class ResidualQueryObserver{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Subject,IsClosed FROM Case WHERE Id=:k WITH USER_MODE';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C12|'+JSON.serialize(payload));}}"
+          },
+          "tests": [
+            "ResidualQueryObserver"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C13",
+      "routes": {
+        "anonymous": {
+          "id": "C13",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id IN :keys WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id IN :keys WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id IN :keys WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Subject FROM Case WHERE Id IN :keys WITH USER_MODE';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C13|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "C13",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id IN :keys WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id IN :keys WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id IN :keys WITH USER_MODE",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "classes": {
+            "ResidualQueryObserver": "@IsTest(SeeAllData=false) private without sharing class ResidualQueryObserver{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Subject FROM Case WHERE Id IN :keys WITH USER_MODE';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C13|'+JSON.serialize(payload));}}"
+          },
+          "tests": [
+            "ResidualQueryObserver"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C14",
+      "routes": {
+        "anonymous": {
+          "id": "C14",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE ORDER BY Subject ASC NULLS FIRST';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C14|'+JSON.serialize(payload));"
+        },
+        "isTest": {
+          "id": "C14",
+          "stage": "observed",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "rows": [
+                  {
+                    "matchesSeed": true,
+                    "Subject": "Synthetic query seed"
+                  }
+                ],
+                "count": 1,
+                "outsideCount": 0,
+                "seedCount": 1,
+                "query": "SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE ORDER BY Subject ASC NULLS FIRST",
+                "exceptionMessage": null,
+                "exceptionType": null
+              }
+            }
+          },
+          "classes": {
+            "ResidualQueryObserver": "@IsTest(SeeAllData=false) private without sharing class ResidualQueryObserver{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE ORDER BY Subject ASC NULLS FIRST';payload.put('query',shape);payload.put('seedCount',1);try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}catch(Exception issue){payload.put('exceptionType',issue.getTypeName());payload.put('exceptionMessage',issue.getMessage());}System.assert(false,'NATIVE_RESULT|C14|'+JSON.serialize(payload));}}"
+          },
+          "tests": [
+            "ResidualQueryObserver"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C03R",
+      "routes": {
+        "isTest": {
+          "id": "C03R",
+          "stage": "carried",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34189,
+                    "problem": "Column too large: 34189"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37279,
+                    "problem": "Column too large: 37279"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 40369,
+                    "problem": "Column too large: 40369"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 43459,
+                    "problem": "Column too large: 43459"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 46549,
+                    "problem": "Column too large: 46549"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 49639,
+                    "problem": "Column too large: 49639"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 52729,
+                    "problem": "Column too large: 52729"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 55819,
+                    "problem": "Column too large: 55819"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58909,
+                    "problem": "Column too large: 58909"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 61999,
+                    "problem": "Column too large: 61999"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65089,
+                    "problem": "Column too large: 65089"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68179,
+                    "problem": "Column too large: 68179"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71269,
+                    "problem": "Column too large: 71269"
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34189,
+                    "problem": "Column too large: 34189"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37279,
+                    "problem": "Column too large: 37279"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 40369,
+                    "problem": "Column too large: 40369"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 43459,
+                    "problem": "Column too large: 43459"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 46549,
+                    "problem": "Column too large: 46549"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 49639,
+                    "problem": "Column too large: 49639"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 52729,
+                    "problem": "Column too large: 52729"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 55819,
+                    "problem": "Column too large: 55819"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58909,
+                    "problem": "Column too large: 58909"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 61999,
+                    "problem": "Column too large: 61999"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65089,
+                    "problem": "Column too large: 65089"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68179,
+                    "problem": "Column too large: 68179"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71269,
+                    "problem": "Column too large: 71269"
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34189,
+                    "problem": "Column too large: 34189"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37279,
+                    "problem": "Column too large: 37279"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 40369,
+                    "problem": "Column too large: 40369"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 43459,
+                    "problem": "Column too large: 43459"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 46549,
+                    "problem": "Column too large: 46549"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 49639,
+                    "problem": "Column too large: 49639"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 52729,
+                    "problem": "Column too large: 52729"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 55819,
+                    "problem": "Column too large: 55819"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58909,
+                    "problem": "Column too large: 58909"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 61999,
+                    "problem": "Column too large: 61999"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65089,
+                    "problem": "Column too large: 65089"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68179,
+                    "problem": "Column too large: 68179"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71269,
+                    "problem": "Column too large: 71269"
+                  }
+                ]
+              }
+            }
+          },
+          "carryReason": "The assertion-chunk wrapper exceeds the native single-line column limit. Salesforce rejected the enclosing class before any restricted query executed; inaccessible maps, query diagnostics and readable-row behavior remain unobserved.",
+          "measuredApex": "User actor=[SELECT Id,ProfileId,Profile.UserLicense.Name,Profile.UserLicense.Status FROM User WHERE Username='[EMAIL]'];Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE';payload.put('query',shape);payload.put('seedCount',1);System.runAs(actor){payload.put('actorUserHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getUserId()))));payload.put('actorProfileHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getProfileId()))));if(UserInfo.getUserId()!=actor.Id || UserInfo.getProfileId()!=actor.ProfileId){throw new IllegalArgumentException('FIXTURE_ERROR: actor identity');}Map<String,Object> bits=new Map<String,Object>{'caseRead'=>Case.SObjectType.getDescribe().isAccessible(),'Id'=>Case.Id.getDescribe().isAccessible(),'Subject'=>Case.Subject.getDescribe().isAccessible()};payload.put('actorPermissions',bits);if((Boolean)bits.get('caseRead')){throw new IllegalArgumentException('FIXTURE_ERROR: case permissions');}try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}"
+        }
+      }
+    },
+    {
+      "id": "C04R",
+      "routes": {
+        "isTest": {
+          "id": "C04R",
+          "stage": "carried",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 35960,
+                    "problem": "Column too large: 35960"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 39211,
+                    "problem": "Column too large: 39211"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 42462,
+                    "problem": "Column too large: 42462"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 45713,
+                    "problem": "Column too large: 45713"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 48964,
+                    "problem": "Column too large: 48964"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 52215,
+                    "problem": "Column too large: 52215"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 55466,
+                    "problem": "Column too large: 55466"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58717,
+                    "problem": "Column too large: 58717"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 61968,
+                    "problem": "Column too large: 61968"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65219,
+                    "problem": "Column too large: 65219"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68470,
+                    "problem": "Column too large: 68470"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71721,
+                    "problem": "Column too large: 71721"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 74972,
+                    "problem": "Column too large: 74972"
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 35960,
+                    "problem": "Column too large: 35960"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 39211,
+                    "problem": "Column too large: 39211"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 42462,
+                    "problem": "Column too large: 42462"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 45713,
+                    "problem": "Column too large: 45713"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 48964,
+                    "problem": "Column too large: 48964"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 52215,
+                    "problem": "Column too large: 52215"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 55466,
+                    "problem": "Column too large: 55466"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58717,
+                    "problem": "Column too large: 58717"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 61968,
+                    "problem": "Column too large: 61968"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65219,
+                    "problem": "Column too large: 65219"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68470,
+                    "problem": "Column too large: 68470"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71721,
+                    "problem": "Column too large: 71721"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 74972,
+                    "problem": "Column too large: 74972"
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 35960,
+                    "problem": "Column too large: 35960"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 39211,
+                    "problem": "Column too large: 39211"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 42462,
+                    "problem": "Column too large: 42462"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 45713,
+                    "problem": "Column too large: 45713"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 48964,
+                    "problem": "Column too large: 48964"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 52215,
+                    "problem": "Column too large: 52215"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 55466,
+                    "problem": "Column too large: 55466"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58717,
+                    "problem": "Column too large: 58717"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 61968,
+                    "problem": "Column too large: 61968"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65219,
+                    "problem": "Column too large: 65219"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68470,
+                    "problem": "Column too large: 68470"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71721,
+                    "problem": "Column too large: 71721"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 74972,
+                    "problem": "Column too large: 74972"
+                  }
+                ]
+              }
+            }
+          },
+          "carryReason": "The assertion-chunk wrapper exceeds the native single-line column limit. Salesforce rejected the enclosing class before any restricted query executed; inaccessible maps, query diagnostics and readable-row behavior remain unobserved.",
+          "measuredApex": "User actor=[SELECT Id,ProfileId,Profile.UserLicense.Name,Profile.UserLicense.Status FROM User WHERE Username='[EMAIL]'];Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH USER_MODE ORDER BY Subject ASC NULLS FIRST';payload.put('query',shape);payload.put('seedCount',1);System.runAs(actor){payload.put('actorUserHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getUserId()))));payload.put('actorProfileHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getProfileId()))));if(UserInfo.getUserId()!=actor.Id || UserInfo.getProfileId()!=actor.ProfileId){throw new IllegalArgumentException('FIXTURE_ERROR: actor identity');}Map<String,Object> bits=new Map<String,Object>{'caseRead'=>Case.SObjectType.getDescribe().isAccessible(),'Subject'=>Case.Subject.getDescribe().isAccessible(),'Id'=>Case.Id.getDescribe().isAccessible(),'Status'=>Case.Status.getDescribe().isAccessible(),'Priority'=>Case.Priority.getDescribe().isAccessible()};payload.put('actorPermissions',bits);if((Boolean)bits.get('caseRead')){throw new IllegalArgumentException('FIXTURE_ERROR: case permissions');}try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}"
+        }
+      }
+    },
+    {
+      "id": "C05R",
+      "routes": {
+        "isTest": {
+          "id": "C05R",
+          "stage": "carried",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 35982,
+                    "problem": "Column too large: 35982"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 39235,
+                    "problem": "Column too large: 39235"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 42488,
+                    "problem": "Column too large: 42488"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 45741,
+                    "problem": "Column too large: 45741"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 48994,
+                    "problem": "Column too large: 48994"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 52247,
+                    "problem": "Column too large: 52247"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 55500,
+                    "problem": "Column too large: 55500"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58753,
+                    "problem": "Column too large: 58753"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 62006,
+                    "problem": "Column too large: 62006"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65259,
+                    "problem": "Column too large: 65259"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68512,
+                    "problem": "Column too large: 68512"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71765,
+                    "problem": "Column too large: 71765"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 75018,
+                    "problem": "Column too large: 75018"
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 35982,
+                    "problem": "Column too large: 35982"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 39235,
+                    "problem": "Column too large: 39235"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 42488,
+                    "problem": "Column too large: 42488"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 45741,
+                    "problem": "Column too large: 45741"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 48994,
+                    "problem": "Column too large: 48994"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 52247,
+                    "problem": "Column too large: 52247"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 55500,
+                    "problem": "Column too large: 55500"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58753,
+                    "problem": "Column too large: 58753"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 62006,
+                    "problem": "Column too large: 62006"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65259,
+                    "problem": "Column too large: 65259"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68512,
+                    "problem": "Column too large: 68512"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71765,
+                    "problem": "Column too large: 71765"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 75018,
+                    "problem": "Column too large: 75018"
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 35982,
+                    "problem": "Column too large: 35982"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 39235,
+                    "problem": "Column too large: 39235"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 42488,
+                    "problem": "Column too large: 42488"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 45741,
+                    "problem": "Column too large: 45741"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 48994,
+                    "problem": "Column too large: 48994"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 52247,
+                    "problem": "Column too large: 52247"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 55500,
+                    "problem": "Column too large: 55500"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58753,
+                    "problem": "Column too large: 58753"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 62006,
+                    "problem": "Column too large: 62006"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65259,
+                    "problem": "Column too large: 65259"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68512,
+                    "problem": "Column too large: 68512"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71765,
+                    "problem": "Column too large: 71765"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 75018,
+                    "problem": "Column too large: 75018"
+                  }
+                ]
+              }
+            }
+          },
+          "carryReason": "The assertion-chunk wrapper exceeds the native single-line column limit. Salesforce rejected the enclosing class before any restricted query executed; inaccessible maps, query diagnostics and readable-row behavior remain unobserved.",
+          "measuredApex": "User actor=[SELECT Id,ProfileId,Profile.UserLicense.Name,Profile.UserLicense.Status FROM User WHERE Username='[EMAIL]'];Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Subject,Id,Status,Priority FROM Case WHERE Id IN :keys WITH SYSTEM_MODE ORDER BY Subject ASC NULLS FIRST';payload.put('query',shape);payload.put('seedCount',1);System.runAs(actor){payload.put('actorUserHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getUserId()))));payload.put('actorProfileHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getProfileId()))));if(UserInfo.getUserId()!=actor.Id || UserInfo.getProfileId()!=actor.ProfileId){throw new IllegalArgumentException('FIXTURE_ERROR: actor identity');}Map<String,Object> bits=new Map<String,Object>{'caseRead'=>Case.SObjectType.getDescribe().isAccessible(),'Subject'=>Case.Subject.getDescribe().isAccessible(),'Id'=>Case.Id.getDescribe().isAccessible(),'Status'=>Case.Status.getDescribe().isAccessible(),'Priority'=>Case.Priority.getDescribe().isAccessible()};payload.put('actorPermissions',bits);if((Boolean)bits.get('caseRead')){throw new IllegalArgumentException('FIXTURE_ERROR: case permissions');}try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}"
+        }
+      }
+    },
+    {
+      "id": "C07R",
+      "routes": {
+        "isTest": {
+          "id": "C07R",
+          "stage": "carried",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34409,
+                    "problem": "Column too large: 34409"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37830,
+                    "problem": "Column too large: 37830"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 41251,
+                    "problem": "Column too large: 41251"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 44672,
+                    "problem": "Column too large: 44672"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 48093,
+                    "problem": "Column too large: 48093"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 51514,
+                    "problem": "Column too large: 51514"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 54935,
+                    "problem": "Column too large: 54935"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58356,
+                    "problem": "Column too large: 58356"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 61777,
+                    "problem": "Column too large: 61777"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65198,
+                    "problem": "Column too large: 65198"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68619,
+                    "problem": "Column too large: 68619"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 72040,
+                    "problem": "Column too large: 72040"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 75461,
+                    "problem": "Column too large: 75461"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 78882,
+                    "problem": "Column too large: 78882"
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34409,
+                    "problem": "Column too large: 34409"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37830,
+                    "problem": "Column too large: 37830"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 41251,
+                    "problem": "Column too large: 41251"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 44672,
+                    "problem": "Column too large: 44672"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 48093,
+                    "problem": "Column too large: 48093"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 51514,
+                    "problem": "Column too large: 51514"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 54935,
+                    "problem": "Column too large: 54935"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58356,
+                    "problem": "Column too large: 58356"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 61777,
+                    "problem": "Column too large: 61777"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65198,
+                    "problem": "Column too large: 65198"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68619,
+                    "problem": "Column too large: 68619"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 72040,
+                    "problem": "Column too large: 72040"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 75461,
+                    "problem": "Column too large: 75461"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 78882,
+                    "problem": "Column too large: 78882"
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34409,
+                    "problem": "Column too large: 34409"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37830,
+                    "problem": "Column too large: 37830"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 41251,
+                    "problem": "Column too large: 41251"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 44672,
+                    "problem": "Column too large: 44672"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 48093,
+                    "problem": "Column too large: 48093"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 51514,
+                    "problem": "Column too large: 51514"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 54935,
+                    "problem": "Column too large: 54935"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58356,
+                    "problem": "Column too large: 58356"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 61777,
+                    "problem": "Column too large: 61777"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65198,
+                    "problem": "Column too large: 65198"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68619,
+                    "problem": "Column too large: 68619"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 72040,
+                    "problem": "Column too large: 72040"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 75461,
+                    "problem": "Column too large: 75461"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 78882,
+                    "problem": "Column too large: 78882"
+                  }
+                ]
+              }
+            }
+          },
+          "carryReason": "The assertion-chunk wrapper exceeds the native single-line column limit. Salesforce rejected the enclosing class before any restricted query executed; inaccessible maps, query diagnostics and readable-row behavior remain unobserved.",
+          "measuredApex": "User actor=[SELECT Id,ProfileId,Profile.UserLicense.Name,Profile.UserLicense.Status FROM User WHERE Username='[EMAIL]'];Contact seed=new Contact(LastName='Synthetic query seed',Birthdate=Date.newInstance(2024,2,3),OwnerId=actor.Id);insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Name,Birthdate FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name';payload.put('query',shape);payload.put('seedCount',1);System.runAs(actor){payload.put('actorUserHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getUserId()))));payload.put('actorProfileHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getProfileId()))));if(UserInfo.getUserId()!=actor.Id || UserInfo.getProfileId()!=actor.ProfileId){throw new IllegalArgumentException('FIXTURE_ERROR: actor identity');}Map<String,Object> bits=new Map<String,Object>{'contactRead'=>Contact.SObjectType.getDescribe().isAccessible(),'accountRead'=>Account.SObjectType.getDescribe().isAccessible(),'Id'=>Contact.Id.getDescribe().isAccessible(),'Name'=>Contact.Name.getDescribe().isAccessible(),'Birthdate'=>Contact.Birthdate.getDescribe().isAccessible()};payload.put('actorPermissions',bits);if(!(Boolean)bits.get('accountRead') || !(Boolean)bits.get('contactRead') || !(Boolean)bits.get('Id') || !(Boolean)bits.get('Name') || (Boolean)bits.get('Birthdate')){throw new IllegalArgumentException('FIXTURE_ERROR: contact permissions');}try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}"
+        }
+      }
+    },
+    {
+      "id": "C08R",
+      "routes": {
+        "isTest": {
+          "id": "C08R",
+          "stage": "carried",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34379,
+                    "problem": "Column too large: 34379"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37797,
+                    "problem": "Column too large: 37797"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 41215,
+                    "problem": "Column too large: 41215"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 44633,
+                    "problem": "Column too large: 44633"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 48051,
+                    "problem": "Column too large: 48051"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 51469,
+                    "problem": "Column too large: 51469"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 54887,
+                    "problem": "Column too large: 54887"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58305,
+                    "problem": "Column too large: 58305"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 61723,
+                    "problem": "Column too large: 61723"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65141,
+                    "problem": "Column too large: 65141"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68559,
+                    "problem": "Column too large: 68559"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71977,
+                    "problem": "Column too large: 71977"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 75395,
+                    "problem": "Column too large: 75395"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 78813,
+                    "problem": "Column too large: 78813"
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34379,
+                    "problem": "Column too large: 34379"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37797,
+                    "problem": "Column too large: 37797"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 41215,
+                    "problem": "Column too large: 41215"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 44633,
+                    "problem": "Column too large: 44633"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 48051,
+                    "problem": "Column too large: 48051"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 51469,
+                    "problem": "Column too large: 51469"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 54887,
+                    "problem": "Column too large: 54887"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58305,
+                    "problem": "Column too large: 58305"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 61723,
+                    "problem": "Column too large: 61723"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65141,
+                    "problem": "Column too large: 65141"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68559,
+                    "problem": "Column too large: 68559"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71977,
+                    "problem": "Column too large: 71977"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 75395,
+                    "problem": "Column too large: 75395"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 78813,
+                    "problem": "Column too large: 78813"
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34379,
+                    "problem": "Column too large: 34379"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37797,
+                    "problem": "Column too large: 37797"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 41215,
+                    "problem": "Column too large: 41215"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 44633,
+                    "problem": "Column too large: 44633"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 48051,
+                    "problem": "Column too large: 48051"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 51469,
+                    "problem": "Column too large: 51469"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 54887,
+                    "problem": "Column too large: 54887"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58305,
+                    "problem": "Column too large: 58305"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 61723,
+                    "problem": "Column too large: 61723"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65141,
+                    "problem": "Column too large: 65141"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68559,
+                    "problem": "Column too large: 68559"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71977,
+                    "problem": "Column too large: 71977"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 75395,
+                    "problem": "Column too large: 75395"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 78813,
+                    "problem": "Column too large: 78813"
+                  }
+                ]
+              }
+            }
+          },
+          "carryReason": "The assertion-chunk wrapper exceeds the native single-line column limit. Salesforce rejected the enclosing class before any restricted query executed; inaccessible maps, query diagnostics and readable-row behavior remain unobserved.",
+          "measuredApex": "User actor=[SELECT Id,ProfileId,Profile.UserLicense.Name,Profile.UserLicense.Status FROM User WHERE Username='[EMAIL]'];Contact seed=new Contact(LastName='Synthetic query seed',Birthdate=Date.newInstance(2024,2,3),OwnerId=actor.Id);insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Name FROM Contact WHERE Id IN :keys WITH USER_MODE ORDER BY Name';payload.put('query',shape);payload.put('seedCount',1);System.runAs(actor){payload.put('actorUserHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getUserId()))));payload.put('actorProfileHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getProfileId()))));if(UserInfo.getUserId()!=actor.Id || UserInfo.getProfileId()!=actor.ProfileId){throw new IllegalArgumentException('FIXTURE_ERROR: actor identity');}Map<String,Object> bits=new Map<String,Object>{'contactRead'=>Contact.SObjectType.getDescribe().isAccessible(),'accountRead'=>Account.SObjectType.getDescribe().isAccessible(),'Id'=>Contact.Id.getDescribe().isAccessible(),'Name'=>Contact.Name.getDescribe().isAccessible()};payload.put('actorPermissions',bits);if(!(Boolean)bits.get('accountRead') || !(Boolean)bits.get('contactRead') || !(Boolean)bits.get('Id') || !(Boolean)bits.get('Name')){throw new IllegalArgumentException('FIXTURE_ERROR: contact permissions');}try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);if(selected.size()!=1){throw new IllegalArgumentException('FIXTURE_ERROR: readable control hidden');}}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}"
+        }
+      }
+    },
+    {
+      "id": "C10R",
+      "routes": {
+        "isTest": {
+          "id": "C10R",
+          "stage": "carried",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34189,
+                    "problem": "Column too large: 34189"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37279,
+                    "problem": "Column too large: 37279"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 40369,
+                    "problem": "Column too large: 40369"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 43459,
+                    "problem": "Column too large: 43459"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 46549,
+                    "problem": "Column too large: 46549"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 49639,
+                    "problem": "Column too large: 49639"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 52729,
+                    "problem": "Column too large: 52729"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 55819,
+                    "problem": "Column too large: 55819"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58909,
+                    "problem": "Column too large: 58909"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 61999,
+                    "problem": "Column too large: 61999"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65089,
+                    "problem": "Column too large: 65089"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68179,
+                    "problem": "Column too large: 68179"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71269,
+                    "problem": "Column too large: 71269"
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34189,
+                    "problem": "Column too large: 34189"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37279,
+                    "problem": "Column too large: 37279"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 40369,
+                    "problem": "Column too large: 40369"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 43459,
+                    "problem": "Column too large: 43459"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 46549,
+                    "problem": "Column too large: 46549"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 49639,
+                    "problem": "Column too large: 49639"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 52729,
+                    "problem": "Column too large: 52729"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 55819,
+                    "problem": "Column too large: 55819"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58909,
+                    "problem": "Column too large: 58909"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 61999,
+                    "problem": "Column too large: 61999"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65089,
+                    "problem": "Column too large: 65089"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68179,
+                    "problem": "Column too large: 68179"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71269,
+                    "problem": "Column too large: 71269"
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34189,
+                    "problem": "Column too large: 34189"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37279,
+                    "problem": "Column too large: 37279"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 40369,
+                    "problem": "Column too large: 40369"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 43459,
+                    "problem": "Column too large: 43459"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 46549,
+                    "problem": "Column too large: 46549"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 49639,
+                    "problem": "Column too large: 49639"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 52729,
+                    "problem": "Column too large: 52729"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 55819,
+                    "problem": "Column too large: 55819"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 58909,
+                    "problem": "Column too large: 58909"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 61999,
+                    "problem": "Column too large: 61999"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65089,
+                    "problem": "Column too large: 65089"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68179,
+                    "problem": "Column too large: 68179"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71269,
+                    "problem": "Column too large: 71269"
+                  }
+                ]
+              }
+            }
+          },
+          "carryReason": "The assertion-chunk wrapper exceeds the native single-line column limit. Salesforce rejected the enclosing class before any restricted query executed; inaccessible maps, query diagnostics and readable-row behavior remain unobserved.",
+          "measuredApex": "User actor=[SELECT Id,ProfileId,Profile.UserLicense.Name,Profile.UserLicense.Status FROM User WHERE Username='[EMAIL]'];Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Subject,Id FROM Case WHERE Id=:k WITH USER_MODE';payload.put('query',shape);payload.put('seedCount',1);System.runAs(actor){payload.put('actorUserHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getUserId()))));payload.put('actorProfileHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getProfileId()))));if(UserInfo.getUserId()!=actor.Id || UserInfo.getProfileId()!=actor.ProfileId){throw new IllegalArgumentException('FIXTURE_ERROR: actor identity');}Map<String,Object> bits=new Map<String,Object>{'caseRead'=>Case.SObjectType.getDescribe().isAccessible(),'Subject'=>Case.Subject.getDescribe().isAccessible(),'Id'=>Case.Id.getDescribe().isAccessible()};payload.put('actorPermissions',bits);if((Boolean)bits.get('caseRead')){throw new IllegalArgumentException('FIXTURE_ERROR: case permissions');}try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}"
+        }
+      }
+    },
+    {
+      "id": "C11R",
+      "routes": {
+        "isTest": {
+          "id": "C11R",
+          "stage": "carried",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34827,
+                    "problem": "Column too large: 34827"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37975,
+                    "problem": "Column too large: 37975"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 41123,
+                    "problem": "Column too large: 41123"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 44271,
+                    "problem": "Column too large: 44271"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 47419,
+                    "problem": "Column too large: 47419"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 50567,
+                    "problem": "Column too large: 50567"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 53715,
+                    "problem": "Column too large: 53715"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 56863,
+                    "problem": "Column too large: 56863"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 60011,
+                    "problem": "Column too large: 60011"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 63159,
+                    "problem": "Column too large: 63159"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 66307,
+                    "problem": "Column too large: 66307"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 69455,
+                    "problem": "Column too large: 69455"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 72603,
+                    "problem": "Column too large: 72603"
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34827,
+                    "problem": "Column too large: 34827"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37975,
+                    "problem": "Column too large: 37975"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 41123,
+                    "problem": "Column too large: 41123"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 44271,
+                    "problem": "Column too large: 44271"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 47419,
+                    "problem": "Column too large: 47419"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 50567,
+                    "problem": "Column too large: 50567"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 53715,
+                    "problem": "Column too large: 53715"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 56863,
+                    "problem": "Column too large: 56863"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 60011,
+                    "problem": "Column too large: 60011"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 63159,
+                    "problem": "Column too large: 63159"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 66307,
+                    "problem": "Column too large: 66307"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 69455,
+                    "problem": "Column too large: 69455"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 72603,
+                    "problem": "Column too large: 72603"
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34827,
+                    "problem": "Column too large: 34827"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37975,
+                    "problem": "Column too large: 37975"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 41123,
+                    "problem": "Column too large: 41123"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 44271,
+                    "problem": "Column too large: 44271"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 47419,
+                    "problem": "Column too large: 47419"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 50567,
+                    "problem": "Column too large: 50567"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 53715,
+                    "problem": "Column too large: 53715"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 56863,
+                    "problem": "Column too large: 56863"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 60011,
+                    "problem": "Column too large: 60011"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 63159,
+                    "problem": "Column too large: 63159"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 66307,
+                    "problem": "Column too large: 66307"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 69455,
+                    "problem": "Column too large: 69455"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 72603,
+                    "problem": "Column too large: 72603"
+                  }
+                ]
+              }
+            }
+          },
+          "carryReason": "The assertion-chunk wrapper exceeds the native single-line column limit. Salesforce rejected the enclosing class before any restricted query executed; inaccessible maps, query diagnostics and readable-row behavior remain unobserved.",
+          "measuredApex": "User actor=[SELECT Id,ProfileId,Profile.UserLicense.Name,Profile.UserLicense.Status FROM User WHERE Username='[EMAIL]'];Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Subject,Status FROM Case WHERE Id=:k WITH USER_MODE';payload.put('query',shape);payload.put('seedCount',1);System.runAs(actor){payload.put('actorUserHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getUserId()))));payload.put('actorProfileHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getProfileId()))));if(UserInfo.getUserId()!=actor.Id || UserInfo.getProfileId()!=actor.ProfileId){throw new IllegalArgumentException('FIXTURE_ERROR: actor identity');}Map<String,Object> bits=new Map<String,Object>{'caseRead'=>Case.SObjectType.getDescribe().isAccessible(),'Id'=>Case.Id.getDescribe().isAccessible(),'Subject'=>Case.Subject.getDescribe().isAccessible(),'Status'=>Case.Status.getDescribe().isAccessible()};payload.put('actorPermissions',bits);if((Boolean)bits.get('caseRead')){throw new IllegalArgumentException('FIXTURE_ERROR: case permissions');}try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}"
+        }
+      }
+    },
+    {
+      "id": "C12R",
+      "routes": {
+        "isTest": {
+          "id": "C12R",
+          "stage": "carried",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34893,
+                    "problem": "Column too large: 34893"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 38047,
+                    "problem": "Column too large: 38047"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 41201,
+                    "problem": "Column too large: 41201"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 44355,
+                    "problem": "Column too large: 44355"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 47509,
+                    "problem": "Column too large: 47509"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 50663,
+                    "problem": "Column too large: 50663"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 53817,
+                    "problem": "Column too large: 53817"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 56971,
+                    "problem": "Column too large: 56971"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 60125,
+                    "problem": "Column too large: 60125"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 63279,
+                    "problem": "Column too large: 63279"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 66433,
+                    "problem": "Column too large: 66433"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 69587,
+                    "problem": "Column too large: 69587"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 72741,
+                    "problem": "Column too large: 72741"
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34893,
+                    "problem": "Column too large: 34893"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 38047,
+                    "problem": "Column too large: 38047"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 41201,
+                    "problem": "Column too large: 41201"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 44355,
+                    "problem": "Column too large: 44355"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 47509,
+                    "problem": "Column too large: 47509"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 50663,
+                    "problem": "Column too large: 50663"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 53817,
+                    "problem": "Column too large: 53817"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 56971,
+                    "problem": "Column too large: 56971"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 60125,
+                    "problem": "Column too large: 60125"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 63279,
+                    "problem": "Column too large: 63279"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 66433,
+                    "problem": "Column too large: 66433"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 69587,
+                    "problem": "Column too large: 69587"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 72741,
+                    "problem": "Column too large: 72741"
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34893,
+                    "problem": "Column too large: 34893"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 38047,
+                    "problem": "Column too large: 38047"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 41201,
+                    "problem": "Column too large: 41201"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 44355,
+                    "problem": "Column too large: 44355"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 47509,
+                    "problem": "Column too large: 47509"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 50663,
+                    "problem": "Column too large: 50663"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 53817,
+                    "problem": "Column too large: 53817"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 56971,
+                    "problem": "Column too large: 56971"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 60125,
+                    "problem": "Column too large: 60125"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 63279,
+                    "problem": "Column too large: 63279"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 66433,
+                    "problem": "Column too large: 66433"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 69587,
+                    "problem": "Column too large: 69587"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 72741,
+                    "problem": "Column too large: 72741"
+                  }
+                ]
+              }
+            }
+          },
+          "carryReason": "The assertion-chunk wrapper exceeds the native single-line column limit. Salesforce rejected the enclosing class before any restricted query executed; inaccessible maps, query diagnostics and readable-row behavior remain unobserved.",
+          "measuredApex": "User actor=[SELECT Id,ProfileId,Profile.UserLicense.Name,Profile.UserLicense.Status FROM User WHERE Username='[EMAIL]'];Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Subject,IsClosed FROM Case WHERE Id=:k WITH USER_MODE';payload.put('query',shape);payload.put('seedCount',1);System.runAs(actor){payload.put('actorUserHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getUserId()))));payload.put('actorProfileHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getProfileId()))));if(UserInfo.getUserId()!=actor.Id || UserInfo.getProfileId()!=actor.ProfileId){throw new IllegalArgumentException('FIXTURE_ERROR: actor identity');}Map<String,Object> bits=new Map<String,Object>{'caseRead'=>Case.SObjectType.getDescribe().isAccessible(),'Id'=>Case.Id.getDescribe().isAccessible(),'Subject'=>Case.Subject.getDescribe().isAccessible(),'IsClosed'=>Case.IsClosed.getDescribe().isAccessible()};payload.put('actorPermissions',bits);if((Boolean)bits.get('caseRead')){throw new IllegalArgumentException('FIXTURE_ERROR: case permissions');}try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}"
+        }
+      }
+    },
+    {
+      "id": "C13R",
+      "routes": {
+        "isTest": {
+          "id": "C13R",
+          "stage": "carried",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34255,
+                    "problem": "Column too large: 34255"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37351,
+                    "problem": "Column too large: 37351"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 40447,
+                    "problem": "Column too large: 40447"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 43543,
+                    "problem": "Column too large: 43543"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 46639,
+                    "problem": "Column too large: 46639"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 49735,
+                    "problem": "Column too large: 49735"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 52831,
+                    "problem": "Column too large: 52831"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 55927,
+                    "problem": "Column too large: 55927"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 59023,
+                    "problem": "Column too large: 59023"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 62119,
+                    "problem": "Column too large: 62119"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65215,
+                    "problem": "Column too large: 65215"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68311,
+                    "problem": "Column too large: 68311"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71407,
+                    "problem": "Column too large: 71407"
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34255,
+                    "problem": "Column too large: 34255"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37351,
+                    "problem": "Column too large: 37351"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 40447,
+                    "problem": "Column too large: 40447"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 43543,
+                    "problem": "Column too large: 43543"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 46639,
+                    "problem": "Column too large: 46639"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 49735,
+                    "problem": "Column too large: 49735"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 52831,
+                    "problem": "Column too large: 52831"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 55927,
+                    "problem": "Column too large: 55927"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 59023,
+                    "problem": "Column too large: 59023"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 62119,
+                    "problem": "Column too large: 62119"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65215,
+                    "problem": "Column too large: 65215"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68311,
+                    "problem": "Column too large: 68311"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71407,
+                    "problem": "Column too large: 71407"
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34255,
+                    "problem": "Column too large: 34255"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37351,
+                    "problem": "Column too large: 37351"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 40447,
+                    "problem": "Column too large: 40447"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 43543,
+                    "problem": "Column too large: 43543"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 46639,
+                    "problem": "Column too large: 46639"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 49735,
+                    "problem": "Column too large: 49735"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 52831,
+                    "problem": "Column too large: 52831"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 55927,
+                    "problem": "Column too large: 55927"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 59023,
+                    "problem": "Column too large: 59023"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 62119,
+                    "problem": "Column too large: 62119"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65215,
+                    "problem": "Column too large: 65215"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68311,
+                    "problem": "Column too large: 68311"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 71407,
+                    "problem": "Column too large: 71407"
+                  }
+                ]
+              }
+            }
+          },
+          "carryReason": "The assertion-chunk wrapper exceeds the native single-line column limit. Salesforce rejected the enclosing class before any restricted query executed; inaccessible maps, query diagnostics and readable-row behavior remain unobserved.",
+          "measuredApex": "User actor=[SELECT Id,ProfileId,Profile.UserLicense.Name,Profile.UserLicense.Status FROM User WHERE Username='[EMAIL]'];Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Subject FROM Case WHERE Id IN :keys WITH USER_MODE';payload.put('query',shape);payload.put('seedCount',1);System.runAs(actor){payload.put('actorUserHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getUserId()))));payload.put('actorProfileHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getProfileId()))));if(UserInfo.getUserId()!=actor.Id || UserInfo.getProfileId()!=actor.ProfileId){throw new IllegalArgumentException('FIXTURE_ERROR: actor identity');}Map<String,Object> bits=new Map<String,Object>{'caseRead'=>Case.SObjectType.getDescribe().isAccessible(),'Id'=>Case.Id.getDescribe().isAccessible(),'Subject'=>Case.Subject.getDescribe().isAccessible()};payload.put('actorPermissions',bits);if((Boolean)bits.get('caseRead')){throw new IllegalArgumentException('FIXTURE_ERROR: case permissions');}try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}"
+        }
+      }
+    },
+    {
+      "id": "C14R",
+      "routes": {
+        "isTest": {
+          "id": "C14R",
+          "stage": "carried",
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34552,
+                    "problem": "Column too large: 34552"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37675,
+                    "problem": "Column too large: 37675"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 40798,
+                    "problem": "Column too large: 40798"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 43921,
+                    "problem": "Column too large: 43921"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 47044,
+                    "problem": "Column too large: 47044"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 50167,
+                    "problem": "Column too large: 50167"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 53290,
+                    "problem": "Column too large: 53290"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 56413,
+                    "problem": "Column too large: 56413"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 59536,
+                    "problem": "Column too large: 59536"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 62659,
+                    "problem": "Column too large: 62659"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65782,
+                    "problem": "Column too large: 65782"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68905,
+                    "problem": "Column too large: 68905"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 72028,
+                    "problem": "Column too large: 72028"
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34552,
+                    "problem": "Column too large: 34552"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37675,
+                    "problem": "Column too large: 37675"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 40798,
+                    "problem": "Column too large: 40798"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 43921,
+                    "problem": "Column too large: 43921"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 47044,
+                    "problem": "Column too large: 47044"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 50167,
+                    "problem": "Column too large: 50167"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 53290,
+                    "problem": "Column too large: 53290"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 56413,
+                    "problem": "Column too large: 56413"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 59536,
+                    "problem": "Column too large: 59536"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 62659,
+                    "problem": "Column too large: 62659"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65782,
+                    "problem": "Column too large: 65782"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68905,
+                    "problem": "Column too large: 68905"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 72028,
+                    "problem": "Column too large: 72028"
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "value": {
+                "diagnostics": [
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 34552,
+                    "problem": "Column too large: 34552"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 37675,
+                    "problem": "Column too large: 37675"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 40798,
+                    "problem": "Column too large: 40798"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 43921,
+                    "problem": "Column too large: 43921"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 47044,
+                    "problem": "Column too large: 47044"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 50167,
+                    "problem": "Column too large: 50167"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 53290,
+                    "problem": "Column too large: 53290"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 56413,
+                    "problem": "Column too large: 56413"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 59536,
+                    "problem": "Column too large: 59536"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 62659,
+                    "problem": "Column too large: 62659"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 65782,
+                    "problem": "Column too large: 65782"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 68905,
+                    "problem": "Column too large: 68905"
+                  },
+                  {
+                    "type": "ApexClass",
+                    "line": 1,
+                    "column": 72028,
+                    "problem": "Column too large: 72028"
+                  }
+                ]
+              }
+            }
+          },
+          "carryReason": "The assertion-chunk wrapper exceeds the native single-line column limit. Salesforce rejected the enclosing class before any restricted query executed; inaccessible maps, query diagnostics and readable-row behavior remain unobserved.",
+          "measuredApex": "User actor=[SELECT Id,ProfileId,Profile.UserLicense.Name,Profile.UserLicense.Status FROM User WHERE Username='[EMAIL]'];Case seed=new Case(Subject='Synthetic query seed',Status='New',Origin='Web');insert seed;Id k=seed.Id;Set<Id> keys=new Set<Id>{k};String shape='SELECT Id,Subject FROM Case WHERE Id=:k WITH USER_MODE ORDER BY Subject ASC NULLS FIRST';payload.put('query',shape);payload.put('seedCount',1);System.runAs(actor){payload.put('actorUserHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getUserId()))));payload.put('actorProfileHash',EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(UserInfo.getProfileId()))));if(UserInfo.getUserId()!=actor.Id || UserInfo.getProfileId()!=actor.ProfileId){throw new IllegalArgumentException('FIXTURE_ERROR: actor identity');}Map<String,Object> bits=new Map<String,Object>{'caseRead'=>Case.SObjectType.getDescribe().isAccessible(),'Id'=>Case.Id.getDescribe().isAccessible(),'Subject'=>Case.Subject.getDescribe().isAccessible()};payload.put('actorPermissions',bits);if((Boolean)bits.get('caseRead')){throw new IllegalArgumentException('FIXTURE_ERROR: case permissions');}try{List<SObject> selected=Database.query(shape);Integer outsideCount=0;for(SObject selectedRow:selected){if(!keys.contains(selectedRow.Id))outsideCount++;}payload.put('outsideCount',outsideCount);if(outsideCount!=0){throw new IllegalArgumentException('FIXTURE_ERROR: out-of-scope query');}payload.put('count',selected.size());List<Object> stableRows=new List<Object>();for(SObject selectedRow:selected){Map<String,Object> stable=new Map<String,Object>(selectedRow.getPopulatedFieldsAsMap());stable.remove('Id');stable.put('matchesSeed',selectedRow.Id==k);stableRows.add(stable);}payload.put('rows',stableRows);}catch(QueryException issue){payload.put('queryExceptionType',issue.getTypeName());payload.put('queryExceptionMessage',issue.getMessage());payload.put('inaccessible',issue.getInaccessibleFields());}}"
+        }
+      }
+    }
+  ]
+}

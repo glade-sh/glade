@@ -1,0 +1,54 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "rows": [
+    {
+      "id": "MD01",
+      "expected": {
+        "outcome": "runtime",
+        "value": "inserted:1|remaining:0|mixed:MIXED_DML_OPERATION"
+      },
+      "routes": {
+        "isTest": {
+          "id": "MD01T",
+          "classes": {
+            "MemberDeleteProbe": "@IsTest private class MemberDeleteProbe {\n @IsTest static void observe() {\n  Group team = new Group(Name='Owned delete team', DeveloperName='OwnedDeleteTeam', Type='Regular');\n  insert team;\n  GroupMember membership = new GroupMember(GroupId=team.Id, UserOrGroupId=UserInfo.getUserId());\n  insert membership;\n  Integer inserted = [SELECT COUNT() FROM GroupMember WHERE GroupId=:team.Id];\n  delete membership;\n  Integer remaining = [SELECT COUNT() FROM GroupMember WHERE GroupId=:team.Id];\n  String mixed = 'none';\n  try { insert new Account(Name='Owned mixed control'); }\n  catch (DmlException e) { mixed = String.valueOf(e.getDmlType(0)); }\n  System.assert(false, 'P|MD01T|inserted:'+inserted+'|remaining:'+remaining+'|mixed:'+mixed);\n }\n}\n"
+          },
+          "tests": [
+            "MemberDeleteProbe"
+          ],
+          "stage": "runtime",
+          "sourceSha256": {
+            "class:MemberDeleteProbe": "b085e1fc4d8cd49778a511244343a7a5c00d22c904e423291f80025b240df3af"
+          }
+        }
+      }
+    }
+  ],
+  "cells": [
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "MD01T",
+      "native": "inserted:1|remaining:0|mixed:MIXED_DML_OPERATION",
+      "rawReceiptSHA256": "8d5ae63746d46265278c11024b8c048c5f5e6f967240edd814e2df343327a417"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "MD01T",
+      "native": "inserted:1|remaining:0|mixed:MIXED_DML_OPERATION",
+      "rawReceiptSHA256": "df4d8b540e9ed781e23bf56687be35056f1e7632047aa2114aaee27a043887e3"
+    },
+    {
+      "api": "68.0",
+      "route": "isTest",
+      "id": "MD01T",
+      "native": "inserted:1|remaining:0|mixed:MIXED_DML_OPERATION",
+      "rawReceiptSHA256": "b2fa6def56127c04aa37031941e87af22282b1638dfedc1cca6e35eaeecea67d"
+    }
+  ]
+}

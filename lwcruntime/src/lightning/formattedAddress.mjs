@@ -10,7 +10,7 @@ function renderFormattedAddress($api, $cmp) {
     attrs: {
       href: `https://www.google.com/maps?q=${encodeURIComponent(address)}`,
       target: "_blank",
-      "aria-label": address,
+      "aria-label": `Show in Google Maps, ${address}`,
     },
   }, $api.i(lines, (line, index) => $api.h("div", {
     key: index + 1,

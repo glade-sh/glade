@@ -20,6 +20,8 @@ import (
 )
 
 // The exported native observations are sufficient for credential-free CI.
+// API68's 304 anonymous answers match the existing Expected values. Separate
+// Tooling compiler captures bind NamedCompilations; named execution is local.
 func TestExceptionsOrgConformance(t *testing.T) {
 	type namedCompilation struct{ Name, Source, Expected string }
 	type familyCase struct {
@@ -45,7 +47,7 @@ func TestExceptionsOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 256 || len(data.Controls) != 48 || len(data.Remaining) != 0 || len(data.TicketRows) != 0 || strings.Join(data.APIVersions, ",") != "62.0,67.0" || strings.Join(data.OrgObjects, ",") != "Account" || strings.Join(data.DependencyDeclarations, ",") != "A06DependencyBaseException,A06DependencyMidException" {
+	if len(data.Cases) != 256 || len(data.Controls) != 48 || len(data.Remaining) != 0 || len(data.TicketRows) != 0 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" || strings.Join(data.OrgObjects, ",") != "Account" || strings.Join(data.DependencyDeclarations, ",") != "A06DependencyBaseException,A06DependencyMidException" {
 		t.Fatalf("oracle shape: cases=%d controls=%d carried=%d versions=%v", len(data.Cases), len(data.Controls), len(data.Remaining), data.APIVersions)
 	}
 	rows := append(append([]familyCase{}, data.Cases...), data.Controls...)

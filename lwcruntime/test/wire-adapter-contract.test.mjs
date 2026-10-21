@@ -214,7 +214,7 @@ test("getRecord invalid configurations match the native pending observations", a
       const delivered = values.find((value) => value.data !== undefined || value.error !== undefined);
       const observed = delivered ? (delivered.error ? { error: delivered.error } : delivered.data) : timeout;
       const text = "JSON|" + JSON.stringify({ returned: observed });
-      for (const api of ["59.0", "67.0"]) {
+      for (const api of ["59.0", "67.0", "68.0"]) {
         assert.equal(text, row.expected[api], `${row.id} API ${api}: exact native pending text`);
       }
       assert.equal(values.length, 1, `${row.id}: no emission beyond the initial empty envelope`);

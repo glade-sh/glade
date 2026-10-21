@@ -1,0 +1,1 @@
+@IsTest private class MetadataOwner68R009 { @IsTest static void observed(){Object value=[SELECT DeveloperName,NamespacePrefix,QualifiedApiName FROM gladens001__OwnerFlag__mdt WHERE QualifiedApiName='gladens001__OchreKestrelC419D7f3b9a2'];System.assert(false,'METADATA_OWNER|R009|'+JSON.serialize(value));} }

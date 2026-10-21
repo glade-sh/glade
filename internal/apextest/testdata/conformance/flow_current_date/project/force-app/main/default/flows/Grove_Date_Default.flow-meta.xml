@@ -1,0 +1,10 @@
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+<apiVersion>62</apiVersion>
+<assignments><name>SetDate</name><label>Set date</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Birthdate</assignToReference><operator>Assign</operator><value><elementReference>chosenDate</elementReference></value></assignmentItems><connector><targetReference>CheckDate</targetReference></connector></assignments>
+<customErrors><name>RejectDate</name><label>Reject date</label><locationX>0</locationX><locationY>0</locationY><customErrorMessages><errorMessage>Grove date outside range</errorMessage><isFieldError>false</isFieldError></customErrorMessages></customErrors>
+<decisions><name>CheckDate</name><label>Check date</label><locationX>0</locationX><locationY>0</locationY><defaultConnectorLabel>Allowed</defaultConnectorLabel><rules><name>TooFar</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>dateAllowed</leftValueReference><operator>EqualTo</operator><rightValue><booleanValue>false</booleanValue></rightValue></conditions><connector><targetReference>RejectDate</targetReference></connector><label>Too far</label></rules></decisions>
+<formulas><name>chosenDate</name><dataType>Date</dataType><expression>IF(ISBLANK({!$Record.Birthdate}), {!$Flow.CurrentDate} + 5, {!$Record.Birthdate})</expression></formulas>
+<formulas><name>dateAllowed</name><dataType>Boolean</dataType><expression>TODAY() + 365 &gt;= {!chosenDate}</expression></formulas>
+<interviewLabel>Grove date default</interviewLabel><label>Grove date default</label><processType>AutoLaunchedFlow</processType>
+<start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>SetDate</targetReference></connector><object>Contact</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status>
+</Flow>

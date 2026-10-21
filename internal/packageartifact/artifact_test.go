@@ -47,7 +47,7 @@ func TestBuildAppliesInstalledNamespaceToCustomSchema(t *testing.T) {
 }
 
 func TestBuildRequiresValidSourceAPIVersion(t *testing.T) {
-	for _, sourceAPIVersion := range []string{"", "68.0", "67.1"} {
+	for _, sourceAPIVersion := range []string{"", "69.0", "67.1"} {
 		t.Run(sourceAPIVersion, func(t *testing.T) {
 			_, err := Build("pkg", "1.0", project.Project{
 				Root:             t.TempDir(),
@@ -305,7 +305,7 @@ func TestBuildCapturedArtifactPreservesOrgProvenanceAndMetadataNames(t *testing.
 }
 
 func TestBuildCapturedRequiresValidSourceAPIVersion(t *testing.T) {
-	for _, sourceAPIVersion := range []string{"", "68.0", "67.1"} {
+	for _, sourceAPIVersion := range []string{"", "69.0", "67.1"} {
 		t.Run(sourceAPIVersion, func(t *testing.T) {
 			_, err := BuildCaptured(BuildCapturedOptions{
 				Namespace:        "pkg",
@@ -338,7 +338,7 @@ func TestValidateRequiresValidSourceAPIVersionForCurrentSchema(t *testing.T) {
 		want    string
 	}{
 		{name: "missing", want: "sourceApiVersion is required"},
-		{name: "future", version: "68.0", want: "unsupported source API version"},
+		{name: "future", version: "69.0", want: "unsupported source API version"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			issues := Validate(Artifact{
@@ -430,7 +430,7 @@ func TestBuildCapturedArtifactHashIgnoresCaptureProvenance(t *testing.T) {
 		Capture: CaptureProvenance{
 			Source:     "org",
 			TargetOrg:  "packaging",
-			OrgID:      "00D000000000001",
+			OrgID:      "00D000000000mH2",
 			CapturedAt: mustParsePackageArtifactTime(t, "2026-06-19T12:00:00Z"),
 		},
 		ApexTypes: []ApexType{capturedArtifactApexType("Alpha")},

@@ -1,0 +1,3 @@
+api	route	case	payload
+67.0	anonymous	N_B_N	{"exceptionMessage":null,"exceptionType":null,"providerCalled":true,"readBackComplete":true,"size":1,"stage":"narrow","success":true}
+67.0	anonymous	N_C_N	{"exceptionMessage":"Invalid conversion from runtime type List<Account> to List<Contact>","exceptionType":"System.TypeException","readBackComplete":false,"stage":"narrow"}

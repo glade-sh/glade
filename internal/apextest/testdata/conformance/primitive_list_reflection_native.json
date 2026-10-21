@@ -1,0 +1,516 @@
+{
+  "marker": "PRIMITIVE_LIST_OBSERVATION",
+  "nativeRowCount": 23,
+  "uniqueRowCount": 20,
+  "pendingCoverage": {
+    "status": "PENDING-ROWS",
+    "additionalHelperApis": [
+      "61.0",
+      "62.0",
+      "67.0",
+      "68.0"
+    ],
+    "additionalCallerApis": [
+      "67.0",
+      "68.0"
+    ],
+    "additionalRoutes": [
+      "anonymous"
+    ]
+  },
+  "captures": [
+    {
+      "callerApi": "62.0",
+      "helperApi": "54.0",
+      "transportApi": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "className": "PrimitiveListObservation62",
+      "helperName": "PrimitiveListView",
+      "sources": {
+        "force-app/main/default/classes/PrimitiveListObservation62.cls": {
+          "source": "@IsTest private class PrimitiveListObservation62 {\n@IsTest static void PL_ID_0(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> values=(List<Object>)Type.forName('List<Id>').newInstance();payload.putAll(PrimitiveListView.inspect(values));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_ID_1(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> values=(List<Object>)Type.forName('List<Id>').newInstance();values.add((Id)'001000000000001');payload.putAll(PrimitiveListView.inspect(values));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_ID_2(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> values=(List<Object>)Type.forName('List<Id>').newInstance();values.add((Id)'001000000000001');values.add((Id)'001000000000001');payload.putAll(PrimitiveListView.inspect(values));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_STRING_CONTROL(){Map<String,Object> payload=new Map<String,Object>();try{payload.putAll(PrimitiveListView.inspect(new List<String>{'owned'}));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_INTEGER_CONTROL(){Map<String,Object> payload=new Map<String,Object>();try{payload.putAll(PrimitiveListView.inspect(new List<Integer>{7}));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_RECORD_CONTROL(){Map<String,Object> payload=new Map<String,Object>();try{Object record=new Account(Name='owned');payload.put('recordName',((Account)record).Name);Object absent;payload.put('nullCast',(Account)absent==null);}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n}\n",
+          "sha256": "b57e10ac2e3bfeca582b80a05298c9542f1bb9f5e7f96d8037717ceaee92817c"
+        },
+        "force-app/main/default/classes/PrimitiveListObservation62.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+        },
+        "force-app/main/default/classes/PrimitiveListView.cls": {
+          "source": "public class PrimitiveListView {\n public static Map<String,Object> inspect(List<Object> input) {return boxed(input);}\n private static Map<String,Object> boxed(Object input) {\n  Map<String,Object> payload=new Map<String,Object>{'size'=>((List<Object>)input).size()};\n  try {Account value=(Account)input;payload.put('castAccepted',true);payload.put('resultNull',value==null);}\n  catch(Exception problem) {payload.put('castAccepted',false);payload.put('castType',problem.getTypeName());payload.put('castMessage',problem.getMessage());String element=problem.getMessage().substringBetween('List<','>');payload.put('element',element);try{Type token=Type.forName(element);payload.put('reflectedNull',token==null);if(token!=null)payload.put('reflectedName',token.getName());}catch(Exception reflection){payload.put('reflectionType',reflection.getTypeName());payload.put('reflectionMessage',reflection.getMessage());}}\n  return payload;\n }\n}",
+          "sha256": "f86d3c5127b027eb8c4a0df1e93e80ce423f5b8c373ec2136accb6d627307a4c"
+        },
+        "force-app/main/default/classes/PrimitiveListView.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>54.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "030bf44e84495471ff5f2c210f44396f31c05e7cc8235f295d9dd2b5fea92bd4"
+        },
+        "sfdx-project.json": {
+          "source": "{\"sourceApiVersion\": \"62.0\", \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}]}\n",
+          "sha256": "f80e01fee8c27f9cd628f6825784156f98f6e6313473d649da4553ee48132aa3"
+        }
+      },
+      "deployment": {
+        "id": "0AfEc00000p1VkMKAU",
+        "checkOnly": true,
+        "done": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 6,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 6
+      },
+      "metadataUnchanged": true,
+      "rawSha256": {
+        "deploy.json": "fe74b801fdb96df68a6e64e3c9a0db69641b5f7e495564a0068f05cb1c151a9a",
+        "org.tsv": "0e2ab4d7948436166bb319a99d3577eab9b709e5d634aa76bed469edead66ab8",
+        "SOURCE-DIGESTS.json": "6e1115f964fcf7e525bb2de8dead8f8f2ff963cd76c8dbef0712349b896eb21f",
+        "RAW-DIGESTS.json": "adb9f22f2e0bb1aad4d5824f5640ee50af945c795e7ce7c7186ef30a5ccd4bc6",
+        "ORG-RUN.txt": "65909a7a1b78264e9a901ec11b9ad1b87e2bcc1ad80ee33973870591d6a67349",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "before.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647",
+        "after.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647"
+      },
+      "rows": [
+        {
+          "method": "PL_ID_0",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_ID_0",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Id\",\"reflectedNull\":false,\"element\":\"Id\",\"castMessage\":\"Invalid conversion from runtime type List<Id> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":0}"
+          },
+          "native": {
+            "reflectedName": "Id",
+            "reflectedNull": false,
+            "element": "Id",
+            "castMessage": "Invalid conversion from runtime type List<Id> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 0
+          }
+        },
+        {
+          "method": "PL_ID_1",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_ID_1",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Id\",\"reflectedNull\":false,\"element\":\"Id\",\"castMessage\":\"Invalid conversion from runtime type List<Id> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":1}"
+          },
+          "native": {
+            "reflectedName": "Id",
+            "reflectedNull": false,
+            "element": "Id",
+            "castMessage": "Invalid conversion from runtime type List<Id> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 1
+          }
+        },
+        {
+          "method": "PL_ID_2",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_ID_2",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Id\",\"reflectedNull\":false,\"element\":\"Id\",\"castMessage\":\"Invalid conversion from runtime type List<Id> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":2}"
+          },
+          "native": {
+            "reflectedName": "Id",
+            "reflectedNull": false,
+            "element": "Id",
+            "castMessage": "Invalid conversion from runtime type List<Id> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 2
+          }
+        },
+        {
+          "method": "PL_INTEGER_CONTROL",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_INTEGER_CONTROL",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Integer\",\"reflectedNull\":false,\"element\":\"Integer\",\"castMessage\":\"Invalid conversion from runtime type List<Integer> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":1}"
+          },
+          "native": {
+            "reflectedName": "Integer",
+            "reflectedNull": false,
+            "element": "Integer",
+            "castMessage": "Invalid conversion from runtime type List<Integer> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 1
+          }
+        },
+        {
+          "method": "PL_RECORD_CONTROL",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_RECORD_CONTROL",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"nullCast\":true,\"recordName\":\"owned\"}"
+          },
+          "native": {
+            "nullCast": true,
+            "recordName": "owned"
+          }
+        },
+        {
+          "method": "PL_STRING_CONTROL",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_STRING_CONTROL",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"String\",\"reflectedNull\":false,\"element\":\"String\",\"castMessage\":\"Invalid conversion from runtime type List<String> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":1}"
+          },
+          "native": {
+            "reflectedName": "String",
+            "reflectedNull": false,
+            "element": "String",
+            "castMessage": "Invalid conversion from runtime type List<String> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 1
+          }
+        }
+      ]
+    },
+    {
+      "callerApi": "62.0",
+      "helperApi": "54.0",
+      "transportApi": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "className": "PrimitiveListObservation62",
+      "helperName": "PrimitiveListView",
+      "sources": {
+        "force-app/main/default/classes/PrimitiveListObservation62.cls": {
+          "source": "@IsTest private class PrimitiveListObservation62 {\n@IsTest static void PL_DECIMAL_0(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> values=(List<Object>)Type.forName('List<Decimal>').newInstance();payload.putAll(PrimitiveListView.inspect(values));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_DECIMAL_1(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> values=(List<Object>)Type.forName('List<Decimal>').newInstance();values.add(2.5);payload.putAll(PrimitiveListView.inspect(values));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_DECIMAL_2(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> values=(List<Object>)Type.forName('List<Decimal>').newInstance();values.add(2.5);values.add(2.5);payload.putAll(PrimitiveListView.inspect(values));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_DATE_0(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> values=(List<Object>)Type.forName('List<Date>').newInstance();payload.putAll(PrimitiveListView.inspect(values));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_DATE_1(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> values=(List<Object>)Type.forName('List<Date>').newInstance();values.add(Date.newInstance(2040,1,2));payload.putAll(PrimitiveListView.inspect(values));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_DATE_2(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> values=(List<Object>)Type.forName('List<Date>').newInstance();values.add(Date.newInstance(2040,1,2));values.add(Date.newInstance(2040,1,2));payload.putAll(PrimitiveListView.inspect(values));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_DATETIME_0(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> values=(List<Object>)Type.forName('List<Datetime>').newInstance();payload.putAll(PrimitiveListView.inspect(values));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_DATETIME_1(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> values=(List<Object>)Type.forName('List<Datetime>').newInstance();values.add(Datetime.newInstanceGMT(2040,1,2,0,0,0));payload.putAll(PrimitiveListView.inspect(values));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_DATETIME_2(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> values=(List<Object>)Type.forName('List<Datetime>').newInstance();values.add(Datetime.newInstanceGMT(2040,1,2,0,0,0));values.add(Datetime.newInstanceGMT(2040,1,2,0,0,0));payload.putAll(PrimitiveListView.inspect(values));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_BOOLEAN_0(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> values=(List<Object>)Type.forName('List<Boolean>').newInstance();payload.putAll(PrimitiveListView.inspect(values));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_BOOLEAN_1(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> values=(List<Object>)Type.forName('List<Boolean>').newInstance();values.add(true);payload.putAll(PrimitiveListView.inspect(values));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_BOOLEAN_2(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> values=(List<Object>)Type.forName('List<Boolean>').newInstance();values.add(true);values.add(true);payload.putAll(PrimitiveListView.inspect(values));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_ID_REDUCTION(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> values=(List<Object>)Type.forName('List<Id>').newInstance();values.add((Id)'001000000000001');values.add((Id)'001000000000002');values.add((Id)'001000000000001');payload.putAll(PrimitiveListView.inspect(values));Set<Id> reduced=new Set<Id>((List<Id>)(Object)values);payload.put('reducedSize',reduced.size());payload.put('firstPresent',reduced.contains('001000000000001'));payload.put('secondPresent',reduced.contains('001000000000002'));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_CLONE_CLEAR(){Map<String,Object> payload=new Map<String,Object>();try{List<Object> original=(List<Object>)Type.forName('List<Id>').newInstance();original.add((Id)'001000000000001');List<Object> copied=original.clone();copied.clear();payload.putAll(PrimitiveListView.inspect(copied));payload.put('originalSize',original.size());}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_STRING_CONTROL(){Map<String,Object> payload=new Map<String,Object>();try{payload.putAll(PrimitiveListView.inspect(new List<String>{'owned'}));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_INTEGER_CONTROL(){Map<String,Object> payload=new Map<String,Object>();try{payload.putAll(PrimitiveListView.inspect(new List<Integer>{7}));}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n@IsTest static void PL_RECORD_CONTROL(){Map<String,Object> payload=new Map<String,Object>();try{Object record=new Account(Name='owned');payload.put('recordName',((Account)record).Name);Object absent;payload.put('nullCast',(Account)absent==null);}catch(Exception problem){payload.put('exceptionType',problem.getTypeName());payload.put('exceptionMessage',problem.getMessage());}System.assertEquals('PRIMITIVE_LIST_OBSERVATION',JSON.serialize(payload));}\n}\n",
+          "sha256": "9fe57c509941ab47edbf7fbfe80caf297487054d2c1204dbb49cc498f663e3b2"
+        },
+        "force-app/main/default/classes/PrimitiveListObservation62.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+        },
+        "force-app/main/default/classes/PrimitiveListView.cls": {
+          "source": "public class PrimitiveListView {\n public static Map<String,Object> inspect(List<Object> input) {return boxed(input);}\n private static Map<String,Object> boxed(Object input) {\n  Map<String,Object> payload=new Map<String,Object>{'size'=>((List<Object>)input).size()};\n  try {Account value=(Account)input;payload.put('castAccepted',true);payload.put('resultNull',value==null);}\n  catch(Exception problem) {payload.put('castAccepted',false);payload.put('castType',problem.getTypeName());payload.put('castMessage',problem.getMessage());String element=problem.getMessage().substringBetween('List<','>');payload.put('element',element);try{Type token=Type.forName(element);payload.put('reflectedNull',token==null);if(token!=null)payload.put('reflectedName',token.getName());}catch(Exception reflection){payload.put('reflectionType',reflection.getTypeName());payload.put('reflectionMessage',reflection.getMessage());}}\n  return payload;\n }\n}",
+          "sha256": "f86d3c5127b027eb8c4a0df1e93e80ce423f5b8c373ec2136accb6d627307a4c"
+        },
+        "force-app/main/default/classes/PrimitiveListView.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>54.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "030bf44e84495471ff5f2c210f44396f31c05e7cc8235f295d9dd2b5fea92bd4"
+        },
+        "sfdx-project.json": {
+          "source": "{\"sourceApiVersion\": \"62.0\", \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}]}\n",
+          "sha256": "f80e01fee8c27f9cd628f6825784156f98f6e6313473d649da4553ee48132aa3"
+        }
+      },
+      "deployment": {
+        "id": "0AfEc00000p1Zb3KAE",
+        "checkOnly": true,
+        "done": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 17,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 17
+      },
+      "metadataUnchanged": true,
+      "rawSha256": {
+        "deploy.json": "9be4a38ae3fba046091ff55b01ff27950ef9bf411a26d0265a20ce7e4d050c24",
+        "org.tsv": "36ca4be7c7027a56ef2a9a25d3927a3a5102da623c784ae53a9c6f8e34172fef",
+        "SOURCE-DIGESTS.json": "9678bf0faab708187ad2abbd18a884d9bbaf8f1f86b1793b661b862e52d8c48f",
+        "RAW-DIGESTS.json": "fc61034d087f0274d54ffd52ce1ad898b29ba5ef6afcf4a5405e375d64f1bcaa",
+        "ORG-RUN.txt": "30da896232287eaea178d925a72500de88139ea60526b59916aef72428daeec5",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "before.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647",
+        "after.json": "916401b59ceede17cc4da8a74bf60c4ac0fe747c3d4e0db36a7b4250a772d647"
+      },
+      "rows": [
+        {
+          "method": "PL_BOOLEAN_0",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_BOOLEAN_0",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Boolean\",\"reflectedNull\":false,\"element\":\"Boolean\",\"castMessage\":\"Invalid conversion from runtime type List<Boolean> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":0}"
+          },
+          "native": {
+            "reflectedName": "Boolean",
+            "reflectedNull": false,
+            "element": "Boolean",
+            "castMessage": "Invalid conversion from runtime type List<Boolean> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 0
+          }
+        },
+        {
+          "method": "PL_BOOLEAN_1",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_BOOLEAN_1",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Boolean\",\"reflectedNull\":false,\"element\":\"Boolean\",\"castMessage\":\"Invalid conversion from runtime type List<Boolean> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":1}"
+          },
+          "native": {
+            "reflectedName": "Boolean",
+            "reflectedNull": false,
+            "element": "Boolean",
+            "castMessage": "Invalid conversion from runtime type List<Boolean> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 1
+          }
+        },
+        {
+          "method": "PL_BOOLEAN_2",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_BOOLEAN_2",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Boolean\",\"reflectedNull\":false,\"element\":\"Boolean\",\"castMessage\":\"Invalid conversion from runtime type List<Boolean> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":2}"
+          },
+          "native": {
+            "reflectedName": "Boolean",
+            "reflectedNull": false,
+            "element": "Boolean",
+            "castMessage": "Invalid conversion from runtime type List<Boolean> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 2
+          }
+        },
+        {
+          "method": "PL_CLONE_CLEAR",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_CLONE_CLEAR",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"originalSize\":1,\"reflectedName\":\"Id\",\"reflectedNull\":false,\"element\":\"Id\",\"castMessage\":\"Invalid conversion from runtime type List<Id> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":0}"
+          },
+          "native": {
+            "originalSize": 1,
+            "reflectedName": "Id",
+            "reflectedNull": false,
+            "element": "Id",
+            "castMessage": "Invalid conversion from runtime type List<Id> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 0
+          }
+        },
+        {
+          "method": "PL_DATETIME_0",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_DATETIME_0",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Datetime\",\"reflectedNull\":false,\"element\":\"Datetime\",\"castMessage\":\"Invalid conversion from runtime type List<Datetime> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":0}"
+          },
+          "native": {
+            "reflectedName": "Datetime",
+            "reflectedNull": false,
+            "element": "Datetime",
+            "castMessage": "Invalid conversion from runtime type List<Datetime> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 0
+          }
+        },
+        {
+          "method": "PL_DATETIME_1",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_DATETIME_1",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Datetime\",\"reflectedNull\":false,\"element\":\"Datetime\",\"castMessage\":\"Invalid conversion from runtime type List<Datetime> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":1}"
+          },
+          "native": {
+            "reflectedName": "Datetime",
+            "reflectedNull": false,
+            "element": "Datetime",
+            "castMessage": "Invalid conversion from runtime type List<Datetime> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 1
+          }
+        },
+        {
+          "method": "PL_DATETIME_2",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_DATETIME_2",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Datetime\",\"reflectedNull\":false,\"element\":\"Datetime\",\"castMessage\":\"Invalid conversion from runtime type List<Datetime> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":2}"
+          },
+          "native": {
+            "reflectedName": "Datetime",
+            "reflectedNull": false,
+            "element": "Datetime",
+            "castMessage": "Invalid conversion from runtime type List<Datetime> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 2
+          }
+        },
+        {
+          "method": "PL_DATE_0",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_DATE_0",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Date\",\"reflectedNull\":false,\"element\":\"Date\",\"castMessage\":\"Invalid conversion from runtime type List<Date> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":0}"
+          },
+          "native": {
+            "reflectedName": "Date",
+            "reflectedNull": false,
+            "element": "Date",
+            "castMessage": "Invalid conversion from runtime type List<Date> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 0
+          }
+        },
+        {
+          "method": "PL_DATE_1",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_DATE_1",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Date\",\"reflectedNull\":false,\"element\":\"Date\",\"castMessage\":\"Invalid conversion from runtime type List<Date> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":1}"
+          },
+          "native": {
+            "reflectedName": "Date",
+            "reflectedNull": false,
+            "element": "Date",
+            "castMessage": "Invalid conversion from runtime type List<Date> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 1
+          }
+        },
+        {
+          "method": "PL_DATE_2",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_DATE_2",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Date\",\"reflectedNull\":false,\"element\":\"Date\",\"castMessage\":\"Invalid conversion from runtime type List<Date> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":2}"
+          },
+          "native": {
+            "reflectedName": "Date",
+            "reflectedNull": false,
+            "element": "Date",
+            "castMessage": "Invalid conversion from runtime type List<Date> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 2
+          }
+        },
+        {
+          "method": "PL_DECIMAL_0",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_DECIMAL_0",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Decimal\",\"reflectedNull\":false,\"element\":\"Decimal\",\"castMessage\":\"Invalid conversion from runtime type List<Decimal> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":0}"
+          },
+          "native": {
+            "reflectedName": "Decimal",
+            "reflectedNull": false,
+            "element": "Decimal",
+            "castMessage": "Invalid conversion from runtime type List<Decimal> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 0
+          }
+        },
+        {
+          "method": "PL_DECIMAL_1",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_DECIMAL_1",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Decimal\",\"reflectedNull\":false,\"element\":\"Decimal\",\"castMessage\":\"Invalid conversion from runtime type List<Decimal> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":1}"
+          },
+          "native": {
+            "reflectedName": "Decimal",
+            "reflectedNull": false,
+            "element": "Decimal",
+            "castMessage": "Invalid conversion from runtime type List<Decimal> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 1
+          }
+        },
+        {
+          "method": "PL_DECIMAL_2",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_DECIMAL_2",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Decimal\",\"reflectedNull\":false,\"element\":\"Decimal\",\"castMessage\":\"Invalid conversion from runtime type List<Decimal> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":2}"
+          },
+          "native": {
+            "reflectedName": "Decimal",
+            "reflectedNull": false,
+            "element": "Decimal",
+            "castMessage": "Invalid conversion from runtime type List<Decimal> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 2
+          }
+        },
+        {
+          "method": "PL_ID_REDUCTION",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_ID_REDUCTION",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"secondPresent\":true,\"firstPresent\":true,\"reducedSize\":2,\"reflectedName\":\"Id\",\"reflectedNull\":false,\"element\":\"Id\",\"castMessage\":\"Invalid conversion from runtime type List<Id> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":3}"
+          },
+          "native": {
+            "secondPresent": true,
+            "firstPresent": true,
+            "reducedSize": 2,
+            "reflectedName": "Id",
+            "reflectedNull": false,
+            "element": "Id",
+            "castMessage": "Invalid conversion from runtime type List<Id> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 3
+          }
+        },
+        {
+          "method": "PL_INTEGER_CONTROL",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_INTEGER_CONTROL",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"Integer\",\"reflectedNull\":false,\"element\":\"Integer\",\"castMessage\":\"Invalid conversion from runtime type List<Integer> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":1}"
+          },
+          "native": {
+            "reflectedName": "Integer",
+            "reflectedNull": false,
+            "element": "Integer",
+            "castMessage": "Invalid conversion from runtime type List<Integer> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 1
+          }
+        },
+        {
+          "method": "PL_RECORD_CONTROL",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_RECORD_CONTROL",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"nullCast\":true,\"recordName\":\"owned\"}"
+          },
+          "native": {
+            "nullCast": true,
+            "recordName": "owned"
+          }
+        },
+        {
+          "method": "PL_STRING_CONTROL",
+          "nativeFailure": {
+            "name": "PrimitiveListObservation62",
+            "methodName": "PL_STRING_CONTROL",
+            "message": "System.AssertException: Assertion Failed: Expected: PRIMITIVE_LIST_OBSERVATION, Actual: {\"reflectedName\":\"String\",\"reflectedNull\":false,\"element\":\"String\",\"castMessage\":\"Invalid conversion from runtime type List<String> to Account\",\"castType\":\"System.TypeException\",\"castAccepted\":false,\"size\":1}"
+          },
+          "native": {
+            "reflectedName": "String",
+            "reflectedNull": false,
+            "element": "String",
+            "castMessage": "Invalid conversion from runtime type List<String> to Account",
+            "castType": "System.TypeException",
+            "castAccepted": false,
+            "size": 1
+          }
+        }
+      ]
+    }
+  ]
+}

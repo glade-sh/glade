@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <decisions>
+        <name>Check_Contact</name><label>Check Contact</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Update_None</targetReference></defaultConnector>
+        <defaultConnectorLabel>None</defaultConnectorLabel>
+        <rules>
+            <name>Found</name><conditionLogic>and</conditionLogic>
+            <conditions><leftValueReference>Lookup_Contact.Id</leftValueReference><operator>IsNull</operator><rightValue><booleanValue>false</booleanValue></rightValue></conditions>
+            <connector><targetReference>Update_Found</targetReference></connector><label>Found</label>
+        </rules>
+    </decisions>
+    <interviewLabel>Scheduled Decision {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Scheduled Decision</label>
+    <processType>AutoLaunchedFlow</processType>
+    <recordCreates>
+        <name>Create_Found_Counter</name><label>Create Found Counter</label><locationX>0</locationX><locationY>0</locationY>
+        <inputAssignments><field>LastName</field><value><stringValue>flow-run-found</stringValue></value></inputAssignments>
+        <inputAssignments><field>AccountId</field><value><elementReference>$Record.Id</elementReference></value></inputAssignments>
+        <object>Contact</object><storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordCreates>
+    <recordCreates>
+        <name>Create_None_Counter</name><label>Create None Counter</label><locationX>0</locationX><locationY>0</locationY>
+        <inputAssignments><field>LastName</field><value><stringValue>flow-run-none</stringValue></value></inputAssignments>
+        <inputAssignments><field>AccountId</field><value><elementReference>$Record.Id</elementReference></value></inputAssignments>
+        <object>Contact</object><storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordCreates>
+    <recordLookups>
+        <name>Lookup_Contact</name><label>Lookup Contact</label><locationX>0</locationX><locationY>0</locationY>
+        <assignNullValuesIfNoRecordsFound>true</assignNullValuesIfNoRecordsFound>
+        <connector><targetReference>Check_Contact</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>AccountId</field><operator>EqualTo</operator><value><elementReference>$Record.Id</elementReference></value></filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly><object>Contact</object><storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <recordUpdates>
+        <name>Update_Found</name><label>Update Found</label><locationX>0</locationX><locationY>0</locationY>
+        <connector><targetReference>Create_Found_Counter</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>Id</field><operator>EqualTo</operator><value><elementReference>$Record.Id</elementReference></value></filters>
+        <inputAssignments><field>Description</field><value><stringValue>found</stringValue></value></inputAssignments>
+        <object>Account</object>
+    </recordUpdates>
+    <recordUpdates>
+        <name>Update_None</name><label>Update None</label><locationX>0</locationX><locationY>0</locationY>
+        <connector><targetReference>Create_None_Counter</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>Id</field><operator>EqualTo</operator><value><elementReference>$Record.Id</elementReference></value></filters>
+        <inputAssignments><field>Description</field><value><stringValue>none</stringValue></value></inputAssignments>
+        <object>Account</object>
+    </recordUpdates>
+    <start>
+        <locationX>0</locationX><locationY>0</locationY><object>Account</object>
+        <schedule><frequency>Daily</frequency><startDate>2026-10-20</startDate><startTime>03:15:00.000Z</startTime></schedule>
+        <triggerType>Scheduled</triggerType><connector><targetReference>Lookup_Contact</targetReference></connector>
+    </start>
+    <status>Active</status>
+</Flow>

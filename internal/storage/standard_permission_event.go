@@ -1,0 +1,35 @@
+package storage
+
+// PermissionSetEvent fills a catalog omission with the public field shape
+// observed on Salesforce at source APIs 62 and 67.
+var permissionSetEventFields = []Field{
+	{APIName: "ReplayId", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 1000},
+	{APIName: "CreatedDate", Type: FieldDateTime, DisplayType: "DATETIME", Createable: BoolFlag(false), Updateable: BoolFlag(false)},
+	{APIName: "EventUuid", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 36},
+	{APIName: "EventIdentifier", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 80},
+	{APIName: "UserId", Type: FieldReference, DisplayType: "REFERENCE", Createable: BoolFlag(false), Updateable: BoolFlag(false), ReferenceTo: []string{"User"}, RelationshipName: "User", Length: 18},
+	{APIName: "Username", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 255},
+	{APIName: "EventDate", Type: FieldDateTime, DisplayType: "DATETIME", Createable: BoolFlag(false), Updateable: BoolFlag(false)},
+	{APIName: "RelatedEventIdentifier", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 80},
+	{APIName: "PolicyId", Type: FieldReference, DisplayType: "REFERENCE", Createable: BoolFlag(false), Updateable: BoolFlag(false), ReferenceTo: []string{"TransactionSecurityPolicy"}, RelationshipName: "Policy", Length: 18},
+	{APIName: "PolicyOutcome", Type: FieldPicklist, DisplayType: "PICKLIST", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 255},
+	{APIName: "EvaluationTime", Type: FieldDecimal, DisplayType: "DOUBLE", Createable: BoolFlag(false), Updateable: BoolFlag(false), Precision: 18},
+	{APIName: "SessionKey", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 24},
+	{APIName: "LoginKey", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 24},
+	{APIName: "SessionLevel", Type: FieldPicklist, DisplayType: "PICKLIST", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 255},
+	{APIName: "SourceIp", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 255},
+	{APIName: "LoginHistoryId", Type: FieldReference, DisplayType: "REFERENCE", Createable: BoolFlag(false), Updateable: BoolFlag(false), ReferenceTo: []string{"LoginHistory"}, RelationshipName: "LoginHistory", Length: 18},
+	{APIName: "EventSource", Type: FieldPicklist, DisplayType: "PICKLIST", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 255},
+	{APIName: "Operation", Type: FieldPicklist, DisplayType: "PICKLIST", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 255},
+	{APIName: "ParentIdList", Type: FieldAny, DisplayType: "JSON", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 250000},
+	{APIName: "ParentNameList", Type: FieldAny, DisplayType: "JSON", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 250000},
+	{APIName: "PermissionType", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 30},
+	{APIName: "PermissionList", Type: FieldAny, DisplayType: "JSON", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 250000},
+	{APIName: "PermissionExpiration", Type: FieldDateTime, DisplayType: "DATETIME", Createable: BoolFlag(false), Updateable: BoolFlag(false)},
+	{APIName: "PermissionExpirationList", Type: FieldAny, DisplayType: "JSON", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 250000},
+	{APIName: "HasExternalUsers", Type: FieldBoolean, DisplayType: "BOOLEAN", Createable: BoolFlag(false), Updateable: BoolFlag(false)},
+	{APIName: "ImpactedUserIds", Type: FieldAny, DisplayType: "JSON", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 250000},
+	{APIName: "UserCount", Type: FieldString, DisplayType: "STRING", Createable: BoolFlag(false), Updateable: BoolFlag(false), Length: 1000},
+	{APIName: "ProfileId", Type: FieldReference, DisplayType: "REFERENCE", Createable: BoolFlag(false), Updateable: BoolFlag(false), ReferenceTo: []string{"Profile"}, RelationshipName: "Profile", Length: 18},
+	{APIName: "RoleId", Type: FieldReference, DisplayType: "REFERENCE", Createable: BoolFlag(false), Updateable: BoolFlag(false), ReferenceTo: []string{"UserRole"}, RelationshipName: "Role", Length: 18},
+}

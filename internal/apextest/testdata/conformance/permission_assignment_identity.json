@@ -1,0 +1,26 @@
+{
+  "evidence": "Documented ID identity and permission-assignment contract; local conformance, not a new native permission capture. Owned id_uuid_version I001/I002/I005/I115 supply ID conversion/equality controls; API68 named there remains legacy anonymous-backed.",
+  "sources": [
+    "https://help.salesforce.com/s/articleView?id=platform.admin_troubleshoot_queries.htm&language=en_US&type=5",
+    "https://help.salesforce.com/s/articleView?id=000389130&language=en_US&type=1",
+    "https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/salesforce_apex_developer_guide.pdf"
+  ],
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "testClass": "OwnedAssignmentIdentityProbe",
+  "methodCount": 6,
+  "source": "@IsTest private class OwnedAssignmentIdentityProbe {\n private static Id reader(){return [SELECT Id FROM PermissionSet WHERE Name='OwnedReader'].Id;}\n private static void verify(){System.runAs(new User(Id=UserInfo.getUserId())){Assert.isTrue(FeatureManagement.checkPermission('OwnedView'));Assert.isFalse(FeatureManagement.checkPermission('OwnedEdit'));Assert.isFalse(FeatureManagement.checkPermission('UndeclaredPermission'));}}\n @IsTest static void directControl(){insert new PermissionSetAssignment(AssigneeId=UserInfo.getUserId(),PermissionSetId=reader());verify();}\n @IsTest static void expandedSetReference(){String parent=reader().toString();Assert.areEqual(18,parent.length());insert new PermissionSetAssignment(AssigneeId=UserInfo.getUserId(),PermissionSetId=parent);verify();}\n @IsTest static void expandedAssigneeReference(){String userId=UserInfo.getUserId().toString();Assert.areEqual(18,userId.length());insert new PermissionSetAssignment(AssigneeId=userId,PermissionSetId=reader());verify();}\n private static Object expand(Object value){return value instanceof String?((String)value).replace('[index]','0'):value;}\n @IsTest static void expandedTokenMapReferences(){Map<Schema.SObjectField,Object> values=new Map<Schema.SObjectField,Object>{PermissionSetAssignment.AssigneeId=>UserInfo.getUserId(),PermissionSetAssignment.PermissionSetId=>reader()};SObject row=PermissionSetAssignment.SObjectType.newSObject();for(Schema.SObjectField field:values.keySet())row.put(field,expand(values.get(field)));insert row;verify();}\n @IsTest static void unassignedControl(){Id parent=reader();Id userId=UserInfo.getUserId();Assert.areEqual(0,[SELECT COUNT() FROM PermissionSetAssignment WHERE AssigneeId=:userId AND PermissionSetId=:parent]);Assert.isFalse(FeatureManagement.checkPermission('OwnedView'));}\n @IsTest static void disabledControl(){insert new PermissionSetAssignment(AssigneeId=UserInfo.getUserId(),PermissionSetId=reader());System.runAs(new User(Id=UserInfo.getUserId())){Assert.isFalse(FeatureManagement.checkPermission('OwnedEdit'));Assert.isFalse(FeatureManagement.checkPermission('UndeclaredPermission'));}}\n}\n",
+  "files": {
+    "customPermissions/OwnedView.customPermission-meta.xml": "<CustomPermission xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Owned View</label><isLicensed>false</isLicensed></CustomPermission>",
+    "customPermissions/OwnedEdit.customPermission-meta.xml": "<CustomPermission xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Owned Edit</label><isLicensed>false</isLicensed></CustomPermission>",
+    "permissionsets/OwnedReader.permissionset-meta.xml": "<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Owned Reader</label><customPermissions><enabled>true</enabled><name>OwnedView</name></customPermissions><customPermissions><enabled>false</enabled><name>OwnedEdit</name></customPermissions></PermissionSet>"
+  },
+  "boundaries": [
+    "Existing grants only; disabled, undeclared and unassigned permissions remain denied.",
+    "No profile defaults, settings, permission refresh timing, group-component or namespace semantics inferred.",
+    "Only direct assignment identity lookup changes; field grants and sharing policies are evaluated by existing paths."
+  ]
+}

@@ -1,0 +1,200 @@
+{
+  "scope": "Exact source61 List<SObject> backing assigned/cast to List<Account>, then addAll with Contact or Account elements. Other concrete targets/source versions/backing kinds are not newly observed.",
+  "helperSource": "public class RecordListStoreProbe {\n    public static List<SObject> contactRows() {\n        return new List<SObject>{new Contact(LastName='Synthetic contact')};\n    }\n    public static List<SObject> accountRows() {\n        return new List<SObject>{new Account(Name='Synthetic account')};\n    }\n    public static Map<String,Object> observe(Boolean matching) {\n        Map<String,Object> result=new Map<String,Object>{'matching'=>matching};\n        String phase='factory';\n        try {\n            List<SObject> source=matching ? accountRows() : contactRows();\n            result.put('sourceSize',source.size());\n            result.put('sourceType',String.valueOf(source[0].getSObjectType()));\n            phase='assignment';\n            List<Account> rows=source;\n            result.put('assignedSize',rows.size());\n            phase='cast';\n            List<Account> additional=(List<Account>)(matching ? accountRows() : contactRows());\n            result.put('castSize',additional.size());\n            phase='addAll';\n            rows.addAll(additional);\n            result.put('finalSize',rows.size());\n            phase='complete';\n        } catch(Exception failure) {\n            result.put('exceptionType',failure.getTypeName());\n            result.put('exceptionMessage',failure.getMessage());\n        }\n        result.put('phase',phase);\n        return result;\n    }\n    public static Map<String,Object> run() {\n        return new Map<String,Object>{'foreign'=>observe(false),'matching'=>observe(true)};\n    }\n}\n",
+  "helperSourceSha256": "1512de15bd304944183a68acb8c8764fae2719cca8f80faa4efe918b50f9d66f",
+  "namedObserverSource": "@IsTest private class RecordListStoreProbeTest {\n    @IsTest static void observe() {\n        System.assert(false,'LIST_STORE_RESULT|'+JSON.serialize(RecordListStoreProbe.run()));\n    }\n}\n",
+  "anonymousObserverSource": "System.debug('LIST_STORE_RESULT|'+JSON.serialize(RecordListStoreProbe.run()));\n",
+  "rows": [
+    {
+      "apiVersion": "61.0",
+      "context": "istest",
+      "shape": "foreign",
+      "expected": {
+        "phase": "complete",
+        "finalSize": 2,
+        "castSize": 1,
+        "assignedSize": 1,
+        "sourceType": "Contact",
+        "sourceSize": 1,
+        "matching": false
+      }
+    },
+    {
+      "apiVersion": "61.0",
+      "context": "istest",
+      "shape": "matching",
+      "expected": {
+        "phase": "complete",
+        "finalSize": 2,
+        "castSize": 1,
+        "assignedSize": 1,
+        "sourceType": "Account",
+        "sourceSize": 1,
+        "matching": true
+      }
+    },
+    {
+      "apiVersion": "61.0",
+      "context": "anonymous",
+      "shape": "foreign",
+      "expected": {
+        "phase": "complete",
+        "finalSize": 2,
+        "castSize": 1,
+        "assignedSize": 1,
+        "sourceType": "Contact",
+        "sourceSize": 1,
+        "matching": false
+      }
+    },
+    {
+      "apiVersion": "61.0",
+      "context": "anonymous",
+      "shape": "matching",
+      "expected": {
+        "phase": "complete",
+        "finalSize": 2,
+        "castSize": 1,
+        "assignedSize": 1,
+        "sourceType": "Account",
+        "sourceSize": 1,
+        "matching": true
+      }
+    }
+  ],
+  "typedGuardSource": "public class RecordListTypedGuardProbe {\n public static Map<String,Object> observe(Boolean useMany) {\n  List<Account> backing=new List<Account>{new Account(Name='Synthetic account')};\n  List<SObject> view=backing;\n  Map<String,Object> result=new Map<String,Object>{'useMany'=>useMany,'beforeSize'=>view.size()};\n  try {\n   if(useMany) {view.addAll(new List<SObject>{new Contact(LastName='Synthetic contact')});}\n   else {view.add(new Contact(LastName='Synthetic contact'));}\n   result.put('phase','complete');\n  } catch(Exception ex) {\n   result.put('phase',useMany?'addAll':'add');\n   result.put('exceptionType',ex.getTypeName());\n   result.put('exceptionMessage',ex.getMessage());\n  }\n  result.put('afterSize',view.size());\n  return result;\n }\n public static Map<String,Object> run(){return new Map<String,Object>{'add'=>observe(false),'addAll'=>observe(true)};}\n}\n",
+  "typedGuardSourceSha256": "4dad58bc4621a420c18c83c37190d3e0b9ac601c7294e11fac0721ca5fe97729",
+  "typedGuardRows": [
+    {
+      "apiVersion": "61.0",
+      "context": "istest",
+      "operation": "add",
+      "expected": {
+        "afterSize": 1,
+        "exceptionMessage": "Collection store exception adding Contact to List<Account>",
+        "exceptionType": "System.TypeException",
+        "phase": "add",
+        "beforeSize": 1,
+        "useMany": false
+      },
+      "messageDisposition": "asserted"
+    },
+    {
+      "apiVersion": "61.0",
+      "context": "istest",
+      "operation": "addAll",
+      "expected": {
+        "afterSize": 1,
+        "exceptionMessage": "Collection store exception adding all List<SObject> to List<Account>",
+        "exceptionType": "System.TypeException",
+        "phase": "addAll",
+        "beforeSize": 1,
+        "useMany": true
+      },
+      "messageDisposition": "carried: native bulk message names source collection; existing runtime names rejected element. This change asserts rejection type and unchanged size only."
+    },
+    {
+      "apiVersion": "61.0",
+      "context": "anonymous",
+      "operation": "add",
+      "expected": {
+        "afterSize": 1,
+        "exceptionMessage": "Collection store exception adding Contact to List<Account>",
+        "exceptionType": "System.TypeException",
+        "phase": "add",
+        "beforeSize": 1,
+        "useMany": false
+      },
+      "messageDisposition": "asserted"
+    },
+    {
+      "apiVersion": "61.0",
+      "context": "anonymous",
+      "operation": "addAll",
+      "expected": {
+        "afterSize": 1,
+        "exceptionMessage": "Collection store exception adding all List<SObject> to List<Account>",
+        "exceptionType": "System.TypeException",
+        "phase": "addAll",
+        "beforeSize": 1,
+        "useMany": true
+      },
+      "messageDisposition": "carried: native bulk message names source collection; existing runtime names rejected element. This change asserts rejection type and unchanged size only."
+    }
+  ],
+  "captures": [
+    {
+      "topic": "record-list-store61",
+      "context": "istest",
+      "sourceApi": "61.0",
+      "transportApi": "67.0",
+      "orgIdSha256": "04a58dd26a83c1ec339870c9385318efaa66874b9cbd1c01a7a7855820655dc4",
+      "deploymentId": "0AfE200000r0BD4KAM",
+      "deploymentStatus": "Succeeded",
+      "helperSourceSha256": "1512de15bd304944183a68acb8c8764fae2719cca8f80faa4efe918b50f9d66f",
+      "helperMetadataSha256": "5a6a7962736b3c952d33ec0523bae961cbede81850aa090f40725ebef716f890",
+      "observerSourceSha256": "303db5642c700ff878749b295c40d75ce054bfbe5121e0ef9e94c219e3d330f6",
+      "rawResponseSha256": "9ed9e405dd191a7a11331df0c54f1bf2f8c11113645b5318d5bc6cb48daf3fdc",
+      "answerSha256": "0ef8fb7a7c951c2dadfff089ac1f5e058bc14ad92b9d8167c954440dfd2f7ec7",
+      "command": "HOME=${SCRATCH_AUTH_HOME} SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --tests RecordListStoreProbeTest --api-version 67.0 --target-org scratch-org --wait 10 --result-format json --json",
+      "exitCode": 100,
+      "answerJSON": "{\"matching\":{\"phase\":\"complete\",\"finalSize\":2,\"castSize\":1,\"assignedSize\":1,\"sourceType\":\"Account\",\"sourceSize\":1,\"matching\":true},\"foreign\":{\"phase\":\"complete\",\"finalSize\":2,\"castSize\":1,\"assignedSize\":1,\"sourceType\":\"Contact\",\"sourceSize\":1,\"matching\":false}}\n",
+      "observerSource": "@IsTest private class RecordListStoreProbeTest {\n    @IsTest static void observe() {\n        System.assert(false,'LIST_STORE_RESULT|'+JSON.serialize(RecordListStoreProbe.run()));\n    }\n}\n"
+    },
+    {
+      "topic": "record-list-store61",
+      "context": "anonymous",
+      "sourceApi": "61.0",
+      "transportApi": "61.0",
+      "orgIdSha256": "04a58dd26a83c1ec339870c9385318efaa66874b9cbd1c01a7a7855820655dc4",
+      "deploymentId": "0AfE200000r0BD4KAM",
+      "deploymentStatus": "Succeeded",
+      "helperSourceSha256": "1512de15bd304944183a68acb8c8764fae2719cca8f80faa4efe918b50f9d66f",
+      "helperMetadataSha256": "5a6a7962736b3c952d33ec0523bae961cbede81850aa090f40725ebef716f890",
+      "observerSourceSha256": "9535e67a8a32c44ce9f866bcab3bbfd2ccedb6a1e49732afc6205e61a7ebfe9e",
+      "rawResponseSha256": "47519bf5d4fdfbe9733f2c3054074371e4e71c3d9a1b6ac2dcd54bce0b409ff1",
+      "answerSha256": "0ef8fb7a7c951c2dadfff089ac1f5e058bc14ad92b9d8167c954440dfd2f7ec7",
+      "command": "HOME=${SCRATCH_AUTH_HOME} SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --file native-capture --api-version 61.0 --target-org scratch-org --json",
+      "exitCode": 0,
+      "answerJSON": "{\"matching\":{\"phase\":\"complete\",\"finalSize\":2,\"castSize\":1,\"assignedSize\":1,\"sourceType\":\"Account\",\"sourceSize\":1,\"matching\":true},\"foreign\":{\"phase\":\"complete\",\"finalSize\":2,\"castSize\":1,\"assignedSize\":1,\"sourceType\":\"Contact\",\"sourceSize\":1,\"matching\":false}}\n",
+      "observerSource": "System.debug('LIST_STORE_RESULT|'+JSON.serialize(RecordListStoreProbe.run()));\n"
+    },
+    {
+      "topic": "record-list-typed-guard61",
+      "context": "istest",
+      "sourceApi": "61.0",
+      "transportApi": "67.0",
+      "orgIdSha256": "04a58dd26a83c1ec339870c9385318efaa66874b9cbd1c01a7a7855820655dc4",
+      "deploymentId": "0AfE200000r0TQ5KAM",
+      "deploymentStatus": "Succeeded",
+      "helperSourceSha256": "4dad58bc4621a420c18c83c37190d3e0b9ac601c7294e11fac0721ca5fe97729",
+      "helperMetadataSha256": "5a6a7962736b3c952d33ec0523bae961cbede81850aa090f40725ebef716f890",
+      "observerSourceSha256": "1af34c4bc9f374965253f38f658b617054d33cad325a06b560b452fa21460cd4",
+      "rawResponseSha256": "38f8a18ec82fc48bc399814866e787e6a6fc409bd7968e732b40b45d65d68d4d",
+      "answerSha256": "e45b74d13c0a1438c25fef8ff3ba210c98bbc0d2fd8a37a37fefb43af07fa2d5",
+      "command": "HOME=${SCRATCH_AUTH_HOME} SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --tests RecordListTypedGuardProbeTest --api-version 67.0 --target-org scratch-org --wait 10 --result-format json --json",
+      "exitCode": 100,
+      "answerJSON": "{\n  \"addAll\": {\n    \"afterSize\": 1,\n    \"exceptionMessage\": \"Collection store exception adding all List<SObject> to List<Account>\",\n    \"exceptionType\": \"System.TypeException\",\n    \"phase\": \"addAll\",\n    \"beforeSize\": 1,\n    \"useMany\": true\n  },\n  \"add\": {\n    \"afterSize\": 1,\n    \"exceptionMessage\": \"Collection store exception adding Contact to List<Account>\",\n    \"exceptionType\": \"System.TypeException\",\n    \"phase\": \"add\",\n    \"beforeSize\": 1,\n    \"useMany\": false\n  }\n}\n",
+      "observerSource": "@IsTest private class RecordListTypedGuardProbeTest {\n @IsTest static void observe(){System.assert(false,'LIST_TYPED_GUARD_RESULT|'+JSON.serialize(RecordListTypedGuardProbe.run()));}\n}\n"
+    },
+    {
+      "topic": "record-list-typed-guard61",
+      "context": "anonymous",
+      "sourceApi": "61.0",
+      "transportApi": "61.0",
+      "orgIdSha256": "04a58dd26a83c1ec339870c9385318efaa66874b9cbd1c01a7a7855820655dc4",
+      "deploymentId": "0AfE200000r0TQ5KAM",
+      "deploymentStatus": "Succeeded",
+      "helperSourceSha256": "4dad58bc4621a420c18c83c37190d3e0b9ac601c7294e11fac0721ca5fe97729",
+      "helperMetadataSha256": "5a6a7962736b3c952d33ec0523bae961cbede81850aa090f40725ebef716f890",
+      "observerSourceSha256": "98bc0cbcbdc1377ef1a5d9ee004da624ac5702c2823466983c39a0b0e291a4cc",
+      "rawResponseSha256": "514f9bfd9c58c3db06e26f863c0b7b81aaea9e9422fcd05846290a426f4e8356",
+      "answerSha256": "e45b74d13c0a1438c25fef8ff3ba210c98bbc0d2fd8a37a37fefb43af07fa2d5",
+      "command": "HOME=${SCRATCH_AUTH_HOME} SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --file native-capture --api-version 61.0 --target-org scratch-org --json",
+      "exitCode": 0,
+      "answerJSON": "{\n  \"addAll\": {\n    \"afterSize\": 1,\n    \"exceptionMessage\": \"Collection store exception adding all List<SObject> to List<Account>\",\n    \"exceptionType\": \"System.TypeException\",\n    \"phase\": \"addAll\",\n    \"beforeSize\": 1,\n    \"useMany\": true\n  },\n  \"add\": {\n    \"afterSize\": 1,\n    \"exceptionMessage\": \"Collection store exception adding Contact to List<Account>\",\n    \"exceptionType\": \"System.TypeException\",\n    \"phase\": \"add\",\n    \"beforeSize\": 1,\n    \"useMany\": false\n  }\n}\n",
+      "observerSource": "System.debug('LIST_TYPED_GUARD_RESULT|'+JSON.serialize(RecordListTypedGuardProbe.run()));\n"
+    }
+  ],
+  "carry": "Native typed-backing addAll exception message names all List<SObject>; runtime currently names Contact. Rejection type and unchanged size asserted; exact bulk text carried separately. No new source62/67 mutation, non-addAll generic-backing, other list targets or empty-list observations."
+}

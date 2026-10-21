@@ -1,0 +1,1309 @@
+{
+  "apiVersions": [
+    "62.0",
+    "63.0",
+    "67.0"
+  ],
+  "transportApi": "62.0",
+  "route": "isTest",
+  "namespaceContext": "none",
+  "knownRows": 24,
+  "pendingCoverage": [
+    "Anonymous interface/abstract/concrete controls, mixed source/caller versions, other primitive types and namespace contexts remain unobserved.",
+    "System.Integer.class named caller63 compilation failed; this setup carry does not establish Type.newInstance runtime behavior."
+  ],
+  "setupCarries": [
+    {
+      "status": "observed-setup-boundary",
+      "cell": "integerQualified",
+      "sourceApi": "63.0",
+      "callerApi": "63.0",
+      "transportApi": "62.0",
+      "route": "@IsTest",
+      "namespaceContext": "none",
+      "deploymentId": "0AfRu00000hblnBKAQ",
+      "terminalStatus": "Failed",
+      "checkOnly": true,
+      "observedRuntimeRows": 0,
+      "sourceExpression": "System.Integer.class",
+      "componentFailures": [
+        {
+          "changed": false,
+          "columnNumber": 106,
+          "componentType": "ApexClass",
+          "created": false,
+          "createdDate": "2026-10-15T13:43:12.000Z",
+          "deleted": false,
+          "fileName": "classes/PrimitiveReflectionObservation.cls",
+          "fullName": "PrimitiveReflectionObservation",
+          "lineNumber": 10,
+          "problem": "Invalid type: System.Integer",
+          "problemType": "Error",
+          "success": false
+        }
+      ],
+      "boundary": "The named caller failed compilation with Invalid type: System.Integer. No Type.newInstance runtime behavior was observed in this deployment; other eight runtime cells remain unanswered.",
+      "ownerBoundary": "Qualified-type semantic behavior is reserved; no semantic/runtime change is proposed by this packet.",
+      "capturedProject": "api63",
+      "rawDigests": {
+        "api63/answers/ORG-RUN.txt": "f0622d79bdaf3ccb1e86cb14abdfbb5c83092af2c76dffe40b88f997bc9edce7",
+        "api63/answers/deploy.command.json": "ec2768857993042958eabf565722fc889b0382105e2e58482513020b5173a6aa",
+        "api63/answers/deploy.json": "b833314d9978dde1aeb5764fa35576a944e4067f05a922d6271dc1ce4099434c",
+        "api63/answers/deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "api63/answers/digests.json": "29c87308f68e227102068cb0de6c94ce340ad7678a586b3531439a5523bb2d21",
+        "api63/answers/errors.json": "09dc0fd9c54b5b5b436e3449cb769b6dfd07ad3561b8000741deace9e21870d2",
+        "api63/answers/org.tsv": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "runtimeFollowThrough": "The separate api63-runtime project completed 8 runtime observations in check-only deployment 0AfRu00000hbmHpKAI after removing only integerQualified. Named runtime twins at API62/67 also completed; they do not answer the qualified-type compilation cell.",
+      "unexecutedVersionTwins": [
+        "api62",
+        "api67"
+      ],
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"63.0\"\n}\n",
+          "sha256": "3ed6ac4773e0a69178e5624efd765c7cc7d715d18cf65272018acf0a6d44a821"
+        },
+        "force-app/main/default/classes/OwnedPrimitiveReflection.cls": {
+          "source": "public class OwnedPrimitiveReflection {\n    public interface Contract {}\n    public abstract class AbstractValue {}\n    public class ConcreteValue {}\n\n    public static Map<String,Object> construct(Type target) {\n        Map<String,Object> row = new Map<String,Object>();\n        try {\n            Object value = target.newInstance();\n            row.put('state', 'value');\n            row.put('value', String.valueOf(value));\n            row.put('isString', value instanceof String);\n            row.put('isStringList', value instanceof List<String>);\n            row.put('isConcrete', value instanceof ConcreteValue);\n        } catch (Exception problem) {\n            row.put('state', 'exception');\n            row.put('type', problem.getTypeName());\n            row.put('message', problem.getMessage());\n        }\n        return row;\n    }\n}\n",
+          "sha256": "7c72a3099599aa16b69bbd879c4df53809a2adf9c4a3d9340787a41be7f26d97"
+        },
+        "force-app/main/default/classes/OwnedPrimitiveReflection.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>63.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "331f43ffe1e36ef113340345573b656cd4c9d663b8c3547d5e6778f46d70523a"
+        },
+        "force-app/main/default/classes/PrimitiveReflectionObservation.cls": {
+          "source": "@IsTest\nprivate class PrimitiveReflectionObservation {\n    private static void emit(String cell, Map<String,Object> row) {\n        row.put('cell',cell);\n        row.put('sourceApi','63.0');\n        row.put('callerApi','63.0');\n        System.assertEquals('capture', 'PRIMITIVE_REFLECTION_OBSERVATION ' + JSON.serialize(row));\n    }\n    @IsTest static void integerLiteral() { emit('integerLiteral', OwnedPrimitiveReflection.construct(Integer.class)); }\n    @IsTest static void integerQualified() { emit('integerQualified', OwnedPrimitiveReflection.construct(System.Integer.class)); }\n    @IsTest static void integerLookup() { emit('integerLookup', OwnedPrimitiveReflection.construct(Type.forName('Integer'))); }\n    @IsTest static void stringLiteral() { emit('stringLiteral', OwnedPrimitiveReflection.construct(String.class)); }\n    @IsTest static void listLiteral() { emit('listLiteral', OwnedPrimitiveReflection.construct(List<String>.class)); }\n    @IsTest static void interfaceLiteral() { emit('interfaceLiteral', OwnedPrimitiveReflection.construct(OwnedPrimitiveReflection.Contract.class)); }\n    @IsTest static void abstractLiteral() { emit('abstractLiteral', OwnedPrimitiveReflection.construct(OwnedPrimitiveReflection.AbstractValue.class)); }\n    @IsTest static void concreteLiteral() { emit('concreteLiteral', OwnedPrimitiveReflection.construct(OwnedPrimitiveReflection.ConcreteValue.class)); }\n    @IsTest static void emptyString() {\n        Object value = '';\n        emit('emptyString', new Map<String,Object>{'state'=>'value', 'value'=>String.valueOf(value), 'isString'=>value instanceof String, 'isStringList'=>value instanceof List<String>, 'isConcrete'=>value instanceof OwnedPrimitiveReflection.ConcreteValue});\n    }\n}\n",
+          "sha256": "1b367f34a5ddebb46a16727e32e0190b46d95a366ac993b385c294b476a39696"
+        },
+        "force-app/main/default/classes/PrimitiveReflectionObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>63.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "331f43ffe1e36ef113340345573b656cd4c9d663b8c3547d5e6778f46d70523a"
+        }
+      }
+    }
+  ],
+  "captures": [
+    {
+      "context": "api62-runtime",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "testClass": "PrimitiveReflectionObservation",
+      "marker": "PRIMITIVE_REFLECTION_OBSERVATION",
+      "deployment": {
+        "id": "0AfRu00000hbhDKKAY",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 8,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 8
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        },
+        "force-app/main/default/classes/OwnedPrimitiveReflection.cls": {
+          "source": "public class OwnedPrimitiveReflection {\n    public interface Contract {}\n    public abstract class AbstractValue {}\n    public class ConcreteValue {}\n\n    public static Map<String,Object> construct(Type target) {\n        Map<String,Object> row = new Map<String,Object>();\n        try {\n            Object value = target.newInstance();\n            row.put('state', 'value');\n            row.put('value', String.valueOf(value));\n            row.put('isString', value instanceof String);\n            row.put('isStringList', value instanceof List<String>);\n            row.put('isConcrete', value instanceof ConcreteValue);\n        } catch (Exception problem) {\n            row.put('state', 'exception');\n            row.put('type', problem.getTypeName());\n            row.put('message', problem.getMessage());\n        }\n        return row;\n    }\n}\n",
+          "sha256": "7c72a3099599aa16b69bbd879c4df53809a2adf9c4a3d9340787a41be7f26d97"
+        },
+        "force-app/main/default/classes/OwnedPrimitiveReflection.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+        },
+        "force-app/main/default/classes/PrimitiveReflectionObservation.cls": {
+          "source": "@IsTest\nprivate class PrimitiveReflectionObservation {\n    private static void emit(String cell, Map<String,Object> row) {\n        row.put('cell',cell);\n        row.put('sourceApi','62.0');\n        row.put('callerApi','62.0');\n        System.assertEquals('capture', 'PRIMITIVE_REFLECTION_OBSERVATION ' + JSON.serialize(row));\n    }\n    @IsTest static void integerLiteral() { emit('integerLiteral', OwnedPrimitiveReflection.construct(Integer.class)); }\n    @IsTest static void integerLookup() { emit('integerLookup', OwnedPrimitiveReflection.construct(Type.forName('Integer'))); }\n    @IsTest static void stringLiteral() { emit('stringLiteral', OwnedPrimitiveReflection.construct(String.class)); }\n    @IsTest static void listLiteral() { emit('listLiteral', OwnedPrimitiveReflection.construct(List<String>.class)); }\n    @IsTest static void interfaceLiteral() { emit('interfaceLiteral', OwnedPrimitiveReflection.construct(OwnedPrimitiveReflection.Contract.class)); }\n    @IsTest static void abstractLiteral() { emit('abstractLiteral', OwnedPrimitiveReflection.construct(OwnedPrimitiveReflection.AbstractValue.class)); }\n    @IsTest static void concreteLiteral() { emit('concreteLiteral', OwnedPrimitiveReflection.construct(OwnedPrimitiveReflection.ConcreteValue.class)); }\n    @IsTest static void emptyString() {\n        Object value = '';\n        emit('emptyString', new Map<String,Object>{'state'=>'value', 'value'=>String.valueOf(value), 'isString'=>value instanceof String, 'isStringList'=>value instanceof List<String>, 'isConcrete'=>value instanceof OwnedPrimitiveReflection.ConcreteValue});\n    }\n}\n",
+          "sha256": "dd1551c89de845534a97a117e4a1e712dcc6be0424243552ea9e6bba38623bdc"
+        },
+        "force-app/main/default/classes/PrimitiveReflectionObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+        }
+      },
+      "rawSha256": {
+        "ORG-RUN.txt": "856309dcac5323fd22f1c7f2bb2891e3e840753f50f7c52b6d336ef90c842408",
+        "deploy.command.json": "ec2768857993042958eabf565722fc889b0382105e2e58482513020b5173a6aa",
+        "deploy.json": "c55851c1f4620d61839b10429fd9ceb487f4a6e031e0587ba01f1acfa4418097",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "digests.json": "a6c7905208c32ca9949390e58dae09710c5f272f34cad19d50a3ae9a4c62b10a",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "org.tsv": "faebd534e7189e6ea664f0240bbdf1c80dd5e9e74275b6196af23fb93a6c3416"
+      },
+      "rows": [
+        {
+          "method": "abstractLiteral",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "abstractLiteral",
+            "message": "OwnedPrimitiveReflection.AbstractValue cannot be constructed",
+            "type": "System.TypeException",
+            "state": "exception"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001FgOZSIA3",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"abstractLiteral\",\"message\":\"OwnedPrimitiveReflection.AbstractValue cannot be constructed\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+            "methodName": "abstractLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.abstractLiteral: line 14, column 1",
+            "time": 45,
+            "type": "Class"
+          },
+          "carriedPaths": {
+            "message": "Native diagnostic retained; existing interface/abstract diagnostic wording is outside the Integer constructor fix. Catchable exception type and all other payload fields remain asserted."
+          }
+        },
+        {
+          "method": "concreteLiteral",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "concreteLiteral",
+            "isConcrete": true,
+            "isStringList": false,
+            "isString": false,
+            "value": "ConcreteValue:[]",
+            "state": "value"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001FgOZSIA3",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"concreteLiteral\",\"isConcrete\":true,\"isStringList\":false,\"isString\":false,\"value\":\"ConcreteValue:[]\",\"state\":\"value\"}",
+            "methodName": "concreteLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.concreteLiteral: line 15, column 1",
+            "time": 82,
+            "type": "Class"
+          }
+        },
+        {
+          "method": "emptyString",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "emptyString",
+            "isConcrete": false,
+            "isStringList": false,
+            "isString": true,
+            "value": "",
+            "state": "value"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001FgOZSIA3",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"emptyString\",\"isConcrete\":false,\"isStringList\":false,\"isString\":true,\"value\":\"\",\"state\":\"value\"}",
+            "methodName": "emptyString",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.emptyString: line 18, column 1",
+            "time": 81,
+            "type": "Class"
+          }
+        },
+        {
+          "method": "integerLiteral",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "integerLiteral",
+            "message": "Integer does not have a no-arg constructor",
+            "type": "System.TypeException",
+            "state": "exception"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001FgOZSIA3",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"integerLiteral\",\"message\":\"Integer does not have a no-arg constructor\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+            "methodName": "integerLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.integerLiteral: line 9, column 1",
+            "time": 76,
+            "type": "Class"
+          }
+        },
+        {
+          "method": "integerLookup",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "integerLookup",
+            "message": "Integer cannot be constructed",
+            "type": "System.TypeException",
+            "state": "exception"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001FgOZSIA3",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"integerLookup\",\"message\":\"Integer cannot be constructed\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+            "methodName": "integerLookup",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.integerLookup: line 10, column 1",
+            "time": 94,
+            "type": "Class"
+          }
+        },
+        {
+          "method": "interfaceLiteral",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "interfaceLiteral",
+            "message": "OwnedPrimitiveReflection.Contract cannot be constructed",
+            "type": "System.TypeException",
+            "state": "exception"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001FgOZSIA3",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"interfaceLiteral\",\"message\":\"OwnedPrimitiveReflection.Contract cannot be constructed\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+            "methodName": "interfaceLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.interfaceLiteral: line 13, column 1",
+            "time": 78,
+            "type": "Class"
+          },
+          "carriedPaths": {
+            "message": "Native diagnostic retained; existing interface/abstract diagnostic wording is outside the Integer constructor fix. Catchable exception type and all other payload fields remain asserted."
+          }
+        },
+        {
+          "method": "listLiteral",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "listLiteral",
+            "isConcrete": false,
+            "isStringList": true,
+            "isString": false,
+            "value": "()",
+            "state": "value"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001FgOZSIA3",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"listLiteral\",\"isConcrete\":false,\"isStringList\":true,\"isString\":false,\"value\":\"()\",\"state\":\"value\"}",
+            "methodName": "listLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.listLiteral: line 12, column 1",
+            "time": 80,
+            "type": "Class"
+          }
+        },
+        {
+          "method": "stringLiteral",
+          "native": {
+            "callerApi": "62.0",
+            "sourceApi": "62.0",
+            "cell": "stringLiteral",
+            "isConcrete": false,
+            "isStringList": false,
+            "isString": true,
+            "value": "",
+            "state": "value"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001FgOZSIA3",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"stringLiteral\",\"isConcrete\":false,\"isStringList\":false,\"isString\":true,\"value\":\"\",\"state\":\"value\"}",
+            "methodName": "stringLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.stringLiteral: line 11, column 1",
+            "time": 77,
+            "type": "Class"
+          }
+        }
+      ]
+    },
+    {
+      "context": "api63-runtime",
+      "sourceApi": "63.0",
+      "callerApi": "63.0",
+      "testClass": "PrimitiveReflectionObservation",
+      "marker": "PRIMITIVE_REFLECTION_OBSERVATION",
+      "deployment": {
+        "id": "0AfRu00000hbmHpKAI",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 8,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 8
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"63.0\"\n}\n",
+          "sha256": "3ed6ac4773e0a69178e5624efd765c7cc7d715d18cf65272018acf0a6d44a821"
+        },
+        "force-app/main/default/classes/OwnedPrimitiveReflection.cls": {
+          "source": "public class OwnedPrimitiveReflection {\n    public interface Contract {}\n    public abstract class AbstractValue {}\n    public class ConcreteValue {}\n\n    public static Map<String,Object> construct(Type target) {\n        Map<String,Object> row = new Map<String,Object>();\n        try {\n            Object value = target.newInstance();\n            row.put('state', 'value');\n            row.put('value', String.valueOf(value));\n            row.put('isString', value instanceof String);\n            row.put('isStringList', value instanceof List<String>);\n            row.put('isConcrete', value instanceof ConcreteValue);\n        } catch (Exception problem) {\n            row.put('state', 'exception');\n            row.put('type', problem.getTypeName());\n            row.put('message', problem.getMessage());\n        }\n        return row;\n    }\n}\n",
+          "sha256": "7c72a3099599aa16b69bbd879c4df53809a2adf9c4a3d9340787a41be7f26d97"
+        },
+        "force-app/main/default/classes/OwnedPrimitiveReflection.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>63.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "331f43ffe1e36ef113340345573b656cd4c9d663b8c3547d5e6778f46d70523a"
+        },
+        "force-app/main/default/classes/PrimitiveReflectionObservation.cls": {
+          "source": "@IsTest\nprivate class PrimitiveReflectionObservation {\n    private static void emit(String cell, Map<String,Object> row) {\n        row.put('cell',cell);\n        row.put('sourceApi','63.0');\n        row.put('callerApi','63.0');\n        System.assertEquals('capture', 'PRIMITIVE_REFLECTION_OBSERVATION ' + JSON.serialize(row));\n    }\n    @IsTest static void integerLiteral() { emit('integerLiteral', OwnedPrimitiveReflection.construct(Integer.class)); }\n    @IsTest static void integerLookup() { emit('integerLookup', OwnedPrimitiveReflection.construct(Type.forName('Integer'))); }\n    @IsTest static void stringLiteral() { emit('stringLiteral', OwnedPrimitiveReflection.construct(String.class)); }\n    @IsTest static void listLiteral() { emit('listLiteral', OwnedPrimitiveReflection.construct(List<String>.class)); }\n    @IsTest static void interfaceLiteral() { emit('interfaceLiteral', OwnedPrimitiveReflection.construct(OwnedPrimitiveReflection.Contract.class)); }\n    @IsTest static void abstractLiteral() { emit('abstractLiteral', OwnedPrimitiveReflection.construct(OwnedPrimitiveReflection.AbstractValue.class)); }\n    @IsTest static void concreteLiteral() { emit('concreteLiteral', OwnedPrimitiveReflection.construct(OwnedPrimitiveReflection.ConcreteValue.class)); }\n    @IsTest static void emptyString() {\n        Object value = '';\n        emit('emptyString', new Map<String,Object>{'state'=>'value', 'value'=>String.valueOf(value), 'isString'=>value instanceof String, 'isStringList'=>value instanceof List<String>, 'isConcrete'=>value instanceof OwnedPrimitiveReflection.ConcreteValue});\n    }\n}\n",
+          "sha256": "6136ad209083904c4bd3835e86689450061eda9a8d3b896e917ebaee47f902a6"
+        },
+        "force-app/main/default/classes/PrimitiveReflectionObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>63.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "331f43ffe1e36ef113340345573b656cd4c9d663b8c3547d5e6778f46d70523a"
+        }
+      },
+      "rawSha256": {
+        "ORG-RUN.txt": "757119448380e57d11e64112653cd4922e5731e409553dd233e0e0fed1606256",
+        "deploy.command.json": "ec2768857993042958eabf565722fc889b0382105e2e58482513020b5173a6aa",
+        "deploy.json": "400f45b646674a5134d86a1f4e91dd1cf457cfd4c5d4bcf32dce9110d8852477",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "digests.json": "ecfbb99097fe972b1ac503207abaa8de6475898e6e975dae37d4fbc6b84cade9",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "org.tsv": "bf1ce2533db1e930d652cae732a63cf617073d7a0b76a27c7802cb43893c8fe4"
+      },
+      "rows": [
+        {
+          "method": "abstractLiteral",
+          "native": {
+            "callerApi": "63.0",
+            "sourceApi": "63.0",
+            "cell": "abstractLiteral",
+            "message": "OwnedPrimitiveReflection.AbstractValue cannot be constructed",
+            "type": "System.TypeException",
+            "state": "exception"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001FfyXqIAJ",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"63.0\",\"sourceApi\":\"63.0\",\"cell\":\"abstractLiteral\",\"message\":\"OwnedPrimitiveReflection.AbstractValue cannot be constructed\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+            "methodName": "abstractLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.abstractLiteral: line 14, column 1",
+            "time": 50,
+            "type": "Class"
+          },
+          "carriedPaths": {
+            "message": "Native diagnostic retained; existing interface/abstract diagnostic wording is outside the Integer constructor fix. Catchable exception type and all other payload fields remain asserted."
+          }
+        },
+        {
+          "method": "concreteLiteral",
+          "native": {
+            "callerApi": "63.0",
+            "sourceApi": "63.0",
+            "cell": "concreteLiteral",
+            "isConcrete": true,
+            "isStringList": false,
+            "isString": false,
+            "value": "ConcreteValue:[]",
+            "state": "value"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001FfyXqIAJ",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"63.0\",\"sourceApi\":\"63.0\",\"cell\":\"concreteLiteral\",\"isConcrete\":true,\"isStringList\":false,\"isString\":false,\"value\":\"ConcreteValue:[]\",\"state\":\"value\"}",
+            "methodName": "concreteLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.concreteLiteral: line 15, column 1",
+            "time": 72,
+            "type": "Class"
+          }
+        },
+        {
+          "method": "emptyString",
+          "native": {
+            "callerApi": "63.0",
+            "sourceApi": "63.0",
+            "cell": "emptyString",
+            "isConcrete": false,
+            "isStringList": false,
+            "isString": true,
+            "value": "",
+            "state": "value"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001FfyXqIAJ",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"63.0\",\"sourceApi\":\"63.0\",\"cell\":\"emptyString\",\"isConcrete\":false,\"isStringList\":false,\"isString\":true,\"value\":\"\",\"state\":\"value\"}",
+            "methodName": "emptyString",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.emptyString: line 18, column 1",
+            "time": 73,
+            "type": "Class"
+          }
+        },
+        {
+          "method": "integerLiteral",
+          "native": {
+            "callerApi": "63.0",
+            "sourceApi": "63.0",
+            "cell": "integerLiteral",
+            "message": "Integer does not have a no-arg constructor",
+            "type": "System.TypeException",
+            "state": "exception"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001FfyXqIAJ",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"63.0\",\"sourceApi\":\"63.0\",\"cell\":\"integerLiteral\",\"message\":\"Integer does not have a no-arg constructor\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+            "methodName": "integerLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.integerLiteral: line 9, column 1",
+            "time": 78,
+            "type": "Class"
+          }
+        },
+        {
+          "method": "integerLookup",
+          "native": {
+            "callerApi": "63.0",
+            "sourceApi": "63.0",
+            "cell": "integerLookup",
+            "message": "Integer cannot be constructed",
+            "type": "System.TypeException",
+            "state": "exception"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001FfyXqIAJ",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"63.0\",\"sourceApi\":\"63.0\",\"cell\":\"integerLookup\",\"message\":\"Integer cannot be constructed\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+            "methodName": "integerLookup",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.integerLookup: line 10, column 1",
+            "time": 91,
+            "type": "Class"
+          }
+        },
+        {
+          "method": "interfaceLiteral",
+          "native": {
+            "callerApi": "63.0",
+            "sourceApi": "63.0",
+            "cell": "interfaceLiteral",
+            "message": "OwnedPrimitiveReflection.Contract cannot be constructed",
+            "type": "System.TypeException",
+            "state": "exception"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001FfyXqIAJ",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"63.0\",\"sourceApi\":\"63.0\",\"cell\":\"interfaceLiteral\",\"message\":\"OwnedPrimitiveReflection.Contract cannot be constructed\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+            "methodName": "interfaceLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.interfaceLiteral: line 13, column 1",
+            "time": 74,
+            "type": "Class"
+          },
+          "carriedPaths": {
+            "message": "Native diagnostic retained; existing interface/abstract diagnostic wording is outside the Integer constructor fix. Catchable exception type and all other payload fields remain asserted."
+          }
+        },
+        {
+          "method": "listLiteral",
+          "native": {
+            "callerApi": "63.0",
+            "sourceApi": "63.0",
+            "cell": "listLiteral",
+            "isConcrete": false,
+            "isStringList": true,
+            "isString": false,
+            "value": "()",
+            "state": "value"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001FfyXqIAJ",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"63.0\",\"sourceApi\":\"63.0\",\"cell\":\"listLiteral\",\"isConcrete\":false,\"isStringList\":true,\"isString\":false,\"value\":\"()\",\"state\":\"value\"}",
+            "methodName": "listLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.listLiteral: line 12, column 1",
+            "time": 83,
+            "type": "Class"
+          }
+        },
+        {
+          "method": "stringLiteral",
+          "native": {
+            "callerApi": "63.0",
+            "sourceApi": "63.0",
+            "cell": "stringLiteral",
+            "isConcrete": false,
+            "isStringList": false,
+            "isString": true,
+            "value": "",
+            "state": "value"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001FfyXqIAJ",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"63.0\",\"sourceApi\":\"63.0\",\"cell\":\"stringLiteral\",\"isConcrete\":false,\"isStringList\":false,\"isString\":true,\"value\":\"\",\"state\":\"value\"}",
+            "methodName": "stringLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.stringLiteral: line 11, column 1",
+            "time": 77,
+            "type": "Class"
+          }
+        }
+      ]
+    },
+    {
+      "context": "api67-runtime",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "testClass": "PrimitiveReflectionObservation",
+      "marker": "PRIMITIVE_REFLECTION_OBSERVATION",
+      "deployment": {
+        "id": "0AfRu00000hbnPBKAY",
+        "done": true,
+        "checkOnly": true,
+        "status": "Failed",
+        "numberComponentErrors": 0,
+        "numberTestErrors": 8,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 8
+      },
+      "sources": {
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"67.0\"\n}\n",
+          "sha256": "2bc58206d0b9c401181c61264ca1a7084dff5c8afdec3c0d7edeea86a65d9484"
+        },
+        "force-app/main/default/classes/OwnedPrimitiveReflection.cls": {
+          "source": "public class OwnedPrimitiveReflection {\n    public interface Contract {}\n    public abstract class AbstractValue {}\n    public class ConcreteValue {}\n\n    public static Map<String,Object> construct(Type target) {\n        Map<String,Object> row = new Map<String,Object>();\n        try {\n            Object value = target.newInstance();\n            row.put('state', 'value');\n            row.put('value', String.valueOf(value));\n            row.put('isString', value instanceof String);\n            row.put('isStringList', value instanceof List<String>);\n            row.put('isConcrete', value instanceof ConcreteValue);\n        } catch (Exception problem) {\n            row.put('state', 'exception');\n            row.put('type', problem.getTypeName());\n            row.put('message', problem.getMessage());\n        }\n        return row;\n    }\n}\n",
+          "sha256": "7c72a3099599aa16b69bbd879c4df53809a2adf9c4a3d9340787a41be7f26d97"
+        },
+        "force-app/main/default/classes/OwnedPrimitiveReflection.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/PrimitiveReflectionObservation.cls": {
+          "source": "@IsTest\nprivate class PrimitiveReflectionObservation {\n    private static void emit(String cell, Map<String,Object> row) {\n        row.put('cell',cell);\n        row.put('sourceApi','67.0');\n        row.put('callerApi','67.0');\n        System.assertEquals('capture', 'PRIMITIVE_REFLECTION_OBSERVATION ' + JSON.serialize(row));\n    }\n    @IsTest static void integerLiteral() { emit('integerLiteral', OwnedPrimitiveReflection.construct(Integer.class)); }\n    @IsTest static void integerLookup() { emit('integerLookup', OwnedPrimitiveReflection.construct(Type.forName('Integer'))); }\n    @IsTest static void stringLiteral() { emit('stringLiteral', OwnedPrimitiveReflection.construct(String.class)); }\n    @IsTest static void listLiteral() { emit('listLiteral', OwnedPrimitiveReflection.construct(List<String>.class)); }\n    @IsTest static void interfaceLiteral() { emit('interfaceLiteral', OwnedPrimitiveReflection.construct(OwnedPrimitiveReflection.Contract.class)); }\n    @IsTest static void abstractLiteral() { emit('abstractLiteral', OwnedPrimitiveReflection.construct(OwnedPrimitiveReflection.AbstractValue.class)); }\n    @IsTest static void concreteLiteral() { emit('concreteLiteral', OwnedPrimitiveReflection.construct(OwnedPrimitiveReflection.ConcreteValue.class)); }\n    @IsTest static void emptyString() {\n        Object value = '';\n        emit('emptyString', new Map<String,Object>{'state'=>'value', 'value'=>String.valueOf(value), 'isString'=>value instanceof String, 'isStringList'=>value instanceof List<String>, 'isConcrete'=>value instanceof OwnedPrimitiveReflection.ConcreteValue});\n    }\n}\n",
+          "sha256": "5046ea71d864e74c382335ce39312428bf919b09ab39f243a7b0407734bf2404"
+        },
+        "force-app/main/default/classes/PrimitiveReflectionObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        }
+      },
+      "rawSha256": {
+        "ORG-RUN.txt": "d66ba792d1e0271fa62d2bac43cdc79d9e13a48a06cd0dee4a5440bbdc83669c",
+        "deploy.command.json": "ec2768857993042958eabf565722fc889b0382105e2e58482513020b5173a6aa",
+        "deploy.json": "2d3b2b6b864e81e31cd06712657a2417f0410001c0afc044f192a06a7f424613",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "digests.json": "d6c262bef9520bf96698ecd2546f1ef69d70243b86f9aee63bcf270bddc5e4d8",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "org.tsv": "b9a794c9858bccc7212889e68250552eaedfc357de4609596b80b1bd6f41de0e"
+      },
+      "rows": [
+        {
+          "method": "abstractLiteral",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "abstractLiteral",
+            "message": "OwnedPrimitiveReflection.AbstractValue cannot be constructed",
+            "type": "System.TypeException",
+            "state": "exception"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001Ff08MIAR",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"abstractLiteral\",\"message\":\"OwnedPrimitiveReflection.AbstractValue cannot be constructed\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+            "methodName": "abstractLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.abstractLiteral: line 14, column 1",
+            "time": 40,
+            "type": "Class"
+          },
+          "carriedPaths": {
+            "message": "Native diagnostic retained; existing interface/abstract diagnostic wording is outside the Integer constructor fix. Catchable exception type and all other payload fields remain asserted."
+          }
+        },
+        {
+          "method": "concreteLiteral",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "concreteLiteral",
+            "isConcrete": true,
+            "isStringList": false,
+            "isString": false,
+            "value": "ConcreteValue:[]",
+            "state": "value"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001Ff08MIAR",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"concreteLiteral\",\"isConcrete\":true,\"isStringList\":false,\"isString\":false,\"value\":\"ConcreteValue:[]\",\"state\":\"value\"}",
+            "methodName": "concreteLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.concreteLiteral: line 15, column 1",
+            "time": 72,
+            "type": "Class"
+          }
+        },
+        {
+          "method": "emptyString",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "emptyString",
+            "isConcrete": false,
+            "isStringList": false,
+            "isString": true,
+            "value": "",
+            "state": "value"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001Ff08MIAR",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"emptyString\",\"isConcrete\":false,\"isStringList\":false,\"isString\":true,\"value\":\"\",\"state\":\"value\"}",
+            "methodName": "emptyString",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.emptyString: line 18, column 1",
+            "time": 72,
+            "type": "Class"
+          }
+        },
+        {
+          "method": "integerLiteral",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "integerLiteral",
+            "message": "Integer does not have a no-arg constructor",
+            "type": "System.TypeException",
+            "state": "exception"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001Ff08MIAR",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"integerLiteral\",\"message\":\"Integer does not have a no-arg constructor\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+            "methodName": "integerLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.integerLiteral: line 9, column 1",
+            "time": 71,
+            "type": "Class"
+          }
+        },
+        {
+          "method": "integerLookup",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "integerLookup",
+            "message": "Integer cannot be constructed",
+            "type": "System.TypeException",
+            "state": "exception"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001Ff08MIAR",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"integerLookup\",\"message\":\"Integer cannot be constructed\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+            "methodName": "integerLookup",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.integerLookup: line 10, column 1",
+            "time": 88,
+            "type": "Class"
+          }
+        },
+        {
+          "method": "interfaceLiteral",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "interfaceLiteral",
+            "message": "OwnedPrimitiveReflection.Contract cannot be constructed",
+            "type": "System.TypeException",
+            "state": "exception"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001Ff08MIAR",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"interfaceLiteral\",\"message\":\"OwnedPrimitiveReflection.Contract cannot be constructed\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+            "methodName": "interfaceLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.interfaceLiteral: line 13, column 1",
+            "time": 81,
+            "type": "Class"
+          },
+          "carriedPaths": {
+            "message": "Native diagnostic retained; existing interface/abstract diagnostic wording is outside the Integer constructor fix. Catchable exception type and all other payload fields remain asserted."
+          }
+        },
+        {
+          "method": "listLiteral",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "listLiteral",
+            "isConcrete": false,
+            "isStringList": true,
+            "isString": false,
+            "value": "()",
+            "state": "value"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001Ff08MIAR",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"listLiteral\",\"isConcrete\":false,\"isStringList\":true,\"isString\":false,\"value\":\"()\",\"state\":\"value\"}",
+            "methodName": "listLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.listLiteral: line 12, column 1",
+            "time": 66,
+            "type": "Class"
+          }
+        },
+        {
+          "method": "stringLiteral",
+          "native": {
+            "callerApi": "67.0",
+            "sourceApi": "67.0",
+            "cell": "stringLiteral",
+            "isConcrete": false,
+            "isStringList": false,
+            "isString": true,
+            "value": "",
+            "state": "value"
+          },
+          "nativeFailure": {
+            "id": "01pRu00001Ff08MIAR",
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: PRIMITIVE_REFLECTION_OBSERVATION {\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"stringLiteral\",\"isConcrete\":false,\"isStringList\":false,\"isString\":true,\"value\":\"\",\"state\":\"value\"}",
+            "methodName": "stringLiteral",
+            "name": "PrimitiveReflectionObservation",
+            "namespace": null,
+            "packageName": "PrimitiveReflectionObservation",
+            "stackTrace": "Class.PrimitiveReflectionObservation.emit: line 7, column 1\nClass.PrimitiveReflectionObservation.stringLiteral: line 11, column 1",
+            "time": 65,
+            "type": "Class"
+          }
+        }
+      ]
+    }
+  ],
+  "knownAnonymousRows": 12,
+  "anonymousCaptures": [
+    {
+      "context": "anonymous-api62/integerLiteral",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "cell": "integerLiteral",
+      "marker": "PRIMITIVE_REFLECTION_OBSERVATION|",
+      "source": {
+        "source": "class OwnedPrimitiveAnonymousBridge {\n    public Map<String,Object> construct(Type target) {\n        Map<String,Object> row = new Map<String,Object>();\n        try {\n            Object value = target.newInstance();\n            row.put('state','value');\n            row.put('value',String.valueOf(value));\n            row.put('isString',value instanceof String);\n            row.put('isStringList',value instanceof List<String>);\n        } catch (Exception problem) {\n            row.put('state','exception');\n            row.put('type',problem.getTypeName());\n            row.put('message',problem.getMessage());\n        }\n        return row;\n    }\n}\nMap<String,Object> row = new OwnedPrimitiveAnonymousBridge().construct(Integer.class);\nrow.put('cell','integerLiteral');\nrow.put('sourceApi','62.0');\nrow.put('callerApi','62.0');\nSystem.debug('PRIMITIVE_REFLECTION_OBSERVATION|'+JSON.serialize(row));\n",
+        "sha256": "fd35fc5f3415009891e93b85acb46fbb88ca0fc2d84da30b7afa68a76a3f4ae1"
+      },
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "exceptionStackTrace": "",
+        "line": -1,
+        "column": -1
+      },
+      "native": {
+        "callerApi": "62.0",
+        "sourceApi": "62.0",
+        "cell": "integerLiteral",
+        "message": "Integer does not have a no-arg constructor",
+        "type": "System.TypeException",
+        "state": "exception"
+      },
+      "nativeLogLine": "07:08:13.24 (27628519)|USER_DEBUG|[22]|DEBUG|PRIMITIVE_REFLECTION_OBSERVATION&#124;{\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"integerLiteral\",\"message\":\"Integer does not have a no-arg constructor\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+      "rawSha256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "09bb8a243361b0a3847c03a53737a01b0b238fba8ba2014363ec4c0a404e9994",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "digests.json": "f2fd4c7a3e11dbc191297a043d57e29928d5fed5a3eff19b73072e947af1a2c3",
+        "source.apex": "fd35fc5f3415009891e93b85acb46fbb88ca0fc2d84da30b7afa68a76a3f4ae1",
+        "run.json": "81919014b1a8327d4bc3bc1300812300b1001df8866cace24f6fbc633457c0cd",
+        "ORG-RUN.txt": "5a7672aab409dcf05fbc00cd872d331858ac9e9c35b2c2950582e3f9aff7da74"
+      }
+    },
+    {
+      "context": "anonymous-api62/integerLookup",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "cell": "integerLookup",
+      "marker": "PRIMITIVE_REFLECTION_OBSERVATION|",
+      "source": {
+        "source": "class OwnedPrimitiveAnonymousBridge {\n    public Map<String,Object> construct(Type target) {\n        Map<String,Object> row = new Map<String,Object>();\n        try {\n            Object value = target.newInstance();\n            row.put('state','value');\n            row.put('value',String.valueOf(value));\n            row.put('isString',value instanceof String);\n            row.put('isStringList',value instanceof List<String>);\n        } catch (Exception problem) {\n            row.put('state','exception');\n            row.put('type',problem.getTypeName());\n            row.put('message',problem.getMessage());\n        }\n        return row;\n    }\n}\nMap<String,Object> row = new OwnedPrimitiveAnonymousBridge().construct(Type.forName('Integer'));\nrow.put('cell','integerLookup');\nrow.put('sourceApi','62.0');\nrow.put('callerApi','62.0');\nSystem.debug('PRIMITIVE_REFLECTION_OBSERVATION|'+JSON.serialize(row));\n",
+        "sha256": "27b8e7df853bd9a4c9d05cc6a1c9e6525cbbc469977b2895b46e78f04fe0f827"
+      },
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "exceptionStackTrace": "",
+        "line": -1,
+        "column": -1
+      },
+      "native": {
+        "callerApi": "62.0",
+        "sourceApi": "62.0",
+        "cell": "integerLookup",
+        "message": "Integer cannot be constructed",
+        "type": "System.TypeException",
+        "state": "exception"
+      },
+      "nativeLogLine": "07:08:15.33 (37158948)|USER_DEBUG|[22]|DEBUG|PRIMITIVE_REFLECTION_OBSERVATION&#124;{\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"integerLookup\",\"message\":\"Integer cannot be constructed\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+      "rawSha256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "bc14006ba6affc4c9ddf7567c8f378047423d4c9fb1305b3dd2e4dee40b2182d",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "digests.json": "0a9eab1deae83921d3da025169b30263d41c2983d7b9817da2c6a23b5e2477b6",
+        "source.apex": "27b8e7df853bd9a4c9d05cc6a1c9e6525cbbc469977b2895b46e78f04fe0f827",
+        "run.json": "36f22fdaaeedd700659852e484b554d4cada69d1c6e2ec196d5ddc489c86ff5e",
+        "ORG-RUN.txt": "83edd8bce2c9bcb045991028e96e37c0f5dbfa1e965fac5deb803e3a6ff518d2"
+      }
+    },
+    {
+      "context": "anonymous-api62/stringLiteral",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "cell": "stringLiteral",
+      "marker": "PRIMITIVE_REFLECTION_OBSERVATION|",
+      "source": {
+        "source": "class OwnedPrimitiveAnonymousBridge {\n    public Map<String,Object> construct(Type target) {\n        Map<String,Object> row = new Map<String,Object>();\n        try {\n            Object value = target.newInstance();\n            row.put('state','value');\n            row.put('value',String.valueOf(value));\n            row.put('isString',value instanceof String);\n            row.put('isStringList',value instanceof List<String>);\n        } catch (Exception problem) {\n            row.put('state','exception');\n            row.put('type',problem.getTypeName());\n            row.put('message',problem.getMessage());\n        }\n        return row;\n    }\n}\nMap<String,Object> row = new OwnedPrimitiveAnonymousBridge().construct(String.class);\nrow.put('cell','stringLiteral');\nrow.put('sourceApi','62.0');\nrow.put('callerApi','62.0');\nSystem.debug('PRIMITIVE_REFLECTION_OBSERVATION|'+JSON.serialize(row));\n",
+        "sha256": "98966555527ca349299b77d8ccbea3df273d5259b1c6efdfe34fa145d35add31"
+      },
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "exceptionStackTrace": "",
+        "line": -1,
+        "column": -1
+      },
+      "native": {
+        "callerApi": "62.0",
+        "sourceApi": "62.0",
+        "cell": "stringLiteral",
+        "isStringList": false,
+        "isString": true,
+        "value": "",
+        "state": "value"
+      },
+      "nativeLogLine": "07:08:17.27 (29233314)|USER_DEBUG|[22]|DEBUG|PRIMITIVE_REFLECTION_OBSERVATION&#124;{\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"stringLiteral\",\"isStringList\":false,\"isString\":true,\"value\":\"\",\"state\":\"value\"}",
+      "rawSha256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "38c3f58acd71ccec1b6fabcd93438f83dca5df9fff6c4bfffdba955629017f99",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "digests.json": "3442815dbad580d75d72a7be5d479ea4f165c3cb721d53a797a5c71e9c18b0b1",
+        "source.apex": "98966555527ca349299b77d8ccbea3df273d5259b1c6efdfe34fa145d35add31",
+        "run.json": "2c230d2cf815dd59a0e919576b4a7c0cb4f93580a7ae49786c8cb70089dbbb08",
+        "ORG-RUN.txt": "e20d0215e87e3186205eb736cc61b8105efb9f77eba644d8ad4144810aa8a8f1"
+      }
+    },
+    {
+      "context": "anonymous-api62/listLiteral",
+      "sourceApi": "62.0",
+      "callerApi": "62.0",
+      "transportApi": "62.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "cell": "listLiteral",
+      "marker": "PRIMITIVE_REFLECTION_OBSERVATION|",
+      "source": {
+        "source": "class OwnedPrimitiveAnonymousBridge {\n    public Map<String,Object> construct(Type target) {\n        Map<String,Object> row = new Map<String,Object>();\n        try {\n            Object value = target.newInstance();\n            row.put('state','value');\n            row.put('value',String.valueOf(value));\n            row.put('isString',value instanceof String);\n            row.put('isStringList',value instanceof List<String>);\n        } catch (Exception problem) {\n            row.put('state','exception');\n            row.put('type',problem.getTypeName());\n            row.put('message',problem.getMessage());\n        }\n        return row;\n    }\n}\nMap<String,Object> row = new OwnedPrimitiveAnonymousBridge().construct(List<String>.class);\nrow.put('cell','listLiteral');\nrow.put('sourceApi','62.0');\nrow.put('callerApi','62.0');\nSystem.debug('PRIMITIVE_REFLECTION_OBSERVATION|'+JSON.serialize(row));\n",
+        "sha256": "003df759d04deb50b658a43a2b0ec53f64ae181ef8bffae581ced9d3ea7fe1c5"
+      },
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "exceptionStackTrace": "",
+        "line": -1,
+        "column": -1
+      },
+      "native": {
+        "callerApi": "62.0",
+        "sourceApi": "62.0",
+        "cell": "listLiteral",
+        "isStringList": true,
+        "isString": false,
+        "value": "()",
+        "state": "value"
+      },
+      "nativeLogLine": "07:08:18.20 (21905388)|USER_DEBUG|[22]|DEBUG|PRIMITIVE_REFLECTION_OBSERVATION&#124;{\"callerApi\":\"62.0\",\"sourceApi\":\"62.0\",\"cell\":\"listLiteral\",\"isStringList\":true,\"isString\":false,\"value\":\"()\",\"state\":\"value\"}",
+      "rawSha256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "58aacad3d41ee3b91bb04d15ed6f047f17150471500d3ac696efb2ec48950156",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "digests.json": "09bf720ea066089867d913448b3caca927cb81b961e706d40e5b929f7b632561",
+        "source.apex": "003df759d04deb50b658a43a2b0ec53f64ae181ef8bffae581ced9d3ea7fe1c5",
+        "run.json": "62ad0273b4076c74abcd55bff6c721361700b60381841c4f431c4ffd392ef333",
+        "ORG-RUN.txt": "1733975210f5fa2cf3b617c3689e605e6f7aca5c9835b10ed45a57a496beb873"
+      }
+    },
+    {
+      "context": "anonymous-api63/integerLiteral",
+      "sourceApi": "63.0",
+      "callerApi": "63.0",
+      "transportApi": "63.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "cell": "integerLiteral",
+      "marker": "PRIMITIVE_REFLECTION_OBSERVATION|",
+      "source": {
+        "source": "class OwnedPrimitiveAnonymousBridge {\n    public Map<String,Object> construct(Type target) {\n        Map<String,Object> row = new Map<String,Object>();\n        try {\n            Object value = target.newInstance();\n            row.put('state','value');\n            row.put('value',String.valueOf(value));\n            row.put('isString',value instanceof String);\n            row.put('isStringList',value instanceof List<String>);\n        } catch (Exception problem) {\n            row.put('state','exception');\n            row.put('type',problem.getTypeName());\n            row.put('message',problem.getMessage());\n        }\n        return row;\n    }\n}\nMap<String,Object> row = new OwnedPrimitiveAnonymousBridge().construct(Integer.class);\nrow.put('cell','integerLiteral');\nrow.put('sourceApi','63.0');\nrow.put('callerApi','63.0');\nSystem.debug('PRIMITIVE_REFLECTION_OBSERVATION|'+JSON.serialize(row));\n",
+        "sha256": "b8ca46c91f23e301a8417c3a83d3709f30d6cb71533f9f33b18cc80fc10636e4"
+      },
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "exceptionStackTrace": "",
+        "line": -1,
+        "column": -1
+      },
+      "native": {
+        "callerApi": "63.0",
+        "sourceApi": "63.0",
+        "cell": "integerLiteral",
+        "message": "Integer does not have a no-arg constructor",
+        "type": "System.TypeException",
+        "state": "exception"
+      },
+      "nativeLogLine": "07:07:12.37 (40886604)|USER_DEBUG|[22]|DEBUG|PRIMITIVE_REFLECTION_OBSERVATION&#124;{\"callerApi\":\"63.0\",\"sourceApi\":\"63.0\",\"cell\":\"integerLiteral\",\"message\":\"Integer does not have a no-arg constructor\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+      "rawSha256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "55ee1efff0912388a2233487ded957abbcc60020451f85cc834bd44d3660e560",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "digests.json": "854d06190bb2f575f08942cfb88dff41d76b3275013d0f5d494f4ffa41c52358",
+        "source.apex": "b8ca46c91f23e301a8417c3a83d3709f30d6cb71533f9f33b18cc80fc10636e4",
+        "run.json": "29e94c8c05685357ce9f1c1741c24ca9360c7dcf26c95ab8e6197ae4dbcee96d",
+        "ORG-RUN.txt": "4ef27c6fb3ee6297d5ea8815ac8607b39b3e8308c2550b1ff6d469b6223609be"
+      }
+    },
+    {
+      "context": "anonymous-api63/integerLookup",
+      "sourceApi": "63.0",
+      "callerApi": "63.0",
+      "transportApi": "63.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "cell": "integerLookup",
+      "marker": "PRIMITIVE_REFLECTION_OBSERVATION|",
+      "source": {
+        "source": "class OwnedPrimitiveAnonymousBridge {\n    public Map<String,Object> construct(Type target) {\n        Map<String,Object> row = new Map<String,Object>();\n        try {\n            Object value = target.newInstance();\n            row.put('state','value');\n            row.put('value',String.valueOf(value));\n            row.put('isString',value instanceof String);\n            row.put('isStringList',value instanceof List<String>);\n        } catch (Exception problem) {\n            row.put('state','exception');\n            row.put('type',problem.getTypeName());\n            row.put('message',problem.getMessage());\n        }\n        return row;\n    }\n}\nMap<String,Object> row = new OwnedPrimitiveAnonymousBridge().construct(Type.forName('Integer'));\nrow.put('cell','integerLookup');\nrow.put('sourceApi','63.0');\nrow.put('callerApi','63.0');\nSystem.debug('PRIMITIVE_REFLECTION_OBSERVATION|'+JSON.serialize(row));\n",
+        "sha256": "8033116c86c6925275b9707453fd49ae0667c749d33561b2c74aec40e48dc697"
+      },
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "exceptionStackTrace": "",
+        "line": -1,
+        "column": -1
+      },
+      "native": {
+        "callerApi": "63.0",
+        "sourceApi": "63.0",
+        "cell": "integerLookup",
+        "message": "Integer cannot be constructed",
+        "type": "System.TypeException",
+        "state": "exception"
+      },
+      "nativeLogLine": "07:07:36.28 (31738337)|USER_DEBUG|[22]|DEBUG|PRIMITIVE_REFLECTION_OBSERVATION&#124;{\"callerApi\":\"63.0\",\"sourceApi\":\"63.0\",\"cell\":\"integerLookup\",\"message\":\"Integer cannot be constructed\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+      "rawSha256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "eee32c6c2202c5d00c2fcab83c973c688d58a8280c8e962896a15e95065b3b7b",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "digests.json": "976d05ba3836e889f82e2ab2dda8799e6f34df5c7a71fdbaa0babb4b82745f16",
+        "source.apex": "8033116c86c6925275b9707453fd49ae0667c749d33561b2c74aec40e48dc697",
+        "run.json": "9c4638bcf86ef58bc2f367ddda1144e8c2c25f701cd089e865a3d80eb604c863",
+        "ORG-RUN.txt": "736e945a264f5bc834b209e1af3068b00800653d0761e7b04365695a77d0fe92"
+      }
+    },
+    {
+      "context": "anonymous-api63/stringLiteral",
+      "sourceApi": "63.0",
+      "callerApi": "63.0",
+      "transportApi": "63.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "cell": "stringLiteral",
+      "marker": "PRIMITIVE_REFLECTION_OBSERVATION|",
+      "source": {
+        "source": "class OwnedPrimitiveAnonymousBridge {\n    public Map<String,Object> construct(Type target) {\n        Map<String,Object> row = new Map<String,Object>();\n        try {\n            Object value = target.newInstance();\n            row.put('state','value');\n            row.put('value',String.valueOf(value));\n            row.put('isString',value instanceof String);\n            row.put('isStringList',value instanceof List<String>);\n        } catch (Exception problem) {\n            row.put('state','exception');\n            row.put('type',problem.getTypeName());\n            row.put('message',problem.getMessage());\n        }\n        return row;\n    }\n}\nMap<String,Object> row = new OwnedPrimitiveAnonymousBridge().construct(String.class);\nrow.put('cell','stringLiteral');\nrow.put('sourceApi','63.0');\nrow.put('callerApi','63.0');\nSystem.debug('PRIMITIVE_REFLECTION_OBSERVATION|'+JSON.serialize(row));\n",
+        "sha256": "9ff5a9ee37e079e32aae51f62589c61881c8128880848323aef27df83011d97e"
+      },
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "exceptionStackTrace": "",
+        "line": -1,
+        "column": -1
+      },
+      "native": {
+        "callerApi": "63.0",
+        "sourceApi": "63.0",
+        "cell": "stringLiteral",
+        "isStringList": false,
+        "isString": true,
+        "value": "",
+        "state": "value"
+      },
+      "nativeLogLine": "07:07:39.20 (22343811)|USER_DEBUG|[22]|DEBUG|PRIMITIVE_REFLECTION_OBSERVATION&#124;{\"callerApi\":\"63.0\",\"sourceApi\":\"63.0\",\"cell\":\"stringLiteral\",\"isStringList\":false,\"isString\":true,\"value\":\"\",\"state\":\"value\"}",
+      "rawSha256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "ea26f24478ffc315c1b63232f2df36d082c31c69864cbdf0ff06a15d4aedba11",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "digests.json": "ae594119ad32b0c488e42d1fedfad10ee124e89b40726d5af258848021a59b5b",
+        "source.apex": "9ff5a9ee37e079e32aae51f62589c61881c8128880848323aef27df83011d97e",
+        "run.json": "8016d54413ee7d95683a48e5eaac56d2a2837dadfcc4123cf43717fcf584102e",
+        "ORG-RUN.txt": "7f772223a16e866cc7c7f7b21ec06c806b70db1109b3b9a189efe8c7de22350a"
+      }
+    },
+    {
+      "context": "anonymous-api63/listLiteral",
+      "sourceApi": "63.0",
+      "callerApi": "63.0",
+      "transportApi": "63.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "cell": "listLiteral",
+      "marker": "PRIMITIVE_REFLECTION_OBSERVATION|",
+      "source": {
+        "source": "class OwnedPrimitiveAnonymousBridge {\n    public Map<String,Object> construct(Type target) {\n        Map<String,Object> row = new Map<String,Object>();\n        try {\n            Object value = target.newInstance();\n            row.put('state','value');\n            row.put('value',String.valueOf(value));\n            row.put('isString',value instanceof String);\n            row.put('isStringList',value instanceof List<String>);\n        } catch (Exception problem) {\n            row.put('state','exception');\n            row.put('type',problem.getTypeName());\n            row.put('message',problem.getMessage());\n        }\n        return row;\n    }\n}\nMap<String,Object> row = new OwnedPrimitiveAnonymousBridge().construct(List<String>.class);\nrow.put('cell','listLiteral');\nrow.put('sourceApi','63.0');\nrow.put('callerApi','63.0');\nSystem.debug('PRIMITIVE_REFLECTION_OBSERVATION|'+JSON.serialize(row));\n",
+        "sha256": "bf0c1f3372857437a436311b6b259755fef35556c7ff4749591aef0dab24e079"
+      },
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "exceptionStackTrace": "",
+        "line": -1,
+        "column": -1
+      },
+      "native": {
+        "callerApi": "63.0",
+        "sourceApi": "63.0",
+        "cell": "listLiteral",
+        "isStringList": true,
+        "isString": false,
+        "value": "()",
+        "state": "value"
+      },
+      "nativeLogLine": "07:07:43.36 (37424409)|USER_DEBUG|[22]|DEBUG|PRIMITIVE_REFLECTION_OBSERVATION&#124;{\"callerApi\":\"63.0\",\"sourceApi\":\"63.0\",\"cell\":\"listLiteral\",\"isStringList\":true,\"isString\":false,\"value\":\"()\",\"state\":\"value\"}",
+      "rawSha256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "2e660c5e779d8aa8e0b026a4b9d48f62514fcd2d4c9f51c6b0fcbf0f031cb2c9",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "digests.json": "bcff44e4f21e58c7c4c89ad16d0531b033350eaea890b55f62c6af0b4e040daf",
+        "source.apex": "bf0c1f3372857437a436311b6b259755fef35556c7ff4749591aef0dab24e079",
+        "run.json": "50f99fda9073069dfdab65edcd35536b8eac9a5d04dbd354857144d96e3792ef",
+        "ORG-RUN.txt": "52d357f7b28bf8f29f01fc7104e6fea0877d2ba8873d914ecc96698f2d6c98bd"
+      }
+    },
+    {
+      "context": "anonymous-api67/integerLiteral",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "cell": "integerLiteral",
+      "marker": "PRIMITIVE_REFLECTION_OBSERVATION|",
+      "source": {
+        "source": "class OwnedPrimitiveAnonymousBridge {\n    public Map<String,Object> construct(Type target) {\n        Map<String,Object> row = new Map<String,Object>();\n        try {\n            Object value = target.newInstance();\n            row.put('state','value');\n            row.put('value',String.valueOf(value));\n            row.put('isString',value instanceof String);\n            row.put('isStringList',value instanceof List<String>);\n        } catch (Exception problem) {\n            row.put('state','exception');\n            row.put('type',problem.getTypeName());\n            row.put('message',problem.getMessage());\n        }\n        return row;\n    }\n}\nMap<String,Object> row = new OwnedPrimitiveAnonymousBridge().construct(Integer.class);\nrow.put('cell','integerLiteral');\nrow.put('sourceApi','67.0');\nrow.put('callerApi','67.0');\nSystem.debug('PRIMITIVE_REFLECTION_OBSERVATION|'+JSON.serialize(row));\n",
+        "sha256": "090a9e5b133add144aea6983744bc0363b7bf89794f208e808b69cf468a31c71"
+      },
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "exceptionStackTrace": "",
+        "line": -1,
+        "column": -1
+      },
+      "native": {
+        "callerApi": "67.0",
+        "sourceApi": "67.0",
+        "cell": "integerLiteral",
+        "message": "Integer does not have a no-arg constructor",
+        "type": "System.TypeException",
+        "state": "exception"
+      },
+      "nativeLogLine": "07:08:59.22 (25090122)|USER_DEBUG|[22]|DEBUG|PRIMITIVE_REFLECTION_OBSERVATION&#124;{\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"integerLiteral\",\"message\":\"Integer does not have a no-arg constructor\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+      "rawSha256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "262f2b559c3f459cb2a3ac0365b18e2da7a84b42db3081d105c3d7e4354caf9b",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "digests.json": "0d41e7ffd76961299d8a361a3b5497d657d98874fc632147aaa9b650fc8ff379",
+        "source.apex": "090a9e5b133add144aea6983744bc0363b7bf89794f208e808b69cf468a31c71",
+        "run.json": "fdbe3760c5a9c703b21ae68e761cf8b5a7dd949e2f344250c8f61e4907340fbb",
+        "ORG-RUN.txt": "1cd9c93839fe22cc3a60f2a9d0a73ef9c54fbb84f8797083e8e2128748bc05ba"
+      }
+    },
+    {
+      "context": "anonymous-api67/integerLookup",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "cell": "integerLookup",
+      "marker": "PRIMITIVE_REFLECTION_OBSERVATION|",
+      "source": {
+        "source": "class OwnedPrimitiveAnonymousBridge {\n    public Map<String,Object> construct(Type target) {\n        Map<String,Object> row = new Map<String,Object>();\n        try {\n            Object value = target.newInstance();\n            row.put('state','value');\n            row.put('value',String.valueOf(value));\n            row.put('isString',value instanceof String);\n            row.put('isStringList',value instanceof List<String>);\n        } catch (Exception problem) {\n            row.put('state','exception');\n            row.put('type',problem.getTypeName());\n            row.put('message',problem.getMessage());\n        }\n        return row;\n    }\n}\nMap<String,Object> row = new OwnedPrimitiveAnonymousBridge().construct(Type.forName('Integer'));\nrow.put('cell','integerLookup');\nrow.put('sourceApi','67.0');\nrow.put('callerApi','67.0');\nSystem.debug('PRIMITIVE_REFLECTION_OBSERVATION|'+JSON.serialize(row));\n",
+        "sha256": "d05997c3560f40cf5ef853844924f05c822d8c7df301792804a53e042b853321"
+      },
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "exceptionStackTrace": "",
+        "line": -1,
+        "column": -1
+      },
+      "native": {
+        "callerApi": "67.0",
+        "sourceApi": "67.0",
+        "cell": "integerLookup",
+        "message": "Integer cannot be constructed",
+        "type": "System.TypeException",
+        "state": "exception"
+      },
+      "nativeLogLine": "07:09:01.29 (32944696)|USER_DEBUG|[22]|DEBUG|PRIMITIVE_REFLECTION_OBSERVATION&#124;{\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"integerLookup\",\"message\":\"Integer cannot be constructed\",\"type\":\"System.TypeException\",\"state\":\"exception\"}",
+      "rawSha256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "71a1537dbff533c262cd3a1f69c4dc002b901b76d412006fb008ee0f9e5d0086",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "digests.json": "377f275bd5917663d6774669fbde0126834e577b5808a2b5f6611dc916162048",
+        "source.apex": "d05997c3560f40cf5ef853844924f05c822d8c7df301792804a53e042b853321",
+        "run.json": "4393049b9f0200201770f0bb9630473636928601236ff9eba69945dc7fd42de2",
+        "ORG-RUN.txt": "a343480c297dad5626f9526aa05a6aa8796eb7348f88a89bbaff39f1b1d82b5e"
+      }
+    },
+    {
+      "context": "anonymous-api67/stringLiteral",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "cell": "stringLiteral",
+      "marker": "PRIMITIVE_REFLECTION_OBSERVATION|",
+      "source": {
+        "source": "class OwnedPrimitiveAnonymousBridge {\n    public Map<String,Object> construct(Type target) {\n        Map<String,Object> row = new Map<String,Object>();\n        try {\n            Object value = target.newInstance();\n            row.put('state','value');\n            row.put('value',String.valueOf(value));\n            row.put('isString',value instanceof String);\n            row.put('isStringList',value instanceof List<String>);\n        } catch (Exception problem) {\n            row.put('state','exception');\n            row.put('type',problem.getTypeName());\n            row.put('message',problem.getMessage());\n        }\n        return row;\n    }\n}\nMap<String,Object> row = new OwnedPrimitiveAnonymousBridge().construct(String.class);\nrow.put('cell','stringLiteral');\nrow.put('sourceApi','67.0');\nrow.put('callerApi','67.0');\nSystem.debug('PRIMITIVE_REFLECTION_OBSERVATION|'+JSON.serialize(row));\n",
+        "sha256": "024b8754a47b3da40545afdb48076d3385417524c4394a48a90759e8d4ba6a7b"
+      },
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "exceptionStackTrace": "",
+        "line": -1,
+        "column": -1
+      },
+      "native": {
+        "callerApi": "67.0",
+        "sourceApi": "67.0",
+        "cell": "stringLiteral",
+        "isStringList": false,
+        "isString": true,
+        "value": "",
+        "state": "value"
+      },
+      "nativeLogLine": "07:09:03.26 (27636494)|USER_DEBUG|[22]|DEBUG|PRIMITIVE_REFLECTION_OBSERVATION&#124;{\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"stringLiteral\",\"isStringList\":false,\"isString\":true,\"value\":\"\",\"state\":\"value\"}",
+      "rawSha256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "77fb702dec851a30b01868e26602c07fa84833bbcee0d70895f63c2e8445b7e5",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "digests.json": "32f38e6c354b80cd9cee270f91d02e796981e83f8f662a81fe6b47f3197e7461",
+        "source.apex": "024b8754a47b3da40545afdb48076d3385417524c4394a48a90759e8d4ba6a7b",
+        "run.json": "e8a0fe760d5ac90ea901c8e985f20046fd23d75cb1e811c0e621d4d13dbf1ede",
+        "ORG-RUN.txt": "e6b14435dcb671ef3a6b72c42f86a7474a5c0751bcb5a675d1d1c461c8bbf504"
+      }
+    },
+    {
+      "context": "anonymous-api67/listLiteral",
+      "sourceApi": "67.0",
+      "callerApi": "67.0",
+      "transportApi": "67.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "cell": "listLiteral",
+      "marker": "PRIMITIVE_REFLECTION_OBSERVATION|",
+      "source": {
+        "source": "class OwnedPrimitiveAnonymousBridge {\n    public Map<String,Object> construct(Type target) {\n        Map<String,Object> row = new Map<String,Object>();\n        try {\n            Object value = target.newInstance();\n            row.put('state','value');\n            row.put('value',String.valueOf(value));\n            row.put('isString',value instanceof String);\n            row.put('isStringList',value instanceof List<String>);\n        } catch (Exception problem) {\n            row.put('state','exception');\n            row.put('type',problem.getTypeName());\n            row.put('message',problem.getMessage());\n        }\n        return row;\n    }\n}\nMap<String,Object> row = new OwnedPrimitiveAnonymousBridge().construct(List<String>.class);\nrow.put('cell','listLiteral');\nrow.put('sourceApi','67.0');\nrow.put('callerApi','67.0');\nSystem.debug('PRIMITIVE_REFLECTION_OBSERVATION|'+JSON.serialize(row));\n",
+        "sha256": "dc2bc2b4977c87726e909274657a62ef7c0959f9ea117d0eb4a56fd560106438"
+      },
+      "execution": {
+        "success": true,
+        "compiled": true,
+        "compileProblem": "",
+        "exceptionMessage": "",
+        "exceptionStackTrace": "",
+        "line": -1,
+        "column": -1
+      },
+      "native": {
+        "callerApi": "67.0",
+        "sourceApi": "67.0",
+        "cell": "listLiteral",
+        "isStringList": true,
+        "isString": false,
+        "value": "()",
+        "state": "value"
+      },
+      "nativeLogLine": "07:09:04.17 (18884151)|USER_DEBUG|[22]|DEBUG|PRIMITIVE_REFLECTION_OBSERVATION&#124;{\"callerApi\":\"67.0\",\"sourceApi\":\"67.0\",\"cell\":\"listLiteral\",\"isStringList\":true,\"isString\":false,\"value\":\"()\",\"state\":\"value\"}",
+      "rawSha256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "org.tsv": "2aa7d9ab3e0b406e3971f8fe2e9b35111d064c36213195dbaf5cb4df862d7ccf",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "digests.json": "48758518417e4dec1b5b4686b35e33e4ba91599596e0782bfbfb7c5b15321ba3",
+        "source.apex": "dc2bc2b4977c87726e909274657a62ef7c0959f9ea117d0eb4a56fd560106438",
+        "run.json": "f2f7b6330d868779c75ed8e04aaa01dd250cf176751e7173b9e791513de317f9",
+        "ORG-RUN.txt": "61f51284eac6ac817faad54503f209e8e6fe8b85e89830b3bb4eca69bd25deb1"
+      }
+    }
+  ]
+}

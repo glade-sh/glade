@@ -2,6 +2,8 @@ package vm
 
 import (
 	"crypto"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"strings"
@@ -29,6 +31,17 @@ func validateJWTWithKey(args []Value) (Value, error) {
 		return Null, unsupportedCallError(callee + " unproved token header")
 	}
 	algorithm := header.Map[mapKey(String("alg"))]
+	if algorithm.Kind == ValueString && algorithm.Text == "HS256" {
+		key, err := base64.StdEncoding.DecodeString(args[1].Text)
+		var publicKey any
+		if err == nil {
+			publicKey, err = x509.ParsePKIXPublicKey(key)
+		}
+		if _, rsaKey := publicKey.(*rsa.PublicKey); err != nil || !rsaKey {
+			return Null, newExceptionError("Auth.JWTValidationException", "We couldn’t validate the publicKey value. Check that you’re sending an RSA key.")
+		}
+		return Null, newExceptionError("Auth.JWTValidationException", "We couldn’t verify the incomingJWT value. Check that the publicKey value is valid.")
+	}
 	if algorithm.Kind != ValueString || algorithm.Text != "RS256" {
 		return Null, unsupportedCallError(callee + " unproved signing algorithm")
 	}

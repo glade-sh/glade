@@ -1,0 +1,462 @@
+{
+  "cluster": "transport",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 2,
+  "nativeObservationCount": 12,
+  "rows": [
+    {
+      "id": "C183ID_001",
+      "group": "CONTROL",
+      "label": "marker transport",
+      "role": "transport-control",
+      "twin": "C183ID_001",
+      "comparison": "exact",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{payload.put('value',7);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_001|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "cff4a434cf6c8792dd2b25b0d2290937396ca0725adc11a2be4e64defa8952db"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "value": {
+                "value": 7
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID001Test": "@IsTest private class KeyObserveC183ID001Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{payload.put('value',7);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_001|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID001Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID001Test": "eb8865f2d56d2aadfb8edc19fceee344efddfeb9ed5b3c5a273c956fed2d02e0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "value": {
+                "value": 7
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "value": {
+                "value": 7
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": 7
+                }
+              },
+              "value": {
+                "value": 7
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C183ID_002",
+      "group": "BASELINE",
+      "label": "existing records and chosen stage",
+      "role": "baseline",
+      "twin": "C183ID_002",
+      "comparison": "transportOnly",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{payload.put('accounts',[SELECT COUNT() FROM Account]);payload.put('contacts',[SELECT COUNT() FROM Contact]);payload.put('opportunities',[SELECT COUNT() FROM Opportunity]);payload.put('users',[SELECT COUNT() FROM User]);payload.put('fixtureRecords',[SELECT COUNT() FROM KeyFixture__c]);payload.put('stage',[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel);payload.put('salesforceLicenses',[SELECT Name,UsedLicenses,TotalLicenses FROM UserLicense WHERE Name='Salesforce']);payload.put('chosenKeys',new Map<String,Object>{'accountName'=>[SELECT COUNT() FROM Account WHERE Name='Synthetic key'],'accountNumber'=>[SELECT COUNT() FROM Account WHERE AccountNumber='Synthetic key'],'contactName'=>[SELECT COUNT() FROM Contact WHERE Name='Synthetic key'],'contactLastName'=>[SELECT COUNT() FROM Contact WHERE LastName='Synthetic key'],'opportunityName'=>[SELECT COUNT() FROM Opportunity WHERE Name='Synthetic key'],'federationIdentifier'=>[SELECT COUNT() FROM User WHERE FederationIdentifier='Synthetic key']});}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}if(payload.containsKey('chosenKeys') && payload.containsKey('salesforceLicenses')){Map<String,Object> chosen=(Map<String,Object>)payload.get('chosenKeys');List<Object> licenses=new List<Object>();for(UserLicense lic:(List<UserLicense>)payload.get('salesforceLicenses')){licenses.add(new List<Object>{lic.Name,lic.TotalLicenses,lic.UsedLicenses});}payload=new Map<String,Object>{'n'=>new List<Object>{payload.get('accounts'),payload.get('contacts'),payload.get('opportunities'),payload.get('users'),payload.get('fixtureRecords')},'s'=>payload.get('stage'),'k'=>new List<Object>{chosen.get('accountName'),chosen.get('accountNumber'),chosen.get('contactName'),chosen.get('contactLastName'),chosen.get('opportunityName'),chosen.get('federationIdentifier')},'l'=>licenses};}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_002|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "71ef2f87f092bf5b7bb811e8688295c3d67384d5e987d2a42f47f292aa80e9ba"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "accounts": 1,
+                  "contacts": 0,
+                  "opportunities": 0,
+                  "users": 7,
+                  "fixtureRecords": 0,
+                  "stage": "Prospecting",
+                  "chosenKeys": {
+                    "accountName": 0,
+                    "accountNumber": 0,
+                    "contactName": 0,
+                    "contactLastName": 0,
+                    "opportunityName": 0,
+                    "federationIdentifier": 0
+                  },
+                  "salesforceLicenses": [
+                    {
+                      "Name": "Salesforce",
+                      "TotalLicenses": 2,
+                      "UsedLicenses": 1
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "accounts": 1,
+                "contacts": 0,
+                "opportunities": 0,
+                "users": 7,
+                "fixtureRecords": 0,
+                "stage": "Prospecting",
+                "chosenKeys": {
+                  "accountName": 0,
+                  "accountNumber": 0,
+                  "contactName": 0,
+                  "contactLastName": 0,
+                  "opportunityName": 0,
+                  "federationIdentifier": 0
+                },
+                "salesforceLicenses": [
+                  {
+                    "Name": "Salesforce",
+                    "TotalLicenses": 2,
+                    "UsedLicenses": 1
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "accounts": 1,
+                  "contacts": 0,
+                  "opportunities": 0,
+                  "users": 7,
+                  "fixtureRecords": 0,
+                  "stage": "Prospecting",
+                  "chosenKeys": {
+                    "accountName": 0,
+                    "accountNumber": 0,
+                    "contactName": 0,
+                    "contactLastName": 0,
+                    "opportunityName": 0,
+                    "federationIdentifier": 0
+                  },
+                  "salesforceLicenses": [
+                    {
+                      "Name": "Salesforce",
+                      "TotalLicenses": 2,
+                      "UsedLicenses": 1
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "accounts": 1,
+                "contacts": 0,
+                "opportunities": 0,
+                "users": 7,
+                "fixtureRecords": 0,
+                "stage": "Prospecting",
+                "chosenKeys": {
+                  "accountName": 0,
+                  "accountNumber": 0,
+                  "contactName": 0,
+                  "contactLastName": 0,
+                  "opportunityName": 0,
+                  "federationIdentifier": 0
+                },
+                "salesforceLicenses": [
+                  {
+                    "Name": "Salesforce",
+                    "TotalLicenses": 2,
+                    "UsedLicenses": 1
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "accounts": 1,
+                  "contacts": 0,
+                  "opportunities": 0,
+                  "users": 7,
+                  "fixtureRecords": 0,
+                  "stage": "Prospecting",
+                  "chosenKeys": {
+                    "accountName": 0,
+                    "accountNumber": 0,
+                    "contactName": 0,
+                    "contactLastName": 0,
+                    "opportunityName": 0,
+                    "federationIdentifier": 0
+                  },
+                  "salesforceLicenses": [
+                    {
+                      "Name": "Salesforce",
+                      "TotalLicenses": 2,
+                      "UsedLicenses": 1
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "accounts": 1,
+                "contacts": 0,
+                "opportunities": 0,
+                "users": 7,
+                "fixtureRecords": 0,
+                "stage": "Prospecting",
+                "chosenKeys": {
+                  "accountName": 0,
+                  "accountNumber": 0,
+                  "contactName": 0,
+                  "contactLastName": 0,
+                  "opportunityName": 0,
+                  "federationIdentifier": 0
+                },
+                "salesforceLicenses": [
+                  {
+                    "Name": "Salesforce",
+                    "TotalLicenses": 2,
+                    "UsedLicenses": 1
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID002Test": "@IsTest private class KeyObserveC183ID002Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{payload.put('accounts',[SELECT COUNT() FROM Account]);payload.put('contacts',[SELECT COUNT() FROM Contact]);payload.put('opportunities',[SELECT COUNT() FROM Opportunity]);payload.put('users',[SELECT COUNT() FROM User]);payload.put('fixtureRecords',[SELECT COUNT() FROM KeyFixture__c]);payload.put('stage',[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel);payload.put('salesforceLicenses',[SELECT Name,UsedLicenses,TotalLicenses FROM UserLicense WHERE Name='Salesforce']);payload.put('chosenKeys',new Map<String,Object>{'accountName'=>[SELECT COUNT() FROM Account WHERE Name='Synthetic key'],'accountNumber'=>[SELECT COUNT() FROM Account WHERE AccountNumber='Synthetic key'],'contactName'=>[SELECT COUNT() FROM Contact WHERE Name='Synthetic key'],'contactLastName'=>[SELECT COUNT() FROM Contact WHERE LastName='Synthetic key'],'opportunityName'=>[SELECT COUNT() FROM Opportunity WHERE Name='Synthetic key'],'federationIdentifier'=>[SELECT COUNT() FROM User WHERE FederationIdentifier='Synthetic key']});}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}if(payload.containsKey('chosenKeys') && payload.containsKey('salesforceLicenses')){Map<String,Object> chosen=(Map<String,Object>)payload.get('chosenKeys');List<Object> licenses=new List<Object>();for(UserLicense lic:(List<UserLicense>)payload.get('salesforceLicenses')){licenses.add(new List<Object>{lic.Name,lic.TotalLicenses,lic.UsedLicenses});}payload=new Map<String,Object>{'n'=>new List<Object>{payload.get('accounts'),payload.get('contacts'),payload.get('opportunities'),payload.get('users'),payload.get('fixtureRecords')},'s'=>payload.get('stage'),'k'=>new List<Object>{chosen.get('accountName'),chosen.get('accountNumber'),chosen.get('contactName'),chosen.get('contactLastName'),chosen.get('opportunityName'),chosen.get('federationIdentifier')},'l'=>licenses};}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_002|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID002Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID002Test": "0e9ce8340e11801c0b841cfa715a6d34e809ea74368c8311c95c9f9048b66e7b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "accounts": 0,
+                  "contacts": 0,
+                  "opportunities": 0,
+                  "users": 7,
+                  "fixtureRecords": 0,
+                  "stage": "Prospecting",
+                  "chosenKeys": {
+                    "accountName": 0,
+                    "accountNumber": 0,
+                    "contactName": 0,
+                    "contactLastName": 0,
+                    "opportunityName": 0,
+                    "federationIdentifier": 0
+                  },
+                  "salesforceLicenses": [
+                    {
+                      "Name": "Salesforce",
+                      "TotalLicenses": 2,
+                      "UsedLicenses": 1
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "accounts": 0,
+                "contacts": 0,
+                "opportunities": 0,
+                "users": 7,
+                "fixtureRecords": 0,
+                "stage": "Prospecting",
+                "chosenKeys": {
+                  "accountName": 0,
+                  "accountNumber": 0,
+                  "contactName": 0,
+                  "contactLastName": 0,
+                  "opportunityName": 0,
+                  "federationIdentifier": 0
+                },
+                "salesforceLicenses": [
+                  {
+                    "Name": "Salesforce",
+                    "TotalLicenses": 2,
+                    "UsedLicenses": 1
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "accounts": 0,
+                  "contacts": 0,
+                  "opportunities": 0,
+                  "users": 7,
+                  "fixtureRecords": 0,
+                  "stage": "Prospecting",
+                  "chosenKeys": {
+                    "accountName": 0,
+                    "accountNumber": 0,
+                    "contactName": 0,
+                    "contactLastName": 0,
+                    "opportunityName": 0,
+                    "federationIdentifier": 0
+                  },
+                  "salesforceLicenses": [
+                    {
+                      "Name": "Salesforce",
+                      "TotalLicenses": 2,
+                      "UsedLicenses": 1
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "accounts": 0,
+                "contacts": 0,
+                "opportunities": 0,
+                "users": 7,
+                "fixtureRecords": 0,
+                "stage": "Prospecting",
+                "chosenKeys": {
+                  "accountName": 0,
+                  "accountNumber": 0,
+                  "contactName": 0,
+                  "contactLastName": 0,
+                  "opportunityName": 0,
+                  "federationIdentifier": 0
+                },
+                "salesforceLicenses": [
+                  {
+                    "Name": "Salesforce",
+                    "TotalLicenses": 2,
+                    "UsedLicenses": 1
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "accounts": 0,
+                  "contacts": 0,
+                  "opportunities": 0,
+                  "users": 7,
+                  "fixtureRecords": 0,
+                  "stage": "Prospecting",
+                  "chosenKeys": {
+                    "accountName": 0,
+                    "accountNumber": 0,
+                    "contactName": 0,
+                    "contactLastName": 0,
+                    "opportunityName": 0,
+                    "federationIdentifier": 0
+                  },
+                  "salesforceLicenses": [
+                    {
+                      "Name": "Salesforce",
+                      "TotalLicenses": 2,
+                      "UsedLicenses": 1
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "accounts": 0,
+                "contacts": 0,
+                "opportunities": 0,
+                "users": 7,
+                "fixtureRecords": 0,
+                "stage": "Prospecting",
+                "chosenKeys": {
+                  "accountName": 0,
+                  "accountNumber": 0,
+                  "contactName": 0,
+                  "contactLastName": 0,
+                  "opportunityName": 0,
+                  "federationIdentifier": 0
+                },
+                "salesforceLicenses": [
+                  {
+                    "Name": "Salesforce",
+                    "TotalLicenses": 2,
+                    "UsedLicenses": 1
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

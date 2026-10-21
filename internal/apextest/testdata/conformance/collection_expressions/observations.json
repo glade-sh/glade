@@ -1,0 +1,1415 @@
+{
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "orgIdSha256": "43773169c747e3225c9803ed34c37bca562c39e7d443b2f0989da2f5f7619d07",
+  "edition": "Developer",
+  "cases": [
+    {
+      "id": "V01",
+      "methods": "Object effect(){return values.add('x');}",
+      "observation": "Object value=effect();observed.put('returnedNull',value==null);",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "V02",
+      "methods": "void nothing(){} Object effect(){return nothing();}",
+      "observation": "Object value=effect();observed.put('returnedNull',value==null);",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 107,
+                "fullName": "ExpressionProbeV0262",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from void to Object"
+              },
+              {
+                "columnNumber": 107,
+                "fullName": "ExpressionTestV0262",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0262 : Illegal conversion from void to Object"
+              }
+            ]
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "100",
+            "compileProblem": "Illegal conversion from void to Object",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 107,
+                "fullName": "ExpressionProbeV0267",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from void to Object"
+              },
+              {
+                "columnNumber": 107,
+                "fullName": "ExpressionTestV0267",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0267 : Illegal conversion from void to Object"
+              }
+            ]
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "100",
+            "compileProblem": "Illegal conversion from void to Object",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 107,
+                "fullName": "ExpressionProbeV0268",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from void to Object"
+              },
+              {
+                "columnNumber": 107,
+                "fullName": "ExpressionTestV0268",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0268 : Illegal conversion from void to Object"
+              }
+            ]
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "100",
+            "compileProblem": "Illegal conversion from void to Object",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "V03",
+      "methods": "Integer effect(){return values.add('x');}",
+      "observation": "Integer value=effect();observed.put('returnedNull',value==null);",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 91,
+                "fullName": "ExpressionProbeV0362",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from Object to Integer"
+              },
+              {
+                "columnNumber": 91,
+                "fullName": "ExpressionTestV0362",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0362 : Illegal conversion from Object to Integer"
+              }
+            ]
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "84",
+            "compileProblem": "Illegal conversion from Object to Integer",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 91,
+                "fullName": "ExpressionProbeV0367",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from Object to Integer"
+              },
+              {
+                "columnNumber": 91,
+                "fullName": "ExpressionTestV0367",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0367 : Illegal conversion from Object to Integer"
+              }
+            ]
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "84",
+            "compileProblem": "Illegal conversion from Object to Integer",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 91,
+                "fullName": "ExpressionProbeV0368",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from Object to Integer"
+              },
+              {
+                "columnNumber": 91,
+                "fullName": "ExpressionTestV0368",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0368 : Illegal conversion from Object to Integer"
+              }
+            ]
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "84",
+            "compileProblem": "Illegal conversion from Object to Integer",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "V04",
+      "methods": "void effect(){return values.add('x');}",
+      "observation": "effect();observed.put('completed',true);",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 88,
+                "fullName": "ExpressionProbeV0462",
+                "lineNumber": 1,
+                "problem": "Void method must not return a value"
+              },
+              {
+                "columnNumber": 88,
+                "fullName": "ExpressionTestV0462",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0462 : Void method must not return a value"
+              }
+            ]
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "81",
+            "compileProblem": "Void method must not return a value",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 88,
+                "fullName": "ExpressionProbeV0467",
+                "lineNumber": 1,
+                "problem": "Void method must not return a value"
+              },
+              {
+                "columnNumber": 88,
+                "fullName": "ExpressionTestV0467",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0467 : Void method must not return a value"
+              }
+            ]
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "81",
+            "compileProblem": "Void method must not return a value",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 88,
+                "fullName": "ExpressionProbeV0468",
+                "lineNumber": 1,
+                "problem": "Void method must not return a value"
+              },
+              {
+                "columnNumber": 88,
+                "fullName": "ExpressionTestV0468",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0468 : Void method must not return a value"
+              }
+            ]
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "81",
+            "compileProblem": "Void method must not return a value",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "V05",
+      "methods": "void effect(){Object value=values.add('x');}",
+      "observation": "effect();observed.put('completed',true);",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "completed": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "completed": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "completed": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "completed": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "completed": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "completed": true,
+            "size": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "V06",
+      "methods": "void take(Object value){} void effect(){take(values.add('x'));}",
+      "observation": "effect();observed.put('completed',true);",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "completed": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "completed": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "completed": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "completed": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "completed": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "completed": true,
+            "size": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "V07",
+      "methods": "Object effect(){values.add('x');return null;}",
+      "observation": "Object value=effect();observed.put('returnedNull',value==null);",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 1
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "V08",
+      "methods": "Object supplied(){return 'x';} Integer effect(){return supplied();}",
+      "observation": "Integer value=effect();observed.put('returnedNull',value==null);",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 122,
+                "fullName": "ExpressionProbeV0862",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from Object to Integer"
+              },
+              {
+                "columnNumber": 122,
+                "fullName": "ExpressionTestV0862",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0862 : Illegal conversion from Object to Integer"
+              }
+            ]
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "115",
+            "compileProblem": "Illegal conversion from Object to Integer",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 122,
+                "fullName": "ExpressionProbeV0867",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from Object to Integer"
+              },
+              {
+                "columnNumber": 122,
+                "fullName": "ExpressionTestV0867",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0867 : Illegal conversion from Object to Integer"
+              }
+            ]
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "115",
+            "compileProblem": "Illegal conversion from Object to Integer",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 122,
+                "fullName": "ExpressionProbeV0868",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from Object to Integer"
+              },
+              {
+                "columnNumber": 122,
+                "fullName": "ExpressionTestV0868",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0868 : Illegal conversion from Object to Integer"
+              }
+            ]
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "115",
+            "compileProblem": "Illegal conversion from Object to Integer",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "F01",
+      "methods": "Object last(Iterable<Object> input){Object value=null;for(Iterator<Object> it=input.iterator();it.hasNext();value=it.next());return value;}",
+      "observation": "observed.put('last',last(new List<Object>{'first','last'}));observed.put('emptyNull',last(new List<Object>())==null);",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "emptyNull": true,
+            "last": "last",
+            "size": 0
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "emptyNull": true,
+            "last": "last",
+            "size": 0
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "emptyNull": true,
+            "last": "last",
+            "size": 0
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "emptyNull": true,
+            "last": "last",
+            "size": 0
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "emptyNull": true,
+            "last": "last",
+            "size": 0
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "emptyNull": true,
+            "last": "last",
+            "size": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "F02",
+      "methods": "Integer count(){Integer ticks=0;for(;ticks<3;ticks++);return ticks;}",
+      "observation": "observed.put('ticks',count());",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 3
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 3
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 3
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 3
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 3
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "F03",
+      "methods": "Integer count(){Integer ticks=0;for(;false;ticks++);return ticks;}",
+      "observation": "observed.put('ticks',count());",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 0
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 0
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 0
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 0
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 0
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "F04",
+      "methods": "Integer count(){Integer ticks=0;for(Integer i=0;i<3;i++){ticks++;}for(Integer j=0;j<2;j++)ticks++;return ticks;}",
+      "observation": "observed.put('ticks',count());",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 5
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 5
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 5
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 5
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 5
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "size": 0,
+            "ticks": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "V09",
+      "methods": "Object effect(){values.add('first');return values.add(0,'x');}",
+      "observation": "Object value=effect();observed.put('returnedNull',value==null);",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "103",
+            "compileProblem": "Illegal conversion from void to Object",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "103",
+            "compileProblem": "Illegal conversion from void to Object",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 110,
+                "fullName": "ExpressionProbeV0968",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from void to Object"
+              },
+              {
+                "columnNumber": 110,
+                "fullName": "ExpressionTestV0968",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0968 : Illegal conversion from void to Object"
+              }
+            ]
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "103",
+            "compileProblem": "Illegal conversion from void to Object",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 110,
+                "fullName": "ExpressionProbeV0962",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from void to Object"
+              },
+              {
+                "columnNumber": 110,
+                "fullName": "ExpressionTestV0962",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0962 : Illegal conversion from void to Object"
+              }
+            ]
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 110,
+                "fullName": "ExpressionProbeV0967",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from void to Object"
+              },
+              {
+                "columnNumber": 110,
+                "fullName": "ExpressionTestV0967",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0967 : Illegal conversion from void to Object"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "V10",
+      "methods": "Object effect(){List<String> typed=new List<String>();return typed.add('x');}",
+      "observation": "Object value=effect();observed.put('returnedNull',value==null);",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 0
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 0
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 0
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 0
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 0
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "istest",
+          "status": "OBSERVED",
+          "native": {
+            "returnedNull": true,
+            "size": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "V11",
+      "methods": "String effect(){List<String> typed=new List<String>();return typed.add('x');}",
+      "observation": "String value=effect();observed.put('returnedNull',value==null);",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "121",
+            "compileProblem": "Illegal conversion from Object to String",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 128,
+                "fullName": "ExpressionProbeV1167",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from Object to String"
+              },
+              {
+                "columnNumber": 128,
+                "fullName": "ExpressionTestV1167",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV1167 : Illegal conversion from Object to String"
+              }
+            ]
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "121",
+            "compileProblem": "Illegal conversion from Object to String",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 128,
+                "fullName": "ExpressionProbeV1168",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from Object to String"
+              },
+              {
+                "columnNumber": 128,
+                "fullName": "ExpressionTestV1168",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV1168 : Illegal conversion from Object to String"
+              }
+            ]
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "121",
+            "compileProblem": "Illegal conversion from Object to String",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 128,
+                "fullName": "ExpressionProbeV1162",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from Object to String"
+              },
+              {
+                "columnNumber": 128,
+                "fullName": "ExpressionTestV1162",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV1162 : Illegal conversion from Object to String"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "V12",
+      "methods": "Integer effect(){values.add('first');return values.add(0,'x');}",
+      "observation": "Integer value=effect();observed.put('returnedNull',value==null);",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "104",
+            "compileProblem": "Illegal conversion from void to Integer",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 111,
+                "fullName": "ExpressionProbeV1267",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from void to Integer"
+              },
+              {
+                "columnNumber": 111,
+                "fullName": "ExpressionTestV1267",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV1267 : Illegal conversion from void to Integer"
+              }
+            ]
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "104",
+            "compileProblem": "Illegal conversion from void to Integer",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 111,
+                "fullName": "ExpressionProbeV1268",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from void to Integer"
+              },
+              {
+                "columnNumber": 111,
+                "fullName": "ExpressionTestV1268",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV1268 : Illegal conversion from void to Integer"
+              }
+            ]
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "column": "104",
+            "compileProblem": "Illegal conversion from void to Integer",
+            "compiled": false,
+            "exceptionMessage": "",
+            "exceptionStackTrace": "",
+            "line": "1"
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "istest",
+          "status": "COMPILE-REJECTED",
+          "native": {
+            "errors": [
+              {
+                "columnNumber": 111,
+                "fullName": "ExpressionProbeV1262",
+                "lineNumber": 1,
+                "problem": "Illegal conversion from void to Integer"
+              },
+              {
+                "columnNumber": 111,
+                "fullName": "ExpressionTestV1262",
+                "lineNumber": 1,
+                "problem": "Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV1262 : Illegal conversion from void to Integer"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "carries": [
+    {
+      "id": "P01",
+      "reason": "Picklist values are org configuration. This fresh Developer org differs from the existing owned standard schema; source tests provide no field/global-value-set metadata. No union or global replacement is inferred.",
+      "cells": [
+        {
+          "api": "62.0",
+          "context": "istest",
+          "native": {
+            "size": 0,
+            "values": [
+              "Existing Customer - Upgrade",
+              "Existing Customer - Replacement",
+              "Existing Customer - Downgrade",
+              "New Customer"
+            ]
+          }
+        },
+        {
+          "api": "62.0",
+          "context": "anonymous",
+          "native": {
+            "size": 0,
+            "values": [
+              "Existing Customer - Upgrade",
+              "Existing Customer - Replacement",
+              "Existing Customer - Downgrade",
+              "New Customer"
+            ]
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "istest",
+          "native": {
+            "size": 0,
+            "values": [
+              "Existing Customer - Upgrade",
+              "Existing Customer - Replacement",
+              "Existing Customer - Downgrade",
+              "New Customer"
+            ]
+          }
+        },
+        {
+          "api": "67.0",
+          "context": "anonymous",
+          "native": {
+            "size": 0,
+            "values": [
+              "Existing Customer - Upgrade",
+              "Existing Customer - Replacement",
+              "Existing Customer - Downgrade",
+              "New Customer"
+            ]
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "istest",
+          "native": {
+            "size": 0,
+            "values": [
+              "Existing Customer - Upgrade",
+              "Existing Customer - Replacement",
+              "Existing Customer - Downgrade",
+              "New Customer"
+            ]
+          }
+        },
+        {
+          "api": "68.0",
+          "context": "anonymous",
+          "native": {
+            "size": 0,
+            "values": [
+              "Existing Customer - Upgrade",
+              "Existing Customer - Replacement",
+              "Existing Customer - Downgrade",
+              "New Customer"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

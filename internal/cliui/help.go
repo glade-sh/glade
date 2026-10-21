@@ -72,17 +72,17 @@ var commandReferences = []CommandHelp{
 	{
 		Name:        "toolchain",
 		Description: "Install or inspect local runtime toolchains.",
-		Usage:       []string{"glade toolchain install [--from <glade-checkout>]", "glade toolchain status [--json]", "glade toolchain install dataweave --java-home <Java17-JDK> [--json]", "glade toolchain status dataweave [--json]"},
+		Usage:       []string{"glade toolchain install [--from <glade-checkout>]", "glade toolchain status [--json]"},
 		Subcommands: []SubcommandHelp{
-			{Name: "install", Description: "Install LWC assets or the DataWeave engine."},
-			{Name: "status", Description: "Print LWC or DataWeave toolchain status."},
+			{Name: "install", Description: "Install LWC assets."},
+			{Name: "status", Description: "Print LWC toolchain status."},
 		},
 		Flags: []FlagHelp{
 			{Name: "--from", Value: "<glade-checkout>", Description: "Install from another glade checkout. Defaults to the current checkout."},
-			{Name: "--java-home", Value: "<path>", Description: "Explicit Java17 JDK for DataWeave installation."},
 			{Name: "--json", Description: "Write toolchain status as JSON."},
 		},
 		Notes: []string{
+			"DataWeave is unsupported in Glade.",
 			"The toolchain installs to the Glade data directory, normally ~/.local/share/glade.",
 			"GLADE_HOME overrides the Glade installation root.",
 			"XDG_DATA_HOME overrides the base directory for the global toolchain.",
@@ -344,7 +344,7 @@ var commandReferences = []CommandHelp{
 			{Name: "--parallel-methods", Description: "Run test methods in parallel."},
 			{Name: "--no-parallel-methods", Description: "Run methods serially within a class."},
 			{Name: "--parallelism", Value: "<n>", Description: "Worker count."},
-			{Name: "--test-timeout", Value: "<dur>", Description: "Per-test timeout."},
+			{Name: "--test-timeout", Value: "<dur>", Description: "Per-test wall-clock cap; overrides GLADE_TEST_TIMEOUT (10m; 0 disables)."},
 			{Name: "--gc-aggressive", Description: "Run with GOGC=50."},
 			{Name: "--limit-mode", Value: "<mode>", Description: "Governor limit mode: permissive or strict."},
 		},
@@ -1144,7 +1144,7 @@ Common flags:
   --parallel-methods        Run test methods in parallel (default).
   --no-parallel-methods     Force serial method execution within a class.
   --parallelism <n>         Worker count (default: GOMAXPROCS).
-  --test-timeout <dur>      Per-test timeout (default 5m, e.g. 30s, 2m).
+  --test-timeout <dur>      Per-test wall-clock cap; overrides GLADE_TEST_TIMEOUT (default 10m; 0 disables).
   --gc-aggressive           Run with GOGC=50 for memory-constrained hosts.
   --limit-mode <mode>       Use strict or permissive governor limits.
 

@@ -1,0 +1,14 @@
+context=istest
+transport=intentional result-bearing assertion; not native test-pass credit
+api=62.0
+source_sha256:62.0:force-app/main/default/classes/CedarBooleanObservationTest.cls=b38af6989319f3f7e2107b57ba53812379780a5d59c2f8a629bfc023c1b32e0c
+source_sha256:62.0:force-app/main/default/classes/CedarBooleanObservationTest.cls-meta.xml=51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d
+source_sha256:62.0:force-app/main/default/flows/Cedar_Boolean_Values.flow-meta.xml=09cf3ebe6a1d665142222f8e753f605fc67cdea1a00d1bd7fb338f96bdb78e8d
+source_sha256:62.0:sfdx-project.json=c498cd6a2814b21c447d6e99066bf8646aed3c79a83a9dbe16360d4739126c1e
+api=67.0
+source_sha256:67.0:force-app/main/default/classes/CedarBooleanObservationTest.cls=b38af6989319f3f7e2107b57ba53812379780a5d59c2f8a629bfc023c1b32e0c
+source_sha256:67.0:force-app/main/default/classes/CedarBooleanObservationTest.cls-meta.xml=17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b
+source_sha256:67.0:force-app/main/default/flows/Cedar_Boolean_Values.flow-meta.xml=5d5357019efd128a85a9aa6ab2e7ccb4d769d593278615e6b15168c192b39b2b
+source_sha256:67.0:sfdx-project.json=5c31de0d65dec71e8b7364858ad7bef1c867d544c47b6b504c85a8757b1b8ed2
+native_complete=true
+observations=2

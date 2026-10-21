@@ -1,0 +1,5 @@
+case	shape
+grouped_alias	USER_MODE custom field alias with explicit field grants
+child_projection	USER_MODE custom queried children with explicit field grants
+hidden_read	An ungranted field remains rejected in USER_MODE grouped projection
+hidden_write	An ungranted scalar write remains rejected in USER_MODE upsert

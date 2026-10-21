@@ -1,0 +1,936 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 6,
+  "nativeObservationCount": 36,
+  "packetRowsSha256": "bdb07c4592ca774891f1569ddbb47b04d8979873883901e5e60ab5a6c6092167",
+  "nativeJsonSha256": "3371b4658cc7034d1461a6b1e24ebf443dbdfb588c66ae393a06296feaa30e65",
+  "sourceManifestSha256": "cd86500b7b47c95e1fe5992615a7f7169c90dd9d903e6776516d2162a3219255",
+  "rows": [
+    {
+      "id": "C126SOSL_001",
+      "question": "Inline dotted parent field",
+      "role": "candidate",
+      "routeDifference": "Test.setFixedSearchResults is used only in @IsTest; anonymous observes compile/execution without fixed-result cardinality.",
+      "routes": {
+        "anonymous": {
+          "id": "C126SOSL_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "f439da77ce6068a83e20a940245b1fb97521a772b7789b99d9759af6d08072bd"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 0,
+                "groups": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 0,
+                "groups": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 0,
+                "groups": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "a195827d515105b93b5349c80b6e45893645f95051f4dd8c268658353ddb2528",
+            "67.0": "a958b333ec9dfc189d6a99bfc7737de1638780b89a822811c15f0f0106c0dc6f",
+            "68.0": "c8350812e1568ce3b552dc4925b11943511a7c72df1efef7c87720d35116ec6e"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<List<SObject>> r=[FIND 'Synthetic' IN ALL FIELDS RETURNING Contact(Id, Account.Name)];o.put('groups',r.size());o.put('count',r[0].size());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126SOSL_001|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126SOSL_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "4c0b3d02ee53c4a9f35773a45c53f288f98780ae7220eb6ba8421ed3885f2fdf"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 1,
+                "groups": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 1,
+                "groups": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 1,
+                "groups": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "c225db61d5715f970a54b0489dc7b47f129ee0ff781e8609e8e1d7fd552db23d",
+            "67.0": "928bde9d115d8fa6de989b2635e3a747b0fd5855d6d847af441bb4df93472785",
+            "68.0": "894ba92cc74b7b1411eceb9aebf534922a7bc0d107181143da0ecbbcbe5d768b"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\nAccount a=new Account(Name='Synthetic');insert a;Contact c=new Contact(LastName='Synthetic',AccountId=a.Id);insert c;Test.setFixedSearchResults(new Id[]{c.Id});\nMap<String,Object> o=new Map<String,Object>();try{\nList<List<SObject>> r=[FIND 'Synthetic' IN ALL FIELDS RETURNING Contact(Id, Account.Name)];o.put('groups',r.size());o.put('count',r[0].size());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126SOSL_001|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126SOSL_002",
+      "question": "Whitespace dotted parent field",
+      "role": "boundary",
+      "routeDifference": "Test.setFixedSearchResults is used only in @IsTest; anonymous observes compile/execution without fixed-result cardinality.",
+      "routes": {
+        "anonymous": {
+          "id": "C126SOSL_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "32b7e840e5e581edf7ff1f314d9893fc8b6133bfa127d12d409649eeb6367de1"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Unexpected token '.'.",
+                "line": 4,
+                "column": 85,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Unexpected token '.'.",
+                "line": 4,
+                "column": 85,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "Unexpected token '.'.",
+                "line": 4,
+                "column": 85,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "Unexpected token '.'.",
+                "line": 4,
+                "column": 85
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "Unexpected token '.'.",
+                "line": 4,
+                "column": 85
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "Unexpected token '.'.",
+                "line": 4,
+                "column": 85
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "cc563a2b7d54666b08cc8d14c601f4fc020e4fc8908430488369557bc2aa23f4",
+            "67.0": "b6771933efd160ddff9f68017c5721c746f3f8e7a752641566b06c1ad26d3fe0",
+            "68.0": "59709c2f5ec7470c76c4c7f33e4a6435db9d3258f132b89f9cd37aa5351d5472"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<List<SObject>> r=[FIND 'Synthetic' IN ALL FIELDS RETURNING Contact(Id, Account . Name)];o.put('groups',r.size());o.put('count',r[0].size());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126SOSL_002|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126SOSL_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "c7948588f6b558a267185394613dd5aa2ca0907bcdd79ed3592119a96779151b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Unexpected token '.'."
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Expecting ';' but was: ')'"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Variable does not exist: r"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Variable does not exist: r"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Unexpected token '.'."
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Expecting ';' but was: ')'"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Variable does not exist: r"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Variable does not exist: r"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Unexpected token '.'."
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Expecting ';' but was: ')'"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Variable does not exist: r"
+                  },
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "Variable does not exist: r"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Unexpected token '.'."
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Expecting ';' but was: ')'"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Variable does not exist: r"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Variable does not exist: r"
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Unexpected token '.'."
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Expecting ';' but was: ')'"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Variable does not exist: r"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Variable does not exist: r"
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Unexpected token '.'."
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Expecting ';' but was: ')'"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Variable does not exist: r"
+              },
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "Variable does not exist: r"
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "a45ddba129539e879c613fbf3f41053cf56f33ddbf4527b49d54c6f13d6f068b",
+            "67.0": "c92aed6b784ed76284f757be7cda286e6d1bd394e2d1a73620c3ccd624ae04f1",
+            "68.0": "47154682035d92e46cb254c59fa6594212321a1dbd07c4e8d4862c46dfb56e01"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\nAccount a=new Account(Name='Synthetic');insert a;Contact c=new Contact(LastName='Synthetic',AccountId=a.Id);insert c;Test.setFixedSearchResults(new Id[]{c.Id});\nMap<String,Object> o=new Map<String,Object>();try{\nList<List<SObject>> r=[FIND 'Synthetic' IN ALL FIELDS RETURNING Contact(Id, Account . Name)];o.put('groups',r.size());o.put('count',r[0].size());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126SOSL_002|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126SOSL_003",
+      "question": "Dynamic dotted parent field",
+      "role": "boundary",
+      "routeDifference": "Test.setFixedSearchResults is used only in @IsTest; anonymous observes compile/execution without fixed-result cardinality.",
+      "routes": {
+        "anonymous": {
+          "id": "C126SOSL_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "1d1bdd04f86d6749ec3b9ca52ad24ad41eb04c957ca6a4b025c2310a57f18156"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 0,
+                "groups": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 0,
+                "groups": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 0,
+                "groups": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "175e0295fd60a0560ca6272fbe7c14e98171fe0e779ba89735ccffe445cc10fa",
+            "67.0": "c0845cc06375040cdfff691d5b6a3808c29115ccb5ceee7a9b0d1ecfd6a6064f",
+            "68.0": "1e940ef3110cc1c199ef953f7cd437276b6e1fb1d1b8c2291e93dac08d482b33"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<List<SObject>> r=Search.query('FIND \\'Synthetic\\' IN ALL FIELDS RETURNING Contact(Id, Account.Name)');o.put('groups',r.size());o.put('count',r[0].size());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126SOSL_003|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126SOSL_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "ea45cc7f8baa36ab4e1bb6fa8870a4ecc96bcf364c2a6c14c1696a70c54be947"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 1,
+                "groups": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 1,
+                "groups": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 1,
+                "groups": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "28978ca0947d2238277a90dbbdc51c0f6fbf5462d7a9c6bc2608055f5009cdf5",
+            "67.0": "79b81e3d98e06cc80de7b500dbf0304209be16e2170763033ba26eb8a622d0c8",
+            "68.0": "84fd46dde4238da3bf5f0908a05de104f6cf0c0f66660b4af277ca57deed9e4b"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\nAccount a=new Account(Name='Synthetic');insert a;Contact c=new Contact(LastName='Synthetic',AccountId=a.Id);insert c;Test.setFixedSearchResults(new Id[]{c.Id});\nMap<String,Object> o=new Map<String,Object>();try{\nList<List<SObject>> r=Search.query('FIND \\'Synthetic\\' IN ALL FIELDS RETURNING Contact(Id, Account.Name)');o.put('groups',r.size());o.put('count',r[0].size());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126SOSL_003|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126SOSL_004",
+      "question": "Ordinary inline fields",
+      "role": "boundary",
+      "routeDifference": "Test.setFixedSearchResults is used only in @IsTest; anonymous observes compile/execution without fixed-result cardinality.",
+      "routes": {
+        "anonymous": {
+          "id": "C126SOSL_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "90c9f22306a4f990dc840d1b69b28854a7da00d9e7a629c486b610dda45b9f81"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 0,
+                "groups": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 0,
+                "groups": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 0,
+                "groups": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "0d675d8f4f7b86c79b63f6d7b82ee0566bb9ad62da9fcf450ca8b82cf90fde2a",
+            "67.0": "132ac8e576504bc0ca62cbdd9339d11b882d66dd168f9d92025fbea79f2ba90d",
+            "68.0": "d8565dbd6b3ff08f412e7ae0e05e45217d80d7b442a7f41861bca408360a45b0"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<List<SObject>> r=[FIND 'Synthetic' IN ALL FIELDS RETURNING Contact(Id, LastName)];o.put('groups',r.size());o.put('count',r[0].size());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126SOSL_004|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126SOSL_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "bce1bae059aed8949b5b910058fec792f8587bd02958715a813deeaea389eeb4"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 1,
+                "groups": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 1,
+                "groups": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "count": 1,
+                "groups": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "9b50adbb073014a3d613449efc089f425d894f7b6643b2ce73386326221b11d2",
+            "67.0": "9c6bc40dd95fe58394eb5f95d0574558ab7ceae3b636870c17b1243c14f87169",
+            "68.0": "c052b1b1061015cdf2db148318a7654760bdd4b52b8dd32113ee44671d037f85"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\nAccount a=new Account(Name='Synthetic');insert a;Contact c=new Contact(LastName='Synthetic',AccountId=a.Id);insert c;Test.setFixedSearchResults(new Id[]{c.Id});\nMap<String,Object> o=new Map<String,Object>();try{\nList<List<SObject>> r=[FIND 'Synthetic' IN ALL FIELDS RETURNING Contact(Id, LastName)];o.put('groups',r.size());o.put('count',r[0].size());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126SOSL_004|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126SOSL_005",
+      "question": "Missing parent field",
+      "role": "rejection",
+      "routeDifference": "Test.setFixedSearchResults is used only in @IsTest; anonymous observes compile/execution without fixed-result cardinality.",
+      "routes": {
+        "anonymous": {
+          "id": "C126SOSL_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "6217da49026db3f2326617fc14d28bf169ff2445fcf16ffa4ceb97e2f688ead3"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "\nALL FIELDS RETURNING Contact(Id, Account.C126Missing)\n                                 ^\nERROR at Row:1:Column:54\nNo such column 'C126Missing' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 23,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "\nALL FIELDS RETURNING Contact(Id, Account.C126Missing)\n                                 ^\nERROR at Row:1:Column:54\nNo such column 'C126Missing' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 23,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "\nALL FIELDS RETURNING Contact(Id, Account.C126Missing)\n                                 ^\nERROR at Row:1:Column:54\nNo such column 'C126Missing' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 23,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "\nALL FIELDS RETURNING Contact(Id, Account.C126Missing)\n                                 ^\nERROR at Row:1:Column:54\nNo such column 'C126Missing' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 23
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "\nALL FIELDS RETURNING Contact(Id, Account.C126Missing)\n                                 ^\nERROR at Row:1:Column:54\nNo such column 'C126Missing' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 23
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "\nALL FIELDS RETURNING Contact(Id, Account.C126Missing)\n                                 ^\nERROR at Row:1:Column:54\nNo such column 'C126Missing' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 23
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "583774202ffec2560714662642266298a20f073312244a4bc62f2d58d69eff5d",
+            "67.0": "2839773cfbf348bf86c76a6fd8b57da2c3c861a4e24993c532a22c12428f5b35",
+            "68.0": "f73f6e5f7f9ea451c7b8073478db6b626dc5b2cef71fad9f817f30460264a117"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<List<SObject>> r=[FIND 'Synthetic' IN ALL FIELDS RETURNING Contact(Id, Account.C126Missing)];o.put('groups',r.size());o.put('count',r[0].size());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126SOSL_005|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126SOSL_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "2aa3dd29b7f1dd4377769c158f04a3cd7265c0bc7e5953e0764d54333605e861"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "ALL FIELDS RETURNING Contact(Id, Account.C126Missing)\n                                 ^\nERROR at Row:1:Column:54\nNo such column 'C126Missing' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "ALL FIELDS RETURNING Contact(Id, Account.C126Missing)\n                                 ^\nERROR at Row:1:Column:54\nNo such column 'C126Missing' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "ALL FIELDS RETURNING Contact(Id, Account.C126Missing)\n                                 ^\nERROR at Row:1:Column:54\nNo such column 'C126Missing' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "ALL FIELDS RETURNING Contact(Id, Account.C126Missing)\n                                 ^\nERROR at Row:1:Column:54\nNo such column 'C126Missing' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "ALL FIELDS RETURNING Contact(Id, Account.C126Missing)\n                                 ^\nERROR at Row:1:Column:54\nNo such column 'C126Missing' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "ALL FIELDS RETURNING Contact(Id, Account.C126Missing)\n                                 ^\nERROR at Row:1:Column:54\nNo such column 'C126Missing' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "c73eb41a2fb7d505537798a3f77f646b22927a27d96720cde50da7abe5ee0761",
+            "67.0": "01bd953bc43813e2825aa198d7f38b0c7298ba12c9e7f4bb25f4696f75dc9190",
+            "68.0": "ef3126045bc49417e2747b8ad45408413f8907ff9a033198cec4788eba287bf3"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\nAccount a=new Account(Name='Synthetic');insert a;Contact c=new Contact(LastName='Synthetic',AccountId=a.Id);insert c;Test.setFixedSearchResults(new Id[]{c.Id});\nMap<String,Object> o=new Map<String,Object>();try{\nList<List<SObject>> r=[FIND 'Synthetic' IN ALL FIELDS RETURNING Contact(Id, Account.C126Missing)];o.put('groups',r.size());o.put('count',r[0].size());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126SOSL_005|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126SOSL_006",
+      "question": "Missing parent relationship",
+      "role": "rejection",
+      "routeDifference": "Test.setFixedSearchResults is used only in @IsTest; anonymous observes compile/execution without fixed-result cardinality.",
+      "routes": {
+        "anonymous": {
+          "id": "C126SOSL_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "9fcf72e5be37de53288b3fbd6470c09f513e97c214f5f363b11f3e73d2bbec07"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "\nALL FIELDS RETURNING Contact(Id, C126Missing.Name)\n                                 ^\nERROR at Row:1:Column:54\nDidn't understand relationship 'C126Missing' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 23,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "\nALL FIELDS RETURNING Contact(Id, C126Missing.Name)\n                                 ^\nERROR at Row:1:Column:54\nDidn't understand relationship 'C126Missing' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 23,
+                "success": false,
+                "exceptionMessage": null
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "compiled": false,
+                "compileProblem": "\nALL FIELDS RETURNING Contact(Id, C126Missing.Name)\n                                 ^\nERROR at Row:1:Column:54\nDidn't understand relationship 'C126Missing' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 23,
+                "success": false,
+                "exceptionMessage": null
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "problem": "\nALL FIELDS RETURNING Contact(Id, C126Missing.Name)\n                                 ^\nERROR at Row:1:Column:54\nDidn't understand relationship 'C126Missing' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 23
+              }
+            ],
+            "67.0": [
+              {
+                "problem": "\nALL FIELDS RETURNING Contact(Id, C126Missing.Name)\n                                 ^\nERROR at Row:1:Column:54\nDidn't understand relationship 'C126Missing' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 23
+              }
+            ],
+            "68.0": [
+              {
+                "problem": "\nALL FIELDS RETURNING Contact(Id, C126Missing.Name)\n                                 ^\nERROR at Row:1:Column:54\nDidn't understand relationship 'C126Missing' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.",
+                "line": 4,
+                "column": 23
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "271c38878e232d8e573c79462b3b9d4cb9b140c3ec4af0e43b85b1fe3777faf8",
+            "67.0": "5acee1938bd2599c1aa12c2e8de68234dcb1dae5e2a11660089de077d839e60b",
+            "68.0": "cc0ac1e7377d13882eb944779fc69c647094883cbff1f969c35315fef53e4b59"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<List<SObject>> r=[FIND 'Synthetic' IN ALL FIELDS RETURNING Contact(Id, C126Missing.Name)];o.put('groups',r.size());o.put('count',r[0].size());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126SOSL_006|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126SOSL_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "617c17e8ea53972457f99885a0c0414eba8fbacc7d9c59c9a50028c19b716b37"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "ALL FIELDS RETURNING Contact(Id, C126Missing.Name)\n                                 ^\nERROR at Row:1:Column:54\nDidn't understand relationship 'C126Missing' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "67.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "ALL FIELDS RETURNING Contact(Id, C126Missing.Name)\n                                 ^\nERROR at Row:1:Column:54\nDidn't understand relationship 'C126Missing' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            },
+            "68.0": {
+              "outcome": "compile-rejected",
+              "diagnostics": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "C126Test",
+                    "type": "ApexClass",
+                    "line": 4,
+                    "problem": "ALL FIELDS RETURNING Contact(Id, C126Missing.Name)\n                                 ^\nERROR at Row:1:Column:54\nDidn't understand relationship 'C126Missing' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {
+            "62.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "ALL FIELDS RETURNING Contact(Id, C126Missing.Name)\n                                 ^\nERROR at Row:1:Column:54\nDidn't understand relationship 'C126Missing' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+              }
+            ],
+            "67.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "ALL FIELDS RETURNING Contact(Id, C126Missing.Name)\n                                 ^\nERROR at Row:1:Column:54\nDidn't understand relationship 'C126Missing' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+              }
+            ],
+            "68.0": [
+              {
+                "name": "C126Test",
+                "type": "ApexClass",
+                "line": 4,
+                "problem": "ALL FIELDS RETURNING Contact(Id, C126Missing.Name)\n                                 ^\nERROR at Row:1:Column:54\nDidn't understand relationship 'C126Missing' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names."
+              }
+            ]
+          },
+          "evidenceSha256ByAPI": {
+            "62.0": "c2e3ee9a72e203016c9477fbd145bd95dd78495895757459b5412e53e73a4bf0",
+            "67.0": "6f5882dea8fcb13a6ef31dd1d1db0a09e39693f311505cff9eb111ab3de52344",
+            "68.0": "9f758f7582922c52dfe49254840edb3883024ccde3726e54e8f28deee186175f"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\nAccount a=new Account(Name='Synthetic');insert a;Contact c=new Contact(LastName='Synthetic',AccountId=a.Id);insert c;Test.setFixedSearchResults(new Id[]{c.Id});\nMap<String,Object> o=new Map<String,Object>();try{\nList<List<SObject>> r=[FIND 'Synthetic' IN ALL FIELDS RETURNING Contact(Id, C126Missing.Name)];o.put('groups',r.size());o.put('count',r[0].size());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126SOSL_006|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    }
+  ]
+}

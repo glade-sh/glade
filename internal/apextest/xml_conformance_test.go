@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -17,7 +18,9 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Owned Salesforce observations at both API endpoints. CI needs no org or tools.
+// Owned API62/67/68 anonymous observations. CI needs no org or tools.
+// API68 keeps the entity repair and direct uncaught observations; named
+// assertions are local legacy checks without a native named capture.
 func TestXMLOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected string
@@ -25,7 +28,17 @@ func TestXMLOrgConformance(t *testing.T) {
 		RemainingReason    string `json:"remainingReason"`
 	}
 	var data struct {
-		APIVersions                []string `json:"apiVersions"`
+		APIVersions   []string `json:"apiVersions"`
+		CeilingOracle struct {
+			APIVersion, Route        string
+			Rows, Observed, Asserted int
+			ControlsUnobserved       []string
+			DirectNativeObservations []struct {
+				ID, Route, ExceptionMessage, CodeSHA256 string
+				Compiled                                bool
+				Success                                 *bool
+			}
+		} `json:"ceilingOracle"`
 		Declarations               map[string]string
 		Cases, Controls, Remaining []familyCase
 	}
@@ -45,8 +58,34 @@ func TestXMLOrgConformance(t *testing.T) {
 		}
 		t.Logf("remaining %s: %s", row.ID, row.RemainingReason)
 	}
-	if strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle versions: %v", data.APIVersions)
+	}
+	ceiling := data.CeilingOracle
+	if ceiling.APIVersion != "68.0" || ceiling.Route != "anonymous" || ceiling.Rows != 279 || ceiling.Observed != 279 || ceiling.Asserted != len(data.Cases) || len(ceiling.ControlsUnobserved) != len(data.Controls) || len(ceiling.DirectNativeObservations) != 2 {
+		t.Fatalf("incomplete API68 XML oracle: %+v", ceiling)
+	}
+	for i, control := range data.Controls {
+		if ceiling.ControlsUnobserved[i] != control.ID {
+			t.Fatalf("API68 control exclusion differs for %s", control.ID)
+		}
+	}
+	for i, observation := range ceiling.DirectNativeObservations {
+		if observation.ID != []string{"R107", "R108"}[i] || observation.Route != "anonymous" || !observation.Compiled || observation.Success == nil || *observation.Success {
+			t.Fatalf("invalid direct API68 XML observation: %+v", observation)
+		}
+		found := false
+		for _, row := range data.Cases {
+			if row.ID == observation.ID {
+				found = true
+				if !row.Uncaught || row.Expected != "UNCAUGHT|"+observation.ExceptionMessage || observation.CodeSHA256 != fmt.Sprintf("%x", sha256.Sum256([]byte(row.Code))) {
+					t.Fatalf("direct API68 source or exception differs from retained %s", row.ID)
+				}
+			}
+		}
+		if !found {
+			t.Fatalf("direct API68 observation has no case %s", observation.ID)
+		}
 	}
 	rows := append(append([]familyCase{}, data.Cases...), data.Controls...)
 	// Inline capture helpers need public visibility when written as .cls files.
@@ -73,6 +112,11 @@ func TestXMLOrgConformance(t *testing.T) {
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "XML", api)
+			apiRows := rows
+			if api == "68.0" {
+				apiRows = data.Cases
+				t.Log("API68: 278 anonymous assertions, C004 carried, 30 controls unobserved; named checks are local legacy assertions")
+			}
 			root := t.TempDir()
 			names := make([]string, 0, len(data.Declarations)+1)
 			declarations := make(map[string]string, len(data.Declarations)+1)
@@ -110,7 +154,7 @@ func TestXMLOrgConformance(t *testing.T) {
 			var namedSource strings.Builder
 			namedSource.WriteString("@IsTest private class XMLProbe {\n")
 			accepted := 0
-			for _, tc := range rows {
+			for _, tc := range apiRows {
 				if strings.HasPrefix(tc.Expected, "COMPILE_ERROR") {
 					continue
 				}
@@ -142,7 +186,7 @@ func TestXMLOrgConformance(t *testing.T) {
 			if run.Summary().Total != accepted || len(namedResults) != accepted {
 				t.Fatalf("named results: %#v, unique%d expected%d: %s", run.Summary(), len(namedResults), accepted, firstRunProblem(run))
 			}
-			for _, tc := range rows {
+			for _, tc := range apiRows {
 				t.Run(tc.ID, func(t *testing.T) {
 					source := body(tc)
 					rejected := strings.HasPrefix(tc.Expected, "COMPILE_ERROR")
@@ -174,7 +218,11 @@ func TestXMLOrgConformance(t *testing.T) {
 							t.Fatal(err)
 						}
 					})
-					counts.run(t, "isTest", "@IsTest", kind, func(t *testing.T) {
+					namedKind := kind
+					if api == "68.0" {
+						namedKind = "legacy"
+					}
+					counts.run(t, "isTest", "@IsTest", namedKind, func(t *testing.T) {
 						if !rejected {
 							result := namedResults[tc.ID]
 							if tc.Uncaught {

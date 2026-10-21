@@ -1,0 +1,42 @@
+{
+  "apis": [
+    "62",
+    "67",
+    "68"
+  ],
+  "contexts": [
+    "anonymous",
+    "istest"
+  ],
+  "orgIdSha256": "a77c92266af702b941b78e1f6e968aba6af0272eb2b74be68190dfe9534fbae9",
+  "edition": "Developer",
+  "object": {
+    "name": "ProbeNode__c",
+    "sharingModel": "Private",
+    "parentField": "Parent__c",
+    "parentReferenceTo": "ProbeNode__c"
+  },
+  "actors": {
+    "owner": "original administrator",
+    "reader": "new Standard User, no role"
+  },
+  "shares": "Only per-row Manual Read shares; no permission metadata changes.",
+  "mode": {
+    "setupDML": "SYSTEM_MODE",
+    "staticQuery": "WITH SYSTEM_MODE",
+    "dynamicQuery": "queryWithBinds AccessLevel.SYSTEM_MODE",
+    "caller": "with sharing",
+    "helper": "inherited sharing"
+  },
+  "normalizations": {
+    "recordIds": "root/middle/leaf labels",
+    "selfSetupErrorId": "<leaf>",
+    "versionedSource": "Source files use API62 suffixes; API67/68 change class suffixes, username uniqueness suffix, and class apiVersion only."
+  },
+  "carries": {
+    "anonymous": "All18 cells compile but throw System.TypeException: System.runAs can only be used within a test method. No reader relationship-projection answer.",
+    "selfCycle": "H05 self-cycle update throws DmlException CIRCULAR_DEPENDENCY. No projected self-cycle answer; only valid-chain bypass is replayed.",
+    "otherContexts": "Default/USER_MODE queries, other access-level argument routes and non-test execution have no captured projection answers.",
+    "otherShapes": "Cross-object/polymorphic parents, child subqueries, predicate/order effects, query handles, custom settings, role/group hierarchies, FLS/grant defaults and namespaces not covered."
+  }
+}

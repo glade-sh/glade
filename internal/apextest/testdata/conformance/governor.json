@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "source": "Salesforce API 62.0 and 67.0 owned governor observations; floor and ceiling org.tsv are byte-identical. Hosted resource usage and emitted log filtering are outside these observations. Actual overflow rows R257/R258 are guarded admission only.",
   "caseRows": {
@@ -345,7 +346,7 @@
     {
       "ID": "R052",
       "Code": "r=Limits.getLimitHeapSize();",
-      "Expected": "6000000",
+      "Expected": "10000000",
       "Compile": false
     },
     {
@@ -1845,5 +1846,54 @@
       "Expected": "44",
       "Compile": false
     }
-  ]
+  ],
+  "ceilingOracle": {
+    "apiVersion": "68.0",
+    "route": "anonymous",
+    "rows": 291,
+    "observed": 291,
+    "controlsUnobserved": [
+      "S001",
+      "S002",
+      "S003",
+      "S004"
+    ],
+    "orgTSV": "native-capture",
+    "orgRowsSHA256": "37e7effbd18887155c9b7bdc8960a06e982ccdd76a7ae081c333b5e299284f16",
+    "heapLimitReleaseObservation": {
+      "id": "R052",
+      "expected": "10000000",
+      "classification": "Winter 27 release drift across APIs62/67/68; no source-version gate",
+      "historicalExpected": "6000000",
+      "sameReleaseCaptures": [
+        {
+          "source": "native-capture",
+          "sha256": "37e7effbd18887155c9b7bdc8960a06e982ccdd76a7ae081c333b5e299284f16"
+        },
+        {
+          "source": "native-capture",
+          "sha256": "7ecebbc046c96b0225fab43c1eb686da151917f42bea82151714db9d3e721e02"
+        },
+        {
+          "source": "native-capture",
+          "sha256": "7ecebbc046c96b0225fab43c1eb686da151917f42bea82151714db9d3e721e02"
+        },
+        {
+          "source": "native-capture",
+          "sha256": "7ecebbc046c96b0225fab43c1eb686da151917f42bea82151714db9d3e721e02"
+        }
+      ],
+      "supportingNamedObservation": {
+        "source": "internal/apextest/testdata/conformance/heap_limits.json",
+        "case": "HEAP-ST",
+        "apis": [
+          "62.0",
+          "67.0",
+          "68.0"
+        ],
+        "qualification": "Separate named capture of getLimitHeapSize plus getLimitCpuTime; the governor named matrix remains anonymous-backed local legacy assertions."
+      },
+      "boundary": "This observation concerns Limits.getLimitHeapSize only; it does not establish the debug-log maximum-heap denominator."
+    }
+  }
 }

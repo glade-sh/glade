@@ -1,0 +1,82 @@
+{
+  "disposition": "PENDING-ROWS",
+  "knownSource": "https://developer.salesforce.com/docs/platform/secure-coding/guide/secure-coding-access-control-protect-from-crud-fls-vulnerabilities.html",
+  "knownBehavior": "WITH USER_MODE exposes the full set of access errors through QueryException.getInaccessibleFields(). Exact expanded map contents and diagnostic text below are not yet native observations.",
+  "scope": "Single-argument Database.query with four flat selected fields, a bare Id IN bind, one ascending text-field ordering, and explicit WITH USER_MODE. No relationship, aggregate, scope overload, handle, five-field, or security-enforced expansion.",
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "helperMetadata": "Actual publicly supplied query-helper and query-builder metadata is API 63.0. Capture matched 62/67/68 and helper63/caller62/67/68 separately.",
+  "versionCells": [
+    {
+      "helperApi": "62.0",
+      "callerApi": "62.0"
+    },
+    {
+      "helperApi": "67.0",
+      "callerApi": "67.0"
+    },
+    {
+      "helperApi": "68.0",
+      "callerApi": "68.0"
+    },
+    {
+      "helperApi": "63.0",
+      "callerApi": "62.0"
+    },
+    {
+      "helperApi": "63.0",
+      "callerApi": "67.0"
+    },
+    {
+      "helperApi": "63.0",
+      "callerApi": "68.0"
+    }
+  ],
+  "contexts": [
+    "anonymous",
+    "@IsTest(SeeAllData=false)"
+  ],
+  "environmentControls": [
+    "Resolve a Minimum Access - Salesforce profile explicitly; record its ID and read permissions. Missing profile is a fixture failure, not an object-denial answer.",
+    "Deploy a new owned permission set granting Account read and Account.AccountNumber read without AnnualRevenue read. Assign it to an owned inserted test user; record object/field describe controls under that user.",
+    "Record permission-set metadata and assignment, schema field types, helper/caller source metadata, org multicurrency flag, actual query text, and selected field count.",
+    "The supplied public snapshot contains no profile or permission-set metadata files although its setup expects an installed account-read permission set. Do not infer or manufacture those grants from its name.",
+    "Anonymous runAs attempts reject; preserve that compile/runtime context control separately. For meaningful denial maps use the @IsTest runAs route; do not treat an administrator anonymous query as a denied-user answer."
+  ],
+  "record": [
+    "compile outcome",
+    "query stage",
+    "success/result size",
+    "exception type and exact message",
+    "getInaccessibleFields null flag, object keys and each field set",
+    "runAs user object/field describe permissions",
+    "query text and metadata versions",
+    "fixture/transport failures separately"
+  ],
+  "controls": [
+    "Integer value=17;",
+    "Caught and uncaught List<Integer> empty=new List<Integer>(); Integer value=empty[0];",
+    "Same four-field query with WITH SYSTEM_MODE",
+    "Same fully readable USER_MODE query",
+    "Existing owned Id-first/equality/flat-string query"
+  ],
+  "rows": [
+    {
+      "id": "DECIMAL_TWO_TEXT",
+      "query": "SELECT AccountNumber, AnnualRevenue, Id, Name FROM Account WHERE Id IN :ids WITH USER_MODE ORDER BY Name ASC NULLS FIRST",
+      "helperSource": "public class ProjectionAccessHelper {public static String observe(Set<Id> ids){Map<String,Object> out=new Map<String,Object>{'stage'=>'query'};try{List<SObject> rows=Database.query('SELECT AccountNumber, AnnualRevenue, Id, Name FROM Account WHERE Id IN :ids WITH USER_MODE ORDER BY Name ASC NULLS FIRST');out.put('size',rows.size());out.put('querySucceeded',true);}catch(QueryException e){out.put('querySucceeded',false);out.put('exceptionType',e.getTypeName());out.put('exceptionMessage',e.getMessage());out.put('inaccessibleFields',e.getInaccessibleFields());out.put('mapIsNull',e.getInaccessibleFields()==null);}return JSON.serialize(out);}}",
+      "invocation": "System.runAs(ownedRestrictedUser){ String observation=ProjectionAccessHelper.observe(ownedIds); System.debug(observation); }",
+      "expected": "UNKNOWN exact native map; preserve all returned facts and do not assert guessed ordering or text."
+    },
+    {
+      "id": "DECIMAL_TEXT_DATE",
+      "query": "SELECT Amount, CloseDate, Id, Name FROM Opportunity WHERE Id IN :ids WITH USER_MODE ORDER BY Name ASC NULLS FIRST",
+      "helperSource": "public class ProjectionAccessHelper {public static String observe(Set<Id> ids){Map<String,Object> out=new Map<String,Object>{'stage'=>'query'};try{List<SObject> rows=Database.query('SELECT Amount, CloseDate, Id, Name FROM Opportunity WHERE Id IN :ids WITH USER_MODE ORDER BY Name ASC NULLS FIRST');out.put('size',rows.size());out.put('querySucceeded',true);}catch(QueryException e){out.put('querySucceeded',false);out.put('exceptionType',e.getTypeName());out.put('exceptionMessage',e.getMessage());out.put('inaccessibleFields',e.getInaccessibleFields());out.put('mapIsNull',e.getInaccessibleFields()==null);}return JSON.serialize(out);}}",
+      "invocation": "System.runAs(ownedRestrictedUser){ String observation=ProjectionAccessHelper.observe(ownedIds); System.debug(observation); }",
+      "expected": "UNKNOWN exact native map; preserve all returned facts and do not assert guessed ordering or text."
+    }
+  ]
+}

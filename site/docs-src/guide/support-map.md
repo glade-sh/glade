@@ -36,12 +36,16 @@ inherit the historical runtime/parity evidence below.
 - You will keep a Salesforce validation gate for features Glade does not model.
 - You will use first-party plugins for capability reports and advisory scans instead of expecting those scanners in base `glade --help`.
 
-Checked Apex source versions are **65.0, 66.0, and 67.0**. Well-formed historical
-source versions are preserved without checked correctness/parity credit.
-Execute Anonymous remains limited to the checked source window; each LWC
-bundle declares an exact supported version. Local HTTP endpoints separately
-support 60.0, 65.0, 66.0, and 67.0 (default 65.0). Do not change project metadata
-merely to avoid a version error. See the [quickstart version box](/guide/quickstart#api-versions-are-separate-contracts).
+The v0.3.0 support window is **Apex 62.0-68.0, LWC and Visualforce 59.0-68.0**.
+Apex source API below 62.0 is unsupported, even when the loader preserves the
+version. Execute Anonymous accepts source API 65.0, 66.0, 67.0, and 68.0.
+Explicit LWC bundle versions must be whole versions from 59.0 through 68.0;
+unversioned bundles use compiler default 68.0. Local HTTP endpoints
+separately support 60.0, 65.0, 66.0, 67.0, and 68.0 (default 65.0).
+DataWeave, ConnectApi, and Slack are excluded and unsupported. Do not change
+project metadata merely to avoid a version error. See the
+[quickstart version box](/guide/quickstart#api-versions-are-separate-contracts)
+and [v0.3.0 known issues](https://github.com/glade-sh/glade/blob/main/docs/RELEASE_NOTES.md#v030).
 
 ## Status key
 

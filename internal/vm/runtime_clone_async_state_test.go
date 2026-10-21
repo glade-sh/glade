@@ -19,6 +19,7 @@ func TestCloneRuntimeStartsWithFreshAsyncLimitsAndRandomState(t *testing.T) {
 	base.currentQueueableDepth = 3
 	base.currentQueueableMaxDepth = 9
 	base.currentQueueableDelay = 5
+	base.currentQueueableDelaySet = true
 	base.testContext = &TestContext{
 		Started:        true,
 		Stopped:        true,
@@ -59,6 +60,7 @@ func TestCloneRuntimeStartsWithFreshAsyncLimitsAndRandomState(t *testing.T) {
 	first.currentQueueableDepth = 1
 	first.currentQueueableMaxDepth = 2
 	first.currentQueueableDelay = 3
+	first.currentQueueableDelaySet = true
 	first.testContext.AsyncJobs = append(first.testContext.AsyncJobs, AsyncJob{ID: "707-first-context"})
 	first.testContext.HTTPMock = Object("FirstHTTPMock")
 	first.testContext.WebServiceMock = Object("FirstWebServiceMock")
@@ -75,7 +77,7 @@ func TestCloneRuntimeStartsWithFreshAsyncLimitsAndRandomState(t *testing.T) {
 			second.localAsyncJobs, second.localAsyncSeq, second.localAsyncDrain, second.localAsyncChain)
 	}
 	if second.currentAsyncKind != "" || second.currentQueueableDepth != 0 ||
-		second.currentQueueableMaxDepth != 0 || second.currentQueueableDelay != 0 {
+		second.currentQueueableMaxDepth != 0 || second.currentQueueableDelay != 0 || second.currentQueueableDelaySet {
 		t.Fatalf("second clone inherited first active async state: kind=%q depth=%d maxDepth=%d delay=%d",
 			second.currentAsyncKind, second.currentQueueableDepth, second.currentQueueableMaxDepth, second.currentQueueableDelay)
 	}
@@ -113,7 +115,7 @@ func assertFreshClonedRequestState(t *testing.T, label string, machine *VM) {
 			label, machine.localAsyncJobs, machine.localAsyncSeq, machine.localAsyncDrain, machine.localAsyncChain)
 	}
 	if machine.currentAsyncKind != "" || machine.currentQueueableDepth != 0 ||
-		machine.currentQueueableMaxDepth != 0 || machine.currentQueueableDelay != 0 {
+		machine.currentQueueableMaxDepth != 0 || machine.currentQueueableDelay != 0 || machine.currentQueueableDelaySet {
 		t.Fatalf("%s clone retained active async state: kind=%q depth=%d maxDepth=%d delay=%d",
 			label, machine.currentAsyncKind, machine.currentQueueableDepth, machine.currentQueueableMaxDepth, machine.currentQueueableDelay)
 	}

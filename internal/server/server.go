@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -254,7 +255,15 @@ func canServeWithReadLock(r *http.Request, parts []string) bool {
 }
 
 func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request, parts []string) {
+	if r.URL.Path == "/_ui/common/data/LookupPage" {
+		s.handleVisualforceLookupSearch(w, r)
+		return
+	}
 	if s.handleVisualforcePresentationAsset(w, r) {
+		return
+	}
+	if r.URL.Path == "/servlet/servlet.ExternalRedirect" {
+		s.handleVisualforceExternalRedirect(w, r)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -264,6 +273,10 @@ func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request, parts [
 	}
 	if len(parts) >= 2 && parts[0] == "apex" {
 		s.handleVisualforcePage(w, r, parts[1:])
+		return
+	}
+	if len(parts) == 1 && storage.ValidateID(storage.ID(parts[0])) == nil {
+		s.handleVisualforceLookupRecord(w, r, parts)
 		return
 	}
 	if len(parts) >= 1 && parts[0] == "record" {
@@ -319,9 +332,14 @@ func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request, parts [
 		version, err := storage.ResolveRESTAPIVersion(requested)
 		if err != nil {
 			message := "unsupported API version " + requested
-			if parts[1] == "Soap" {
+			switch {
+			case parts[1] == "Soap":
 				writeSOAPFault(w, http.StatusInternalServerError, "sf:INVALID_VERSION", message)
-			} else {
+			case parts[1] == "data" && restVersionUnservedNatively(requested) == restVersionRetired:
+				writeJSON(w, http.StatusGone, []salesforceError{{ErrorCode: "GONE", Message: nativeRetiredRESTVersionMessage}})
+			case parts[1] == "data" && restVersionUnservedNatively(requested) == restVersionAbsent:
+				writeSalesforceError(w, errUnknownEndpoint, nativeUnservedRESTVersionMessage)
+			default:
 				writeSalesforceError(w, errUnknownEndpoint, message)
 			}
 			return
@@ -422,6 +440,51 @@ func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request, parts [
 	default:
 		writeSalesforceError(w, errUnknownEndpoint)
 	}
+}
+
+// Salesforce serves REST versions from oldestPlatformRESTAPIVersion through
+// the org release; the newest endpoint-window version is that release. It
+// answers whole versions outside that range with its own bodies (rows in
+// testdata/rest_api_version_routes.json):
+//   - below the oldest version, 410 GONE (rows rest_*_floor@30.0);
+//   - above the release, 404 NOT_FOUND (rows rest_*@69.0, rest_versions_list).
+//
+// Whole versions inside the range but outside the endpoint window, such as
+// 31.0 (rows rest_*_floor@31.0), 59.0 and 64.0, keep the explicit local message.
+const (
+	oldestPlatformRESTAPIVersion     = 31
+	nativeRetiredRESTVersionMessage  = "The requested resource no longer exists."
+	nativeUnservedRESTVersionMessage = "The requested resource does not exist"
+)
+
+type restVersionNativeState int
+
+const (
+	restVersionServed restVersionNativeState = iota // served natively, or not a whole version
+	restVersionRetired
+	restVersionAbsent
+)
+
+func restVersionUnservedNatively(requested string) restVersionNativeState {
+	digits, ok := strings.CutSuffix(strings.TrimPrefix(requested, "v"), ".0")
+	if !ok || digits == "" || strings.Trim(digits, "0123456789") != "" {
+		return restVersionServed
+	}
+	major, err := strconv.Atoi(digits)
+	if err != nil {
+		return restVersionServed
+	}
+	newest := storage.SupportedRESTAPIVersions[len(storage.SupportedRESTAPIVersions)-1]
+	newestMajor, err := strconv.Atoi(strings.TrimSuffix(newest, ".0"))
+	switch {
+	case err != nil:
+		return restVersionServed
+	case major < oldestPlatformRESTAPIVersion:
+		return restVersionRetired
+	case major > newestMajor:
+		return restVersionAbsent
+	}
+	return restVersionServed
 }
 
 func requestAPIVersion(parts []string) (string, bool) {

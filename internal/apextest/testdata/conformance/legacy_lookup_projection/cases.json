@@ -1,0 +1,168 @@
+{
+  "api": "62.0",
+  "route": "istest",
+  "context": "plain",
+  "sourcePins": {
+    "LegacyOmissionQuery": "24.0",
+    "LegacyOmissionWrite": "39.0",
+    "LegacyOmissionRead": "40.0",
+    "LegacyOmissionObserver": "62.0"
+  },
+  "sourceSHA256": {
+    "ProjectionTile__c.object": "053bf0642c21da98063925718b62038e99498ded0d090524f59069522e95f93c",
+    "classes/LegacyOmissionObserver.cls": "70f86220ce3899416557e5ca534d0db91bf0750d207e5605a42d5f77ac4fd4fa",
+    "classes/LegacyOmissionObserver.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+    "classes/LegacyOmissionQuery.cls": "2a944bd67fdabf3f716be4a44f691b92192bb93abec5be380853df0379a63030",
+    "classes/LegacyOmissionQuery.cls-meta.xml": "45ddc03dcd3caf164fecd732835b53a53d25ebb48dd5b51f62b677872e26d6c4",
+    "classes/LegacyOmissionRead.cls": "70e7d5787ca3ccc89675224c578743c25e232cd80f7e30d126a3e65823352c94",
+    "classes/LegacyOmissionRead.cls-meta.xml": "736b59ea9c1b5f59cd8b65c9425620d3681865e057dcc4bcfe60d7892c7587f2",
+    "classes/LegacyOmissionWrite.cls": "b8dcd404eb9a39af3c43c526525f0bfa4c1b26f44f3f8cbb895a2c5ccc7c88a3",
+    "classes/LegacyOmissionWrite.cls-meta.xml": "c2a6805fa907675e8ba80de58a77e033ae89217ca0868eca839fd6de8b7d500c"
+  },
+  "rows": [
+    {
+      "id": "A01L",
+      "native": {
+        "reads": {
+          "token": {
+            "message": "SObject row was retrieved via SOQL without querying the requested field: ProjectionTile__c.ParentAccount__c",
+            "type": "System.SObjectException",
+            "ok": false
+          },
+          "string": {
+            "message": "SObject row was retrieved via SOQL without querying the requested field: ProjectionTile__c.ParentAccount__c",
+            "type": "System.SObjectException",
+            "ok": false
+          },
+          "direct": {
+            "message": "SObject row was retrieved via SOQL without querying the requested field: ProjectionTile__c.ParentAccount__c",
+            "type": "System.SObjectException",
+            "ok": false
+          }
+        },
+        "amount": 12.0,
+        "sourcePins": [
+          24,
+          39,
+          40
+        ],
+        "row": "A01L",
+        "outcome": "complete"
+      }
+    },
+    {
+      "id": "A02L",
+      "native": {
+        "reads": {
+          "token": {
+            "value": null,
+            "ok": true
+          },
+          "string": {
+            "value": null,
+            "ok": true
+          },
+          "direct": {
+            "value": null,
+            "ok": true
+          }
+        },
+        "amount": 15.0,
+        "sourcePins": [
+          24,
+          39,
+          40
+        ],
+        "row": "A02L",
+        "outcome": "complete"
+      }
+    },
+    {
+      "id": "A03L",
+      "native": {
+        "reads": {
+          "token": {
+            "value": null,
+            "ok": true
+          },
+          "string": {
+            "value": null,
+            "ok": true
+          },
+          "direct": {
+            "value": null,
+            "ok": true
+          }
+        },
+        "amount": 9.0,
+        "sourcePins": [
+          24,
+          39,
+          40
+        ],
+        "row": "A03L",
+        "outcome": "complete"
+      }
+    },
+    {
+      "id": "A10L",
+      "native": {
+        "reads": {
+          "token": {
+            "value": null,
+            "ok": true
+          },
+          "string": {
+            "value": null,
+            "ok": true
+          },
+          "direct": {
+            "value": null,
+            "ok": true
+          }
+        },
+        "amount": 12.0,
+        "sourcePins": [
+          24,
+          39,
+          40
+        ],
+        "row": "A10L",
+        "outcome": "complete"
+      }
+    },
+    {
+      "id": "SELECTED_L",
+      "native": {
+        "reads": {
+          "token": {
+            "value": null,
+            "ok": true
+          },
+          "string": {
+            "value": null,
+            "ok": true
+          },
+          "direct": {
+            "value": null,
+            "ok": true
+          }
+        },
+        "amount": 15.0,
+        "sourcePins": [
+          24,
+          39,
+          40
+        ],
+        "row": "SELECTED_L",
+        "outcome": "complete"
+      }
+    }
+  ],
+  "carries": [
+    {
+      "count": 55,
+      "reason": "Other entry APIs, anonymous routes and owning-namespace contexts have no native answer for the legacy source chain; retain the existing requested cells."
+    }
+  ]
+}

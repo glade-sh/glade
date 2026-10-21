@@ -178,7 +178,7 @@ func TestDaemonEquivalenceMatrix(t *testing.T) {
 			wantTotal:          1,
 			wantCaseStatus:     testreport.StatusUnsupported,
 			wantProblemType:    "Canceled",
-			wantProblemMessage: context.DeadlineExceeded.Error(),
+			wantProblemMessage: "context deadline exceeded: per-test wall-clock cap 20ms (--test-timeout flag) exceeded; raise --test-timeout above 20ms, or disable it with --test-timeout 0",
 			wantEnvelopeStatus: "failed",
 		},
 		{

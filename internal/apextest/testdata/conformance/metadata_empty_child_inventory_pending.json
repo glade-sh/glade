@@ -1,0 +1,40 @@
+{
+  "disposition": "PENDING-ROWS",
+  "scope": "Environment carry: filtered formula-field inventories can have emptychildren. Owned soql_relationships R122/R123 observe emptyproperty/nullgetSObjects. No EntityDefinition-specific exception added.",
+  "apis": [
+    "47.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "contexts": [
+    "anonymous",
+    "@IsTest(SeeAllData=false)"
+  ],
+  "metadata": "Actualhelper 62/caller 47; helper 62/callers62/67/68; matched62/67/68 bothroutes. Recordformula-fieldinventory before query; do notinventformulas to satisfy anallobjects loop.",
+  "record": [
+    "compile outcome",
+    "stage",
+    "returned payload",
+    "caught exception type and exact message",
+    "uncaught result",
+    "source metadata",
+    "native release and timezone"
+  ],
+  "controls": [
+    "Integer value=17;",
+    "caught and uncaught empty List<Integer> indexed at0"
+  ],
+  "envelope": "Map<String,Object> payload=new Map<String,Object>();try{BODY}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'PROBE|ID|'+JSON.serialize(payload));",
+  "rows": [
+    {
+      "id": "FILTERED_CHILD",
+      "body": "List<EntityDefinition> entities=[SELECT QualifiedApiName,(SELECT QualifiedApiName FROM Fields WHERE IsCalculated=TRUE) FROM EntityDefinition WHERE QualifiedApiName='Contact'];payload.put('entities',entities.size());if(!entities.isEmpty()){EntityDefinition entity=entities[0];payload.put('propertySize',entity.Fields.size());List<SObject> children=entity.getSObjects('Fields');payload.put('getterNull',children==null);Integer seen=0;for(SObject child:children)seen++;payload.put('iterated',seen);}"
+    },
+    {
+      "id": "FORCED_EMPTY",
+      "body": "List<EntityDefinition> entities=[SELECT QualifiedApiName,(SELECT QualifiedApiName FROM Fields WHERE IsCalculated=TRUE LIMIT 0) FROM EntityDefinition WHERE QualifiedApiName='Contact'];payload.put('entities',entities.size());if(!entities.isEmpty()){EntityDefinition entity=entities[0];payload.put('propertySize',entity.Fields.size());List<SObject> children=entity.getSObjects('Fields');payload.put('getterNull',children==null);Integer seen=0;for(SObject child:children)seen++;payload.put('iterated',seen);}"
+    }
+  ],
+  "expectedNative": "UNKNOWN; do not infer native answers from local candidates."
+}

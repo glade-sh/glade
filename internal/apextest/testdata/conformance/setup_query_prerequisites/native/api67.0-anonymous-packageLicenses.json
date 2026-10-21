@@ -1,0 +1,5 @@
+{
+  "compiled": true,
+  "success": false,
+  "exceptionMessage": "System.AssertException: Assertion Failed: OBSERVED|packageLicenses|{\"SalesforceCPQ_CPQStandardPerm\":{\"prefix\":\"0PL\",\"total\":2,\"status\":\"Active\",\"label\":\"Salesforce CPQ License\"},\"SalesforceCPQ_CPQAAPerm\":{\"prefix\":\"0PL\",\"total\":2,\"status\":\"Active\",\"label\":\"Salesforce CPQ AA License\"},\"count\":2}"
+}

@@ -1,0 +1,132 @@
+{
+  "provenance": "Owned synthetic short-field SOQL/fixed-body SOSL union with literal UTC CreatedDate window and nested without-sharing helper. API62/67/68 named only; no anonymous injection or search-index inference.",
+  "rowCount": 9,
+  "scalarCells": 45,
+  "orgIdSHA256": "60065bad01b1ba06c672017f459accaa2e964a094d92c1f7049335e186684b38",
+  "orgTSVSHA256": "4b1b77a90e7b1e7db9b1a829d60d31f33e3991b47a0beaeb8c5961c97dbf4765",
+  "orgRunSHA256": "18b98f62213e8facf0001f332ccbc77e42c4c8115af9fd0621329b7b4b10df0b",
+  "orgContext": {
+    "requestedEdition": "Developer",
+    "featuresRequested": [],
+    "settingsChanged": false,
+    "otherFeatureContext": "UNCAPTURED"
+  },
+  "testClass": "OwnedSearchWindowProbe",
+  "source": "@IsTest private class OwnedSearchWindowProbe {\n    @IsTest static void sw01() { observe('SW01', false, true); }\n    @IsTest static void sw02() { observe('SW02', true, true); }\n    @IsTest static void sw03() { observe('SW03', false, false); }\n    private static void observe(String row, Boolean oldBody, Boolean fixedIds) {\n        String token = String.valueOf(Datetime.now().getTime());\n        Account headline = new Account(Name='ownedneedle short '+token);\n        Account body = new Account(Name='Owned body '+token, Description='ownedneedle body text');\n        insert new List<Account>{headline,body};\n        if (oldBody) Test.setCreatedDate(body.Id, Datetime.now().addDays(-4));\n        Datetime lower = Datetime.now().addDays(-1);\n        Datetime upper = Datetime.now();\n        String term = 'ownedneedle';\n        String pattern = '%'+term+'%';\n        if (fixedIds) Test.setFixedSearchResults(new List<Id>{body.Id});\n        Test.startTest();\n        Set<Id> headlineIds = new Map<Id,Account>([SELECT Id FROM Account WHERE Name LIKE :pattern AND CreatedDate >= :lower AND CreatedDate <= :upper]).keySet();\n        List<List<SObject>> unfiltered = Search.query('FIND :term IN ALL FIELDS RETURNING Account(Id)', AccessLevel.SYSTEM_MODE);\n        Set<Id> bodyIds = new BodyFinder().find(term,lower,upper);\n        Set<Id> allIds = new Set<Id>(); allIds.addAll(headlineIds); allIds.addAll(bodyIds);\n        Map<String,Object> observed = new Map<String,Object>{\n            'shortCount'=>headlineIds.size(), 'bodyCount'=>bodyIds.size(), 'unionCount'=>allIds.size(),\n            'unfilteredFixedCount'=>unfiltered[0].size(), 'hasBody'=>bodyIds.contains(body.Id)\n        };\n        Test.stopTest();\n        System.assert(false,'SEARCH_WINDOW|'+row+'|'+JSON.serialize(observed));\n    }\n    private without sharing class BodyFinder {\n        Set<Id> find(String term, Datetime lower, Datetime upper) {\n            String statement = 'FIND :term IN ALL FIELDS RETURNING Account(Id WHERE CreatedDate >= '\n                +lower.formatGmt('yyyy-MM-dd\\'T\\'HH:mm:ss\\'Z\\'')+' AND CreatedDate <= '\n                +upper.formatGmt('yyyy-MM-dd\\'T\\'HH:mm:ss\\'Z\\'')+' ORDER BY CreatedDate DESC)';\n            Set<Id> ids = new Set<Id>();\n            for(SObject item : Search.query(statement,AccessLevel.SYSTEM_MODE)[0]) ids.add(item.Id);\n            return ids;\n        }\n    }\n}\n",
+  "sourceSHA256": "dd09331308f52629ccd1498db6090be6bb98b1edfaa09035ab89ba6c1b5711df",
+  "captures": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "deploymentID": "0AfO800000alEIvKAM",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "testOutcome": "Failed",
+      "deploymentReceiptSHA256": "f5a882442466167e9c722c00692be2a9538ab0092bfb073ed74e1e984619e066",
+      "receiptSHA256": "af40b38fdb5cf6e7cb552008093b24f3b9b78a46ffc560229fbd35fcdcf228b0",
+      "observations": {
+        "SW01": {
+          "hasBody": true,
+          "unfilteredFixedCount": 1,
+          "unionCount": 2,
+          "bodyCount": 1,
+          "shortCount": 1
+        },
+        "SW02": {
+          "hasBody": false,
+          "unfilteredFixedCount": 1,
+          "unionCount": 1,
+          "bodyCount": 0,
+          "shortCount": 1
+        },
+        "SW03": {
+          "hasBody": false,
+          "unfilteredFixedCount": 0,
+          "unionCount": 1,
+          "bodyCount": 0,
+          "shortCount": 1
+        }
+      }
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "deploymentID": "0AfO800000al1QYKAY",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "testOutcome": "Failed",
+      "deploymentReceiptSHA256": "3a60488e43b7f65c6a35e02cdeb99cff9130b5ac4ab1c515defbbd6faf7d9679",
+      "receiptSHA256": "70ae7343abf4df4ceaaa006922648773853e9e11c8369c90ba6dfa9c6351deff",
+      "observations": {
+        "SW01": {
+          "hasBody": true,
+          "unfilteredFixedCount": 1,
+          "unionCount": 2,
+          "bodyCount": 1,
+          "shortCount": 1
+        },
+        "SW02": {
+          "hasBody": false,
+          "unfilteredFixedCount": 1,
+          "unionCount": 1,
+          "bodyCount": 0,
+          "shortCount": 1
+        },
+        "SW03": {
+          "hasBody": false,
+          "unfilteredFixedCount": 0,
+          "unionCount": 1,
+          "bodyCount": 0,
+          "shortCount": 1
+        }
+      }
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "deploymentID": "0AfO800000alEM9KAM",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "testOutcome": "Failed",
+      "deploymentReceiptSHA256": "0d16f2297dee2f08f1a98c336eaa0a595810c17dc3a64baeea2ecb52f946fcd2",
+      "receiptSHA256": "1c7a02b88e688ca1b90ffb2b12213992d129a31d4488f35a8045b1f96b59e8ee",
+      "observations": {
+        "SW01": {
+          "hasBody": true,
+          "unfilteredFixedCount": 1,
+          "unionCount": 2,
+          "bodyCount": 1,
+          "shortCount": 1
+        },
+        "SW02": {
+          "hasBody": false,
+          "unfilteredFixedCount": 1,
+          "unionCount": 1,
+          "bodyCount": 0,
+          "shortCount": 1
+        },
+        "SW03": {
+          "hasBody": false,
+          "unfilteredFixedCount": 0,
+          "unionCount": 1,
+          "bodyCount": 0,
+          "shortCount": 1
+        }
+      }
+    }
+  ],
+  "uncaptured": [
+    "No new anonymous fixed-search observations; existing owned Test.setFixedSearchResults context-rejection carries remain unchanged.",
+    "Real indexed long-text search is outside fixed-result observations.",
+    "Other audit fields, timestamp precision/offset formats and nullable custom-field rules are not generalized from these rows."
+  ]
+}

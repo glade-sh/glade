@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"reflect"
 	"slices"
 	"sort"
@@ -50,9 +51,12 @@ const (
 // markers below flag the start of a contiguous group. When adding state,
 // place it in the matching group and update New.
 type VM struct {
+	stringASCII      []stringASCIIEntry
+	stringASCIIBytes int
 	// --- Class/method/type registries and lookup caches ---
 	Globals                  map[string]Value
 	VarTypes                 map[string]string
+	expressionTypeResolver   ExpressionTypeResolver
 	Methods                  map[string]Method
 	MethodOverloads          map[string][]Method
 	MethodFolded             map[string][]Method
@@ -102,13 +106,18 @@ type VM struct {
 	Stdout                  io.Writer
 	callStack               []callFrame
 	scopeStack              []map[string]Value
+	finalLocals             map[string]bool // active frame; bool records initialization
+	closedSOQLLocals        map[string]Value
+	dynamicSOQLBindRoute    string
 	currentClass            string
 	currentNamespace        string
 	currentMethod           Method
 	currentTrigger          bool
+	beforeUpdateFrames      []beforeUpdateTriggerFrame
 	eventBusTriggerContext  *eventBusTriggerContext
 	eventBusReplaySequence  int64
 	entrySharingMode        string
+	testExecutionEntry      *testExecutionEntry
 	reflectionConstructType string
 	testContext             *TestContext
 	localAsyncJobs          []AsyncJob
@@ -122,7 +131,9 @@ type VM struct {
 	// Clones share this immutable ID set; EnableTestContext must not recapture it.
 	testDocumentBaseline map[storage.ID]struct{}
 	// Traversals belong to this VM, independently of method frames and clones.
-	activeCollectionTraversals map[collectionTraversalKey]int
+	activeCollectionTraversals        map[collectionTraversalKey]int
+	enhancedCollectionTraversals      map[collectionTraversalKey]int
+	collectionTraversalMutationEpochs map[uint64]uint64
 	// Auth validation failures belong to this runtime, never a shared template.
 	authTotpFailures map[string]int
 	// --- Governor limits ---
@@ -136,14 +147,22 @@ type VM struct {
 	fakeNow         time.Time
 	lastNow         time.Time
 	hasLastNow      bool
+	// The first millis read can share the most recent now() timestamp without
+	// leaving subsequent millis reads pinned to that cached timestamp.
+	hasPendingNowMillis bool
 	// --- Async/queueable scheduling ---
 	currentAsyncKind             string
+	inBatchFinish                bool
 	currentQueueableDepth        int
 	currentQueueableMaxDepth     int
 	currentQueueableDelay        int
+	currentQueueableDelaySet     bool
 	queueableDuplicateSignatures map[string]string
 	currentFinalizer             Value
-	activeExceptions             []activeException
+	// success callbacks expose SYSTEM_MODE reads as their captured user.
+	// The dispatch scope restores this ID; nested runAs users do not inherit it.
+	eventPublishReadUserID string
+	activeExceptions       []activeException
 	// --- Exception / statement / trigger-depth tracking ---
 	currentStatement        callFrame
 	hasStatement            bool
@@ -152,14 +171,19 @@ type VM struct {
 	activeTriggerNamespaces []string
 	installContextDepth     int
 	// --- Transaction state (savepoints) ---
-	savepoints      map[string]storage.OrgState
-	savepointMarks  map[string]storage.IsolationMark
-	emailSavepoints map[string][]CapturedEmail
-	savepointOrder  map[string]int
-	nextSavepoint   int
+	savepoints         map[string]storage.OrgState
+	savepointMarks     map[string]storage.IsolationMark
+	emailSavepoints    map[string][]CapturedEmail
+	savepointOrder     map[string]int
+	nextSavepoint      int
+	recordCreations    *dml.RecordCreations
+	lookupHistoryScope *storage.LookupHistoryScope
+	creationSavepoints map[string]recordCreationCheckpoint
 	// --- Visualforce / page context ---
 	pageMessages              []Value
 	currentPage               Value
+	currentPageHeaderWrites   map[string]bool
+	currentPageHeaderWriteRef uint64
 	vfActionInvoker           VisualforceActionInvoker
 	vfStandardControllerReset func(string) (Value, error)
 	vfDeleteConfirmationToken func(string) (string, error)
@@ -170,16 +194,20 @@ type VM struct {
 	// cloneRuntime starts with a fresh registry through newVM.
 	queryCursors map[string]Value
 	// Alternate query sources belong to this VM, including cursor JSON copies.
-	queryHandleSources    map[string]*storage.OrgState
-	fixedSearchResults    []Value
-	fixedSearchResultsSet bool
-	sfsqlqueryRows        []Value
-	sfsqlqueryMetadata    []Value
-	platformCache         map[string]map[string]cacheEntry
-	cacheScanLocators     map[string][]cacheScanItem
-	cacheScanSeq          int
+	queryHandleSources        map[string]*storage.OrgState
+	fixedSearchResults        []Value
+	fixedSearchResultsSet     bool
+	sfsqlqueryRows            []Value
+	sfsqlqueryMetadata        []Value
+	platformCache             map[string]map[string]cacheEntry
+	platformCacheSetupPhase   bool
+	platformCacheSetupTouched map[string]bool
+	cacheScanLocators         map[string][]cacheScanItem
+	cacheScanSeq              int
 	// --- Captured side effects ---
-	capturedEmails []CapturedEmail
+	capturedEmails      []CapturedEmail
+	singleEmailReserved int64
+	massEmailReserved   int64
 	// --- REST / server request context ---
 	restRequest        Value
 	restResponse       Value
@@ -189,22 +217,21 @@ type VM struct {
 	subMgmtTestRecords map[string]Value
 	subMgmtTestSeq     int
 	// --- Debug / trace hooks ---
-	debugHooks                  DebugHooks
-	hasDebugHooks               bool
-	debugOutputSink             func(DebugEvent)
-	traceEnabled                bool
-	ctx                         context.Context
-	activeGetters               map[string]int
-	activeSetters               map[string]int
-	triggerGlobals              map[string]Value
-	frameworkDomainTriggerState map[string][]Value
-	cryptoRandomSeq             uint64
+	debugHooks       DebugHooks
+	hasDebugHooks    bool
+	debugOutputSink  func(DebugEvent)
+	traceEnabled     bool
+	ctx              context.Context
+	contextPollCount uint8
+	activeGetters    map[string]int
+	activeSetters    map[string]int
+	triggerGlobals   map[string]Value
+	cryptoRandomSeq  uint64
 	// uuidRandomReader is a per-VM test seam; nil selects crypto/rand.Reader.
-	uuidRandomReader     io.Reader
-	staticInitState      map[string]staticInitState
-	frameworkIDSequences map[string]uint64
-	lastAmbiguous        *overloadDiagnostic
-	activeConstructors   map[string]int
+	uuidRandomReader   io.Reader
+	staticInitState    map[string]staticInitState
+	lastAmbiguous      *overloadDiagnostic
+	activeConstructors map[string]int
 	// --- Describe caches ---
 	describeCache                map[string]Value
 	fieldDescribeCache           map[string]Value
@@ -244,10 +271,16 @@ type VM struct {
 	sObjectCollectionAliasRefs  map[uint64]bool
 	sObjectAliasTypes           map[string]sObjectAliasTypeVerdict
 	sObjectAliasTypeOrg         *storage.OrgState
+	collectionMutationRefSeq    map[uint64]uint64
+	collectionMutationRefFloor  uint64
 	collectionMutationSeq       uint64
+	splitBackingRefs            map[uint64]struct{}
+	splitBackingAll             bool
+	mapKeySetBackings           map[uint64]mapKeySetSourceRef
+	mapKeySetBinds              uint64
 	aliasContainmentMutationSeq uint64
 	aliasContainmentCache       map[aliasContainmentCacheKey]uint64
-	frameworkRecorderRollback   *frameworkMethodCountRecorderRollback
+	mapPutParentContainment     *mapPutParentContainmentCache
 	perfRecorder                *PerfRecorder
 	classLookupPerf             *classLookupPerfShard
 	scopeAliasTraversalObserver scopeAliasTraversalObserver
@@ -261,16 +294,12 @@ type VisualforcePageContext struct {
 	CurrentPage   Value
 	PageMessages  []Value
 	ActionInvoker VisualforceActionInvoker
+	headerWrites  map[string]bool
 }
 
 type staticFieldRef struct {
 	ClassName string
 	FieldName string
-}
-
-type frameworkMethodCountRecorderRollback struct {
-	previous *frameworkMethodCountRecorderRollback
-	values   map[string]Value
 }
 
 type recentlyViewedEntry struct {
@@ -445,7 +474,8 @@ type CapturedEmail struct {
 }
 
 type sideEffectSnapshot struct {
-	capturedEmails []CapturedEmail
+	capturedEmails  []CapturedEmail
+	recordCreations recordCreationCheckpoint
 }
 
 // DebugEvent records a System.debug invocation with its logging level and the
@@ -505,13 +535,23 @@ func unsupportedCallError(callee string) error {
 	return &RuntimeError{Type: "UnsupportedFeature", Message: fmt.Sprintf("unsupported call %q", callee)}
 }
 
+type testExecutionEntry struct {
+	className string
+	depth     int
+}
+
 type callFrame struct {
-	Symbol      string
-	File        string
-	Line        int
-	Column      int
-	APIVersion  string
-	SharingMode string
+	Symbol    string
+	File      string
+	Line      int
+	Column    int
+	statement bool
+	// Projection-only anonymous caller location; structured frames stay intact.
+	anonymousCallerLine int
+	APIVersion          string
+	SharingMode         string
+
+	invocableFlowOutput *invocableFlowOutputObservation
 }
 
 type TestContext struct {
@@ -529,8 +569,12 @@ type TestContext struct {
 	PlatformEventPublishes   int
 	PlatformEventStartIndex  int
 	ChangeDataCaptureEnabled bool
+	ReadOnlyApplication      bool
 	Draining                 bool
+	StopDraining             bool
 	HTTPMock                 Value
+	httpMockSourceUnit       string
+	httpMockDependency       bool
 	WebServiceMock           Value
 	ContinuationResponses    map[string]Value
 	ConnectAPIFixtures       map[string]Value
@@ -566,6 +610,12 @@ type AsyncJob struct {
 	LastProcessed       string
 	LastProcessedOffset int
 	Deferred            bool
+	// Finish-created schedules remain eligible between stopTest drain passes.
+	RunAtTestStop bool
+
+	// Direct submissions retain the observed phase state at a batch fault.
+	DirectBatchSubmission bool
+
 	// Scheduled test payloads outlive cancellation but require an active replacement to run.
 	ScheduledAborted            bool
 	ScheduledReusedBy           string
@@ -573,6 +623,7 @@ type AsyncJob struct {
 	QueueableDepth              int
 	QueueableMaxDepth           int
 	QueueableDelayMinutes       int
+	QueueableDelaySet           bool
 	QueueableDuplicateSignature string
 	NotBefore                   time.Time
 }
@@ -597,9 +648,12 @@ type Trigger struct {
 	Operation  string
 	APIVersion string
 	Program    ir.Program
-	File       string
-	Line       int
-	Column     int
+	// LocalMethods are declarations separated from the executable trigger body.
+	// Calls remain unsupported until their binding and execution are modeled.
+	LocalMethods []string
+	File         string
+	Line         int
+	Column       int
 }
 
 func New(stdout io.Writer) *VM {
@@ -627,6 +681,7 @@ func newVM(stdout io.Writer, recorder *PerfRecorder) *VM {
 		onlyNestedTypeCache:          make(map[string]uniqueNestedTypeLookup),
 		topLevelTypeCache:            make(map[string]uniqueNestedTypeLookup),
 		Triggers:                     make(map[string][]Trigger),
+		beforeUpdateFrames:           nil,
 		triggerMatchCache:            newTriggerMatchCache(),
 		triggerNamespaceCache:        make(map[triggerNamespaceLookupKey]string),
 		Stdout:                       stdout,
@@ -650,7 +705,6 @@ func newVM(stdout io.Writer, recorder *PerfRecorder) *VM {
 		ctx:                          context.Background(),
 		activeGetters:                make(map[string]int),
 		activeSetters:                make(map[string]int),
-		frameworkIDSequences:         make(map[string]uint64),
 		describeCache:                make(map[string]Value),
 		fieldDescribeCache:           make(map[string]Value),
 		describeDefCache:             make(map[string]storage.ObjectDefinition),
@@ -701,6 +755,7 @@ func (vm *VM) CloneRuntimeFrozenShared(stdout io.Writer) *VM {
 
 func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	clone := newVM(stdout, vm.perfRecorder)
+	clone.expressionTypeResolver = vm.expressionTypeResolver
 	// Methods, MethodOverloads, MethodFolded, and Triggers are compiled
 	// artifacts that are only mutated by Register*/unregister* at setup, never
 	// during execution. Share the maps by pointer and mark them shared so
@@ -903,7 +958,13 @@ func (vm *VM) SetIsolationJournal(journal *storage.IsolationJournal) {
 }
 
 func (vm *VM) recordIsolationJournalMutation(objectName string, id storage.ID, before storage.Record, exists bool) {
-	if vm == nil || vm.isolationJournal == nil || objectName == "" || id == "" {
+	if vm == nil || objectName == "" || id == "" {
+		return
+	}
+	if !exists {
+		vm.recordCreationState().Record(id)
+	}
+	if vm.isolationJournal == nil {
 		return
 	}
 	if exists {
@@ -1109,7 +1170,9 @@ func (p *classCopyPlan) planSkips(name string) bool {
 // sameClassValue reports whether two Class values are the same value: equal
 // scalars, and maps and slices with the same backing storage.
 func sameClassValue(a, b Class) bool {
-	return a.Name == b.Name &&
+	return a.SourceUnit == b.SourceUnit &&
+		a.PlatformType == b.PlatformType &&
+		a.Name == b.Name &&
 		a.Namespace == b.Namespace &&
 		a.APIVersion == b.APIVersion &&
 		a.SuperClass == b.SuperClass &&
@@ -1388,6 +1451,8 @@ func (vm *VM) RegisterPageReference(name string) {
 func (vm *VM) ResetApexPageState() {
 	vm.pageMessages = nil
 	vm.currentPage = Value{}
+	vm.currentPageHeaderWrites = nil
+	vm.currentPageHeaderWriteRef = 0
 	vm.siteExperienceID = ""
 }
 
@@ -1399,6 +1464,7 @@ func (vm *VM) SnapshotVisualforcePageContext() VisualforcePageContext {
 		CurrentPage:   cloneValue(vm.currentPage),
 		PageMessages:  cloneValueSlice(vm.pageMessages),
 		ActionInvoker: vm.vfActionInvoker,
+		headerWrites:  maps.Clone(vm.visualforceHeaderWrites()),
 	}
 }
 
@@ -1407,6 +1473,8 @@ func (vm *VM) RestoreVisualforcePageContext(ctx VisualforcePageContext) {
 		return
 	}
 	vm.currentPage = cloneValue(ctx.CurrentPage)
+	vm.currentPageHeaderWrites = maps.Clone(ctx.headerWrites)
+	vm.currentPageHeaderWriteRef = vm.currentPage.Fields["headers"].Ref
 	vm.pageMessages = cloneValueSlice(ctx.PageMessages)
 	vm.vfActionInvoker = ctx.ActionInvoker
 }
@@ -1456,6 +1524,9 @@ func (vm *VM) SetCurrentPageURLNull() {
 }
 
 func (vm *VM) SetOrg(org *storage.OrgState) {
+	vm.recordCreations = nil
+	vm.lookupHistoryScope = nil
+	vm.creationSavepoints = nil
 	vm.sObjectAliasTypes = nil
 	nextStamp := runtimeSchemaStampHintForOrg(org)
 	if nextStamp == "" {
@@ -1495,6 +1566,9 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 // SetRuntimeTemplateOrg installs a fresh clone of the schema generation that
 // this VM was cloned from. All other org changes must use SetOrg.
 func (vm *VM) SetRuntimeTemplateOrg(org *storage.OrgState) {
+	vm.recordCreations = nil
+	vm.lookupHistoryScope = nil
+	vm.creationSavepoints = nil
 	stamp := runtimeSchemaStampHintForOrg(org)
 	if stamp == "" || stamp != vm.metadataCacheStamp {
 		vm.SetOrg(org)
@@ -1885,7 +1959,14 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	}
 	engine.SummaryByChild = vm.dmlSummaryByChild
 	engine.IsolationJournal = vm.isolationJournal
+	engine.RecordCreations = vm.recordCreationState()
+	engine.LookupHistoryScope = vm.lookupHistoryState()
 	engine.Now = func() time.Time { return vm.fakeNow }
+	engine.SystemTimestampObserver = func(stamp time.Time) {
+		if stamp.After(vm.fakeNow) {
+			vm.fakeNow = stamp
+		}
+	}
 	if userID := vm.currentUserID(); userID != "" {
 		engine.UserID = storage.ID(userID)
 	}
@@ -1932,9 +2013,8 @@ func (vm *VM) invokeFlowActionWithContext(action storage.FlowAction, record stor
 	}
 	var args []Value
 	if len(method.Params) == 0 {
-		// Salesforce packages in the corpus include invocable actions that use
-		// the action call only as a transaction boundary and intentionally take
-		// no input (for example, a deferred-rollup commit action).
+		// An invocable action can use its call as a transaction boundary without
+		// taking any input parameters.
 		args = nil
 	} else {
 		if len(method.Params) != 1 || collectionBase(method.Params[0].Type) != "List" {
@@ -1946,7 +2026,13 @@ func (vm *VM) invokeFlowActionWithContext(action storage.FlowAction, record stor
 		// Rollup). Runtime values still need the owning class qualification so
 		// member lookup sees the nested class fields.
 		elementType = vm.qualifyFlowActionElementType(method, elementType)
-		item := vm.flowActionInputObject(action, record, context, elementType)
+		item, directEvent := vm.platformEventFlowActionInput(action, record, method, elementType)
+		if !directEvent {
+			item, err = vm.flowActionInputObject(action, record, context, elementType, method.Params[0].Name, result)
+			if err != nil {
+				return err
+			}
+		}
 		arg := List(item)
 		arg.Type = method.Params[0].Type
 		args = []Value{arg}
@@ -1990,12 +2076,26 @@ func (vm *VM) qualifyFlowActionElementType(method Method, elementType string) st
 	return elementType
 }
 
-func (vm *VM) flowActionInputObject(action storage.FlowAction, record storage.Record, context dml.FlowActionContext, elementType string) Value {
+func (vm *VM) flowActionInputObject(action storage.FlowAction, record storage.Record, context dml.FlowActionContext, elementType, parameterName string, result *Result) (Value, error) {
 	if len(action.Inputs) == 0 {
-		return vm.vmValueFromRecord(record)
+		return vm.vmValueFromRecord(record), nil
+	}
+	if len(action.Inputs) == 1 {
+		input := action.Inputs[0]
+		if value, ok := vm.flowActionInputValue(input, record, context); ok {
+			if recordInput, ok := vm.invocableRecordInput(elementType, parameterName, input.Name, value); ok {
+				return recordInput, nil
+			}
+		}
 	}
 	item := Object(elementType)
-	vm.initializeFields(&item, elementType)
+	if _, ok := vm.lookupClass(elementType); ok {
+		var err error
+		item, err = vm.constructValueWithLiteral(elementType, nil, nil, result, false)
+		if err != nil {
+			return Null, err
+		}
+	}
 	for _, input := range action.Inputs {
 		name := strings.TrimSpace(input.Name)
 		if name == "" {
@@ -2007,7 +2107,7 @@ func (vm *VM) flowActionInputObject(action storage.FlowAction, record storage.Re
 		}
 		item.Fields[name] = value
 	}
-	return item
+	return item, nil
 }
 
 func (vm *VM) flowActionInputValue(input storage.WorkflowFieldUpdate, record storage.Record, context dml.FlowActionContext) (Value, bool) {
@@ -2375,12 +2475,14 @@ func (vm *VM) refireAutomationUpdateTriggers(objectName string, id storage.ID, o
 
 func (vm *VM) snapshotSideEffects() sideEffectSnapshot {
 	return sideEffectSnapshot{
-		capturedEmails: append([]CapturedEmail(nil), vm.capturedEmails...),
+		capturedEmails:  append([]CapturedEmail(nil), vm.capturedEmails...),
+		recordCreations: vm.creationCheckpoint(),
 	}
 }
 
 func (vm *VM) restoreSideEffects(snapshot sideEffectSnapshot) {
 	vm.capturedEmails = append([]CapturedEmail(nil), snapshot.capturedEmails...)
+	snapshot.recordCreations.restore()
 }
 
 func (vm *VM) RegisterTrigger(trigger Trigger) error {
@@ -2500,7 +2602,7 @@ func (vm *VM) defaultOrgUserRecord() (storage.Record, bool) {
 	if !ok || len(users.Records) == 0 {
 		return storage.Record{}, false
 	}
-	for _, preferredID := range []storage.ID{storage.ID("005-local-user"), storage.ID("005000000000001")} {
+	for _, preferredID := range []storage.ID{storage.ID("005-local-user"), storage.ID(storage.DefaultUserID)} {
 		if preferred, ok := users.Records[preferredID]; ok {
 			if !strings.EqualFold(recordFieldString(preferred, "UserType"), "AutomatedProcess") {
 				return preferred, true
@@ -2668,7 +2770,25 @@ func (vm *VM) ExecuteInClass(program ir.Program, className string) (result Resul
 	return vm.execute(program, className)
 }
 
+// ExecuteTestInClass scopes the sharing entry to an actual test invocation.
+func (vm *VM) ExecuteTestInClass(program ir.Program, className string) (Result, error) {
+	previousEntry, previousTest := vm.entrySharingMode, vm.testExecutionEntry
+	if vm.entrySharingMode == "" {
+		vm.entrySharingMode = "with sharing"
+	}
+	vm.testExecutionEntry = &testExecutionEntry{className: className, depth: len(vm.callStack) + 1}
+	defer func() { vm.entrySharingMode, vm.testExecutionEntry = previousEntry, previousTest }()
+	return vm.ExecuteInClass(program, className)
+}
+
 func (vm *VM) execute(program ir.Program, className string) (result Result, err error) {
+	restoreCreations := vm.beginRecordCreationTransaction()
+	defer restoreCreations()
+	callerClosedLocals, callerBindRoute := vm.closedSOQLLocals, vm.dynamicSOQLBindRoute
+	vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = nil, ""
+	defer func() {
+		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = callerClosedLocals, callerBindRoute
+	}()
 	vm.startCPUClock()
 	result = Result{Vars: vm.Globals, traceEnabled: vm.traceEnabled}
 	if vm.traceEnabled {
@@ -2772,7 +2892,8 @@ func (vm *VM) HasPendingAsyncWork() bool {
 	return len(vm.testContext.AsyncJobs) > 0 || len(vm.testContext.PlatformEvents) > 0 || len(vm.testContext.EventPublishes) > 0
 }
 
-func (vm *VM) DrainAsync(result *Result) error {
+func (vm *VM) DrainAsync(result *Result) (err error) {
+	defer recoverJSONConversionError(&err)
 	if vm.testContext != nil {
 		return vm.drainTestAsync(result)
 	}

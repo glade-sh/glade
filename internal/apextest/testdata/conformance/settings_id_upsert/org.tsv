@@ -1,0 +1,7 @@
+source_api	route	observation
+62.0	anonymous	{"created":false,"sameId":true,"success":true,"value":"third"}
+62.0	isTest	{"created":false,"sameId":true,"success":true,"value":"third"}
+67.0	anonymous	{"created":false,"sameId":true,"success":true,"value":"third"}
+67.0	isTest	{"created":false,"sameId":true,"success":true,"value":"third"}
+68.0	anonymous	{"created":false,"sameId":true,"success":true,"value":"third"}
+68.0	isTest	{"created":false,"sameId":true,"success":true,"value":"third"}

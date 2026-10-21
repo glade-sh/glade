@@ -1,0 +1,708 @@
+{
+  "apiVersion": "65.0",
+  "observationCount": 4,
+  "sources": {
+    "T1": {
+      "id": "T1",
+      "anonymous": "Map<String,Object> observed=new Map<String,Object>();\nMap<String,Schema.SObjectField> fields=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap();\nMap<String,Object> tokens=new Map<String,Object>();\nfor(String name:new List<String>{'RecurrenceActivityId','AccountId','WhoId','WhatId'}) {\n Map<String,Object> token=new Map<String,Object>{'exists'=>fields.containsKey(name)};\n try { if(fields.containsKey(name)) { Schema.DescribeFieldResult d=fields.get(name).getDescribe(); List<String> targets=new List<String>(); for(Schema.SObjectType target:d.getReferenceTo()) targets.add(String.valueOf(target)); token.put('name',d.getName()); token.put('type',String.valueOf(d.getType())); token.put('relationshipName',d.getRelationshipName()); token.put('referenceTo',targets); }} catch(Exception e) { token.put('exceptionType',e.getTypeName()); token.put('exceptionMessage',e.getMessage()); }\n tokens.put(name,token);\n}\nobserved.put('tokens',tokens);\nList<Object> references=new List<Object>(); List<String> nullReferences=new List<String>();\ntry { for(Schema.SObjectField field:fields.values()) { Schema.DescribeFieldResult d=field.getDescribe(); if(d.getType()==Schema.DisplayType.REFERENCE) { references.add(new Map<String,Object>{'field'=>d.getName(),'relationshipName'=>d.getRelationshipName()}); if(d.getRelationshipName()==null) nullReferences.add(d.getName()); }} nullReferences.sort(); observed.put('references',references); observed.put('nullRefs',nullReferences); } catch(Exception e) { observed.put('sequenceExceptionType',e.getTypeName()); observed.put('sequenceExceptionMessage',e.getMessage()); }\nMap<String,Object> unguarded=new Map<String,Object>{'found'=>null,'lastField'=>null,'exceptionType'=>null,'exceptionMessage'=>null};\ntry { for(Schema.SObjectField field:fields.values()) { Schema.DescribeFieldResult d=field.getDescribe(); if(d.getType()==Schema.DisplayType.REFERENCE) { unguarded.put('lastField',d.getName()); if(d.getRelationshipName().toLowerCase()=='what') { unguarded.put('found',d.getName()); break; } } } } catch(Exception e) { unguarded.put('exceptionType',e.getTypeName()); unguarded.put('exceptionMessage',e.getMessage()); }\nobserved.put('unguarded',unguarded);\nMap<String,Object> guarded=new Map<String,Object>{'found'=>null,'lastField'=>null,'exceptionType'=>null,'exceptionMessage'=>null};\ntry { for(Schema.SObjectField field:fields.values()) { Schema.DescribeFieldResult d=field.getDescribe(); if(d.getType()==Schema.DisplayType.REFERENCE) { guarded.put('lastField',d.getName()); String relationship=d.getRelationshipName(); if(relationship!=null && relationship.toLowerCase()=='what') { guarded.put('found',d.getName()); break; } } } } catch(Exception e) { guarded.put('exceptionType',e.getTypeName()); guarded.put('exceptionMessage',e.getMessage()); }\nobserved.put('guarded',guarded);\nSystem.debug(LoggingLevel.ERROR,'NATIVE_RESULT|T1|'+JSON.serialize(observed));",
+      "classes": {
+        "OwnedTaskReference65Test": "@IsTest private class OwnedTaskReference65Test { @IsTest static void observeReferenceTraversal(){\nMap<String,Object> observed=new Map<String,Object>();\nMap<String,Schema.SObjectField> fields=Schema.getGlobalDescribe().get('Task').getDescribe().fields.getMap();\nMap<String,Object> tokens=new Map<String,Object>();\nfor(String name:new List<String>{'RecurrenceActivityId','AccountId','WhoId','WhatId'}) {\n Map<String,Object> token=new Map<String,Object>{'exists'=>fields.containsKey(name)};\n try { if(fields.containsKey(name)) { Schema.DescribeFieldResult d=fields.get(name).getDescribe(); List<String> targets=new List<String>(); for(Schema.SObjectType target:d.getReferenceTo()) targets.add(String.valueOf(target)); token.put('name',d.getName()); token.put('type',String.valueOf(d.getType())); token.put('relationshipName',d.getRelationshipName()); token.put('referenceTo',targets); }} catch(Exception e) { token.put('exceptionType',e.getTypeName()); token.put('exceptionMessage',e.getMessage()); }\n tokens.put(name,token);\n}\nobserved.put('tokens',tokens);\nList<Object> references=new List<Object>(); List<String> nullReferences=new List<String>();\ntry { for(Schema.SObjectField field:fields.values()) { Schema.DescribeFieldResult d=field.getDescribe(); if(d.getType()==Schema.DisplayType.REFERENCE) { references.add(new Map<String,Object>{'field'=>d.getName(),'relationshipName'=>d.getRelationshipName()}); if(d.getRelationshipName()==null) nullReferences.add(d.getName()); }} nullReferences.sort(); observed.put('references',references); observed.put('nullRefs',nullReferences); } catch(Exception e) { observed.put('sequenceExceptionType',e.getTypeName()); observed.put('sequenceExceptionMessage',e.getMessage()); }\nMap<String,Object> unguarded=new Map<String,Object>{'found'=>null,'lastField'=>null,'exceptionType'=>null,'exceptionMessage'=>null};\ntry { for(Schema.SObjectField field:fields.values()) { Schema.DescribeFieldResult d=field.getDescribe(); if(d.getType()==Schema.DisplayType.REFERENCE) { unguarded.put('lastField',d.getName()); if(d.getRelationshipName().toLowerCase()=='what') { unguarded.put('found',d.getName()); break; } } } } catch(Exception e) { unguarded.put('exceptionType',e.getTypeName()); unguarded.put('exceptionMessage',e.getMessage()); }\nobserved.put('unguarded',unguarded);\nMap<String,Object> guarded=new Map<String,Object>{'found'=>null,'lastField'=>null,'exceptionType'=>null,'exceptionMessage'=>null};\ntry { for(Schema.SObjectField field:fields.values()) { Schema.DescribeFieldResult d=field.getDescribe(); if(d.getType()==Schema.DisplayType.REFERENCE) { guarded.put('lastField',d.getName()); String relationship=d.getRelationshipName(); if(relationship!=null && relationship.toLowerCase()=='what') { guarded.put('found',d.getName()); break; } } } } catch(Exception e) { guarded.put('exceptionType',e.getTypeName()); guarded.put('exceptionMessage',e.getMessage()); }\nobserved.put('guarded',guarded);\nSystem.assert(false,'NATIVE_RESULT|T1|'+JSON.serialize(observed));\n} }"
+      },
+      "tests": [
+        "OwnedTaskReference65Test"
+      ],
+      "testMethod": "observeReferenceTraversal",
+      "stage": "runtime",
+      "sourceSha256": {
+        "anonymous": "4454bc6b24c9ac93d674b8feb1709ddfea946f9e2b2861276f93a5f2d80c913f",
+        "class:OwnedTaskReference65Test": "6c1e32b591609f99d6135c368b214e3fb3a19f0d67539aef6354659ee545eb78"
+      }
+    },
+    "T2": {
+      "id": "T2",
+      "anonymous": "List<String> names=new List<String>();for(Schema.SObjectField field:Task.SObjectType.getDescribe().fields.getMap().values()){names.add(field.getDescribe().getName());}Map<String,Object> observed=new Map<String,Object>{'fieldNames'=>names};System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|T2|'+JSON.serialize(observed));",
+      "classes": {
+        "OwnedTaskOrder65Test": "@IsTest private class OwnedTaskOrder65Test{@IsTest static void observe(){List<String> names=new List<String>();for(Schema.SObjectField field:Task.SObjectType.getDescribe().fields.getMap().values()){names.add(field.getDescribe().getName());}Map<String,Object> observed=new Map<String,Object>{'fieldNames'=>names};System.assert(false,'NATIVE_RESULT|T2|'+JSON.serialize(observed));}}"
+      },
+      "tests": [
+        "OwnedTaskOrder65Test"
+      ],
+      "testMethod": "observe",
+      "stage": "runtime",
+      "sourceSha256": {
+        "anonymous": "218aeb0d26cfb92b3cd01a89b6345450b18ccb99c4b62d795b7493fb33245cff",
+        "class:OwnedTaskOrder65Test": "c8ca8ece93f5400b5d6505940f8cdb200ba9e3b603454efdb94ff65472849143"
+      }
+    }
+  },
+  "nativeRows": [
+    {
+      "apiVersion": "65.0",
+      "context": "anonymous",
+      "id": "T1",
+      "value": {
+        "guarded": {
+          "exceptionMessage": null,
+          "exceptionType": null,
+          "found": "WhatId",
+          "lastField": "WhatId"
+        },
+        "nullRefs": [
+          "RecurrenceActivityId"
+        ],
+        "references": [
+          {
+            "field": "WhoId",
+            "relationshipName": "Who"
+          },
+          {
+            "field": "WhatId",
+            "relationshipName": "What"
+          },
+          {
+            "field": "OwnerId",
+            "relationshipName": "Owner"
+          },
+          {
+            "field": "AccountId",
+            "relationshipName": "Account"
+          },
+          {
+            "field": "CreatedById",
+            "relationshipName": "CreatedBy"
+          },
+          {
+            "field": "LastModifiedById",
+            "relationshipName": "LastModifiedBy"
+          },
+          {
+            "field": "RecurrenceActivityId",
+            "relationshipName": null
+          }
+        ],
+        "tokens": {
+          "AccountId": {
+            "exists": true,
+            "name": "AccountId",
+            "referenceTo": [
+              "Account"
+            ],
+            "relationshipName": "Account",
+            "type": "REFERENCE"
+          },
+          "RecurrenceActivityId": {
+            "exists": true,
+            "name": "RecurrenceActivityId",
+            "referenceTo": [
+              "Task"
+            ],
+            "relationshipName": null,
+            "type": "REFERENCE"
+          },
+          "WhatId": {
+            "exists": true,
+            "name": "WhatId",
+            "referenceTo": [
+              "Account",
+              "ApprovalSubmission",
+              "ApprovalSubmissionDetail",
+              "ApprovalWorkItem",
+              "ApptBundleAggrDurDnscale",
+              "ApptBundleAggrPolicy",
+              "ApptBundleConfig",
+              "ApptBundlePolicy",
+              "ApptBundlePolicySvcTerr",
+              "ApptBundlePropagatePolicy",
+              "ApptBundleRestrictPolicy",
+              "ApptBundleSortPolicy",
+              "Asset",
+              "AssetAccountParticipant",
+              "AssetContactParticipant",
+              "AssetDowntimePeriod",
+              "AssetRelationship",
+              "AssetWarranty",
+              "AssignedResource",
+              "AttributeDefinition",
+              "AttributePicklist",
+              "AttributePicklistValue",
+              "Campaign",
+              "Case",
+              "CommSubscriptionConsent",
+              "ContactRequest",
+              "Contract",
+              "ContractLineItem",
+              "CreditMemo",
+              "DevopsActivityLog",
+              "DevopsEnvDeployment",
+              "DevopsEnvDeploymentMbr",
+              "DevopsEnvironment",
+              "DevopsRequestInfo",
+              "Entitlement",
+              "Expense",
+              "ExpenseReport",
+              "ExpenseReportEntry",
+              "GeolocationBasedAction",
+              "Image",
+              "Invoice",
+              "LegalEntity",
+              "ListEmail",
+              "LiveAgentSession",
+              "LiveChatTranscript",
+              "Location",
+              "MaintenanceAsset",
+              "MaintenancePlan",
+              "OperatingHoursHoliday",
+              "Opportunity",
+              "Order",
+              "PartyConsent",
+              "PrivacyRTBFRequest",
+              "ProcessException",
+              "Product2",
+              "ProductConsumed",
+              "ProductItem",
+              "ProductRequest",
+              "ProductRequestLineItem",
+              "ProductServiceCampaign",
+              "ProductServiceCampaignItem",
+              "ProductTransfer",
+              "ResourceAbsence",
+              "ReturnOrder",
+              "ReturnOrderLineItem",
+              "SchedulingWorkspace",
+              "SchedulingWorkspaceTerritory",
+              "ServiceAppointment",
+              "ServiceContract",
+              "ServiceCrew",
+              "ServiceCrewMember",
+              "ServiceResource",
+              "SfdcPartnerSbscrOffer",
+              "Shift",
+              "ShiftPattern",
+              "ShiftPatternEntry",
+              "Shipment",
+              "ShipmentItem",
+              "Solution",
+              "TimeSheet",
+              "TimeSheetEntry",
+              "TravelMode",
+              "WarrantyTerm",
+              "WorkOrder",
+              "WorkOrderLineItem",
+              "WorkPlan",
+              "WorkPlanSelectionRule",
+              "WorkPlanTemplate",
+              "WorkPlanTemplateEntry",
+              "WorkStep",
+              "WorkStepTemplate"
+            ],
+            "relationshipName": "What",
+            "type": "REFERENCE"
+          },
+          "WhoId": {
+            "exists": true,
+            "name": "WhoId",
+            "referenceTo": [
+              "Contact",
+              "Lead"
+            ],
+            "relationshipName": "Who",
+            "type": "REFERENCE"
+          }
+        },
+        "unguarded": {
+          "exceptionMessage": null,
+          "exceptionType": null,
+          "found": "WhatId",
+          "lastField": "WhatId"
+        }
+      }
+    },
+    {
+      "apiVersion": "65.0",
+      "context": "anonymous",
+      "id": "T2",
+      "value": {
+        "fieldNames": [
+          "Id",
+          "WhoId",
+          "WhatId",
+          "Subject",
+          "ActivityDate",
+          "Status",
+          "Priority",
+          "IsHighPriority",
+          "OwnerId",
+          "Description",
+          "IsDeleted",
+          "AccountId",
+          "IsClosed",
+          "CreatedDate",
+          "CreatedById",
+          "LastModifiedDate",
+          "LastModifiedById",
+          "SystemModstamp",
+          "IsArchived",
+          "CallDurationInSeconds",
+          "CallType",
+          "CallDisposition",
+          "CallObject",
+          "ReminderDateTime",
+          "IsReminderSet",
+          "RecurrenceActivityId",
+          "IsRecurrence",
+          "RecurrenceStartDateOnly",
+          "RecurrenceEndDateOnly",
+          "RecurrenceTimeZoneSidKey",
+          "RecurrenceType",
+          "RecurrenceInterval",
+          "RecurrenceDayOfWeekMask",
+          "RecurrenceDayOfMonth",
+          "RecurrenceInstance",
+          "RecurrenceMonthOfYear",
+          "RecurrenceRegeneratedType",
+          "TaskSubtype",
+          "CompletedDateTime"
+        ]
+      }
+    },
+    {
+      "apiVersion": "65.0",
+      "context": "isTest",
+      "id": "T1",
+      "value": {
+        "guarded": {
+          "exceptionMessage": null,
+          "exceptionType": null,
+          "found": "WhatId",
+          "lastField": "WhatId"
+        },
+        "nullRefs": [
+          "RecurrenceActivityId"
+        ],
+        "references": [
+          {
+            "field": "WhoId",
+            "relationshipName": "Who"
+          },
+          {
+            "field": "WhatId",
+            "relationshipName": "What"
+          },
+          {
+            "field": "OwnerId",
+            "relationshipName": "Owner"
+          },
+          {
+            "field": "AccountId",
+            "relationshipName": "Account"
+          },
+          {
+            "field": "CreatedById",
+            "relationshipName": "CreatedBy"
+          },
+          {
+            "field": "LastModifiedById",
+            "relationshipName": "LastModifiedBy"
+          },
+          {
+            "field": "RecurrenceActivityId",
+            "relationshipName": null
+          }
+        ],
+        "tokens": {
+          "AccountId": {
+            "exists": true,
+            "name": "AccountId",
+            "referenceTo": [
+              "Account"
+            ],
+            "relationshipName": "Account",
+            "type": "REFERENCE"
+          },
+          "RecurrenceActivityId": {
+            "exists": true,
+            "name": "RecurrenceActivityId",
+            "referenceTo": [
+              "Task"
+            ],
+            "relationshipName": null,
+            "type": "REFERENCE"
+          },
+          "WhatId": {
+            "exists": true,
+            "name": "WhatId",
+            "referenceTo": [
+              "Account",
+              "ApprovalSubmission",
+              "ApprovalSubmissionDetail",
+              "ApprovalWorkItem",
+              "ApptBundleAggrDurDnscale",
+              "ApptBundleAggrPolicy",
+              "ApptBundleConfig",
+              "ApptBundlePolicy",
+              "ApptBundlePolicySvcTerr",
+              "ApptBundlePropagatePolicy",
+              "ApptBundleRestrictPolicy",
+              "ApptBundleSortPolicy",
+              "Asset",
+              "AssetAccountParticipant",
+              "AssetContactParticipant",
+              "AssetDowntimePeriod",
+              "AssetRelationship",
+              "AssetWarranty",
+              "AssignedResource",
+              "AttributeDefinition",
+              "AttributePicklist",
+              "AttributePicklistValue",
+              "Campaign",
+              "Case",
+              "CommSubscriptionConsent",
+              "ContactRequest",
+              "Contract",
+              "ContractLineItem",
+              "CreditMemo",
+              "DevopsActivityLog",
+              "DevopsEnvDeployment",
+              "DevopsEnvDeploymentMbr",
+              "DevopsEnvironment",
+              "DevopsRequestInfo",
+              "Entitlement",
+              "Expense",
+              "ExpenseReport",
+              "ExpenseReportEntry",
+              "GeolocationBasedAction",
+              "Image",
+              "Invoice",
+              "LegalEntity",
+              "ListEmail",
+              "LiveAgentSession",
+              "LiveChatTranscript",
+              "Location",
+              "MaintenanceAsset",
+              "MaintenancePlan",
+              "OperatingHoursHoliday",
+              "Opportunity",
+              "Order",
+              "PartyConsent",
+              "PrivacyRTBFRequest",
+              "ProcessException",
+              "Product2",
+              "ProductConsumed",
+              "ProductItem",
+              "ProductRequest",
+              "ProductRequestLineItem",
+              "ProductServiceCampaign",
+              "ProductServiceCampaignItem",
+              "ProductTransfer",
+              "ResourceAbsence",
+              "ReturnOrder",
+              "ReturnOrderLineItem",
+              "SchedulingWorkspace",
+              "SchedulingWorkspaceTerritory",
+              "ServiceAppointment",
+              "ServiceContract",
+              "ServiceCrew",
+              "ServiceCrewMember",
+              "ServiceResource",
+              "SfdcPartnerSbscrOffer",
+              "Shift",
+              "ShiftPattern",
+              "ShiftPatternEntry",
+              "Shipment",
+              "ShipmentItem",
+              "Solution",
+              "TimeSheet",
+              "TimeSheetEntry",
+              "TravelMode",
+              "WarrantyTerm",
+              "WorkOrder",
+              "WorkOrderLineItem",
+              "WorkPlan",
+              "WorkPlanSelectionRule",
+              "WorkPlanTemplate",
+              "WorkPlanTemplateEntry",
+              "WorkStep",
+              "WorkStepTemplate"
+            ],
+            "relationshipName": "What",
+            "type": "REFERENCE"
+          },
+          "WhoId": {
+            "exists": true,
+            "name": "WhoId",
+            "referenceTo": [
+              "Contact",
+              "Lead"
+            ],
+            "relationshipName": "Who",
+            "type": "REFERENCE"
+          }
+        },
+        "unguarded": {
+          "exceptionMessage": null,
+          "exceptionType": null,
+          "found": "WhatId",
+          "lastField": "WhatId"
+        }
+      }
+    },
+    {
+      "apiVersion": "65.0",
+      "context": "isTest",
+      "id": "T2",
+      "value": {
+        "fieldNames": [
+          "Id",
+          "WhoId",
+          "WhatId",
+          "Subject",
+          "ActivityDate",
+          "Status",
+          "Priority",
+          "IsHighPriority",
+          "OwnerId",
+          "Description",
+          "Type",
+          "IsDeleted",
+          "AccountId",
+          "IsClosed",
+          "CreatedDate",
+          "CreatedById",
+          "LastModifiedDate",
+          "LastModifiedById",
+          "SystemModstamp",
+          "IsArchived",
+          "CallDurationInSeconds",
+          "CallType",
+          "CallDisposition",
+          "CallObject",
+          "ReminderDateTime",
+          "IsReminderSet",
+          "RecurrenceActivityId",
+          "IsRecurrence",
+          "RecurrenceStartDateOnly",
+          "RecurrenceEndDateOnly",
+          "RecurrenceTimeZoneSidKey",
+          "RecurrenceType",
+          "RecurrenceInterval",
+          "RecurrenceDayOfWeekMask",
+          "RecurrenceDayOfMonth",
+          "RecurrenceInstance",
+          "RecurrenceMonthOfYear",
+          "RecurrenceRegeneratedType",
+          "TaskSubtype",
+          "CompletedDateTime"
+        ]
+      }
+    }
+  ],
+  "provenance": {
+    "native-capture": "60fbc21435e55a50e29b4f677fe8a46276c930a1ed37587924c9fa9acc9b96cb",
+    "native-capture #2": "6b672f2e9f7e0b6e29949d73eb1d10e58d4f226352e76f5331a20170147e894c"
+  },
+  "carries": [
+    {
+      "cell": "T2/Type availability",
+      "reason": "Native anonymous omits Type and native named includes Type after Description. This change orders available captured fields only; schema/route availability is unchanged.",
+      "nativeValue": {
+        "anonymous": false,
+        "isTest": true,
+        "isTestPositionAfter": "Description"
+      }
+    },
+    {
+      "cell": "T1/WhatId.referenceTo",
+      "reason": "Native target availability depends on org features and differs from the embedded standard catalog. Preserve raw observed native targets; assert relationship/type and captured traversal separately.",
+      "nativeValue": [
+        "Account",
+        "ApprovalSubmission",
+        "ApprovalSubmissionDetail",
+        "ApprovalWorkItem",
+        "ApptBundleAggrDurDnscale",
+        "ApptBundleAggrPolicy",
+        "ApptBundleConfig",
+        "ApptBundlePolicy",
+        "ApptBundlePolicySvcTerr",
+        "ApptBundlePropagatePolicy",
+        "ApptBundleRestrictPolicy",
+        "ApptBundleSortPolicy",
+        "Asset",
+        "AssetAccountParticipant",
+        "AssetContactParticipant",
+        "AssetDowntimePeriod",
+        "AssetRelationship",
+        "AssetWarranty",
+        "AssignedResource",
+        "AttributeDefinition",
+        "AttributePicklist",
+        "AttributePicklistValue",
+        "Campaign",
+        "Case",
+        "CommSubscriptionConsent",
+        "ContactRequest",
+        "Contract",
+        "ContractLineItem",
+        "CreditMemo",
+        "DevopsActivityLog",
+        "DevopsEnvDeployment",
+        "DevopsEnvDeploymentMbr",
+        "DevopsEnvironment",
+        "DevopsRequestInfo",
+        "Entitlement",
+        "Expense",
+        "ExpenseReport",
+        "ExpenseReportEntry",
+        "GeolocationBasedAction",
+        "Image",
+        "Invoice",
+        "LegalEntity",
+        "ListEmail",
+        "LiveAgentSession",
+        "LiveChatTranscript",
+        "Location",
+        "MaintenanceAsset",
+        "MaintenancePlan",
+        "OperatingHoursHoliday",
+        "Opportunity",
+        "Order",
+        "PartyConsent",
+        "PrivacyRTBFRequest",
+        "ProcessException",
+        "Product2",
+        "ProductConsumed",
+        "ProductItem",
+        "ProductRequest",
+        "ProductRequestLineItem",
+        "ProductServiceCampaign",
+        "ProductServiceCampaignItem",
+        "ProductTransfer",
+        "ResourceAbsence",
+        "ReturnOrder",
+        "ReturnOrderLineItem",
+        "SchedulingWorkspace",
+        "SchedulingWorkspaceTerritory",
+        "ServiceAppointment",
+        "ServiceContract",
+        "ServiceCrew",
+        "ServiceCrewMember",
+        "ServiceResource",
+        "SfdcPartnerSbscrOffer",
+        "Shift",
+        "ShiftPattern",
+        "ShiftPatternEntry",
+        "Shipment",
+        "ShipmentItem",
+        "Solution",
+        "TimeSheet",
+        "TimeSheetEntry",
+        "TravelMode",
+        "WarrantyTerm",
+        "WorkOrder",
+        "WorkOrderLineItem",
+        "WorkPlan",
+        "WorkPlanSelectionRule",
+        "WorkPlanTemplate",
+        "WorkPlanTemplateEntry",
+        "WorkStep",
+        "WorkStepTemplate"
+      ]
+    },
+    {
+      "cell": "T2/full field availability",
+      "reason": "Embedded catalog includes additional fields; this fix only orders available fields present in the native sequence. Raw full sequences remain in nativeRows. Missing or extra field availability is not inferred. Local Task additionally exposes reference RecordTypeId; its native availability/position is unobserved, so it remains available in the deterministic suffix and is excluded only from the native common-reference projection.",
+      "nativeValue": {
+        "anonymous": [
+          "Id",
+          "WhoId",
+          "WhatId",
+          "Subject",
+          "ActivityDate",
+          "Status",
+          "Priority",
+          "IsHighPriority",
+          "OwnerId",
+          "Description",
+          "IsDeleted",
+          "AccountId",
+          "IsClosed",
+          "CreatedDate",
+          "CreatedById",
+          "LastModifiedDate",
+          "LastModifiedById",
+          "SystemModstamp",
+          "IsArchived",
+          "CallDurationInSeconds",
+          "CallType",
+          "CallDisposition",
+          "CallObject",
+          "ReminderDateTime",
+          "IsReminderSet",
+          "RecurrenceActivityId",
+          "IsRecurrence",
+          "RecurrenceStartDateOnly",
+          "RecurrenceEndDateOnly",
+          "RecurrenceTimeZoneSidKey",
+          "RecurrenceType",
+          "RecurrenceInterval",
+          "RecurrenceDayOfWeekMask",
+          "RecurrenceDayOfMonth",
+          "RecurrenceInstance",
+          "RecurrenceMonthOfYear",
+          "RecurrenceRegeneratedType",
+          "TaskSubtype",
+          "CompletedDateTime"
+        ],
+        "isTest": [
+          "Id",
+          "WhoId",
+          "WhatId",
+          "Subject",
+          "ActivityDate",
+          "Status",
+          "Priority",
+          "IsHighPriority",
+          "OwnerId",
+          "Description",
+          "Type",
+          "IsDeleted",
+          "AccountId",
+          "IsClosed",
+          "CreatedDate",
+          "CreatedById",
+          "LastModifiedDate",
+          "LastModifiedById",
+          "SystemModstamp",
+          "IsArchived",
+          "CallDurationInSeconds",
+          "CallType",
+          "CallDisposition",
+          "CallObject",
+          "ReminderDateTime",
+          "IsReminderSet",
+          "RecurrenceActivityId",
+          "IsRecurrence",
+          "RecurrenceStartDateOnly",
+          "RecurrenceEndDateOnly",
+          "RecurrenceTimeZoneSidKey",
+          "RecurrenceType",
+          "RecurrenceInterval",
+          "RecurrenceDayOfWeekMask",
+          "RecurrenceDayOfMonth",
+          "RecurrenceInstance",
+          "RecurrenceMonthOfYear",
+          "RecurrenceRegeneratedType",
+          "TaskSubtype",
+          "CompletedDateTime"
+        ]
+      },
+      "localCatalogOnlyReferences": [
+        "RecordTypeId"
+      ]
+    },
+    {
+      "cell": "other APIs/objects/namespaces",
+      "reason": "Only plain API65 Task describe traversal was observed. Preserve all other existing ordering paths.",
+      "nativeValue": null
+    }
+  ]
+}

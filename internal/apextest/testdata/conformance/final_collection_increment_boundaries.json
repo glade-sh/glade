@@ -1,0 +1,2257 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "boundaries",
+  "shapeCount": 12,
+  "nativeObservationCount": 72,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C166PF_103",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Integer> a=new List<Integer>{1};Integer i=0;a[i]++;r=String.valueOf(a[i]);System.assert(false,'C126_RESULT|C166PF_103|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "ba4fb19568fd6b15c7f5b6f1cf4bd931496f2ba4ae2eaa5d0e877adbb3cefcba"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe103": "@IsTest private class C166Observe103{@IsTest static void observe(){String r;final List<Integer> a=new List<Integer>{1};Integer i=0;a[i]++;r=String.valueOf(a[i]);System.assert(false,'C126_RESULT|C166PF_103|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe103"
+          ],
+          "sourceSha256": {
+            "class:C166Observe103": "9dc99bd66f0639a79a1cd16aaa2f2972f4848e5cdd55c4fad47a119dfd56df5c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_104",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Integer>[] a=new List<Integer>[]{new List<Integer>{1}};a[0][0]++;r=String.valueOf(a[0][0]);System.assert(false,'C126_RESULT|C166PF_104|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "e43d247858d06291327c8b899e5dc77533a7f83a97d954ea9cb394402b4e2b34"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unexpected token 'final'.",
+                  "line": 2,
+                  "column": 10,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unexpected token 'final'.",
+                  "line": 2,
+                  "column": 10,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unexpected token 'final'.",
+                  "line": 2,
+                  "column": 10,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe104": "@IsTest private class C166Observe104{@IsTest static void observe(){String r;final List<Integer>[] a=new List<Integer>[]{new List<Integer>{1}};a[0][0]++;r=String.valueOf(a[0][0]);System.assert(false,'C126_RESULT|C166PF_104|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe104"
+          ],
+          "sourceSha256": {
+            "class:C166Observe104": "2e31a342cd012bb8a2e0f040f65a099ff714f3afed3058f4da31639c58b1985f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'List'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token '['."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Extra ';', at '}'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 2,
+                      "problem": "Expecting '}' but was: '<EOF>'"
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: Integer"
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'List'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token '['."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Extra ';', at '}'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 2,
+                      "problem": "Expecting '}' but was: '<EOF>'"
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: Integer"
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'List'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token '['."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Extra ';', at '}'."
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 2,
+                      "problem": "Expecting '}' but was: '<EOF>'"
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: Integer"
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe104",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_105",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Long> a=new List<Long>{1};Integer i=0;++a[i];r=String.valueOf(a[i]);System.assert(false,'C126_RESULT|C166PF_105|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "af329889308f50a92e86df075a288582c177e48d3d5ead799a9010f332c38439"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe105": "@IsTest private class C166Observe105{@IsTest static void observe(){String r;final List<Long> a=new List<Long>{1};Integer i=0;++a[i];r=String.valueOf(a[i]);System.assert(false,'C126_RESULT|C166PF_105|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe105"
+          ],
+          "sourceSha256": {
+            "class:C166Observe105": "f06e617d33cdfea6b2ebbf3556f740c6b30954f799a34eaed3c460706d7b355b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "2"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"2\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_106",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Long>[] a=new List<Long>[]{new List<Long>{1}};++a[0][0];r=String.valueOf(a[0][0]);System.assert(false,'C126_RESULT|C166PF_106|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "b72c7c2887e6bd30a30a7df962c429fc8c3517e9a568bcb37a12483a4f7f1c85"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unexpected token 'final'.",
+                  "line": 2,
+                  "column": 10,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unexpected token 'final'.",
+                  "line": 2,
+                  "column": 10,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unexpected token 'final'.",
+                  "line": 2,
+                  "column": 10,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe106": "@IsTest private class C166Observe106{@IsTest static void observe(){String r;final List<Long>[] a=new List<Long>[]{new List<Long>{1}};++a[0][0];r=String.valueOf(a[0][0]);System.assert(false,'C126_RESULT|C166PF_106|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe106"
+          ],
+          "sourceSha256": {
+            "class:C166Observe106": "884fb2efca470e570b53b1087d8a791034d2e8fe0ce4b7c5cfdc42b2a46e68f8"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'List'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token '['."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Extra ';', at '}'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 2,
+                      "problem": "Expecting '}' but was: '<EOF>'"
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: Long"
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'List'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token '['."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Extra ';', at '}'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 2,
+                      "problem": "Expecting '}' but was: '<EOF>'"
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: Long"
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'List'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token '['."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Extra ';', at '}'."
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 2,
+                      "problem": "Expecting '}' but was: '<EOF>'"
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: Long"
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe106",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_107",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Double> a=new List<Double>{1};Integer i=0;a[i]--;r=String.valueOf(a[i]);System.assert(false,'C126_RESULT|C166PF_107|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "4a0027d73ff1887cb565875c71ec1e97b06276db33811b9d67de8ae0a540d108"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0.0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0.0\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0.0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0.0\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0.0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0.0\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe107": "@IsTest private class C166Observe107{@IsTest static void observe(){String r;final List<Double> a=new List<Double>{1};Integer i=0;a[i]--;r=String.valueOf(a[i]);System.assert(false,'C126_RESULT|C166PF_107|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe107"
+          ],
+          "sourceSha256": {
+            "class:C166Observe107": "e282f409260ac1301ce9488b9b85171f5712c412c65159852a933e0979999f23"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0.0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0.0\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0.0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0.0\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0.0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0.0\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_108",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Double>[] a=new List<Double>[]{new List<Double>{1}};a[0][0]--;r=String.valueOf(a[0][0]);System.assert(false,'C126_RESULT|C166PF_108|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "653618fd0299b3b77335fe4eee864abb0f2dacc50eb9f95cf05e28dfef3d897f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unexpected token 'final'.",
+                  "line": 2,
+                  "column": 10,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unexpected token 'final'.",
+                  "line": 2,
+                  "column": 10,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unexpected token 'final'.",
+                  "line": 2,
+                  "column": 10,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe108": "@IsTest private class C166Observe108{@IsTest static void observe(){String r;final List<Double>[] a=new List<Double>[]{new List<Double>{1}};a[0][0]--;r=String.valueOf(a[0][0]);System.assert(false,'C126_RESULT|C166PF_108|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe108"
+          ],
+          "sourceSha256": {
+            "class:C166Observe108": "8978bdbdf5fa9e2175cbcb25e917f0de44f37f893a086df517ead655396f6c34"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'List'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token '['."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Extra ';', at '}'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 2,
+                      "problem": "Expecting '}' but was: '<EOF>'"
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: Double"
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'List'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token '['."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Extra ';', at '}'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 2,
+                      "problem": "Expecting '}' but was: '<EOF>'"
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: Double"
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'List'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token '['."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Extra ';', at '}'."
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 2,
+                      "problem": "Expecting '}' but was: '<EOF>'"
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: Double"
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe108",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_109",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Decimal> a=new List<Decimal>{1};Integer i=0;--a[i];r=String.valueOf(a[i]);System.assert(false,'C126_RESULT|C166PF_109|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "510816ae6736b4ef18dbe4988179ffb63a35a79d4f809908bb40df35a2c1bf58"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0\"}"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe109": "@IsTest private class C166Observe109{@IsTest static void observe(){String r;final List<Decimal> a=new List<Decimal>{1};Integer i=0;--a[i];r=String.valueOf(a[i]);System.assert(false,'C126_RESULT|C166PF_109|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe109"
+          ],
+          "sourceSha256": {
+            "class:C166Observe109": "82effd91f475ef736d455160ea78177586f373bdc58aba92f8405203d0db5a00"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "0"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"0\"}"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_110",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Decimal>[] a=new List<Decimal>[]{new List<Decimal>{1}};--a[0][0];r=String.valueOf(a[0][0]);System.assert(false,'C126_RESULT|C166PF_110|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "33ccda9fbf5c712f7625bbd10582921a4fc91be320f64d295b15c2b67bd4669f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unexpected token 'final'.",
+                  "line": 2,
+                  "column": 10,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unexpected token 'final'.",
+                  "line": 2,
+                  "column": 10,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Unexpected token 'final'.",
+                  "line": 2,
+                  "column": 10,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe110": "@IsTest private class C166Observe110{@IsTest static void observe(){String r;final List<Decimal>[] a=new List<Decimal>[]{new List<Decimal>{1}};--a[0][0];r=String.valueOf(a[0][0]);System.assert(false,'C126_RESULT|C166PF_110|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe110"
+          ],
+          "sourceSha256": {
+            "class:C166Observe110": "2b4fc78c842bcd235dc4da12348d7a2567b2583926a6a301ab535015ac4693fb"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'List'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token '['."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Extra ';', at '}'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 2,
+                      "problem": "Expecting '}' but was: '<EOF>'"
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: Decimal"
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'List'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token '['."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Extra ';', at '}'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 2,
+                      "problem": "Expecting '}' but was: '<EOF>'"
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: Decimal"
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "sf_exit_code": 1,
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'final'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token 'List'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token '['."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Unexpected token ']'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Extra ';', at '}'."
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 2,
+                      "problem": "Expecting '}' but was: '<EOF>'"
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: Decimal"
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    },
+                    {
+                      "name": "C166Observe110",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "problem": "Variable does not exist: a"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Unexpected token 'final'."
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_111",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Integer> a=new List<Integer>{null};a[0]++;r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_111|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "e1009850d68e87562a8f5de5caaa63dd3f650f84f4f6f2d1a9b49a957b1091c6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe111": "@IsTest private class C166Observe111{@IsTest static void observe(){String r;final List<Integer> a=new List<Integer>{null};a[0]++;r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_111|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe111"
+          ],
+          "sourceSha256": {
+            "class:C166Observe111": "7015537d7c443e4a1098b92b67d25dad52adac2e6a14b39b0705f12315945331"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe111",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object",
+                    "exceptionType": "System.NullPointerException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe111",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object",
+                    "exceptionType": "System.NullPointerException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe111",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object",
+                    "exceptionType": "System.NullPointerException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_112",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Double> a=new List<Double>{null};++a[0];r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_112|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "9a86c485f5c75c830ebbd3afd517df0d65653c7e31648d412c1e8f9cee00fd47"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.NullPointerException: Attempt to de-reference a null object",
+                "exceptionType": "System.NullPointerException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe112": "@IsTest private class C166Observe112{@IsTest static void observe(){String r;final List<Double> a=new List<Double>{null};++a[0];r=String.valueOf(a[0]);System.assert(false,'C126_RESULT|C166PF_112|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe112"
+          ],
+          "sourceSha256": {
+            "class:C166Observe112": "0b882029ad9ad17f7d50f18af2a4237b34c3f329014614447d75b3048e9df2ec"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe112",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object",
+                    "exceptionType": "System.NullPointerException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe112",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object",
+                    "exceptionType": "System.NullPointerException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe112",
+                    "method": "observe",
+                    "message": "System.NullPointerException: Attempt to de-reference a null object",
+                    "exceptionType": "System.NullPointerException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.NullPointerException",
+              "message": "Attempt to de-reference a null object"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_113",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Double> a=new List<Double>{1};a[1]--;r=String.valueOf(a[1]);System.assert(false,'C126_RESULT|C166PF_113|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "eef704cfb413d24a7924f4d968ad1da551b7002b8145f15c2dae1ce214d9d0d0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.ListException: List index out of bounds: 1",
+                "exceptionType": "System.ListException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 1"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.ListException: List index out of bounds: 1",
+                "exceptionType": "System.ListException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 1"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.ListException: List index out of bounds: 1",
+                "exceptionType": "System.ListException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 1"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe113": "@IsTest private class C166Observe113{@IsTest static void observe(){String r;final List<Double> a=new List<Double>{1};a[1]--;r=String.valueOf(a[1]);System.assert(false,'C126_RESULT|C166PF_113|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe113"
+          ],
+          "sourceSha256": {
+            "class:C166Observe113": "cdd359fb71451f3ceabe7beb31c25338105558404bc61e0ff2fb55db85fd8ff4"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe113",
+                    "method": "observe",
+                    "message": "System.ListException: List index out of bounds: 1",
+                    "exceptionType": "System.ListException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 1"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe113",
+                    "method": "observe",
+                    "message": "System.ListException: List index out of bounds: 1",
+                    "exceptionType": "System.ListException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 1"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe113",
+                    "method": "observe",
+                    "message": "System.ListException: List index out of bounds: 1",
+                    "exceptionType": "System.ListException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 1"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    },
+    {
+      "id": "C166PF_114",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "\nString r;final List<Decimal> a=new List<Decimal>{1};--a[1];r=String.valueOf(a[1]);System.assert(false,'C126_RESULT|C166PF_114|'+JSON.serialize(new Map<String,Object>{'value'=>r}));",
+          "sourceSha256": {
+            "anonymous": "9207e1e6a4b4cc02fc03586d2579ced9b0e34fcd6b6dc429a84154e4b9f0d2f1"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.ListException: List index out of bounds: 1",
+                "exceptionType": "System.ListException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 1"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.ListException: List index out of bounds: 1",
+                "exceptionType": "System.ListException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 1"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_anonymous",
+                "exceptionMessage": "System.ListException: List index out of bounds: 1",
+                "exceptionType": "System.ListException",
+                "exceptionTypeSource": "returned_message_prefix"
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 1"
+            }
+          },
+          "carriedByAPI": {}
+        },
+        "isTest": {
+          "classes": {
+            "C166Observe114": "@IsTest private class C166Observe114{@IsTest static void observe(){String r;final List<Decimal> a=new List<Decimal>{1};--a[1];r=String.valueOf(a[1]);System.assert(false,'C126_RESULT|C166PF_114|'+JSON.serialize(new Map<String,Object>{'value'=>r}));}}"
+          },
+          "tests": [
+            "C166Observe114"
+          ],
+          "sourceSha256": {
+            "class:C166Observe114": "5759ff4bf1c6bf620e3c0455ed113e7b4797281c23bc8a33e9871010ae16d7a8"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe114",
+                    "method": "observe",
+                    "message": "System.ListException: List index out of bounds: 1",
+                    "exceptionType": "System.ListException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 1"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe114",
+                    "method": "observe",
+                    "message": "System.ListException: List index out of bounds: 1",
+                    "exceptionType": "System.ListException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 1"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "uncaught_test_failure",
+                "testFailures": [
+                  {
+                    "cls": "C166Observe114",
+                    "method": "observe",
+                    "message": "System.ListException: List index out of bounds: 1",
+                    "exceptionType": "System.ListException",
+                    "exceptionTypeSource": "returned_message_prefix"
+                  }
+                ]
+              },
+              "outcome": "uncaught",
+              "exceptionType": "System.ListException",
+              "message": "List index out of bounds: 1"
+            }
+          },
+          "carriedByAPI": {}
+        }
+      }
+    }
+  ]
+}

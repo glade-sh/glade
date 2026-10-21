@@ -1,0 +1,13 @@
+{
+  "status": "Failed",
+  "id": "0Afiz000000jGbjCAE",
+  "failures": [
+    {
+      "fullName": "classes/DiagnosticVersion.cls-meta.xml",
+      "lineNumber": null,
+      "columnNumber": null,
+      "problem": "Invalid api version:99.0",
+      "problemType": "Error"
+    }
+  ]
+}

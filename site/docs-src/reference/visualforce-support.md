@@ -12,6 +12,9 @@ implementation.
 Use this page when checking the local Visualforce preview boundary.
 The support map carries the current local contract and hosted gaps.
 
+v0.3.0 supports Visualforce API 59.0-68.0. Preserved historical page versions
+outside that window are unsupported.
+
 ## Start here
 
 Start with controller logic, page routes, standard components, static resources, uploads, remoting, and AJAX refresh paths.

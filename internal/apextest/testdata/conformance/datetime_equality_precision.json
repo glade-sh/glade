@@ -1,0 +1,656 @@
+{
+  "nativeObservationCount": 41,
+  "carriedCount": 3,
+  "provenance": "Owned synthetic check-only Metadata API observations, existing authorized scratch org; named source62/67 plus exact source54 endpoint tests with transport62. Anonymous and API68 are unobserved. Raw deployment receipts and deployment IDs retained outside product testdata. Observation values are exported literally; source files preserve per-class API versions.",
+  "captures": [
+    {
+      "id": "precision-62",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "testClass": "DatePrecisionObservation",
+      "files": {
+        "force-app/main/default/classes/DatePrecisionObservation.cls": "@IsTest private class DatePrecisionObservation {\n private static final Long BASE=1735689600000L;\n private static Map<String,Object> pair(Datetime left,Datetime right){return new Map<String,Object>{'left'=>left.getTime(),'right'=>right.getTime(),'operator'=>left==right,'equals'=>left.equals(right),'less'=>left<right,'greater'=>left>right};}\n private static void emit(Object value){System.assertEquals('NATIVE_OBSERVATION',JSON.serialize(value));}\n @IsTest static void positiveControl(){System.assertEquals(3,1+2);}\n @IsTest static void customInsert(){\n  Map<String,Object> r=new Map<String,Object>();try{\n   Datetime submitted=Datetime.newInstance(BASE+123L);\n   PrecisionLedger__c row=new PrecisionLedger__c(Name='Insert',OccurredAt__c=submitted);PrecisionLedger__c alias=row;\n   r.put('before',row.OccurredAt__c.getTime());insert row;\n   PrecisionLedger__c stored=[SELECT OccurredAt__c FROM PrecisionLedger__c WHERE Id=:row.Id];\n   r.put('submitted',submitted.getTime());r.put('caller',row.OccurredAt__c.getTime());r.put('alias',alias.OccurredAt__c.getTime());r.put('comparison',pair(row.OccurredAt__c,stored.OccurredAt__c));\n  }catch(Exception e){r.put('exceptionType',e.getTypeName());r.put('exceptionMessage',e.getMessage());}emit(r);\n }\n @IsTest static void customUpdate(){\n  Map<String,Object> r=new Map<String,Object>();try{\n   PrecisionLedger__c row=new PrecisionLedger__c(Name='Update',OccurredAt__c=Datetime.newInstance(BASE));insert row;\n   Datetime submitted=Datetime.newInstance(BASE+1456L);row.OccurredAt__c=submitted;PrecisionLedger__c alias=row;\n   r.put('before',row.OccurredAt__c.getTime());Database.SaveResult result=Database.update(row,false);r.put('success',result.isSuccess());\n   PrecisionLedger__c stored=[SELECT OccurredAt__c FROM PrecisionLedger__c WHERE Id=:row.Id];\n   r.put('submitted',submitted.getTime());r.put('caller',row.OccurredAt__c.getTime());r.put('alias',alias.OccurredAt__c.getTime());r.put('comparison',pair(row.OccurredAt__c,stored.OccurredAt__c));\n  }catch(Exception e){r.put('exceptionType',e.getTypeName());r.put('exceptionMessage',e.getMessage());}emit(r);\n }\n @IsTest static void customQueriedCopy(){\n  Map<String,Object> r=new Map<String,Object>();try{\n   PrecisionLedger__c original=new PrecisionLedger__c(Name='Original',OccurredAt__c=Datetime.newInstance(BASE+1L));insert original;\n   PrecisionLedger__c first=[SELECT OccurredAt__c FROM PrecisionLedger__c WHERE Id=:original.Id];\n   PrecisionLedger__c copied=new PrecisionLedger__c(Name='Copied',OccurredAt__c=first.OccurredAt__c);insert copied;\n   PrecisionLedger__c second=[SELECT OccurredAt__c FROM PrecisionLedger__c WHERE Id=:copied.Id];\n   r.put('firstStored',first.OccurredAt__c.getTime());r.put('copyCaller',copied.OccurredAt__c.getTime());r.put('comparison',pair(original.OccurredAt__c,second.OccurredAt__c));\n  }catch(Exception e){r.put('exceptionType',e.getTypeName());r.put('exceptionMessage',e.getMessage());}emit(r);\n }\n @IsTest static void scalarMilliseconds(){\n  Map<String,Object> r=new Map<String,Object>();try{\n   List<Object> pairs=new List<Object>();Datetime whole=Datetime.newInstance(BASE);\n   for(Long delta:new List<Long>{0L,1L,10L,999L,1000L})pairs.add(pair(whole,Datetime.newInstance(BASE+delta)));\n   r.put('pairs',pairs);\n  }catch(Exception e){r.put('exceptionType',e.getTypeName());r.put('exceptionMessage',e.getMessage());}emit(r);\n }\n @IsTest static void eventStorageControl(){\n  Map<String,Object> r=new Map<String,Object>();try{\n   Datetime submitted=Datetime.newInstance(BASE+123L);Event row=new Event(Subject='Precision Event',StartDateTime=submitted,EndDateTime=submitted.addHours(1));Event alias=row;insert row;\n   Event stored=[SELECT StartDateTime FROM Event WHERE Id=:row.Id];\n   r.put('submitted',submitted.getTime());r.put('caller',row.StartDateTime.getTime());r.put('alias',alias.StartDateTime.getTime());r.put('comparison',pair(row.StartDateTime,stored.StartDateTime));\n  }catch(Exception e){r.put('exceptionType',e.getTypeName());r.put('exceptionMessage',e.getMessage());}emit(r);\n }\n}\n",
+        "force-app/main/default/classes/DatePrecisionObservation.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/objects/PrecisionLedger__c/PrecisionLedger__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>Precision Ledger</label><pluralLabel>Precision Ledgers</pluralLabel><nameField><label>Ledger Name</label><type>Text</type></nameField><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+        "force-app/main/default/objects/PrecisionLedger__c/fields/OccurredAt__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>OccurredAt__c</fullName><label>Occurred At</label><type>DateTime</type></CustomField>\n",
+        "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n"
+      },
+      "fileSHA256": {
+        "force-app/main/default/classes/DatePrecisionObservation.cls": "c0187e184996f705b8593fc12292501503ec800ea272e86e4475ed7451e34231",
+        "force-app/main/default/classes/DatePrecisionObservation.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "force-app/main/default/objects/PrecisionLedger__c/PrecisionLedger__c.object-meta.xml": "68030770a4f9463c1c3e0c5cbd4eccb5d31460216de7732c7ef23173e414361f",
+        "force-app/main/default/objects/PrecisionLedger__c/fields/OccurredAt__c.field-meta.xml": "ac8bc9628ad01e2cf6d0ce30a28b02985d3bbb95db4a4780ec2f7af49cdb53ff",
+        "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+      },
+      "checkOnly": true,
+      "rollbackOnError": true,
+      "rows": [
+        {
+          "method": "customInsert",
+          "kind": "observation",
+          "native": {
+            "comparison": {
+              "greater": true,
+              "less": false,
+              "equals": true,
+              "operator": false,
+              "right": 1735689600000,
+              "left": 1735689600123
+            },
+            "alias": 1735689600123,
+            "caller": 1735689600123,
+            "submitted": 1735689600123,
+            "before": 1735689600123
+          }
+        },
+        {
+          "method": "customQueriedCopy",
+          "kind": "observation",
+          "native": {
+            "comparison": {
+              "greater": true,
+              "less": false,
+              "equals": true,
+              "operator": false,
+              "right": 1735689600000,
+              "left": 1735689600001
+            },
+            "copyCaller": 1735689600000,
+            "firstStored": 1735689600000
+          }
+        },
+        {
+          "method": "customUpdate",
+          "kind": "observation",
+          "native": {
+            "comparison": {
+              "greater": true,
+              "less": false,
+              "equals": true,
+              "operator": false,
+              "right": 1735689601000,
+              "left": 1735689601456
+            },
+            "alias": 1735689601456,
+            "caller": 1735689601456,
+            "submitted": 1735689601456,
+            "success": true,
+            "before": 1735689601456
+          }
+        },
+        {
+          "method": "eventStorageControl",
+          "kind": "observation",
+          "native": {
+            "comparison": {
+              "greater": true,
+              "less": false,
+              "equals": true,
+              "operator": false,
+              "right": 1735689600000,
+              "left": 1735689600123
+            },
+            "alias": 1735689600123,
+            "caller": 1735689600123,
+            "submitted": 1735689600123
+          }
+        },
+        {
+          "method": "scalarMilliseconds",
+          "kind": "observation",
+          "native": {
+            "pairs": [
+              {
+                "greater": false,
+                "less": false,
+                "equals": true,
+                "operator": true,
+                "right": 1735689600000,
+                "left": 1735689600000
+              },
+              {
+                "greater": false,
+                "less": true,
+                "equals": true,
+                "operator": false,
+                "right": 1735689600001,
+                "left": 1735689600000
+              },
+              {
+                "greater": false,
+                "less": true,
+                "equals": true,
+                "operator": false,
+                "right": 1735689600010,
+                "left": 1735689600000
+              },
+              {
+                "greater": false,
+                "less": true,
+                "equals": true,
+                "operator": false,
+                "right": 1735689600999,
+                "left": 1735689600000
+              },
+              {
+                "greater": false,
+                "less": true,
+                "equals": false,
+                "operator": false,
+                "right": 1735689601000,
+                "left": 1735689600000
+              }
+            ]
+          }
+        },
+        {
+          "method": "positiveControl",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        }
+      ]
+    },
+    {
+      "id": "precision-67",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "testClass": "DatePrecisionObservation",
+      "files": {
+        "force-app/main/default/classes/DatePrecisionObservation.cls": "@IsTest private class DatePrecisionObservation {\n private static final Long BASE=1735689600000L;\n private static Map<String,Object> pair(Datetime left,Datetime right){return new Map<String,Object>{'left'=>left.getTime(),'right'=>right.getTime(),'operator'=>left==right,'equals'=>left.equals(right),'less'=>left<right,'greater'=>left>right};}\n private static void emit(Object value){System.assertEquals('NATIVE_OBSERVATION',JSON.serialize(value));}\n @IsTest static void positiveControl(){System.assertEquals(3,1+2);}\n @IsTest static void customInsert(){\n  Map<String,Object> r=new Map<String,Object>();try{\n   Datetime submitted=Datetime.newInstance(BASE+123L);\n   PrecisionLedger__c row=new PrecisionLedger__c(Name='Insert',OccurredAt__c=submitted);PrecisionLedger__c alias=row;\n   r.put('before',row.OccurredAt__c.getTime());insert row;\n   PrecisionLedger__c stored=[SELECT OccurredAt__c FROM PrecisionLedger__c WHERE Id=:row.Id];\n   r.put('submitted',submitted.getTime());r.put('caller',row.OccurredAt__c.getTime());r.put('alias',alias.OccurredAt__c.getTime());r.put('comparison',pair(row.OccurredAt__c,stored.OccurredAt__c));\n  }catch(Exception e){r.put('exceptionType',e.getTypeName());r.put('exceptionMessage',e.getMessage());}emit(r);\n }\n @IsTest static void customUpdate(){\n  Map<String,Object> r=new Map<String,Object>();try{\n   PrecisionLedger__c row=new PrecisionLedger__c(Name='Update',OccurredAt__c=Datetime.newInstance(BASE));insert row;\n   Datetime submitted=Datetime.newInstance(BASE+1456L);row.OccurredAt__c=submitted;PrecisionLedger__c alias=row;\n   r.put('before',row.OccurredAt__c.getTime());Database.SaveResult result=Database.update(row,false);r.put('success',result.isSuccess());\n   PrecisionLedger__c stored=[SELECT OccurredAt__c FROM PrecisionLedger__c WHERE Id=:row.Id];\n   r.put('submitted',submitted.getTime());r.put('caller',row.OccurredAt__c.getTime());r.put('alias',alias.OccurredAt__c.getTime());r.put('comparison',pair(row.OccurredAt__c,stored.OccurredAt__c));\n  }catch(Exception e){r.put('exceptionType',e.getTypeName());r.put('exceptionMessage',e.getMessage());}emit(r);\n }\n @IsTest static void customQueriedCopy(){\n  Map<String,Object> r=new Map<String,Object>();try{\n   PrecisionLedger__c original=new PrecisionLedger__c(Name='Original',OccurredAt__c=Datetime.newInstance(BASE+1L));insert original;\n   PrecisionLedger__c first=[SELECT OccurredAt__c FROM PrecisionLedger__c WHERE Id=:original.Id];\n   PrecisionLedger__c copied=new PrecisionLedger__c(Name='Copied',OccurredAt__c=first.OccurredAt__c);insert copied;\n   PrecisionLedger__c second=[SELECT OccurredAt__c FROM PrecisionLedger__c WHERE Id=:copied.Id];\n   r.put('firstStored',first.OccurredAt__c.getTime());r.put('copyCaller',copied.OccurredAt__c.getTime());r.put('comparison',pair(original.OccurredAt__c,second.OccurredAt__c));\n  }catch(Exception e){r.put('exceptionType',e.getTypeName());r.put('exceptionMessage',e.getMessage());}emit(r);\n }\n @IsTest static void scalarMilliseconds(){\n  Map<String,Object> r=new Map<String,Object>();try{\n   List<Object> pairs=new List<Object>();Datetime whole=Datetime.newInstance(BASE);\n   for(Long delta:new List<Long>{0L,1L,10L,999L,1000L})pairs.add(pair(whole,Datetime.newInstance(BASE+delta)));\n   r.put('pairs',pairs);\n  }catch(Exception e){r.put('exceptionType',e.getTypeName());r.put('exceptionMessage',e.getMessage());}emit(r);\n }\n @IsTest static void eventStorageControl(){\n  Map<String,Object> r=new Map<String,Object>();try{\n   Datetime submitted=Datetime.newInstance(BASE+123L);Event row=new Event(Subject='Precision Event',StartDateTime=submitted,EndDateTime=submitted.addHours(1));Event alias=row;insert row;\n   Event stored=[SELECT StartDateTime FROM Event WHERE Id=:row.Id];\n   r.put('submitted',submitted.getTime());r.put('caller',row.StartDateTime.getTime());r.put('alias',alias.StartDateTime.getTime());r.put('comparison',pair(row.StartDateTime,stored.StartDateTime));\n  }catch(Exception e){r.put('exceptionType',e.getTypeName());r.put('exceptionMessage',e.getMessage());}emit(r);\n }\n}\n",
+        "force-app/main/default/classes/DatePrecisionObservation.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/objects/PrecisionLedger__c/PrecisionLedger__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>Precision Ledger</label><pluralLabel>Precision Ledgers</pluralLabel><nameField><label>Ledger Name</label><type>Text</type></nameField><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+        "force-app/main/default/objects/PrecisionLedger__c/fields/OccurredAt__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>OccurredAt__c</fullName><label>Occurred At</label><type>DateTime</type></CustomField>\n",
+        "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n"
+      },
+      "fileSHA256": {
+        "force-app/main/default/classes/DatePrecisionObservation.cls": "c0187e184996f705b8593fc12292501503ec800ea272e86e4475ed7451e34231",
+        "force-app/main/default/classes/DatePrecisionObservation.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "force-app/main/default/objects/PrecisionLedger__c/PrecisionLedger__c.object-meta.xml": "68030770a4f9463c1c3e0c5cbd4eccb5d31460216de7732c7ef23173e414361f",
+        "force-app/main/default/objects/PrecisionLedger__c/fields/OccurredAt__c.field-meta.xml": "ac8bc9628ad01e2cf6d0ce30a28b02985d3bbb95db4a4780ec2f7af49cdb53ff",
+        "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+      },
+      "checkOnly": true,
+      "rollbackOnError": true,
+      "rows": [
+        {
+          "method": "customInsert",
+          "kind": "observation",
+          "native": {
+            "exceptionMessage": "Operation failed due to fields being inaccessible on Sobject PrecisionLedger__c, check errors on Exception or Result! ",
+            "exceptionType": "System.DmlException",
+            "before": 1735689600123
+          },
+          "carryReason": "Default-DML native field-access rejection prevents observing custom timestamp persistence at source API67; permission/default-DML policy is outside this family.",
+          "carryOwner": "default DML access policy"
+        },
+        {
+          "method": "customQueriedCopy",
+          "kind": "observation",
+          "native": {
+            "exceptionMessage": "Operation failed due to fields being inaccessible on Sobject PrecisionLedger__c, check errors on Exception or Result! ",
+            "exceptionType": "System.DmlException"
+          },
+          "carryReason": "Default-DML native field-access rejection prevents observing custom timestamp persistence at source API67; permission/default-DML policy is outside this family.",
+          "carryOwner": "default DML access policy"
+        },
+        {
+          "method": "customUpdate",
+          "kind": "observation",
+          "native": {
+            "exceptionMessage": "Operation failed due to fields being inaccessible on Sobject PrecisionLedger__c, check errors on Exception or Result! ",
+            "exceptionType": "System.DmlException"
+          },
+          "carryReason": "Default-DML native field-access rejection prevents observing custom timestamp persistence at source API67; permission/default-DML policy is outside this family.",
+          "carryOwner": "default DML access policy"
+        },
+        {
+          "method": "eventStorageControl",
+          "kind": "observation",
+          "native": {
+            "comparison": {
+              "greater": true,
+              "less": false,
+              "equals": true,
+              "operator": false,
+              "right": 1735689600000,
+              "left": 1735689600123
+            },
+            "alias": 1735689600123,
+            "caller": 1735689600123,
+            "submitted": 1735689600123
+          }
+        },
+        {
+          "method": "scalarMilliseconds",
+          "kind": "observation",
+          "native": {
+            "pairs": [
+              {
+                "greater": false,
+                "less": false,
+                "equals": true,
+                "operator": true,
+                "right": 1735689600000,
+                "left": 1735689600000
+              },
+              {
+                "greater": false,
+                "less": true,
+                "equals": true,
+                "operator": false,
+                "right": 1735689600001,
+                "left": 1735689600000
+              },
+              {
+                "greater": false,
+                "less": true,
+                "equals": true,
+                "operator": false,
+                "right": 1735689600010,
+                "left": 1735689600000
+              },
+              {
+                "greater": false,
+                "less": true,
+                "equals": true,
+                "operator": false,
+                "right": 1735689600999,
+                "left": 1735689600000
+              },
+              {
+                "greater": false,
+                "less": true,
+                "equals": false,
+                "operator": false,
+                "right": 1735689601000,
+                "left": 1735689600000
+              }
+            ]
+          }
+        },
+        {
+          "method": "positiveControl",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        }
+      ]
+    },
+    {
+      "id": "assertions-62",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "testClass": "DateAssertionOutcomes",
+      "files": {
+        "force-app/main/default/classes/DateAssertionOutcomes.cls": "@IsTest private class DateAssertionOutcomes {\n@IsTest static void legacyEqualSameSecond(){Datetime left=Datetime.newInstance(1735689600000L);Datetime right=Datetime.newInstance(1735689600000L+1L);System.assertEquals(left,right);}\n@IsTest static void legacyEqualNextSecond(){Datetime left=Datetime.newInstance(1735689600000L);Datetime right=Datetime.newInstance(1735689600000L+1000L);System.assertEquals(left,right);}\n@IsTest static void modernEqualSameSecond(){Datetime left=Datetime.newInstance(1735689600000L);Datetime right=Datetime.newInstance(1735689600000L+1L);System.Assert.areEqual(left,right);}\n@IsTest static void modernEqualNextSecond(){Datetime left=Datetime.newInstance(1735689600000L);Datetime right=Datetime.newInstance(1735689600000L+1000L);System.Assert.areEqual(left,right);}\n@IsTest static void legacyNotEqualSameSecond(){Datetime left=Datetime.newInstance(1735689600000L);Datetime right=Datetime.newInstance(1735689600000L+1L);System.assertNotEquals(left,right);}\n@IsTest static void legacyNotEqualNextSecond(){Datetime left=Datetime.newInstance(1735689600000L);Datetime right=Datetime.newInstance(1735689600000L+1000L);System.assertNotEquals(left,right);}\n@IsTest static void modernNotEqualSameSecond(){Datetime left=Datetime.newInstance(1735689600000L);Datetime right=Datetime.newInstance(1735689600000L+1L);System.Assert.areNotEqual(left,right);}\n@IsTest static void modernNotEqualNextSecond(){Datetime left=Datetime.newInstance(1735689600000L);Datetime right=Datetime.newInstance(1735689600000L+1000L);System.Assert.areNotEqual(left,right);}\n@IsTest static void lowerEndpoint(){Datetime lower=NativeEndpointSamples.lower;System.assertEquals(lower,Datetime.now().addDays(-10));}\n@IsTest static void upperEndpoint(){Datetime upper=NativeEndpointSamples.upper;System.Assert.areEqual(upper,Datetime.now().addDays(10));}\n@IsTest static void positiveControl(){System.assertEquals(3,1+2);}\n}\n",
+        "force-app/main/default/classes/DateAssertionOutcomes.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/NativeEndpointSamples.cls": "public class NativeEndpointSamples {public static Datetime lower=Datetime.now().addDays(-10);public static Datetime upper=Datetime.now().addDays(10);}\n",
+        "force-app/main/default/classes/NativeEndpointSamples.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>54.0</apiVersion><status>Active</status></ApexClass>\n",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"62.0\"}\n"
+      },
+      "fileSHA256": {
+        "force-app/main/default/classes/DateAssertionOutcomes.cls": "318c9f8d55b9fd8473acc449f198f3d130aedf1dafb9601a1752a0b69e1be23b",
+        "force-app/main/default/classes/DateAssertionOutcomes.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "force-app/main/default/classes/NativeEndpointSamples.cls": "27c7704bf8f277776a8fd025505620227c1dfec37a5d76bb8e9fb9382321c028",
+        "force-app/main/default/classes/NativeEndpointSamples.cls-meta.xml": "030bf44e84495471ff5f2c210f44396f31c05e7cc8235f295d9dd2b5fea92bd4",
+        "sfdx-project.json": "66516866b2b0241e44d98c4af16e0c8e68568ddb4b71e5949b5921c6d208b7cb"
+      },
+      "checkOnly": true,
+      "rollbackOnError": true,
+      "rows": [
+        {
+          "method": "legacyEqualNextSecond",
+          "kind": "outcome",
+          "native": {
+            "status": "fail",
+            "message": "System.AssertException: Assertion Failed: Expected: 2025-01-01 00:00:00, Actual: 2025-01-01 00:00:01",
+            "stackTrace": "Class.DateAssertionOutcomes.legacyEqualNextSecond: line 3, column 1"
+          }
+        },
+        {
+          "method": "legacyEqualSameSecond",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        },
+        {
+          "method": "legacyNotEqualNextSecond",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        },
+        {
+          "method": "legacyNotEqualSameSecond",
+          "kind": "outcome",
+          "native": {
+            "status": "fail",
+            "message": "System.AssertException: Assertion Failed: Same value: 2025-01-01 00:00:00",
+            "stackTrace": "Class.DateAssertionOutcomes.legacyNotEqualSameSecond: line 6, column 1"
+          }
+        },
+        {
+          "method": "lowerEndpoint",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        },
+        {
+          "method": "modernEqualNextSecond",
+          "kind": "outcome",
+          "native": {
+            "status": "fail",
+            "message": "System.AssertException: Assertion Failed: Expected: 2025-01-01 00:00:00, Actual: 2025-01-01 00:00:01",
+            "stackTrace": "Class.DateAssertionOutcomes.modernEqualNextSecond: line 5, column 1"
+          }
+        },
+        {
+          "method": "modernEqualSameSecond",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        },
+        {
+          "method": "modernNotEqualNextSecond",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        },
+        {
+          "method": "modernNotEqualSameSecond",
+          "kind": "outcome",
+          "native": {
+            "status": "fail",
+            "message": "System.AssertException: Assertion Failed: Same value: 2025-01-01 00:00:00",
+            "stackTrace": "Class.DateAssertionOutcomes.modernNotEqualSameSecond: line 8, column 1"
+          }
+        },
+        {
+          "method": "positiveControl",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        },
+        {
+          "method": "upperEndpoint",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        }
+      ]
+    },
+    {
+      "id": "assertions-67",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "testClass": "DateAssertionOutcomes",
+      "files": {
+        "force-app/main/default/classes/DateAssertionOutcomes.cls": "@IsTest private class DateAssertionOutcomes {\n@IsTest static void legacyEqualSameSecond(){Datetime left=Datetime.newInstance(1735689600000L);Datetime right=Datetime.newInstance(1735689600000L+1L);System.assertEquals(left,right);}\n@IsTest static void legacyEqualNextSecond(){Datetime left=Datetime.newInstance(1735689600000L);Datetime right=Datetime.newInstance(1735689600000L+1000L);System.assertEquals(left,right);}\n@IsTest static void modernEqualSameSecond(){Datetime left=Datetime.newInstance(1735689600000L);Datetime right=Datetime.newInstance(1735689600000L+1L);System.Assert.areEqual(left,right);}\n@IsTest static void modernEqualNextSecond(){Datetime left=Datetime.newInstance(1735689600000L);Datetime right=Datetime.newInstance(1735689600000L+1000L);System.Assert.areEqual(left,right);}\n@IsTest static void legacyNotEqualSameSecond(){Datetime left=Datetime.newInstance(1735689600000L);Datetime right=Datetime.newInstance(1735689600000L+1L);System.assertNotEquals(left,right);}\n@IsTest static void legacyNotEqualNextSecond(){Datetime left=Datetime.newInstance(1735689600000L);Datetime right=Datetime.newInstance(1735689600000L+1000L);System.assertNotEquals(left,right);}\n@IsTest static void modernNotEqualSameSecond(){Datetime left=Datetime.newInstance(1735689600000L);Datetime right=Datetime.newInstance(1735689600000L+1L);System.Assert.areNotEqual(left,right);}\n@IsTest static void modernNotEqualNextSecond(){Datetime left=Datetime.newInstance(1735689600000L);Datetime right=Datetime.newInstance(1735689600000L+1000L);System.Assert.areNotEqual(left,right);}\n@IsTest static void lowerEndpoint(){Datetime lower=NativeEndpointSamples.lower;System.assertEquals(lower,Datetime.now().addDays(-10));}\n@IsTest static void upperEndpoint(){Datetime upper=NativeEndpointSamples.upper;System.Assert.areEqual(upper,Datetime.now().addDays(10));}\n@IsTest static void positiveControl(){System.assertEquals(3,1+2);}\n}\n",
+        "force-app/main/default/classes/DateAssertionOutcomes.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "force-app/main/default/classes/NativeEndpointSamples.cls": "public class NativeEndpointSamples {public static Datetime lower=Datetime.now().addDays(-10);public static Datetime upper=Datetime.now().addDays(10);}\n",
+        "force-app/main/default/classes/NativeEndpointSamples.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>54.0</apiVersion><status>Active</status></ApexClass>\n",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"62.0\"}\n"
+      },
+      "fileSHA256": {
+        "force-app/main/default/classes/DateAssertionOutcomes.cls": "318c9f8d55b9fd8473acc449f198f3d130aedf1dafb9601a1752a0b69e1be23b",
+        "force-app/main/default/classes/DateAssertionOutcomes.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "force-app/main/default/classes/NativeEndpointSamples.cls": "27c7704bf8f277776a8fd025505620227c1dfec37a5d76bb8e9fb9382321c028",
+        "force-app/main/default/classes/NativeEndpointSamples.cls-meta.xml": "030bf44e84495471ff5f2c210f44396f31c05e7cc8235f295d9dd2b5fea92bd4",
+        "sfdx-project.json": "66516866b2b0241e44d98c4af16e0c8e68568ddb4b71e5949b5921c6d208b7cb"
+      },
+      "checkOnly": true,
+      "rollbackOnError": true,
+      "rows": [
+        {
+          "method": "legacyEqualNextSecond",
+          "kind": "outcome",
+          "native": {
+            "status": "fail",
+            "message": "System.AssertException: Assertion Failed: Expected: 2025-01-01 00:00:00, Actual: 2025-01-01 00:00:01",
+            "stackTrace": "Class.DateAssertionOutcomes.legacyEqualNextSecond: line 3, column 1"
+          }
+        },
+        {
+          "method": "legacyEqualSameSecond",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        },
+        {
+          "method": "legacyNotEqualNextSecond",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        },
+        {
+          "method": "legacyNotEqualSameSecond",
+          "kind": "outcome",
+          "native": {
+            "status": "fail",
+            "message": "System.AssertException: Assertion Failed: Same value: 2025-01-01 00:00:00",
+            "stackTrace": "Class.DateAssertionOutcomes.legacyNotEqualSameSecond: line 6, column 1"
+          }
+        },
+        {
+          "method": "lowerEndpoint",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        },
+        {
+          "method": "modernEqualNextSecond",
+          "kind": "outcome",
+          "native": {
+            "status": "fail",
+            "message": "System.AssertException: Assertion Failed: Expected: 2025-01-01 00:00:00, Actual: 2025-01-01 00:00:01",
+            "stackTrace": "Class.DateAssertionOutcomes.modernEqualNextSecond: line 5, column 1"
+          }
+        },
+        {
+          "method": "modernEqualSameSecond",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        },
+        {
+          "method": "modernNotEqualNextSecond",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        },
+        {
+          "method": "modernNotEqualSameSecond",
+          "kind": "outcome",
+          "native": {
+            "status": "fail",
+            "message": "System.AssertException: Assertion Failed: Same value: 2025-01-01 00:00:00",
+            "stackTrace": "Class.DateAssertionOutcomes.modernNotEqualSameSecond: line 8, column 1"
+          }
+        },
+        {
+          "method": "positiveControl",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        },
+        {
+          "method": "upperEndpoint",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        }
+      ]
+    },
+    {
+      "id": "endpoint54-62",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "testClass": "Endpoint54Observation",
+      "files": {
+        "force-app/main/default/classes/Endpoint54Observation.cls": "@IsTest private class Endpoint54Observation {\n static Datetime lower=Datetime.now().addDays(-10);\n static Datetime upper=Datetime.now().addDays(10);\n @IsTest static void lowerEndpoint(){System.assertEquals(lower,Datetime.now().addDays(-10));}\n @IsTest static void upperEndpoint(){System.assertEquals(upper,Datetime.now().addDays(10));}\n @IsTest static void epochControl(){System.assertEquals(1735689600001L,Datetime.newInstance(1735689600001L).getTime());}\n}\n",
+        "force-app/main/default/classes/Endpoint54Observation.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>54.0</apiVersion><status>Active</status></ApexClass>\n",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"54.0\"}\n"
+      },
+      "fileSHA256": {
+        "force-app/main/default/classes/Endpoint54Observation.cls": "8d70d1c1499f2b10bdea8081a5965df8e52c88c72e0bd15405b35c55280f79eb",
+        "force-app/main/default/classes/Endpoint54Observation.cls-meta.xml": "030bf44e84495471ff5f2c210f44396f31c05e7cc8235f295d9dd2b5fea92bd4",
+        "sfdx-project.json": "796cfa0fde058dc05e444d8e5c6c3c77daf1614ed62abbd5fd1e24fd3c49ecf8"
+      },
+      "checkOnly": true,
+      "rollbackOnError": true,
+      "rows": [
+        {
+          "method": "epochControl",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        },
+        {
+          "method": "lowerEndpoint",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        },
+        {
+          "method": "upperEndpoint",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        }
+      ]
+    },
+    {
+      "id": "second-boundary-62",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "testClass": "SecondBoundaryObservation",
+      "files": {
+        "force-app/main/default/classes/SecondBoundaryObservation.cls": "@IsTest private class SecondBoundaryObservation {\n private static Map<String,Object> pair(Long left,Long right){Datetime a=Datetime.newInstance(left);Datetime b=Datetime.newInstance(right);return new Map<String,Object>{'left'=>a.getTime(),'right'=>b.getTime(),'equals'=>a.equals(b),'operator'=>a==b};}\n @IsTest static void boundaryComparisons(){Long base=1735689600000L;System.assertEquals('NATIVE_OBSERVATION',JSON.serialize(new Map<String,Object>{'within'=>pair(base+1L,base+999L),'across'=>pair(base+999L,base+1000L),'reverse'=>pair(base+1000L,base+999L),'before'=>pair(base-1L,base)}));}\n @IsTest static void positiveControl(){System.assertEquals(3,1+2);}\n}\n",
+        "force-app/main/default/classes/SecondBoundaryObservation.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"62.0\"}\n"
+      },
+      "fileSHA256": {
+        "force-app/main/default/classes/SecondBoundaryObservation.cls": "e989ce4950e5c42d71b111a443f38d72fbda276149a3ce43dd99b71c1d3acab9",
+        "force-app/main/default/classes/SecondBoundaryObservation.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "sfdx-project.json": "66516866b2b0241e44d98c4af16e0c8e68568ddb4b71e5949b5921c6d208b7cb"
+      },
+      "checkOnly": true,
+      "rollbackOnError": true,
+      "rows": [
+        {
+          "method": "boundaryComparisons",
+          "kind": "observation",
+          "native": {
+            "before": {
+              "operator": false,
+              "equals": false,
+              "right": 1735689600000,
+              "left": 1735689599999
+            },
+            "reverse": {
+              "operator": false,
+              "equals": false,
+              "right": 1735689600999,
+              "left": 1735689601000
+            },
+            "across": {
+              "operator": false,
+              "equals": false,
+              "right": 1735689601000,
+              "left": 1735689600999
+            },
+            "within": {
+              "operator": false,
+              "equals": true,
+              "right": 1735689600999,
+              "left": 1735689600001
+            }
+          }
+        },
+        {
+          "method": "positiveControl",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        }
+      ]
+    },
+    {
+      "id": "second-boundary-67",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "testClass": "SecondBoundaryObservation",
+      "files": {
+        "force-app/main/default/classes/SecondBoundaryObservation.cls": "@IsTest private class SecondBoundaryObservation {\n private static Map<String,Object> pair(Long left,Long right){Datetime a=Datetime.newInstance(left);Datetime b=Datetime.newInstance(right);return new Map<String,Object>{'left'=>a.getTime(),'right'=>b.getTime(),'equals'=>a.equals(b),'operator'=>a==b};}\n @IsTest static void boundaryComparisons(){Long base=1735689600000L;System.assertEquals('NATIVE_OBSERVATION',JSON.serialize(new Map<String,Object>{'within'=>pair(base+1L,base+999L),'across'=>pair(base+999L,base+1000L),'reverse'=>pair(base+1000L,base+999L),'before'=>pair(base-1L,base)}));}\n @IsTest static void positiveControl(){System.assertEquals(3,1+2);}\n}\n",
+        "force-app/main/default/classes/SecondBoundaryObservation.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"62.0\"}\n"
+      },
+      "fileSHA256": {
+        "force-app/main/default/classes/SecondBoundaryObservation.cls": "e989ce4950e5c42d71b111a443f38d72fbda276149a3ce43dd99b71c1d3acab9",
+        "force-app/main/default/classes/SecondBoundaryObservation.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "sfdx-project.json": "66516866b2b0241e44d98c4af16e0c8e68568ddb4b71e5949b5921c6d208b7cb"
+      },
+      "checkOnly": true,
+      "rollbackOnError": true,
+      "rows": [
+        {
+          "method": "boundaryComparisons",
+          "kind": "observation",
+          "native": {
+            "before": {
+              "operator": false,
+              "equals": false,
+              "right": 1735689600000,
+              "left": 1735689599999
+            },
+            "reverse": {
+              "operator": false,
+              "equals": false,
+              "right": 1735689600999,
+              "left": 1735689601000
+            },
+            "across": {
+              "operator": false,
+              "equals": false,
+              "right": 1735689601000,
+              "left": 1735689600999
+            },
+            "within": {
+              "operator": false,
+              "equals": true,
+              "right": 1735689600999,
+              "left": 1735689600001
+            }
+          }
+        },
+        {
+          "method": "positiveControl",
+          "kind": "outcome",
+          "native": {
+            "status": "pass"
+          }
+        }
+      ]
+    }
+  ]
+}

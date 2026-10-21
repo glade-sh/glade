@@ -18,7 +18,9 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Salesforce observations at both source API endpoints; all inputs are local.
+// Salesforce observations at API 62/67/68; all inputs are local. API 68 uses
+// the capture tools
+// (capture-revision-012310312458312507917637898451268706156520007562680435218905439787740686374650); all replayed answers equal 62/67.
 func TestSchemaDescribeOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected  string
@@ -41,7 +43,7 @@ func TestSchemaDescribeOrgConformance(t *testing.T) {
 	if len(data.Cases) != 293 || len(data.Remaining) != 3 {
 		t.Fatalf("oracle rows: %d supported + %d remaining", len(data.Cases), len(data.Remaining))
 	}
-	if strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle versions: %v", data.APIVersions)
 	}
 	seen := map[string]bool{}

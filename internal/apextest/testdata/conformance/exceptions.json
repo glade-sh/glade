@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "orgObjects": [
     "Account"
@@ -66,6 +67,11 @@
           "Name": "A06Native67R004",
           "Source": "@IsTest private class A06Native67R004 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new ExProbeException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "68.0": {
+          "Name": "A06Native68R004",
+          "Source": "@IsTest private class A06Native68R004 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new ExProbeException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
         }
       }
     },
@@ -119,6 +125,11 @@
           "Name": "A06Native67R009",
           "Source": "@IsTest private class A06Native67R009 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new ExOtherException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "68.0": {
+          "Name": "A06Native68R009",
+          "Source": "@IsTest private class A06Native68R009 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new ExOtherException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
         }
       }
     },
@@ -156,6 +167,11 @@
           "Name": "A06Native67R012",
           "Source": "@IsTest private class A06Native67R012 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException('message'); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
+        },
+        "68.0": {
+          "Name": "A06Native68R012",
+          "Source": "@IsTest private class A06Native68R012 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException('message'); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
         }
       }
     },
@@ -176,6 +192,11 @@
         "67.0": {
           "Name": "A06Native67R013",
           "Source": "@IsTest private class A06Native67R013 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException(''); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
+        },
+        "68.0": {
+          "Name": "A06Native68R013",
+          "Source": "@IsTest private class A06Native68R013 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException(''); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
         }
       }
@@ -198,6 +219,11 @@
           "Name": "A06Native67R014",
           "Source": "@IsTest private class A06Native67R014 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(NULL)"
+        },
+        "68.0": {
+          "Name": "A06Native68R014",
+          "Source": "@IsTest private class A06Native68R014 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(NULL)"
         }
       }
     },
@@ -218,6 +244,11 @@
         "67.0": {
           "Name": "A06Native67R015",
           "Source": "@IsTest private class A06Native67R015 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry {throw new NullPointerException('thrown');}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
+        },
+        "68.0": {
+          "Name": "A06Native68R015",
+          "Source": "@IsTest private class A06Native68R015 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry {throw new NullPointerException('thrown');}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
         }
       }
@@ -263,6 +294,11 @@
         "67.0": {
           "Name": "A06Native67R019",
           "Source": "@IsTest private class A06Native67R019 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new IllegalArgumentException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "68.0": {
+          "Name": "A06Native68R019",
+          "Source": "@IsTest private class A06Native68R019 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new IllegalArgumentException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
         }
       }
@@ -317,6 +353,11 @@
           "Name": "A06Native67R024",
           "Source": "@IsTest private class A06Native67R024 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new TypeException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "68.0": {
+          "Name": "A06Native68R024",
+          "Source": "@IsTest private class A06Native68R024 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new TypeException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
         }
       }
     },
@@ -369,6 +410,11 @@
         "67.0": {
           "Name": "A06Native67R029",
           "Source": "@IsTest private class A06Native67R029 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new ListException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "68.0": {
+          "Name": "A06Native68R029",
+          "Source": "@IsTest private class A06Native68R029 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new ListException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
         }
       }
@@ -423,6 +469,11 @@
           "Name": "A06Native67R034",
           "Source": "@IsTest private class A06Native67R034 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new StringException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "68.0": {
+          "Name": "A06Native68R034",
+          "Source": "@IsTest private class A06Native68R034 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new StringException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
         }
       }
     },
@@ -475,6 +526,11 @@
         "67.0": {
           "Name": "A06Native67R039",
           "Source": "@IsTest private class A06Native67R039 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new QueryException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "68.0": {
+          "Name": "A06Native68R039",
+          "Source": "@IsTest private class A06Native68R039 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new QueryException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
         }
       }
@@ -529,6 +585,11 @@
           "Name": "A06Native67R044",
           "Source": "@IsTest private class A06Native67R044 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new MathException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "68.0": {
+          "Name": "A06Native68R044",
+          "Source": "@IsTest private class A06Native68R044 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new MathException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
         }
       }
     },
@@ -581,6 +642,11 @@
         "67.0": {
           "Name": "A06Native67R049",
           "Source": "@IsTest private class A06Native67R049 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new JSONException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
+        },
+        "68.0": {
+          "Name": "A06Native68R049",
+          "Source": "@IsTest private class A06Native68R049 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new JSONException(null); r=e.getTypeName()+'|'+e.getMessage()+'|'+String.valueOf(e.getCause()==null);\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tAmbiguous method signature: void <init>(NULL)"
         }
       }
@@ -874,6 +940,11 @@
         "67.0": {
           "Name": "A06Native67R084",
           "Source": "@IsTest private class A06Native67R084 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new ExProbeException('m');r=e instanceof Exception;\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tOperation instanceof is always true since an instance of Exception is always an instance of Exception"
+        },
+        "68.0": {
+          "Name": "A06Native68R084",
+          "Source": "@IsTest private class A06Native68R084 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new ExProbeException('m');r=e instanceof Exception;\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tOperation instanceof is always true since an instance of Exception is always an instance of Exception"
         }
       }
@@ -1464,6 +1535,11 @@
           "Name": "A06Native67R156",
           "Source": "@IsTest private class A06Native67R156 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nString t='';try{t+='try|';throw new NullPointerException('x');}catch(ExProbeException e){t+='custom|';}catch(NullPointerException e){t+='null|';}catch(Exception e){t+='base|';}finally{t+='finally';}r=t;\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
+        },
+        "68.0": {
+          "Name": "A06Native68R156",
+          "Source": "@IsTest private class A06Native68R156 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nString t='';try{t+='try|';throw new NullPointerException('x');}catch(ExProbeException e){t+='custom|';}catch(NullPointerException e){t+='null|';}catch(Exception e){t+='base|';}finally{t+='finally';}r=t;\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
         }
       }
     },
@@ -1484,6 +1560,11 @@
         "67.0": {
           "Name": "A06Native67R157",
           "Source": "@IsTest private class A06Native67R157 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{try{throw new NullPointerException('x');}catch(ExProbeException e){throw e;}}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
+        },
+        "68.0": {
+          "Name": "A06Native68R157",
+          "Source": "@IsTest private class A06Native68R157 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{try{throw new NullPointerException('x');}catch(ExProbeException e){throw e;}}catch(Exception e){r=e.getTypeName()+'|'+e.getMessage();}\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(String)"
         }
       }
@@ -1634,6 +1715,11 @@
           "Name": "A06Native67R174",
           "Source": "@IsTest private class A06Native67R174 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nInteger n=0;try{throw new ExProbeException('x');}catch(Exception e){n++;}catch(ExProbeException e){n+=10;}r=n;\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tException type already caught: A06Native67R174.ExProbeException"
+        },
+        "68.0": {
+          "Name": "A06Native68R174",
+          "Source": "@IsTest private class A06Native68R174 {\nclass ExProbeException extends Exception {}\nclass ExOtherException extends Exception {}\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nInteger n=0;try{throw new ExProbeException('x');}catch(Exception e){n++;}catch(ExProbeException e){n+=10;}r=n;\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException type already caught: A06Native68R174.ExProbeException"
         }
       }
     },
@@ -1966,6 +2052,11 @@
           "Name": "A06Native67C001",
           "Source": "@IsTest private class A06Native67C001 {\nclass ValidException extends Exception {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                          Exception e=new ValidException(); pq.out('C001','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "compiled"
+        },
+        "68.0": {
+          "Name": "A06Native68C001",
+          "Source": "@IsTest private class A06Native68C001 {\nclass ValidException extends Exception {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                          Exception e=new ValidException(); pq.out('C001','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
         }
       }
     },
@@ -1986,6 +2077,11 @@
           "Name": "A06Native67C002",
           "Source": "@IsTest private class A06Native67C002 {\nclass ValidException extends Exception {public Integer extra=7;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                 ValidException e=new ValidException(); pq.out('C002','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "compiled"
+        },
+        "68.0": {
+          "Name": "A06Native68C002",
+          "Source": "@IsTest private class A06Native68C002 {\nclass ValidException extends Exception {public Integer extra=7;}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                 ValidException e=new ValidException(); pq.out('C002','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
         }
       }
     },
@@ -2005,6 +2101,11 @@
         "67.0": {
           "Name": "A06Native67C003",
           "Source": "@IsTest private class A06Native67C003 {\nclass ValidException extends System.Exception {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                 Exception e=new ValidException('x'); pq.out('C003','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "68.0": {
+          "Name": "A06Native68C003",
+          "Source": "@IsTest private class A06Native68C003 {\nclass ValidException extends System.Exception {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                 Exception e=new ValidException('x'); pq.out('C003','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "compiled"
         }
       }
@@ -2027,6 +2128,11 @@
           "Name": "A06Native67C004",
           "Source": "@IsTest private class A06Native67C004 {\nclass BadName extends Exception {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                   pq.out('C004','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06Native67C004.BadName"
+        },
+        "68.0": {
+          "Name": "A06Native68C004",
+          "Source": "@IsTest private class A06Native68C004 {\nclass BadName extends Exception {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                   pq.out('C004','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06Native68C004.BadName"
         }
       }
     },
@@ -2048,6 +2154,11 @@
           "Name": "A06Native67C005",
           "Source": "@IsTest private class A06Native67C005 {\nclass ExceptionChild extends Exception {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                          pq.out('C005','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06Native67C005.ExceptionChild"
+        },
+        "68.0": {
+          "Name": "A06Native68C005",
+          "Source": "@IsTest private class A06Native68C005 {\nclass ExceptionChild extends Exception {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                          pq.out('C005','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06Native68C005.ExceptionChild"
         }
       }
     },
@@ -2069,6 +2180,11 @@
           "Name": "A06Native67C006",
           "Source": "@IsTest private class A06Native67C006 {\nclass ValidException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                        throw new ValidException(); pq.out('C006','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tException class must extend another Exception class: A06Native67C006.ValidException"
+        },
+        "68.0": {
+          "Name": "A06Native68C006",
+          "Source": "@IsTest private class A06Native68C006 {\nclass ValidException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                        throw new ValidException(); pq.out('C006','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException class must extend another Exception class: A06Native68C006.ValidException"
         }
       }
     },
@@ -2089,6 +2205,11 @@
         "67.0": {
           "Name": "A06Native67C007",
           "Source": "@IsTest private class A06Native67C007 {\nclass ValidException extends Object {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                       pq.out('C007','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException class must extend another Exception class: Object"
+        },
+        "68.0": {
+          "Name": "A06Native68C007",
+          "Source": "@IsTest private class A06Native68C007 {\nclass ValidException extends Object {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                       pq.out('C007','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tException class must extend another Exception class: Object"
         }
       }
@@ -2111,6 +2232,11 @@
           "Name": "A06Native67C008",
           "Source": "@IsTest private class A06Native67C008 {\nclass ValidException extends Exception {public ValidException(String s){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                           pq.out('C008','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tSystem exception constructor already defined: void <init>(String)"
+        },
+        "68.0": {
+          "Name": "A06Native68C008",
+          "Source": "@IsTest private class A06Native68C008 {\nclass ValidException extends Exception {public ValidException(String s){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                           pq.out('C008','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tSystem exception constructor already defined: void <init>(String)"
         }
       }
     },
@@ -2132,6 +2258,11 @@
           "Name": "A06Native67C009",
           "Source": "@IsTest private class A06Native67C009 {\nvirtual class BaseException extends Exception {}\nclass ChildException extends BaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                               pq.out('C009','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "compiled"
+        },
+        "68.0": {
+          "Name": "A06Native68C009",
+          "Source": "@IsTest private class A06Native68C009 {\nvirtual class BaseException extends Exception {}\nclass ChildException extends BaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                               pq.out('C009','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
         }
       }
     },
@@ -2152,6 +2283,11 @@
           "Name": "A06Native67C010",
           "Source": "@IsTest private class A06Native67C010 {\nclass BaseException extends Exception {}\nclass ChildException extends BaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                       pq.out('C010','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tNon-virtual and non-abstract type cannot be extended: A06Native67C010.BaseException"
+        },
+        "68.0": {
+          "Name": "A06Native68C010",
+          "Source": "@IsTest private class A06Native68C010 {\nclass BaseException extends Exception {}\nclass ChildException extends BaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                       pq.out('C010','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tNon-virtual and non-abstract type cannot be extended: A06Native68C010.BaseException"
         }
       }
     },
@@ -2172,6 +2308,11 @@
           "Name": "A06Native67C011",
           "Source": "@IsTest private class A06Native67C011 {\nclass ValidException extends Exception {public override String getMessage(){return 'x';}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                          pq.out('C011','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "compiled"
+        },
+        "68.0": {
+          "Name": "A06Native68C011",
+          "Source": "@IsTest private class A06Native68C011 {\nclass ValidException extends Exception {public override String getMessage(){return 'x';}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                          pq.out('C011','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
         }
       }
     },
@@ -2191,6 +2332,11 @@
         "67.0": {
           "Name": "A06Native67C012",
           "Source": "@IsTest private class A06Native67C012 {\nclass ValidException extends Exception {public String customName(){return getTypeName();}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                           pq.out('C012','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "68.0": {
+          "Name": "A06Native68C012",
+          "Source": "@IsTest private class A06Native68C012 {\nclass ValidException extends Exception {public String customName(){return getTypeName();}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                           pq.out('C012','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "compiled"
         }
       }
@@ -2213,6 +2359,11 @@
           "Name": "A06Native67C013",
           "Source": "@IsTest private class A06Native67C013 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new Exception(); pq.out('C013','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tType cannot be constructed: Exception"
+        },
+        "68.0": {
+          "Name": "A06Native68C013",
+          "Source": "@IsTest private class A06Native68C013 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new Exception(); pq.out('C013','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tType cannot be constructed: Exception"
         }
       }
     },
@@ -2233,6 +2384,11 @@
         "67.0": {
           "Name": "A06Native67C014",
           "Source": "@IsTest private class A06Native67C014 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new System.Exception('x'); pq.out('C014','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tType cannot be constructed: Exception"
+        },
+        "68.0": {
+          "Name": "A06Native68C014",
+          "Source": "@IsTest private class A06Native68C014 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new System.Exception('x'); pq.out('C014','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tType cannot be constructed: Exception"
         }
       }
@@ -2255,6 +2411,11 @@
           "Name": "A06Native67C015",
           "Source": "@IsTest private class A06Native67C015 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException(1); pq.out('C015','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(Integer)"
+        },
+        "68.0": {
+          "Name": "A06Native68C015",
+          "Source": "@IsTest private class A06Native68C015 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException(1); pq.out('C015','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tConstructor not defined: [System.NullPointerException].<Constructor>(Integer)"
         }
       }
     },
@@ -2275,6 +2436,11 @@
         "67.0": {
           "Name": "A06Native67C016",
           "Source": "@IsTest private class A06Native67C016 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nthrow 1; pq.out('C016','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tThrow expression must be of type exception: Integer"
+        },
+        "68.0": {
+          "Name": "A06Native68C016",
+          "Source": "@IsTest private class A06Native68C016 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nthrow 1; pq.out('C016','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tThrow expression must be of type exception: Integer"
         }
       }
@@ -2297,6 +2463,11 @@
           "Name": "A06Native67C017",
           "Source": "@IsTest private class A06Native67C017 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nthrow 'text'; pq.out('C017','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tThrow expression must be of type exception: String"
+        },
+        "68.0": {
+          "Name": "A06Native68C017",
+          "Source": "@IsTest private class A06Native68C017 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nthrow 'text'; pq.out('C017','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tThrow expression must be of type exception: String"
         }
       }
     },
@@ -2317,6 +2488,11 @@
         "67.0": {
           "Name": "A06Native67C018",
           "Source": "@IsTest private class A06Native67C018 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nthrow new Account(); pq.out('C018','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tThrow expression must be of type exception: Account"
+        },
+        "68.0": {
+          "Name": "A06Native68C018",
+          "Source": "@IsTest private class A06Native68C018 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nthrow new Account(); pq.out('C018','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tThrow expression must be of type exception: Account"
         }
       }
@@ -2339,6 +2515,11 @@
           "Name": "A06Native67C019",
           "Source": "@IsTest private class A06Native67C019 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nObject e=new NullPointerException();throw e; pq.out('C019','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tThrow expression must be of type exception: Object"
+        },
+        "68.0": {
+          "Name": "A06Native68C019",
+          "Source": "@IsTest private class A06Native68C019 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nObject e=new NullPointerException();throw e; pq.out('C019','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tThrow expression must be of type exception: Object"
         }
       }
     },
@@ -2359,6 +2540,11 @@
         "67.0": {
           "Name": "A06Native67C020",
           "Source": "@IsTest private class A06Native67C020 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nthrow; pq.out('C020','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tUnexpected token ';'."
+        },
+        "68.0": {
+          "Name": "A06Native68C020",
+          "Source": "@IsTest private class A06Native68C020 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nthrow; pq.out('C020','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tUnexpected token ';'."
         }
       }
@@ -2381,6 +2567,11 @@
           "Name": "A06Native67C021",
           "Source": "@IsTest private class A06Native67C021 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(String e){} pq.out('C021','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tCatch block variable must be of type exception: String"
+        },
+        "68.0": {
+          "Name": "A06Native68C021",
+          "Source": "@IsTest private class A06Native68C021 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(String e){} pq.out('C021','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tCatch block variable must be of type exception: String"
         }
       }
     },
@@ -2401,6 +2592,11 @@
         "67.0": {
           "Name": "A06Native67C022",
           "Source": "@IsTest private class A06Native67C022 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Object e){} pq.out('C022','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tCatch block variable must be of type exception: Object"
+        },
+        "68.0": {
+          "Name": "A06Native68C022",
+          "Source": "@IsTest private class A06Native68C022 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Object e){} pq.out('C022','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tCatch block variable must be of type exception: Object"
         }
       }
@@ -2423,6 +2619,11 @@
           "Name": "A06Native67C023",
           "Source": "@IsTest private class A06Native67C023 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Account e){} pq.out('C023','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tCatch block variable must be of type exception: Account"
+        },
+        "68.0": {
+          "Name": "A06Native68C023",
+          "Source": "@IsTest private class A06Native68C023 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Account e){} pq.out('C023','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tCatch block variable must be of type exception: Account"
         }
       }
     },
@@ -2443,6 +2644,11 @@
         "67.0": {
           "Name": "A06Native67C024",
           "Source": "@IsTest private class A06Native67C024 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception){} pq.out('C024','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tUnexpected token ')'."
+        },
+        "68.0": {
+          "Name": "A06Native68C024",
+          "Source": "@IsTest private class A06Native68C024 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception){} pq.out('C024','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tUnexpected token ')'."
         }
       }
@@ -2465,6 +2671,11 @@
           "Name": "A06Native67C025",
           "Source": "@IsTest private class A06Native67C025 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(e){} pq.out('C025','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tUnexpected token ')'."
+        },
+        "68.0": {
+          "Name": "A06Native68C025",
+          "Source": "@IsTest private class A06Native68C025 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(e){} pq.out('C025','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tUnexpected token ')'."
         }
       }
     },
@@ -2485,6 +2696,11 @@
         "67.0": {
           "Name": "A06Native67C026",
           "Source": "@IsTest private class A06Native67C026 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception e,Exception f){} pq.out('C026','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tExpecting ')' but was: ','"
+        },
+        "68.0": {
+          "Name": "A06Native68C026",
+          "Source": "@IsTest private class A06Native68C026 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception e,Exception f){} pq.out('C026','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tExpecting ')' but was: ','"
         }
       }
@@ -2507,6 +2723,11 @@
           "Name": "A06Native67C027",
           "Source": "@IsTest private class A06Native67C027 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception e){}catch(Exception e){} pq.out('C027','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tException type already caught: Exception"
+        },
+        "68.0": {
+          "Name": "A06Native68C027",
+          "Source": "@IsTest private class A06Native68C027 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception e){}catch(Exception e){} pq.out('C027','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException type already caught: Exception"
         }
       }
     },
@@ -2527,6 +2748,11 @@
         "67.0": {
           "Name": "A06Native67C028",
           "Source": "@IsTest private class A06Native67C028 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception e){}catch(NullPointerException e){} pq.out('C028','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException type already caught: System.NullPointerException"
+        },
+        "68.0": {
+          "Name": "A06Native68C028",
+          "Source": "@IsTest private class A06Native68C028 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception e){}catch(NullPointerException e){} pq.out('C028','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tException type already caught: System.NullPointerException"
         }
       }
@@ -2549,6 +2775,11 @@
           "Name": "A06Native67C029",
           "Source": "@IsTest private class A06Native67C029 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}finally{}catch(Exception e){} pq.out('C029','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tExpecting '}' but was: 'catch'"
+        },
+        "68.0": {
+          "Name": "A06Native68C029",
+          "Source": "@IsTest private class A06Native68C029 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}finally{}catch(Exception e){} pq.out('C029','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tExpecting '}' but was: 'catch'"
         }
       }
     },
@@ -2569,6 +2800,11 @@
         "67.0": {
           "Name": "A06Native67C030",
           "Source": "@IsTest private class A06Native67C030 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}finally{}finally{} pq.out('C030','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tExpecting '}' but was: 'finally'"
+        },
+        "68.0": {
+          "Name": "A06Native68C030",
+          "Source": "@IsTest private class A06Native68C030 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}finally{}finally{} pq.out('C030','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tExpecting '}' but was: 'finally'"
         }
       }
@@ -2591,6 +2827,11 @@
           "Name": "A06Native67C031",
           "Source": "@IsTest private class A06Native67C031 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{} pq.out('C031','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tTry block must have at least one catch block or a finally block"
+        },
+        "68.0": {
+          "Name": "A06Native68C031",
+          "Source": "@IsTest private class A06Native68C031 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{} pq.out('C031','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tTry block must have at least one catch block or a finally block"
         }
       }
     },
@@ -2611,6 +2852,11 @@
         "67.0": {
           "Name": "A06Native67C032",
           "Source": "@IsTest private class A06Native67C032 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ncatch(Exception e){} pq.out('C032','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tExpecting '}' but was: 'catch'"
+        },
+        "68.0": {
+          "Name": "A06Native68C032",
+          "Source": "@IsTest private class A06Native68C032 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ncatch(Exception e){} pq.out('C032','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tExpecting '}' but was: 'catch'"
         }
       }
@@ -2633,6 +2879,11 @@
           "Name": "A06Native67C033",
           "Source": "@IsTest private class A06Native67C033 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nfinally{} pq.out('C033','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tExpecting '}' but was: 'finally'"
+        },
+        "68.0": {
+          "Name": "A06Native68C033",
+          "Source": "@IsTest private class A06Native68C033 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nfinally{} pq.out('C033','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tExpecting '}' but was: 'finally'"
         }
       }
     },
@@ -2654,6 +2905,11 @@
           "Name": "A06Native67C034",
           "Source": "@IsTest private class A06Native67C034 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception e){}e.getMessage(); pq.out('C034','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tVariable does not exist: e"
+        },
+        "68.0": {
+          "Name": "A06Native68C034",
+          "Source": "@IsTest private class A06Native68C034 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(Exception e){}e.getMessage(); pq.out('C034','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tVariable does not exist: e"
         }
       }
     },
@@ -2673,6 +2929,11 @@
         "67.0": {
           "Name": "A06Native67C035",
           "Source": "@IsTest private class A06Native67C035 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(NullPointerException e){String x=e.getMessage();} pq.out('C035','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "68.0": {
+          "Name": "A06Native68C035",
+          "Source": "@IsTest private class A06Native68C035 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(NullPointerException e){String x=e.getMessage();} pq.out('C035','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "compiled"
         }
       }
@@ -2694,6 +2955,11 @@
           "Name": "A06Native67C036",
           "Source": "@IsTest private class A06Native67C036 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(LimitException e){} pq.out('C036','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "compiled"
+        },
+        "68.0": {
+          "Name": "A06Native68C036",
+          "Source": "@IsTest private class A06Native68C036 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\ntry{}catch(LimitException e){} pq.out('C036','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
         }
       }
     },
@@ -2714,6 +2980,11 @@
           "Name": "A06Native67C037",
           "Source": "@IsTest private class A06Native67C037 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nLimitException e=new LimitException(); pq.out('C037','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "compiled"
+        },
+        "68.0": {
+          "Name": "A06Native68C037",
+          "Source": "@IsTest private class A06Native68C037 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nLimitException e=new LimitException(); pq.out('C037','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
         }
       }
     },
@@ -2733,6 +3004,11 @@
         "67.0": {
           "Name": "A06Native67C038",
           "Source": "@IsTest private class A06Native67C038 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nif(false){throw new LimitException('manual');} pq.out('C038','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "68.0": {
+          "Name": "A06Native68C038",
+          "Source": "@IsTest private class A06Native68C038 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nif(false){throw new LimitException('manual');} pq.out('C038','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "compiled"
         }
       }
@@ -2755,6 +3031,11 @@
           "Name": "A06Native67C039",
           "Source": "@IsTest private class A06Native67C039 {\nclass ValidException extends LimitException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                               pq.out('C039','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tNon-virtual and non-abstract type cannot be extended: System.LimitException"
+        },
+        "68.0": {
+          "Name": "A06Native68C039",
+          "Source": "@IsTest private class A06Native68C039 {\nclass ValidException extends LimitException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                               pq.out('C039','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tNon-virtual and non-abstract type cannot be extended: System.LimitException"
         }
       }
     },
@@ -2775,6 +3056,11 @@
         "67.0": {
           "Name": "A06Native67C040",
           "Source": "@IsTest private class A06Native67C040 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException();e.setMessage(1); pq.out('C040','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void setMessage(Integer) from the type Exception"
+        },
+        "68.0": {
+          "Name": "A06Native68C040",
+          "Source": "@IsTest private class A06Native68C040 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException();e.setMessage(1); pq.out('C040','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void setMessage(Integer) from the type Exception"
         }
       }
@@ -2797,6 +3083,11 @@
           "Name": "A06Native67C041",
           "Source": "@IsTest private class A06Native67C041 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException();e.getMessage(1); pq.out('C041','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void getMessage(Integer) from the type Exception"
+        },
+        "68.0": {
+          "Name": "A06Native68C041",
+          "Source": "@IsTest private class A06Native68C041 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException();e.getMessage(1); pq.out('C041','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void getMessage(Integer) from the type Exception"
         }
       }
     },
@@ -2818,6 +3109,11 @@
           "Name": "A06Native67C042",
           "Source": "@IsTest private class A06Native67C042 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException();e.setCause(new NullPointerException()); pq.out('C042','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void setCause(System.NullPointerException) from the type Exception"
+        },
+        "68.0": {
+          "Name": "A06Native68C042",
+          "Source": "@IsTest private class A06Native68C042 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException();e.setCause(new NullPointerException()); pq.out('C042','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tMethod does not exist or incorrect signature: void setCause(System.NullPointerException) from the type Exception"
         }
       }
     },
@@ -2837,6 +3133,11 @@
         "67.0": {
           "Name": "A06Native67C043",
           "Source": "@IsTest private class A06Native67C043 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException();e.getLineNumber();e.getStackTraceString();e.getCause(); pq.out('C043','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "68.0": {
+          "Name": "A06Native68C043",
+          "Source": "@IsTest private class A06Native68C043 {\n\n@IsTest static void observed(){\nP pq=new P(); Object r;\nException e=new NullPointerException();e.getLineNumber();e.getStackTraceString();e.getCause(); pq.out('C043','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "compiled"
         }
       }
@@ -2981,6 +3282,11 @@
           "Name": "A06Native67K001",
           "Source": "@IsTest private class A06Native67K001 {\nclass CustomException extends Exception {public CustomException(){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                     pq.out('K001','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tSystem exception constructor already defined: void <init>()"
+        },
+        "68.0": {
+          "Name": "A06Native68K001",
+          "Source": "@IsTest private class A06Native68K001 {\nclass CustomException extends Exception {public CustomException(){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                     pq.out('K001','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tSystem exception constructor already defined: void <init>()"
         }
       }
     },
@@ -3001,6 +3307,11 @@
         "67.0": {
           "Name": "A06Native67K002",
           "Source": "@IsTest private class A06Native67K002 {\nclass CustomException extends Exception {public CustomException(Exception cause){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                    pq.out('K002','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tSystem exception constructor already defined: void <init>(Exception)"
+        },
+        "68.0": {
+          "Name": "A06Native68K002",
+          "Source": "@IsTest private class A06Native68K002 {\nclass CustomException extends Exception {public CustomException(Exception cause){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                    pq.out('K002','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tSystem exception constructor already defined: void <init>(Exception)"
         }
       }
@@ -3023,6 +3334,11 @@
           "Name": "A06Native67K003",
           "Source": "@IsTest private class A06Native67K003 {\nclass CustomException extends Exception {public CustomException(String message,Exception cause){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                   pq.out('K003','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tSystem exception constructor already defined: void <init>(String, Exception)"
+        },
+        "68.0": {
+          "Name": "A06Native68K003",
+          "Source": "@IsTest private class A06Native68K003 {\nclass CustomException extends Exception {public CustomException(String message,Exception cause){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                   pq.out('K003','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tSystem exception constructor already defined: void <init>(String, Exception)"
         }
       }
     },
@@ -3043,6 +3359,11 @@
           "Name": "A06Native67K004",
           "Source": "@IsTest private class A06Native67K004 {\nclass CustomException extends Exception {public CustomException(Integer code){setMessage(String.valueOf(code));}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                                  Exception e=new CustomException(7); pq.out('K004','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "compiled"
+        },
+        "68.0": {
+          "Name": "A06Native68K004",
+          "Source": "@IsTest private class A06Native68K004 {\nclass CustomException extends Exception {public CustomException(Integer code){setMessage(String.valueOf(code));}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                                                  Exception e=new CustomException(7); pq.out('K004','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
         }
       }
     },
@@ -3062,6 +3383,11 @@
         "67.0": {
           "Name": "A06Native67K005",
           "Source": "@IsTest private class A06Native67K005 {\nclass CustomException extends Exception {public CustomException(Boolean flag){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                 pq.out('K005','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "68.0": {
+          "Name": "A06Native68K005",
+          "Source": "@IsTest private class A06Native68K005 {\nclass CustomException extends Exception {public CustomException(Boolean flag){}}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                 pq.out('K005','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "compiled"
         }
       }
@@ -3084,6 +3410,11 @@
           "Name": "A06Native67K006",
           "Source": "@IsTest private class A06Native67K006 {\nclass BaseException extends Exception {}\nclass BadName extends BaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                pq.out('K006','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06Native67K006.BadName"
+        },
+        "68.0": {
+          "Name": "A06Native68K006",
+          "Source": "@IsTest private class A06Native68K006 {\nclass BaseException extends Exception {}\nclass BadName extends BaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                                pq.out('K006','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06Native68K006.BadName"
         }
       }
     },
@@ -3105,6 +3436,11 @@
           "Name": "A06Native67K007",
           "Source": "@IsTest private class A06Native67K007 {\nclass OtherBase {}\nclass WrongException extends OtherBase {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                             pq.out('K007','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tException class must extend another Exception class: A06Native67K007.OtherBase"
+        },
+        "68.0": {
+          "Name": "A06Native68K007",
+          "Source": "@IsTest private class A06Native68K007 {\nclass OtherBase {}\nclass WrongException extends OtherBase {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                             pq.out('K007','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tException class must extend another Exception class: A06Native68K007.OtherBase"
         }
       }
     },
@@ -3125,6 +3461,11 @@
         "67.0": {
           "Name": "A06Native67K008",
           "Source": "@IsTest private class A06Native67K008 {\nclass ValidException extends System.LimitException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                      pq.out('K008','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tNon-virtual and non-abstract type cannot be extended: System.LimitException"
+        },
+        "68.0": {
+          "Name": "A06Native68K008",
+          "Source": "@IsTest private class A06Native68K008 {\nclass ValidException extends System.LimitException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                      pq.out('K008','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tNon-virtual and non-abstract type cannot be extended: System.LimitException"
         }
       }
@@ -3322,6 +3663,11 @@
           "Name": "A06DependencyNative67D001",
           "Source": "@IsTest private class A06DependencyNative67D001 {\nclass A06DependencyChildException extends A06DependencyBaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                        pq.out('D001','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "compiled"
+        },
+        "68.0": {
+          "Name": "A06DependencyNative68D001",
+          "Source": "@IsTest private class A06DependencyNative68D001 {\nclass A06DependencyChildException extends A06DependencyBaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                        pq.out('D001','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
         }
       }
     },
@@ -3343,6 +3689,11 @@
           "Name": "A06DependencyNative67D002",
           "Source": "@IsTest private class A06DependencyNative67D002 {\nclass A06DependencyBadName extends A06DependencyBaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                 pq.out('D002','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06DependencyNative67D002.A06DependencyBadName"
+        },
+        "68.0": {
+          "Name": "A06DependencyNative68D002",
+          "Source": "@IsTest private class A06DependencyNative68D002 {\nclass A06DependencyBadName extends A06DependencyBaseException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                 pq.out('D002','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "COMPILE_ERROR\tClasses extending Exception must have a name ending in Exception: A06DependencyNative68D002.A06DependencyBadName"
         }
       }
     },
@@ -3362,6 +3713,11 @@
         "67.0": {
           "Name": "A06DependencyNative67D003",
           "Source": "@IsTest private class A06DependencyNative67D003 {\nclass A06DependencyChildException extends A06DependencyMidException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                       pq.out('D003','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
+          "Expected": "compiled"
+        },
+        "68.0": {
+          "Name": "A06DependencyNative68D003",
+          "Source": "@IsTest private class A06DependencyNative68D003 {\nclass A06DependencyChildException extends A06DependencyMidException {}\n@IsTest static void observed(){\nP pq=new P(); Object r;\n                                                                       pq.out('D003','accepted');\n}\nprivate class P {public void out(String id,Object v){} public void err(String id,Exception e){}}\n}\n",
           "Expected": "compiled"
         }
       }

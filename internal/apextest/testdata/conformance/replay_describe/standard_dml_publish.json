@@ -1,0 +1,457 @@
+{
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "standard_dml_publish",
+  "shapeCount": 2,
+  "nativeObservationCount": 16,
+  "assertedObservationCount": 16,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C168RP_098",
+      "group": "standard-dml-publish",
+      "role": "standard-boundary",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "ccc0dc2c9fecc16a51e10cfadeb04e0a288fb0b28bf48d59e237140aaf6b6efe",
+          "sourceSha256": {
+            "anonymous": "48c490d2bd630108596223faa4b1e3354f60dccf558b6622922cd28c15c76464"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.TypeException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 55,
+                      "text": "DML operation INSERT not allowed on BatchApexErrorEvent"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"truncated\":false,\"length\":55,\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.TypeException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 55,
+                      "text": "DML operation INSERT not allowed on BatchApexErrorEvent"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"truncated\":false,\"length\":55,\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.TypeException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 55,
+                      "text": "DML operation INSERT not allowed on BatchApexErrorEvent"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"truncated\":false,\"length\":55,\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.TypeException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 55,
+                      "text": "DML operation INSERT not allowed on BatchApexErrorEvent"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"truncated\":false,\"length\":55,\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\"}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_098');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "ccc0dc2c9fecc16a51e10cfadeb04e0a288fb0b28bf48d59e237140aaf6b6efe",
+          "sourceSha256": {
+            "class:C168C168RP098Test": "a62c48d0298e9de6efdf869481dbeaa82f6fbce71f9e5db78ce59819fafeaa8b"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "1QQ"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"1QQ\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "1QQ"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"1QQ\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": false,
+                    "id": {
+                      "isNull": true
+                    },
+                    "errors": [
+                      {
+                        "status": "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+                        "message": {
+                          "truncated": false,
+                          "length": 55,
+                          "text": "DML operation INSERT not allowed on BatchApexErrorEvent"
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":false,\"id\":{\"isNull\":true},\"errors\":[{\"status\":\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\",\"message\":{\"truncated\":false,\"length\":55,\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\"},\"fields\":[]}],\"record\":{}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": false,
+                    "id": {
+                      "isNull": true
+                    },
+                    "errors": [
+                      {
+                        "status": "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+                        "message": {
+                          "truncated": false,
+                          "length": 55,
+                          "text": "DML operation INSERT not allowed on BatchApexErrorEvent"
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {}
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":false,\"id\":{\"isNull\":true},\"errors\":[{\"status\":\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\",\"message\":{\"truncated\":false,\"length\":55,\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\"},\"fields\":[]}],\"record\":{}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP098Test": "@IsTest private class C168C168RP098Test{@IsTest static void observe(){Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Database.SaveResult sr=Database.insert(s,false);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_098');}}"
+          },
+          "tests": [
+            "C168C168RP098Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_099",
+      "group": "standard-dml-publish",
+      "role": "standard-boundary",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "bb3f376e4802acea06865af2cee2c648bb3ad0ed71aac514ae1a78b0a3d3ed15",
+          "sourceSha256": {
+            "anonymous": "31b0233f2f928d4e275288d02ebeb48cc8cc344ca14ff351c1fc72ad5f5a90ae"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.TypeException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 55,
+                      "text": "DML operation INSERT not allowed on BatchApexErrorEvent"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"truncated\":false,\"length\":55,\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\"}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.TypeException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 55,
+                      "text": "DML operation INSERT not allowed on BatchApexErrorEvent"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"truncated\":false,\"length\":55,\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\"}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.TypeException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 55,
+                      "text": "DML operation INSERT not allowed on BatchApexErrorEvent"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"truncated\":false,\"length\":55,\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\"}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "exceptionType": "System.TypeException",
+                    "exceptionMessage": {
+                      "truncated": false,
+                      "length": 55,
+                      "text": "DML operation INSERT not allowed on BatchApexErrorEvent"
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"exceptionType\":\"System.TypeException\",\"exceptionMessage\":{\"truncated\":false,\"length\":55,\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\"}}}"
+            }
+          },
+          "anonymous": "Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_099');"
+        },
+        "isTest": {
+          "originalApex": "SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};",
+          "originalApexSha256": "bb3f376e4802acea06865af2cee2c648bb3ad0ed71aac514ae1a78b0a3d3ed15",
+          "sourceSha256": {
+            "class:C168C168RP099Test": "5fc89104a43cb3010e8e39923432e8020d451504c22782eb486693b99162afc0"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "1QQ"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"1QQ\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": true,
+                    "id": {
+                      "idLength": 18,
+                      "idPrefix": "1QQ"
+                    },
+                    "errors": [
+                      {
+                        "status": "OPERATION_ENQUEUED",
+                        "message": {
+                          "uuidShaped": true,
+                          "length": 36
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":true,\"id\":{\"idLength\":18,\"idPrefix\":\"1QQ\"},\"errors\":[{\"status\":\"OPERATION_ENQUEUED\",\"message\":{\"uuidShaped\":true,\"length\":36},\"fields\":[]}],\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": false,
+                    "id": {
+                      "isNull": true
+                    },
+                    "errors": [
+                      {
+                        "status": "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+                        "message": {
+                          "truncated": false,
+                          "length": 55,
+                          "text": "DML operation INSERT not allowed on BatchApexErrorEvent"
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":false,\"id\":{\"isNull\":true},\"errors\":[{\"status\":\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\",\"message\":{\"truncated\":false,\"length\":55,\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\"},\"fields\":[]}],\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": {
+                    "success": false,
+                    "id": {
+                      "isNull": true
+                    },
+                    "errors": [
+                      {
+                        "status": "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY",
+                        "message": {
+                          "truncated": false,
+                          "length": 55,
+                          "text": "DML operation INSERT not allowed on BatchApexErrorEvent"
+                        },
+                        "fields": []
+                      }
+                    ],
+                    "record": {
+                      "EventUuid": {
+                        "uuidShaped": true,
+                        "length": 36,
+                        "isNull": false
+                      }
+                    }
+                  }
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":{\"success\":false,\"id\":{\"isNull\":true},\"errors\":[{\"status\":\"CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY\",\"message\":{\"truncated\":false,\"length\":55,\"text\":\"DML operation INSERT not allowed on BatchApexErrorEvent\"},\"fields\":[]}],\"record\":{\"EventUuid\":{\"uuidShaped\":true,\"length\":36,\"isNull\":false}}}}"
+            }
+          },
+          "classes": {
+            "C168C168RP099Test": "@IsTest private class C168C168RP099Test{@IsTest static void observe(){Object v;try{SObject s=Schema.getGlobalDescribe().get('BatchApexErrorEvent').newSObject();Database.SaveResult sr=EventBus.publish(s);List<Object> errors=new List<Object>();for(Database.Error e:sr.getErrors()){errors.add(new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields()});}v=new Map<String,Object>{'success'=>sr.isSuccess(),'id'=>sr.getId(),'errors'=>errors,'record'=>s.getPopulatedFieldsAsMap()};}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_099');}}"
+          },
+          "tests": [
+            "C168C168RP099Test"
+          ]
+        }
+      }
+    }
+  ]
+}

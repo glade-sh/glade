@@ -177,6 +177,34 @@ public class QueryProbe {
 	}
 }
 
+// principal captures compile this local declaration immediately after a
+// catch block. Whitespace and the closing brace must not hide the declaration
+// or move its scope back into the block that just ended.
+func TestQuerySemanticsBindDeclarationAfterClosedBlock(t *testing.T) {
+	for name, test := range map[string]struct {
+		source     string
+		wantReject bool
+	}{
+		"captured after catch": {
+			source: `public class QueryProbe {public void run(){String value; try {value='ok';}catch(Exception e){value=e.getMessage();} Id callbackId=UserInfo.getUserId(); List<User> callbackUsers=[SELECT UserType FROM User WHERE Id=:callbackId WITH SYSTEM_MODE];}}`,
+		},
+		"closed block local remains inaccessible": {
+			source:     `public class QueryProbe {public void run(){if(true){Id callbackId=UserInfo.getUserId();} List<User> callbackUsers=[SELECT UserType FROM User WHERE Id=:callbackId WITH SYSTEM_MODE];}}`,
+			wantReject: true,
+		},
+		"anonymous declaration after catch": {
+			source: `String value; try {value='ok';}catch(Exception e){value=e.getMessage();} Id callbackId=UserInfo.getUserId(); List<User> callbackUsers=[SELECT UserType FROM User WHERE Id=:callbackId WITH SYSTEM_MODE];`,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", test.source)
+			if got := hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND"); got != test.wantReject {
+				t.Fatalf("diagnostics = %#v, want bind rejection %t", diagnostics, test.wantReject)
+			}
+		})
+	}
+}
+
 func TestQuerySemanticsValidatesDottedBindReceivers(t *testing.T) {
 	for name, test := range map[string]struct {
 		source     string

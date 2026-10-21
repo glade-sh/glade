@@ -22,7 +22,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	}
 	normalizeNameFields(objectName, object.Definition, &record)
 	if record.ID == "" {
-		return fmt.Errorf("dml: update requires id")
+		return errUpdateRequiresID
 	}
 	stripImplicitReadOnlyDefaultFields(object.Definition, e.Org.Namespace, &record, false)
 	if err := e.validateObjectID(object.Definition, record); err != nil {
@@ -44,7 +44,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err := e.applyStringLengthRules(object.Definition, &record); err != nil {
 		return err
 	}
-	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
+	if err := validateFields(object.Definition, e.Org.Namespace, record, existing); err != nil {
 		return err
 	}
 	if err := e.validateUpdateReferences(object.Definition, record); err != nil {
@@ -54,6 +54,12 @@ func (e *Engine) updateOne(record storage.Record) error {
 		return err
 	}
 	finalRecord := existing.Clone()
+	if _, nameSupplied := record.GetField("Name"); nameSupplied || record.HasExplicitNull("Name") {
+		finalRecord.HierarchyNameUsesRecordID = false
+	}
+	if _, ownerSupplied := record.GetField("SetupOwnerId"); ownerSupplied || record.HasExplicitNull("SetupOwnerId") {
+		finalRecord.HierarchyNameUsesRecordID = false
+	}
 	if record.System.OwnerID != "" {
 		finalRecord.System.OwnerID = record.System.OwnerID
 	}
@@ -89,6 +95,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err := validatePersonAccountRequiredFields(objectName, finalRecord); err != nil {
 		return err
 	}
+	e.applyTaskPriorityFlag(&finalRecord)
+	e.applyOrderItemDerivedFields(&finalRecord)
+	e.applyOpportunityLineItemDerivedFields(&finalRecord, record, existing)
 	priorRecord := e.priorRecordForValidation(record.ID, existing)
 	if err := e.validateValidationRules(objectName, object.Definition, finalRecord, &priorRecord, false); err != nil {
 		return err
@@ -96,7 +105,8 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err := e.validateLookupFilters(object.Definition, finalRecord); err != nil {
 		return err
 	}
-	needsRollback := !e.DeferAutomation && hasObjectAutomation(object.Definition)
+	_, hasPrivateShares := privateOwnerShareObject(e.Org, object.Definition)
+	needsRollback := hasPrivateShares || !e.DeferAutomation && hasObjectAutomation(object.Definition)
 	rollback := e.beginRollbackPoint(needsRollback)
 	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
 		object = e.Org.Objects[objectName]
@@ -110,7 +120,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 	}
 	stamp := e.systemTimestamp()
 	oldRecord := existing.Clone()
+	existing.ForgetChangedClearedLookups(record)
 	existing.System.OwnerID = finalRecord.System.OwnerID
+	existing.HierarchyNameUsesRecordID = finalRecord.HierarchyNameUsesRecordID
 	for field, value := range record.Fields {
 		deleteCaseInsensitiveFieldAlias(object.Definition, e.Org.Namespace, existing.Fields, field)
 		deleteCaseInsensitiveNullAlias(object.Definition, e.Org.Namespace, existing.ExplicitNulls, field)
@@ -125,7 +137,11 @@ func (e *Engine) updateOne(record storage.Record) error {
 			existing.ExplicitNulls[field] = true
 		}
 	}
+	e.applyTaskPriorityFlag(&existing)
 	stripStoredCalculatedFields(object.Definition, &existing)
+	e.applyOrderItemDerivedFields(&existing)
+	e.applyOpportunityLineItemDerivedFields(&existing, record, oldRecord)
+	materializeEmailMessageName(&existing)
 	existing.System.LastModifiedDate = stamp
 	existing.System.SystemModstamp = stamp
 	existing.System.LastModifiedByID = e.systemUserID()
@@ -137,6 +153,14 @@ func (e *Engine) updateOne(record storage.Record) error {
 	e.removeUniqueIndexRecord(objectName, object.Definition, oldRecord)
 	e.addUniqueIndexRecord(objectName, object.Definition, existing)
 	e.recalculateSummaryFieldsForChildren(objectName, oldRecord, finalRecord)
+	if !storage.IDsEqual(oldRecord.System.OwnerID, existing.System.OwnerID) {
+		if err := e.reconcilePrivateOwnerShares(objectName, storedID); err != nil {
+			if rollbackErr := e.restoreRollbackPoint(rollback); rollbackErr != nil {
+				return rollbackErr
+			}
+			return err
+		}
+	}
 	if syncPersonContactAfterUpdate(objectName) {
 		if err := e.syncPersonContact(existing); err != nil {
 			if rollbackErr := e.restoreRollbackPoint(rollback); rollbackErr != nil {
@@ -263,6 +287,7 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	if err := e.applyBeforeDeleteFlows(objectName, stored); err != nil {
 		return err
 	}
+	object = e.Org.Objects[objectName]
 	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {
 		object = e.Org.Objects[objectName]
 		storedID, stored, _ = storage.LookupRecordByID(object.Records, id)
@@ -317,7 +342,7 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 		}
 		return record.ID, false, nil
 	}
-	field, value, ok, err := upsertExternalID(object.Definition, e.Org.Namespace, record, externalIDField)
+	field, value, ok, err := upsertExternalID(object.Definition, e.Org.Namespace, record, externalIDField, e.Options.AllowApexIDLookupUpsert)
 	if err != nil {
 		return "", false, err
 	}

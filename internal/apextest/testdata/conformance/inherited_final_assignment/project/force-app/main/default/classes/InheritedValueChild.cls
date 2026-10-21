@@ -1,0 +1,1 @@
+public class InheritedValueChild extends InheritedValueBase { public InheritedValueChild(Account value) { this.record = value; } public static Map<String,Object> observe() { return new Map<String,Object>{'value' => new InheritedValueChild(new Account(Name='owned value')).read()}; } }

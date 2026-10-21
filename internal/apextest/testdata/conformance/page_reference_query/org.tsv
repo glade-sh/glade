@@ -1,0 +1,5 @@
+source_api	method	observation
+62.0	opaqueQuery	{"containsMarker":true,"url":"https://example.test/auth?client_id=***synthetic_client***&state=done"}
+62.0	parameterQuery	{"containsMarker":true,"url":"/apex/Grove?client_id=***synthetic_client***"}
+67.0	opaqueQuery	{"containsMarker":true,"url":"https://example.test/auth?client_id=***synthetic_client***&state=done"}
+67.0	parameterQuery	{"containsMarker":true,"url":"/apex/Grove?client_id=***synthetic_client***"}

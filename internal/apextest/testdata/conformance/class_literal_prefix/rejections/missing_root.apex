@@ -1,0 +1,1 @@
+Type rejected = UnregisteredRoot.class;

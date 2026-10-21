@@ -1,0 +1,6 @@
+C001	anonymous	compiled
+C001	@IsTest	compiled
+C002	anonymous	compiled
+C002	@IsTest	compiled
+C003	anonymous	line 7: Variable does not exist: namespacePrefix
+C003	@IsTest	[{"changed": false, "columnNumber": 60, "componentType": "ApexClass", "created": false, "createdDate": "2026-10-12T18:55:28.000Z", "deleted": false, "fileName": "classes/Ns113910271390462C003.cls", "fullName": "Ns113910271390462C003", "lineNumber": 3, "problem": "Variable does not exist: namespacePrefix", "problemType": "Error", "success": false}, {"changed": false, "columnNumber": 94, "componentType": "ApexClass", "created": false, "createdDate": "2026-10-12T18:55:28.000Z", "deleted": false, "fileName": "classes/Ns113910271390462C003.cls", "fullName": "Ns113910271390462C003", "lineNumber": 3, "problem": "Variable does not exist: namespacePrefix", "problemType": "Error", "success": false}]

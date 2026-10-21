@@ -49,4 +49,4 @@ first run and cleanup. The command above uses a fresh data root because the
 v0.2.15 stable binary predates the non-empty-workspace guard.
 
 The bundled `RefinementServiceTest` first shipped in v0.2.14 and is included in
-the v0.2.15 stable release.
+the v0.3.0 release.

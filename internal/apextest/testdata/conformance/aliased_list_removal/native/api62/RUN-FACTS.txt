@@ -1,0 +1,13 @@
+{
+  "route": "istest",
+  "sourceAPI": "62.0",
+  "transportAPI": "67.0",
+  "status": 100,
+  "nativeRows": 4,
+  "sourceSHA256": {
+    "AliasedRemoval62.cls": "a9b7bc9c81fa012748dc96f29a046ae0b8035b4c42f36db70dbffdf9f926d7e7",
+    "AliasedRemoval62.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+  },
+  "scratchOrgDeleted": true,
+  "scratchAliasAbsent": true
+}

@@ -1,0 +1,58 @@
+{
+  "rows": [
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "keys",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "first",
+        "keyHasName": false,
+        "hasName": false
+      },
+      "sourceSha256": "4791422e2757f009016debb16b6b6224979a04ea7aa63375f4d99a3364cc646c",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); Set<String> keys=m.keySet(); keys.remove('Name'); out.put('hasName',m.containsKey('Name')); out.put('keyHasName',keys.contains('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|keys|'+JSON.serialize(out));"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "keys",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "first",
+        "keyHasName": false,
+        "hasName": false
+      },
+      "sourceSha256": "899651448f19b6f00ad0340c65e5684458937da84dce67e55b7cf037afccd519",
+      "className": "PopulatedMapProbe62",
+      "method": "observeKeys"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "keys",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "first",
+        "keyHasName": false,
+        "hasName": false
+      },
+      "sourceSha256": "4791422e2757f009016debb16b6b6224979a04ea7aa63375f4d99a3364cc646c",
+      "source": "Map<String,Object> out=new Map<String,Object>(); try { Account a=new Account(Name='first'); Map<String,Object> m=a.getPopulatedFieldsAsMap(); Set<String> keys=m.keySet(); keys.remove('Name'); out.put('hasName',m.containsKey('Name')); out.put('keyHasName',keys.contains('Name')); out.put('recordName',a.Name); } catch(Exception e) { out.put('exceptionType',e.getTypeName()); out.put('exceptionMessage',e.getMessage()); } System.assert(false,'MAP|keys|'+JSON.serialize(out));"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "keys",
+      "outcome": "observation",
+      "expected": {
+        "recordName": "first",
+        "keyHasName": false,
+        "hasName": false
+      },
+      "sourceSha256": "cc1e83b54fe6f6e18bca19b822907073c744ca802507b04200cca16636f52b5d",
+      "className": "PopulatedMapProbe67",
+      "method": "observeKeys"
+    }
+  ]
+}

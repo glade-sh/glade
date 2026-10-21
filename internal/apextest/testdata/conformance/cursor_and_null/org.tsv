@@ -1,0 +1,11 @@
+source_api	method	observation
+62.0	distinctCursor	{"repeatsCursor":false,"remaining":2}
+62.0	millisecondCursor	{"later":0,"earlier":0,"equal":1,"storedMillis":0}
+62.0	nullMapCopy	{"message":"Attempt to de-reference a null object","type":"System.NullPointerException","caught":true,"sourceNull":true}
+62.0	populatedMapCopy	{"sourceHasBeta":false,"retained":1,"copySize":2,"sourceSize":1}
+62.0	tiedCursor	{"equalStamp":3,"repeatsCursor":false,"remaining":2}
+67.0	distinctCursor	{"repeatsCursor":false,"remaining":2}
+67.0	millisecondCursor	{"later":0,"earlier":0,"equal":1,"storedMillis":0}
+67.0	nullMapCopy	{"message":"Attempt to de-reference a null object","type":"System.NullPointerException","caught":true,"sourceNull":true}
+67.0	populatedMapCopy	{"sourceHasBeta":false,"retained":1,"copySize":2,"sourceSize":1}
+67.0	tiedCursor	{"equalStamp":3,"repeatsCursor":false,"remaining":2}

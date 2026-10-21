@@ -55,7 +55,7 @@ func TestRunExecPreservesHistoricalApexSourceVersion(t *testing.T) {
 }
 
 func TestRunExecRejectsInvalidHistoricalApexVersions(t *testing.T) {
-	for _, version := range []string{"68.0", "53.5", "0.0"} {
+	for _, version := range []string{"69.0", "53.5", "0.0"} {
 		t.Run(version, func(t *testing.T) {
 			root := t.TempDir()
 			t.Chdir(root)

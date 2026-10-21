@@ -1,0 +1,57 @@
+{
+  "observations": 192,
+  "accounted_rows": 192,
+  "fixture_error_rows": [],
+  "platform_fault_rows": [],
+  "no_answer_rows": [],
+  "http_error_rows": [],
+  "native_complete": true,
+  "transport_gates": [
+    "CTRL_POS@62.0@anonymous",
+    "CTRL_POS@62.0@istest",
+    "CTRL_CAUGHT@62.0@anonymous",
+    "CTRL_CAUGHT@62.0@istest",
+    "CTRL_UNCAUGHT@62.0@anonymous",
+    "CTRL_UNCAUGHT@62.0@istest",
+    "CTRL_POS@67.0@anonymous",
+    "CTRL_POS@67.0@istest",
+    "CTRL_CAUGHT@67.0@anonymous",
+    "CTRL_CAUGHT@67.0@istest",
+    "CTRL_UNCAUGHT@67.0@anonymous",
+    "CTRL_UNCAUGHT@67.0@istest",
+    "CTRL_POS@68.0@anonymous",
+    "CTRL_POS@68.0@istest",
+    "CTRL_CAUGHT@68.0@anonymous",
+    "CTRL_CAUGHT@68.0@istest",
+    "CTRL_UNCAUGHT@68.0@anonymous",
+    "CTRL_UNCAUGHT@68.0@istest"
+  ],
+  "control_rechecks": [],
+  "fixture_states": [
+    {
+      "api": "62.0",
+      "ready": true,
+      "cleanup_verified": true
+    },
+    {
+      "api": "67.0",
+      "ready": true,
+      "cleanup_verified": true
+    },
+    {
+      "api": "68.0",
+      "ready": true,
+      "cleanup_verified": true
+    }
+  ],
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "source_manifest_sha256": "22e6e95ffce06ade584e44977192d51ceef0365ca576a2b06540319821fd726a"
+}

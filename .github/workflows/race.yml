@@ -34,6 +34,7 @@ jobs:
       has-early-packages: ${{ steps.classify.outputs.has-early-packages }}
       has-generic-packages: ${{ steps.classify.outputs.has-generic-packages }}
       mode: ${{ steps.classify.outputs.mode }}
+      push-matrix: ${{ steps.classify.outputs.push-matrix }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -47,7 +48,7 @@ jobs:
         run: |
           case "${{ github.event_name }}" in
             push)
-              mode=full
+              mode=concurrency
               packages="$(scripts/ci-race-packages.sh full)"
               ;;
             schedule|workflow_dispatch)
@@ -69,6 +70,8 @@ jobs:
           generic_packages="${partition[1]}"
           if [[ "$early_packages" == "[]" ]]; then has_early_packages=false; else has_early_packages=true; fi
           if [[ "$generic_packages" == "[]" ]]; then has_generic_packages=false; else has_generic_packages=true; fi
+          push_matrix="$(python3 scripts/ci-race-push.py plan)"
+          echo "push-matrix=$push_matrix" >>"$GITHUB_OUTPUT"
           echo "mode=$mode" >>"$GITHUB_OUTPUT"
           echo "packages=$packages" >>"$GITHUB_OUTPUT"
           echo "early-packages=$early_packages" >>"$GITHUB_OUTPUT"
@@ -77,7 +80,7 @@ jobs:
           echo "has-early-packages=$has_early_packages" >>"$GITHUB_OUTPUT"
           echo "has-generic-packages=$has_generic_packages" >>"$GITHUB_OUTPUT"
           mkdir -p ci-artifacts/race-plan
-          printf '{"mode":"%s","packages":%s,"early_packages":%s,"generic_packages":%s}\n' "$mode" "$packages" "$early_packages" "$generic_packages" >ci-artifacts/race-plan/plan.json
+          printf '{"mode":"%s","packages":%s,"early_packages":%s,"generic_packages":%s,"push_matrix":%s}\n' "$mode" "$packages" "$early_packages" "$generic_packages" "$push_matrix" >ci-artifacts/race-plan/plan.json
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         if: ${{ contains(fromJSON(steps.classify.outputs.early-packages), './internal/gladecli') }}
         with:
@@ -162,9 +165,102 @@ jobs:
           path: ci-artifacts/race-plan/plan.json
           if-no-files-found: error
 
-  race-browser:
+  test-binaries:
     needs: plan
-    if: needs.plan.outputs.has-packages == 'true'
+    if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-packages == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-attempt: ${{ steps.bundle.outputs.attempt }}
+    timeout-minutes: 30
+    env:
+      GOMAXPROCS: "2"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.9"
+          cache: false
+      - name: Restore Go module cache
+        id: restore-go-mod-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-race-test-binaries-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-race-test-binaries-${{ hashFiles('go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Restore Go build cache
+        id: restore-go-build-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-race-test-binaries-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-race-test-binaries-${{ hashFiles('go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.9-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Bind binary artifact attempt
+        id: bundle
+        run: echo "attempt=$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
+      - name: Build shared test binaries
+        env:
+          CGO_ENABLED: "1"
+        run: |
+          for package in apextest gladecli lwc/compile visualforce; do
+            slug="${package//\//-}"
+            python3 scripts/ci-test-binary.py build "/tmp/glade-race-test-binaries/$slug" race "./internal/$package"
+          done
+      - name: Save Go module cache
+        if: success()
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ steps.restore-go-mod-cache.outputs.cache-primary-key }}
+      - name: Save Go build cache
+        if: success()
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
+      - name: Upload apextest test binary
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: race-test-binaries-apextest-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/glade-race-test-binaries/apextest/
+          compression-level: 1
+          retention-days: 1
+          if-no-files-found: error
+      - name: Upload gladecli test binary
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: race-test-binaries-gladecli-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/glade-race-test-binaries/gladecli/
+          compression-level: 1
+          retention-days: 1
+          if-no-files-found: error
+      - name: Upload lwc-compile test binary
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: race-test-binaries-lwc-compile-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/glade-race-test-binaries/lwc-compile/
+          compression-level: 1
+          retention-days: 1
+          if-no-files-found: error
+      - name: Upload visualforce test binary
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: race-test-binaries-visualforce-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/glade-race-test-binaries/visualforce/
+          compression-level: 1
+          retention-days: 1
+          if-no-files-found: error
+
+  race-browser:
+    needs: [plan, test-binaries]
+    if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-packages == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 70
     strategy:
@@ -209,6 +305,8 @@ jobs:
             slug: internal-lwc-compile
             shard: 7
     env:
+      CGO_ENABLED: "1"
+      CI_TEST_BIN_DIR: /tmp/glade-race-test-binaries
       GOMAXPROCS: "2"
       CI_RACE_SHARD_INDEX: ${{ matrix.shard }}
       CI_RACE_HEAD_SHA: ${{ github.sha }}
@@ -218,6 +316,11 @@ jobs:
       CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Download shared race test binaries
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: race-test-binaries-${{ matrix.slug == 'internal-lwc-compile' && 'lwc-compile' || 'visualforce' }}-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
+          path: /tmp/glade-race-test-binaries
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: "1.26.9"
@@ -253,7 +356,7 @@ jobs:
 
   race-browser-aggregate:
     needs: [plan, race-browser]
-    if: always() && needs.plan.outputs.has-packages == 'true'
+    if: always() && needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-packages == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
@@ -296,8 +399,8 @@ jobs:
           if-no-files-found: error
 
   race-early:
-    needs: plan
-    if: needs.plan.outputs.has-early-packages == 'true'
+    needs: [plan, test-binaries]
+    if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-early-packages == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 70
     strategy:
@@ -305,9 +408,17 @@ jobs:
       matrix:
         package: ${{ fromJSON(needs.plan.outputs.early-packages) }}
     env:
+      CGO_ENABLED: "1"
+      CI_TEST_BIN_DIR: ${{ matrix.package == './internal/gladecli' && '/tmp/glade-race-test-binaries' || '' }}
       GOMAXPROCS: "2"
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Download shared race test binaries
+        if: matrix.package == './internal/gladecli'
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: race-test-binaries-gladecli-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
+          path: /tmp/glade-race-test-binaries
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: "1.26.9"
@@ -354,7 +465,7 @@ jobs:
 
   race:
     needs: plan
-    if: needs.plan.outputs.has-generic-packages == 'true'
+    if: needs.plan.outputs.mode == 'full' && needs.plan.outputs.has-generic-packages == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 70
     strategy:
@@ -418,17 +529,24 @@ jobs:
           if-no-files-found: error
 
   race-apextest-a:
-    needs: plan
-    if: contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
+    needs: [plan, test-binaries]
+    if: needs.plan.outputs.mode == 'full' && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
     runs-on: ubuntu-latest
     timeout-minutes: 70
     env:
+      CGO_ENABLED: "1"
+      CI_TEST_BIN_DIR: /tmp/glade-race-test-binaries
       GOMAXPROCS: "2"
       CI_RACE_APEXTEST_RUNNER: a
       CI_RACE_APEXTEST_SHARD_INDEXES: 0,3,5,8,11,13
       CI_RACE_HEAD_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Download shared race test binaries
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: race-test-binaries-apextest-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
+          path: /tmp/glade-race-test-binaries
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: "1.26.9"
@@ -444,17 +562,24 @@ jobs:
           if-no-files-found: error
 
   race-apextest-b:
-    needs: plan
-    if: contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
+    needs: [plan, test-binaries]
+    if: needs.plan.outputs.mode == 'full' && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
     runs-on: ubuntu-latest
     timeout-minutes: 70
     env:
+      CGO_ENABLED: "1"
+      CI_TEST_BIN_DIR: /tmp/glade-race-test-binaries
       GOMAXPROCS: "2"
       CI_RACE_APEXTEST_RUNNER: b
       CI_RACE_APEXTEST_SHARD_INDEXES: 4,7,12,15
       CI_RACE_HEAD_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Download shared race test binaries
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: race-test-binaries-apextest-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
+          path: /tmp/glade-race-test-binaries
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: "1.26.9"
@@ -470,17 +595,24 @@ jobs:
           if-no-files-found: error
 
   race-apextest-c:
-    needs: plan
-    if: contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
+    needs: [plan, test-binaries]
+    if: needs.plan.outputs.mode == 'full' && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
     runs-on: ubuntu-latest
     timeout-minutes: 70
     env:
+      CGO_ENABLED: "1"
+      CI_TEST_BIN_DIR: /tmp/glade-race-test-binaries
       GOMAXPROCS: "2"
       CI_RACE_APEXTEST_RUNNER: c
       CI_RACE_APEXTEST_SHARD_INDEXES: 1,2,6,9,10,14
       CI_RACE_HEAD_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Download shared race test binaries
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: race-test-binaries-apextest-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
+          path: /tmp/glade-race-test-binaries
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: "1.26.9"
@@ -497,7 +629,7 @@ jobs:
 
   race-apextest-aggregate:
     needs: [plan, race-apextest-a, race-apextest-b, race-apextest-c]
-    if: always() && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
+    if: always() && needs.plan.outputs.mode == 'full' && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -525,4 +657,44 @@ jobs:
         with:
           name: race-internal-apextest-aggregate-${{ github.run_id }}-${{ github.run_attempt }}
           path: ci-artifacts/race/apextest-aggregate/union-validation.json
+          if-no-files-found: error
+
+  race-push:
+    needs: plan
+    if: needs.plan.outputs.mode == 'concurrency'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.push-matrix).include }}
+    env:
+      CGO_ENABLED: "1"
+      GOMAXPROCS: "2"
+      GLADE_LWC_PLAYWRIGHT_MODULE: ${{ github.workspace }}/lwcruntime/node_modules/playwright
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.9"
+          cache: false
+      - if: ${{ contains(matrix.packages, './internal/gladecli') || contains(matrix.packages, './internal/server') }}
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "22"
+      - name: Install test browser dependencies
+        if: ${{ contains(matrix.packages, './internal/gladecli') || contains(matrix.packages, './internal/server') }}
+        run: |
+          npm ci --prefix third_party/lwc
+          npm ci --prefix lwcruntime
+          ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
+      - name: Run concurrent Go tests
+        run: python3 scripts/ci-race-push.py run "${{ matrix.index }}"
+      - name: Upload push race evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: race-push-${{ matrix.index }}-${{ github.run_attempt }}
+          path: ci-artifacts/race-push/
           if-no-files-found: error

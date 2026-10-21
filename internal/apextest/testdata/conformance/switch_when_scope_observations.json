@@ -1,0 +1,108 @@
+{
+  "fixtures": {
+    "49.0": {
+      "observer": "BranchScopeObservation",
+      "classes": {
+        "BranchScopeProbe": "public class BranchScopeProbe {\n    public enum Shade { Light, Mid, Dark }\n    public static Integer run() { return observe('Seed'); }\n    public static Integer runFallback() { return observe('Fallback'); }\n    private static Integer observe(String seed) {\n        Integer observed = 0;\n        for (String phase : new List<String>{seed, 'Read'}) {\n            switch on phase {\n                when 'Seed' { Integer shade = 3; }\n                when 'Read' { observed = Shade.values().size(); }\n                when else { Integer shade = 4; }\n            }\n        }\n        return observed;\n    }\n}\n",
+        "BranchScopeObservation": "@IsTest private class BranchScopeObservation {\n    @IsTest static void observe() {\n        System.assert(false, 'SWITCH_SCOPE_RESULT|' + JSON.serialize(new Map<String,Object>{'ordinary'=>BranchScopeProbe.run(),'fallback'=>BranchScopeProbe.runFallback()}));\n    }\n}\n"
+      },
+      "sourceSHA256": {
+        "BranchScopeProbe": "40516f5695af5ace0709e8b0d44e615c680a09d7211a833dd89016fe4518bc85",
+        "BranchScopeObservation": "07e014ea3359f983e5586afff3290fe0085841ec7f64f147fb2bca2173722131"
+      },
+      "metadata": {
+        "BranchScopeProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>49.0</apiVersion><status>Active</status></ApexClass>\n",
+        "BranchScopeObservation": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>49.0</apiVersion><status>Active</status></ApexClass>\n"
+      },
+      "metadataSHA256": {
+        "BranchScopeProbe": "470669cbb959a46f94421506e13ca9aef7a965584031ed5fac45ec163d030e81",
+        "BranchScopeObservation": "470669cbb959a46f94421506e13ca9aef7a965584031ed5fac45ec163d030e81"
+      },
+      "anonymous": "System.debug('SWITCH_SCOPE_RESULT|' + JSON.serialize(new Map<String,Object>{'ordinary'=>BranchScopeProbe.run(),'fallback'=>BranchScopeProbe.runFallback()}));\n",
+      "anonymousSHA256": "a95dfbb8698bb99efde79fbee01fca6def8d57b20d0639d9108ab59b968a5c2c"
+    },
+    "67.0": {
+      "observer": "BranchScopeObservation67",
+      "classes": {
+        "BranchScopeProbe67": "public class BranchScopeProbe67 {\n    public enum Shade { Light, Mid, Dark }\n    public static Integer run() { return observe('Seed'); }\n    public static Integer runFallback() { return observe('Fallback'); }\n    private static Integer observe(String seed) {\n        Integer observed = 0;\n        for (String phase : new List<String>{seed, 'Read'}) {\n            switch on phase {\n                when 'Seed' { Integer shade = 3; }\n                when 'Read' { observed = Shade.values().size(); }\n                when else { Integer shade = 4; }\n            }\n        }\n        return observed;\n    }\n}\n",
+        "BranchScopeObservation67": "@IsTest private class BranchScopeObservation67 {\n    @IsTest static void observe() {\n        System.assert(false, 'SWITCH_SCOPE_RESULT|' + JSON.serialize(new Map<String,Object>{'ordinary'=>BranchScopeProbe67.run(),'fallback'=>BranchScopeProbe67.runFallback()}));\n    }\n}\n"
+      },
+      "sourceSHA256": {
+        "BranchScopeProbe67": "8519826015d2787074610bf65ba5362bddf9cf16af68234237fd7afc4a6ba821",
+        "BranchScopeObservation67": "e7b2e7db4278ecd844bdfb89772bd24e0ccf11b76202dec44c81ac48c83fba64"
+      },
+      "metadata": {
+        "BranchScopeProbe67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "BranchScopeObservation67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+      },
+      "metadataSHA256": {
+        "BranchScopeProbe67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "BranchScopeObservation67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+      },
+      "anonymous": "System.debug('SWITCH_SCOPE_RESULT|' + JSON.serialize(new Map<String,Object>{'ordinary'=>BranchScopeProbe67.run(),'fallback'=>BranchScopeProbe67.runFallback()}));\n",
+      "anonymousSHA256": "e8d1a4f5eebcc0c205bf444fd6d08cdc92a1457abc8e2e3a8255dc35aaab585a"
+    }
+  },
+  "cells": [
+    {
+      "api": "49.0",
+      "context": "istest",
+      "transportAPI": "67.0",
+      "rawAnswerSHA256": "2d2bf22c508fbeba79ef90a22d22e27cf954de902d6a5c0a7b6ba6f7487b5f3c",
+      "rawResponseSHA256": "4b38a4104e0f4944f0d068494b63bbc4c68919dd8da25c1d9cbf689d6e2030a7",
+      "answers": {
+        "fallback": 3,
+        "ordinary": 3
+      }
+    },
+    {
+      "api": "49.0",
+      "context": "anonymous",
+      "transportAPI": "49.0",
+      "rawAnswerSHA256": "2d2bf22c508fbeba79ef90a22d22e27cf954de902d6a5c0a7b6ba6f7487b5f3c",
+      "rawResponseSHA256": "9525fcda3986f1ca33a6040ab61beff726ea4166cf3e17bbfa3acd9ca33bd55a",
+      "answers": {
+        "fallback": 3,
+        "ordinary": 3
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "istest",
+      "transportAPI": "67.0",
+      "rawAnswerSHA256": "2d2bf22c508fbeba79ef90a22d22e27cf954de902d6a5c0a7b6ba6f7487b5f3c",
+      "rawResponseSHA256": "d3dded5d7aa11cd457d44760eead334009701580fcc7eb401155bc5b1ae3c24a",
+      "answers": {
+        "fallback": 3,
+        "ordinary": 3
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "anonymous",
+      "transportAPI": "67.0",
+      "rawAnswerSHA256": "2d2bf22c508fbeba79ef90a22d22e27cf954de902d6a5c0a7b6ba6f7487b5f3c",
+      "rawResponseSHA256": "65f61afc06eb00b8fb229fc3dd66916ef5f98af1e4967544df0fcd2d1248b60c",
+      "answers": {
+        "fallback": 3,
+        "ordinary": 3
+      }
+    }
+  ],
+  "provenance": {
+    "orgIdSHA256": "04a58dd26a83c1ec339870c9385318efaa66874b9cbd1c01a7a7855820655dc4",
+    "deploymentId": "0AfE200000r0W1NKAU",
+    "deploymentTransportAPI": "67.0",
+    "scope": "Nonnamespaced owned synthetic switch branches; direct local declarations; no packaging."
+  },
+  "uncaptured": [
+    {
+      "scope": "API61 native routes",
+      "reason": "API61 is a local regression control; native runtime answers here are pinned source49 and67."
+    },
+    {
+      "scope": "Type-pattern binding behavior",
+      "reason": "No new type-pattern behavior is asserted; the existing match and binding restoration remain in place."
+    }
+  ]
+}

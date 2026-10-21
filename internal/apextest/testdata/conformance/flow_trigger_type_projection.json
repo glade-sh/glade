@@ -1,0 +1,206 @@
+{
+  "apiVersions": [
+    "62.0",
+    "65.0",
+    "67.0"
+  ],
+  "routes": [
+    "istest"
+  ],
+  "fixtures": {
+    "62.0": {
+      "capturedClasses": {
+        "FlowViewObservation": "@IsTest private class FlowViewObservation {\n @IsTest static void observe() {\n  FlowDefinitionView idle=[SELECT TriggerType,ProcessType FROM FlowDefinitionView WHERE ApiName='QuietCatalogIdleFlow' AND IsActive=true];\n  FlowDefinitionView triggered=[SELECT TriggerType FROM FlowDefinitionView WHERE ApiName='QuietCatalogRecordFlow' AND IsActive=true];\n  CatalogNote__c copied=new CatalogNote__c(Kind__c=idle.TriggerType);\n  CatalogNote__c control=new CatalogNote__c(Kind__c=triggered.TriggerType);\n  CatalogNote__c emptyValue=new CatalogNote__c(Kind__c='');\n  CatalogNote__c nullValue=new CatalogNote__c(Kind__c=null);\n  insert new List<CatalogNote__c>{copied,control,emptyValue,nullValue};\n  Set<Id> keys=new Set<Id>{copied.Id,control.Id,emptyValue.Id,nullValue.Id};\n  Map<Id,CatalogNote__c> saved=new Map<Id,CatalogNote__c>([SELECT Kind__c FROM CatalogNote__c WHERE Id IN :keys]);\n  Map<String,Object> out=new Map<String,Object>{'view'=>idle.TriggerType,'process'=>idle.ProcessType,'triggered'=>triggered.TriggerType,'caller'=>copied.Kind__c,'stored'=>saved.get(copied.Id).Kind__c,'controlStored'=>saved.get(control.Id).Kind__c,'emptyCaller'=>emptyValue.Kind__c,'nullCaller'=>nullValue.Kind__c,'emptyStored'=>saved.get(emptyValue.Id).Kind__c,'nullStored'=>saved.get(nullValue.Id).Kind__c};\n  System.assertEquals('FLOW_VIEW_NATIVE',JSON.serialize(out));\n }\n}\n"
+      },
+      "capturedSourceSHA256": {
+        "FlowViewObservation": "ba8d0ebcc16ad4620822110f54486b08eeb583059b780ced43fb714bd68b1f71"
+      },
+      "files": {
+        "force-app/main/default/flows/QuietCatalogIdleFlow.flow-meta.xml": "<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><assignments><name>SetOutput</name><label>SetOutput</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>ChildOut</assignToReference><operator>Assign</operator><value><stringValue>child</stringValue></value></assignmentItems></assignments><interviewLabel>QuietCatalogIdleFlow {!$Flow.CurrentDateTime}</interviewLabel><label>QuietCatalogIdleFlow</label><processType>AutoLaunchedFlow</processType><startElementReference>SetOutput</startElementReference><status>Active</status><variables><name>ChildOut</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables></Flow>",
+        "force-app/main/default/flows/QuietCatalogRecordFlow.flow-meta.xml": "<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><assignments><name>MarkFired</name><label>MarkFired</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Fired__c</assignToReference><operator>Assign</operator><value><booleanValue>true</booleanValue></value></assignmentItems></assignments><interviewLabel>QuietCatalogRecordFlow {!$Flow.CurrentDateTime}</interviewLabel><label>QuietCatalogRecordFlow</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>MarkFired</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>subject</stringValue></value></filters><object>QuietCatalogRecord__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status></Flow>",
+        "force-app/main/default/objects/CatalogNote__c/CatalogNote__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>Catalog Note</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>Catalog Notes</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+        "force-app/main/default/objects/CatalogNote__c/fields/Kind__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Kind__c</fullName><label>Kind</label><required>false</required><type>Picklist</type><valueSet><valueSetDefinition><sorted>false</sorted><value><fullName>PlatformEvent</fullName><default>false</default><label>PlatformEvent</label></value><value><fullName>RecordAfterSave</fullName><default>false</default><label>RecordAfterSave</label></value><value><fullName>RecordBeforeSave</fullName><default>false</default><label>RecordBeforeSave</label></value><value><fullName>Scheduled</fullName><default>false</default><label>Scheduled</label></value></valueSetDefinition></valueSet></CustomField>",
+        "force-app/main/default/objects/QuietCatalogRecord__c/QuietCatalogRecord__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>QuietCatalogRecord__c Flow Record</label><nameField><label>QuietCatalogRecord__c Name</label><type>Text</type></nameField><pluralLabel>QuietCatalogRecord__c Flow Records</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+        "force-app/main/default/objects/QuietCatalogRecord__c/fields/Fired__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Fired__c</fullName><defaultValue>false</defaultValue><label>QuietCatalogRecord__c Fired</label><type>Checkbox</type></CustomField>"
+      },
+      "fileSHA256": {
+        "force-app/main/default/flows/QuietCatalogIdleFlow.flow-meta.xml": "c7a77eac8c7e521e2f366fe85152e3cef64e1adf00d221ce7a81475a103931da",
+        "force-app/main/default/flows/QuietCatalogRecordFlow.flow-meta.xml": "dcba12fcd8184538bd095815d9114743ffb046ccbf46279e053cb6c4c4fcd881",
+        "force-app/main/default/objects/CatalogNote__c/CatalogNote__c.object-meta.xml": "35163188e9570866da2d9c554a1acdaa9b1f4463e2870e8516bb232d9d18d361",
+        "force-app/main/default/objects/CatalogNote__c/fields/Kind__c.field-meta.xml": "33692edc16d71b1373258469c4cd94369294fe89f1f511eca58548678ffc5665",
+        "force-app/main/default/objects/QuietCatalogRecord__c/QuietCatalogRecord__c.object-meta.xml": "f429fc3c0e183f46d7f28c59bdbb16414a6a521e1122845e2855464fd16b5c26",
+        "force-app/main/default/objects/QuietCatalogRecord__c/fields/Fired__c.field-meta.xml": "735464317dfd8112c0536b7a4699be750bca1586f385962a05312712b6cff2a8"
+      },
+      "classes": {
+        "FlowViewObservation": "@IsTest private class FlowViewObservation {\n @IsTest static void observe() {\n  FlowDefinitionView idle=[SELECT TriggerType,ProcessType FROM FlowDefinitionView WHERE ApiName='QuietCatalogIdleFlow' AND IsActive=true];\n  CatalogNote__c copied=new CatalogNote__c(Kind__c=idle.TriggerType);\n  CatalogNote__c control=new CatalogNote__c(Kind__c='RecordBeforeSave');\n  CatalogNote__c emptyValue=new CatalogNote__c(Kind__c='');\n  CatalogNote__c nullValue=new CatalogNote__c(Kind__c=null);\n  insert new List<CatalogNote__c>{copied,control,emptyValue,nullValue};\n  Set<Id> keys=new Set<Id>{copied.Id,control.Id,emptyValue.Id,nullValue.Id};\n  Map<Id,CatalogNote__c> saved=new Map<Id,CatalogNote__c>([SELECT Kind__c FROM CatalogNote__c WHERE Id IN :keys]);\n  Map<String,Object> out=new Map<String,Object>{'view'=>idle.TriggerType,'process'=>idle.ProcessType,'caller'=>copied.Kind__c,'stored'=>saved.get(copied.Id).Kind__c,'controlStored'=>saved.get(control.Id).Kind__c,'emptyCaller'=>emptyValue.Kind__c,'nullCaller'=>nullValue.Kind__c,'emptyStored'=>saved.get(emptyValue.Id).Kind__c,'nullStored'=>saved.get(nullValue.Id).Kind__c};\n  System.assertEquals('FLOW_VIEW_NATIVE',JSON.serialize(out));\n }\n}\n"
+      },
+      "sourceSHA256": {
+        "FlowViewObservation": "f3183a9eedbe6c2041f0d1c67e00519538816f2bc87c65ac5efb38dc6bee7184"
+      },
+      "classMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "classMetadataSHA256": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa"
+    },
+    "65.0": {
+      "capturedClasses": {
+        "FlowViewObservation": "@IsTest private class FlowViewObservation {\n @IsTest static void observe() {\n  FlowDefinitionView idle=[SELECT TriggerType,ProcessType FROM FlowDefinitionView WHERE ApiName='QuietCatalogIdleFlow' AND IsActive=true];\n  FlowDefinitionView triggered=[SELECT TriggerType FROM FlowDefinitionView WHERE ApiName='QuietCatalogRecordFlow' AND IsActive=true];\n  CatalogNote__c copied=new CatalogNote__c(Kind__c=idle.TriggerType);\n  CatalogNote__c control=new CatalogNote__c(Kind__c=triggered.TriggerType);\n  CatalogNote__c emptyValue=new CatalogNote__c(Kind__c='');\n  CatalogNote__c nullValue=new CatalogNote__c(Kind__c=null);\n  insert new List<CatalogNote__c>{copied,control,emptyValue,nullValue};\n  Set<Id> keys=new Set<Id>{copied.Id,control.Id,emptyValue.Id,nullValue.Id};\n  Map<Id,CatalogNote__c> saved=new Map<Id,CatalogNote__c>([SELECT Kind__c FROM CatalogNote__c WHERE Id IN :keys]);\n  Map<String,Object> out=new Map<String,Object>{'view'=>idle.TriggerType,'process'=>idle.ProcessType,'triggered'=>triggered.TriggerType,'caller'=>copied.Kind__c,'stored'=>saved.get(copied.Id).Kind__c,'controlStored'=>saved.get(control.Id).Kind__c,'emptyCaller'=>emptyValue.Kind__c,'nullCaller'=>nullValue.Kind__c,'emptyStored'=>saved.get(emptyValue.Id).Kind__c,'nullStored'=>saved.get(nullValue.Id).Kind__c};\n  System.assertEquals('FLOW_VIEW_NATIVE',JSON.serialize(out));\n }\n}\n"
+      },
+      "capturedSourceSHA256": {
+        "FlowViewObservation": "ba8d0ebcc16ad4620822110f54486b08eeb583059b780ced43fb714bd68b1f71"
+      },
+      "files": {
+        "force-app/main/default/flows/QuietCatalogIdleFlow.flow-meta.xml": "<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>65.0</apiVersion><assignments><name>SetOutput</name><label>SetOutput</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>ChildOut</assignToReference><operator>Assign</operator><value><stringValue>child</stringValue></value></assignmentItems></assignments><interviewLabel>QuietCatalogIdleFlow {!$Flow.CurrentDateTime}</interviewLabel><label>QuietCatalogIdleFlow</label><processType>AutoLaunchedFlow</processType><startElementReference>SetOutput</startElementReference><status>Active</status><variables><name>ChildOut</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables></Flow>",
+        "force-app/main/default/flows/QuietCatalogRecordFlow.flow-meta.xml": "<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>65.0</apiVersion><assignments><name>MarkFired</name><label>MarkFired</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Fired__c</assignToReference><operator>Assign</operator><value><booleanValue>true</booleanValue></value></assignmentItems></assignments><interviewLabel>QuietCatalogRecordFlow {!$Flow.CurrentDateTime}</interviewLabel><label>QuietCatalogRecordFlow</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>MarkFired</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>subject</stringValue></value></filters><object>QuietCatalogRecord__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status></Flow>",
+        "force-app/main/default/objects/CatalogNote__c/CatalogNote__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>Catalog Note</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>Catalog Notes</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+        "force-app/main/default/objects/CatalogNote__c/fields/Kind__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Kind__c</fullName><label>Kind</label><required>false</required><type>Picklist</type><valueSet><valueSetDefinition><sorted>false</sorted><value><fullName>PlatformEvent</fullName><default>false</default><label>PlatformEvent</label></value><value><fullName>RecordAfterSave</fullName><default>false</default><label>RecordAfterSave</label></value><value><fullName>RecordBeforeSave</fullName><default>false</default><label>RecordBeforeSave</label></value><value><fullName>Scheduled</fullName><default>false</default><label>Scheduled</label></value></valueSetDefinition></valueSet></CustomField>",
+        "force-app/main/default/objects/QuietCatalogRecord__c/QuietCatalogRecord__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>QuietCatalogRecord__c Flow Record</label><nameField><label>QuietCatalogRecord__c Name</label><type>Text</type></nameField><pluralLabel>QuietCatalogRecord__c Flow Records</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+        "force-app/main/default/objects/QuietCatalogRecord__c/fields/Fired__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Fired__c</fullName><defaultValue>false</defaultValue><label>QuietCatalogRecord__c Fired</label><type>Checkbox</type></CustomField>"
+      },
+      "fileSHA256": {
+        "force-app/main/default/flows/QuietCatalogIdleFlow.flow-meta.xml": "9a930fa4ef90123ebb75b267b29b5371e07dd1e71f05d11797c8e7b49dfb33bf",
+        "force-app/main/default/flows/QuietCatalogRecordFlow.flow-meta.xml": "72ecd2fa5ca07425698c8a8d889eadc3be157b903eddd53ba94b7e14b99db02b",
+        "force-app/main/default/objects/CatalogNote__c/CatalogNote__c.object-meta.xml": "35163188e9570866da2d9c554a1acdaa9b1f4463e2870e8516bb232d9d18d361",
+        "force-app/main/default/objects/CatalogNote__c/fields/Kind__c.field-meta.xml": "33692edc16d71b1373258469c4cd94369294fe89f1f511eca58548678ffc5665",
+        "force-app/main/default/objects/QuietCatalogRecord__c/QuietCatalogRecord__c.object-meta.xml": "f429fc3c0e183f46d7f28c59bdbb16414a6a521e1122845e2855464fd16b5c26",
+        "force-app/main/default/objects/QuietCatalogRecord__c/fields/Fired__c.field-meta.xml": "735464317dfd8112c0536b7a4699be750bca1586f385962a05312712b6cff2a8"
+      },
+      "classes": {
+        "FlowViewObservation": "@IsTest private class FlowViewObservation {\n @IsTest static void observe() {\n  FlowDefinitionView idle=[SELECT TriggerType,ProcessType FROM FlowDefinitionView WHERE ApiName='QuietCatalogIdleFlow' AND IsActive=true];\n  CatalogNote__c copied=new CatalogNote__c(Kind__c=idle.TriggerType);\n  CatalogNote__c control=new CatalogNote__c(Kind__c='RecordBeforeSave');\n  CatalogNote__c emptyValue=new CatalogNote__c(Kind__c='');\n  CatalogNote__c nullValue=new CatalogNote__c(Kind__c=null);\n  insert new List<CatalogNote__c>{copied,control,emptyValue,nullValue};\n  Set<Id> keys=new Set<Id>{copied.Id,control.Id,emptyValue.Id,nullValue.Id};\n  Map<Id,CatalogNote__c> saved=new Map<Id,CatalogNote__c>([SELECT Kind__c FROM CatalogNote__c WHERE Id IN :keys]);\n  Map<String,Object> out=new Map<String,Object>{'view'=>idle.TriggerType,'process'=>idle.ProcessType,'caller'=>copied.Kind__c,'stored'=>saved.get(copied.Id).Kind__c,'controlStored'=>saved.get(control.Id).Kind__c,'emptyCaller'=>emptyValue.Kind__c,'nullCaller'=>nullValue.Kind__c,'emptyStored'=>saved.get(emptyValue.Id).Kind__c,'nullStored'=>saved.get(nullValue.Id).Kind__c};\n  System.assertEquals('FLOW_VIEW_NATIVE',JSON.serialize(out));\n }\n}\n"
+      },
+      "sourceSHA256": {
+        "FlowViewObservation": "f3183a9eedbe6c2041f0d1c67e00519538816f2bc87c65ac5efb38dc6bee7184"
+      },
+      "classMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>65.0</apiVersion><status>Active</status></ApexClass>",
+      "classMetadataSHA256": "62c496b4c1c6fd12d9773fcd11ea6ffcc9c9794dbbd053439950cbdd5eb1e241"
+    },
+    "67.0": {
+      "capturedClasses": {
+        "FlowViewObservation": "@IsTest private class FlowViewObservation {\n @IsTest static void observe() {\n  FlowDefinitionView idle=[SELECT TriggerType,ProcessType FROM FlowDefinitionView WHERE ApiName='QuietCatalogIdleFlow' AND IsActive=true];\n  FlowDefinitionView triggered=[SELECT TriggerType FROM FlowDefinitionView WHERE ApiName='QuietCatalogRecordFlow' AND IsActive=true];\n  System.assertEquals('FLOW_VIEW_NATIVE',JSON.serialize(new Map<String,Object>{'view'=>idle.TriggerType,'process'=>idle.ProcessType,'triggered'=>triggered.TriggerType}));\n }\n}\n"
+      },
+      "capturedSourceSHA256": {
+        "FlowViewObservation": "76f415332b1b465ea72c476a75b364aa26325eb8d73d5d6722e6c48e8d65d1a0"
+      },
+      "files": {
+        "force-app/main/default/flows/QuietCatalogIdleFlow.flow-meta.xml": "<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><assignments><name>SetOutput</name><label>SetOutput</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>ChildOut</assignToReference><operator>Assign</operator><value><stringValue>child</stringValue></value></assignmentItems></assignments><interviewLabel>QuietCatalogIdleFlow {!$Flow.CurrentDateTime}</interviewLabel><label>QuietCatalogIdleFlow</label><processType>AutoLaunchedFlow</processType><startElementReference>SetOutput</startElementReference><status>Active</status><variables><name>ChildOut</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables></Flow>",
+        "force-app/main/default/flows/QuietCatalogRecordFlow.flow-meta.xml": "<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><assignments><name>MarkFired</name><label>MarkFired</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Fired__c</assignToReference><operator>Assign</operator><value><booleanValue>true</booleanValue></value></assignmentItems></assignments><interviewLabel>QuietCatalogRecordFlow {!$Flow.CurrentDateTime}</interviewLabel><label>QuietCatalogRecordFlow</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>MarkFired</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>subject</stringValue></value></filters><object>QuietCatalogRecord__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType></start><status>Active</status></Flow>",
+        "force-app/main/default/objects/QuietCatalogRecord__c/QuietCatalogRecord__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>QuietCatalogRecord__c Flow Record</label><nameField><label>QuietCatalogRecord__c Name</label><type>Text</type></nameField><pluralLabel>QuietCatalogRecord__c Flow Records</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+        "force-app/main/default/objects/QuietCatalogRecord__c/fields/Fired__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Fired__c</fullName><defaultValue>false</defaultValue><label>QuietCatalogRecord__c Fired</label><type>Checkbox</type></CustomField>"
+      },
+      "fileSHA256": {
+        "force-app/main/default/flows/QuietCatalogIdleFlow.flow-meta.xml": "3d30effef00318976a8a68f20512c46aa40a1e252d1db4d4b15c43d7325619e6",
+        "force-app/main/default/flows/QuietCatalogRecordFlow.flow-meta.xml": "3948cb14285dd61500ac74d627553ec5b57ccf5c054f554b2abca18e3a262e00",
+        "force-app/main/default/objects/QuietCatalogRecord__c/QuietCatalogRecord__c.object-meta.xml": "f429fc3c0e183f46d7f28c59bdbb16414a6a521e1122845e2855464fd16b5c26",
+        "force-app/main/default/objects/QuietCatalogRecord__c/fields/Fired__c.field-meta.xml": "735464317dfd8112c0536b7a4699be750bca1586f385962a05312712b6cff2a8"
+      },
+      "classes": {
+        "FlowViewObservation": "@IsTest private class FlowViewObservation {\n @IsTest static void observe() {\n  FlowDefinitionView idle=[SELECT TriggerType,ProcessType FROM FlowDefinitionView WHERE ApiName='QuietCatalogIdleFlow' AND IsActive=true];\n  System.assertEquals('FLOW_VIEW_NATIVE',JSON.serialize(new Map<String,Object>{'view'=>idle.TriggerType,'process'=>idle.ProcessType}));\n }\n}\n"
+      },
+      "sourceSHA256": {
+        "FlowViewObservation": "547d6430c8d1584c1f686d514c40a49aac12c9fc8cf7a0da4c39cab6d24c8f62"
+      },
+      "classMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "classMetadataSHA256": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d"
+    }
+  },
+  "cells": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "method": "observe",
+      "deploymentID": "0AfEc00000p1gavKAA",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; owner b60/k13; no permanent metadata or data",
+      "rawDeploymentSHA256": "c2f9c24c5083c730cddfa1ce46b5307c1af3ec656a1172f4b55ffa01a4cfa0f2",
+      "rawRowSHA256": "1598d0a19dc27b3d5241bad89dcd581c971f292e103322d928d3dbd3fb6a1f8a",
+      "payload": "{\"nullStored\":null,\"emptyStored\":null,\"nullCaller\":null,\"emptyCaller\":\"\",\"controlStored\":\"RecordBeforeSave\",\"stored\":null,\"caller\":null,\"triggered\":\"RecordBeforeSave\",\"process\":\"AutoLaunchedFlow\",\"view\":null}",
+      "payloadSHA256": "55909ba4893867b4546d72bd560f19e2828ca6941ae528b741e00e210b8b90db",
+      "native": {
+        "nullStored": null,
+        "emptyStored": null,
+        "nullCaller": null,
+        "emptyCaller": "",
+        "controlStored": "RecordBeforeSave",
+        "stored": null,
+        "caller": null,
+        "triggered": "RecordBeforeSave",
+        "process": "AutoLaunchedFlow",
+        "view": null
+      }
+    },
+    {
+      "api": "65.0",
+      "transportAPI": "65.0",
+      "route": "istest",
+      "method": "observe",
+      "deploymentID": "0AfEc00000p1gSrKAI",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; owner b60/k13; no permanent metadata or data",
+      "rawDeploymentSHA256": "20dba09bbdd8592ce6ea7a3d8a4ba1d8b82a0b7a80b0d2fbc98b5c478c9f9753",
+      "rawRowSHA256": "1598d0a19dc27b3d5241bad89dcd581c971f292e103322d928d3dbd3fb6a1f8a",
+      "payload": "{\"nullStored\":null,\"emptyStored\":null,\"nullCaller\":null,\"emptyCaller\":\"\",\"controlStored\":\"RecordBeforeSave\",\"stored\":null,\"caller\":null,\"triggered\":\"RecordBeforeSave\",\"process\":\"AutoLaunchedFlow\",\"view\":null}",
+      "payloadSHA256": "55909ba4893867b4546d72bd560f19e2828ca6941ae528b741e00e210b8b90db",
+      "native": {
+        "nullStored": null,
+        "emptyStored": null,
+        "nullCaller": null,
+        "emptyCaller": "",
+        "controlStored": "RecordBeforeSave",
+        "stored": null,
+        "caller": null,
+        "triggered": "RecordBeforeSave",
+        "process": "AutoLaunchedFlow",
+        "view": null
+      }
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "method": "observe",
+      "deploymentID": "0AfEc00000p1gizKAA",
+      "done": true,
+      "checkOnly": true,
+      "status": "Failed",
+      "cleanup": "terminal check-only rollback; owner b60/k13; no permanent metadata or data",
+      "rawDeploymentSHA256": "7f2fa47c877e16b99d18328f10ef25ff0a05eee514c07b60f4c6311517a2bec0",
+      "rawRowSHA256": "57a1a7051a47c5fc4bc5dc113798dfdd587f0c89cf7fa2fce5aa8db0f1992364",
+      "payload": "{\"triggered\":\"RecordBeforeSave\",\"process\":\"AutoLaunchedFlow\",\"view\":null}",
+      "payloadSHA256": "720e6cb7db70fbbfaeec29f4ccfbdcf93195b6220b3b821b9b514d701beb6bba",
+      "native": {
+        "triggered": "RecordBeforeSave",
+        "process": "AutoLaunchedFlow",
+        "view": null
+      }
+    }
+  ],
+  "fixtureBasis": "Owned flow_core/subflow-outputs child assignment and flow_core/controls record-before-save metadata; names/API pins rendered for isolation. No Flow execution behavior is added.",
+  "carried": {
+    "api67Copy": "Default DML at API67 rejects the newly deployed optional field as inaccessible. The native view-only result is separate; no permission changes or copy parity inference.",
+    "anonymous": "Not captured by this bounded request.",
+    "api68": "Not captured by this bounded request.",
+    "otherMetadata": "Other FlowDefinitionView fields, other process types and omitted versus explicit-empty XML twins are outside this observation.",
+    "emptyCaller": "Native API62/65 retains literal empty Picklist on the caller after insert; the unchanged local path yields null. This existing caller-mutation mismatch is outside catalog projection; raw value stays captured and is logged rather than asserted as matched.",
+    "recordTriggeredDiscovery": "The existing catalog omits record-bound FlowRules. Local source projection removes only that discovery query and uses the native observed nonempty value as a literal Picklist control. triggered stays native-only; controlStored checks literal nonempty persistence, not triggered-catalog copying."
+  },
+  "partial": {
+    "api": "67.0",
+    "transportAPI": "67.0",
+    "route": "istest",
+    "deploymentID": "0AfEc00000p1cViKAI",
+    "done": true,
+    "checkOnly": true,
+    "status": "Failed",
+    "source": "@IsTest private class FlowViewObservation {\n @IsTest static void observe() {\n  FlowDefinitionView idle=[SELECT TriggerType,ProcessType FROM FlowDefinitionView WHERE ApiName='QuietCatalogIdleFlow' AND IsActive=true];\n  FlowDefinitionView triggered=[SELECT TriggerType FROM FlowDefinitionView WHERE ApiName='QuietCatalogRecordFlow' AND IsActive=true];\n  CatalogNote__c copied=new CatalogNote__c(Kind__c=idle.TriggerType);\n  CatalogNote__c control=new CatalogNote__c(Kind__c=triggered.TriggerType);\n  CatalogNote__c emptyValue=new CatalogNote__c(Kind__c='');\n  CatalogNote__c nullValue=new CatalogNote__c(Kind__c=null);\n  insert new List<CatalogNote__c>{copied,control,emptyValue,nullValue};\n  Set<Id> keys=new Set<Id>{copied.Id,control.Id,emptyValue.Id,nullValue.Id};\n  Map<Id,CatalogNote__c> saved=new Map<Id,CatalogNote__c>([SELECT Kind__c FROM CatalogNote__c WHERE Id IN :keys]);\n  Map<String,Object> out=new Map<String,Object>{'view'=>idle.TriggerType,'process'=>idle.ProcessType,'triggered'=>triggered.TriggerType,'caller'=>copied.Kind__c,'stored'=>saved.get(copied.Id).Kind__c,'controlStored'=>saved.get(control.Id).Kind__c,'emptyCaller'=>emptyValue.Kind__c,'nullCaller'=>nullValue.Kind__c,'emptyStored'=>saved.get(emptyValue.Id).Kind__c,'nullStored'=>saved.get(nullValue.Id).Kind__c};\n  System.assertEquals('FLOW_VIEW_NATIVE',JSON.serialize(out));\n }\n}\n",
+    "sourceSHA256": "ba8d0ebcc16ad4620822110f54486b08eeb583059b780ced43fb714bd68b1f71",
+    "rawDeploymentSHA256": "427e9ea9b7e8ee9d6ceefda19c90d5223f663f67ba19185edfa3d3a873f02792",
+    "nativeError": "System.DmlException: Operation failed due to fields being inaccessible on Sobject CatalogNote__c, check errors on Exception or Result!",
+    "reason": "Default DML at API67 rejects the newly deployed optional field as inaccessible. The native view-only result is separate; no permission changes or copy parity inference.",
+    "cleanup": "terminal check-only rollback; owner b60/k13"
+  },
+  "nativeObservationCount": 3,
+  "carriedObservationCount": 1
+}

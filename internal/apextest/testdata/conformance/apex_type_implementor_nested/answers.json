@@ -1,0 +1,36 @@
+{
+  "apiVersions": ["62.0", "67.0", "68.0"],
+  "routes": ["anonymous", "istest"],
+  "rows": [
+    {
+      "className": "ProbeNestedContainer.NestedImplementor",
+      "namespacePrefix": null,
+      "interfaceName": "ProbeNestedContract",
+      "rowCount": 1
+    },
+    {
+      "className": "ProbeNestedContainer.MultiImplementor",
+      "namespacePrefix": null,
+      "interfaceName": "ProbeNestedContract",
+      "rowCount": 1
+    },
+    {
+      "className": "ProbeNestedContainer.MultiImplementor",
+      "namespacePrefix": null,
+      "interfaceName": "ProbeSecondContract",
+      "rowCount": 1
+    }
+  ],
+  "controls": [
+    {
+      "className": "ProbeNestedContainer.NestedControl",
+      "interfaceName": "ProbeNestedContract",
+      "rowCount": 0
+    },
+    {
+      "className": "ProbeNestedContainer.PrivateImplementor",
+      "interfaceName": "ProbeNestedContract",
+      "rowCount": 0
+    }
+  ]
+}

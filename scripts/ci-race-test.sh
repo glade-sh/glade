@@ -278,7 +278,11 @@ PY
 	build_resource="${artifact_dir}/build-resource.json"
 	set +e
 	run_apextest_command "${resource_runner}" "${build_resource}" "race-${slug}-build" -- \
-		"${go_command}" test -race -c -o "${binary_path}" "${package}"
+		bash -c 'if [[ -n "${CI_TEST_BIN_DIR:-}" ]]; then
+			python3 "$1/ci-test-binary.py" copy-race "$2" "$3"
+		else
+			"$4" test -race -c -o "$3" "$2"
+		fi' bash "${script_dir}" "${package}" "${binary_path}" "${go_command}"
 	build_native_rc="$?"
 	set -e
 	set +e
@@ -344,7 +348,7 @@ PY
 	if [[ "${discovery_native_rc}" -ne 0 ]]; then exit "${discovery_native_rc}"; fi
 	verify_apextest_binary
 else
-	"${go_command}" test "${go_test_package_args[@]}" -race -list '.' "${package}" >"${discovery_raw}"
+	CI_TEST_GO_COMMAND="${go_command}" python3 "${script_dir}/ci-test-binary.py" test "${go_test_package_args[@]}" -race -list '.' "${package}" >"${discovery_raw}"
 fi
 python3 - "${discovery_raw}" "${discovery}" "${discovery_benchmarks}" "${ordinary_discovery}" "${package_name}" <<'PY'
 import re
@@ -740,7 +744,7 @@ for lane_name in "${lane_names[@]}"; do
 	set +e
 	"${resource_runner}" "${resource}" "race-${slug}-${lane_name}" -- \
 		bash -c 'events="$1"; shift; "$@" >"${events}"' bash "${events}" \
-		"${go_command}" test "${go_test_package_args[@]}" -json -race -count=1 -timeout=60m -run "${regex}" "${package}"
+		env CI_TEST_GO_COMMAND="${go_command}" python3 "${script_dir}/ci-test-binary.py" test "${go_test_package_args[@]}" -json -race -count=1 -timeout=60m -run "${regex}" "${package}"
 	native_rc="$?"
 	set -e
 	set +e

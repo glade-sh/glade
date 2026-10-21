@@ -1,0 +1,7 @@
+method	question
+identifierAccount	Does an inserted standard-record ID have a nonzero body segment and pass a filtered update?
+identifierCustom	Does an inserted custom-record ID have a nonzero body segment and pass a filtered update?
+mergeAll	How are two successful duplicate merges grouped?
+mergePartial	How are valid and deleted duplicate results grouped?
+mergeEmpty	What results does an empty duplicate list produce?
+setupVisibility	Can a Standard User query an unassigned setup-created PermissionSet?

@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"inserted":200,"processed":200}
+62.0	isTest	{"inserted":200,"processed":200}
+67.0	anonymous	{"inserted":200,"processed":200}
+67.0	isTest	{"inserted":200,"processed":200}

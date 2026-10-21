@@ -1,0 +1,3 @@
+source_api	type	message
+62.0	System.FinalException	Cannot modify a collection while it is being iterated.
+67.0	System.FinalException	Cannot modify a collection while it is being iterated.

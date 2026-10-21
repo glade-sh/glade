@@ -309,7 +309,7 @@ func TestExecuteHierarchyCustomSettingSetupOwnerProjection(t *testing.T) {
 				Object: "Hierarchy_Setting__c",
 				Fields: map[string]storage.Value{
 					"Name":         storage.StringValue("OrgDefaults"),
-					"SetupOwnerId": storage.StringValue("00D000000000001"),
+					"SetupOwnerId": storage.StringValue("00D000000000mH2"),
 				},
 			},
 		},
@@ -625,8 +625,8 @@ func TestExecuteProjectsOrganizationTimeZoneDefault(t *testing.T) {
 			},
 		},
 		Records: map[storage.ID]storage.Record{
-			"00D000000000001": {
-				ID:     "00D000000000001",
+			"00D000000000mH2": {
+				ID:     "00D000000000mH2",
 				Object: "Organization",
 				Fields: map[string]storage.Value{
 					"Name": storage.StringValue("Local Org"),
@@ -1785,14 +1785,14 @@ func TestExecuteDatePartFunctionWithConvertTimezone(t *testing.T) {
 
 func TestFiscalDateFunctionsUseOrganizationFiscalStartMonth(t *testing.T) {
 	org := aggregateTestOrg()
-	org.OrgID = "00D000000000001"
+	org.OrgID = "00D000000000mH2"
 	org.Objects["Organization"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{APIName: "Organization", Fields: map[string]storage.Field{
 			"FiscalYearStartMonth":          {APIName: "FiscalYearStartMonth", Type: storage.FieldInteger},
 			"UsesStartDateAsFiscalYearName": {APIName: "UsesStartDateAsFiscalYearName", Type: storage.FieldBoolean},
 		}},
 		Records: map[storage.ID]storage.Record{
-			"00D000000000001": {ID: "00D000000000001", Object: "Organization", Fields: map[string]storage.Value{
+			"00D000000000mH2": {ID: "00D000000000mH2", Object: "Organization", Fields: map[string]storage.Value{
 				"FiscalYearStartMonth":          storage.IntegerValue(2),
 				"UsesStartDateAsFiscalYearName": storage.BooleanValue(false),
 			}},
@@ -2270,13 +2270,13 @@ func TestDateLiteralReferenceCoverage(t *testing.T) {
 func TestFiscalDateLiteralsUseOrganizationFiscalStartMonth(t *testing.T) {
 	now := time.Date(2026, 6, 15, 12, 0, 0, 0, time.UTC)
 	org := storage.NewOrgState()
-	org.OrgID = "00D000000000001"
+	org.OrgID = "00D000000000mH2"
 	org.Objects["Organization"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{APIName: "Organization", Fields: map[string]storage.Field{
 			"FiscalYearStartMonth": {APIName: "FiscalYearStartMonth", Type: storage.FieldInteger},
 		}},
 		Records: map[storage.ID]storage.Record{
-			"00D000000000001": {ID: "00D000000000001", Object: "Organization", Fields: map[string]storage.Value{
+			"00D000000000mH2": {ID: "00D000000000mH2", Object: "Organization", Fields: map[string]storage.Value{
 				"FiscalYearStartMonth": storage.IntegerValue(2),
 			}},
 		},
@@ -4629,9 +4629,14 @@ func TestExecuteChildRelationshipSubqueryErrors(t *testing.T) {
 		},
 	}
 
-	_, err := ParseAndExecute(org, "SELECT Id, (SELECT Id FROM Contacts) FROM Account")
-	// R223/R224: unknown child selectors use the native relationship diagnostic.
-	if err == nil || !strings.Contains(err.Error(), "Didn't understand relationship 'Contacts' in FROM part of query call") {
+	// Native Account/Contacts rows accept this platform edge before the local
+	// child table is loaded. The NoSuchChildren control is independently rejected.
+	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Id FROM Contacts) FROM Account")
+	if err != nil || len(result.Records) != 1 || len(result.Records[0].Children["Contacts"]) != 0 {
+		t.Fatalf("unloaded platform child = %#v, %v", result, err)
+	}
+	_, err = ParseAndExecute(org, "SELECT Id, (SELECT Id FROM NoSuchChildren) FROM Account")
+	if err == nil || !strings.Contains(err.Error(), "Didn't understand relationship 'NoSuchChildren' in FROM part of query call") {
 		t.Fatalf("child relationship error = %v", err)
 	}
 }
@@ -4832,7 +4837,7 @@ func TestExecuteComplexPredicates(t *testing.T) {
 		{"SELECT Id FROM Account WHERE Name = 'Acme' AND Rating = 'Hot' OR Rating = 'Cold'", []string{"001000000000001", "001000000000003", "001000000000004"}},
 		{"SELECT Id FROM Account WHERE (Name = 'Acme' OR Name = 'Beta') AND Rating = 'Warm'", []string{"001000000000002"}},
 		{"SELECT Id FROM Account WHERE NOT Name = 'Acme'", []string{"001000000000002", "001000000000003", "001000000000004"}},
-		{"SELECT Id FROM Account WHERE Name NOT LIKE 'a%'", []string{"001000000000002", "001000000000003", "001000000000004"}},
+		{"SELECT Id FROM Account WHERE NOT Name LIKE 'a%'", []string{"001000000000002", "001000000000003", "001000000000004"}},
 		{"SELECT Id FROM Account WHERE AnnualRevenue = 20", []string{"001000000000004"}},
 	}
 

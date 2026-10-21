@@ -1,0 +1,1038 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 10,
+  "nativeObservationCount": 60,
+  "packetRowsSha256": "bdb07c4592ca774891f1569ddbb47b04d8979873883901e5e60ab5a6c6092167",
+  "nativeJsonSha256": "3371b4658cc7034d1461a6b1e24ebf443dbdfb588c66ae393a06296feaa30e65",
+  "sourceManifestSha256": "cd86500b7b47c95e1fe5992615a7f7169c90dd9d903e6776516d2162a3219255",
+  "rows": [
+    {
+      "id": "C126EVENT_001",
+      "question": "C126Immediate__e direct",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EVENT_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "a29f1c56f48a560689087973be4d263ee6f72a5506f691a1deda446e8d18892c",
+            "object:C126Immediate__e": "815d9bbf9500313effd0ef5e79fdeaa880eaafeca9cc5b6ba84f18390d62510e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "aecd4981c5a843088cf269961f4e67a0cb7b1ec7e238c69b2254c548b3a5b9d8",
+            "67.0": "486e98c6e0f5aea7493b88b495f3bf19aada1c6d57fd8f0fdd0879673b306b11",
+            "68.0": "bae16031a9242b71ef222d8d73cacb171f23e36b1610a2d751b52afe6d835031"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<C126Immediate__e> events=new List<C126Immediate__e>{new C126Immediate__e()};Integer d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();List<Database.SaveResult> r=EventBus.publish(events);o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);o.put('success',r[0].isSuccess());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EVENT_001|'+JSON.serialize(o));",
+          "objects": {
+            "C126Immediate__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Immediate</label>\n    <pluralLabel>Synthetic Immediate Events</pluralLabel>\n    <publishBehavior>PublishImmediately</publishBehavior>\n</CustomObject>\n"
+          }
+        },
+        "isTest": {
+          "id": "C126EVENT_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "6054c280c64e85707a9785cf3aed590317bc3c170ced943ee3af80e298d8c411",
+            "object:C126Immediate__e": "815d9bbf9500313effd0ef5e79fdeaa880eaafeca9cc5b6ba84f18390d62510e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "12b7f2aa92d2abe8d0cdd652cc1f5cdd56d7a04f952b64edccbbf09c6ba6d5b6",
+            "67.0": "f00de3bd064bb488b8c838098c6c6ec4dd55db9b672444c33e7c40218b7e8f43",
+            "68.0": "047b8c9e6c7fce76ce8248d756992c38833d398c399102f368684f87011563a7"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nList<C126Immediate__e> events=new List<C126Immediate__e>{new C126Immediate__e()};Integer d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();List<Database.SaveResult> r=EventBus.publish(events);o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);o.put('success',r[0].isSuccess());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EVENT_001|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {
+            "C126Immediate__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Immediate</label>\n    <pluralLabel>Synthetic Immediate Events</pluralLabel>\n    <publishBehavior>PublishImmediately</publishBehavior>\n</CustomObject>\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "C126EVENT_002",
+      "question": "C126Immediate__e forward",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EVENT_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "034702514e91b9a50ef31fe051d00cbb7f4beac96cc8ae6877d42ed65002c90b",
+            "object:C126Immediate__e": "815d9bbf9500313effd0ef5e79fdeaa880eaafeca9cc5b6ba84f18390d62510e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "cf3b58a46605f61e94a2cba2b60946daea4348c02afcf9c2576d3c07952ac800",
+            "67.0": "eea95c14b5709d0aa02bcc9b1c3bf88a655910fa1b8dfd97767b1908367ad99e",
+            "68.0": "8a340688a5c49efa6f8d7be5a8d1708be51fff36e8ef805fa81dc2e2b79bb1e2"
+          },
+          "anonymous": "class C126Publish {public List<Database.SaveResult> publish(List<SObject> x){return EventBus.publish(x);} public List<Database.SaveResult> again(List<SObject> x){return publish(x);}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<C126Immediate__e> events=new List<C126Immediate__e>{new C126Immediate__e()};Integer d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();List<Database.SaveResult> r=new C126Publish().publish(events);o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);o.put('success',r[0].isSuccess());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EVENT_002|'+JSON.serialize(o));",
+          "objects": {
+            "C126Immediate__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Immediate</label>\n    <pluralLabel>Synthetic Immediate Events</pluralLabel>\n    <publishBehavior>PublishImmediately</publishBehavior>\n</CustomObject>\n"
+          }
+        },
+        "isTest": {
+          "id": "C126EVENT_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Publish": "d03d8b83928afda2b2ee1b7d7ee30752dd287e699700d6f6162b834e52cf7b59",
+            "class:C126Test": "00f699a1585af199a988be215049b89ad9cf33fed3e1d90a1e67cd3d0300a471",
+            "object:C126Immediate__e": "815d9bbf9500313effd0ef5e79fdeaa880eaafeca9cc5b6ba84f18390d62510e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "ca529388a3ffa6cf89260cbc8dafb146c3eb3b69cec99fcc74bcc417cfa6890c",
+            "67.0": "30aeebb8bdaf9f402111dd34151d2861d87eb1fb3492cdc6eb11b4d86439a83f",
+            "68.0": "53c570bacdc0ff05b9c9f9db858dee00c127fc52435f3fa2f57c74b6ee05d46c"
+          },
+          "classes": {
+            "C126Publish": "public class C126Publish {public List<Database.SaveResult> publish(List<SObject> x){return EventBus.publish(x);} public List<Database.SaveResult> again(List<SObject> x){return publish(x);}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nList<C126Immediate__e> events=new List<C126Immediate__e>{new C126Immediate__e()};Integer d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();List<Database.SaveResult> r=new C126Publish().publish(events);o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);o.put('success',r[0].isSuccess());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EVENT_002|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {
+            "C126Immediate__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Immediate</label>\n    <pluralLabel>Synthetic Immediate Events</pluralLabel>\n    <publishBehavior>PublishImmediately</publishBehavior>\n</CustomObject>\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "C126EVENT_003",
+      "question": "C126Immediate__e twice",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EVENT_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "cb6b417be61eba8a731ad422f7d2db6cefb258c6f100be17791e77f10b4d646e",
+            "object:C126Immediate__e": "815d9bbf9500313effd0ef5e79fdeaa880eaafeca9cc5b6ba84f18390d62510e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "2c5d9f85a490cf7d696c36373834e9f36b8ed95fb7436eb0749e8337066466dc",
+            "67.0": "62d99299c5992e728aa52bd5469cc684ae4e8f96a5cd0cf7b1e36ab720573e5c",
+            "68.0": "2f9127626084d3a0e6d605afaca7928fc65173df4de73bbd1a785ff5074cde71"
+          },
+          "anonymous": "class C126Publish {public List<Database.SaveResult> publish(List<SObject> x){return EventBus.publish(x);} public List<Database.SaveResult> again(List<SObject> x){return publish(x);}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<C126Immediate__e> events=new List<C126Immediate__e>{new C126Immediate__e()};Integer d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();List<Database.SaveResult> r=new C126Publish().again(events);o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);o.put('success',r[0].isSuccess());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EVENT_003|'+JSON.serialize(o));",
+          "objects": {
+            "C126Immediate__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Immediate</label>\n    <pluralLabel>Synthetic Immediate Events</pluralLabel>\n    <publishBehavior>PublishImmediately</publishBehavior>\n</CustomObject>\n"
+          }
+        },
+        "isTest": {
+          "id": "C126EVENT_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Publish": "d03d8b83928afda2b2ee1b7d7ee30752dd287e699700d6f6162b834e52cf7b59",
+            "class:C126Test": "868d414ecad74622abcb9cf06fd4de95b75b35b95940fa7d68c067c108d57864",
+            "object:C126Immediate__e": "815d9bbf9500313effd0ef5e79fdeaa880eaafeca9cc5b6ba84f18390d62510e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 1,
+                "dmlDelta": 0
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "139d513cbf379f841efa974f26bcc9ed63bea026d99aeef90333bf0b63ad86e0",
+            "67.0": "6369f744d9bc754436ddc4673efe6e1388f763f589021bcee1ee860f6b0ce2e4",
+            "68.0": "dda764cbc4a2777b02e2c70abac7463806e5fcabab34df98829dbf3199085d75"
+          },
+          "classes": {
+            "C126Publish": "public class C126Publish {public List<Database.SaveResult> publish(List<SObject> x){return EventBus.publish(x);} public List<Database.SaveResult> again(List<SObject> x){return publish(x);}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nList<C126Immediate__e> events=new List<C126Immediate__e>{new C126Immediate__e()};Integer d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();List<Database.SaveResult> r=new C126Publish().again(events);o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);o.put('success',r[0].isSuccess());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EVENT_003|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {
+            "C126Immediate__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Immediate</label>\n    <pluralLabel>Synthetic Immediate Events</pluralLabel>\n    <publishBehavior>PublishImmediately</publishBehavior>\n</CustomObject>\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "C126EVENT_004",
+      "question": "C126Immediate__e generic",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EVENT_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "be653aeb4cc94c61fcca75b62c747eeaffc759d59090b1fff7bfa3b822c5d45c",
+            "object:C126Immediate__e": "815d9bbf9500313effd0ef5e79fdeaa880eaafeca9cc5b6ba84f18390d62510e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "97e4b7e6d0ea1d8fb7896206b981cff8f908fd03a91b69a82e95a4937d5645ee",
+            "67.0": "74000f67159e63b79fe6ac5bbe4a1a21d861d4b4bc82c96b482b6b6bbd5dab6a",
+            "68.0": "8a6745afd95a7a61d6d8bcc6a615e50ea55fcbb0e1c6e2435d27c1ec1a6ee0d4"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<SObject> events=new List<SObject>{new C126Immediate__e()};Integer d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();List<Database.SaveResult> r=EventBus.publish(events);o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);o.put('success',r[0].isSuccess());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EVENT_004|'+JSON.serialize(o));",
+          "objects": {
+            "C126Immediate__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Immediate</label>\n    <pluralLabel>Synthetic Immediate Events</pluralLabel>\n    <publishBehavior>PublishImmediately</publishBehavior>\n</CustomObject>\n"
+          }
+        },
+        "isTest": {
+          "id": "C126EVENT_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "d40d94569c3ec98146695dd769ba8fa8ab01248a8f6f31be00e4a73f937976f0",
+            "object:C126Immediate__e": "815d9bbf9500313effd0ef5e79fdeaa880eaafeca9cc5b6ba84f18390d62510e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "8b4d21d59297bfcdd45da4370f1351e88f1388e75e769a2448ab863db22e4736",
+            "67.0": "c5d6c4c1d9caa1af2ba7c79fae90bb80ff5d8f1338781973d0fdfb578cc8aa23",
+            "68.0": "9b19e87c7084097555f2fb87a22f41cb31253874a3b988a458430f0c893111c0"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nList<SObject> events=new List<SObject>{new C126Immediate__e()};Integer d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();List<Database.SaveResult> r=EventBus.publish(events);o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);o.put('success',r[0].isSuccess());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EVENT_004|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {
+            "C126Immediate__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Immediate</label>\n    <pluralLabel>Synthetic Immediate Events</pluralLabel>\n    <publishBehavior>PublishImmediately</publishBehavior>\n</CustomObject>\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "C126EVENT_005",
+      "question": "C126Commit__e direct",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EVENT_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "6939b048cf5c764e63e8b89218231b7016c14145a403ec41c3b16b739eb06a14",
+            "object:C126Commit__e": "486e2ca5a72c645432290aed94b2ae370ab97e8a41dd21f5fbc8bdef96f737d0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "0658092ce6cf91a5389f21e8c47b23325b94755942d4bacf625334c6158d90e6",
+            "67.0": "e6d2efe4dd42e52bb841d79c495bd0c35378b6840d5065ccdb5964f1ca6fa842",
+            "68.0": "9865a4d14b12390d2d7284179a9a0b9d6ce7bb02d68c25712ee175ec314fc5e1"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<C126Commit__e> events=new List<C126Commit__e>{new C126Commit__e()};Integer d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();List<Database.SaveResult> r=EventBus.publish(events);o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);o.put('success',r[0].isSuccess());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EVENT_005|'+JSON.serialize(o));",
+          "objects": {
+            "C126Commit__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Commit</label>\n    <pluralLabel>Synthetic Commit Events</pluralLabel>\n    <publishBehavior>PublishAfterCommit</publishBehavior>\n</CustomObject>\n"
+          }
+        },
+        "isTest": {
+          "id": "C126EVENT_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "4d57ae1fdf1659e838f1ebe7cbc1f00ba27e771b26021ccfb21554f60e4161c9",
+            "object:C126Commit__e": "486e2ca5a72c645432290aed94b2ae370ab97e8a41dd21f5fbc8bdef96f737d0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "325f4ad85f5088c13b59e9a2c1561dd11a0168a95ec0c7712ccd7f83e055bb7e",
+            "67.0": "f907ac865e2b980349855ab8fb96227c7b2d4a81d928c3e092885bc47f670e13",
+            "68.0": "b1bacc4d05635c453325317d6f40548b21bbcbaa8881e0905a713935a4b66d00"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nList<C126Commit__e> events=new List<C126Commit__e>{new C126Commit__e()};Integer d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();List<Database.SaveResult> r=EventBus.publish(events);o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);o.put('success',r[0].isSuccess());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EVENT_005|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {
+            "C126Commit__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Commit</label>\n    <pluralLabel>Synthetic Commit Events</pluralLabel>\n    <publishBehavior>PublishAfterCommit</publishBehavior>\n</CustomObject>\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "C126EVENT_006",
+      "question": "C126Commit__e forward",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EVENT_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "ab786a63375f538f8608caaefabb99d55d3ee5b621c8e50c45b76b67405ba924",
+            "object:C126Commit__e": "486e2ca5a72c645432290aed94b2ae370ab97e8a41dd21f5fbc8bdef96f737d0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "935ac6fdd400f86e4f50f61559d1631784219176a9f722e56110f5ac04826bd8",
+            "67.0": "624224cc53c82ea2b3f9cd09e7627fa687868f7a73e98cc936db470abb964183",
+            "68.0": "54ce8925aefdc94260c1acc2ba18769291a355a53f913e07d8b194e9142d1011"
+          },
+          "anonymous": "class C126Publish {public List<Database.SaveResult> publish(List<SObject> x){return EventBus.publish(x);} public List<Database.SaveResult> again(List<SObject> x){return publish(x);}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<C126Commit__e> events=new List<C126Commit__e>{new C126Commit__e()};Integer d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();List<Database.SaveResult> r=new C126Publish().publish(events);o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);o.put('success',r[0].isSuccess());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EVENT_006|'+JSON.serialize(o));",
+          "objects": {
+            "C126Commit__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Commit</label>\n    <pluralLabel>Synthetic Commit Events</pluralLabel>\n    <publishBehavior>PublishAfterCommit</publishBehavior>\n</CustomObject>\n"
+          }
+        },
+        "isTest": {
+          "id": "C126EVENT_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Publish": "d03d8b83928afda2b2ee1b7d7ee30752dd287e699700d6f6162b834e52cf7b59",
+            "class:C126Test": "495f1c73a2308a16ef1272398fc9739a62ba06631906121c7f633d59b811a6e0",
+            "object:C126Commit__e": "486e2ca5a72c645432290aed94b2ae370ab97e8a41dd21f5fbc8bdef96f737d0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "f1990981e92aee1b0ee2b56288724807a0560a3ecf6191897bc73611e60a5467",
+            "67.0": "692e3019ea59ccce38fd49703a0f3a43ed2294e32adf1470700698da43761cac",
+            "68.0": "06ef038f6f383b82788c88a071631f2c54ca86562c795fc66458690204700bdb"
+          },
+          "classes": {
+            "C126Publish": "public class C126Publish {public List<Database.SaveResult> publish(List<SObject> x){return EventBus.publish(x);} public List<Database.SaveResult> again(List<SObject> x){return publish(x);}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nList<C126Commit__e> events=new List<C126Commit__e>{new C126Commit__e()};Integer d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();List<Database.SaveResult> r=new C126Publish().publish(events);o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);o.put('success',r[0].isSuccess());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EVENT_006|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {
+            "C126Commit__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Commit</label>\n    <pluralLabel>Synthetic Commit Events</pluralLabel>\n    <publishBehavior>PublishAfterCommit</publishBehavior>\n</CustomObject>\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "C126EVENT_007",
+      "question": "C126Commit__e twice",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EVENT_007",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "91e2daaddd4378c9dc43561624e8615a4c7ca19b1a228342d1b0e86e5dfd2327",
+            "object:C126Commit__e": "486e2ca5a72c645432290aed94b2ae370ab97e8a41dd21f5fbc8bdef96f737d0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "77c55b0d85b739773eeaa4c95e1c0ced731b487037963a2f1618a8b5c53e1589",
+            "67.0": "92a5a257e6be0c298cdd1618388620b5510d89bdea3a3727cd76f3f1e8150d20",
+            "68.0": "0d49dc0e83d046706bc9b35d6672316ed06deed93da87dd5a7fd23305cb4b06e"
+          },
+          "anonymous": "class C126Publish {public List<Database.SaveResult> publish(List<SObject> x){return EventBus.publish(x);} public List<Database.SaveResult> again(List<SObject> x){return publish(x);}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<C126Commit__e> events=new List<C126Commit__e>{new C126Commit__e()};Integer d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();List<Database.SaveResult> r=new C126Publish().again(events);o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);o.put('success',r[0].isSuccess());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EVENT_007|'+JSON.serialize(o));",
+          "objects": {
+            "C126Commit__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Commit</label>\n    <pluralLabel>Synthetic Commit Events</pluralLabel>\n    <publishBehavior>PublishAfterCommit</publishBehavior>\n</CustomObject>\n"
+          }
+        },
+        "isTest": {
+          "id": "C126EVENT_007",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Publish": "d03d8b83928afda2b2ee1b7d7ee30752dd287e699700d6f6162b834e52cf7b59",
+            "class:C126Test": "6826f67fc15d5185ea37b78a8f3bb6efcaac8fb832364dc75730995fa650d439",
+            "object:C126Commit__e": "486e2ca5a72c645432290aed94b2ae370ab97e8a41dd21f5fbc8bdef96f737d0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "034bcec31a2099c11e19faf32f49e96f6b519f827d054ee3ead083da85946511",
+            "67.0": "4b515ae0860b12eb88fa25dce9785905ee2406ce9fb6290620fd55233ff7cfc7",
+            "68.0": "c08d7ab1113fb825a9555b0bc63f4ffc0d6d05429089ef296c23b91f4cbb76f7"
+          },
+          "classes": {
+            "C126Publish": "public class C126Publish {public List<Database.SaveResult> publish(List<SObject> x){return EventBus.publish(x);} public List<Database.SaveResult> again(List<SObject> x){return publish(x);}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nList<C126Commit__e> events=new List<C126Commit__e>{new C126Commit__e()};Integer d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();List<Database.SaveResult> r=new C126Publish().again(events);o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);o.put('success',r[0].isSuccess());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EVENT_007|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {
+            "C126Commit__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Commit</label>\n    <pluralLabel>Synthetic Commit Events</pluralLabel>\n    <publishBehavior>PublishAfterCommit</publishBehavior>\n</CustomObject>\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "C126EVENT_008",
+      "question": "C126Commit__e generic",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EVENT_008",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "e1b25a2363634bdc355963b13250fefcb554b6923e6c28d1b2ce09ca4650e1d7",
+            "object:C126Commit__e": "486e2ca5a72c645432290aed94b2ae370ab97e8a41dd21f5fbc8bdef96f737d0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "e988940a48142832e67d279c4bfea6e56c546b09ea59f190bde4daa2eacafc4f",
+            "67.0": "5b2d8cd01eeb1294e6b08387756ab2fee9b4a1bcba4040b611b9a7efc219229f",
+            "68.0": "968e45346d7375fa5b088e681911ec736e46003be417f7abadf8aa31dccf710f"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<SObject> events=new List<SObject>{new C126Commit__e()};Integer d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();List<Database.SaveResult> r=EventBus.publish(events);o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);o.put('success',r[0].isSuccess());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EVENT_008|'+JSON.serialize(o));",
+          "objects": {
+            "C126Commit__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Commit</label>\n    <pluralLabel>Synthetic Commit Events</pluralLabel>\n    <publishBehavior>PublishAfterCommit</publishBehavior>\n</CustomObject>\n"
+          }
+        },
+        "isTest": {
+          "id": "C126EVENT_008",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "bc4d47c7cd4600cbe109cbf9adcf42d1d85204102a722753a1bf3eabadab1f38",
+            "object:C126Commit__e": "486e2ca5a72c645432290aed94b2ae370ab97e8a41dd21f5fbc8bdef96f737d0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "success": true,
+                "immediateDelta": 0,
+                "dmlDelta": 1
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "4912a8563c1f5cedc91cfae07f0531030dddf8a6d544109b3efe83e92c411dd4",
+            "67.0": "492be98e5afba960134f55a65f7af47d810a9c2991ccf305d398abcd901e82e8",
+            "68.0": "51b6d7c56997e85323a56a0436aba4a5e4e968324812a8bf09af2faa9aa8c4a2"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nList<SObject> events=new List<SObject>{new C126Commit__e()};Integer d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();List<Database.SaveResult> r=EventBus.publish(events);o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);o.put('success',r[0].isSuccess());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EVENT_008|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {
+            "C126Commit__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Commit</label>\n    <pluralLabel>Synthetic Commit Events</pluralLabel>\n    <publishBehavior>PublishAfterCommit</publishBehavior>\n</CustomObject>\n"
+          }
+        }
+      }
+    },
+    {
+      "id": "C126EVENT_009",
+      "question": "Ordinary record cannot be published as event",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EVENT_009",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "d73dc3982c1c9ad35ac1d2db4c1413742e31ddf5c4beb63b722ad1b94dc77b2d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "uncaught_anonymous",
+              "exceptionMessage": "System.UnexpectedException: The specified sObject or list of sObjects contains objects that aren’t platform events. You can publish only platform event objects using EventBus.publish. Ensure the type of the specified sObject is a platform event.",
+              "exceptionType": "System.UnexpectedException",
+              "exceptionTypeSource": "returned_message_prefix"
+            },
+            "67.0": {
+              "outcome": "uncaught_anonymous",
+              "exceptionMessage": "System.UnexpectedException: The specified sObject or list of sObjects contains objects that aren’t platform events. You can publish only platform event objects using EventBus.publish. Ensure the type of the specified sObject is a platform event.",
+              "exceptionType": "System.UnexpectedException",
+              "exceptionTypeSource": "returned_message_prefix"
+            },
+            "68.0": {
+              "outcome": "uncaught_anonymous",
+              "exceptionMessage": "System.UnexpectedException: The specified sObject or list of sObjects contains objects that aren’t platform events. You can publish only platform event objects using EventBus.publish. Ensure the type of the specified sObject is a platform event.",
+              "exceptionType": "System.UnexpectedException",
+              "exceptionTypeSource": "returned_message_prefix"
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "3d3facb74bc8e0616276a7a8f3da68439d9d62aa282b4ad33877df19ad99a8f4",
+            "67.0": "e0b5308cf2c65a419f49848cda52883bbfaa38d80d109ae360b5bb9da9c5fbee",
+            "68.0": "e64345337a631d3e3a883fcb5135340006e0a7b7fe6dfcea03a060d9b3d916e4"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nList<Database.SaveResult> r=EventBus.publish(new List<SObject>{new Account(Name='Synthetic')});o.put('success',r[0].isSuccess());o.put('errors',r[0].getErrors());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EVENT_009|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126EVENT_009",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "a112e03f8a7ec7f191204b2932affdd4f27a899a01652800ff4504b40fad7295"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "uncaught_test_failure",
+              "testFailures": [
+                {
+                  "cls": "C126Test",
+                  "method": "observe",
+                  "message": "System.UnexpectedException: The specified sObject or list of sObjects contains objects that aren’t platform events. You can publish only platform event objects using EventBus.publish. Ensure the type of the specified sObject is a platform event.",
+                  "exceptionType": "System.UnexpectedException",
+                  "exceptionTypeSource": "returned_message_prefix"
+                }
+              ]
+            },
+            "67.0": {
+              "outcome": "uncaught_test_failure",
+              "testFailures": [
+                {
+                  "cls": "C126Test",
+                  "method": "observe",
+                  "message": "System.UnexpectedException: The specified sObject or list of sObjects contains objects that aren’t platform events. You can publish only platform event objects using EventBus.publish. Ensure the type of the specified sObject is a platform event.",
+                  "exceptionType": "System.UnexpectedException",
+                  "exceptionTypeSource": "returned_message_prefix"
+                }
+              ]
+            },
+            "68.0": {
+              "outcome": "uncaught_test_failure",
+              "testFailures": [
+                {
+                  "cls": "C126Test",
+                  "method": "observe",
+                  "message": "System.UnexpectedException: The specified sObject or list of sObjects contains objects that aren’t platform events. You can publish only platform event objects using EventBus.publish. Ensure the type of the specified sObject is a platform event.",
+                  "exceptionType": "System.UnexpectedException",
+                  "exceptionTypeSource": "returned_message_prefix"
+                }
+              ]
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "91e0eae90f46815cabf476ffc6437f861b4e809670a1ff454ef9463a218bd522",
+            "67.0": "892335c33574e710fc63d1f81497d7f3e760f85ea6423a075239b02ed227b458",
+            "68.0": "732ccb66d475a374d56006c641a8a91fd568fca8379841f02d4e2a7d84da0a96"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nList<Database.SaveResult> r=EventBus.publish(new List<SObject>{new Account(Name='Synthetic')});o.put('success',r[0].isSuccess());o.put('errors',r[0].getErrors());\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EVENT_009|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126EVENT_010",
+      "question": "Empty concrete event forwarded",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126EVENT_010",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "4a389436d76fc952d32b346a0b39523f886dd90bb49d453b516b8ba116ec9731",
+            "object:C126Immediate__e": "815d9bbf9500313effd0ef5e79fdeaa880eaafeca9cc5b6ba84f18390d62510e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "immediateDelta": 0,
+                "dmlDelta": 0,
+                "size": 0
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "immediateDelta": 0,
+                "dmlDelta": 0,
+                "size": 0
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "immediateDelta": 0,
+                "dmlDelta": 0,
+                "size": 0
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "6d85c9db1949d30d48a9faf68f5586eecaad382710b42710c242934ed737afc2",
+            "67.0": "0558319a1aaed867a9b0027d3f89264d77632c618568cf43f6bc0980f6e41704",
+            "68.0": "7eb323a52c0c1c0e12ffac1ba6786a3271cfa20fc22b3f5df4b48576ab1d08ab"
+          },
+          "anonymous": "class C126Publish {public List<Database.SaveResult> publish(List<SObject> x){return EventBus.publish(x);}}\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nInteger d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();o.put('size',new C126Publish().publish(new List<C126Immediate__e>()).size());o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126EVENT_010|'+JSON.serialize(o));",
+          "objects": {
+            "C126Immediate__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Immediate</label>\n    <pluralLabel>Synthetic Immediate Events</pluralLabel>\n    <publishBehavior>PublishImmediately</publishBehavior>\n</CustomObject>\n"
+          }
+        },
+        "isTest": {
+          "id": "C126EVENT_010",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Publish": "6d14153418b0cb4e5ff905c5918dfb0ae44865e16fe342322dc01fa9af1b2132",
+            "class:C126Test": "2f33fa2db035d6e63f749fc2f12099427bfd85146409701cfd70b51291b3f79f",
+            "object:C126Immediate__e": "815d9bbf9500313effd0ef5e79fdeaa880eaafeca9cc5b6ba84f18390d62510e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "immediateDelta": 0,
+                "dmlDelta": 0,
+                "size": 0
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "immediateDelta": 0,
+                "dmlDelta": 0,
+                "size": 0
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "immediateDelta": 0,
+                "dmlDelta": 0,
+                "size": 0
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "c68d081ff936a5c3275f1514045e3fb653ba3fa68e78e405a7734eb3d9b8b290",
+            "67.0": "6d52124181e7065eca391db5ba095f3b8abccc3b1e0bfc5dc9f9a566ece75178",
+            "68.0": "8f4ce1783a04cb8d986c9f9bc2c5b87da5c5c1223e78feb50439cf17c0171e8d"
+          },
+          "classes": {
+            "C126Publish": "public class C126Publish {public List<Database.SaveResult> publish(List<SObject> x){return EventBus.publish(x);}}",
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nInteger d=Limits.getDmlStatements();Integer p=Limits.getPublishImmediateDML();o.put('size',new C126Publish().publish(new List<C126Immediate__e>()).size());o.put('dmlDelta',Limits.getDmlStatements()-d);o.put('immediateDelta',Limits.getPublishImmediateDML()-p);\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126EVENT_010|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {
+            "C126Immediate__e": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <eventType>HighVolume</eventType>\n    <fields>\n        <fullName>Value__c</fullName>\n        <label>Value</label>\n        <length>40</length>\n        <type>Text</type>\n    </fields>\n    <label>Synthetic Immediate</label>\n    <pluralLabel>Synthetic Immediate Events</pluralLabel>\n    <publishBehavior>PublishImmediately</publishBehavior>\n</CustomObject>\n"
+          }
+        }
+      }
+    }
+  ]
+}

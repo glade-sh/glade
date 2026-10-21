@@ -45,6 +45,7 @@ type l23Runtime struct {
 }
 
 // TestL23SalesforceConformance follows the native capture adapter using the owned
+// inputs and API 59/67/68 native answers. Eight
 // security-container operations were never invoked natively: the iframe srcdoc
 // fixture was rejected. Their removal reasons are exported, not runtime answers.
 // The remaining 100 compiler/metadata and 126 DOM rows per API compare exact
@@ -52,10 +53,11 @@ type l23Runtime struct {
 // observes Glade's real tab host; native answers never enter the browser.
 // Rejections also compare the captured diagnostics.json messages byte for byte,
 // using the product deployment diagnostics, including their source positions.
-// Capability answers use isolated capability controls at both APIs:
+// Capability answers use isolated capability controls at each API:
 // unknown capabilities reject independently of exposure; valid twins compile.
-// Isolated host-module controls retain the missing-import diagnostic and an
-// exact valid-import twin, counted separately from the original before rows.
+// At API 68 the isolated unknown-capability and missing-host-module rejections
+// supersede their batch acceptances. The isolated valid host-import twin is
+// counted separately from the original before rows.
 // GLADE_L23_CAPTURE=1 records behavior gaps without failing, and
 // GLADE_L23_REPORT selects the per-row report. CI never contacts Salesforce.
 func TestL23SalesforceConformance(t *testing.T) {
@@ -83,6 +85,7 @@ func TestL23SalesforceConformance(t *testing.T) {
 		controlIDs[c.ID] = true
 	}
 	allCases := append(append([]l23Case{}, data.Cases...), data.Controls...)
+	versions := []string{"59.0", "67.0", "68.0"}
 	seen, groups := map[string]bool{}, map[string]bool{}
 	var compilerCases, runtimeCases []l23Case
 	for _, c := range allCases {
@@ -90,7 +93,7 @@ func TestL23SalesforceConformance(t *testing.T) {
 			t.Fatalf("invalid or duplicate L23 row %q", c.ID)
 		}
 		seen[c.ID], groups[c.Group] = true, true
-		for _, api := range []string{"59.0", "67.0"} {
+		for _, api := range versions {
 			want, ok := c.Expected[api]
 			if !ok {
 				t.Fatalf("missing native L23 answer %s API %s", c.ID, api)
@@ -175,7 +178,7 @@ func TestL23SalesforceConformance(t *testing.T) {
 	matches, compileMatches, domMatches, domRows := 0, 0, 0, 0
 	controlMatches := 0
 	outcomeMatches, diagnosticMatches, diagnosticRows := 0, 0, 0
-	for _, api := range []string{"59.0", "67.0"} {
+	for _, api := range versions {
 		compiled := l23CompileCases(t, api, compilerCases)
 		fixture, ok := fixtures[api]
 		if !ok || fixture.Page != "familyL23Runtime"+api[:2] {
@@ -271,15 +274,15 @@ func TestL23SalesforceConformance(t *testing.T) {
 		fmt.Fprintf(&report, "API_CONTROL_TOTAL\t%s\t%d/%d\n", api, apiControlMatches, len(data.Controls))
 		t.Logf("L23 API %s matches %d/226; local DOM rows %d/126", api, apiMatches, apiDOMRows)
 	}
-	fmt.Fprintf(&report, "TOTAL\t%d/452\nCOMPILE_TOTAL\t%d/200\nDOM_TOTAL\t%d/252\nLOCAL_DOM_ROWS\t%d/252\n", matches, compileMatches, domMatches, domRows)
-	fmt.Fprintf(&report, "OUTCOME_TOTAL\t%d/452\nREJECTION_DIAGNOSTIC_TOTAL\t%d/%d\n", outcomeMatches, diagnosticMatches, diagnosticRows)
-	fmt.Fprintf(&report, "CONTROL_TOTAL\t%d/%d\n", controlMatches, len(data.Controls)*2)
+	fmt.Fprintf(&report, "TOTAL\t%d/678\nCOMPILE_TOTAL\t%d/300\nDOM_TOTAL\t%d/378\nLOCAL_DOM_ROWS\t%d/378\n", matches, compileMatches, domMatches, domRows)
+	fmt.Fprintf(&report, "OUTCOME_TOTAL\t%d/678\nREJECTION_DIAGNOSTIC_TOTAL\t%d/%d\n", outcomeMatches, diagnosticMatches, diagnosticRows)
+	fmt.Fprintf(&report, "CONTROL_TOTAL\t%d/%d\n", controlMatches, len(data.Controls)*len(versions))
 	for _, row := range data.Removed {
 		fmt.Fprintf(&report, "REMOVED\t%s\t%s\n", row.ID, l23OneLine(row.Reason))
 	}
-	t.Logf("L23 matches %d/452; compile/metadata %d/200; native-vs-local DOM %d/252; observed DOM rows %d/252; 8 uninvoked native rows removed per API", matches, compileMatches, domMatches, domRows)
-	t.Logf("L23 outcomes %d/452; exact rejection diagnostics %d/%d", outcomeMatches, diagnosticMatches, diagnosticRows)
-	t.Logf("L23 isolated metadata controls %d/%d", controlMatches, len(data.Controls)*2)
+	t.Logf("L23 matches %d/678; compile/metadata %d/300; native-vs-local DOM %d/378; observed DOM rows %d/378; 8 uninvoked native rows removed per API", matches, compileMatches, domMatches, domRows)
+	t.Logf("L23 outcomes %d/678; exact rejection diagnostics %d/%d", outcomeMatches, diagnosticMatches, diagnosticRows)
+	t.Logf("L23 isolated metadata controls %d/%d", controlMatches, len(data.Controls)*len(versions))
 	if reportPath != "" {
 		l23Write(t, reportPath, report.String())
 	}

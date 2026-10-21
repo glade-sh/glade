@@ -2,6 +2,7 @@ package dml
 
 import (
 	"fmt"
+	"math/big"
 	"sort"
 	"strconv"
 	"strings"
@@ -83,6 +84,7 @@ func canonicalizeRecord(namespace string, definition storage.ObjectDefinition, o
 		nulls[canonical] = value
 	}
 	record.ExplicitNulls = nulls
+	NormalizeEmailFields(definition, namespace, &record)
 	return record, nil
 }
 
@@ -97,6 +99,9 @@ func normalizeStoredFieldValue(field storage.Field, value storage.Value) storage
 	if value.Kind != storage.ValueString {
 		return value
 	}
+	if emptyOptionalMultiPicklistSelection(field, value) {
+		return storage.NullValue()
+	}
 	if strings.EqualFold(field.DisplayType, "RICHTEXTAREA") {
 		value.String = sanitizeRichText(value.String)
 		return value
@@ -104,6 +109,19 @@ func normalizeStoredFieldValue(field storage.Field, value storage.Value) storage
 	if field.Type == storage.FieldString {
 		// Normalize the stored copy without rewriting the caller's SObject.
 		value.String = strings.Trim(value.String, " ")
+		if field.LongTextArea {
+			// Owned named boundary observations at API 62/67/68 preserve the
+			// caller and interior line breaks, but trim stored LF/CRLF edges.
+			// Bare CR, leading CRLF and empty-only shapes remain unestablished.
+			trimmed := strings.TrimLeft(value.String, "\n")
+			for strings.HasSuffix(trimmed, "\n") {
+				trimmed = strings.TrimSuffix(trimmed, "\n")
+				trimmed = strings.TrimSuffix(trimmed, "\r")
+			}
+			if strings.Trim(trimmed, " ") != "" {
+				value.String = trimmed
+			}
+		}
 	}
 	if !isSingleLineTextField(field) {
 		return value
@@ -120,6 +138,11 @@ func normalizeStoredFieldValue(field storage.Field, value storage.Value) storage
 		}
 	}
 	return value
+}
+
+func emptyOptionalMultiPicklistSelection(field storage.Field, value storage.Value) bool {
+	return field.Type == storage.FieldMultiPicklist && !field.Required && !field.RestrictedPicklist &&
+		value.Kind == storage.ValueString && value.String != "" && strings.Trim(value.String, ";") == ""
 }
 
 func canonicalPicklistValue(field storage.Field, value string) (string, bool) {
@@ -143,7 +166,7 @@ func isSingleLineTextField(field storage.Field) bool {
 	}
 }
 
-func validateFields(definition storage.ObjectDefinition, namespace string, record storage.Record) error {
+func validateFields(definition storage.ObjectDefinition, namespace string, record storage.Record, existing ...storage.Record) error {
 	for field := range record.Fields {
 		if field == "Id" {
 			continue
@@ -156,16 +179,27 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 			if allowSyntheticCustomDMLField(definition, field) {
 				continue
 			}
+			if err := personAccountFeatureFieldError(definition, record.Object, field); err != nil {
+				return err
+			}
 			return fmt.Errorf("dml: unknown field %s.%s", record.Object, field)
 		}
 		if isCalculatedOrSummaryField(definition.Fields[canonical]) {
 			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{canonical}, "dml: field %s.%s is not writeable", record.Object, canonical)
+		}
+		if err := validateScaleZeroNumberField(canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
+			return err
 		}
 		if err := validateEmailField(record.Object, canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
 			return err
 		}
 		if err := validateRestrictedPicklistField(record.Object, canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
 			return err
+		}
+		if len(existing) > 0 {
+			if err := validateDependentPicklistField(definition, namespace, record, existing, canonical, record.Fields[field]); err != nil {
+				return err
+			}
 		}
 	}
 	for field := range record.ExplicitNulls {
@@ -177,6 +211,9 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 			if allowSyntheticCustomDMLField(definition, field) {
 				continue
 			}
+			if err := personAccountFeatureFieldError(definition, record.Object, field); err != nil {
+				return err
+			}
 			return fmt.Errorf("dml: unknown field %s.%s", record.Object, field)
 		}
 		if isCalculatedOrSummaryField(definition.Fields[canonical]) {
@@ -184,6 +221,73 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 		}
 	}
 	return nil
+}
+
+func validateDependentPicklistField(definition storage.ObjectDefinition, namespace string, record storage.Record, existing []storage.Record, fieldName string, value storage.Value) error {
+	field := definition.Fields[fieldName]
+	if !strings.HasSuffix(strings.ToLower(fieldName), "__c") || !field.RestrictedPicklist || field.Type != storage.FieldPicklist ||
+		strings.TrimSpace(field.PicklistController) == "" || len(field.PicklistValueSettings) == 0 || value.Kind != storage.ValueString || strings.TrimSpace(value.String) == "" {
+		return nil
+	}
+	controllerName, known := storage.ResolveFieldName(definition, namespace, field.PicklistController)
+	if !known || definition.Fields[controllerName].Type != storage.FieldPicklist {
+		return nil
+	}
+	controller, supplied := record.GetField(controllerName)
+	if record.HasExplicitNull(controllerName) {
+		controller = storage.NullValue()
+	} else if !supplied && len(existing) > 0 {
+		if existing[0].HasExplicitNull(controllerName) {
+			controller = storage.NullValue()
+		} else {
+			controller, _ = existing[0].GetField(controllerName)
+		}
+	}
+	if controller.Kind == storage.ValueString {
+		for _, setting := range field.PicklistValueSettings {
+			if !strings.EqualFold(setting.ValueName, value.String) {
+				continue
+			}
+			for _, allowed := range setting.ControllingFieldValues {
+				if strings.EqualFold(allowed, controller.String) {
+					return nil
+				}
+			}
+		}
+	}
+	return restrictedPicklistValueError(record.Object, fieldName, value.String)
+}
+
+func validateScaleZeroNumberField(fieldName string, field storage.Field, value storage.Value) error {
+	if field.Type != storage.FieldDecimal || !strings.EqualFold(field.DisplayType, "DOUBLE") ||
+		!field.ScaleSpecified || field.Scale != 0 || field.Precision < 1 || field.Precision > 18 {
+		return nil
+	}
+	var text string
+	switch value.Kind {
+	case storage.ValueInteger:
+		text = strconv.FormatInt(value.Integer, 10)
+	case storage.ValueDecimal:
+		text = value.Decimal
+	default:
+		return nil
+	}
+	number, ok := new(big.Rat).SetString(text)
+	if !ok {
+		return nil
+	}
+	// Scale-zero Number validation uses the rounded magnitude, but accepted
+	// fractional values retain their original precision in storage.
+	power := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(field.Precision)), nil)
+	boundary := new(big.Rat).Sub(new(big.Rat).SetInt(power), big.NewRat(1, 2))
+	if new(big.Rat).Abs(number).Cmp(boundary) < 0 {
+		return nil
+	}
+	label := strings.TrimSpace(field.Label)
+	if label == "" {
+		label = fieldName
+	}
+	return dmlErrorf("NUMBER_OUTSIDE_VALID_RANGE", []string{fieldName}, "%s: value outside of valid range on numeric field: the number %s is too large; please enter a value with no more than %d digits and 0 decimal places", label, text, field.Precision)
 }
 
 func validateRestrictedPicklistField(objectName, fieldName string, field storage.Field, value storage.Value) error {
@@ -648,6 +752,10 @@ func validateRequiredWithInsertDefaults(definition storage.ObjectDefinition, rec
 		sortRequiredFields(missing)
 		return dmlErrorf("REQUIRED_FIELD_MISSING", missing, "%s", requiredFieldsMessage(definition, missing))
 	}
+	if inserting && strings.EqualFold(definition.APIName, "Asset") &&
+		idFromStorageValue(record.Fields["AccountId"]) == "" && idFromStorageValue(record.Fields["ContactId"]) == "" {
+		return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{"AccountId", "ContactId"}, "Every asset needs an account, a contact, or both.")
+	}
 	return nil
 }
 
@@ -812,6 +920,14 @@ func requiredFieldOrder(field string) int {
 
 func isDMLRequiredField(definition storage.ObjectDefinition, name string, field storage.Field) bool {
 	if field.Required {
+		return true
+	}
+	// Insert defaults supply omitted permission checkboxes before validation.
+	// Preserve the existing explicit-null validation for this non-nullable
+	// catalog shape without marking it as a caller-required schema input.
+	if strings.EqualFold(definition.APIName, "PermissionSet") && strings.HasPrefix(field.APIName, "Permissions") && field.Type == storage.FieldBoolean &&
+		field.Nillable != nil && !*field.Nillable && field.Createable != nil && *field.Createable &&
+		field.DefaultedOnCreate != nil && !*field.DefaultedOnCreate && field.DefaultValue == "" {
 		return true
 	}
 	return storage.IsCustomSettingDefinition(definition) &&
@@ -984,6 +1100,9 @@ func (e *Engine) validateReferencesWithLoadedView(definition storage.ObjectDefin
 	if record.System.OwnerID != "" && !e.validSystemOwnerID(definition, record.System.OwnerID) {
 		return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{"OwnerId"}, "dml: invalid owner reference %s.OwnerId %s", record.Object, record.System.OwnerID)
 	}
+	if err := e.validateUserOwnerReference(record.System.OwnerID); err != nil {
+		return err
+	}
 	for name, field := range definition.Fields {
 		if field.Type != storage.FieldReference || len(field.ReferenceTo) == 0 {
 			continue
@@ -1018,7 +1137,7 @@ func (e *Engine) validateReferencesWithLoadedView(definition storage.ObjectDefin
 			target := e.Org.Objects[canonical]
 			_, parent, ok := storage.LookupRecordByID(target.Records, id)
 			if ok {
-				if !parent.System.IsDeleted || (update && record.ID != "" && loaded && setNull) {
+				if !parent.System.IsDeleted || (update && record.ID != "" && loaded && setNull) || (update && e.canRestoreClearedLookup(definition, record, name, id)) {
 					found = true
 					break
 				}
@@ -1038,6 +1157,9 @@ func (e *Engine) validateReferencesWithLoadedView(definition storage.ObjectDefin
 		if !found && allowDescribeOnlyMasterRecordTypeReference(name, field, id) {
 			continue
 		}
+		if !found && !update && !isPolymorphicReference(definition, name) && requiresSelfLookupInsertTarget(definition, field, id) {
+			return dmlErrorf("INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY", nil, "insufficient access rights on cross-reference id: %s", id)
+		}
 		if !found && allowMissingLocalReference(definition, name, id) {
 			continue
 		}
@@ -1046,6 +1168,15 @@ func (e *Engine) validateReferencesWithLoadedView(definition storage.ObjectDefin
 		}
 	}
 	return nil
+}
+
+// Optional self lookups still require an existing target on insert. Keep the
+// compatibility policy for other reference shapes and placeholder IDs separate.
+func requiresSelfLookupInsertTarget(definition storage.ObjectDefinition, field storage.Field, id storage.ID) bool {
+	return hasSuffixFold(definition.APIName, "__c") && !storage.IsCustomSettingDefinition(definition) &&
+		!field.MasterDetail && !field.Required && len(field.ReferenceTo) == 1 &&
+		strings.EqualFold(field.ReferenceTo[0], definition.APIName) &&
+		definition.KeyPrefix != "" && strings.HasPrefix(string(id), definition.KeyPrefix) && storage.ValidateID(id) == nil
 }
 
 func allowDescribeOnlyMasterRecordTypeReference(fieldName string, field storage.Field, id storage.ID) bool {
@@ -1084,6 +1215,21 @@ func (e *Engine) validSystemOwnerID(definition storage.ObjectDefinition, id stor
 		}
 	}
 	return false
+}
+
+func (e *Engine) validateUserOwnerReference(id storage.ID) error {
+	if !strings.HasPrefix(string(id), "005") || storage.ValidateID(id) != nil {
+		return nil
+	}
+	userObject, ok := storage.ResolveObjectName(*e.Org, "User")
+	if !ok {
+		return nil
+	}
+	_, user, found := storage.LookupRecordByID(e.Org.Objects[userObject].Records, id)
+	if !found || user.System.IsDeleted {
+		return dmlErrorf("INVALID_CROSS_REFERENCE_KEY", nil, "invalid cross reference id")
+	}
+	return nil
 }
 
 func allowMissingLocalReference(definition storage.ObjectDefinition, fieldName string, id storage.ID) bool {
@@ -1379,7 +1525,17 @@ func (e *Engine) validateValidationRules(objectName string, definition storage.O
 		message = validationRuleErrorMessage(message)
 		fields := []string(nil)
 		if rule.ErrorDisplayField != "" {
-			fields = []string{rule.ErrorDisplayField}
+			field := rule.ErrorDisplayField
+			// Main-project metadata may retain a local display field while
+			// dependency imports qualify it. Resolve using the rule's owner
+			// only when that exact qualified field is declared.
+			if rule.Namespace != "" {
+				qualified := storage.NamespaceTokenName(rule.Namespace, field)
+				if _, ok := definition.Fields[qualified]; ok {
+					field = qualified
+				}
+			}
+			fields = []string{field}
 		}
 		return dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", fields, "%s", message)
 	}

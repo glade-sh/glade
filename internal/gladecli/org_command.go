@@ -17,11 +17,12 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/server"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 const (
-	defaultOrgID   = "00D000000000001"
-	defaultUserID  = "005000000000001"
+	defaultOrgID   = storage.DefaultOrgID
+	defaultUserID  = storage.DefaultUserID
 	defaultOrgHost = "127.0.0.1"
 	defaultOrgPort = 17911
 )

@@ -1,0 +1,14 @@
+[
+  {
+    "method": "accountNameQuery",
+    "shape": "FieldDefinition query filters the Account name field with IsNameField"
+  },
+  {
+    "method": "caseNameQuery",
+    "shape": "FieldDefinition query filters the Case name field with IsNameField"
+  },
+  {
+    "method": "describeNameControl",
+    "shape": "Describe identifies Account.Name and Case.CaseNumber as name fields and Industry and Case.Subject as non-name fields"
+  }
+]

@@ -69,7 +69,7 @@ func (decoder *describeJSONDecoder) describeObject(describe *standardDescribeObj
 		case "labelPlural":
 			bit, ok = 1<<2, decoder.stringInto(&describe.LabelPlural)
 		case "keyPrefix":
-			bit, ok = 1<<3, decoder.stringInto(&describe.KeyPrefix)
+			bit, ok = 1<<3, decoder.stringPointerInto(&describe.KeyPrefix)
 		case "mergeable":
 			bit, ok = 1<<4, decoder.boolPointerInto(&describe.Mergeable)
 		case "triggerable":
@@ -183,6 +183,10 @@ func (decoder *describeJSONDecoder) describeField(field *standardDescribeField) 
 			bit, ok = 1<<27, decoder.boolInto(&field.Polymorphic)
 		case "picklistValues":
 			bit, ok = 1<<28, decoder.describePicklistValues(&field.PicklistValues)
+		case "nameField":
+			bit, ok = 1<<29, decoder.boolPointerInto(&field.NameField)
+		case "extraTypeInfo":
+			bit, ok = 1<<30, decoder.stringInto(&field.ExtraTypeInfo)
 		default:
 			ok = !describeFieldKeyFolds(key) && decoder.skipValue(1)
 		}
@@ -358,7 +362,7 @@ func describeFieldKeyFolds(key []byte) bool {
 	case "name", "label", "type", "length", "precision", "scale", "calculated", "defaultvalue", "defaultvalueformula",
 		"compoundfieldname", "nillable", "defaultedoncreate", "createable", "updateable", "filterable", "groupable",
 		"sortable", "aggregatable", "permissionable", "deprecatedandhidden", "externalid", "unique", "encrypted",
-		"casesensitive", "idlookup", "referenceto", "relationshipname", "polymorphicforeignkey", "picklistvalues":
+		"casesensitive", "idlookup", "referenceto", "relationshipname", "polymorphicforeignkey", "picklistvalues", "namefield", "extratypeinfo":
 		return true
 	}
 	return false

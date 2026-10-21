@@ -15,6 +15,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/dlclark/regexp2/syntax"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func callStdlibMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -475,6 +476,13 @@ func stringStatic(callee string, args []Value) (Value, error) {
 			}
 			return String(text), nil
 		}
+		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Datetime") {
+			instant, err := parsePlatformDatetime(args[0])
+			if err != nil {
+				return Null, err
+			}
+			return String(apexDatetimeDisplayText(instant)), nil
+		}
 		if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Blob") {
 			raw := ""
 			if value, ok := args[0].Fields["value"]; ok && value.Kind == ValueString {
@@ -489,6 +497,9 @@ func stringStatic(callee string, args []Value) (Value, error) {
 	case "String.format":
 		if len(args) != 2 {
 			return Null, fmt.Errorf("String.format expects format String and List arguments")
+		}
+		if value, handled, err := stringFormatNullList(args[0], args[1]); handled {
+			return value, err
 		}
 		if args[0].Kind == ValueNull || args[1].Kind == ValueNull {
 			return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
@@ -1661,18 +1672,11 @@ func nextRegexSearchIndex(input string, index int) int {
 }
 
 func listSObjectTypeName(receiver Value) string {
-	if elementType, ok := collectionElementType(receiver.Static); ok && isListSObjectElementType(elementType) {
-		return elementType
-	}
-	if elementType, ok := collectionElementType(receiver.Runtime); ok && isListSObjectElementType(elementType) {
-		return elementType
-	}
-	if elementType, ok := collectionElementType(receiver.Type); ok && (isListSObjectElementType(elementType) || strings.EqualFold(elementType, "sObject")) {
-		if !strings.EqualFold(elementType, "sObject") {
-			return elementType
-		}
-		if len(receiver.List) == 0 {
-			return ""
+	for _, typeName := range []string{receiver.Static, receiver.Runtime, receiver.Type} {
+		if elementType, ok := collectionElementType(typeName); ok {
+			if objectName := listSObjectElementTypeName(elementType); objectName != "" {
+				return objectName
+			}
 		}
 	}
 	for _, item := range receiver.List {
@@ -1683,8 +1687,8 @@ func listSObjectTypeName(receiver Value) string {
 			if typeName == "" || strings.EqualFold(typeName, "SObject") || strings.EqualFold(typeName, "Object") {
 				continue
 			}
-			if isListSObjectElementType(typeName) {
-				return typeName
+			if objectName := listSObjectElementTypeName(typeName); objectName != "" {
+				return objectName
 			}
 		}
 		if objectName, ok := item.Fields["object"]; ok && objectName.Kind == ValueString && objectName.Text != "" {
@@ -1692,6 +1696,67 @@ func listSObjectTypeName(receiver Value) string {
 		}
 	}
 	return ""
+}
+
+func listSObjectElementTypeName(typeName string) string {
+	// Reflection keeps Schema qualification in collection element identities;
+	// SObject tokens use the record's API name instead.
+	if hasPrefixFold(typeName, "Schema.") {
+		typeName = typeName[len("Schema."):]
+	}
+	if isCommonSObjectTypeName(typeName) || isCustomObjectLikeName(typeName) || strings.EqualFold(typeName, "AggregateResult") {
+		return typeName
+	}
+	return ""
+}
+
+func allocatedGenericSObjectList(receiver Value) bool {
+	if !receiver.genericSObjectList {
+		return false
+	}
+	typeName := receiver.Runtime
+	if typeName == "" {
+		typeName = receiver.Type
+	}
+	element, ok := collectionElementType(typeName)
+	if !ok || !strings.EqualFold(element, "SObject") {
+		return false
+	}
+	// Named schema_classification_boundaries rows extend the existing Id-only
+	// singleton case to collections built with newSObject(Id). Ordinary
+	// constructor twins retain their prior behavior pending exact observations.
+	// Populated lists, AggregateResult and events keep their own paths.
+	schemaIDs := len(receiver.List) > 0
+	for _, item := range receiver.List {
+		if !item.schemaIDConstructor || sObjectIDFromFields(item.Fields) == "" {
+			schemaIDs = false
+		}
+		if item.Kind != ValueNull && item.Kind != ValueObject {
+			return false
+		}
+		if item.Kind == ValueObject {
+			if item.classInstance || item.projectClass {
+				return false
+			}
+			typeName := runtimeObjectType(item)
+			if hasSuffixFold(typeName, "__e") || strings.EqualFold(typeName, "BatchApexErrorEvent") || strings.EqualFold(typeName, "AggregateResult") {
+				return false
+			}
+			for field, value := range item.Fields {
+				if isInternalSObjectField(field) || strings.EqualFold(field, "Id") ||
+					(isDefaultedSObjectField(item, field) && !isExplicitSObjectField(item, field)) {
+					continue
+				}
+				if value.Kind != ValueNull || isExplicitSObjectField(item, field) {
+					return false
+				}
+			}
+		}
+	}
+	if len(receiver.List) >= 1 && len(receiver.List) <= 2 && receiver.List[0].Kind == ValueNull {
+		return true
+	}
+	return schemaIDs || len(receiver.List) == 1 && receiver.List[0].Kind == ValueObject && sObjectIDFromFields(receiver.List[0].Fields) != ""
 }
 
 func isListSObjectElementType(typeName string) bool {
@@ -1860,20 +1925,7 @@ func stringIndexOf(text, needle string, start int) int {
 		start = 0
 	}
 	if asciiPrefixLen(text, len(text)) == len(text) && asciiPrefixLen(needle, len(needle)) == len(needle) {
-		if start > len(text) {
-			if needle == "" {
-				return len(text)
-			}
-			return -1
-		}
-		if needle == "" {
-			return start
-		}
-		index := strings.Index(text[start:], needle)
-		if index < 0 {
-			return -1
-		}
-		return start + index
+		return stringIndexOfASCII(text, needle, start)
 	}
 	textRunes := []rune(text)
 	needleRunes := []rune(needle)
@@ -3283,7 +3335,15 @@ func formatString(pattern string, args []Value, display func(Value) (string, err
 				i++
 				continue
 			}
-			inQuote = !inQuote
+			// A quote begins a literal span only before a syntax brace.
+			// Apostrophes in ordinary text retain their literal spelling.
+			if inQuote {
+				inQuote = false
+			} else if i+1 < len(pattern) && (pattern[i+1] == '{' || pattern[i+1] == '}') {
+				inQuote = true
+			} else {
+				out.WriteByte('\'')
+			}
 		case '{':
 			if inQuote {
 				out.WriteByte(pattern[i])
@@ -3723,6 +3783,10 @@ func repeatRunes(pattern string, count int) string {
 }
 
 func substring(text string, args []Value) (Value, bool, error) {
+	return substringWithASCII(text, args, false)
+}
+
+func substringWithASCII(text string, args []Value, ascii bool) (Value, bool, error) {
 	if len(args) != 1 && len(args) != 2 {
 		return Null, true, fmt.Errorf("String.substring expects 1 or 2 arguments")
 	}
@@ -3730,12 +3794,15 @@ func substring(text string, args []Value) (Value, bool, error) {
 		return Null, true, fmt.Errorf("String.substring expects integer indexes")
 	}
 	start := int(args[0].Int)
-	length := apexStringLength(text)
+	length := len(text)
+	if !ascii {
+		length = apexStringLength(text)
+	}
 	end := length
 	if len(args) == 2 {
 		end = int(args[1].Int)
 	}
-	if start >= 0 && end >= start && asciiPrefixLen(text, end) == end {
+	if start >= 0 && end >= start && end <= len(text) && (ascii || asciiPrefixLen(text, end) == end) {
 		return String(text[start:end]), true, nil
 	}
 	if start < 0 || start > length {
@@ -3804,12 +3871,19 @@ func callObjectMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, fmt.Errorf("Object.toString expects 0 arguments")
 		}
 		if receiver.Kind == ValueList || receiver.Kind == ValueSet || receiver.Kind == ValueMap {
+			// Crash guard only, native behavior uncaptured: see collection_display_guard.go.
+			if collectionDisplayRecurses(receiver) {
+				return Null, true, recursiveCollectionDisplayError()
+			}
 			return String(apexCollectionString(receiver)), true, nil
 		}
 		return String(receiver.String()), true, nil
 	case "equals":
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("Object.equals expects 1 argument")
+		}
+		if equal, handled := datetimeMethodEquals(receiver, args[0]); handled {
+			return Bool(equal), true, nil
 		}
 		return Bool(receiver.Equal(args[0])), true, nil
 	case "hashCode":
@@ -3823,6 +3897,17 @@ func callObjectMember(receiver Value, method string, args []Value) (Value, bool,
 		}
 		if receiver.Kind == ValueObject && strings.EqualFold(receiver.Type, "AccessLevel") {
 			return accessLevelClone(receiver), true, nil
+		}
+		if receiver.Kind == ValueObject && receiver.classInstance {
+			// Owned API 62/66/67 user-class rows: clone creates a new root
+			// while retaining member references, including cycles to the source.
+			cloned := receiver
+			cloned.Ref = newValueRef()
+			cloned.Fields = make(map[string]Value, len(receiver.Fields))
+			for name, field := range receiver.Fields {
+				cloned.Fields[name] = field
+			}
+			return cloned, true, nil
 		}
 		return cloneValue(receiver), true, nil
 	default:
@@ -3848,6 +3933,7 @@ func javaStringHashCode(text string) int32 {
 }
 
 func valueHashCode(value Value) int32 {
+	value = value.currentMapKeySet()
 	switch value.Kind {
 	case ValueNull:
 		return 0
@@ -3924,6 +4010,11 @@ func valueHashCode(value Value) int32 {
 				return javaStringHashCode(value.Type + ":" + text)
 			}
 		}
+		// Alias snapshots retain Apex identity while copying the backing map.
+		// Default object hashes must follow that identity, just like equals.
+		if value.Ref != 0 {
+			return int32(value.Ref ^ (value.Ref >> 32))
+		}
 		return javaStringHashCode(fmt.Sprintf("%p", value.Fields))
 	default:
 		return javaStringHashCode(value.String())
@@ -3985,9 +4076,15 @@ func (vm *VM) callIdMember(receiver Value, method string, args []Value) (Value, 
 		if err := validateApexIDShape(idText); err != nil {
 			return Null, true, err
 		}
+		// An opaque Id may be valid without identifying an available object.
 		objectName, ok := vm.sObjectNameForID(idText)
 		if !ok {
-			return Null, true, fmt.Errorf("System.StringException: Invalid id prefix: %s", idText[:3])
+			return Null, true, newExceptionError("System.SObjectException", "Cannot locate Apex Type for ID: "+displayIDText(idText))
+		}
+		if strings.EqualFold(objectName, "CaseComment") {
+			if _, stored := vm.findOrgRecord(objectName, storage.ID(idText)); !stored {
+				return Null, true, newExceptionError("System.SObjectException", "Cannot locate Apex Type for ID: "+displayIDText(idText))
+			}
 		}
 		token := Object("Schema.SObjectType")
 		token.Fields["object"] = String(objectName)

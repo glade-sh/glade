@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "Declarations": {
     "A41": "public class A41 {\n public Integer seq=0;\n public String results(List<Messaging.SendEmailResult> xs) {\n  if(xs==null) return 'null';\n  List<String> out=new List<String>();\n  for(Messaging.SendEmailResult x:xs) {\n   if(x==null){out.add('null-result');continue;}\n   List<String> errors=new List<String>();\n   for(Messaging.SendEmailError e:x.getErrors()) errors.add(String.valueOf(e.getStatusCode())+'|'+e.getMessage()+'|'+String.valueOf(e.getFields())+'|target-null='+String.valueOf(e.getTargetObjectId()==null));\n   out.add(String.valueOf(x.isSuccess())+'|'+String.join(errors,';'));\n  }\n  return xs.size()+':'+String.join(out,'/');\n }\n public EmailTemplate template(String variant) {\n  String developerName='A41'+variant+'20261005';\n  return [SELECT Id FROM EmailTemplate WHERE DeveloperName=:developerName AND Folder.DeveloperName='A41MessagingOracle20261005'];\n }\n}",

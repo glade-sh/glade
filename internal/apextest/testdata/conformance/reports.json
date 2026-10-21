@@ -1,11 +1,25 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "source": {
     "oracle": "Owned reporting observations and controls at API 62.0 and 67.0, including fact, JSON, position and legacy JSON controls.",
-    "transport": "exception"
+    "transport": "exception",
+    "api68": {
+      "primaryOracle": "native-capture",
+      "primaryOracleSHA256": "07294a698aeeae5ae3f60bb437c41c20c6b86f13f50ab3f7dc8a557663737673",
+      "primaryRows": 281,
+      "controlsOracle": "native-capture",
+      "controlsOracleSHA256": "5c4ca8364e84d87d5361553f36009b0829f4aeadb4be4c99f65bf884c3f69da3",
+      "controlRows": 140,
+      "transport": "exception",
+      "fixtureClass": "A45LegacyJSONDTO",
+      "fixtureClassAPI": "62.0",
+      "fixtureClassSHA256": "0ce5698dc78c71a1b4e7056cfd8b35f410a7a92b00d628f2cd80fa6c5a5e74b9",
+      "controlsCaptureToolsCommit": "capture-revision-2"
+    }
   },
   "oldTicketRows": {},
   "cases": [
@@ -3468,55 +3482,55 @@
       "id": "LB001",
       "code": "r=Reports.ReportManager.describeReport(Id.valueOf('00O000000000001'))==null;",
       "expected": "EXC|System.UnsupportedOperationException|reports.ReportManager.describeReport requires the hosted Reports service",
-      "basis": "local-boundary"
+      "basis": "local-boundary (disposition the conditional frontier and Auth before the data layer batches)"
     },
     {
       "id": "LB002",
       "code": "r=Reports.ReportManager.runReport(Id.valueOf('00O000000000001'),true)==null;",
       "expected": "EXC|System.UnsupportedOperationException|reports.ReportManager.runReport requires the hosted Reports service",
-      "basis": "local-boundary"
+      "basis": "local-boundary (disposition the conditional frontier and Auth before the data layer batches)"
     },
     {
       "id": "LB003",
       "code": "r=Reports.ReportManager.runReport(Id.valueOf('00O000000000001'),(Reports.ReportMetadata)null,false)==null;",
       "expected": "EXC|System.UnsupportedOperationException|reports.ReportManager.runReport requires the hosted Reports service",
-      "basis": "local-boundary"
+      "basis": "local-boundary (disposition the conditional frontier and Auth before the data layer batches)"
     },
     {
       "id": "LB004",
       "code": "r=Reports.ReportManager.runAsyncReport(Id.valueOf('00O000000000001'),(Reports.ReportMetadata)null,true)==null;",
       "expected": "EXC|System.UnsupportedOperationException|reports.ReportManager.runAsyncReport requires the hosted Reports service",
-      "basis": "local-boundary"
+      "basis": "local-boundary (disposition the conditional frontier and Auth before the data layer batches)"
     },
     {
       "id": "LB005",
       "code": "r=Reports.ReportManager.getReportInstances(Id.valueOf('00O000000000001'))==null;",
       "expected": "EXC|System.UnsupportedOperationException|reports.ReportManager.getReportInstances requires the hosted Reports service",
-      "basis": "local-boundary"
+      "basis": "local-boundary (disposition the conditional frontier and Auth before the data layer batches)"
     },
     {
       "id": "LB006",
       "code": "r=Reports.ReportManager.getReportInstance(Id.valueOf('0LG000000000001'))==null;",
       "expected": "EXC|System.UnsupportedOperationException|reports.ReportManager.getReportInstance requires the hosted Reports service",
-      "basis": "local-boundary"
+      "basis": "local-boundary (disposition the conditional frontier and Auth before the data layer batches)"
     },
     {
       "id": "LB007",
       "code": "r=Wave.QueryBuilder.load('A45MissingDataset','A45MissingVersion').execute('q')==null;",
       "expected": "EXC|System.UnsupportedOperationException|wave.QueryNode.execute requires the hosted CRM Analytics service",
-      "basis": "local-boundary"
+      "basis": "local-boundary (disposition the conditional frontier and Auth before the data layer batches)"
     },
     {
       "id": "LB008",
       "code": "r=Wave.QueryBuilder.load('A45MissingDataset','A45MissingVersion').execute('')==null;",
       "expected": "EXC|System.UnsupportedOperationException|wave.QueryNode.execute requires the hosted CRM Analytics service",
-      "basis": "local-boundary"
+      "basis": "local-boundary (disposition the conditional frontier and Auth before the data layer batches)"
     },
     {
       "id": "LB009",
       "code": "r=Wave.QueryBuilder.load('A45MissingDataset','A45MissingVersion').execute(null)==null;",
       "expected": "EXC|System.UnsupportedOperationException|wave.QueryNode.execute requires the hosted CRM Analytics service",
-      "basis": "local-boundary"
+      "basis": "local-boundary (disposition the conditional frontier and Auth before the data layer batches)"
     }
   ],
   "declarations": {

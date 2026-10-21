@@ -1,0 +1,252 @@
+{
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "unrelated_query_exception",
+  "shapeCount": 1,
+  "assertedObservationCount": 8,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C185ID_041",
+      "routes": {
+        "anonymous": {
+          "59.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, NoSuchSyntheticField__c FROM Account WHERE Id = :scopeId');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_041|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "a86d9d2bffcb4d2fcb75a77329682e1627ddd4f20b65dd742ab7fc880a2ad898"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "No such column 'NoSuchSyntheticField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+                "exceptionType": "System.QueryException",
+                "inaccessibleFields": {},
+                "mapIsNull": false,
+                "mapKeys": [],
+                "mapSize": 0,
+                "nestedSets": {},
+                "querySucceeded": false,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"No such column 'NoSuchSyntheticField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.\", \"exceptionType\": \"System.QueryException\", \"inaccessibleFields\": {}, \"mapIsNull\": false, \"mapKeys\": [], \"mapSize\": 0, \"nestedSets\": {}, \"querySucceeded\": false, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, NoSuchSyntheticField__c FROM Account WHERE Id = :scopeId');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_041|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "e6427625a2c375f99952abd45088be2820e2dc191d30b1aa9dcd00ec8424091c"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "No such column 'NoSuchSyntheticField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+                "exceptionType": "System.QueryException",
+                "inaccessibleFields": {},
+                "mapIsNull": false,
+                "mapKeys": [],
+                "mapSize": 0,
+                "nestedSets": {},
+                "querySucceeded": false,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"No such column 'NoSuchSyntheticField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.\", \"exceptionType\": \"System.QueryException\", \"inaccessibleFields\": {}, \"mapIsNull\": false, \"mapKeys\": [], \"mapSize\": 0, \"nestedSets\": {}, \"querySucceeded\": false, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, NoSuchSyntheticField__c FROM Account WHERE Id = :scopeId');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_041|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "336cccdf3d37cf5cb2fce723347425181472cecfe64044b67711df3b645ad881"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "No such column 'NoSuchSyntheticField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+                "exceptionType": "System.QueryException",
+                "inaccessibleFields": {},
+                "mapIsNull": false,
+                "mapKeys": [],
+                "mapSize": 0,
+                "nestedSets": {},
+                "querySucceeded": false,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"No such column 'NoSuchSyntheticField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.\", \"exceptionType\": \"System.QueryException\", \"inaccessibleFields\": {}, \"mapIsNull\": false, \"mapKeys\": [], \"mapSize\": 0, \"nestedSets\": {}, \"querySucceeded\": false, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, NoSuchSyntheticField__c FROM Account WHERE Id = :scopeId');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_041|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "4a063df2c3353da8931373105edfca899283df9d3594304c73dbefa84e4bf370"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "No such column 'NoSuchSyntheticField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+                "exceptionType": "System.QueryException",
+                "inaccessibleFields": {},
+                "mapIsNull": false,
+                "mapKeys": [],
+                "mapSize": 0,
+                "nestedSets": {},
+                "querySucceeded": false,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"No such column 'NoSuchSyntheticField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.\", \"exceptionType\": \"System.QueryException\", \"inaccessibleFields\": {}, \"mapIsNull\": false, \"mapKeys\": [], \"mapSize\": 0, \"nestedSets\": {}, \"querySucceeded\": false, \"seedCount\": 1}"
+          }
+        },
+        "istest": {
+          "59.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID041Test": "@IsTest private without sharing class QueryObserveC185ID041Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A5958648890Secret__c='private-one',C185A5958648890SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, NoSuchSyntheticField__c FROM Account WHERE Id = :scopeId');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A5958648890Secret__c'));entry.put('containsSecondSecret',values.contains('C185A5958648890SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_041|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID041Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID041Test": "72c66271b0f9ccd49510341e4fa992cceefaaeab125a35e96eb45288a754cb62"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "No such column 'NoSuchSyntheticField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+                "exceptionType": "System.QueryException",
+                "inaccessibleFields": {},
+                "mapIsNull": false,
+                "mapKeys": [],
+                "mapSize": 0,
+                "nestedSets": {},
+                "querySucceeded": false,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"No such column 'NoSuchSyntheticField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.\", \"exceptionType\": \"System.QueryException\", \"inaccessibleFields\": {}, \"mapIsNull\": false, \"mapKeys\": [], \"mapSize\": 0, \"nestedSets\": {}, \"querySucceeded\": false, \"seedCount\": 1}"
+          },
+          "62.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID041Test": "@IsTest private without sharing class QueryObserveC185ID041Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A62d964bb76Secret__c='private-one',C185A62d964bb76SecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, NoSuchSyntheticField__c FROM Account WHERE Id = :scopeId');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A62d964bb76Secret__c'));entry.put('containsSecondSecret',values.contains('C185A62d964bb76SecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_041|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID041Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID041Test": "27b0dc4c70ca066485a300ac9b14669f130cd9ff248e27028f1e95d73810eec1"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "No such column 'NoSuchSyntheticField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+                "exceptionType": "System.QueryException",
+                "inaccessibleFields": {},
+                "mapIsNull": false,
+                "mapKeys": [],
+                "mapSize": 0,
+                "nestedSets": {},
+                "querySucceeded": false,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"No such column 'NoSuchSyntheticField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.\", \"exceptionType\": \"System.QueryException\", \"inaccessibleFields\": {}, \"mapIsNull\": false, \"mapKeys\": [], \"mapSize\": 0, \"nestedSets\": {}, \"querySucceeded\": false, \"seedCount\": 1}"
+          },
+          "67.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID041Test": "@IsTest private without sharing class QueryObserveC185ID041Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A672990f7cfSecret__c='private-one',C185A672990f7cfSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, NoSuchSyntheticField__c FROM Account WHERE Id = :scopeId');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A672990f7cfSecret__c'));entry.put('containsSecondSecret',values.contains('C185A672990f7cfSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_041|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID041Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID041Test": "cd42d957af60b7edd10576a0cb5410d2a0eec8765db93eb309a12c1e728133b8"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "No such column 'NoSuchSyntheticField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+                "exceptionType": "System.QueryException",
+                "inaccessibleFields": {},
+                "mapIsNull": false,
+                "mapKeys": [],
+                "mapSize": 0,
+                "nestedSets": {},
+                "querySucceeded": false,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"No such column 'NoSuchSyntheticField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.\", \"exceptionType\": \"System.QueryException\", \"inaccessibleFields\": {}, \"mapIsNull\": false, \"mapKeys\": [], \"mapSize\": 0, \"nestedSets\": {}, \"querySucceeded\": false, \"seedCount\": 1}"
+          },
+          "68.0": {
+            "source": {
+              "classes": {
+                "QueryObserveC185ID041Test": "@IsTest private without sharing class QueryObserveC185ID041Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{Account accountRow=new Account(Name='Synthetic query scope',C185A68114a5e7fSecret__c='private-one',C185A68114a5e7fSecondSecret__c='private-two');insert accountRow;Id scopeId=accountRow.Id;if(!payload.containsKey('fixtureError')){Integer scoped=[SELECT COUNT() FROM Account WHERE Id=:scopeId];payload.put('seedCount',scoped);if(scoped!=1){payload.put('fixtureError','seed-not-visible');}else{payload.put('effectStarted',true);try{List<SObject> result=Database.query('SELECT Id, NoSuchSyntheticField__c FROM Account WHERE Id = :scopeId');Integer outOfScope=0;for(SObject item:result){if(item.Id!=scopeId){outOfScope++;}}payload.put('outOfScope',outOfScope);if(outOfScope!=0){payload.put('fixtureError','out-of-scope');}payload.put('resultCount',result.size());payload.put('querySucceeded',true);}catch(QueryException queryError){payload.put('querySucceeded',false);\npayload.put('exceptionType',queryError.getTypeName());payload.put('exceptionMessage',queryError.getMessage());\nMap<String,Set<String>> inaccessible=queryError.getInaccessibleFields();\npayload.put('inaccessibleFields',inaccessible);payload.put('mapIsNull',inaccessible==null);\nif(inaccessible!=null){\npayload.put('mapSize',inaccessible.size());List<String> keys=new List<String>(inaccessible.keySet());keys.sort();payload.put('mapKeys',keys);\nMap<String,Object> nested=new Map<String,Object>();\nfor(String key:keys){Set<String> values=inaccessible.get(key);Map<String,Object> entry=new Map<String,Object>{'setIsNull'=>values==null};if(values!=null){List<String> fields=new List<String>(values);fields.sort();entry.put('fields',fields);entry.put('size',values.size());entry.put('containsSecret',values.contains('C185A68114a5e7fSecret__c'));entry.put('containsSecondSecret',values.contains('C185A68114a5e7fSecondSecret__c'));entry.put('containsId',values.contains('Id'));}nested.put(key,entry);}\npayload.put('nestedSets',nested);\n}\n}}}}catch(Exception unexpected){payload.put('exceptionType',unexpected.getTypeName());payload.put('exceptionMessage',unexpected.getMessage());if(!payload.containsKey('effectStarted')){payload.put('fixtureError','seed-or-harness-exception');}}System.assert(false,'C126_RESULT|C185ID_041|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "QueryObserveC185ID041Test"
+              ],
+              "sourceSha256": {
+                "class:QueryObserveC185ID041Test": "be7c892d4ee9d77be68a9cdd8bcf0088f4d637b58ede720b0bd42d1f602a0ad2"
+              }
+            },
+            "nativeStatus": "OBSERVED",
+            "native": {
+              "outcome": "runtime",
+              "value": {
+                "effectStarted": true,
+                "exceptionMessage": "No such column 'NoSuchSyntheticField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+                "exceptionType": "System.QueryException",
+                "inaccessibleFields": {},
+                "mapIsNull": false,
+                "mapKeys": [],
+                "mapSize": 0,
+                "nestedSets": {},
+                "querySucceeded": false,
+                "seedCount": 1
+              }
+            },
+            "outcome": "runtime",
+            "value": "{\"effectStarted\": true, \"exceptionMessage\": \"No such column 'NoSuchSyntheticField__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.\", \"exceptionType\": \"System.QueryException\", \"inaccessibleFields\": {}, \"mapIsNull\": false, \"mapKeys\": [], \"mapSize\": 0, \"nestedSets\": {}, \"querySucceeded\": false, \"seedCount\": 1}"
+          }
+        }
+      }
+    }
+  ],
+  "nativeObservationCount": 8
+}

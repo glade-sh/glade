@@ -1,0 +1,3 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Details__c</fullName><label>Details</label><length>255</length><type>Text</type>
+</CustomField>

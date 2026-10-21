@@ -1,0 +1,69 @@
+{
+  "id": "0Afdq00000EcSfxCAF",
+  "status": "Failed",
+  "done": true,
+  "checkOnly": true,
+  "numberComponentErrors": 0,
+  "numberTestErrors": 5,
+  "numberTestsCompleted": 0,
+  "numberTestsTotal": 5,
+  "errors": [],
+  "failures": [
+    {
+      "id": "01pdq00000Pmt2EAAR",
+      "message": "System.AssertException: Assertion Failed: OBSERVED|systemUndelete|{\"message\":\"Undelete failed. First exception on row 0 with id RECORD; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: []\",\"exceptionType\":\"System.DmlException\",\"success\":false}",
+      "methodName": "systemUndelete",
+      "name": "RecordAccessOperationProbeTest",
+      "namespace": null,
+      "packageName": "RecordAccessOperationProbeTest",
+      "stackTrace": "Class.RecordAccessOperationProbeTest.observe: line 18, column 1\nClass.RecordAccessOperationProbeTest.systemUndelete: line 10, column 1",
+      "time": 411,
+      "type": "Class"
+    },
+    {
+      "id": "01pdq00000Pmt2EAAR",
+      "message": "System.AssertException: Assertion Failed: OBSERVED|systemUpdate|{\"message\":\"Update failed. First exception on row 0 with id RECORD; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: RECORD: []\",\"exceptionType\":\"System.DmlException\",\"success\":false}",
+      "methodName": "systemUpdate",
+      "name": "RecordAccessOperationProbeTest",
+      "namespace": null,
+      "packageName": "RecordAccessOperationProbeTest",
+      "stackTrace": "Class.RecordAccessOperationProbeTest.observe: line 18, column 1\nClass.RecordAccessOperationProbeTest.systemUpdate: line 8, column 1",
+      "time": 211,
+      "type": "Class"
+    },
+    {
+      "id": "01pdq00000Pmt2EAAR",
+      "message": "System.AssertException: Assertion Failed: OBSERVED|systemUpsert|{\"message\":\"Upsert failed. First exception on row 0 with id RECORD; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: RECORD: []\",\"exceptionType\":\"System.DmlException\",\"success\":false}",
+      "methodName": "systemUpsert",
+      "name": "RecordAccessOperationProbeTest",
+      "namespace": null,
+      "packageName": "RecordAccessOperationProbeTest",
+      "stackTrace": "Class.RecordAccessOperationProbeTest.observe: line 18, column 1\nClass.RecordAccessOperationProbeTest.systemUpsert: line 9, column 1",
+      "time": 232,
+      "type": "Class"
+    },
+    {
+      "id": "01pdq00000Pmt2EAAR",
+      "message": "System.AssertException: Assertion Failed: OBSERVED|userUndelete|{\"message\":\"Undelete failed. First exception on row 0 with id RECORD; first error: INVALID_ID_FIELD, invalid record id: []\",\"exceptionType\":\"System.DmlException\",\"success\":false}",
+      "methodName": "userUndelete",
+      "name": "RecordAccessOperationProbeTest",
+      "namespace": null,
+      "packageName": "RecordAccessOperationProbeTest",
+      "stackTrace": "Class.RecordAccessOperationProbeTest.observe: line 18, column 1\nClass.RecordAccessOperationProbeTest.userUndelete: line 7, column 1",
+      "time": 247,
+      "type": "Class"
+    },
+    {
+      "id": "01pdq00000Pmt2EAAR",
+      "message": "System.AssertException: Assertion Failed: OBSERVED|userUpsert|{\"message\":\"Operation failed due to fields being inaccessible on Sobject Case, check errors on Exception or Result! \",\"exceptionType\":\"System.DmlException\",\"success\":false}",
+      "methodName": "userUpsert",
+      "name": "RecordAccessOperationProbeTest",
+      "namespace": null,
+      "packageName": "RecordAccessOperationProbeTest",
+      "stackTrace": "Class.RecordAccessOperationProbeTest.observe: line 18, column 1\nClass.RecordAccessOperationProbeTest.userUpsert: line 6, column 1",
+      "time": 157,
+      "type": "Class"
+    }
+  ],
+  "successes": []
+}

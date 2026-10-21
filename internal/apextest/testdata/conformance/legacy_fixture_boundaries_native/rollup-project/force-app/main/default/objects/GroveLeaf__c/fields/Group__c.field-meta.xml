@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>Group__c</fullName>
+  <label>Group</label>
+  <referenceTo>GroveGroup__c</referenceTo>
+  <relationshipLabel>Leaves</relationshipLabel>
+  <relationshipName>Leaves</relationshipName>
+  <reparentableMasterDetail>false</reparentableMasterDetail>
+  <type>MasterDetail</type>
+  <writeRequiresMasterRead>false</writeRequiresMasterRead>
+</CustomField>

@@ -195,7 +195,7 @@ func (v *customComponentValidation) attributeError(node *MarkupNode, controller,
 	if !writable {
 		return fmt.Errorf("Read only property 'c:%s.%s'", componentName, target)
 	}
-	if !componentBindingTypesEqual(node.Attribute("type"), member.Type) {
+	if !componentBindingTypesAssignable(node.Attribute("type"), member.Type) {
 		return fmt.Errorf("Type mismatch for <apex:attribute assignTo>. Value binding to a property of type %s is required, property specified (%s) is of type %s.", node.Attribute("type"), target, member.Type)
 	}
 	return nil

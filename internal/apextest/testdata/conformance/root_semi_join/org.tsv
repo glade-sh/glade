@@ -1,0 +1,9 @@
+source_api	method	observation
+62.0	descendantJoinGroup	{"message":"Semi join sub-selects are only allowed at the top level WHERE expressions and not in nested WHERE expressions.","type":"System.QueryException"}
+62.0	rootAntiJoinFirst	{"rows":1}
+62.0	rootReferenceJoinSecond	{"rows":1}
+62.0	rootTwoJoins	{"rows":1}
+67.0	descendantJoinGroup	{"message":"Semi join sub-selects are only allowed at the top level WHERE expressions and not in nested WHERE expressions.","type":"System.QueryException"}
+67.0	rootAntiJoinFirst	{"rows":1}
+67.0	rootReferenceJoinSecond	{"rows":1}
+67.0	rootTwoJoins	{"rows":1}

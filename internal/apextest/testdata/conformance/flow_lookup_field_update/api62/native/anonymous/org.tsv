@@ -1,0 +1,5 @@
+id	group	route	status	value
+L01	FLOW_LOOKUP_FIELD_UPDATE	anonymous	runtime	{"description":"lookup ran","exception":null,"isNull":true,"matchesTarget":false}
+L02	FLOW_LOOKUP_FIELD_UPDATE	anonymous	runtime	{"description":"lookup ran","exception":null,"isNull":false,"matchesTarget":true}
+L03	FLOW_LOOKUP_FIELD_UPDATE	anonymous	runtime	{"description":"lookup ran","exception":null,"isNull":true,"matchesTarget":false}
+L04	FLOW_LOOKUP_FIELD_UPDATE	anonymous	runtime	{"description":"lookup ran","exception":null,"isNull":false,"matchesTarget":true}

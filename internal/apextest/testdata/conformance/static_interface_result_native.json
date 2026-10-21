@@ -1,0 +1,700 @@
+{
+  "rowCount": 36,
+  "scalarCells": 300,
+  "orgIDSHA256": "828a1b558510f9294d5d25087e7326a2dcbea9173109b0659c394a6e3046dbe1",
+  "orgTSVSHA256": "763f9ab9612b4143a9a7b53a624d025cc8e162af88b0017a91fffeb967319d02",
+  "orgRunSHA256": "0f8783883675dd0424186f8d2a6f4f7d49a92f02b8b17c5accba497412108504",
+  "testClass": "OwnedStaticSearchTest",
+  "projectAPI": "62.0",
+  "projectSource": "{\"sourceApiVersion\": \"62.0\", \"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}]}\n",
+  "projectSourceSHA256": "f80e01fee8c27f9cd628f6825784156f98f6e6313473d649da4553ee48132aa3",
+  "sources": {
+    "OwnedInstanceSearcher": "public class OwnedInstanceSearcher implements OwnedSearchContract {\n public static Integer calls=0;\n public Object execute(Object term,Map<String,Object> options) {\n  calls++;\n  List<String> fields=(List<String>)options.get('fields');\n  return new Account(Name='instance'+':'+(String)term,Description=String.valueOf((Id)options.get('recordId'))+':'+String.join(fields,','));\n }\n}\n",
+    "OwnedStaticSearchObserver": "public class OwnedStaticSearchObserver {\n public static String observe(String row) {\n  OwnedPrimarySearcher.calls=0;OwnedOtherSearcher.calls=0;OwnedInstanceSearcher.calls=0;\n  Map<String,Object> options=new Map<String,Object>{'recordId'=>UserInfo.getUserId(),'fields'=>new List<String>{'Name','Description'}};\n  Map<String,Object> seen=new Map<String,Object>();Object returned;String term='';\n  try {\n   if(row=='SI01'||row=='SI02'||row=='SI03') {\n    String name=row=='SI01'?'OwnedPrimarySearcher':(row=='SI02'?'OwnedOtherSearcher':'OwnedInstanceSearcher');\n    Object raw=Type.forName(name).newInstance();OwnedSearchContract receiver=(OwnedSearchContract)raw;\n    returned=receiver.execute(term,options);\n   }\n   if(row=='SI04') {Object raw=new OwnedNotSearcher();OwnedSearchContract receiver=(OwnedSearchContract)raw;returned=receiver.execute(term,options);}\n   if(row=='SI05') {OwnedSearchContract receiver=null;returned=receiver.execute(term,options);}\n   if(row=='SI06') returned=OwnedPrimarySearcher.execute(term,options);\n   seen.put('outcome','returned');\n   seen.put('account',returned instanceof Account);\n   if(returned instanceof Account) {\n    Account item=(Account)returned;seen.put('name',item.Name);\n    seen.put('arguments',item.Description==String.valueOf(UserInfo.getUserId())+':Name,Description');\n   }\n  } catch(Exception e) {seen.put('outcome','threw');seen.put('exception',e.getTypeName());}\n  seen.put('primaryCalls',OwnedPrimarySearcher.calls);seen.put('otherCalls',OwnedOtherSearcher.calls);seen.put('instanceCalls',OwnedInstanceSearcher.calls);\n  seen.put('optionsSize',options.size());seen.put('fieldsSize',((List<String>)options.get('fields')).size());\n  return JSON.serialize(seen);\n }\n}\n",
+    "OwnedSearchContract": "public interface OwnedSearchContract { Object execute(Object term,Map<String,Object> options); }\n",
+    "OwnedPrimarySearcher": "public class OwnedPrimarySearcher implements OwnedSearchContract {\n public static Integer calls=0;\n public static Object execute(Object term,Map<String,Object> options) {\n  calls++;\n  List<String> fields=(List<String>)options.get('fields');\n  return new Account(Name='primary'+':'+(String)term,Description=String.valueOf((Id)options.get('recordId'))+':'+String.join(fields,','));\n }\n}\n",
+    "OwnedOtherSearcher": "public class OwnedOtherSearcher implements OwnedSearchContract {\n public static Integer calls=0;\n public static Object execute(Object term,Map<String,Object> options) {\n  calls++;\n  List<String> fields=(List<String>)options.get('fields');\n  return new Account(Name='other'+':'+(String)term,Description=String.valueOf((Id)options.get('recordId'))+':'+String.join(fields,','));\n }\n}\n",
+    "OwnedNotSearcher": "public class OwnedNotSearcher {}\n",
+    "OwnedStaticSearchTest": "@IsTest private class OwnedStaticSearchTest {\n @IsTest static void si01(){System.assert(false,'STATIC_SEARCH|SI01|'+OwnedStaticSearchObserver.observe('SI01'));}\n @IsTest static void si02(){System.assert(false,'STATIC_SEARCH|SI02|'+OwnedStaticSearchObserver.observe('SI02'));}\n @IsTest static void si03(){System.assert(false,'STATIC_SEARCH|SI03|'+OwnedStaticSearchObserver.observe('SI03'));}\n @IsTest static void si04(){System.assert(false,'STATIC_SEARCH|SI04|'+OwnedStaticSearchObserver.observe('SI04'));}\n @IsTest static void si05(){System.assert(false,'STATIC_SEARCH|SI05|'+OwnedStaticSearchObserver.observe('SI05'));}\n @IsTest static void si06(){System.assert(false,'STATIC_SEARCH|SI06|'+OwnedStaticSearchObserver.observe('SI06'));}\n}\n"
+  },
+  "sourceSHA256": {
+    "OwnedInstanceSearcher": "8b39f44d8d7bb78d4005d1dfb189fb115df0061c0e17e09a7ef9841d89425adc",
+    "OwnedStaticSearchObserver": "0497e7705993620cdd9a8bedfce25df21c7b3f822ca990c62cc0b10d5bd3ac60",
+    "OwnedSearchContract": "acedf16f5d0e77e52f67a361bc290465e3abf0b4e1b123df0898a5edc53987aa",
+    "OwnedPrimarySearcher": "73c0c1f801525258d144aa9293507a86af0028db67717655a17789877c2b6d61",
+    "OwnedOtherSearcher": "bb6a47335e77d252570b91d545b4b63ae52ee0360a583e8d9ce3a0547045c028",
+    "OwnedNotSearcher": "10721d0a3c25a03b2622bcf2ae9287b200bf1a72a2e47dc06e96ef6e29806e32",
+    "OwnedStaticSearchTest": "2483dbd5f0aef5a1e5010b053fd0dcf9910ac59f9570e4dcd0def1748c90372d"
+  },
+  "anonymousSource": "System.debug('STATIC_SEARCH|SI01|'+OwnedStaticSearchObserver.observe('SI01'));\nSystem.debug('STATIC_SEARCH|SI02|'+OwnedStaticSearchObserver.observe('SI02'));\nSystem.debug('STATIC_SEARCH|SI03|'+OwnedStaticSearchObserver.observe('SI03'));\nSystem.debug('STATIC_SEARCH|SI04|'+OwnedStaticSearchObserver.observe('SI04'));\nSystem.debug('STATIC_SEARCH|SI05|'+OwnedStaticSearchObserver.observe('SI05'));\nSystem.debug('STATIC_SEARCH|SI06|'+OwnedStaticSearchObserver.observe('SI06'));\n",
+  "anonymousSourceSHA256": "b5d821d2426bb545bf3bab587b8269ce708d30853457d026728143132caf42fa",
+  "orgContext": {
+    "requestedEdition": "Developer",
+    "featuresRequested": [],
+    "settingsChanged": false,
+    "otherFeatureContext": "UNCAPTURED"
+  },
+  "captures": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "deploymentID": "0AfE200000r0xpZKAQ",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "4673617db5973ec24165d4e093eeccda444a4a97daad6f145bd8f3daf045c009"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "deploymentID": "0AfE200000r0xrBKAQ",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "5c28dd77bcf001c5ffc123cb544039fdd9cc5442c65a9db783f9a60922a97ca9"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "deploymentID": "0AfE200000r0xCBKAY",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "97bd9ded78c4ad4418c10efc198df8301d53c4ccd07d244fd6233f44d1c23c69"
+    }
+  ],
+  "rows": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "SI01",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 1,
+        "arguments": true,
+        "name": "primary:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "228542e3250a32f199baecaf71bec95e4be3e51c6c158022b44fe327f9c06664"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "SI02",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 1,
+        "primaryCalls": 0,
+        "arguments": true,
+        "name": "other:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "228542e3250a32f199baecaf71bec95e4be3e51c6c158022b44fe327f9c06664"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "SI03",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 1,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "arguments": true,
+        "name": "instance:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "228542e3250a32f199baecaf71bec95e4be3e51c6c158022b44fe327f9c06664"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "SI04",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "exception": "System.TypeException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "228542e3250a32f199baecaf71bec95e4be3e51c6c158022b44fe327f9c06664"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "SI05",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "exception": "System.NullPointerException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "228542e3250a32f199baecaf71bec95e4be3e51c6c158022b44fe327f9c06664"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "SI06",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 1,
+        "arguments": true,
+        "name": "primary:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "228542e3250a32f199baecaf71bec95e4be3e51c6c158022b44fe327f9c06664"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "SI01",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 1,
+        "arguments": true,
+        "name": "primary:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "6ffb5518fe922c3adbe0b8369dabc6e0edbeb912e84d168afe60fc62f068b0b1"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "SI02",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 1,
+        "primaryCalls": 0,
+        "arguments": true,
+        "name": "other:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "6ffb5518fe922c3adbe0b8369dabc6e0edbeb912e84d168afe60fc62f068b0b1"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "SI03",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 1,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "arguments": true,
+        "name": "instance:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "6ffb5518fe922c3adbe0b8369dabc6e0edbeb912e84d168afe60fc62f068b0b1"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "SI04",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "exception": "System.TypeException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "6ffb5518fe922c3adbe0b8369dabc6e0edbeb912e84d168afe60fc62f068b0b1"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "SI05",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "exception": "System.NullPointerException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "6ffb5518fe922c3adbe0b8369dabc6e0edbeb912e84d168afe60fc62f068b0b1"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "SI06",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 1,
+        "arguments": true,
+        "name": "primary:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "6ffb5518fe922c3adbe0b8369dabc6e0edbeb912e84d168afe60fc62f068b0b1"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "SI01",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 1,
+        "arguments": true,
+        "name": "primary:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "0678bb778fbe2853b3f1f23dcf33277abec744d819dfaa9ca6d563e174af9efe"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "SI02",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 1,
+        "primaryCalls": 0,
+        "arguments": true,
+        "name": "other:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "0678bb778fbe2853b3f1f23dcf33277abec744d819dfaa9ca6d563e174af9efe"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "SI03",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 1,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "arguments": true,
+        "name": "instance:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "0678bb778fbe2853b3f1f23dcf33277abec744d819dfaa9ca6d563e174af9efe"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "SI04",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "exception": "System.TypeException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "0678bb778fbe2853b3f1f23dcf33277abec744d819dfaa9ca6d563e174af9efe"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "SI05",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "exception": "System.NullPointerException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "0678bb778fbe2853b3f1f23dcf33277abec744d819dfaa9ca6d563e174af9efe"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "SI06",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 1,
+        "arguments": true,
+        "name": "primary:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "0678bb778fbe2853b3f1f23dcf33277abec744d819dfaa9ca6d563e174af9efe"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "SI01",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 1,
+        "arguments": true,
+        "name": "primary:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "728378cca280bcf3510b32845322f719a9d28909650262971836741c6b201097"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "SI02",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 1,
+        "primaryCalls": 0,
+        "arguments": true,
+        "name": "other:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "728378cca280bcf3510b32845322f719a9d28909650262971836741c6b201097"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "SI03",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 1,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "arguments": true,
+        "name": "instance:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "728378cca280bcf3510b32845322f719a9d28909650262971836741c6b201097"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "SI04",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "exception": "System.TypeException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "728378cca280bcf3510b32845322f719a9d28909650262971836741c6b201097"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "SI05",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "exception": "System.NullPointerException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "728378cca280bcf3510b32845322f719a9d28909650262971836741c6b201097"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "SI06",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 1,
+        "arguments": true,
+        "name": "primary:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "728378cca280bcf3510b32845322f719a9d28909650262971836741c6b201097"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "SI01",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 1,
+        "arguments": true,
+        "name": "primary:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "14682cb2c2739f60c5c044b0aae4e827eff39f4f4af928830e8b5c720c4edb60"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "SI02",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 1,
+        "primaryCalls": 0,
+        "arguments": true,
+        "name": "other:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "14682cb2c2739f60c5c044b0aae4e827eff39f4f4af928830e8b5c720c4edb60"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "SI03",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 1,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "arguments": true,
+        "name": "instance:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "14682cb2c2739f60c5c044b0aae4e827eff39f4f4af928830e8b5c720c4edb60"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "SI04",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "exception": "System.TypeException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "14682cb2c2739f60c5c044b0aae4e827eff39f4f4af928830e8b5c720c4edb60"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "SI05",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "exception": "System.NullPointerException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "14682cb2c2739f60c5c044b0aae4e827eff39f4f4af928830e8b5c720c4edb60"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "SI06",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 1,
+        "arguments": true,
+        "name": "primary:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "14682cb2c2739f60c5c044b0aae4e827eff39f4f4af928830e8b5c720c4edb60"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "SI01",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 1,
+        "arguments": true,
+        "name": "primary:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "18ef6f97b0e21dfca3f6154eb9e2525d704de500808722f96671aef9bfc87ee4"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "SI02",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 1,
+        "primaryCalls": 0,
+        "arguments": true,
+        "name": "other:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "18ef6f97b0e21dfca3f6154eb9e2525d704de500808722f96671aef9bfc87ee4"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "SI03",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 1,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "arguments": true,
+        "name": "instance:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "18ef6f97b0e21dfca3f6154eb9e2525d704de500808722f96671aef9bfc87ee4"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "SI04",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "exception": "System.TypeException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "18ef6f97b0e21dfca3f6154eb9e2525d704de500808722f96671aef9bfc87ee4"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "SI05",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 0,
+        "exception": "System.NullPointerException",
+        "outcome": "threw"
+      },
+      "receiptSHA256": "18ef6f97b0e21dfca3f6154eb9e2525d704de500808722f96671aef9bfc87ee4"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "SI06",
+      "native": {
+        "fieldsSize": 2,
+        "optionsSize": 2,
+        "instanceCalls": 0,
+        "otherCalls": 0,
+        "primaryCalls": 1,
+        "arguments": true,
+        "name": "primary:",
+        "account": true,
+        "outcome": "returned"
+      },
+      "receiptSHA256": "18ef6f97b0e21dfca3f6154eb9e2525d704de500808722f96671aef9bfc87ee4"
+    }
+  ],
+  "projection": "Anonymous capture emits six independent lines; each observer resets all three counters and has no DML. Local comparison replays those exact lines independently to preserve controls when a row fails.",
+  "uncaptured": [
+    "Other formal parameter or return signatures; inherited or nonpublic static implementations; namespaced or mixed-source contexts remain unobserved.",
+    "The new Object(Object,Map<String,Object>) observations do not extend the separate void() API52/62/67 scope to API68."
+  ]
+}

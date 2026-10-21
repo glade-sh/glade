@@ -1,0 +1,1 @@
+@IsTest private class MetadataOwner68CTRLUNCAUGHT { @IsTest static void observed(){List<Integer> empty=new List<Integer>();Integer value=empty[0];} }

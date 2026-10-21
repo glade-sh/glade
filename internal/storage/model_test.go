@@ -899,17 +899,21 @@ func TestEnsureStandardObjectFieldsAddsUserProfileBreadthFields(t *testing.T) {
 	if field, ok := definition.Fields["Salutation"]; !ok || field.Type != FieldPicklist {
 		t.Fatalf("User.Salutation = %#v, %v", field, ok)
 	}
-	for _, fieldName := range []string{"Alias", "Email", "EmailEncodingKey", "IsActive", "LanguageLocaleKey", "LocaleSidKey", "ProfileId", "TimeZoneSidKey", "Username"} {
+	for _, fieldName := range []string{"Alias", "Email", "EmailEncodingKey", "IsActive", "LanguageLocaleKey", "LocaleSidKey", "ProfileId", "Username"} {
 		if field := definition.Fields[fieldName]; field.DefaultValue == "" {
 			t.Fatalf("User.%s default missing: %#v", fieldName, field)
 		}
+	}
+	zone := definition.Fields["TimeZoneSidKey"]
+	if zone.DefaultValue != "" || FieldFlagValue(zone.DefaultedOnCreate, true) || !zone.Required || FieldFlagValue(zone.Nillable, true) || !zone.RestrictedPicklist {
+		t.Fatalf("User.TimeZoneSidKey must require an explicit picklist value: %#v", zone)
 	}
 	activeDefault, ok := DefaultValueForField(definition.Fields["IsActive"])
 	if !ok || activeDefault.Kind != ValueBoolean || !activeDefault.Boolean {
 		t.Fatalf("User.IsActive default = %#v, %v", activeDefault, ok)
 	}
 	profileDefault, ok := DefaultValueForField(definition.Fields["ProfileId"])
-	if !ok || profileDefault.Kind != ValueID || profileDefault.ID != "00e000000000001" {
+	if !ok || profileDefault.Kind != ValueID || profileDefault.ID != DefaultProfileID {
 		t.Fatalf("User.ProfileId default = %#v, %v", profileDefault, ok)
 	}
 }
@@ -1026,9 +1030,10 @@ func TestApplyOrgShapeAddsOptionalFeatureObjectsAndRecords(t *testing.T) {
 	if apps := org.Objects["CustomApplication"]; len(apps.Records) != 3 {
 		t.Fatalf("CustomApplication records = %d, want 3", len(apps.Records))
 	}
-	orgRecord := org.Objects["Organization"].Records["00D000000000001"]
-	if !orgRecord.Fields["IsSetPasswordInApiEnabled"].Boolean || !orgRecord.Fields["HasAnalyticsAdminPerms"].Boolean || !orgRecord.Fields["IsHealthCloudEnabled"].Boolean || !orgRecord.Fields["IsMultiCurrencyEnabled"].Boolean {
-		t.Fatalf("scratch feature flags were not applied: %#v", orgRecord.Fields)
+	for _, feature := range []string{"EnableSetPasswordInApi", "AnalyticsAdminPerms", "HealthCloud", "MultiCurrency"} {
+		if !org.HasFeature(feature) {
+			t.Fatalf("org feature %s was not retained", feature)
+		}
 	}
 }
 
@@ -1072,13 +1077,12 @@ func TestIsImmutableMetadataObjectExcludesCustomMetadata(t *testing.T) {
 	}
 }
 
-func TestApplyOrgShapeMultiCurrencyCreatesOrganizationFlag(t *testing.T) {
+func TestApplyOrgShapeMultiCurrencyRetainsFeatureProfile(t *testing.T) {
 	org := NewOrgState()
 	ApplyOrgShape(&org, []string{"MultiCurrency"})
 
-	orgRecord := org.Objects["Organization"].Records["00D000000000001"]
-	if !orgRecord.Fields["IsMultiCurrencyEnabled"].Boolean {
-		t.Fatalf("multi-currency flag was not applied: %#v", orgRecord.Fields)
+	if !org.HasFeature("MultiCurrency") {
+		t.Fatal("multi-currency feature was not retained")
 	}
 	currencyType := org.Objects["CurrencyType"]
 	if len(currencyType.Records) != 1 {
@@ -1467,7 +1471,7 @@ func containsTestString(values []string, want string) bool {
 }
 
 func TestEnsureStandardObjectFieldsAddsCustomObjectNameAndRecordTypeId(t *testing.T) {
-	definition := ObjectDefinition{APIName: "OrderItem__c"}
+	definition := ObjectDefinition{APIName: "OrderItem__c", Metadata: map[string]string{"enableActivities": "true"}, RecordTypes: []RecordTypeInfo{{DeveloperName: "Choice"}}}
 
 	EnsureStandardObjectFields(&definition)
 
@@ -1530,7 +1534,12 @@ func TestEnsureStandardObjectFieldsAddsCustomMetadataIdentityFields(t *testing.T
 
 	for _, name := range []string{"DeveloperName", "Label", "Language", "MasterLabel", "NamespacePrefix", "QualifiedApiName"} {
 		field, ok := definition.Fields[name]
-		if !ok || field.Type != FieldString {
+		want := FieldString
+		if name == "Language" {
+			// Native describe: Language is a PICKLIST of length 40 (62.0, 67.0, 68.0).
+			want = FieldPicklist
+		}
+		if !ok || field.Type != want {
 			t.Fatalf("%s field = %#v, %v", name, field, ok)
 		}
 	}
@@ -1901,13 +1910,14 @@ func TestResolveRESTAPIVersion(t *testing.T) {
 		{raw: "   ", want: DefaultRESTAPIVersion},
 		{raw: "v65.0", want: "65.0"},
 		{raw: "65.00", want: "65.0"},
+		{raw: "v68.0", want: "68.0"},
 	} {
 		got, err := ResolveRESTAPIVersion(test.raw)
 		if err != nil || got != test.want {
 			t.Fatalf("ResolveRESTAPIVersion(%q) = %q, %v; want %q", test.raw, got, err, test.want)
 		}
 	}
-	for _, raw := range []string{"v", "+65.0", "64.0", "68.0", "67.1", "junk"} {
+	for _, raw := range []string{"v", "+65.0", "64.0", "69.0", "67.1", "junk"} {
 		if got, err := ResolveRESTAPIVersion(raw); err == nil {
 			t.Fatalf("ResolveRESTAPIVersion(%q) = %q, nil", raw, got)
 		}
@@ -1915,12 +1925,12 @@ func TestResolveRESTAPIVersion(t *testing.T) {
 }
 
 func TestSupportedRESTAPIVersion(t *testing.T) {
-	for _, version := range []string{"60.0", "65.0", "66.0", "67.0"} {
+	for _, version := range []string{"60.0", "65.0", "66.0", "67.0", "68.0"} {
 		if !IsSupportedRESTAPIVersion(version) {
 			t.Fatalf("%s is not supported", version)
 		}
 	}
-	for _, version := range []string{"59.0", "64.0", "68.0", "67.1", "junk"} {
+	for _, version := range []string{"59.0", "64.0", "69.0", "67.1", "junk"} {
 		if IsSupportedRESTAPIVersion(version) {
 			t.Fatalf("%s is supported", version)
 		}

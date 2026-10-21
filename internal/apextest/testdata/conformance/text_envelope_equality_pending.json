@@ -1,0 +1,47 @@
+{
+  "disposition": "PENDING-ROWS",
+  "scope": "Operator equality versus explicit custom equals whoseStringpayload uses documentedcase-sensitive String.equals. No operator/equalitycandidatechanged withoutnative evidence.",
+  "apis": [
+    "61.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "contexts": [
+    "anonymous",
+    "@IsTest(SeeAllData=false)"
+  ],
+  "metadata": "Record helper and caller versions separately. Use matched versions plus helper 61/callers 61/62/67/68 unless rows specify another actual helper. Each row runs separately.",
+  "record": [
+    "compile outcome",
+    "stage",
+    "returned payload",
+    "caught exception type and exact message",
+    "uncaught result",
+    "source metadata",
+    "native release and timezone"
+  ],
+  "controls": [
+    "Integer value=17;",
+    "caught and uncaught empty List<Integer> indexed at0"
+  ],
+  "envelope": "Map<String,Object> payload=new Map<String,Object>();try{BODY}catch(Exception error){payload.put('exceptionType',error.getTypeName());payload.put('exceptionMessage',error.getMessage());}System.assert(false,'PROBE|ID|'+JSON.serialize(payload));",
+  "rows": [
+    {
+      "id": "SAME_CASE",
+      "classes": {
+        "TextEnvelope": "public class TextEnvelope {private Object value;public TextEnvelope(Object value){this.value=value;}public Boolean equals(Object other){if(!(other instanceof TextEnvelope))return false;Object right=((TextEnvelope)other).value;if(value instanceof String)return ((String)value).equals((String)right);return value==right;}}"
+      },
+      "body": "TextEnvelope left=new TextEnvelope('STR');TextEnvelope right=new TextEnvelope('STR');Object erased=left;payload.put('operator',left==right);payload.put('explicit',left.equals(right));payload.put('objectOperator',erased==right);payload.put('objectEquals',erased.equals(right));"
+    },
+    {
+      "id": "MIXED_CASE",
+      "classes": {
+        "TextEnvelope": "public class TextEnvelope {private Object value;public TextEnvelope(Object value){this.value=value;}public Boolean equals(Object other){if(!(other instanceof TextEnvelope))return false;Object right=((TextEnvelope)other).value;if(value instanceof String)return ((String)value).equals((String)right);return value==right;}}"
+      },
+      "body": "TextEnvelope left=new TextEnvelope('STR');TextEnvelope right=new TextEnvelope('str');Object erased=left;payload.put('operator',left==right);payload.put('explicit',left.equals(right));payload.put('objectOperator',erased==right);payload.put('objectEquals',erased.equals(right));"
+    }
+  ],
+  "expectedNative": "UNKNOWN; do not infer native answers from local candidates.",
+  "candidatePolicy": "Ifnativeconfirmsfalse, carrytest-contractmismatch. Ifnativeoperatorandexplicitmethoddiffer, implementonlyobservedoperatorcontract afterindependentreview; do notoverride String.equals."
+}

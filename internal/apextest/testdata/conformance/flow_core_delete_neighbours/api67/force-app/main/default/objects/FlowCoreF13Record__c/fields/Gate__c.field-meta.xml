@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Gate__c</fullName><label>Gate</label><type>Checkbox</type><defaultValue>false</defaultValue></CustomField>

@@ -1,0 +1,215 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "shapeCount": 1,
+  "nativeObservationCount": 6,
+  "rows": [
+    {
+      "id": "GS02",
+      "expected": {
+        "outcome": "runtime",
+        "value": "count:2|origin:OwnedOrigin:Owned Origin:Regular:true:false|target:OwnedTarget:Owned Target:Regular:false:false|related:true|members:0:1:0:true|absent:0"
+      },
+      "routes": {
+        "anonymous": {
+          "id": "GS02A",
+          "anonymous": "System.assert(false,'P|GS02A|' + GroupSeedProbe.observe());\n",
+          "setupClasses": {
+            "GroupSeedProbe": "public class GroupSeedProbe {\n public static String observe() {\n  Map<String,Group> groups=new Map<String,Group>();\n  for(Group g:[SELECT Id,DeveloperName,Name,Type,RelatedId,DoesIncludeBosses,DoesSendEmailToMembers FROM Group WHERE DeveloperName IN ('OwnedOrigin','OwnedTarget')]) {groups.put(g.DeveloperName,g);}\n  Group origin=groups.get('OwnedOrigin'); Group target=groups.get('OwnedTarget');\n  Integer initial=[SELECT count() FROM GroupMember WHERE GroupId=:origin.Id];\n  Savepoint sp=Database.setSavepoint();\n  try {\n   GroupMember membership=new GroupMember(GroupId=origin.Id,UserOrGroupId=UserInfo.getUserId()); insert membership;\n   GroupMember stored=[SELECT GroupId,UserOrGroupId FROM GroupMember WHERE Id=:membership.Id];\n   Integer inserted=[SELECT count() FROM GroupMember WHERE GroupId=:origin.Id];\n   Boolean identity=membership.Id!=null && stored.GroupId==origin.Id && stored.UserOrGroupId==UserInfo.getUserId();\n   delete membership;\n   Integer remaining=[SELECT count() FROM GroupMember WHERE GroupId=:origin.Id];\n   return 'count:'+groups.size()+'|origin:'+origin.DeveloperName+':'+origin.Name+':'+origin.Type+':'+origin.DoesIncludeBosses+':'+origin.DoesSendEmailToMembers\n    +'|target:'+target.DeveloperName+':'+target.Name+':'+target.Type+':'+target.DoesIncludeBosses+':'+target.DoesSendEmailToMembers\n    +'|related:'+(origin.RelatedId==null && target.RelatedId==null)\n    +'|members:'+initial+':'+inserted+':'+remaining+':'+identity\n    +'|absent:'+ [SELECT count() FROM Group WHERE DeveloperName='UnprovidedGroup'];\n  } finally {Database.rollback(sp);}\n }\n}"
+          },
+          "groupMetadata": {
+            "OwnedOrigin": "<Group xmlns=\"http://soap.sforce.com/2006/04/metadata\"><name>Owned Origin</name><doesIncludeBosses>true</doesIncludeBosses></Group>\n",
+            "OwnedTarget": "<Group xmlns=\"http://soap.sforce.com/2006/04/metadata\"><name>Owned Target</name><doesIncludeBosses>false</doesIncludeBosses></Group>\n"
+          },
+          "stage": "runtime",
+          "sourceSha256": {
+            "anonymous": "44c607291569980592c6f7309390b6724462f4a3c6d5e8de72094a17b189fe6b",
+            "setupClass:GroupSeedProbe": "384034d16ae29e70ae299666423633a39b66bd1bdb5b9a1ddf496ca623a2669e",
+            "group:OwnedOrigin": "69bda5924ef0e6de7441c8c6dfc5f40858af925554024bddad65032f2b6e45cc",
+            "group:OwnedTarget": "5d92b671071e9522682d149c8bc0f186844f418fd0eadff6f3034c5da180f864"
+          }
+        },
+        "isTest": {
+          "id": "GS02T",
+          "classes": {
+            "GroupSeedProbe": "public class GroupSeedProbe {\n public static String observe() {\n  Map<String,Group> groups=new Map<String,Group>();\n  for(Group g:[SELECT Id,DeveloperName,Name,Type,RelatedId,DoesIncludeBosses,DoesSendEmailToMembers FROM Group WHERE DeveloperName IN ('OwnedOrigin','OwnedTarget')]) {groups.put(g.DeveloperName,g);}\n  Group origin=groups.get('OwnedOrigin'); Group target=groups.get('OwnedTarget');\n  Integer initial=[SELECT count() FROM GroupMember WHERE GroupId=:origin.Id];\n  Savepoint sp=Database.setSavepoint();\n  try {\n   GroupMember membership=new GroupMember(GroupId=origin.Id,UserOrGroupId=UserInfo.getUserId()); insert membership;\n   GroupMember stored=[SELECT GroupId,UserOrGroupId FROM GroupMember WHERE Id=:membership.Id];\n   Integer inserted=[SELECT count() FROM GroupMember WHERE GroupId=:origin.Id];\n   Boolean identity=membership.Id!=null && stored.GroupId==origin.Id && stored.UserOrGroupId==UserInfo.getUserId();\n   delete membership;\n   Integer remaining=[SELECT count() FROM GroupMember WHERE GroupId=:origin.Id];\n   return 'count:'+groups.size()+'|origin:'+origin.DeveloperName+':'+origin.Name+':'+origin.Type+':'+origin.DoesIncludeBosses+':'+origin.DoesSendEmailToMembers\n    +'|target:'+target.DeveloperName+':'+target.Name+':'+target.Type+':'+target.DoesIncludeBosses+':'+target.DoesSendEmailToMembers\n    +'|related:'+(origin.RelatedId==null && target.RelatedId==null)\n    +'|members:'+initial+':'+inserted+':'+remaining+':'+identity\n    +'|absent:'+ [SELECT count() FROM Group WHERE DeveloperName='UnprovidedGroup'];\n  } finally {Database.rollback(sp);}\n }\n}",
+            "GroupSeedSpec": "@IsTest private class GroupSeedSpec { @IsTest static void observe(){System.assert(false,'P|GS02T|' + GroupSeedProbe.observe());} }\n"
+          },
+          "tests": [
+            "GroupSeedSpec"
+          ],
+          "groupMetadata": {
+            "OwnedOrigin": "<Group xmlns=\"http://soap.sforce.com/2006/04/metadata\"><name>Owned Origin</name><doesIncludeBosses>true</doesIncludeBosses></Group>\n",
+            "OwnedTarget": "<Group xmlns=\"http://soap.sforce.com/2006/04/metadata\"><name>Owned Target</name><doesIncludeBosses>false</doesIncludeBosses></Group>\n"
+          },
+          "stage": "runtime",
+          "sourceSha256": {
+            "class:GroupSeedProbe": "384034d16ae29e70ae299666423633a39b66bd1bdb5b9a1ddf496ca623a2669e",
+            "class:GroupSeedSpec": "5d77d659503dc79de7e4e3135117b49394f6b97080594bff5af41d1545c27009",
+            "group:OwnedOrigin": "69bda5924ef0e6de7441c8c6dfc5f40858af925554024bddad65032f2b6e45cc",
+            "group:OwnedTarget": "5d92b671071e9522682d149c8bc0f186844f418fd0eadff6f3034c5da180f864"
+          }
+        }
+      }
+    }
+  ],
+  "cells": [
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "GS02A",
+      "native": "count:2|origin:OwnedOrigin:Owned Origin:Regular:true:false|target:OwnedTarget:Owned Target:Regular:false:false|related:true|members:0:1:0:true|absent:0",
+      "nativeSHA256": "3444c645195f5b2ddcd6e534e5bbaa715414a2daac3f2fcdd3ab19f79e3b436a",
+      "rawReceiptSHA256": "d31dc0fa4699192da6d78ecbc97fe509baceec61226d03d4c70dd2d6bb461401"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "GS02T",
+      "native": "count:2|origin:OwnedOrigin:Owned Origin:Regular:true:false|target:OwnedTarget:Owned Target:Regular:false:false|related:true|members:0:1:0:true|absent:0",
+      "nativeSHA256": "3444c645195f5b2ddcd6e534e5bbaa715414a2daac3f2fcdd3ab19f79e3b436a",
+      "rawReceiptSHA256": "aff4d7190ea438a7a1f86db321d8b9305b03464e9d9a75fb4313a56f72f0816e"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "GS02A",
+      "native": "count:2|origin:OwnedOrigin:Owned Origin:Regular:true:false|target:OwnedTarget:Owned Target:Regular:false:false|related:true|members:0:1:0:true|absent:0",
+      "nativeSHA256": "3444c645195f5b2ddcd6e534e5bbaa715414a2daac3f2fcdd3ab19f79e3b436a",
+      "rawReceiptSHA256": "0f367173e5f657930bec22c6e55f3c8fd14a9f3c5c59b3ef921f107412165241"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "GS02T",
+      "native": "count:2|origin:OwnedOrigin:Owned Origin:Regular:true:false|target:OwnedTarget:Owned Target:Regular:false:false|related:true|members:0:1:0:true|absent:0",
+      "nativeSHA256": "3444c645195f5b2ddcd6e534e5bbaa715414a2daac3f2fcdd3ab19f79e3b436a",
+      "rawReceiptSHA256": "514732d319c9f8ccc238e456abb80509b53a5672b8db2b1ad877b38853b2ee15"
+    },
+    {
+      "api": "68.0",
+      "route": "anonymous",
+      "id": "GS02A",
+      "native": "count:2|origin:OwnedOrigin:Owned Origin:Regular:true:false|target:OwnedTarget:Owned Target:Regular:false:false|related:true|members:0:1:0:true|absent:0",
+      "nativeSHA256": "3444c645195f5b2ddcd6e534e5bbaa715414a2daac3f2fcdd3ab19f79e3b436a",
+      "rawReceiptSHA256": "ccd6f6ee86d75788b572b9f22787a176c2949e12ad82a06fc466fd66a22f6916"
+    },
+    {
+      "api": "68.0",
+      "route": "isTest",
+      "id": "GS02T",
+      "native": "count:2|origin:OwnedOrigin:Owned Origin:Regular:true:false|target:OwnedTarget:Owned Target:Regular:false:false|related:true|members:0:1:0:true|absent:0",
+      "nativeSHA256": "3444c645195f5b2ddcd6e534e5bbaa715414a2daac3f2fcdd3ab19f79e3b436a",
+      "rawReceiptSHA256": "86c343aeb41049523a29f983a05db6fc2b95828155ee05a18c8a28949d34a0ff"
+    }
+  ],
+  "classMetadataByAPI": {
+    "62.0": {
+      "GroupSeedProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "GroupSeedSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "67.0": {
+      "GroupSeedProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "GroupSeedSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "68.0": {
+      "GroupSeedProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "GroupSeedSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+    }
+  },
+  "classMetadataSHA256": {
+    "62.0": {
+      "GroupSeedProbe": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "GroupSeedSpec": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+    },
+    "67.0": {
+      "GroupSeedProbe": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "GroupSeedSpec": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+    },
+    "68.0": {
+      "GroupSeedProbe": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "GroupSeedSpec": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147"
+    }
+  },
+  "carriedBoundaries": {
+    "omittedBossFlag": {
+      "classes": {
+        "GroupSeedProbe": "public class GroupSeedProbe {\n public static String observe() {\n  Map<String,Group> groups=new Map<String,Group>();\n  for(Group g:[SELECT Id,DeveloperName,Name,Type,RelatedId,DoesIncludeBosses,DoesSendEmailToMembers FROM Group WHERE DeveloperName IN ('OwnedOrigin','OwnedTarget','OwnedDefault')]) {groups.put(g.DeveloperName,g);}\n  Group origin=groups.get('OwnedOrigin'); Group target=groups.get('OwnedTarget'); Group defaults=groups.get('OwnedDefault');\n  Integer initial=[SELECT count() FROM GroupMember WHERE GroupId=:origin.Id];\n  Savepoint sp=Database.setSavepoint();\n  try {\n   GroupMember membership=new GroupMember(GroupId=origin.Id,UserOrGroupId=UserInfo.getUserId()); insert membership;\n   GroupMember stored=[SELECT GroupId,UserOrGroupId FROM GroupMember WHERE Id=:membership.Id];\n   Integer inserted=[SELECT count() FROM GroupMember WHERE GroupId=:origin.Id];\n   Boolean identity=membership.Id!=null && stored.GroupId==origin.Id && stored.UserOrGroupId==UserInfo.getUserId();\n   delete membership;\n   Integer remaining=[SELECT count() FROM GroupMember WHERE GroupId=:origin.Id];\n   return 'count:'+groups.size()+'|origin:'+origin.DeveloperName+':'+origin.Name+':'+origin.Type+':'+origin.DoesIncludeBosses\n    +'|target:'+target.DeveloperName+':'+target.Name+':'+target.Type+':'+target.DoesIncludeBosses\n    +'|default:'+defaults.Type+':'+defaults.DoesIncludeBosses+':'+defaults.DoesSendEmailToMembers\n    +'|related:'+(origin.RelatedId==null && target.RelatedId==null && defaults.RelatedId==null)\n    +'|members:'+initial+':'+inserted+':'+remaining+':'+identity\n    +'|absent:'+ [SELECT count() FROM Group WHERE DeveloperName='UnprovidedGroup'];\n  } finally {Database.rollback(sp);}\n }\n}",
+        "GroupSeedSpec": "@IsTest private class GroupSeedSpec { @IsTest static void observe(){System.assert(false,'P|GS01T|' + GroupSeedProbe.observe());} }\n"
+      },
+      "groupMetadata": {
+        "OwnedOrigin": "<Group xmlns=\"http://soap.sforce.com/2006/04/metadata\"><name>Owned Origin</name><doesIncludeBosses>true</doesIncludeBosses></Group>\n",
+        "OwnedTarget": "<Group xmlns=\"http://soap.sforce.com/2006/04/metadata\"><name>Owned Target</name><doesIncludeBosses>false</doesIncludeBosses></Group>\n",
+        "OwnedDefault": "<Group xmlns=\"http://soap.sforce.com/2006/04/metadata\"><name>Owned Default</name></Group>\n"
+      },
+      "sourceSha256": {
+        "class:GroupSeedProbe": "d72d61b242b28d50dd53a8d6b39a64c4a0146a3fb6af41126a42038e12bcf4c2",
+        "class:GroupSeedSpec": "40ab3a6fb0253da96ac5247916f9637e9aa24760faee33e3acbd646345325516",
+        "group:OwnedOrigin": "69bda5924ef0e6de7441c8c6dfc5f40858af925554024bddad65032f2b6e45cc",
+        "group:OwnedTarget": "5d92b671071e9522682d149c8bc0f186844f418fd0eadff6f3034c5da180f864",
+        "group:OwnedDefault": "cb9c15ba598d230018ff29377d55143e4b4e4cc2875cf05c5883afec7a9908fc"
+      },
+      "observations": [
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "phase": "initial deployment",
+          "native": "count:3|origin:OwnedOrigin:Owned Origin:Regular:true|target:OwnedTarget:Owned Target:Regular:false|default:Regular:true:false|related:true|members:0:1:0:true|absent:0",
+          "rawReceiptSHA256": "02b5f034569b6c5d3c847d63dc06642987ec45b4479bba8929a1ad33bf22974a"
+        },
+        {
+          "api": "62.0",
+          "route": "isTest",
+          "phase": "initial deployment",
+          "native": "count:3|origin:OwnedOrigin:Owned Origin:Regular:true|target:OwnedTarget:Owned Target:Regular:false|default:Regular:true:false|related:true|members:0:1:0:true|absent:0",
+          "rawReceiptSHA256": "794362a088b7d3b3cb791f559479504c543c2a50b1958d7c01748038b50db31a"
+        },
+        {
+          "api": "67.0",
+          "route": "anonymous",
+          "phase": "redeployment",
+          "native": "count:3|origin:OwnedOrigin:Owned Origin:Regular:true|target:OwnedTarget:Owned Target:Regular:false|default:Regular:false:false|related:true|members:0:1:0:true|absent:0",
+          "rawReceiptSHA256": "e26507660eb9f4f174a8315761ba043b6e16f719f580601580af668ecff9e84d"
+        },
+        {
+          "api": "67.0",
+          "route": "isTest",
+          "phase": "redeployment",
+          "native": "count:3|origin:OwnedOrigin:Owned Origin:Regular:true|target:OwnedTarget:Owned Target:Regular:false|default:Regular:false:false|related:true|members:0:1:0:true|absent:0",
+          "rawReceiptSHA256": "7ccf4a32fb99b9abf5c9f5144dcc0e293577709a49684b1e6f0b746b3dbc0987"
+        },
+        {
+          "api": "68.0",
+          "route": "anonymous",
+          "phase": "redeployment",
+          "native": "count:3|origin:OwnedOrigin:Owned Origin:Regular:true|target:OwnedTarget:Owned Target:Regular:false|default:Regular:false:false|related:true|members:0:1:0:true|absent:0",
+          "rawReceiptSHA256": "b8bfedec5a321a734abb2b9c6e7906c86d2deb81292390b05e039b2fe87cea0a"
+        },
+        {
+          "api": "68.0",
+          "route": "isTest",
+          "phase": "redeployment",
+          "native": "count:3|origin:OwnedOrigin:Owned Origin:Regular:true|target:OwnedTarget:Owned Target:Regular:false|default:Regular:false:false|related:true|members:0:1:0:true|absent:0",
+          "rawReceiptSHA256": "98411d7886eacd61a3c1ad97959b3a884d133daaf5c3df36b6140cf7c33c7ce5"
+        },
+        {
+          "api": "62.0",
+          "route": "anonymous",
+          "phase": "same API redeployment",
+          "native": "count:3|origin:OwnedOrigin:Owned Origin:Regular:true|target:OwnedTarget:Owned Target:Regular:false|default:Regular:false:false|related:true|members:0:1:0:true|absent:0",
+          "rawReceiptSHA256": "794700c43708ea5d5b94bc50e33e36a878c4f30084708dd3222988ccc085f9e6"
+        }
+      ],
+      "expectedNativeDefault": null
+    },
+    "metadataDeclaredMembership": {
+      "expectedNative": null
+    },
+    "ownerRuleGrantEvaluation": {
+      "expectedNative": null
+    }
+  }
+}

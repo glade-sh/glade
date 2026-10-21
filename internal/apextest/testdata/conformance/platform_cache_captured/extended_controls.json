@@ -1,0 +1,1097 @@
+{
+  "APIVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "Cluster": "extended_controls",
+  "CellCount": 18,
+  "ObservedCount": 18,
+  "AssertedCount": 18,
+  "CarriedCount": 0,
+  "Cells": [
+    {
+      "ID": "PCCTRLCAUGHT",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { try{throw new IllegalArgumentException('PcControlCaught');}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();} } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCCTRLCAUGHT|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "8a69be0539f9dbfe578a3512a7f812c95f0ee668f93dcdc9e60b3497711753d3"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "EXC|System.IllegalArgumentException|PcControlCaught",
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "EXC|System.IllegalArgumentException|PcControlCaught"
+    },
+    {
+      "ID": "PCCTRLCAUGHT",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCCTRLCAUGHTA62Test": "@IsTest private class PcPCCTRLCAUGHTA62Test { @IsTest static void observe(){String r; try { try{throw new IllegalArgumentException('PcControlCaught');}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();} } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+26>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCCTRLCAUGHT|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCCTRLCAUGHTA62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCCTRLCAUGHTA62Test": "9d5ede672a1bff36fea8d4f96d8a4f45c947c039ebfcda33c000b54782fdf40d"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "EXC|System.IllegalArgumentException|PcControlCaught",
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "EXC|System.IllegalArgumentException|PcControlCaught"
+    },
+    {
+      "ID": "PCCTRLPOSITIVE",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { System.assert(Account.Name.getDescribe().isAccessible(),'FIXTURE_ERROR Account Name FLS'); Account pcControl=new Account(Name='PcE36Control'); insert pcControl; List<Account> pcScoped=[SELECT Id,Name FROM Account WHERE Id=:pcControl.Id]; Integer pcForeign=0; for(Account pcFound:pcScoped){if(pcFound.Id!=pcControl.Id)pcForeign++;} System.assertEquals(0,pcForeign,'FIXTURE_ERROR scope'); System.assertEquals(1,pcScoped.size(),'FIXTURE_ERROR control effect'); r='control'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCCTRLPOSITIVE|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "4f035ec52fba01ef27905714897207c5c224490f6d955ca9130857e28d685d67"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "control",
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "control"
+    },
+    {
+      "ID": "PCCTRLPOSITIVE",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCCTRLPOSITIVEA62Test": "@IsTest private class PcPCCTRLPOSITIVEA62Test { @IsTest static void observe(){String r; try { System.assert(Account.Name.getDescribe().isAccessible(),'FIXTURE_ERROR Account Name FLS'); Account pcControl=new Account(Name='PcE36Control'); insert pcControl; List<Account> pcScoped=[SELECT Id,Name FROM Account WHERE Id=:pcControl.Id]; Integer pcForeign=0; for(Account pcFound:pcScoped){if(pcFound.Id!=pcControl.Id)pcForeign++;} System.assertEquals(0,pcForeign,'FIXTURE_ERROR scope'); System.assertEquals(1,pcScoped.size(),'FIXTURE_ERROR control effect'); r='control'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+28>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCCTRLPOSITIVE|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCCTRLPOSITIVEA62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCCTRLPOSITIVEA62Test": "f543fecc19b4f2b0db55b7b34b930c3cf73f0e758fdb4a30192c044b563e49aa"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "control",
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "control"
+    },
+    {
+      "ID": "PCCTRLUNCAUGHT",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "throw new IllegalArgumentException('PcControlUncaught');"
+      },
+      "SourceSHA256": {
+        "anonymous": "0566edc0e3cc2916ef66542cdd1749da1c59e9de4b99facdb817df3f1af97b42"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "uncaught",
+        "message": "System.IllegalArgumentException: PcControlUncaught",
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "uncaught",
+      "ExceptionType": "System.IllegalArgumentException",
+      "Message": "PcControlUncaught"
+    },
+    {
+      "ID": "PCCTRLUNCAUGHT",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCCTRLUNCAUGHTA62Test": "@IsTest private class PcPCCTRLUNCAUGHTA62Test { @IsTest static void observe(){throw new IllegalArgumentException('PcControlUncaught');} }"
+        },
+        "Tests": [
+          "PcPCCTRLUNCAUGHTA62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCCTRLUNCAUGHTA62Test": "22983446a81ac977b175a7dbe0d4e688b14e344f9b0a380eaf680c059f989714"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "rejected-with-tests",
+        "failures": [
+          {
+            "cls": "PcPCCTRLUNCAUGHTA62Test",
+            "method": "observe",
+            "message": "System.IllegalArgumentException: PcControlUncaught"
+          }
+        ],
+        "coverage": [],
+        "message": null,
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "uncaught",
+      "ExceptionType": "System.IllegalArgumentException",
+      "Message": "PcControlUncaught"
+    },
+    {
+      "ID": "PCCTRLCAUGHT",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { try{throw new IllegalArgumentException('PcControlCaught');}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();} } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCCTRLCAUGHT|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "8a69be0539f9dbfe578a3512a7f812c95f0ee668f93dcdc9e60b3497711753d3"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "EXC|System.IllegalArgumentException|PcControlCaught",
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "EXC|System.IllegalArgumentException|PcControlCaught"
+    },
+    {
+      "ID": "PCCTRLCAUGHT",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCCTRLCAUGHTA67Test": "@IsTest private class PcPCCTRLCAUGHTA67Test { @IsTest static void observe(){String r; try { try{throw new IllegalArgumentException('PcControlCaught');}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();} } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+26>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCCTRLCAUGHT|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCCTRLCAUGHTA67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCCTRLCAUGHTA67Test": "09bcd1f383d80e0605cb2d4cf619d864cce9890f04a16659cf0a0cef7a34bab0"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "EXC|System.IllegalArgumentException|PcControlCaught",
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "EXC|System.IllegalArgumentException|PcControlCaught"
+    },
+    {
+      "ID": "PCCTRLPOSITIVE",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { System.assert(Account.Name.getDescribe().isAccessible(),'FIXTURE_ERROR Account Name FLS'); Account pcControl=new Account(Name='PcE36Control'); insert pcControl; List<Account> pcScoped=[SELECT Id,Name FROM Account WHERE Id=:pcControl.Id]; Integer pcForeign=0; for(Account pcFound:pcScoped){if(pcFound.Id!=pcControl.Id)pcForeign++;} System.assertEquals(0,pcForeign,'FIXTURE_ERROR scope'); System.assertEquals(1,pcScoped.size(),'FIXTURE_ERROR control effect'); r='control'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCCTRLPOSITIVE|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "4f035ec52fba01ef27905714897207c5c224490f6d955ca9130857e28d685d67"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "control",
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "control"
+    },
+    {
+      "ID": "PCCTRLPOSITIVE",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCCTRLPOSITIVEA67Test": "@IsTest private class PcPCCTRLPOSITIVEA67Test { @IsTest static void observe(){String r; try { System.assert(Account.Name.getDescribe().isAccessible(),'FIXTURE_ERROR Account Name FLS'); Account pcControl=new Account(Name='PcE36Control'); insert pcControl; List<Account> pcScoped=[SELECT Id,Name FROM Account WHERE Id=:pcControl.Id]; Integer pcForeign=0; for(Account pcFound:pcScoped){if(pcFound.Id!=pcControl.Id)pcForeign++;} System.assertEquals(0,pcForeign,'FIXTURE_ERROR scope'); System.assertEquals(1,pcScoped.size(),'FIXTURE_ERROR control effect'); r='control'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+28>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCCTRLPOSITIVE|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCCTRLPOSITIVEA67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCCTRLPOSITIVEA67Test": "476c03ed08f288b2ccf9fffbdf0a683a081c77d581371bd0874f5d85d84ce15d"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "control",
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "control"
+    },
+    {
+      "ID": "PCCTRLUNCAUGHT",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "throw new IllegalArgumentException('PcControlUncaught');"
+      },
+      "SourceSHA256": {
+        "anonymous": "0566edc0e3cc2916ef66542cdd1749da1c59e9de4b99facdb817df3f1af97b42"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "uncaught",
+        "message": "System.IllegalArgumentException: PcControlUncaught",
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "uncaught",
+      "ExceptionType": "System.IllegalArgumentException",
+      "Message": "PcControlUncaught"
+    },
+    {
+      "ID": "PCCTRLUNCAUGHT",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCCTRLUNCAUGHTA67Test": "@IsTest private class PcPCCTRLUNCAUGHTA67Test { @IsTest static void observe(){throw new IllegalArgumentException('PcControlUncaught');} }"
+        },
+        "Tests": [
+          "PcPCCTRLUNCAUGHTA67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCCTRLUNCAUGHTA67Test": "8b2478112f69ad906248eda8be6a25c307151872b1a86aa226a4bd448615d355"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "rejected-with-tests",
+        "failures": [
+          {
+            "cls": "PcPCCTRLUNCAUGHTA67Test",
+            "method": "observe",
+            "message": "System.IllegalArgumentException: PcControlUncaught"
+          }
+        ],
+        "coverage": [],
+        "message": null,
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "uncaught",
+      "ExceptionType": "System.IllegalArgumentException",
+      "Message": "PcControlUncaught"
+    },
+    {
+      "ID": "PCCTRLCAUGHT",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { try{throw new IllegalArgumentException('PcControlCaught');}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();} } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCCTRLCAUGHT|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "8a69be0539f9dbfe578a3512a7f812c95f0ee668f93dcdc9e60b3497711753d3"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "EXC|System.IllegalArgumentException|PcControlCaught",
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "EXC|System.IllegalArgumentException|PcControlCaught"
+    },
+    {
+      "ID": "PCCTRLCAUGHT",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCCTRLCAUGHTA68Test": "@IsTest private class PcPCCTRLCAUGHTA68Test { @IsTest static void observe(){String r; try { try{throw new IllegalArgumentException('PcControlCaught');}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();} } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+26>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCCTRLCAUGHT|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCCTRLCAUGHTA68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCCTRLCAUGHTA68Test": "0b503f3f7bfe10d60df5bb5648f8f8693f64c4b42960e93a142f790b7a8af379"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "EXC|System.IllegalArgumentException|PcControlCaught",
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "EXC|System.IllegalArgumentException|PcControlCaught"
+    },
+    {
+      "ID": "PCCTRLPOSITIVE",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { System.assert(Account.Name.getDescribe().isAccessible(),'FIXTURE_ERROR Account Name FLS'); Account pcControl=new Account(Name='PcE36Control'); insert pcControl; List<Account> pcScoped=[SELECT Id,Name FROM Account WHERE Id=:pcControl.Id]; Integer pcForeign=0; for(Account pcFound:pcScoped){if(pcFound.Id!=pcControl.Id)pcForeign++;} System.assertEquals(0,pcForeign,'FIXTURE_ERROR scope'); System.assertEquals(1,pcScoped.size(),'FIXTURE_ERROR control effect'); r='control'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCCTRLPOSITIVE|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "4f035ec52fba01ef27905714897207c5c224490f6d955ca9130857e28d685d67"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "control",
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "control"
+    },
+    {
+      "ID": "PCCTRLPOSITIVE",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCCTRLPOSITIVEA68Test": "@IsTest private class PcPCCTRLPOSITIVEA68Test { @IsTest static void observe(){String r; try { System.assert(Account.Name.getDescribe().isAccessible(),'FIXTURE_ERROR Account Name FLS'); Account pcControl=new Account(Name='PcE36Control'); insert pcControl; List<Account> pcScoped=[SELECT Id,Name FROM Account WHERE Id=:pcControl.Id]; Integer pcForeign=0; for(Account pcFound:pcScoped){if(pcFound.Id!=pcControl.Id)pcForeign++;} System.assertEquals(0,pcForeign,'FIXTURE_ERROR scope'); System.assertEquals(1,pcScoped.size(),'FIXTURE_ERROR control effect'); r='control'; } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+28>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCCTRLPOSITIVE|'+pcWire);} }"
+        },
+        "Tests": [
+          "PcPCCTRLPOSITIVEA68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCCTRLPOSITIVEA68Test": "ae8eaa634f440609b598388dbd4d7a92ed56e8455ab8a2756dea204b61cf3fb3"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "value",
+        "value": "control",
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "control"
+    },
+    {
+      "ID": "PCCTRLUNCAUGHT",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "throw new IllegalArgumentException('PcControlUncaught');"
+      },
+      "SourceSHA256": {
+        "anonymous": "0566edc0e3cc2916ef66542cdd1749da1c59e9de4b99facdb817df3f1af97b42"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "uncaught",
+        "message": "System.IllegalArgumentException: PcControlUncaught",
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "uncaught",
+      "ExceptionType": "System.IllegalArgumentException",
+      "Message": "PcControlUncaught"
+    },
+    {
+      "ID": "PCCTRLUNCAUGHT",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "deploy-checkonly",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCCTRLUNCAUGHTA68Test": "@IsTest private class PcPCCTRLUNCAUGHTA68Test { @IsTest static void observe(){throw new IllegalArgumentException('PcControlUncaught');} }"
+        },
+        "Tests": [
+          "PcPCCTRLUNCAUGHTA68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCCTRLUNCAUGHTA68Test": "3d82a2dfddedacd811206d6da665d5b16ac883b25d93e14cc3282841af6f922e"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [],
+      "Native": {
+        "outcome": "rejected-with-tests",
+        "failures": [
+          {
+            "cls": "PcPCCTRLUNCAUGHTA68Test",
+            "method": "observe",
+            "message": "System.IllegalArgumentException: PcControlUncaught"
+          }
+        ],
+        "coverage": [],
+        "message": null,
+        "capacity_layout": {
+          "preferred": null,
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "uncaught",
+      "ExceptionType": "System.IllegalArgumentException",
+      "Message": "PcControlUncaught"
+    }
+  ]
+}

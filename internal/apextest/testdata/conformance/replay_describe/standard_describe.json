@@ -1,0 +1,467 @@
+{
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "standard_describe",
+  "shapeCount": 4,
+  "nativeObservationCount": 32,
+  "assertedObservationCount": 32,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "C168RP_078",
+      "group": "standard-describe",
+      "role": "standard-boundary",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('BatchApexErrorEvent').getDescribe().fields.getMap().get('ReplayId').getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));",
+          "originalApexSha256": "2a8f32def520392359d1e5efdf440ec7af61490b66bff7745db0e280ce4dff48",
+          "sourceSha256": {
+            "anonymous": "fede4e90ba99622eee2d174f57250df59b077bc972e1a1546c00318a55844247"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001001000000|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001001000000|STRING\"}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001001000000|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001001000000|STRING\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001001000000|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001001000000|STRING\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001001000000|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001001000000|STRING\"}"
+            }
+          },
+          "anonymous": "Object v;try{Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('BatchApexErrorEvent').getDescribe().fields.getMap().get('ReplayId').getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_078');"
+        },
+        "isTest": {
+          "originalApex": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('BatchApexErrorEvent').getDescribe().fields.getMap().get('ReplayId').getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));",
+          "originalApexSha256": "2a8f32def520392359d1e5efdf440ec7af61490b66bff7745db0e280ce4dff48",
+          "sourceSha256": {
+            "class:C168C168RP078Test": "f698d9c504799c026cf1b26c31224ea85d1b309a35bd3934fc20f209f92a8884"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001001000000|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001001000000|STRING\"}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001001000000|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001001000000|STRING\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001001000000|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001001000000|STRING\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001001000000|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001001000000|STRING\"}"
+            }
+          },
+          "classes": {
+            "C168C168RP078Test": "@IsTest private class C168C168RP078Test{@IsTest static void observe(){Object v;try{Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('BatchApexErrorEvent').getDescribe().fields.getMap().get('ReplayId').getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_078');}}"
+          },
+          "tests": [
+            "C168C168RP078Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_082",
+      "group": "standard-describe",
+      "role": "standard-boundary",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('BatchApexErrorEvent').getDescribe().fields.getMap().get('EventUuid').getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));",
+          "originalApexSha256": "6415e938cbf771401981462b95d77964e947804c075e2eb19d4fd5f49ac0f347",
+          "sourceSha256": {
+            "anonymous": "966411d65fabfbdac74fe1d6265a23442f83537dacb7dd56de378926c39af122"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001001000000|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001001000000|STRING\"}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001001000000|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001001000000|STRING\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001001000000|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001001000000|STRING\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001001000000|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001001000000|STRING\"}"
+            }
+          },
+          "anonymous": "Object v;try{Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('BatchApexErrorEvent').getDescribe().fields.getMap().get('EventUuid').getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_082');"
+        },
+        "isTest": {
+          "originalApex": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('BatchApexErrorEvent').getDescribe().fields.getMap().get('EventUuid').getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));",
+          "originalApexSha256": "6415e938cbf771401981462b95d77964e947804c075e2eb19d4fd5f49ac0f347",
+          "sourceSha256": {
+            "class:C168C168RP082Test": "0f9dccdf78ac01b89ca78b09876052fb56ff822c30d98b1413cb760d6ecff036"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001001000000|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001001000000|STRING\"}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001001000000|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001001000000|STRING\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001001000000|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001001000000|STRING\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001001000000|STRING"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001001000000|STRING\"}"
+            }
+          },
+          "classes": {
+            "C168C168RP082Test": "@IsTest private class C168C168RP082Test{@IsTest static void observe(){Object v;try{Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('BatchApexErrorEvent').getDescribe().fields.getMap().get('EventUuid').getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_082');}}"
+          },
+          "tests": [
+            "C168C168RP082Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_086",
+      "group": "standard-describe",
+      "role": "standard-boundary",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('BatchApexErrorEvent').getDescribe().fields.getMap().get('CreatedDate').getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));",
+          "originalApexSha256": "b30c9eff01c57a9fd47756c41bc0a13e37b87b054f747afa55dd377a62d2b41e",
+          "sourceSha256": {
+            "anonymous": "6dd4e54c1a56f1ab51131a55eb095c28cd76435a3942d36f3906dbc20bb76be4"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001000000100|DATETIME"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001000000100|DATETIME\"}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001000000100|DATETIME"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001000000100|DATETIME\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001000000100|DATETIME"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001000000100|DATETIME\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001000000100|DATETIME"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001000000100|DATETIME\"}"
+            }
+          },
+          "anonymous": "Object v;try{Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('BatchApexErrorEvent').getDescribe().fields.getMap().get('CreatedDate').getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_086');"
+        },
+        "isTest": {
+          "originalApex": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('BatchApexErrorEvent').getDescribe().fields.getMap().get('CreatedDate').getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));",
+          "originalApexSha256": "b30c9eff01c57a9fd47756c41bc0a13e37b87b054f747afa55dd377a62d2b41e",
+          "sourceSha256": {
+            "class:C168C168RP086Test": "f2f9197d19e6d616f56016e1c30771d44f6ab468d913b47d3f8d66d199596092"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001000000100|DATETIME"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001000000100|DATETIME\"}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001000000100|DATETIME"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001000000100|DATETIME\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001000000100|DATETIME"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001000000100|DATETIME\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001000000100|DATETIME"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001000000100|DATETIME\"}"
+            }
+          },
+          "classes": {
+            "C168C168RP086Test": "@IsTest private class C168C168RP086Test{@IsTest static void observe(){Object v;try{Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('BatchApexErrorEvent').getDescribe().fields.getMap().get('CreatedDate').getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_086');}}"
+          },
+          "tests": [
+            "C168C168RP086Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C168RP_090",
+      "group": "standard-describe",
+      "role": "standard-boundary",
+      "twin": "C168RP_006",
+      "routes": {
+        "anonymous": {
+          "originalApex": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('BatchApexErrorEvent').getDescribe().fields.getMap().get('CreatedById').getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));",
+          "originalApexSha256": "a23962c726103f186c0115b61c42f74c088d8998761100898e95ac3f8e8a0c17",
+          "sourceSha256": {
+            "anonymous": "cff34b7e9b2454fa04c81e5bbacafc49a735e345164b8259fbea39140cf13f11"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001000000100|REFERENCE"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001000000100|REFERENCE\"}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001000000100|REFERENCE"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001000000100|REFERENCE\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001000000100|REFERENCE"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001000000100|REFERENCE\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001000000100|REFERENCE"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001000000100|REFERENCE\"}"
+            }
+          },
+          "anonymous": "Object v;try{Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('BatchApexErrorEvent').getDescribe().fields.getMap().get('CreatedById').getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_090');"
+        },
+        "isTest": {
+          "originalApex": "Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('BatchApexErrorEvent').getDescribe().fields.getMap().get('CreatedById').getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));",
+          "originalApexSha256": "a23962c726103f186c0115b61c42f74c088d8998761100898e95ac3f8e8a0c17",
+          "sourceSha256": {
+            "class:C168C168RP090Test": "992008ebf646623790b90de283381089e4824eb13a2e030223aba9a9e5519530"
+          },
+          "expectedByAPI": {
+            "59.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001000000100|REFERENCE"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001000000100|REFERENCE\"}"
+            },
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001000000100|REFERENCE"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001000000100|REFERENCE\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001000000100|REFERENCE"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001000000100|REFERENCE\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "value": "001000000100|REFERENCE"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"value\":\"001000000100|REFERENCE\"}"
+            }
+          },
+          "classes": {
+            "C168C168RP090Test": "@IsTest private class C168C168RP090Test{@IsTest static void observe(){Object v;try{Schema.DescribeFieldResult d=Schema.getGlobalDescribe().get('BatchApexErrorEvent').getDescribe().fields.getMap().get('CreatedById').getDescribe();v=((d.isCreateable()?'1':'0')+(d.isUpdateable()?'1':'0')+(d.isAccessible()?'1':'0')+(d.isFilterable()?'1':'0')+(d.isSortable()?'1':'0')+(d.isNillable()?'1':'0')+(d.isCustom()?'1':'0')+(d.isCalculated()?'1':'0')+(d.isAutoNumber()?'1':'0')+(d.isDefaultedOnCreate()?'1':'0')+(d.isPermissionable()?'1':'0')+(d.isIdLookup()?'1':'0')+'|'+String.valueOf(d.getType()));}catch(Exception e){v=new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>e.getMessage()};}new C168CaptureValues().emit(v,'C168RP_090');}}"
+          },
+          "tests": [
+            "C168C168RP090Test"
+          ]
+        }
+      }
+    }
+  ]
+}

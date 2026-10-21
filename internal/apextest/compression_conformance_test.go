@@ -18,7 +18,9 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Compression observations at API 62 and 67. CI needs no org or probe tools.
+// Compression observations at API 62, 67, and 68. CI needs no org or probe tools.
+// API 68 named checks reuse anonymous answers; they are local cross-route
+// assertions, not independently captured native named-route observations.
 func TestCompressionOrgConformance(t *testing.T) {
 	type familyCase struct {
 		ID, Code, Expected                string
@@ -41,7 +43,7 @@ func TestCompressionOrgConformance(t *testing.T) {
 	if len(data.Cases) != 239 || len(data.Controls) != 24 {
 		t.Fatalf("oracle rows: %d + %d", len(data.Cases), len(data.Controls))
 	}
-	if strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle versions: %v", data.APIVersions)
 	}
 	rows := append(append([]familyCase{}, data.Cases...), data.Controls...)
@@ -115,6 +117,9 @@ func TestCompressionOrgConformance(t *testing.T) {
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "compression", api)
+			if api == "68.0" {
+				t.Log("API 68: 263 captured anonymous rows; 18 compiler diagnostic text carries; @IsTest checks retain anonymous-backed local assertions without native named-route capture")
+			}
 			root := t.TempDir()
 			names := make([]string, 0, len(data.Declarations)+1)
 			declarations := make(map[string]string, len(data.Declarations)+1)
@@ -137,7 +142,7 @@ func TestCompressionOrgConformance(t *testing.T) {
 				if extra != "" {
 					files = append(files, extra)
 				}
-				return typesys.Build(project.Project{Root: root, ApexFiles: files}, gladeschema.Schema{})
+				return typesys.Build(project.Project{Root: root, ApexFiles: files, SourceAPIVersion: api}, gladeschema.Schema{})
 			}
 			index := buildIndex("")
 			if index.HasErrors() {
@@ -216,7 +221,11 @@ func TestCompressionOrgConformance(t *testing.T) {
 						assertDebug(t, tc, result.Debug)
 					})
 					t.Run("isTest", func(t *testing.T) {
-						counts.TrackKind(t, "@IsTest", kind, 1)
+						namedKind := kind
+						if api == "68.0" {
+							namedKind = "legacy"
+						}
+						counts.TrackKind(t, "@IsTest", namedKind, 1)
 						if !rejected {
 							result := namedResults[tc.ID]
 							if result.Status != testreport.StatusPass {

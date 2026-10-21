@@ -56,6 +56,8 @@ type v11Case struct {
 // Every row compares exact text, including raw null values and diagnostics.
 // GLADE_V11_CAPTURE=1 reports mismatches without failing on the unchanged base;
 // GLADE_V11_REPORT selects the per-row TSV output path. CI needs no credentials.
+var v11APIVersions = []string{"59.0", "67.0"}
+
 func TestV11SalesforceConformance(t *testing.T) {
 	capture := os.Getenv("GLADE_V11_CAPTURE") != ""
 	data, err := os.ReadFile("testdata/v11_salesforce.json")
@@ -73,7 +75,6 @@ func TestV11SalesforceConformance(t *testing.T) {
 		t.Fatalf("View state requires 240 captured cases, got %d", len(table.Cases))
 	}
 
-	versions := []string{"59.0", "67.0"}
 	counts, seen := map[string]int{}, map[string]bool{}
 	for _, c := range table.Cases {
 		if c.ID == "" || seen[c.ID] || (c.Kind != "compile" && c.Kind != "runtime") {
@@ -88,7 +89,7 @@ func TestV11SalesforceConformance(t *testing.T) {
 		}
 
 		counts[c.Kind]++
-		for _, api := range versions {
+		for _, api := range v11APIVersions {
 			input := c.Inputs[api]
 			if input.Name == "" || len(input.Files) < 5 || input.Files["sfdx-project.json"] == "" ||
 				input.Files["force-app/main/default/pages/"+input.Name+".page"] == "" ||
@@ -136,15 +137,15 @@ func TestV11SalesforceConformance(t *testing.T) {
 	var report strings.Builder
 	tsv := csv.NewWriter(&report)
 	tsv.Comma = '\t'
-	writeRow := func(fields ...string) {
+	writeRow := func(t *testing.T, fields ...string) {
 		if err := tsv.Write(fields); err != nil {
 			t.Fatal(err)
 		}
 	}
-	writeRow("api", "id", "status", "actual", "expected", "group", "resource", "diagnostic", "owner", "reason", "acceptance_status", "diagnostic_status", "expected_diagnostic")
+	writeRow(t, "api", "id", "status", "actual", "expected", "group", "resource", "diagnostic", "owner", "reason", "acceptance_status", "diagnostic_status", "expected_diagnostic")
 	matches, compileMatches, acceptanceMatches, diagnosticMatches, domMatches := 0, 0, 0, 0, 0
 	total, compileTotal, domTotal := 0, 0, 0
-	for _, api := range versions {
+	for _, api := range v11APIVersions {
 		apiMatches, apiCompileMatches, apiAcceptanceMatches, apiDiagnosticMatches, apiDOMMatches := 0, 0, 0, 0, 0
 		apiCompileTotal, apiDOMTotal := 0, 0
 		apiSecurityMatches, apiSecurityTotal := 0, 0
@@ -228,23 +229,26 @@ func TestV11SalesforceConformance(t *testing.T) {
 					} else if c.Owner != "" {
 						t.Errorf("API %s %s now matches native; remove stale %s carry", api, c.ID, c.Owner)
 					}
-					writeRow(api, c.ID, status, got, want, c.Group, "ApexPage", strings.ReplaceAll(actualDiagnostic, root, "<fixture>"), owner, reason, acceptanceStatus, diagnosticStatus, expectedDiagnostic)
+					writeRow(t, api, c.ID, status, got, want, c.Group, "ApexPage", strings.ReplaceAll(actualDiagnostic, root, "<fixture>"), owner, reason, acceptanceStatus, diagnosticStatus, expectedDiagnostic)
 					if !capture && owner == "" && c.ExcludedOutcomeReason == "" && (!acceptanceMatch || !diagnosticMatch) {
 						t.Errorf("API %s %s: actual <%s> expected <%s>; diagnostics <%s> expected <%s>", api, c.ID, got, want, actualDiagnostic, expectedDiagnostic)
 					}
 				})
+			}
+			if api == "67.0" {
+				t.Run("size-controls", v11SizeControlConformance)
 			}
 		})
 		apiTotal := apiCompileTotal + apiDOMTotal
 		if apiTotal == 0 {
 			continue
 		}
-		writeRow("API_TOTAL", api, fmt.Sprintf("%d/%d", apiMatches, apiTotal))
-		writeRow("COMPILE_API_TOTAL", api, fmt.Sprintf("%d/%d", apiCompileMatches, apiCompileTotal))
-		writeRow("COMPILE_ACCEPTANCE_API_TOTAL", api, fmt.Sprintf("%d/%d", apiAcceptanceMatches, apiCompileTotal))
-		writeRow("DIAGNOSTIC_API_TOTAL", api, fmt.Sprintf("%d/%d", apiDiagnosticMatches, apiCompileTotal))
-		writeRow("DOM_API_TOTAL", api, fmt.Sprintf("%d/%d", apiDOMMatches, apiDOMTotal))
-		writeRow("SECURITY_SCOPED_API_TOTAL", api, fmt.Sprintf("%d/%d", apiSecurityMatches, apiSecurityTotal))
+		writeRow(t, "API_TOTAL", api, fmt.Sprintf("%d/%d", apiMatches, apiTotal))
+		writeRow(t, "COMPILE_API_TOTAL", api, fmt.Sprintf("%d/%d", apiCompileMatches, apiCompileTotal))
+		writeRow(t, "COMPILE_ACCEPTANCE_API_TOTAL", api, fmt.Sprintf("%d/%d", apiAcceptanceMatches, apiCompileTotal))
+		writeRow(t, "DIAGNOSTIC_API_TOTAL", api, fmt.Sprintf("%d/%d", apiDiagnosticMatches, apiCompileTotal))
+		writeRow(t, "DOM_API_TOTAL", api, fmt.Sprintf("%d/%d", apiDOMMatches, apiDOMTotal))
+		writeRow(t, "SECURITY_SCOPED_API_TOTAL", api, fmt.Sprintf("%d/%d", apiSecurityMatches, apiSecurityTotal))
 		t.Logf("View state API %s exact %d/%d; compile %d/%d, acceptance %d/%d, diagnostics %d/%d; DOM %d/%d", api, apiMatches, apiTotal, apiCompileMatches, apiCompileTotal, apiAcceptanceMatches, apiCompileTotal, apiDiagnosticMatches, apiCompileTotal, apiDOMMatches, apiDOMTotal)
 		t.Logf("View state API %s security rejection/steps exact %d/%d; hosted outcome excluded; counted separately from raw exact matches", api, apiSecurityMatches, apiSecurityTotal)
 		total += apiTotal
@@ -256,11 +260,11 @@ func TestV11SalesforceConformance(t *testing.T) {
 		diagnosticMatches += apiDiagnosticMatches
 		domMatches += apiDOMMatches
 	}
-	writeRow("COMPILE_TOTAL", fmt.Sprintf("%d/%d", compileMatches, compileTotal))
-	writeRow("COMPILE_ACCEPTANCE_TOTAL", fmt.Sprintf("%d/%d", acceptanceMatches, compileTotal))
-	writeRow("DIAGNOSTIC_TOTAL", fmt.Sprintf("%d/%d", diagnosticMatches, compileTotal))
-	writeRow("DOM_TOTAL", fmt.Sprintf("%d/%d", domMatches, domTotal))
-	writeRow("TOTAL", fmt.Sprintf("%d/%d", matches, total))
+	writeRow(t, "COMPILE_TOTAL", fmt.Sprintf("%d/%d", compileMatches, compileTotal))
+	writeRow(t, "COMPILE_ACCEPTANCE_TOTAL", fmt.Sprintf("%d/%d", acceptanceMatches, compileTotal))
+	writeRow(t, "DIAGNOSTIC_TOTAL", fmt.Sprintf("%d/%d", diagnosticMatches, compileTotal))
+	writeRow(t, "DOM_TOTAL", fmt.Sprintf("%d/%d", domMatches, domTotal))
+	writeRow(t, "TOTAL", fmt.Sprintf("%d/%d", matches, total))
 	t.Logf("View state exact matches %d/%d; compile %d/%d; DOM %d/%d", matches, total, compileMatches, compileTotal, domMatches, domTotal)
 	tsv.Flush()
 	if err := tsv.Error(); err != nil {
@@ -271,7 +275,6 @@ func TestV11SalesforceConformance(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	t.Run("size-controls", v11SizeControlConformance)
 }
 
 // Native tamper captures retain the hosted error page in outcome.frames, with

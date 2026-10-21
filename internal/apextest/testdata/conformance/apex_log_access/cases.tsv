@@ -1,0 +1,5 @@
+case	observation
+persistent_log_access	ApexLog object read/create/update/delete describe facets
+log_status_access	ApexLog.Status field read/create/update describe facets
+ordinary_record_control	Contact object and LastName field read/write controls
+object_first_guard	Owned object-before-field guard classification for create and update

@@ -1,0 +1,5 @@
+case_id	api_version	route	shape
+F16_006	62.0	anonymous	uncaught subflow fault message with direct observation envelope
+F16_006	62.0	istest	uncaught subflow fault message with direct observation envelope
+F16_006	67.0	anonymous	uncaught subflow fault message with direct observation envelope
+F16_006	67.0	istest	uncaught subflow fault message with direct observation envelope

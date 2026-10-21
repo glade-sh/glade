@@ -1,0 +1,15 @@
+source_api	method	observation
+62.0	differentDeletedParentUpdate	{"matchesOriginalParent":true,"matchesDeletedParent":false,"lookupCleared":false,"storedName":"Original child","storedCount":1,"status":"ENTITY_IS_DELETED","success":false}
+62.0	explicitNullThenRestore	{"matchesDeletedParent":false,"lookupCleared":true,"storedName":"Reset child","restoreStatus":"ENTITY_IS_DELETED","restoreSuccess":false,"clearSuccess":true}
+62.0	freshChildLookupUpdate	{"matchesOriginalParent":true,"matchesDeletedParent":true,"lookupCleared":false,"storedName":"After update","storedCount":1,"success":true}
+62.0	newChildInsert	{"storedCount":0,"status":"ENTITY_IS_DELETED","success":false}
+62.0	retainedChildUpdate	{"afterLookupCleared":false,"afterName":"After update","updateSuccess":true,"lookupCleared":true,"survivingChildren":1}
+62.0	rolledBackNullThenRestore	{"matchesDeletedParent":true,"lookupCleared":false,"storedName":"Restored child","restoreSuccess":true,"clearSuccess":true}
+62.0	sparseChildUpdate	{"afterLookupCleared":true,"afterName":"After update","updateSuccess":true,"lookupCleared":true,"survivingChildren":1}
+67.0	differentDeletedParentUpdate	{"matchesOriginalParent":true,"matchesDeletedParent":false,"lookupCleared":false,"storedName":"Original child","storedCount":1,"status":"ENTITY_IS_DELETED","success":false}
+67.0	explicitNullThenRestore	{"matchesDeletedParent":false,"lookupCleared":true,"storedName":"Reset child","restoreStatus":"ENTITY_IS_DELETED","restoreSuccess":false,"clearSuccess":true}
+67.0	freshChildLookupUpdate	{"matchesOriginalParent":true,"matchesDeletedParent":true,"lookupCleared":false,"storedName":"After update","storedCount":1,"success":true}
+67.0	newChildInsert	{"storedCount":0,"status":"ENTITY_IS_DELETED","success":false}
+67.0	retainedChildUpdate	{"afterLookupCleared":false,"afterName":"After update","updateSuccess":true,"lookupCleared":true,"survivingChildren":1}
+67.0	rolledBackNullThenRestore	{"matchesDeletedParent":true,"lookupCleared":false,"storedName":"Restored child","restoreSuccess":true,"clearSuccess":true}
+67.0	sparseChildUpdate	{"afterLookupCleared":true,"afterName":"After update","updateSuccess":true,"lookupCleared":true,"survivingChildren":1}

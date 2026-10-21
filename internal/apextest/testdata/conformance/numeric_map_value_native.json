@@ -1,0 +1,267 @@
+{
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "sourcesByAPI": {
+    "62.0": {
+      "helperName": "NumericMapOracle62",
+      "helperSource": "public class NumericMapOracle62 { public static String snapshot() { Map<String,Object> ints=new Map<String,Object>{'slot'=>1}; Map<String,Object> decimals=new Map<String,Object>{'slot'=>Decimal.valueOf('1.0')}; return JSON.serialize(new Map<String,Object>{'decimalSameScale'=>(decimals == new Map<String,Object>{'slot'=>Decimal.valueOf('1.0')}),'decimalSameScaleEquals'=>(decimals.equals(new Map<String,Object>{'slot'=>Decimal.valueOf('1.0')})),'integerDecimalZero'=>(ints == new Map<String,Object>{'slot'=>Decimal.valueOf('1')}),'integerDecimalZeroEquals'=>(ints.equals(new Map<String,Object>{'slot'=>Decimal.valueOf('1')})),'decimalZeroScale'=>(new Map<String,Object>{'slot'=>Decimal.valueOf('1')} == decimals),'scalarDecimalScale'=>(Decimal.valueOf('1.0') == Decimal.valueOf('1.00')),'typedDecimalSameScale'=>(new Map<String,Decimal>{'slot'=>Decimal.valueOf('1.0')} == new Map<String,Decimal>{'slot'=>Decimal.valueOf('1.0')}),'mixedOperator'=>(ints == decimals),'mixedEquals'=>(ints.equals(decimals)),'reverseOperator'=>(decimals == ints),'reverseEquals'=>(decimals.equals(ints)),'integerSame'=>(ints == new Map<String,Object>{'slot'=>1}),'decimalSame'=>(decimals == new Map<String,Object>{'slot'=>Decimal.valueOf('1.00')}),'integerSameEquals'=>(ints.equals(new Map<String,Object>{'slot'=>1})),'decimalSameEquals'=>(decimals.equals(new Map<String,Object>{'slot'=>Decimal.valueOf('1.00')})),'scalarOperator'=>(1 == Decimal.valueOf('1.0')),'typedDecimalOperator'=>(new Map<String,Decimal>{'slot'=>1} == new Map<String,Decimal>{'slot'=>Decimal.valueOf('1.0')}),'differentValue'=>(ints == new Map<String,Object>{'slot'=>Decimal.valueOf('2.0')}),'stringCase'=>(new Map<String,Object>{'slot'=>'north'} == new Map<String,Object>{'slot'=>'NORTH'}),'scalarString'=>('north' == 'NORTH')}); } }",
+      "helperMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "testName": "NumericMapObserved62",
+      "testSource": "@IsTest private class NumericMapObserved62 { @IsTest static void observed() { System.assert(false,'NUMERIC_MAP|'+NumericMapOracle62.snapshot()); } }",
+      "testMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "anonymous": "System.debug('NUMERIC_MAP|'+NumericMapOracle62.snapshot());"
+    },
+    "67.0": {
+      "helperName": "NumericMapOracle67",
+      "helperSource": "public class NumericMapOracle67 { public static String snapshot() { Map<String,Object> ints=new Map<String,Object>{'slot'=>1}; Map<String,Object> decimals=new Map<String,Object>{'slot'=>Decimal.valueOf('1.0')}; return JSON.serialize(new Map<String,Object>{'decimalSameScale'=>(decimals == new Map<String,Object>{'slot'=>Decimal.valueOf('1.0')}),'decimalSameScaleEquals'=>(decimals.equals(new Map<String,Object>{'slot'=>Decimal.valueOf('1.0')})),'integerDecimalZero'=>(ints == new Map<String,Object>{'slot'=>Decimal.valueOf('1')}),'integerDecimalZeroEquals'=>(ints.equals(new Map<String,Object>{'slot'=>Decimal.valueOf('1')})),'decimalZeroScale'=>(new Map<String,Object>{'slot'=>Decimal.valueOf('1')} == decimals),'scalarDecimalScale'=>(Decimal.valueOf('1.0') == Decimal.valueOf('1.00')),'typedDecimalSameScale'=>(new Map<String,Decimal>{'slot'=>Decimal.valueOf('1.0')} == new Map<String,Decimal>{'slot'=>Decimal.valueOf('1.0')}),'mixedOperator'=>(ints == decimals),'mixedEquals'=>(ints.equals(decimals)),'reverseOperator'=>(decimals == ints),'reverseEquals'=>(decimals.equals(ints)),'integerSame'=>(ints == new Map<String,Object>{'slot'=>1}),'decimalSame'=>(decimals == new Map<String,Object>{'slot'=>Decimal.valueOf('1.00')}),'integerSameEquals'=>(ints.equals(new Map<String,Object>{'slot'=>1})),'decimalSameEquals'=>(decimals.equals(new Map<String,Object>{'slot'=>Decimal.valueOf('1.00')})),'scalarOperator'=>(1 == Decimal.valueOf('1.0')),'typedDecimalOperator'=>(new Map<String,Decimal>{'slot'=>1} == new Map<String,Decimal>{'slot'=>Decimal.valueOf('1.0')}),'differentValue'=>(ints == new Map<String,Object>{'slot'=>Decimal.valueOf('2.0')}),'stringCase'=>(new Map<String,Object>{'slot'=>'north'} == new Map<String,Object>{'slot'=>'NORTH'}),'scalarString'=>('north' == 'NORTH')}); } }",
+      "helperMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "testName": "NumericMapObserved67",
+      "testSource": "@IsTest private class NumericMapObserved67 { @IsTest static void observed() { System.assert(false,'NUMERIC_MAP|'+NumericMapOracle67.snapshot()); } }",
+      "testMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "anonymous": "System.debug('NUMERIC_MAP|'+NumericMapOracle67.snapshot());"
+    },
+    "68.0": {
+      "helperName": "NumericMapOracle68",
+      "helperSource": "public class NumericMapOracle68 { public static String snapshot() { Map<String,Object> ints=new Map<String,Object>{'slot'=>1}; Map<String,Object> decimals=new Map<String,Object>{'slot'=>Decimal.valueOf('1.0')}; return JSON.serialize(new Map<String,Object>{'decimalSameScale'=>(decimals == new Map<String,Object>{'slot'=>Decimal.valueOf('1.0')}),'decimalSameScaleEquals'=>(decimals.equals(new Map<String,Object>{'slot'=>Decimal.valueOf('1.0')})),'integerDecimalZero'=>(ints == new Map<String,Object>{'slot'=>Decimal.valueOf('1')}),'integerDecimalZeroEquals'=>(ints.equals(new Map<String,Object>{'slot'=>Decimal.valueOf('1')})),'decimalZeroScale'=>(new Map<String,Object>{'slot'=>Decimal.valueOf('1')} == decimals),'scalarDecimalScale'=>(Decimal.valueOf('1.0') == Decimal.valueOf('1.00')),'typedDecimalSameScale'=>(new Map<String,Decimal>{'slot'=>Decimal.valueOf('1.0')} == new Map<String,Decimal>{'slot'=>Decimal.valueOf('1.0')}),'mixedOperator'=>(ints == decimals),'mixedEquals'=>(ints.equals(decimals)),'reverseOperator'=>(decimals == ints),'reverseEquals'=>(decimals.equals(ints)),'integerSame'=>(ints == new Map<String,Object>{'slot'=>1}),'decimalSame'=>(decimals == new Map<String,Object>{'slot'=>Decimal.valueOf('1.00')}),'integerSameEquals'=>(ints.equals(new Map<String,Object>{'slot'=>1})),'decimalSameEquals'=>(decimals.equals(new Map<String,Object>{'slot'=>Decimal.valueOf('1.00')})),'scalarOperator'=>(1 == Decimal.valueOf('1.0')),'typedDecimalOperator'=>(new Map<String,Decimal>{'slot'=>1} == new Map<String,Decimal>{'slot'=>Decimal.valueOf('1.0')}),'differentValue'=>(ints == new Map<String,Object>{'slot'=>Decimal.valueOf('2.0')}),'stringCase'=>(new Map<String,Object>{'slot'=>'north'} == new Map<String,Object>{'slot'=>'NORTH'}),'scalarString'=>('north' == 'NORTH')}); } }",
+      "helperMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+      "testName": "NumericMapObserved68",
+      "testSource": "@IsTest private class NumericMapObserved68 { @IsTest static void observed() { System.assert(false,'NUMERIC_MAP|'+NumericMapOracle68.snapshot()); } }",
+      "testMetadata": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+      "anonymous": "System.debug('NUMERIC_MAP|'+NumericMapOracle68.snapshot());"
+    }
+  },
+  "cells": [
+    {
+      "api": "62.0",
+      "context": "anonymous",
+      "map": {
+        "scalarString": true,
+        "stringCase": false,
+        "differentValue": false,
+        "typedDecimalOperator": false,
+        "scalarOperator": true,
+        "decimalSameEquals": false,
+        "integerSameEquals": true,
+        "decimalSame": false,
+        "integerSame": true,
+        "reverseEquals": false,
+        "reverseOperator": false,
+        "mixedEquals": false,
+        "mixedOperator": false,
+        "typedDecimalSameScale": true,
+        "scalarDecimalScale": true,
+        "decimalZeroScale": false,
+        "integerDecimalZeroEquals": false,
+        "integerDecimalZero": false,
+        "decimalSameScaleEquals": true,
+        "decimalSameScale": true
+      }
+    },
+    {
+      "api": "62.0",
+      "context": "istest",
+      "map": {
+        "scalarString": true,
+        "stringCase": false,
+        "differentValue": false,
+        "typedDecimalOperator": false,
+        "scalarOperator": true,
+        "decimalSameEquals": false,
+        "integerSameEquals": true,
+        "decimalSame": false,
+        "integerSame": true,
+        "reverseEquals": false,
+        "reverseOperator": false,
+        "mixedEquals": false,
+        "mixedOperator": false,
+        "typedDecimalSameScale": true,
+        "scalarDecimalScale": true,
+        "decimalZeroScale": false,
+        "integerDecimalZeroEquals": false,
+        "integerDecimalZero": false,
+        "decimalSameScaleEquals": true,
+        "decimalSameScale": true
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "anonymous",
+      "map": {
+        "scalarString": true,
+        "stringCase": false,
+        "differentValue": false,
+        "typedDecimalOperator": false,
+        "scalarOperator": true,
+        "decimalSameEquals": false,
+        "integerSameEquals": true,
+        "decimalSame": false,
+        "integerSame": true,
+        "reverseEquals": false,
+        "reverseOperator": false,
+        "mixedEquals": false,
+        "mixedOperator": false,
+        "typedDecimalSameScale": true,
+        "scalarDecimalScale": true,
+        "decimalZeroScale": false,
+        "integerDecimalZeroEquals": false,
+        "integerDecimalZero": false,
+        "decimalSameScaleEquals": true,
+        "decimalSameScale": true
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "istest",
+      "map": {
+        "scalarString": true,
+        "stringCase": false,
+        "differentValue": false,
+        "typedDecimalOperator": false,
+        "scalarOperator": true,
+        "decimalSameEquals": false,
+        "integerSameEquals": true,
+        "decimalSame": false,
+        "integerSame": true,
+        "reverseEquals": false,
+        "reverseOperator": false,
+        "mixedEquals": false,
+        "mixedOperator": false,
+        "typedDecimalSameScale": true,
+        "scalarDecimalScale": true,
+        "decimalZeroScale": false,
+        "integerDecimalZeroEquals": false,
+        "integerDecimalZero": false,
+        "decimalSameScaleEquals": true,
+        "decimalSameScale": true
+      }
+    },
+    {
+      "api": "68.0",
+      "context": "anonymous",
+      "map": {
+        "scalarString": true,
+        "stringCase": false,
+        "differentValue": false,
+        "typedDecimalOperator": false,
+        "scalarOperator": true,
+        "decimalSameEquals": false,
+        "integerSameEquals": true,
+        "decimalSame": false,
+        "integerSame": true,
+        "reverseEquals": false,
+        "reverseOperator": false,
+        "mixedEquals": false,
+        "mixedOperator": false,
+        "typedDecimalSameScale": true,
+        "scalarDecimalScale": true,
+        "decimalZeroScale": false,
+        "integerDecimalZeroEquals": false,
+        "integerDecimalZero": false,
+        "decimalSameScaleEquals": true,
+        "decimalSameScale": true
+      }
+    },
+    {
+      "api": "68.0",
+      "context": "istest",
+      "map": {
+        "scalarString": true,
+        "stringCase": false,
+        "differentValue": false,
+        "typedDecimalOperator": false,
+        "scalarOperator": true,
+        "decimalSameEquals": false,
+        "integerSameEquals": true,
+        "decimalSame": false,
+        "integerSame": true,
+        "reverseEquals": false,
+        "reverseOperator": false,
+        "mixedEquals": false,
+        "mixedOperator": false,
+        "typedDecimalSameScale": true,
+        "scalarDecimalScale": true,
+        "decimalZeroScale": false,
+        "integerDecimalZeroEquals": false,
+        "integerDecimalZero": false,
+        "decimalSameScaleEquals": true,
+        "decimalSameScale": true
+      }
+    }
+  ],
+  "carries": [],
+  "provenance": {
+    "kind": "direct native scratch-org observations",
+    "orgIdSha256": "fb33956e2835632b70ca589f4dda85a92483f425f1cfe6e2f19a14ab779370ea",
+    "payloadMarker": "NUMERIC_MAP|",
+    "transport": {
+      "anonymous": "debug",
+      "istest": "intentional assertion failure"
+    },
+    "deployCommand": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf project deploy start --target-org <scratch-org> --source-dir <synthetic-project>/force-app --wait 15 --json",
+    "sourceSha256ByAPI": {
+      "62.0": {
+        "helperSource": "2179022b24e60767027ea8e89f4cf9b17c32df0f12c07c92d6b97aa22edc6b01",
+        "helperMetadata": "da4734888bce35ef4049b50165acdd9cf59812633aba42cdb64ec85b9c4c0e62",
+        "testSource": "0e0ba3c50008d096e8511800d3e1b5533192900f36aef469dee422b9c709e523",
+        "testMetadata": "da4734888bce35ef4049b50165acdd9cf59812633aba42cdb64ec85b9c4c0e62",
+        "anonymous": "e23aaf22e622f9ac9b302397abdbd711c77b551f6ab9b205ae7b406a2cccf0a9"
+      },
+      "67.0": {
+        "helperSource": "ef7a0461d429a71300e3b8c0de73a946253379eb3865d1211ec38762387283b8",
+        "helperMetadata": "6d12d2d7f42b1b2abee0c3e3ac82e40374fae5850aeae1a30115bc3e0b7a2016",
+        "testSource": "24a4dafa18b0f559546f6260820e980e000dfef92a56f73f4e2f3935b102760e",
+        "testMetadata": "6d12d2d7f42b1b2abee0c3e3ac82e40374fae5850aeae1a30115bc3e0b7a2016",
+        "anonymous": "fbbcad624cd045637b31e3f1ec221122ded1564433d1faad4c87b2449901d556"
+      },
+      "68.0": {
+        "helperSource": "fe6febadcdba8be916f1dc0d21a94876c369a05ca77af1a37540992373c45227",
+        "helperMetadata": "a94673229db0afeb37b4968956b0fff2fd5c8cfd39023cd84fb68698f5225761",
+        "testSource": "8dfd1d322aee10e1c925bf80705af93b6a058a894cd76d612a01b0f78b3a8980",
+        "testMetadata": "a94673229db0afeb37b4968956b0fff2fd5c8cfd39023cd84fb68698f5225761",
+        "anonymous": "3d870147db90ba9184720742b7f2da9170236b8f825884ff2cd459df30f7c591"
+      }
+    },
+    "cells": [
+      {
+        "api": "62.0",
+        "context": "anonymous",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version 62.0 --file <synthetic-probe>/api62.apex --json",
+        "rawResponseSha256": "0a21f11ee0a31ed54982822187572f34f1bd1566359f437c6308e1681ceab233"
+      },
+      {
+        "api": "62.0",
+        "context": "istest",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names NumericMapObserved62 --synchronous --result-format json --wait 15 --json",
+        "rawResponseSha256": "91edbbc7da6d407eefa248d43a8e1dbd840c4d1eb2d65e46304e77c2f6ab4b90"
+      },
+      {
+        "api": "67.0",
+        "context": "anonymous",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version 67.0 --file <synthetic-probe>/api67.apex --json",
+        "rawResponseSha256": "33accd12659f6a9647e699f52a56f863450cde0505bbf9008a7cd802974a47ac"
+      },
+      {
+        "api": "67.0",
+        "context": "istest",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names NumericMapObserved67 --synchronous --result-format json --wait 15 --json",
+        "rawResponseSha256": "42166f514edcc3cd5012ea3a5d2fc4d210967902279bbf73a43e035b50baeaf0"
+      },
+      {
+        "api": "68.0",
+        "context": "anonymous",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version 68.0 --file <synthetic-probe>/api68.apex --json",
+        "rawResponseSha256": "388860da1723f0c4e9124ec9a7005f829afb47beb1f1863a2ab16c6e2bc7ba78"
+      },
+      {
+        "api": "68.0",
+        "context": "istest",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names NumericMapObserved68 --synchronous --result-format json --wait 15 --json",
+        "rawResponseSha256": "6c73ee6b32e05834a569de677619465082572681a37e636d824bf1ac9ea5dafe"
+      }
+    ],
+    "commandPathNormalization": "Authentication home, scratch-org target alias, and synthetic project paths are replaced with placeholders; command options are unchanged."
+  }
+}

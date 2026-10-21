@@ -1,0 +1,1633 @@
+{
+  "evidence": {
+    "capturedDate": "2026-10-14",
+    "oracle": "Owned black-box Salesforce observations",
+    "valueNormalization": "Only exception type qualification; complete exception messages and other returned values are compared.",
+    "sourceNormalization": [
+      "Generated deployment class identifiers replaced by stable synthetic identifiers.",
+      "Named analytics observation marker renamed.",
+      "Nonempty org namespace represented by the synthetic namespace sample."
+    ],
+    "namespaceContext": "Same-namespace helpers and callers were unpackaged classes; no installed or managed package provenance was observed.",
+    "unansweredDimensions": [
+      "Controls establish capture transport and compilation/exception observation only."
+    ]
+  },
+  "cellCount": 52,
+  "matchedCount": 52,
+  "carriedCount": 0,
+  "cells": [
+    {
+      "id": "CTRL_POS",
+      "api": "52.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';o.put('value',7);o.put('accountToken',String.valueOf(Account.SObjectType));}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_POS|'+captureHash+'|'+captureJson);",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "5f14f7d992850b0b56e309c95068f6083268c134e51ce5c99549771453734bf9"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "accountToken": "Account",
+          "value": 7,
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "accountToken": "Account",
+        "value": 7,
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "api": "52.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';try{Integer zero=0;Integer quotient=1/zero;}catch(Exception e){o.put('caught',e.getTypeName());o.put('message',e.getMessage());}}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_CAUGHT|'+captureHash+'|'+captureJson);",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "73e1c97ee30f22a1677d8332f4e9d2706ce32f797f5c7a7b228919460335af03"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "message": "Divide by 0",
+          "caught": "System.MathException",
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "message": "Divide by 0",
+        "caught": "System.MathException",
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "api": "52.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};Integer zero=0;Integer quotient=1/zero;",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "63dd847ff464645c3430191562e1824f4d11fbceb56b211a7cd42ee438bcc555"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "uncaught_anonymous",
+        "exceptionMessage": "System.MathException: Divide by 0",
+        "exceptionType": "System.MathException"
+      },
+      "outcome": "uncaught",
+      "exceptionType": "System.MathException",
+      "message": "Divide by 0"
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "api": "52.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';Integer badValue='synthetic wrong type';}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_COMPILE|'+captureHash+'|'+captureJson);",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "8faa32d829ffe9eddc4324581012c5ee5fb94266b1b46b8dd47803e80f539523"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "compile-rejected",
+        "diagnostics": {
+          "compileProblem": "Illegal assignment from String to Integer",
+          "line": 1,
+          "column": 145
+        }
+      },
+      "outcome": "reject",
+      "primary": "Illegal assignment from String to Integer"
+    },
+    {
+      "id": "CTRL_POS",
+      "api": "52.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLPOSTest": "@IsTest private class ReflectProbeCTRLPOSTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';o.put('value',7);o.put('accountToken',String.valueOf(Account.SObjectType));}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);if(captureJson.length()>492){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_POS|'+captureHash+'|'+captureJson);}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLPOSTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLPOSTest": "90d064b7cd6331e51ebe7d6bfec7a920c45e14e7ea8da62451e5708a30f9de4f"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "accountToken": "Account",
+          "value": 7,
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "accountToken": "Account",
+        "value": 7,
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "api": "52.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLCAUGHTTest": "@IsTest private class ReflectProbeCTRLCAUGHTTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';try{Integer zero=0;Integer quotient=1/zero;}catch(Exception e){o.put('caught',e.getTypeName());o.put('message',e.getMessage());}}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);if(captureJson.length()>489){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_CAUGHT|'+captureHash+'|'+captureJson);}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLCAUGHTTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLCAUGHTTest": "aabcaa01dabf1bd06ac5b4f039a828b4e7e2944c403cc52122712629ea82f8f9"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "message": "Divide by 0",
+          "caught": "System.MathException",
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "message": "Divide by 0",
+        "caught": "System.MathException",
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "api": "52.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLUNCAUGHTTest": "@IsTest private class ReflectProbeCTRLUNCAUGHTTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};Integer zero=0;Integer quotient=1/zero;}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLUNCAUGHTTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLUNCAUGHTTest": "4a5ecba72dc3d75d0602e3907e91ce58b2e6a5773ec67aae16fb6e184680be93"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "uncaught_test_failure",
+        "exceptionMessage": "System.MathException: Divide by 0",
+        "exceptionType": "System.MathException"
+      },
+      "outcome": "uncaught",
+      "exceptionType": "System.MathException",
+      "message": "Divide by 0"
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "api": "52.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLCOMPILETest": "@IsTest private class ReflectProbeCTRLCOMPILETest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';Integer badValue='synthetic wrong type';}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);if(captureJson.length()>488){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_COMPILE|'+captureHash+'|'+captureJson);}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLCOMPILETest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLCOMPILETest": "cb0d1e416a865a093d3d1f46165c1680f10f07525e105a9b35a36b46d666f45f"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "compile-rejected",
+        "diagnostics": [
+          {
+            "name": "ReflectProbeCTRLCOMPILETest",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Illegal assignment from String to Integer",
+            "column": 225
+          }
+        ]
+      },
+      "outcome": "reject",
+      "primary": "Illegal assignment from String to Integer"
+    },
+    {
+      "id": "CTRL_POS",
+      "api": "62.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';o.put('value',7);o.put('accountToken',String.valueOf(Account.SObjectType));}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_POS|'+captureHash+'|'+captureJson);",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "5f14f7d992850b0b56e309c95068f6083268c134e51ce5c99549771453734bf9"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "accountToken": "Account",
+          "value": 7,
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "accountToken": "Account",
+        "value": 7,
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "api": "62.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';try{Integer zero=0;Integer quotient=1/zero;}catch(Exception e){o.put('caught',e.getTypeName());o.put('message',e.getMessage());}}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_CAUGHT|'+captureHash+'|'+captureJson);",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "73e1c97ee30f22a1677d8332f4e9d2706ce32f797f5c7a7b228919460335af03"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "message": "Divide by 0",
+          "caught": "System.MathException",
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "message": "Divide by 0",
+        "caught": "System.MathException",
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "api": "62.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};Integer zero=0;Integer quotient=1/zero;",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "63dd847ff464645c3430191562e1824f4d11fbceb56b211a7cd42ee438bcc555"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "uncaught_anonymous",
+        "exceptionMessage": "System.MathException: Divide by 0",
+        "exceptionType": "System.MathException"
+      },
+      "outcome": "uncaught",
+      "exceptionType": "System.MathException",
+      "message": "Divide by 0"
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "api": "62.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';Integer badValue='synthetic wrong type';}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_COMPILE|'+captureHash+'|'+captureJson);",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "8faa32d829ffe9eddc4324581012c5ee5fb94266b1b46b8dd47803e80f539523"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "compile-rejected",
+        "diagnostics": {
+          "compileProblem": "Illegal assignment from String to Integer",
+          "line": 1,
+          "column": 145
+        }
+      },
+      "outcome": "reject",
+      "primary": "Illegal assignment from String to Integer"
+    },
+    {
+      "id": "CTRL_POS",
+      "api": "62.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLPOSTest": "@IsTest private class ReflectProbeCTRLPOSTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';o.put('value',7);o.put('accountToken',String.valueOf(Account.SObjectType));}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);if(captureJson.length()>492){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_POS|'+captureHash+'|'+captureJson);}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLPOSTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLPOSTest": "90d064b7cd6331e51ebe7d6bfec7a920c45e14e7ea8da62451e5708a30f9de4f"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "accountToken": "Account",
+          "value": 7,
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "accountToken": "Account",
+        "value": 7,
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "api": "62.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLCAUGHTTest": "@IsTest private class ReflectProbeCTRLCAUGHTTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';try{Integer zero=0;Integer quotient=1/zero;}catch(Exception e){o.put('caught',e.getTypeName());o.put('message',e.getMessage());}}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);if(captureJson.length()>489){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_CAUGHT|'+captureHash+'|'+captureJson);}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLCAUGHTTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLCAUGHTTest": "aabcaa01dabf1bd06ac5b4f039a828b4e7e2944c403cc52122712629ea82f8f9"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "message": "Divide by 0",
+          "caught": "System.MathException",
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "message": "Divide by 0",
+        "caught": "System.MathException",
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "api": "62.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLUNCAUGHTTest": "@IsTest private class ReflectProbeCTRLUNCAUGHTTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};Integer zero=0;Integer quotient=1/zero;}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLUNCAUGHTTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLUNCAUGHTTest": "4a5ecba72dc3d75d0602e3907e91ce58b2e6a5773ec67aae16fb6e184680be93"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "uncaught_test_failure",
+        "exceptionMessage": "System.MathException: Divide by 0",
+        "exceptionType": "System.MathException"
+      },
+      "outcome": "uncaught",
+      "exceptionType": "System.MathException",
+      "message": "Divide by 0"
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "api": "62.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLCOMPILETest": "@IsTest private class ReflectProbeCTRLCOMPILETest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';Integer badValue='synthetic wrong type';}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);if(captureJson.length()>488){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_COMPILE|'+captureHash+'|'+captureJson);}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLCOMPILETest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLCOMPILETest": "cb0d1e416a865a093d3d1f46165c1680f10f07525e105a9b35a36b46d666f45f"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "compile-rejected",
+        "diagnostics": [
+          {
+            "name": "ReflectProbeCTRLCOMPILETest",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Illegal assignment from String to Integer",
+            "column": 225
+          }
+        ]
+      },
+      "outcome": "reject",
+      "primary": "Illegal assignment from String to Integer"
+    },
+    {
+      "id": "CTRL_POS",
+      "api": "64.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';o.put('value',7);o.put('accountToken',String.valueOf(Account.SObjectType));}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_POS|'+captureHash+'|'+captureJson);",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "5f14f7d992850b0b56e309c95068f6083268c134e51ce5c99549771453734bf9"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "accountToken": "Account",
+          "value": 7,
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "accountToken": "Account",
+        "value": 7,
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "api": "64.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';try{Integer zero=0;Integer quotient=1/zero;}catch(Exception e){o.put('caught',e.getTypeName());o.put('message',e.getMessage());}}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_CAUGHT|'+captureHash+'|'+captureJson);",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "73e1c97ee30f22a1677d8332f4e9d2706ce32f797f5c7a7b228919460335af03"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "message": "Divide by 0",
+          "caught": "System.MathException",
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "message": "Divide by 0",
+        "caught": "System.MathException",
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "api": "64.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};Integer zero=0;Integer quotient=1/zero;",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "63dd847ff464645c3430191562e1824f4d11fbceb56b211a7cd42ee438bcc555"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "uncaught_anonymous",
+        "exceptionMessage": "System.MathException: Divide by 0",
+        "exceptionType": "System.MathException"
+      },
+      "outcome": "uncaught",
+      "exceptionType": "System.MathException",
+      "message": "Divide by 0"
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "api": "64.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';Integer badValue='synthetic wrong type';}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_COMPILE|'+captureHash+'|'+captureJson);",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "8faa32d829ffe9eddc4324581012c5ee5fb94266b1b46b8dd47803e80f539523"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "compile-rejected",
+        "diagnostics": {
+          "compileProblem": "Illegal assignment from String to Integer",
+          "line": 1,
+          "column": 145
+        }
+      },
+      "outcome": "reject",
+      "primary": "Illegal assignment from String to Integer"
+    },
+    {
+      "id": "CTRL_POS",
+      "api": "64.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLPOSTest": "@IsTest private class ReflectProbeCTRLPOSTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';o.put('value',7);o.put('accountToken',String.valueOf(Account.SObjectType));}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);if(captureJson.length()>492){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_POS|'+captureHash+'|'+captureJson);}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLPOSTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLPOSTest": "90d064b7cd6331e51ebe7d6bfec7a920c45e14e7ea8da62451e5708a30f9de4f"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "accountToken": "Account",
+          "value": 7,
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "accountToken": "Account",
+        "value": 7,
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "api": "64.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLCAUGHTTest": "@IsTest private class ReflectProbeCTRLCAUGHTTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';try{Integer zero=0;Integer quotient=1/zero;}catch(Exception e){o.put('caught',e.getTypeName());o.put('message',e.getMessage());}}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);if(captureJson.length()>489){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_CAUGHT|'+captureHash+'|'+captureJson);}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLCAUGHTTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLCAUGHTTest": "aabcaa01dabf1bd06ac5b4f039a828b4e7e2944c403cc52122712629ea82f8f9"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "message": "Divide by 0",
+          "caught": "System.MathException",
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "message": "Divide by 0",
+        "caught": "System.MathException",
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "api": "64.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLUNCAUGHTTest": "@IsTest private class ReflectProbeCTRLUNCAUGHTTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};Integer zero=0;Integer quotient=1/zero;}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLUNCAUGHTTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLUNCAUGHTTest": "4a5ecba72dc3d75d0602e3907e91ce58b2e6a5773ec67aae16fb6e184680be93"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "uncaught_test_failure",
+        "exceptionMessage": "System.MathException: Divide by 0",
+        "exceptionType": "System.MathException"
+      },
+      "outcome": "uncaught",
+      "exceptionType": "System.MathException",
+      "message": "Divide by 0"
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "api": "64.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLCOMPILETest": "@IsTest private class ReflectProbeCTRLCOMPILETest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';Integer badValue='synthetic wrong type';}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);if(captureJson.length()>488){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_COMPILE|'+captureHash+'|'+captureJson);}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLCOMPILETest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLCOMPILETest": "cb0d1e416a865a093d3d1f46165c1680f10f07525e105a9b35a36b46d666f45f"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "compile-rejected",
+        "diagnostics": [
+          {
+            "name": "ReflectProbeCTRLCOMPILETest",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Illegal assignment from String to Integer",
+            "column": 225
+          }
+        ]
+      },
+      "outcome": "reject",
+      "primary": "Illegal assignment from String to Integer"
+    },
+    {
+      "id": "CTRL_POS",
+      "api": "67.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';o.put('value',7);o.put('accountToken',String.valueOf(Account.SObjectType));}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_POS|'+captureHash+'|'+captureJson);",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "5f14f7d992850b0b56e309c95068f6083268c134e51ce5c99549771453734bf9"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "accountToken": "Account",
+          "value": 7,
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "accountToken": "Account",
+        "value": 7,
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "api": "67.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';try{Integer zero=0;Integer quotient=1/zero;}catch(Exception e){o.put('caught',e.getTypeName());o.put('message',e.getMessage());}}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_CAUGHT|'+captureHash+'|'+captureJson);",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "73e1c97ee30f22a1677d8332f4e9d2706ce32f797f5c7a7b228919460335af03"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "message": "Divide by 0",
+          "caught": "System.MathException",
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "message": "Divide by 0",
+        "caught": "System.MathException",
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "api": "67.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};Integer zero=0;Integer quotient=1/zero;",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "63dd847ff464645c3430191562e1824f4d11fbceb56b211a7cd42ee438bcc555"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "uncaught_anonymous",
+        "exceptionMessage": "System.MathException: Divide by 0",
+        "exceptionType": "System.MathException"
+      },
+      "outcome": "uncaught",
+      "exceptionType": "System.MathException",
+      "message": "Divide by 0"
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "api": "67.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';Integer badValue='synthetic wrong type';}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_COMPILE|'+captureHash+'|'+captureJson);",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "8faa32d829ffe9eddc4324581012c5ee5fb94266b1b46b8dd47803e80f539523"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "compile-rejected",
+        "diagnostics": {
+          "compileProblem": "Illegal assignment from String to Integer",
+          "line": 1,
+          "column": 145
+        }
+      },
+      "outcome": "reject",
+      "primary": "Illegal assignment from String to Integer"
+    },
+    {
+      "id": "CTRL_POS",
+      "api": "67.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLPOSTest": "@IsTest private class ReflectProbeCTRLPOSTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';o.put('value',7);o.put('accountToken',String.valueOf(Account.SObjectType));}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);if(captureJson.length()>492){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_POS|'+captureHash+'|'+captureJson);}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLPOSTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLPOSTest": "90d064b7cd6331e51ebe7d6bfec7a920c45e14e7ea8da62451e5708a30f9de4f"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "accountToken": "Account",
+          "value": 7,
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "accountToken": "Account",
+        "value": 7,
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "api": "67.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLCAUGHTTest": "@IsTest private class ReflectProbeCTRLCAUGHTTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';try{Integer zero=0;Integer quotient=1/zero;}catch(Exception e){o.put('caught',e.getTypeName());o.put('message',e.getMessage());}}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);if(captureJson.length()>489){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_CAUGHT|'+captureHash+'|'+captureJson);}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLCAUGHTTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLCAUGHTTest": "aabcaa01dabf1bd06ac5b4f039a828b4e7e2944c403cc52122712629ea82f8f9"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "message": "Divide by 0",
+          "caught": "System.MathException",
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "message": "Divide by 0",
+        "caught": "System.MathException",
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "api": "67.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLUNCAUGHTTest": "@IsTest private class ReflectProbeCTRLUNCAUGHTTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};Integer zero=0;Integer quotient=1/zero;}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLUNCAUGHTTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLUNCAUGHTTest": "4a5ecba72dc3d75d0602e3907e91ce58b2e6a5773ec67aae16fb6e184680be93"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "uncaught_test_failure",
+        "exceptionMessage": "System.MathException: Divide by 0",
+        "exceptionType": "System.MathException"
+      },
+      "outcome": "uncaught",
+      "exceptionType": "System.MathException",
+      "message": "Divide by 0"
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "api": "67.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLCOMPILETest": "@IsTest private class ReflectProbeCTRLCOMPILETest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';Integer badValue='synthetic wrong type';}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);if(captureJson.length()>488){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_COMPILE|'+captureHash+'|'+captureJson);}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLCOMPILETest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLCOMPILETest": "cb0d1e416a865a093d3d1f46165c1680f10f07525e105a9b35a36b46d666f45f"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "compile-rejected",
+        "diagnostics": [
+          {
+            "name": "ReflectProbeCTRLCOMPILETest",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Illegal assignment from String to Integer",
+            "column": 225
+          }
+        ]
+      },
+      "outcome": "reject",
+      "primary": "Illegal assignment from String to Integer"
+    },
+    {
+      "id": "CTRL_POS",
+      "api": "68.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';o.put('value',7);o.put('accountToken',String.valueOf(Account.SObjectType));}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_POS|'+captureHash+'|'+captureJson);",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "5f14f7d992850b0b56e309c95068f6083268c134e51ce5c99549771453734bf9"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "accountToken": "Account",
+          "value": 7,
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "accountToken": "Account",
+        "value": 7,
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "api": "68.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';try{Integer zero=0;Integer quotient=1/zero;}catch(Exception e){o.put('caught',e.getTypeName());o.put('message',e.getMessage());}}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_CAUGHT|'+captureHash+'|'+captureJson);",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "73e1c97ee30f22a1677d8332f4e9d2706ce32f797f5c7a7b228919460335af03"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "message": "Divide by 0",
+          "caught": "System.MathException",
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "message": "Divide by 0",
+        "caught": "System.MathException",
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "api": "68.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};Integer zero=0;Integer quotient=1/zero;",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "63dd847ff464645c3430191562e1824f4d11fbceb56b211a7cd42ee438bcc555"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "uncaught_anonymous",
+        "exceptionMessage": "System.MathException: Divide by 0",
+        "exceptionType": "System.MathException"
+      },
+      "outcome": "uncaught",
+      "exceptionType": "System.MathException",
+      "message": "Divide by 0"
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "api": "68.0",
+      "route": "anonymous",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';Integer badValue='synthetic wrong type';}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_COMPILE|'+captureHash+'|'+captureJson);",
+        "classes": {},
+        "tests": []
+      },
+      "sourceSha256": {
+        "anonymous": "8faa32d829ffe9eddc4324581012c5ee5fb94266b1b46b8dd47803e80f539523"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "compile-rejected",
+        "diagnostics": {
+          "compileProblem": "Illegal assignment from String to Integer",
+          "line": 1,
+          "column": 145
+        }
+      },
+      "outcome": "reject",
+      "primary": "Illegal assignment from String to Integer"
+    },
+    {
+      "id": "CTRL_POS",
+      "api": "68.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLPOSTest": "@IsTest private class ReflectProbeCTRLPOSTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';o.put('value',7);o.put('accountToken',String.valueOf(Account.SObjectType));}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);if(captureJson.length()>492){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_POS|'+captureHash+'|'+captureJson);}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLPOSTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLPOSTest": "90d064b7cd6331e51ebe7d6bfec7a920c45e14e7ea8da62451e5708a30f9de4f"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "accountToken": "Account",
+          "value": 7,
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "accountToken": "Account",
+        "value": 7,
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_CAUGHT",
+      "api": "68.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLCAUGHTTest": "@IsTest private class ReflectProbeCTRLCAUGHTTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';try{Integer zero=0;Integer quotient=1/zero;}catch(Exception e){o.put('caught',e.getTypeName());o.put('message',e.getMessage());}}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);if(captureJson.length()>489){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_CAUGHT|'+captureHash+'|'+captureJson);}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLCAUGHTTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLCAUGHTTest": "aabcaa01dabf1bd06ac5b4f039a828b4e7e2944c403cc52122712629ea82f8f9"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "message": "Divide by 0",
+          "caught": "System.MathException",
+          "exceptionMessage": null,
+          "exceptionType": null
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "message": "Divide by 0",
+        "caught": "System.MathException",
+        "exceptionMessage": null,
+        "exceptionType": null
+      }
+    },
+    {
+      "id": "CTRL_UNCAUGHT",
+      "api": "68.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLUNCAUGHTTest": "@IsTest private class ReflectProbeCTRLUNCAUGHTTest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};Integer zero=0;Integer quotient=1/zero;}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLUNCAUGHTTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLUNCAUGHTTest": "4a5ecba72dc3d75d0602e3907e91ce58b2e6a5773ec67aae16fb6e184680be93"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "uncaught_test_failure",
+        "exceptionMessage": "System.MathException: Divide by 0",
+        "exceptionType": "System.MathException"
+      },
+      "outcome": "uncaught",
+      "exceptionType": "System.MathException",
+      "message": "Divide by 0"
+    },
+    {
+      "id": "CTRL_COMPILE",
+      "api": "68.0",
+      "route": "istest",
+      "context": "unpackaged",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "ReflectProbeCTRLCOMPILETest": "@IsTest private class ReflectProbeCTRLCOMPILETest{@IsTest static void observe(){String phase='fixture';Map<String,Object> o=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null};try{phase='behavior';Integer badValue='synthetic wrong type';}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());o.put('exceptionPhase',phase);if(phase=='fixture' && false){o.put('fixtureError',true);}}String captureJson=JSON.serialize(o);if(captureJson.length()>488){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','length'=>captureJson.length()});}String captureHash=EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(captureJson)));System.assert(false,'RFLX_RESULT|CTRL_COMPILE|'+captureHash+'|'+captureJson);}}"
+        },
+        "tests": [
+          "ReflectProbeCTRLCOMPILETest"
+        ]
+      },
+      "sourceSha256": {
+        "class:ReflectProbeCTRLCOMPILETest": "cb0d1e416a865a093d3d1f46165c1680f10f07525e105a9b35a36b46d666f45f"
+      },
+      "marker": "RFLX_RESULT|",
+      "hashedEnvelope": true,
+      "native": {
+        "outcome": "compile-rejected",
+        "diagnostics": [
+          {
+            "name": "ReflectProbeCTRLCOMPILETest",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Illegal assignment from String to Integer",
+            "column": 225
+          }
+        ]
+      },
+      "outcome": "reject",
+      "primary": "Illegal assignment from String to Integer"
+    },
+    {
+      "id": "namespace_CTRL_POS",
+      "api": "62.0",
+      "route": "istest",
+      "context": "sameNamespace",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "AnalyticsProbeCTRLPOSTest": "@IsTest private class AnalyticsProbeCTRLPOSTest {@IsTest static void observe(){Map<String,Object> result=new Map<String,Object>();String stage='control';try{stage='expression';result.put('value',7);}catch(Exception e){result.put('exceptionType',e.getTypeName());result.put('exceptionMessage',e.getMessage());result.put('stage',stage);} String envelope='ANALYTICS_RESULT|namespace_CTRL_POS|'+JSON.serialize(result); if(envelope.length()>620){envelope='ANALYTICS_RESULT|namespace_CTRL_POS|'+JSON.serialize(new Map<String,Object>{'captureTransportError'=>true,'length'=>envelope.length()});} System.assert(false,envelope);} }"
+        },
+        "tests": [
+          "AnalyticsProbeCTRLPOSTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:AnalyticsProbeCTRLPOSTest": "181d700ac8663ace947e32463d3a7dd4a58e02fd8bb6c6730f847b0b44afbcf7"
+      },
+      "marker": "ANALYTICS_RESULT|",
+      "hashedEnvelope": false,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": 7
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "value": 7
+      }
+    },
+    {
+      "id": "namespace_CTRL_CAUGHT",
+      "api": "62.0",
+      "route": "istest",
+      "context": "sameNamespace",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "AnalyticsProbeCTRLCAUGHTTest": "@IsTest private class AnalyticsProbeCTRLCAUGHTTest {@IsTest static void observe(){Map<String,Object> result=new Map<String,Object>();String stage='control';try{stage='expression';try{Integer ignored=1/0;}catch(Exception e){result.put('caught',e.getTypeName());result.put('message',e.getMessage());}}catch(Exception e){result.put('exceptionType',e.getTypeName());result.put('exceptionMessage',e.getMessage());result.put('stage',stage);} String envelope='ANALYTICS_RESULT|namespace_CTRL_CAUGHT|'+JSON.serialize(result); if(envelope.length()>620){envelope='ANALYTICS_RESULT|namespace_CTRL_CAUGHT|'+JSON.serialize(new Map<String,Object>{'captureTransportError'=>true,'length'=>envelope.length()});} System.assert(false,envelope);} }"
+        },
+        "tests": [
+          "AnalyticsProbeCTRLCAUGHTTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:AnalyticsProbeCTRLCAUGHTTest": "892e480259db8e97ad13c4636549191a534c15dacd70afdb99fd26832e3741e5"
+      },
+      "marker": "ANALYTICS_RESULT|",
+      "hashedEnvelope": false,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "message": "Divide by 0",
+          "caught": "System.MathException"
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "message": "Divide by 0",
+        "caught": "System.MathException"
+      }
+    },
+    {
+      "id": "namespace_CTRL_UNCAUGHT",
+      "api": "62.0",
+      "route": "istest",
+      "context": "sameNamespace",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "AnalyticsProbeCTRLUNCAUGHTTest": "@IsTest private class AnalyticsProbeCTRLUNCAUGHTTest {@IsTest static void observe(){Integer ignored=1/0;} }"
+        },
+        "tests": [
+          "AnalyticsProbeCTRLUNCAUGHTTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:AnalyticsProbeCTRLUNCAUGHTTest": "6ff230ad7b5d9a78fa5a669bbbcf9e33537d2cf89a532e60746a26e652de740c"
+      },
+      "marker": "ANALYTICS_RESULT|",
+      "hashedEnvelope": false,
+      "native": {
+        "outcome": "uncaught_test_failure",
+        "exceptionMessage": "System.MathException: Divide by 0",
+        "exceptionType": "System.MathException"
+      },
+      "outcome": "uncaught",
+      "exceptionType": "System.MathException",
+      "message": "Divide by 0"
+    },
+    {
+      "id": "namespace_CTRL_COMPILE",
+      "api": "62.0",
+      "route": "istest",
+      "context": "sameNamespace",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "AnalyticsProbeCTRLCOMPILETest": "@IsTest private class AnalyticsProbeCTRLCOMPILETest {@IsTest static void observe(){Integer ignored='wrong';} }"
+        },
+        "tests": [
+          "AnalyticsProbeCTRLCOMPILETest"
+        ]
+      },
+      "sourceSha256": {
+        "class:AnalyticsProbeCTRLCOMPILETest": "e474172d6e7ab86803b46c214334e67feef392990b7f4bb790d43b777000fd5d"
+      },
+      "marker": "ANALYTICS_RESULT|",
+      "hashedEnvelope": false,
+      "native": {
+        "outcome": "compile-rejected",
+        "diagnostics": [
+          {
+            "name": "AnalyticsProbeCTRLCOMPILETest",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Illegal assignment from String to Integer",
+            "column": 91
+          }
+        ]
+      },
+      "outcome": "reject",
+      "primary": "Illegal assignment from String to Integer"
+    },
+    {
+      "id": "namespace_CTRL_POS",
+      "api": "67.0",
+      "route": "istest",
+      "context": "sameNamespace",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "AnalyticsProbeCTRLPOSTest": "@IsTest private class AnalyticsProbeCTRLPOSTest {@IsTest static void observe(){Map<String,Object> result=new Map<String,Object>();String stage='control';try{stage='expression';result.put('value',7);}catch(Exception e){result.put('exceptionType',e.getTypeName());result.put('exceptionMessage',e.getMessage());result.put('stage',stage);} String envelope='ANALYTICS_RESULT|namespace_CTRL_POS|'+JSON.serialize(result); if(envelope.length()>620){envelope='ANALYTICS_RESULT|namespace_CTRL_POS|'+JSON.serialize(new Map<String,Object>{'captureTransportError'=>true,'length'=>envelope.length()});} System.assert(false,envelope);} }"
+        },
+        "tests": [
+          "AnalyticsProbeCTRLPOSTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:AnalyticsProbeCTRLPOSTest": "181d700ac8663ace947e32463d3a7dd4a58e02fd8bb6c6730f847b0b44afbcf7"
+      },
+      "marker": "ANALYTICS_RESULT|",
+      "hashedEnvelope": false,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": 7
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "value": 7
+      }
+    },
+    {
+      "id": "namespace_CTRL_CAUGHT",
+      "api": "67.0",
+      "route": "istest",
+      "context": "sameNamespace",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "AnalyticsProbeCTRLCAUGHTTest": "@IsTest private class AnalyticsProbeCTRLCAUGHTTest {@IsTest static void observe(){Map<String,Object> result=new Map<String,Object>();String stage='control';try{stage='expression';try{Integer ignored=1/0;}catch(Exception e){result.put('caught',e.getTypeName());result.put('message',e.getMessage());}}catch(Exception e){result.put('exceptionType',e.getTypeName());result.put('exceptionMessage',e.getMessage());result.put('stage',stage);} String envelope='ANALYTICS_RESULT|namespace_CTRL_CAUGHT|'+JSON.serialize(result); if(envelope.length()>620){envelope='ANALYTICS_RESULT|namespace_CTRL_CAUGHT|'+JSON.serialize(new Map<String,Object>{'captureTransportError'=>true,'length'=>envelope.length()});} System.assert(false,envelope);} }"
+        },
+        "tests": [
+          "AnalyticsProbeCTRLCAUGHTTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:AnalyticsProbeCTRLCAUGHTTest": "892e480259db8e97ad13c4636549191a534c15dacd70afdb99fd26832e3741e5"
+      },
+      "marker": "ANALYTICS_RESULT|",
+      "hashedEnvelope": false,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "message": "Divide by 0",
+          "caught": "System.MathException"
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "message": "Divide by 0",
+        "caught": "System.MathException"
+      }
+    },
+    {
+      "id": "namespace_CTRL_UNCAUGHT",
+      "api": "67.0",
+      "route": "istest",
+      "context": "sameNamespace",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "AnalyticsProbeCTRLUNCAUGHTTest": "@IsTest private class AnalyticsProbeCTRLUNCAUGHTTest {@IsTest static void observe(){Integer ignored=1/0;} }"
+        },
+        "tests": [
+          "AnalyticsProbeCTRLUNCAUGHTTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:AnalyticsProbeCTRLUNCAUGHTTest": "6ff230ad7b5d9a78fa5a669bbbcf9e33537d2cf89a532e60746a26e652de740c"
+      },
+      "marker": "ANALYTICS_RESULT|",
+      "hashedEnvelope": false,
+      "native": {
+        "outcome": "uncaught_test_failure",
+        "exceptionMessage": "System.MathException: Divide by 0",
+        "exceptionType": "System.MathException"
+      },
+      "outcome": "uncaught",
+      "exceptionType": "System.MathException",
+      "message": "Divide by 0"
+    },
+    {
+      "id": "namespace_CTRL_COMPILE",
+      "api": "67.0",
+      "route": "istest",
+      "context": "sameNamespace",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "AnalyticsProbeCTRLCOMPILETest": "@IsTest private class AnalyticsProbeCTRLCOMPILETest {@IsTest static void observe(){Integer ignored='wrong';} }"
+        },
+        "tests": [
+          "AnalyticsProbeCTRLCOMPILETest"
+        ]
+      },
+      "sourceSha256": {
+        "class:AnalyticsProbeCTRLCOMPILETest": "e474172d6e7ab86803b46c214334e67feef392990b7f4bb790d43b777000fd5d"
+      },
+      "marker": "ANALYTICS_RESULT|",
+      "hashedEnvelope": false,
+      "native": {
+        "outcome": "compile-rejected",
+        "diagnostics": [
+          {
+            "name": "AnalyticsProbeCTRLCOMPILETest",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Illegal assignment from String to Integer",
+            "column": 91
+          }
+        ]
+      },
+      "outcome": "reject",
+      "primary": "Illegal assignment from String to Integer"
+    },
+    {
+      "id": "namespace_CTRL_POS",
+      "api": "68.0",
+      "route": "istest",
+      "context": "sameNamespace",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "AnalyticsProbeCTRLPOSTest": "@IsTest private class AnalyticsProbeCTRLPOSTest {@IsTest static void observe(){Map<String,Object> result=new Map<String,Object>();String stage='control';try{stage='expression';result.put('value',7);}catch(Exception e){result.put('exceptionType',e.getTypeName());result.put('exceptionMessage',e.getMessage());result.put('stage',stage);} String envelope='ANALYTICS_RESULT|namespace_CTRL_POS|'+JSON.serialize(result); if(envelope.length()>620){envelope='ANALYTICS_RESULT|namespace_CTRL_POS|'+JSON.serialize(new Map<String,Object>{'captureTransportError'=>true,'length'=>envelope.length()});} System.assert(false,envelope);} }"
+        },
+        "tests": [
+          "AnalyticsProbeCTRLPOSTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:AnalyticsProbeCTRLPOSTest": "181d700ac8663ace947e32463d3a7dd4a58e02fd8bb6c6730f847b0b44afbcf7"
+      },
+      "marker": "ANALYTICS_RESULT|",
+      "hashedEnvelope": false,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": 7
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "value": 7
+      }
+    },
+    {
+      "id": "namespace_CTRL_CAUGHT",
+      "api": "68.0",
+      "route": "istest",
+      "context": "sameNamespace",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "AnalyticsProbeCTRLCAUGHTTest": "@IsTest private class AnalyticsProbeCTRLCAUGHTTest {@IsTest static void observe(){Map<String,Object> result=new Map<String,Object>();String stage='control';try{stage='expression';try{Integer ignored=1/0;}catch(Exception e){result.put('caught',e.getTypeName());result.put('message',e.getMessage());}}catch(Exception e){result.put('exceptionType',e.getTypeName());result.put('exceptionMessage',e.getMessage());result.put('stage',stage);} String envelope='ANALYTICS_RESULT|namespace_CTRL_CAUGHT|'+JSON.serialize(result); if(envelope.length()>620){envelope='ANALYTICS_RESULT|namespace_CTRL_CAUGHT|'+JSON.serialize(new Map<String,Object>{'captureTransportError'=>true,'length'=>envelope.length()});} System.assert(false,envelope);} }"
+        },
+        "tests": [
+          "AnalyticsProbeCTRLCAUGHTTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:AnalyticsProbeCTRLCAUGHTTest": "892e480259db8e97ad13c4636549191a534c15dacd70afdb99fd26832e3741e5"
+      },
+      "marker": "ANALYTICS_RESULT|",
+      "hashedEnvelope": false,
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "message": "Divide by 0",
+          "caught": "System.MathException"
+        }
+      },
+      "outcome": "runtime",
+      "value": {
+        "message": "Divide by 0",
+        "caught": "System.MathException"
+      }
+    },
+    {
+      "id": "namespace_CTRL_UNCAUGHT",
+      "api": "68.0",
+      "route": "istest",
+      "context": "sameNamespace",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "AnalyticsProbeCTRLUNCAUGHTTest": "@IsTest private class AnalyticsProbeCTRLUNCAUGHTTest {@IsTest static void observe(){Integer ignored=1/0;} }"
+        },
+        "tests": [
+          "AnalyticsProbeCTRLUNCAUGHTTest"
+        ]
+      },
+      "sourceSha256": {
+        "class:AnalyticsProbeCTRLUNCAUGHTTest": "6ff230ad7b5d9a78fa5a669bbbcf9e33537d2cf89a532e60746a26e652de740c"
+      },
+      "marker": "ANALYTICS_RESULT|",
+      "hashedEnvelope": false,
+      "native": {
+        "outcome": "uncaught_test_failure",
+        "exceptionMessage": "System.MathException: Divide by 0",
+        "exceptionType": "System.MathException"
+      },
+      "outcome": "uncaught",
+      "exceptionType": "System.MathException",
+      "message": "Divide by 0"
+    },
+    {
+      "id": "namespace_CTRL_COMPILE",
+      "api": "68.0",
+      "route": "istest",
+      "context": "sameNamespace",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "AnalyticsProbeCTRLCOMPILETest": "@IsTest private class AnalyticsProbeCTRLCOMPILETest {@IsTest static void observe(){Integer ignored='wrong';} }"
+        },
+        "tests": [
+          "AnalyticsProbeCTRLCOMPILETest"
+        ]
+      },
+      "sourceSha256": {
+        "class:AnalyticsProbeCTRLCOMPILETest": "e474172d6e7ab86803b46c214334e67feef392990b7f4bb790d43b777000fd5d"
+      },
+      "marker": "ANALYTICS_RESULT|",
+      "hashedEnvelope": false,
+      "native": {
+        "outcome": "compile-rejected",
+        "diagnostics": [
+          {
+            "name": "AnalyticsProbeCTRLCOMPILETest",
+            "type": "ApexClass",
+            "line": 1,
+            "problem": "Illegal assignment from String to Integer",
+            "column": 91
+          }
+        ]
+      },
+      "outcome": "reject",
+      "primary": "Illegal assignment from String to Integer"
+    }
+  ]
+}

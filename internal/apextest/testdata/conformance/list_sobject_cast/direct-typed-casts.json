@@ -1,0 +1,1407 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "direct-typed-casts",
+  "shapeCount": 9,
+  "nativeObservationCount": 54,
+  "rows": [
+    {
+      "id": "C167CL_047",
+      "disposition": "conformance",
+      "label": "Account direct cast 0",
+      "twin": "C167CL_048",
+      "routes": {
+        "anonymous": {
+          "anonymous": "String r;try{List<Account> aList=new List<Account>{};Account a=(Account)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_047|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_047|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+          "sourceSha256": {
+            "anonymous": "3d678e3fda724d64d29642d554d9cc26af42f9d7ac94b23e827ed37f82cd4e5f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<Account> is never an instance of Account",
+                  "line": 1,
+                  "column": 64,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<Account> is never an instance of Account",
+                  "line": 1,
+                  "column": 64,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<Account> is never an instance of Account",
+                  "line": 1,
+                  "column": 64,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C167Observe047": "@IsTest private class C167Observe047{@IsTest static void observe(){String r;try{List<Account> aList=new List<Account>{};Account a=(Account)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_047|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_047|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+          },
+          "tests": [
+            "C167Observe047"
+          ],
+          "sourceSha256": {
+            "class:C167Observe047": "83e4656f6bacda642ef0fa0bcf2631118e811cec9df90c4ef8582b4cf3807f7a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe047",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 131,
+                      "problem": "Incompatible types since an instance of List<Account> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe047",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 131,
+                      "problem": "Incompatible types since an instance of List<Account> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe047",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 131,
+                      "problem": "Incompatible types since an instance of List<Account> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C167CL_048",
+      "disposition": "conformance",
+      "label": "Account direct cast 1",
+      "twin": "C167CL_047",
+      "routes": {
+        "anonymous": {
+          "anonymous": "String r;try{List<Account> aList=new List<Account>{new Account(Name='a')};Account a=(Account)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_048|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_048|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+          "sourceSha256": {
+            "anonymous": "c965180a519329ea3e9cdcc2e4a3a33dd0b108d935792d5739e9b728448a3d44"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<Account> is never an instance of Account",
+                  "line": 1,
+                  "column": 85,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<Account> is never an instance of Account",
+                  "line": 1,
+                  "column": 85,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<Account> is never an instance of Account",
+                  "line": 1,
+                  "column": 85,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C167Observe048": "@IsTest private class C167Observe048{@IsTest static void observe(){String r;try{List<Account> aList=new List<Account>{new Account(Name='a')};Account a=(Account)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_048|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_048|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+          },
+          "tests": [
+            "C167Observe048"
+          ],
+          "sourceSha256": {
+            "class:C167Observe048": "33f250085c0e437e47241900cdda3932af2e763de972ad07437e73202cd7b2a3"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe048",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 152,
+                      "problem": "Incompatible types since an instance of List<Account> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe048",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 152,
+                      "problem": "Incompatible types since an instance of List<Account> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe048",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 152,
+                      "problem": "Incompatible types since an instance of List<Account> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C167CL_049",
+      "disposition": "conformance",
+      "label": "Account direct cast 2",
+      "twin": "C167CL_050",
+      "routes": {
+        "anonymous": {
+          "anonymous": "String r;try{List<Account> aList=new List<Account>{new Account(Name='a'),new Account(Name='b')};Account a=(Account)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_049|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_049|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+          "sourceSha256": {
+            "anonymous": "787dab94a96fcfb2517363004ad3ee74e68d9991a9bdd1a15e6dc2da2ed48723"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<Account> is never an instance of Account",
+                  "line": 1,
+                  "column": 107,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<Account> is never an instance of Account",
+                  "line": 1,
+                  "column": 107,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<Account> is never an instance of Account",
+                  "line": 1,
+                  "column": 107,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C167Observe049": "@IsTest private class C167Observe049{@IsTest static void observe(){String r;try{List<Account> aList=new List<Account>{new Account(Name='a'),new Account(Name='b')};Account a=(Account)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_049|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_049|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+          },
+          "tests": [
+            "C167Observe049"
+          ],
+          "sourceSha256": {
+            "class:C167Observe049": "d72063ede7957e3bbaad1eacbca05215baa4c90eb24e3989910e0868b9389959"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe049",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 174,
+                      "problem": "Incompatible types since an instance of List<Account> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe049",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 174,
+                      "problem": "Incompatible types since an instance of List<Account> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe049",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 174,
+                      "problem": "Incompatible types since an instance of List<Account> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<Account> is never an instance of Account"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C167CL_050",
+      "disposition": "conformance",
+      "label": "SObject direct cast 0",
+      "twin": "C167CL_049",
+      "routes": {
+        "anonymous": {
+          "anonymous": "String r;try{List<SObject> aList=new List<SObject>{};Account a=(Account)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_050|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_050|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+          "sourceSha256": {
+            "anonymous": "4e5cd184434db64d7a7787f9ff87f47158d0909c3797f4feb1548b8b9aa7568d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of Account",
+                  "line": 1,
+                  "column": 64,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of Account",
+                  "line": 1,
+                  "column": 64,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of Account",
+                  "line": 1,
+                  "column": 64,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C167Observe050": "@IsTest private class C167Observe050{@IsTest static void observe(){String r;try{List<SObject> aList=new List<SObject>{};Account a=(Account)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_050|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_050|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+          },
+          "tests": [
+            "C167Observe050"
+          ],
+          "sourceSha256": {
+            "class:C167Observe050": "9d25cff134e83f62156f5273f16b500fe670cc8ef04d747538f5e42182d5c677"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe050",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 131,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe050",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 131,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe050",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 131,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C167CL_051",
+      "disposition": "conformance",
+      "label": "SObject direct cast 1",
+      "twin": "C167CL_052",
+      "routes": {
+        "anonymous": {
+          "anonymous": "String r;try{List<SObject> aList=new List<SObject>{new Account(Name='a')};Account a=(Account)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_051|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_051|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+          "sourceSha256": {
+            "anonymous": "4edad76559427e3ebfaed901fa9a7327af3f803d51fd2efd181d164481c7a823"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of Account",
+                  "line": 1,
+                  "column": 85,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of Account",
+                  "line": 1,
+                  "column": 85,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of Account",
+                  "line": 1,
+                  "column": 85,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C167Observe051": "@IsTest private class C167Observe051{@IsTest static void observe(){String r;try{List<SObject> aList=new List<SObject>{new Account(Name='a')};Account a=(Account)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_051|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_051|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+          },
+          "tests": [
+            "C167Observe051"
+          ],
+          "sourceSha256": {
+            "class:C167Observe051": "7159ce0e075a3d108f0023acbc51258006400e4b978ac278d4747657cdb75142"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe051",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 152,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe051",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 152,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe051",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 152,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C167CL_052",
+      "disposition": "conformance",
+      "label": "SObject direct cast 2",
+      "twin": "C167CL_051",
+      "routes": {
+        "anonymous": {
+          "anonymous": "String r;try{List<SObject> aList=new List<SObject>{new Account(Name='a'),new Account(Name='b')};Account a=(Account)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_052|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_052|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+          "sourceSha256": {
+            "anonymous": "77f32ca92bf14433e7c93c9cd84608637778909246c431467a9a8c987ec65911"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of Account",
+                  "line": 1,
+                  "column": 107,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of Account",
+                  "line": 1,
+                  "column": 107,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of Account",
+                  "line": 1,
+                  "column": 107,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C167Observe052": "@IsTest private class C167Observe052{@IsTest static void observe(){String r;try{List<SObject> aList=new List<SObject>{new Account(Name='a'),new Account(Name='b')};Account a=(Account)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_052|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_052|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+          },
+          "tests": [
+            "C167Observe052"
+          ],
+          "sourceSha256": {
+            "class:C167Observe052": "bd502fd28c03230607f4ff44cf535fd8258b94f863a6066cf18df0096e37278d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe052",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 174,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe052",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 174,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe052",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 174,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of Account"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C167CL_053",
+      "disposition": "conformance",
+      "label": "SObject direct cast to SObject 0",
+      "twin": "C167CL_054",
+      "routes": {
+        "anonymous": {
+          "anonymous": "String r;try{List<SObject> aList=new List<SObject>{};SObject a=(SObject)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_053|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_053|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+          "sourceSha256": {
+            "anonymous": "13c8add71ee9b0679f9e0d5a1250c98211ad5a149f247c67966f2a0f79154f8b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of SObject",
+                  "line": 1,
+                  "column": 64,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of SObject",
+                  "line": 1,
+                  "column": 64,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of SObject",
+                  "line": 1,
+                  "column": 64,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C167Observe053": "@IsTest private class C167Observe053{@IsTest static void observe(){String r;try{List<SObject> aList=new List<SObject>{};SObject a=(SObject)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_053|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_053|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+          },
+          "tests": [
+            "C167Observe053"
+          ],
+          "sourceSha256": {
+            "class:C167Observe053": "575213318f7d270f1fb65feb854f387a97c9f0923e6873c0e86053ddded5cb94"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe053",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 131,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe053",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 131,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe053",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 131,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C167CL_054",
+      "disposition": "conformance",
+      "label": "SObject direct cast to SObject 1",
+      "twin": "C167CL_053",
+      "routes": {
+        "anonymous": {
+          "anonymous": "String r;try{List<SObject> aList=new List<SObject>{new Account(Name='a')};SObject a=(SObject)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_054|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_054|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+          "sourceSha256": {
+            "anonymous": "6ebee12561e7cd094a49a9ece960e30db77128ff0e9648bfee6229c357fa1f10"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of SObject",
+                  "line": 1,
+                  "column": 85,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of SObject",
+                  "line": 1,
+                  "column": 85,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of SObject",
+                  "line": 1,
+                  "column": 85,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C167Observe054": "@IsTest private class C167Observe054{@IsTest static void observe(){String r;try{List<SObject> aList=new List<SObject>{new Account(Name='a')};SObject a=(SObject)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_054|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_054|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+          },
+          "tests": [
+            "C167Observe054"
+          ],
+          "sourceSha256": {
+            "class:C167Observe054": "fc22db84739078adef06c9cf4d72a5bd9431e5cdfcfe177f79771a00434f7fd3"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe054",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 152,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe054",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 152,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe054",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 152,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C167CL_055",
+      "disposition": "conformance",
+      "label": "SObject direct cast to SObject 2",
+      "twin": "C167CL_056",
+      "routes": {
+        "anonymous": {
+          "anonymous": "String r;try{List<SObject> aList=new List<SObject>{new Account(Name='a'),new Account(Name='b')};SObject a=(SObject)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_055|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_055|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);",
+          "sourceSha256": {
+            "anonymous": "2a56bef22c1c4e097645dc9300ef06e6ab0c4ca6f1d7142fe489c7a048bfdabf"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of SObject",
+                  "line": 1,
+                  "column": 107,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of SObject",
+                  "line": 1,
+                  "column": 107,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "compiled": false,
+                  "compileProblem": "Incompatible types since an instance of List<SObject> is never an instance of SObject",
+                  "line": 1,
+                  "column": 107,
+                  "success": false,
+                  "exceptionMessage": null
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "C167Observe055": "@IsTest private class C167Observe055{@IsTest static void observe(){String r;try{List<SObject> aList=new List<SObject>{new Account(Name='a'),new Account(Name='b')};SObject a=(SObject)aList;r=String.valueOf(a);}catch(Exception e){r='EXC|'+e.getTypeName()+'|'+e.getMessage();}String payload=JSON.serialize(new Map<String,Object>{'value'=>r});String fault;if(payload.containsIgnoreCase('Internal Salesforce Error')){fault='PLATFORM_FAULT|INTERNAL_SALESFORCE_ERROR';}if(payload.containsIgnoreCase('UNABLE_TO_LOCK_ROW')){fault='PLATFORM_FAULT|UNABLE_TO_LOCK_ROW';}if(payload.containsIgnoreCase('UNKNOWN_EXCEPTION')){fault='PLATFORM_FAULT|UNKNOWN_EXCEPTION';}if(payload.containsIgnoreCase('An unexpected error occurred')&&payload.containsIgnoreCase('ErrorId')){fault='PLATFORM_FAULT|UNEXPECTED_ERROR_ERRORID';}if(payload.contains('SeedError')||payload.contains('C14_FIXTURE_ERROR|')||payload.contains('C14_SUBJECT_ERROR|')){fault='FIXTURE_ERROR|SEED_OR_SHARED_FIXTURE';}if(fault!=null){System.assert(false,'C14_FAULT|C167CL_055|'+fault);}Blob encoded=Blob.valueOf(payload);String hex=EncodingUtil.convertToHex(encoded);String prefix=hex.substring(0,Math.min(hex.length(),480));System.assert(false,'C14|C167CL_055|'+String.valueOf(encoded.size())+'|'+EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',encoded))+'|'+prefix);}}"
+          },
+          "tests": [
+            "C167Observe055"
+          ],
+          "sourceSha256": {
+            "class:C167Observe055": "da3954579af659a1b70208247f2e3e6e42517b122df8bb1f29d8f032c88b4f95"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe055",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 174,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe055",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 174,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "compile-rejected",
+                "diagnostics": {
+                  "done": true,
+                  "success": false,
+                  "fault": null,
+                  "coverage": [],
+                  "status": "Failed",
+                  "checkOnly": true,
+                  "code": null,
+                  "compile": [
+                    {
+                      "name": "C167Observe055",
+                      "type": "ApexClass",
+                      "line": 1,
+                      "column": 174,
+                      "problem": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+                    }
+                  ],
+                  "testFailures": [],
+                  "testPasses": []
+                }
+              },
+              "outcome": "reject",
+              "primary": "Incompatible types since an instance of List<SObject> is never an instance of SObject"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+case	source	bind	native_outcome	native_observation	local_replay
+chained_member	chained_member.apex	:a?.b?.Name	pass	OBS=rows:1	true
+concat_member	concat_member.apex	:holder?.Name + 'x'	pass	OBS=rows:1	true
+dynamic_member	dynamic_member.apex	:holder?.Name	runtime_rejected	unexpected token: '?'	true
+empty_single_row	empty_single_row.apex	[SELECT Id FROM Account WHERE Name = :missing?.Name]?.Id	pass	OBS=value:null	true
+in_member	in_member.apex	IN :a?.ids	pass	OBS=rows:1	true
+left_member	left_member.apex	:holder?.Name = Name	compile_rejected	Unexpected token '<'	false
+limit_member	limit_member.apex	LIMIT :a?.n	pass	OBS=rows:1	true
+list_get	list_get.apex	:names?.get(0)	pass	OBS=rows:1	true
+map_get	map_get.apex	:names?.get('k')	pass	OBS=rows:1	true
+null_member	null_member.apex	:missing?.Name	pass	OBS=rows:0	true
+quoted_question	quoted_question.apex	'NAV-QUESTION?MARK'	pass	OBS=rows:1	true
+simple_member	simple_member.apex	:holder?.Name	pass	OBS=rows:1	true
+single_row_member	single_row_member.apex	[SELECT Id FROM Account WHERE Name = :holder?.Name]?.Id	pass	OBS=value:id	true
+ternary_bind	ternary_bind.apex	:flag ? 'NAV-TERNARY-A' : 'NAV-TERNARY-B'	pass	OBS=rows:1	true
+whitespace_member	whitespace_member.apex	:holder ?. Name	pass	OBS=rows:1	true

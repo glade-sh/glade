@@ -23,6 +23,10 @@ not public issues. If GitHub reporting is unavailable, use
 
 ## Release proof
 
+The v0.3.0 archive inventories and embedded revision must be read from that
+release's binaries, SBOMs, and attestations. The measurements below are
+historical v0.2.15 evidence and do not describe v0.3.0 artifacts.
+
 The v0.2.15 binaries embed commit `82b8495972715a27aec8f864bc4ab39e7fa03974`
 with `vcs.modified=false`.
 

@@ -1,0 +1,417 @@
+{
+  "provenance": "Owned scratch-org local plain reflection lookup observations; source and transport APIs pinned. No namespace/package inference.",
+  "rowCount": 27,
+  "scalarCells": 81,
+  "enforcedRows": 21,
+  "enforcedScalarCells": 63,
+  "carriedRows": 6,
+  "carriedScalarCells": 18,
+  "orgIdSHA256": "01c85c06db810342516601e103f49d52dab48b5d66da3f0f6924637fbee10785",
+  "orgTSVSHA256": "bbf8f12f2094d3f7ee2c98219bb1d1ba56008b66fcff3ea7d1cfa808752eb1c3",
+  "orgRunSHA256": "fccad6b1a83cfe34108c2b08bbbd0a98a0b6eb0b84e948996de7744550868ff1",
+  "orgContext": {
+    "requestedEdition": "Developer",
+    "featuresRequested": [],
+    "settingsChanged": false,
+    "otherFeatureContext": "UNCAPTURED"
+  },
+  "testClass": "OwnedHiddenReflectionProbe",
+  "sources": {
+    "OwnedVisibleReflectionTest": "@IsTest public class OwnedVisibleReflectionTest {\n @IsTest static void control() {}\n}\n",
+    "OwnedReflectionLookup": "public class OwnedReflectionLookup {\n public static Map<String,Object> inspect(String name) {\n  Map<String,Object> result = new Map<String,Object>();\n  try { result.put('single',Type.forName(name)?.getName()); }\n  catch(Exception e) { result.put('single','EXCEPTION:'+e.getTypeName()+':'+e.getMessage()); }\n  try { result.put('empty',Type.forName('',name)?.getName()); }\n  catch(Exception e) { result.put('empty','EXCEPTION:'+e.getTypeName()+':'+e.getMessage()); }\n  try { result.put('null',Type.forName(null,name)?.getName()); }\n  catch(Exception e) { result.put('null','EXCEPTION:'+e.getTypeName()+':'+e.getMessage()); }\n  return result;\n }\n}\n",
+    "OwnedHiddenReflectionProbe": "@IsTest private class OwnedHiddenReflectionProbe {\n private class HiddenWorker {}\n @IsTest static void h01() { observe('H01',OwnedReflectionLookup.inspect('OwnedHiddenReflectionProbe')); }\n @IsTest static void h02() { observe('H02',OwnedReflectionLookup.inspect('OwnedReflectionLookup')); }\n @IsTest static void h03() { observe('H03',OwnedReflectionLookup.inspect('OwnedHiddenReflectionProbe.HiddenWorker')); }\n @IsTest static void h04() { observe('H04',OwnedReflectionLookup.inspect('OwnedVisibleReflectionTest')); }\n @IsTest static void h05() {\n  Map<String,Object> result=new Map<String,Object>();\n  try { result.put('single',Type.forName('OwnedHiddenReflectionProbe')?.getName()); }\n  catch(Exception e) { result.put('single','EXCEPTION:'+e.getTypeName()+':'+e.getMessage()); }\n  try { result.put('empty',Type.forName('','OwnedHiddenReflectionProbe')?.getName()); }\n  catch(Exception e) { result.put('empty','EXCEPTION:'+e.getTypeName()+':'+e.getMessage()); }\n  try { result.put('null',Type.forName(null,'OwnedHiddenReflectionProbe')?.getName()); }\n  catch(Exception e) { result.put('null','EXCEPTION:'+e.getTypeName()+':'+e.getMessage()); }\n  observe('H05',result);\n }\n private static void observe(String row,Map<String,Object> result) {\n  System.assert(false,'REFLECT_VISIBILITY|'+row+'|'+JSON.serialize(result));\n }\n}\n"
+  },
+  "sourceSHA256": {
+    "OwnedVisibleReflectionTest": "0d313aa4b1df0d1144e6cc4c28c1b4f6f72276a4dddcfd59dc1f0de134b711b0",
+    "OwnedReflectionLookup": "e9b03cba8197f029f928567b1221d2412f16d9b531ff844fa8b1d9b9be4b3798",
+    "OwnedHiddenReflectionProbe": "b3264beb8e1007cd19187cede68130fbd7744ec8f16e30364e8698b6f0884f0f"
+  },
+  "anonymousSources": {
+    "H01": "System.assert(false,'REFLECT_VISIBILITY|H01|'+JSON.serialize(OwnedReflectionLookup.inspect('OwnedHiddenReflectionProbe')));\n",
+    "H04": "System.assert(false,'REFLECT_VISIBILITY|H04|'+JSON.serialize(OwnedReflectionLookup.inspect('OwnedVisibleReflectionTest')));\n",
+    "H02": "System.assert(false,'REFLECT_VISIBILITY|H02|'+JSON.serialize(OwnedReflectionLookup.inspect('OwnedReflectionLookup')));\n",
+    "H03": "System.assert(false,'REFLECT_VISIBILITY|H03|'+JSON.serialize(OwnedReflectionLookup.inspect('OwnedHiddenReflectionProbe.HiddenWorker')));\n"
+  },
+  "captures": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "deploymentID": "0AfRt00000hYsA7KAK",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "8c2b9ec73c9b971eeaa4b140bc6a93cd2e39ec7d20b88c5fc944e1f53c701e80"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "deploymentID": "0AfRt00000hYnUjKAK",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "7930b7da4de60c10b90b98bd8470f9cda7a9589d755b420bb1862f9b6b8603d0"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "deploymentID": "0AfRt00000hYu3sKAC",
+      "deploymentStatus": "Succeeded",
+      "checkOnly": false,
+      "deploymentReceiptSHA256": "6862206eb24864f526e60fc12642fd2decdc56542a2edb71b31e76d2d53a7c20"
+    }
+  ],
+  "rows": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "H01",
+      "native": {
+        "null": null,
+        "empty": null,
+        "single": null
+      },
+      "receiptSHA256": "e4c1d0d0ad2b4536029ed865c26f080f8861ee4b59a4da019c190e0b7455a0ed"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "H02",
+      "native": {
+        "null": "OwnedReflectionLookup",
+        "empty": "OwnedReflectionLookup",
+        "single": "OwnedReflectionLookup"
+      },
+      "receiptSHA256": "e4c1d0d0ad2b4536029ed865c26f080f8861ee4b59a4da019c190e0b7455a0ed"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "H03",
+      "native": {
+        "null": null,
+        "empty": null,
+        "single": null
+      },
+      "receiptSHA256": "e4c1d0d0ad2b4536029ed865c26f080f8861ee4b59a4da019c190e0b7455a0ed"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "H04",
+      "native": {
+        "null": "OwnedVisibleReflectionTest",
+        "empty": "OwnedVisibleReflectionTest",
+        "single": "OwnedVisibleReflectionTest"
+      },
+      "receiptSHA256": "e4c1d0d0ad2b4536029ed865c26f080f8861ee4b59a4da019c190e0b7455a0ed"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "id": "H05",
+      "native": {
+        "null": null,
+        "empty": null,
+        "single": null
+      },
+      "receiptSHA256": "e4c1d0d0ad2b4536029ed865c26f080f8861ee4b59a4da019c190e0b7455a0ed"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "H01",
+      "native": {
+        "null": null,
+        "empty": null,
+        "single": null
+      },
+      "receiptSHA256": "35c440cc4d89c558850fc78c86974733cd627ed2f90c7f522cda3336ab4a26fb"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "H02",
+      "native": {
+        "null": "OwnedReflectionLookup",
+        "empty": "OwnedReflectionLookup",
+        "single": "OwnedReflectionLookup"
+      },
+      "receiptSHA256": "0dbe1b4faa2fcbf85f2526bfceca843a2f8c69b8fcef54cbe52f11b12d9863c8"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "H03",
+      "native": {
+        "null": null,
+        "empty": null,
+        "single": null
+      },
+      "receiptSHA256": "05b9d6385e3655ee25b8461b669cd7349714bd2394e9ee111431cb65d0a51a96"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "id": "H04",
+      "native": {
+        "null": "OwnedVisibleReflectionTest",
+        "empty": "OwnedVisibleReflectionTest",
+        "single": "OwnedVisibleReflectionTest"
+      },
+      "receiptSHA256": "13f014e68a7500881aa28ddab6585afc01c055bcac475d5a052ae386c48df36d"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "H01",
+      "native": {
+        "null": null,
+        "empty": null,
+        "single": null
+      },
+      "receiptSHA256": "90386bded73eb0712b64f36234e1c7f1ac7192d9729952b381d9bf16f1c3eee8"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "H02",
+      "native": {
+        "null": "OwnedReflectionLookup",
+        "empty": "OwnedReflectionLookup",
+        "single": "OwnedReflectionLookup"
+      },
+      "receiptSHA256": "90386bded73eb0712b64f36234e1c7f1ac7192d9729952b381d9bf16f1c3eee8"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "H03",
+      "native": {
+        "null": null,
+        "empty": null,
+        "single": null
+      },
+      "receiptSHA256": "90386bded73eb0712b64f36234e1c7f1ac7192d9729952b381d9bf16f1c3eee8"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "H04",
+      "native": {
+        "null": "OwnedVisibleReflectionTest",
+        "empty": "OwnedVisibleReflectionTest",
+        "single": "OwnedVisibleReflectionTest"
+      },
+      "receiptSHA256": "90386bded73eb0712b64f36234e1c7f1ac7192d9729952b381d9bf16f1c3eee8"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "id": "H05",
+      "native": {
+        "null": null,
+        "empty": null,
+        "single": null
+      },
+      "receiptSHA256": "90386bded73eb0712b64f36234e1c7f1ac7192d9729952b381d9bf16f1c3eee8"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "H01",
+      "native": {
+        "null": null,
+        "empty": null,
+        "single": null
+      },
+      "receiptSHA256": "4f99679b894ca65ccb6b1072522a364957a645131e5731e38a007a1c6a919df7"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "H02",
+      "native": {
+        "null": "OwnedReflectionLookup",
+        "empty": "OwnedReflectionLookup",
+        "single": "OwnedReflectionLookup"
+      },
+      "receiptSHA256": "7318b44e31c2bfe79fb428144583105a31609f59fb9de5c50675cad523d2fbd1"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "H03",
+      "native": {
+        "null": null,
+        "empty": null,
+        "single": null
+      },
+      "receiptSHA256": "0a0047ac680af4a1015970f4a479d147a1f842252521eca381a3bdf42ab72411"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "id": "H04",
+      "native": {
+        "null": "OwnedVisibleReflectionTest",
+        "empty": "OwnedVisibleReflectionTest",
+        "single": "OwnedVisibleReflectionTest"
+      },
+      "receiptSHA256": "777650792d65ebfe515a9149f8559926d2b0411bea8de3510a481dd5f23b15a3"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "H01",
+      "native": {
+        "null": null,
+        "empty": null,
+        "single": null
+      },
+      "receiptSHA256": "094637ad0b1b7da3b9878e80d9f55ee6927529bd311a95f046087de3255fdbb5"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "H02",
+      "native": {
+        "null": "OwnedReflectionLookup",
+        "empty": "OwnedReflectionLookup",
+        "single": "OwnedReflectionLookup"
+      },
+      "receiptSHA256": "094637ad0b1b7da3b9878e80d9f55ee6927529bd311a95f046087de3255fdbb5"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "H03",
+      "native": {
+        "null": null,
+        "empty": null,
+        "single": null
+      },
+      "receiptSHA256": "094637ad0b1b7da3b9878e80d9f55ee6927529bd311a95f046087de3255fdbb5"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "H04",
+      "native": {
+        "null": "OwnedVisibleReflectionTest",
+        "empty": "OwnedVisibleReflectionTest",
+        "single": "OwnedVisibleReflectionTest"
+      },
+      "receiptSHA256": "094637ad0b1b7da3b9878e80d9f55ee6927529bd311a95f046087de3255fdbb5"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "istest",
+      "id": "H05",
+      "native": {
+        "null": null,
+        "empty": null,
+        "single": null
+      },
+      "receiptSHA256": "094637ad0b1b7da3b9878e80d9f55ee6927529bd311a95f046087de3255fdbb5"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "H01",
+      "native": {
+        "null": null,
+        "empty": null,
+        "single": null
+      },
+      "receiptSHA256": "950a764bff309d5f6cb6b283d162e9ca6331bacfc7d3376c79976843089b400b"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "H02",
+      "native": {
+        "null": "OwnedReflectionLookup",
+        "empty": "OwnedReflectionLookup",
+        "single": "OwnedReflectionLookup"
+      },
+      "receiptSHA256": "c3a155b2b747f1f51374cc03fa9fe5c5498af7c6969fe868d353d0e86f41a1c9"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "H03",
+      "native": {
+        "null": null,
+        "empty": null,
+        "single": null
+      },
+      "receiptSHA256": "ab754f567502c69ff2aca4eafa81dde4fed209cea3a7559bf5c12ce550384906"
+    },
+    {
+      "api": "68.0",
+      "transportAPI": "68.0",
+      "route": "anonymous",
+      "id": "H04",
+      "native": {
+        "null": "OwnedVisibleReflectionTest",
+        "empty": "OwnedVisibleReflectionTest",
+        "single": "OwnedVisibleReflectionTest"
+      },
+      "receiptSHA256": "fd2340c83079dfc7b42578301781a9400cd5d2dba3658d3daf98ca740c423b47"
+    }
+  ],
+  "carry": {
+    "id": "H03",
+    "ownerCommit": "capture-revision-101178971230423374541195777434233254409522279888771267780935517270067878892000",
+    "reason": "Private nested visibility is already implemented by its separate owner commit. It is not an ancestor of this branch; this top-level-test repair does not duplicate it. Native values remain null for all three overloads in both routes."
+  },
+  "uncaptured": [
+    "Nonempty namespaces and package-qualified private test lookups are not generalized.",
+    "Anonymous self-caller H05 is not a captured context."
+  ],
+  "diagnostics": [
+    {
+      "id": "initial-deploy62",
+      "admittedObservations": 0,
+      "reason": "Reserved synthetic nested identifier rejected at deployment; no behavior cells exported.",
+      "receiptSHA256": "b5cd767d22037f5f86558cafdcff0aaf2b277f9b761d9e9ebaf7b318d7907cf9",
+      "sourceSHA256": "663ef0b8505e59a05fa9a65f14eaca25768b0b94d7eee773f5d7bb24375c15c6"
+    }
+  ],
+  "anonymousSourceSHA256": {
+    "H01": "d043a53592559f6c8641d1c3005a748076abb11b68fc1fc7d39266c860c9ad63",
+    "H04": "f4e1fc73893113a99af816cbb6d8cf6200e723b3950d19eaf6a7eeebcd542c4d",
+    "H02": "6001f83f969765641d6a8e434f24ba0a353592c8cbf5074c1a7989dec469e2e0",
+    "H03": "98f24e09abf8f15e90fd4103a9756f15c26461ad1bd57bd82cf97f7f37f21d71"
+  }
+}

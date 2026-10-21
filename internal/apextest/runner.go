@@ -38,6 +38,7 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
+	"golang.org/x/text/unicode/norm"
 )
 
 type Options struct {
@@ -54,6 +55,7 @@ type Options struct {
 	TraceAll              bool
 	SlowTestThresholdMS   int64
 	TimeoutMS             int64
+	TimeoutSource         string // CLI flag, environment, or default; empty preserves direct-runner messages.
 	Parallelism           int
 	ParallelMethods       bool
 	NoDiskCache           bool
@@ -66,6 +68,7 @@ type Options struct {
 	PerfCounters               bool
 	PreRunPhaseDurations       PreRunPhaseDurations
 	BuildArtifacts             *typesys.BuildArtifacts
+	ProjectSnapshot            *project.Project
 	SourceDigests              *typesys.SourceDigestSet
 	Progress                   func(TestProgress)
 }
@@ -114,10 +117,18 @@ type PreRunPhaseDurations struct {
 
 type permissionSetMetadata struct {
 	Label                  string                           `xml:"label"`
+	UserLicense            string                           `xml:"userLicense"`
+	ClassAccesses          []permissionSetClassAccess       `xml:"classAccesses"`
 	CustomPermission       []permissionSetCustomPermission  `xml:"customPermissions"`
 	FieldPermissions       []permissionSetFieldPermission   `xml:"fieldPermissions"`
 	ObjectPermission       []permissionSetObjectPermission  `xml:"objectPermissions"`
 	RecordTypeVisibilities []profileRecordTypeVisibilityXML `xml:"recordTypeVisibilities"`
+	UserPermissions        []permissionSetCustomPermission  `xml:"userPermissions"`
+}
+
+type permissionSetClassAccess struct {
+	ApexClass string `xml:"apexClass"`
+	Enabled   bool   `xml:"enabled"`
 }
 
 type permissionSetCustomPermission struct {
@@ -302,7 +313,17 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 		runState.counters.phases.indexBuildNS.Store(opts.PreRunPhaseDurations.IndexBuild.Nanoseconds())
 		runState.counters.phases.discoverNS.Store(opts.PreRunPhaseDurations.Discover.Nanoseconds())
 	}
+	return runCasesGated(ctx, index, opts, cases, hooks, &runState, nil)
+}
+
+// runCasesGated runs one generation of the project. gate is nil for the
+// complete project and set when the dependency-scoped compile gate reruns a
+// project subset without its invalid classes and their dependents.
+func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases []TestCase, hooks semanticGateHooks, runState *runExecution, gate *compileGate) (report testreport.Run) {
 	started := time.Now()
+	if gate != nil && opts.Progress != nil {
+		opts.Progress = compileGateNestedProgress(opts.Progress)
+	}
 	if snapshotErr := validateBuildArtifacts(index, opts.BuildArtifacts); snapshotErr != nil {
 		return compileErrorRun(cases, snapshotErr, started, opts)
 	}
@@ -322,6 +343,9 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 	}
 	defer func() { report.RuntimeRESTAPIVersion = runtimeRESTAPIVersion }()
 	sources := newSourceCache()
+	if opts.ProjectSnapshot != nil {
+		sources.seedProjectSnapshot(opts.ProjectSnapshot)
+	}
 	if err := sources.seedBuildArtifacts(index, opts.BuildArtifacts); err != nil {
 		return compileErrorRun(cases, err, started, opts)
 	}
@@ -337,8 +361,13 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_start"})
 	}
-	if compileErr := semanticCompileErrorWithHooks(ctx, index, opts.BuildArtifacts, sources, generation, hooks, !opts.NoDiskCache && diskCacheEnabled(), runState.counters); compileErr != nil {
-		return compileErrorRun(cases, compileErr, started, opts)
+	diagnostics, gateErr := semanticGateDiagnostics(ctx, index, opts.BuildArtifacts, sources, generation, hooks, !opts.NoDiskCache && diskCacheEnabled(), gate.cacheSlot(), runState.counters)
+	if gateErr != nil {
+		return compileErrorRun(cases, gateErr, started, opts)
+	}
+	diagnostics = gate.withoutScopedDependencyErrors(diagnostics)
+	if compileErr := indexCompileError(diagnostics); compileErr != nil {
+		return runWithCompileGate(ctx, index, opts, cases, hooks, runState, gate, sources, diagnostics, compileErr, started)
 	}
 	var runtimeKey runtimeCacheKey
 	var runtime runtimeExecutionView
@@ -382,12 +411,22 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 	// @TestSetup, or methods execute. Never mutate the cached org or source key.
 	org.APIVersion = runtimeRESTAPIVersion
 	initializeTestOrg(&org)
+	if index.Project.Root != "" {
+		p, err := sources.capturedProjectSnapshot(index.Project.Root)
+		if err != nil {
+			return compileErrorRun(cases, err, started, opts)
+		}
+		if err := applyConfiguredTestPermissions(&org, p); err != nil {
+			return compileErrorRun(cases, err, started, opts)
+		}
+	}
 	if runState.counters.enabled {
 		runState.counters.phases.orgBuildNS.Add(time.Since(orgSetupStarted).Nanoseconds())
 	}
 	recordCloneReason("", "run-base", "vm-runtime", runState.counters)
 	machineCloneStarted := time.Now()
 	baseMachine := runtime.restored.CloneMachine(nil)
+	baseMachine.SetExpressionTypeResolver(sema.RuntimeExpressionTypeResolver(index))
 	recordCloneRuntimeMachineDuration(time.Since(machineCloneStarted), runState.counters)
 	baseMachine.SetTestDocumentBaseline(&org)
 	baseMachine.SetPerfRecorder(runState.vmPerf)
@@ -465,7 +504,7 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 			})
 		}
 	}
-	if noSetupFastPath(setups, setupErrors, setupInvokeErrors) && allClassesHaveSingleMethod(suiteIndexes) {
+	if noSetupFastPath(setups, setupErrors, setupInvokeErrors) && allClassesHaveSingleMethod(suiteIndexes) && !hasSourceUnitMetadataCollisions(org) {
 		for i := range planned {
 			if results[i].Status != "" {
 				continue
@@ -625,6 +664,18 @@ func invokeSnapshotValidationHook(stage string) {
 // otherwise repeated on every call with unchanged sources.
 
 func semanticCompileErrorWithHooks(ctx context.Context, index typesys.Index, artifacts *typesys.BuildArtifacts, sources *sourceCache, generation runtimeGeneration, hooks semanticGateHooks, cacheAllowed bool, counters ...*runPerfCounters) error {
+	diagnostics, err := semanticGateDiagnostics(ctx, index, artifacts, sources, generation, hooks, cacheAllowed, "", counters...)
+	if err != nil {
+		return err
+	}
+	return indexCompileError(diagnostics)
+}
+
+// semanticGateDiagnostics returns the semantic gate's diagnostics. A non-nil
+// error is a snapshot or cache failure, not an Apex compile error. cacheSlot
+// names a separate on-disk semantic result for a compile-gate project subset,
+// so a scoped rerun does not replace the complete project's cached result.
+func semanticGateDiagnostics(ctx context.Context, index typesys.Index, artifacts *typesys.BuildArtifacts, sources *sourceCache, generation runtimeGeneration, hooks semanticGateHooks, cacheAllowed bool, cacheSlot string, counters ...*runPerfCounters) ([]diagnostic.Diagnostic, error) {
 	validateGeneration := func() error {
 		if artifacts != nil {
 			return validateCapturedBuildGeneration(index, artifacts)
@@ -635,7 +686,7 @@ func semanticCompileErrorWithHooks(ctx context.Context, index typesys.Index, art
 		key := generation.key
 		rememberRuntimeCacheRoot(index, key)
 		evictSnapshotCaches(key)
-		return err
+		return nil, err
 	}
 	if artifacts != nil {
 		invokeSnapshotValidationHook("semantic_after_initial_validation")
@@ -690,7 +741,7 @@ func semanticCompileErrorWithHooks(ctx context.Context, index typesys.Index, art
 			diagnostics = result.Diagnostics
 			if err := validateGeneration(); err != nil {
 				evictSnapshotCaches(key)
-				return err
+				return nil, err
 			}
 			if cacheAllowed {
 				semaDiagnosticsCacheMu.Lock()
@@ -701,9 +752,12 @@ func semanticCompileErrorWithHooks(ctx context.Context, index typesys.Index, art
 	} else {
 		identity, identityErr := semanticcache.IdentityForBuild(analysisIndex, artifacts, analyzeOptions)
 		if identityErr != nil {
-			return identityErr
+			return nil, identityErr
 		}
 		cachePath := semanticResultCachePath(identity)
+		if cacheSlot != "" {
+			cachePath = strings.TrimSuffix(cachePath, ".json") + "-" + cacheSlot + ".json"
+		}
 		result, access, cacheErr := semanticResults.GetOrCompute(ctx, semanticcache.Request{
 			Identity:     identity,
 			ProjectRoot:  index.Project.Root,
@@ -732,7 +786,7 @@ func semanticCompileErrorWithHooks(ctx context.Context, index typesys.Index, art
 			}
 			semanticResults.Evict(identity)
 			evictSnapshotCaches(key)
-			return cacheErr
+			return nil, cacheErr
 		}
 		if perfCounters.enabled {
 			perfCounters.recordSemanticCache(identity, access)
@@ -755,12 +809,12 @@ func semanticCompileErrorWithHooks(ctx context.Context, index typesys.Index, art
 	}
 	if err := validateGeneration(); err != nil {
 		evictSnapshotCaches(key)
-		return err
+		return nil, err
 	}
 	if perfCounters.enabled {
 		perfCounters.phases.semanticGateNS.Add(time.Since(gateStarted).Nanoseconds())
 	}
-	return indexCompileError(diagnostics)
+	return diagnostics, nil
 }
 
 func semanticResultCachePath(identity semanticcache.Identity) string {
@@ -1042,10 +1096,11 @@ type runtimeExecutionView struct {
 }
 
 type CompiledProjectRuntime struct {
-	Methods   map[string]vm.Method `json:"methods,omitempty"`
-	Classes   []vm.Class           `json:"classes,omitempty"`
-	Triggers  []vm.Trigger         `json:"triggers,omitempty"`
-	PageNames []string             `json:"pageNames,omitempty"`
+	Methods         map[string]vm.Method `json:"methods,omitempty"`
+	Classes         []vm.Class           `json:"classes,omitempty"`
+	Triggers        []vm.Trigger         `json:"triggers,omitempty"`
+	PageNames       []string             `json:"pageNames,omitempty"`
+	expressionTypes vm.ExpressionTypeResolver
 }
 
 type setupCompileCacheEntry struct {
@@ -1597,6 +1652,9 @@ func prepareRuntimeGeneration(index typesys.Index, digests *typesys.SourceDigest
 	if err != nil {
 		return runtimeGeneration{}, err
 	}
+	if err := sources.captureProjectRuntimeMetadata(index, &metadata); err != nil {
+		return runtimeGeneration{}, err
+	}
 	sources.generationValidator = func() error { return validateRuntimeGeneration(sources) }
 	if err := sources.validateCapturedSourceGeneration(); err != nil {
 		return runtimeGeneration{}, err
@@ -1705,7 +1763,10 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	methods := compileProjectMethods(index, sources)
 	classes := compileProjectClasses(index, methods, sources)
 	triggers, triggerErrors := compileProjectTriggers(index, sources)
-	org := orgFromIndex(index, sources)
+	org, orgErr := orgFromIndexWithError(index, sources)
+	if orgErr != nil {
+		return key, zero, orgErr
+	}
 	pageNames := visualforcePageNames(index)
 	baseMachine := vm.New(nil)
 	baseMachine.SetTraceEnabled(false)
@@ -1857,7 +1918,10 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 	counters.phases.projectCompileNS.Add(time.Since(compileStarted).Nanoseconds())
 
 	orgStarted := time.Now()
-	org := orgFromIndex(index, sources)
+	org, orgErr := orgFromIndexWithError(index, sources)
+	if orgErr != nil {
+		return key, zero, orgErr
+	}
 	counters.phases.orgBuildNS.Add(time.Since(orgStarted).Nanoseconds())
 
 	compileStarted = time.Now()
@@ -2138,7 +2202,7 @@ func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm
 			if emitProgress {
 				started = time.Now()
 			}
-			setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
+			setupCtx, setupCancel := testContext(ctx, opts)
 			var setupLimits vm.Limits
 			setupOrg, setupRandom, setupErr, shared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts, counters, &setupLimits)
 			if setupCancel != nil {
@@ -2173,7 +2237,7 @@ func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm
 				if emitProgress {
 					started = time.Now()
 				}
-				setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
+				setupCtx, setupCancel := testContext(ctx, opts)
 				var setupLimits vm.Limits
 				setupOrg, setupRandom, setupErr, shared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts, counters, &setupLimits)
 				if setupCancel != nil {
@@ -2219,7 +2283,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 			if emitProgress {
 				reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 			}
-			caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
+			caseCtx, caseCancel := testContext(ctx, opts)
 			cloneOrg := len(planned) > 1 || plan.SetupShared
 			if methodWindowStarted.IsZero() {
 				methodWindowStarted = startMethodWindow(counters)
@@ -2262,7 +2326,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 					if emitProgress {
 						reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 					}
-					caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
+					caseCtx, caseCancel := testContext(ctx, opts)
 					cloneOrg := len(planned) > 1 || plan.SetupShared
 					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethod, plan.TestRuntimeMethods, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, nil, counters, plan.SetupLimits)
 					if caseCancel != nil {
@@ -2374,8 +2438,8 @@ func runJournaledNoSetupPlan(ctx context.Context, i int, planned []testCasePlan,
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 	}
-	caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
-	mark := journal.Mark()
+	caseCtx, caseCancel := testContext(ctx, opts)
+	mark := markTestJournal(journal)
 	results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethod, plan.TestRuntimeMethods, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, *journal.Org(), setupRandom, opts, false, journal, counters)
 	if rollbackErr := rollbackJournal(journal, mark, counters); rollbackErr != nil && results[i].Problem == nil {
 		results[i].Status = testreport.StatusFail
@@ -2390,13 +2454,37 @@ func runJournaledNoSetupPlan(ctx context.Context, i int, planned []testCasePlan,
 	}
 }
 
-func rollbackJournal(journal *storage.IsolationJournal, mark storage.IsolationMark, counters *runPerfCounters) error {
-	if counters == nil || !counters.enabled {
-		return journal.Rollback(mark)
+type testJournalMark struct {
+	records                 storage.IsolationMark
+	systemTimestampBase     string
+	systemTimestampSequence int64
+}
+
+func markTestJournal(journal *storage.IsolationJournal) testJournalMark {
+	org := journal.Org()
+	return testJournalMark{
+		records:                 journal.Mark(),
+		systemTimestampBase:     org.SystemTimestampBase,
+		systemTimestampSequence: org.SystemTimestampSequence,
 	}
-	started := time.Now()
-	err := journal.Rollback(mark)
-	counters.phases.rollbackNS.Add(time.Since(started).Nanoseconds())
+}
+
+func rollbackJournal(journal *storage.IsolationJournal, mark testJournalMark, counters *runPerfCounters) error {
+	var started time.Time
+	if counters != nil && counters.enabled {
+		started = time.Now()
+	}
+	err := journal.Rollback(mark.records)
+	if err == nil {
+		// Test isolation must restore the timestamp allocator just as an org clone
+		// does; otherwise earlier tests can give later records future timestamps.
+		org := journal.Org()
+		org.SystemTimestampBase = mark.systemTimestampBase
+		org.SystemTimestampSequence = mark.systemTimestampSequence
+	}
+	if !started.IsZero() {
+		counters.phases.rollbackNS.Add(time.Since(started).Nanoseconds())
+	}
 	return err
 }
 
@@ -2472,9 +2560,13 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 				if emitProgress {
 					started = time.Now()
 				}
-				setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
+				setupCtx, setupCancel := testContext(ctx, opts)
 				var setupLimits vm.Limits
-				setupOrg, setupRandom, setupErr, setupShared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts, counters, &setupLimits)
+				classOrg := org
+				if indexes := classIndexes[className]; len(indexes) > 0 {
+					classOrg = customMetadataForSourceUnit(org, planned[indexes[0]].TestMethod.SourceUnit)
+				}
+				setupOrg, setupRandom, setupErr, setupShared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, classOrg, opts, counters, &setupLimits)
 				if setupCancel != nil {
 					setupCancel()
 				}
@@ -2514,12 +2606,12 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 						reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 					}
 					methodWindow.dispatch()
-					caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
+					caseCtx, caseCancel := testContext(ctx, opts)
 					cloneOrg := len(methodIndexes) > 1 || plan.SetupShared
-					var mark storage.IsolationMark
+					var mark testJournalMark
 					caseJournal := journal
 					if caseJournal != nil {
-						mark = caseJournal.Mark()
+						mark = markTestJournal(caseJournal)
 						cloneOrg = false
 					}
 					if cloneOrg {
@@ -2752,12 +2844,12 @@ func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCas
 				if emitProgress {
 					reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 				}
-				caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
+				caseCtx, caseCancel := testContext(ctx, opts)
 				cloneOrg := true
 				caseJournal := journal
-				var mark storage.IsolationMark
+				var mark testJournalMark
 				if caseJournal != nil {
-					mark = caseJournal.Mark()
+					mark = markTestJournal(caseJournal)
 					cloneOrg = false
 				}
 				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethod, plan.TestRuntimeMethods, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, caseJournal, counters, plan.SetupLimits)
@@ -2808,7 +2900,7 @@ func runSingleClassTestPlans(ctx context.Context, planned []testCasePlan, result
 				if emitProgress {
 					reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 				}
-				caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
+				caseCtx, caseCancel := testContext(ctx, opts)
 				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethod, plan.TestRuntimeMethods, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, len(planned) > 1, nil, counters, plan.SetupLimits)
 				if caseCancel != nil {
 					caseCancel()
@@ -2845,13 +2937,6 @@ func progressStatus(err error) string {
 	return "pass"
 }
 
-func testContext(parent context.Context, timeoutMS int64) (context.Context, context.CancelFunc) {
-	if timeoutMS <= 0 {
-		return parent, nil
-	}
-	return context.WithTimeout(parent, time.Duration(timeoutMS)*time.Millisecond)
-}
-
 func initializeTestOrg(org *storage.OrgState) {
 	machine := vm.New(nil)
 	machine.SetTraceEnabled(false)
@@ -2866,7 +2951,7 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 		*limits[0] = vm.Limits{}
 	}
 	if err := ctx.Err(); err != nil {
-		return org, 0, err, true
+		return org, 0, testContextError(ctx, err), true
 	}
 	if baseRuntimeErr != nil {
 		return org, 0, baseRuntimeErr, true
@@ -2897,15 +2982,16 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 	machine.EnableTestContext()
 	machine.SetCurrentPageURLNull()
 	for i, setup := range setups {
+		machine.EnablePlatformCacheTestSetupSnapshot()
 		if err := ctx.Err(); err != nil {
-			return setupOrg, machine.DeterministicRandomState(), err, false
+			return setupOrg, machine.DeterministicRandomState(), testContextError(ctx, err), false
 		}
 		if i >= len(setupPrograms) {
 			return setupOrg, machine.DeterministicRandomState(), fmt.Errorf("missing compiled @TestSetup invocation for %s", setup.Name), false
 		}
-		result, err := machine.ExecuteInClass(setupPrograms[i], setup.ClassName)
+		result, err := machine.ExecuteTestInClass(setupPrograms[i], setup.ClassName)
 		if err != nil {
-			return setupOrg, machine.DeterministicRandomState(), err, false
+			return setupOrg, machine.DeterministicRandomState(), testContextError(ctx, err), false
 		}
 		if len(limits) > 0 && limits[0] != nil {
 			*limits[0] = result.Limits
@@ -2916,7 +3002,7 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 
 func runCase(ctx context.Context, testCase TestCase, testMethod vm.Method, testRuntimeMethods []vm.Method, testMethodErr error, invokeProgram ir.Program, invokeErr error, baseMachine *vm.VM, baseRuntimeErr error, setupErr error, triggerErrors []error, org storage.OrgState, setupRandom uint64, opts Options, cloneOrg bool, journal *storage.IsolationJournal, counters *runPerfCounters, setupLimits ...vm.Limits) testreport.Case {
 	if err := ctx.Err(); err != nil {
-		return canceledCase(testCase, err)
+		return canceledCase(testCase, testContextError(ctx, err))
 	}
 	out := testreport.Case{
 		ClassName:  testCase.ClassName,
@@ -2970,7 +3056,8 @@ func runCase(ctx context.Context, testCase TestCase, testMethod vm.Method, testR
 	if len(setupLimits) > 0 {
 		machine.RestoreTestSetupLimits(setupLimits[0])
 	}
-	result, err := machine.ExecuteInClass(invokeProgram, testCase.ClassName)
+	result, err := machine.ExecuteTestInClass(invokeProgram, testCase.ClassName)
+	err = testContextError(ctx, err)
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			out.Status = testreport.StatusUnsupported
@@ -3187,6 +3274,7 @@ func RegisterProjectRuntimeWithSourceDigests(machine *vm.VM, index typesys.Index
 		return triggerErrors[0]
 	}
 	registerVisualforcePages(machine, runtime.PageNames)
+	machine.SetExpressionTypeResolver(sema.RuntimeExpressionTypeResolver(index))
 	return registerBaseRuntime(machine, methods, classes, triggers)
 }
 
@@ -3236,7 +3324,7 @@ func RegisterUncachedProjectRuntimeForRequest(machine *vm.VM, index typesys.Inde
 	if err := sources.validateCapturedSourceGeneration(); err != nil {
 		return err
 	}
-	err := RegisterCompiledProjectRuntimeForRequest(machine, compiledProjectRuntimeFromEntry(runtime))
+	err := RegisterCompiledProjectRuntimeForRequest(machine, compiledProjectRuntimeFromEntry(runtime, index))
 	if sourceErr := sources.validateCapturedSourceGeneration(); sourceErr != nil {
 		return sourceErr
 	}
@@ -3252,7 +3340,7 @@ func RegisterProjectRuntimeForRequestWithSourceDigests(machine *vm.VM, index typ
 	if err != nil {
 		return err
 	}
-	return RegisterCompiledProjectRuntimeForRequest(machine, compiledProjectRuntimeFromEntry(runtime))
+	return RegisterCompiledProjectRuntimeForRequest(machine, compiledProjectRuntimeFromEntry(runtime, index))
 }
 
 func CompileProjectRuntimeForRequest(index typesys.Index) CompiledProjectRuntime {
@@ -3268,11 +3356,12 @@ func CompileProjectRuntimeForRequestWithSourceDigests(index typesys.Index, diges
 	if err != nil {
 		return CompiledProjectRuntime{}, err
 	}
-	return compiledProjectRuntimeFromEntry(runtime), nil
+	return compiledProjectRuntimeFromEntry(runtime, index), nil
 }
 
 func RegisterCompiledProjectRuntimeForRequest(machine *vm.VM, runtime CompiledProjectRuntime) error {
 	registerVisualforcePages(machine, runtime.PageNames)
+	machine.AddExpressionTypeResolver(runtime.expressionTypes)
 	return registerBaseRuntime(machine, runtime.Methods, runtime.Classes, runtime.Triggers)
 }
 
@@ -3305,13 +3394,17 @@ func RegisterTestMethodForRequest(machine *vm.VM, index typesys.Index, className
 	return registerTestRuntime(machine, []vm.Method{method})
 }
 
-func compiledProjectRuntimeFromEntry(runtime runtimeCacheEntry) CompiledProjectRuntime {
-	return CompiledProjectRuntime{
+func compiledProjectRuntimeFromEntry(runtime runtimeCacheEntry, indexes ...typesys.Index) CompiledProjectRuntime {
+	compiled := CompiledProjectRuntime{
 		Methods:   runtime.Methods,
 		Classes:   runtime.Classes,
 		Triggers:  runtime.Triggers,
 		PageNames: runtime.PageNames,
 	}
+	if len(indexes) != 0 {
+		compiled.expressionTypes = sema.RuntimeExpressionTypeResolver(indexes[0])
+	}
+	return compiled
 }
 
 func OrgFromIndex(index typesys.Index) storage.OrgState {
@@ -3372,18 +3465,22 @@ func registerVisualforcePages(machine *vm.VM, names []string) {
 }
 
 type sourceCache struct {
-	mu                   sync.RWMutex
-	expectedDigests      *typesys.SourceDigestSet
-	expectedDigestLookup func(string) ([sha256.Size]byte, bool)
-	snapshotErr          error
-	files                map[string]string
-	rawFiles             map[string]string
-	apiVersions          map[string]string
-	fileRemaps           map[string][]namespaceremap.Rule
-	capturedFiles        map[string][sha256.Size]byte
-	capturedMetadata     map[string]typesys.ApexMetadataInput
-	metadataAuthority    runtimeMetadataAuthority
-	generationValidator  func() error
+	mu                      sync.RWMutex
+	expectedDigests         *typesys.SourceDigestSet
+	expectedDigestLookup    func(string) ([sha256.Size]byte, bool)
+	snapshotErr             error
+	files                   map[string]string
+	rawFiles                map[string]string
+	apiVersions             map[string]string
+	fileRemaps              map[string][]namespaceremap.Rule
+	capturedFiles           map[string][sha256.Size]byte
+	capturedMetadata        map[string]typesys.ApexMetadataInput
+	metadataAuthority       runtimeMetadataAuthority
+	projectMetadataBodies   map[string]string
+	runtimeSourceUnits      map[string]string
+	projectMetadataPrepared bool
+	capturedProject         *project.Project
+	generationValidator     func() error
 }
 
 // SourceSnapshotMismatchError reports that an authoritative source snapshot no
@@ -4058,6 +4155,7 @@ func isPassiveStandardRuntimeType(name string) bool {
 
 func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.Class {
 	class := vm.Class{
+		PlatformType: typ.File == "<standard-platform>",
 		Name:         name,
 		Namespace:    typ.Namespace,
 		APIVersion:   typ.EffectiveAPIVersion,
@@ -4450,6 +4548,7 @@ func compileTestMethodsForIndex(index *typesys.Index, cases []TestCase, caches .
 		if testCase.APIVersion != "" {
 			method.APIVersion = testCase.APIVersion
 		}
+		method.SourceUnit = sources.runtimeSourceUnit(testCase.File)
 		method.SourceContextBound = testCase.SourceContextBound
 		method.Namespace = testCase.Namespace
 		method.SharingMode = testCase.SharingMode
@@ -4518,13 +4617,13 @@ var standardApexTestOrgCache struct {
 func standardApexTestOrg() storage.OrgState {
 	standardApexTestOrgCache.once.Do(func() {
 		org := storage.NewOrgState()
-		org.OrgID = "00D000000000001"
+		org.OrgID = storage.DefaultOrgID
 		for _, objectName := range storage.KnownStandardObjectNames() {
 			storage.EnsureStandardObject(&org, objectName)
 		}
 		standardApexTestOrgCache.org = org
 	})
-	return standardApexTestOrgCache.org.Clone()
+	return standardApexTestOrgCache.org.CloneRuntimeFrozenDefinition()
 }
 
 var shapedStandardApexTestOrgCache struct {
@@ -4535,8 +4634,9 @@ var shapedStandardApexTestOrgCache struct {
 
 // Keep one immutable seed for the exact ordered feature inputs. Projects with
 // schema overlays or a namespace cannot share this prefix of org construction.
-// Every caller receives a deep clone, and changing shapes replaces the sole
-// cached seed rather than retaining one full standard org per project shape.
+// Callers receive private rows and copy-on-write definitions. Changing shapes
+// replaces the sole cached seed rather than retaining one full standard org
+// per project shape.
 func shapedStandardApexTestOrg(features []string, domainURL string) storage.OrgState {
 	key, _ := json.Marshal(struct {
 		Features  []string
@@ -4553,10 +4653,17 @@ func shapedStandardApexTestOrg(features []string, domainURL string) storage.OrgS
 	}
 	seed := shapedStandardApexTestOrgCache.org
 	shapedStandardApexTestOrgCache.mu.Unlock()
-	return seed.Clone()
+	return seed.CloneRuntimeFrozenDefinition()
 }
 
 func orgFromIndex(index typesys.Index, caches ...*sourceCache) storage.OrgState {
+	org, _ := orgFromIndexWithError(index, caches...)
+	// This host-facing API exposes mutable schema maps. Internal runtime
+	// construction retains frozen definitions and detaches only its overlays.
+	return org.Clone()
+}
+
+func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage.OrgState, error) {
 	sources := sourceCacheFor(caches)
 	sources.configureNamespaceRemaps(index.Types, index.Triggers)
 	caches = []*sourceCache{sources}
@@ -4580,7 +4687,7 @@ func orgFromIndex(index typesys.Index, caches ...*sourceCache) storage.OrgState 
 	}
 	org.APIVersion = storage.DefaultRESTAPIVersion
 	org.Namespace = index.Project.Namespace
-	org.OrgID = "00D000000000001"
+	org.OrgID = storage.DefaultOrgID
 	if org.DomainURL == "" {
 		org.DomainURL = domainURL
 	}
@@ -4600,17 +4707,35 @@ func orgFromIndex(index typesys.Index, caches ...*sourceCache) storage.OrgState 
 	applyProjectReferencedStandardFields(&org, index, caches...)
 	foldPersonAccountObjectIntoAccount(&org)
 	applyApexClassRecords(&org, index, caches...)
-	applyCustomMetadataRecordsBestEffort(&org, index.CustomMetadataRecords)
+	applyApexTriggerRecords(&org, index, caches...)
+	metadataRecords := append([]schema.CustomMetadataRecord(nil), index.CustomMetadataRecords...)
+	for i := range metadataRecords {
+		unit := sources.runtimeSourceUnit(metadataRecords[i].File)
+		if strings.HasPrefix(unit, "sfdx:") {
+			metadataRecords[i].SourceUnit = unit
+		}
+	}
+	applyCustomMetadataRecordsBestEffort(&org, metadataRecords)
 	var loadedProject *project.Project
 	if index.Project.Root != "" {
-		if p, err := project.Load(index.Project.Root); err == nil {
+		if p, err := sources.capturedProjectSnapshot(index.Project.Root); err == nil {
 			loadedProject = &p
+			if err := vm.LoadListViewMetadata(&org, p.ListViewFiles, sources.readCapturedProjectMetadata); err != nil {
+				return org, err
+			}
+			declarations, err := automation.LoadFlowDeclarations(p.FlowFiles, sources.readCapturedProjectMetadata)
+			if err != nil {
+				return org, err
+			}
 			applyCustomApplicationRecords(&org, p.ApplicationFiles)
 			applyCustomNotificationTypeRecords(&org, p.Root)
-			_ = resource.ApplyProject(&org, p)
+			_ = resource.ApplyProject(&org, p, sources.readCapturedProjectMetadata)
 			if automationIndex, err := automation.LoadProject(p); err == nil {
 				automation.ApplyToOrg(&org, automationIndex)
 			}
+			// Bind discovery to the captured metadata generation, including when
+			// unrelated executable automation cannot be loaded.
+			org.Metadata.FlowDeclarations = declarations
 			applyProjectReferencedRecordTypes(&org, p, caches...)
 			applyManagedDependencyReferencedRecordTypes(&org, p, caches...)
 			applyProjectDataRelationshipReferences(&org, p)
@@ -4621,6 +4746,10 @@ func orgFromIndex(index typesys.Index, caches ...*sourceCache) storage.OrgState 
 		storage.ApplyOrgShape(&org, features)
 	}
 	if loadedProject != nil {
+		_ = resource.ApplyProjectRoles(&org, *loadedProject)
+		_ = resource.ApplyProjectGroups(&org, *loadedProject)
+		_ = resource.ApplyProjectQueues(&org, *loadedProject)
+		_ = resource.ApplyProjectOwnerSharingRules(&org, *loadedProject)
 		if applyProjectProfileRecordTypes(&org, *loadedProject) {
 			storage.EnsureDeterministicPlatformData(&org)
 		}
@@ -4630,10 +4759,14 @@ func orgFromIndex(index typesys.Index, caches ...*sourceCache) storage.OrgState 
 		applyProjectPermissionSetRecords(&org, *loadedProject, permissionSetMetadataCache)
 		storage.EnsureDeterministicPlatformData(&org)
 		applyProjectPermissionSetGroupRecords(&org, *loadedProject)
+		if err := applyProjectPermissionSetGroupComponents(&org, *loadedProject, sources.readCapturedProjectMetadata); err != nil {
+			return org, err
+		}
 	}
 	applyReferencedSyntheticFieldSets(&org, index, caches...)
 	normalizeOrgKeyPrefixes(&org)
-	return org
+	applyApexTypeImplementorRecords(&org, index)
+	return org, nil
 }
 
 func applyCustomMetadataRecordsBestEffort(org *storage.OrgState, records []schema.CustomMetadataRecord) {
@@ -4674,6 +4807,7 @@ func foldPersonAccountObjectIntoAccount(org *storage.OrgState) {
 		storage.DeleteObject(org, "PersonAccount")
 		return
 	}
+	account.Definition = account.Definition.Clone()
 	storage.EnsureStandardObjectFieldsForFeatures(&account.Definition, []string{"PersonAccounts"})
 	for _, recordType := range personAccount.Definition.RecordTypes {
 		if profileRecordTypeExists(account.Definition.RecordTypes, recordType.DeveloperName) {
@@ -4719,8 +4853,7 @@ type projectChildRelationshipSourceReference struct {
 var projectReferencedStandardFieldCache sync.Map
 
 type projectReferencedStandardFieldSet struct {
-	Fields   map[string]map[string]storage.Field
-	Features []string
+	Fields map[string]map[string]storage.Field
 }
 
 func apexReferenceScanSource(source string) string {
@@ -4976,6 +5109,7 @@ func recordProjectReferencedListCustomSetting(org *storage.OrgState, objectName 
 		return
 	}
 	state := org.Objects[canonicalObject]
+	state.Definition = state.Definition.Clone()
 	if state.Definition.Metadata == nil {
 		state.Definition.Metadata = make(map[string]string)
 	}
@@ -5080,6 +5214,7 @@ func applyReferencedStandardFieldSet(org *storage.OrgState, fields map[string]ma
 		if state.Definition.Fields == nil {
 			state.Definition.Fields = make(map[string]storage.Field)
 		}
+		detached := false
 		// Relations is ordered, so add fields by name rather than map order.
 		fieldNames := make([]string, 0, len(objectFields))
 		for fieldName := range objectFields {
@@ -5093,6 +5228,13 @@ func applyReferencedStandardFieldSet(org *storage.OrgState, fields map[string]ma
 			}
 			if projectReferencedNameIsChildRelationship(*org, objectName, fieldName, childRelationshipLookup) {
 				continue
+			}
+			if !detached {
+				state.Definition = state.Definition.Clone()
+				if state.Definition.Fields == nil {
+					state.Definition.Fields = make(map[string]storage.Field)
+				}
+				detached = true
 			}
 			state.Definition.Fields[fieldName] = field
 			if field.Type == storage.FieldReference && field.RelationshipName != "" && len(field.ReferenceTo) > 0 && !parentRelationshipKnown(state.Definition, field.RelationshipName) {
@@ -5449,6 +5591,9 @@ type projectRecordTypeReference struct {
 	ObjectName    string
 	DeveloperName string
 	Name          string
+	// NameDerived marks a Name guessed from DeveloperName. It must not replace
+	// a label that metadata already declared.
+	NameDerived bool
 }
 
 type projectDataRelationshipReference struct {
@@ -5482,6 +5627,7 @@ func scanRecordTypesFromApexSource(source string) []projectRecordTypeReference {
 		if kind == "developername" {
 			ref.DeveloperName = value
 			ref.Name = recordTypeLabelFromDeveloperName(value)
+			ref.NameDerived = true
 		} else {
 			ref.DeveloperName = recordTypeDeveloperNameFromLabel(value)
 			ref.Name = value
@@ -5541,7 +5687,7 @@ func parallelScanProjectReferencedRecordTypes(files []string, cache *sourceCache
 }
 
 func mergeProjectRecordTypeReferences(chunks ...[]projectRecordTypeReference) []projectRecordTypeReference {
-	seen := make(map[string]bool)
+	seen := make(map[string]int)
 	var refs []projectRecordTypeReference
 	add := func(ref projectRecordTypeReference) {
 		ref.ObjectName = strings.TrimSpace(ref.ObjectName)
@@ -5551,10 +5697,14 @@ func mergeProjectRecordTypeReferences(chunks ...[]projectRecordTypeReference) []
 			return
 		}
 		key := strings.ToLower(ref.ObjectName) + "\x00" + strings.ToLower(ref.DeveloperName)
-		if seen[key] {
+		if at, ok := seen[key]; ok {
+			// A label reference outranks a label guessed from the developer name.
+			if refs[at].NameDerived && !ref.NameDerived {
+				refs[at] = ref
+			}
 			return
 		}
-		seen[key] = true
+		seen[key] = len(refs)
 		refs = append(refs, ref)
 	}
 	for _, chunk := range chunks {
@@ -5598,6 +5748,7 @@ func projectReferencedRecordTypes(p project.Project, caches ...*sourceCache) []p
 				ObjectName:    match[1],
 				DeveloperName: match[2],
 				Name:          recordTypeLabelFromDeveloperName(match[2]),
+				NameDerived:   true,
 			})
 		}
 	}
@@ -6059,7 +6210,7 @@ func profileNameFromPath(path string) string {
 	name := filepath.Base(path)
 	for _, suffix := range []string{".profile-meta.xml", ".profile"} {
 		if hasSuffixFold(name, suffix) {
-			return strings.TrimSpace(name[:len(name)-len(suffix)])
+			return norm.NFC.String(strings.TrimSpace(name[:len(name)-len(suffix)]))
 		}
 	}
 	return ""
@@ -6155,6 +6306,7 @@ func ensureProjectDataReferencedObjectField(org *storage.OrgState, objectName, q
 	if _, ok := storage.ResolveFieldName(state.Definition, org.Namespace, fieldName); ok {
 		return
 	}
+	state.Definition = state.Definition.Clone()
 	state.Definition.Fields[fieldName] = inferredReferencedField(fieldName)
 	org.Objects[resolvedObjectName] = state
 }
@@ -6329,12 +6481,16 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 		if apexClassBodyHiddenFromProject(index.Project.Namespace, typ) {
 			source = ""
 		}
+		namespace := storage.NullValue()
+		if typ.Namespace != "" {
+			namespace = storage.StringValue(typ.Namespace)
+		}
 		state.Records[id] = storage.Record{
 			ID:     id,
 			Object: "ApexClass",
 			Fields: map[string]storage.Value{
 				"Name":                  {Kind: storage.ValueString, String: typ.Name},
-				"NamespacePrefix":       {Kind: storage.ValueString, String: typ.Namespace},
+				"NamespacePrefix":       namespace,
 				"Body":                  {Kind: storage.ValueString, String: source},
 				"ApiVersion":            storage.DecimalValue("65.0"),
 				"LengthWithoutComments": storage.IntegerValue(int64(len(source))),
@@ -6461,6 +6617,7 @@ func applyCustomNotificationTypeRecords(org *storage.OrgState, root string) {
 	}
 	storage.EnsureStandardObject(org, "CustomNotificationType")
 	state := org.Objects["CustomNotificationType"]
+	state.Definition = state.Definition.Clone()
 	if state.Definition.Fields == nil {
 		state.Definition.Fields = make(map[string]storage.Field)
 	}
@@ -6824,11 +6981,11 @@ func parseEnumValues(typeSource string) []string {
 	if open < 0 || close <= open {
 		return nil
 	}
-	body := typeSource[open+1 : close]
+	// Comment punctuation cannot terminate the enum's member list.
+	body := stripApexComments(typeSource[open+1 : close])
 	if semi := strings.IndexByte(body, ';'); semi >= 0 {
 		body = body[:semi]
 	}
-	body = stripApexComments(body)
 	var out []string
 	for _, part := range strings.Split(body, ",") {
 		name := strings.TrimSpace(part)
@@ -6847,11 +7004,24 @@ func typeHeader(typeSource string) string {
 }
 
 func parseParams(methodSource string) ([]vm.Param, error) {
-	header := methodSource
-	if body := strings.IndexByte(methodSource, '{'); body >= 0 {
-		header = methodSource[:body]
+	open := -1
+header:
+	for i := 0; i < len(methodSource); i++ {
+		switch methodSource[i] {
+		case '\'':
+			i = skipApexString(methodSource, i)
+		case '/':
+			if i+1 < len(methodSource) && methodSource[i+1] == '/' {
+				i = skipLineComment(methodSource, i)
+			} else if i+1 < len(methodSource) && methodSource[i+1] == '*' {
+				i = skipBlockComment(methodSource, i)
+			}
+		case '{':
+			break header
+		case '(':
+			open = i
+		}
 	}
-	open := strings.LastIndexByte(header, '(')
 	if open < 0 {
 		return nil, fmt.Errorf("method parameter list is unavailable")
 	}

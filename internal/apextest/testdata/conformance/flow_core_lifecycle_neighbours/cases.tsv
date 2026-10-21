@@ -1,0 +1,5 @@
+case_id	api_version	route	shape
+N2_001	62.0	anonymous	before-save Create and Update flows across insert, update, external-id upsert, and client-id upsert
+N2_001	62.0	istest	before-save Create and Update flows across insert, update, external-id upsert, and client-id upsert
+N2_001	67.0	anonymous	before-save Create and Update flows across insert, update, external-id upsert, and client-id upsert
+N2_001	67.0	istest	before-save Create and Update flows across insert, update, external-id upsert, and client-id upsert

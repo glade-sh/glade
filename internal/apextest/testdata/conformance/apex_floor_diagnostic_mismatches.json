@@ -1,5 +1,8 @@
 {
   "apiVersion": "62.0",
+  "observedCanonical": "capture-revision-098950566703103603885171112641438851927160001612900124400450095300328054414741",
+  "observedTree": "capture-revision-110056461395319378583221591941301661906515564091804500232267604349949377187916",
+  "toolsPin": "capture-revision-053712147112052223229016906724885615166071876091482231487478870770176839023422",
   "mismatches": [
     {
       "family": "Integer and Long",
@@ -80,18 +83,10 @@
         "@IsTest": "COMPILE_ERROR\tline 1: NumericFamilyProbe has invalid source contract: scientific notation is not valid Apex numeric literal syntax"
       },
       "reason": "Scientific notation is diagnosed before its declarator; parser-context repair deferred."
-    },
-    {
-      "family": "collections",
-      "rowId": "C012",
-      "nativeText": "COMPILE_ERROR\tline 6: Illegal assignment from Object to Integer",
-      "localTexts": {
-        "anonymous": "COMPILE_ERROR\tline 1: method \"execute\" initializes y with void",
-        "@IsTest": "COMPILE_ERROR\tline 1: method \"run\" initializes Integer local \"y\" with void"
-      },
-      "reason": "List.add returns local void but native reports Object in this assignment; return-diagnostic modeling deferred."
     }
   ],
+  "reconciledCanonical": "capture-revision-013435881448819456825570670053619920096483542824207161456894957676670938765263",
+  "reconciledProductTree": "capture-revision-048383619704995094045430831380540270448646515583601541630811763481868490154628",
   "lineFraming": [
     {
       "family": "Integer and Long",
@@ -581,6 +576,15 @@
         "@IsTest"
       ],
       "reason": "The API 62 native batch wrapper reports line 6; local anonymous line 1, @IsTest line 1 uses a different wrapper; normalize only its leading numeric line."
+    },
+    {
+      "family": "collections",
+      "rowId": "C012",
+      "routes": [
+        "anonymous",
+        "@IsTest"
+      ],
+      "reason": "The API 62 native batch wrapper reports line 6; local anonymous and @IsTest wrappers report line 1; normalize only its leading numeric line."
     },
     {
       "family": "collections",

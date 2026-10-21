@@ -132,13 +132,22 @@ func TestRenderAjaxCommandButtonEmitsSubmitHook(t *testing.T) {
 
 func TestRenderAjaxCommandButtonKeepsLabelOutOfTextContent(t *testing.T) {
 	rendered := renderAjaxMarkupForTest(t, `<apex:page><apex:form><apex:commandButton value="Step" action="{!step}" reRender="out"/></apex:form></apex:page>`)
-	for _, want := range []string{`<input type="submit"`, `value="Step"`, "window.GLADEVF.submit"} {
+	for _, want := range []string{`<input type="button"`, `value="Step"`, "window.GLADEVF.submit"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("rendered missing %q: %s", want, rendered)
 		}
 	}
 	if strings.Contains(rendered, `>Step</button>`) {
 		t.Fatalf("commandButton label leaked into text content: %s", rendered)
+	}
+}
+
+// V14 r_principal_post at API59/67 excludes the ordinary submit button from
+// the observed fields; r_principal_ajax retains its reRender button.
+func TestRenderCommandButtonWithoutRerenderRemainsSubmit(t *testing.T) {
+	rendered := renderAjaxMarkupForTest(t, `<apex:page><apex:form><apex:commandButton value="Step" action="{!step}"/></apex:form></apex:page>`)
+	if !strings.Contains(rendered, `<input type="submit"`) {
+		t.Fatalf("ordinary commandButton must submit its form: %s", rendered)
 	}
 }
 

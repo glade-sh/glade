@@ -18,6 +18,34 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
+// API 68.0 anonymous capture at native-capture
+// has SHA-256 9a04d028b56d06590367a3cf3bbf9df9e85b2c700d2087aefeb758b184d916f6.
+// Its 256 observed answers match the stored primary oracle exactly. It had no
+// usable answer for C003 (empty COMPILE_ERROR) or R153 (no row).
+//
+// The API 68.0 native UNCAUGHT recapture at
+// native-capture has SHA-256
+// 1bc8b8f835729d211a6bd0e94062fa6be2508466e59437f8025e8bbbe1deb599. Its
+// anonymous answers for primary rows C003 and R153 and supplemental controls
+// M001-M006 equal the stored expectations exactly, so those rows are asserted
+// at 68.0. Other controls and Tooling named compilations were captured only at
+// 62.0 and 67.0. Both API 68.0 sources are anonymous-only: the local @IsTest
+// route at 68.0 counts as legacy, not as native named evidence.
+var classesLifecycleAPI68Recaptured = map[string]string{
+	"C003": "UNCAUGHT|System.LimitException: Maximum stack depth reached: 1001",
+	"R153": "UNCAUGHT|System.FinalException: Collection is read-only",
+	"M001": "UNCAUGHT|System.FinalException: Collection is read-only",
+	"M002": "UNCAUGHT|System.FinalException: Collection is read-only",
+	"M003": "UNCAUGHT|System.FinalException: Collection is read-only",
+	"M004": "UNCAUGHT|System.FinalException: Collection is read-only",
+	"M005": "UNCAUGHT|System.FinalException: Collection is read-only",
+	"M006": "UNCAUGHT|System.FinalException: Collection is read-only",
+}
+
+// classesLifecycleToolingAPIs are the versions with native Tooling named
+// compilations and control captures.
+var classesLifecycleToolingAPIs = []string{"62.0", "67.0"}
+
 // Captured lifecycle observations run without Salesforce or glade-tools in CI.
 func TestClassesLifecycleOrgConformance(t *testing.T) {
 	type namedCompilation struct{ Name, Source, Expected string }
@@ -45,7 +73,7 @@ func TestClassesLifecycleOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 258 || len(data.Controls) != 31 || len(data.Remaining) != 0 || len(data.NamedCompilerControls) != 6 || len(data.CaseRows["all"]) != 258 || len(data.CaseRows["access-modifiers-and-namespaces"]) != 12 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 258 || len(data.Controls) != 31 || len(data.Remaining) != 0 || len(data.NamedCompilerControls) != 6 || len(data.CaseRows["all"]) != 258 || len(data.CaseRows["access-modifiers-and-namespaces"]) != 12 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle shape: cases=%d controls=%d carried=%d versions=%v", len(data.Cases), len(data.Controls), len(data.Remaining), data.APIVersions)
 	}
 	rows := append(append([]familyCase{}, data.Cases...), data.Controls...)
@@ -68,16 +96,30 @@ func TestClassesLifecycleOrgConformance(t *testing.T) {
 		t.Logf("%s carried to %s: %s; native <%s>", row.ID, row.Owner, row.Reason, row.Expected)
 	}
 	for _, row := range data.NamedCompilerControls {
-		if row.ID == "" || seen[row.ID] || len(row.NamedCompilations) != len(data.APIVersions) {
+		if row.ID == "" || seen[row.ID] || len(row.NamedCompilations) != len(classesLifecycleToolingAPIs) {
 			t.Fatalf("invalid named compiler control: %#v", row)
 		}
-		for _, api := range data.APIVersions {
+		for _, api := range classesLifecycleToolingAPIs {
 			native, captured := row.NamedCompilations[api]
 			if !captured || native.Name == "" || native.Source == "" || native.Expected == "" {
 				t.Fatalf("missing compiler control %s at %s", row.ID, api)
 			}
 		}
 		seen[row.ID] = true
+	}
+	for id, native := range classesLifecycleAPI68Recaptured {
+		found := false
+		for _, row := range rows {
+			if row.ID == id {
+				if row.Expected != native {
+					t.Fatalf("API 68.0 recapture of %s differs from stored oracle: native <%s> stored <%s>", id, native, row.Expected)
+				}
+				found = true
+			}
+		}
+		if !found {
+			t.Fatalf("API 68.0 recaptured row is not a case or control: %s", id)
+		}
 	}
 	for group, ids := range data.CaseRows {
 		for _, id := range ids {
@@ -240,6 +282,21 @@ func TestClassesLifecycleOrgConformance(t *testing.T) {
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "classes and lifecycle", api)
+			rows := rows
+			toolingCaptured := api != "68.0"
+			if !toolingCaptured {
+				rows = append([]familyCase{}, data.Cases...)
+				excludedControls := 0
+				for _, tc := range data.Controls {
+					if _, recaptured := classesLifecycleAPI68Recaptured[tc.ID]; recaptured {
+						rows = append(rows, tc)
+						continue
+					}
+					excludedControls++
+				}
+				t.Logf("A04 API %s: %d controls, %d named compiler controls and Tooling named compilations have no native capture at API %s", api, excludedControls, len(data.NamedCompilerControls), api)
+				t.Logf("A04 API %s: %d anonymous-captured rows; @IsTest checks retain anonymous-backed local assertions without native named-route capture", api, len(rows))
+			}
 			build := func(root string, sources map[string]string) typesys.Index {
 				t.Helper()
 				names := make([]string, 0, len(sources))
@@ -257,6 +314,9 @@ func TestClassesLifecycleOrgConformance(t *testing.T) {
 				return typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: paths}, gladeschema.Schema{})
 			}
 			for _, tc := range data.NamedCompilerControls {
+				if !toolingCaptured {
+					break
+				}
 				t.Run(tc.ID, func(t *testing.T) {
 					t.Run("isTestCompiler", func(t *testing.T) {
 						kind := "exact"
@@ -387,8 +447,17 @@ func TestClassesLifecycleOrgConformance(t *testing.T) {
 						_, execErr := runner.execute(program)
 						assertExecution(t, tc, execErr)
 					})
+					if len(tc.NamedCompilations) > 0 && !toolingCaptured {
+						// The named route of this row is a Tooling compilation
+						// with no native capture at this API version.
+						return
+					}
 					t.Run("isTest", func(t *testing.T) {
-						counts.Track(t, "@IsTest", 1)
+						namedKind := "exact"
+						if api == "68.0" {
+							namedKind = "legacy"
+						}
+						counts.TrackKind(t, "@IsTest", namedKind, 1)
 						if native, captured := tc.NamedCompilations[api]; captured {
 							sources := copySources(data.Declarations)
 							sources[native.Name] = native.Source

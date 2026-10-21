@@ -1,0 +1,196 @@
+{
+  "fixtures": {
+    "62.0": {
+      "files": {
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"62.0\"}",
+        "force-app/main/default/classes/CloneMemberProbe.cls": "public class CloneMemberProbe {\n    public class Leaf {public String text='seed';}\n    public virtual class Parent {public String label='seed';public Leaf leaf=new Leaf();}\n    public class Child extends Parent {\n        public List<String> words=new List<String>{'first'};\n        public Map<String,Leaf> entries=new Map<String,Leaf>();\n        public Account record=new Account(Name='seed');\n        public Child self;\n        public Child copy() {return this.clone();}\n    }\n    public static String observe() {\n        Child original=new Child();original.self=original;\n        original.entries.put('leaf',original.leaf);\n        Child copied=original.copy();\n        Map<String,Object> out=new Map<String,Object>();\n        out.put('differentRoot',original!==copied);\n        out.put('sameLeaf',original.leaf===copied.leaf);\n        out.put('sameWords',original.words===copied.words);\n        out.put('sameMap',original.entries===copied.entries);\n        out.put('sameRecord',original.record===copied.record);\n        out.put('selfIsOriginal',copied.self===original);\n        copied.label='copy';out.put('originalLabel',original.label);\n        original.leaf.text='changed';out.put('copiedLeaf',copied.leaf.text);\n        copied.words.add('second');out.put('originalWordCount',original.words.size());\n        copied.entries.get('leaf').text='mapChange';out.put('originalLeaf',original.leaf.text);\n        copied.record.Name='recordChange';out.put('originalRecordName',original.record.Name);\n        copied.leaf=new Leaf();out.put('originalLeafAfterReplace',original.leaf.text);\n        out.put('copiedLeafAfterReplace',copied.leaf.text);\n        return JSON.serialize(out);\n    }\n}",
+        "force-app/main/default/classes/CloneMemberProbeTest.cls": "@IsTest private class CloneMemberProbeTest {@IsTest static void observe(){System.assert(false,'NATIVE_CLONE|'+CloneMemberProbe.observe());}}",
+        "force-app/main/default/classes/CloneMemberProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/CloneMemberProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "anonymous.apex": "System.debug('NATIVE_CLONE|'+CloneMemberProbe.observe());"
+      },
+      "sha256": {
+        "sfdx-project.json": "3f6415903c25e013895eb93fa7fbec23956f74b06460f5266f9d0ac53b80ddbc",
+        "force-app/main/default/classes/CloneMemberProbe.cls": "a6a138c75c2c7f60734d6589085ab66d1ad838b1197b0bcaebe0c608063bd124",
+        "force-app/main/default/classes/CloneMemberProbeTest.cls": "ec6be3228dcfc984e7c9f844f4f1bad2ef63640dfa0efdff9c57d1e3eca27739",
+        "force-app/main/default/classes/CloneMemberProbe.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "force-app/main/default/classes/CloneMemberProbeTest.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "anonymous.apex": "ac866a97a94e13af4f5428c47d53d21886c9ac10be03979ab3fcff526ad89466"
+      }
+    },
+    "66.0": {
+      "files": {
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"66.0\"}",
+        "force-app/main/default/classes/CloneMemberProbe.cls": "public class CloneMemberProbe {\n    public class Leaf {public String text='seed';}\n    public virtual class Parent {public String label='seed';public Leaf leaf=new Leaf();}\n    public class Child extends Parent {\n        public List<String> words=new List<String>{'first'};\n        public Map<String,Leaf> entries=new Map<String,Leaf>();\n        public Account record=new Account(Name='seed');\n        public Child self;\n        public Child copy() {return this.clone();}\n    }\n    public static String observe() {\n        Child original=new Child();original.self=original;\n        original.entries.put('leaf',original.leaf);\n        Child copied=original.copy();\n        Map<String,Object> out=new Map<String,Object>();\n        out.put('differentRoot',original!==copied);\n        out.put('sameLeaf',original.leaf===copied.leaf);\n        out.put('sameWords',original.words===copied.words);\n        out.put('sameMap',original.entries===copied.entries);\n        out.put('sameRecord',original.record===copied.record);\n        out.put('selfIsOriginal',copied.self===original);\n        copied.label='copy';out.put('originalLabel',original.label);\n        original.leaf.text='changed';out.put('copiedLeaf',copied.leaf.text);\n        copied.words.add('second');out.put('originalWordCount',original.words.size());\n        copied.entries.get('leaf').text='mapChange';out.put('originalLeaf',original.leaf.text);\n        copied.record.Name='recordChange';out.put('originalRecordName',original.record.Name);\n        copied.leaf=new Leaf();out.put('originalLeafAfterReplace',original.leaf.text);\n        out.put('copiedLeafAfterReplace',copied.leaf.text);\n        return JSON.serialize(out);\n    }\n}",
+        "force-app/main/default/classes/CloneMemberProbeTest.cls": "@IsTest private class CloneMemberProbeTest {@IsTest static void observe(){System.assert(false,'NATIVE_CLONE|'+CloneMemberProbe.observe());}}",
+        "force-app/main/default/classes/CloneMemberProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>66.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/CloneMemberProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>66.0</apiVersion><status>Active</status></ApexClass>",
+        "anonymous.apex": "System.debug('NATIVE_CLONE|'+CloneMemberProbe.observe());"
+      },
+      "sha256": {
+        "sfdx-project.json": "373445617fe08fdc2cb4f6e29d1fba1fdd945ed94aa61ea5a87d4922b7b6de5b",
+        "force-app/main/default/classes/CloneMemberProbe.cls": "a6a138c75c2c7f60734d6589085ab66d1ad838b1197b0bcaebe0c608063bd124",
+        "force-app/main/default/classes/CloneMemberProbeTest.cls": "ec6be3228dcfc984e7c9f844f4f1bad2ef63640dfa0efdff9c57d1e3eca27739",
+        "force-app/main/default/classes/CloneMemberProbe.cls-meta.xml": "7124272a5458f12847f486abb1e95c7c271ee41b8f2efe4059c1c00a003520a6",
+        "force-app/main/default/classes/CloneMemberProbeTest.cls-meta.xml": "7124272a5458f12847f486abb1e95c7c271ee41b8f2efe4059c1c00a003520a6",
+        "anonymous.apex": "ac866a97a94e13af4f5428c47d53d21886c9ac10be03979ab3fcff526ad89466"
+      }
+    },
+    "67.0": {
+      "files": {
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"67.0\"}",
+        "force-app/main/default/classes/CloneMemberProbe.cls": "public class CloneMemberProbe {\n    public class Leaf {public String text='seed';}\n    public virtual class Parent {public String label='seed';public Leaf leaf=new Leaf();}\n    public class Child extends Parent {\n        public List<String> words=new List<String>{'first'};\n        public Map<String,Leaf> entries=new Map<String,Leaf>();\n        public Account record=new Account(Name='seed');\n        public Child self;\n        public Child copy() {return this.clone();}\n    }\n    public static String observe() {\n        Child original=new Child();original.self=original;\n        original.entries.put('leaf',original.leaf);\n        Child copied=original.copy();\n        Map<String,Object> out=new Map<String,Object>();\n        out.put('differentRoot',original!==copied);\n        out.put('sameLeaf',original.leaf===copied.leaf);\n        out.put('sameWords',original.words===copied.words);\n        out.put('sameMap',original.entries===copied.entries);\n        out.put('sameRecord',original.record===copied.record);\n        out.put('selfIsOriginal',copied.self===original);\n        copied.label='copy';out.put('originalLabel',original.label);\n        original.leaf.text='changed';out.put('copiedLeaf',copied.leaf.text);\n        copied.words.add('second');out.put('originalWordCount',original.words.size());\n        copied.entries.get('leaf').text='mapChange';out.put('originalLeaf',original.leaf.text);\n        copied.record.Name='recordChange';out.put('originalRecordName',original.record.Name);\n        copied.leaf=new Leaf();out.put('originalLeafAfterReplace',original.leaf.text);\n        out.put('copiedLeafAfterReplace',copied.leaf.text);\n        return JSON.serialize(out);\n    }\n}",
+        "force-app/main/default/classes/CloneMemberProbeTest.cls": "@IsTest private class CloneMemberProbeTest {@IsTest static void observe(){System.assert(false,'NATIVE_CLONE|'+CloneMemberProbe.observe());}}",
+        "force-app/main/default/classes/CloneMemberProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/CloneMemberProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "anonymous.apex": "System.debug('NATIVE_CLONE|'+CloneMemberProbe.observe());"
+      },
+      "sha256": {
+        "sfdx-project.json": "58a7912dda14c3c2fba252a12fd198a98556f0c44971080e7acdfe0d673c847b",
+        "force-app/main/default/classes/CloneMemberProbe.cls": "a6a138c75c2c7f60734d6589085ab66d1ad838b1197b0bcaebe0c608063bd124",
+        "force-app/main/default/classes/CloneMemberProbeTest.cls": "ec6be3228dcfc984e7c9f844f4f1bad2ef63640dfa0efdff9c57d1e3eca27739",
+        "force-app/main/default/classes/CloneMemberProbe.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "force-app/main/default/classes/CloneMemberProbeTest.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "anonymous.apex": "ac866a97a94e13af4f5428c47d53d21886c9ac10be03979ab3fcff526ad89466"
+      }
+    }
+  },
+  "cells": [
+    {
+      "api": "62.0",
+      "context": "anonymous",
+      "fixture": "62.0",
+      "receiptSHA256": "98b83ca2caf5c13e077b3cb298516b3ca862672633f4d609ca8b8e4fe2a3ae85",
+      "orgIDHash": "068f399f9498922bd09108097e9bb389ab7023f3b3428fb9c63f8016bf4005ff",
+      "native": {
+        "copiedLeafAfterReplace": "seed",
+        "originalLeafAfterReplace": "mapChange",
+        "originalRecordName": "recordChange",
+        "originalLeaf": "mapChange",
+        "originalWordCount": 2,
+        "copiedLeaf": "changed",
+        "originalLabel": "seed",
+        "selfIsOriginal": true,
+        "sameRecord": true,
+        "sameMap": true,
+        "sameWords": true,
+        "sameLeaf": true,
+        "differentRoot": true
+      }
+    },
+    {
+      "api": "62.0",
+      "context": "istest",
+      "fixture": "62.0",
+      "receiptSHA256": "4c4545a4708978fdcf48a0996f72867978180c12065a7fec3ae6b6f8ce26a0a0",
+      "orgIDHash": "068f399f9498922bd09108097e9bb389ab7023f3b3428fb9c63f8016bf4005ff",
+      "native": {
+        "copiedLeafAfterReplace": "seed",
+        "originalLeafAfterReplace": "mapChange",
+        "originalRecordName": "recordChange",
+        "originalLeaf": "mapChange",
+        "originalWordCount": 2,
+        "copiedLeaf": "changed",
+        "originalLabel": "seed",
+        "selfIsOriginal": true,
+        "sameRecord": true,
+        "sameMap": true,
+        "sameWords": true,
+        "sameLeaf": true,
+        "differentRoot": true
+      }
+    },
+    {
+      "api": "66.0",
+      "context": "anonymous",
+      "fixture": "66.0",
+      "receiptSHA256": "61958dd947c30ff21861e1a042e005874d6e129b33e7ca86de21f453efdbf9dc",
+      "orgIDHash": "068f399f9498922bd09108097e9bb389ab7023f3b3428fb9c63f8016bf4005ff",
+      "native": {
+        "copiedLeafAfterReplace": "seed",
+        "originalLeafAfterReplace": "mapChange",
+        "originalRecordName": "recordChange",
+        "originalLeaf": "mapChange",
+        "originalWordCount": 2,
+        "copiedLeaf": "changed",
+        "originalLabel": "seed",
+        "selfIsOriginal": true,
+        "sameRecord": true,
+        "sameMap": true,
+        "sameWords": true,
+        "sameLeaf": true,
+        "differentRoot": true
+      }
+    },
+    {
+      "api": "66.0",
+      "context": "istest",
+      "fixture": "66.0",
+      "receiptSHA256": "accf85cdced530ed0a0e7b79b7a0e6f286e2b443cb88acf5b5c1e49c22836e0c",
+      "orgIDHash": "068f399f9498922bd09108097e9bb389ab7023f3b3428fb9c63f8016bf4005ff",
+      "native": {
+        "copiedLeafAfterReplace": "seed",
+        "originalLeafAfterReplace": "mapChange",
+        "originalRecordName": "recordChange",
+        "originalLeaf": "mapChange",
+        "originalWordCount": 2,
+        "copiedLeaf": "changed",
+        "originalLabel": "seed",
+        "selfIsOriginal": true,
+        "sameRecord": true,
+        "sameMap": true,
+        "sameWords": true,
+        "sameLeaf": true,
+        "differentRoot": true
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "anonymous",
+      "fixture": "67.0",
+      "receiptSHA256": "14ccd5b856c3cc772cba4bfedc1be234416c12e55d7c9d51f8ff93cb0957c26a",
+      "orgIDHash": "068f399f9498922bd09108097e9bb389ab7023f3b3428fb9c63f8016bf4005ff",
+      "native": {
+        "copiedLeafAfterReplace": "seed",
+        "originalLeafAfterReplace": "mapChange",
+        "originalRecordName": "recordChange",
+        "originalLeaf": "mapChange",
+        "originalWordCount": 2,
+        "copiedLeaf": "changed",
+        "originalLabel": "seed",
+        "selfIsOriginal": true,
+        "sameRecord": true,
+        "sameMap": true,
+        "sameWords": true,
+        "sameLeaf": true,
+        "differentRoot": true
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "istest",
+      "fixture": "67.0",
+      "receiptSHA256": "56a6521c110bbced04dcc30d4ff33cb3da661b3cdef562ff494752e7e444b5d3",
+      "orgIDHash": "068f399f9498922bd09108097e9bb389ab7023f3b3428fb9c63f8016bf4005ff",
+      "native": {
+        "copiedLeafAfterReplace": "seed",
+        "originalLeafAfterReplace": "mapChange",
+        "originalRecordName": "recordChange",
+        "originalLeaf": "mapChange",
+        "originalWordCount": 2,
+        "copiedLeaf": "changed",
+        "originalLabel": "seed",
+        "selfIsOriginal": true,
+        "sameRecord": true,
+        "sameMap": true,
+        "sameWords": true,
+        "sameLeaf": true,
+        "differentRoot": true
+      }
+    }
+  ],
+  "carries": [
+    "API68 and namespaced deployment variants unprobed; these plain user-class observations do not settle namespace-specific JSON serialization.",
+    "Async uncapped first-cap and earlier named/anonymous rollback boundaries remain outside these synchronous clone observations."
+  ]
+}

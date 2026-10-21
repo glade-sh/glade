@@ -1,0 +1,30 @@
+{
+  "deployment": {
+    "status": "Failed",
+    "success": false,
+    "checkOnly": false,
+    "numberComponentErrors": 1,
+    "componentFailures": [
+      {
+        "changed": false,
+        "componentType": "CustomMetadata",
+        "created": false,
+        "createdDate": "2026-10-12T19:03:27.000Z",
+        "deleted": false,
+        "fileName": "customMetadata/ns113wrong__Ns113bAbsent.Apex68.md",
+        "fullName": "ns113wrong__Ns113bAbsent.Apex68",
+        "problem": "Custom metadata type ns113wrong__Ns113bAbsent__mdt is not available in this organization.",
+        "problemType": "Error",
+        "success": false
+      }
+    ]
+  },
+  "records": [
+    {
+      "DeveloperName": "Apex68",
+      "NamespacePrefix": null,
+      "QualifiedApiName": "Apex68",
+      "gladens001__Enabled__c": true
+    }
+  ]
+}

@@ -39,7 +39,16 @@ func NativeLifecycleDiagnostics(index typesys.Index, diagnostics []diagnostic.Di
 	for i := range out {
 		d := &out[i]
 		if d.NativeMessage != "" {
-			if d.Code == "GLADESEMA018" && strings.HasPrefix(d.NativeMessage, "Illegal assignment from ") && !valueCollectionAssignmentNativeText(d.NativeMessage) ||
+			// Preserve the historical editor text when ordinary rejected
+			// assignments acquire native wording. Enum and captured member
+			// assignments retain their existing native editor presentation.
+			publishAssignment := d.NativeMessage == "Illegal assignment from String to Integer" || d.NativeMessage == "Illegal assignment from Account to Id" || d.Message == d.NativeMessage
+			if _, target, ok := strings.Cut(d.NativeMessage, " to "); ok {
+				if typ, found := lookup(target); found && typ.Kind == apexast.DeclarationEnum && !typ.Dependency {
+					publishAssignment = true
+				}
+			}
+			if d.Code == "GLADESEMA018" && strings.HasPrefix(d.NativeMessage, "Illegal assignment from ") && publishAssignment && (!valueCollectionAssignmentNativeText(d.NativeMessage) || d.NativeMessage == "Illegal assignment from String to Integer") ||
 				d.Code == "GLADESEMA002" && strings.HasPrefix(d.NativeMessage, "Invalid type: ") ||
 				d.Code == "GLADESEMA023" && strings.HasPrefix(d.NativeMessage, "Method does not exist or incorrect signature: void valueOf(") && strings.HasSuffix(d.NativeMessage, " from the type String") ||
 				d.Code == "GLADESEMA025" && strings.HasPrefix(d.NativeMessage, "Invalid value type ") && strings.HasSuffix(d.NativeMessage, " for Object") {
@@ -69,6 +78,10 @@ func NativeLifecycleDiagnostics(index typesys.Index, diagnostics []diagnostic.Di
 			if source, ok := exceptionSources.rawForType(typ); ok {
 				digest, bound := index.SourceDigest(d.File)
 				if bound && sha256.Sum256([]byte(source)) == digest {
+					if syntax := vm.FinalCollectionArraySyntaxError(source); syntax != nil && d.Range != nil && d.Range.Start.Offset <= syntax.EndOffset && syntax.Offset <= d.Range.End.Offset {
+						d.NativeMessage = syntax.NativeMessage
+						continue
+					}
 					if syntax := vm.ExceptionSyntaxError(source); syntax != nil && d.Range != nil {
 						end := max(syntax.Offset, syntax.EndOffset)
 						if d.Range.Start.Offset <= end && syntax.Offset <= d.Range.End.Offset {
@@ -113,7 +126,7 @@ func NativeLifecycleDiagnostics(index typesys.Index, diagnostics []diagnostic.Di
 			}
 		case "GLADESEMA018":
 			if match := lifecycleEnumLocal.FindStringSubmatch(d.Message); match != nil {
-				native := valueCollectionAssignmentMessage(match[1], match[2], nil)
+				native := assignmentDiagnosticMessage(match[1], match[2], nil)
 				if native != "" {
 					// The named scanner runs before IR. Preserve its explanation
 					// without rebuilding the type-member model for wording.
@@ -220,7 +233,7 @@ func NativeLifecycleDiagnostics(index typesys.Index, diagnostics []diagnostic.Di
 			}
 		}
 	}
-	return nativeAnnotationDiagnostics(index, out)
+	return nativeAnnotationDiagnostics(index, capturedInheritedFinalDiagnostics(index, capturedReturnDependencyNativeText(index, out)))
 }
 
 // Preserve the member selected by inheritance checking. Reconstructing it from

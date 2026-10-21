@@ -187,14 +187,14 @@ func TestSObjectContainersTypeForNameMissingSchemaNameReturnsNull(t *testing.T) 
 	}
 }
 
-// Canonical scope control, not an additional Salesforce-conformance row.
+// Native map identity controls are retained in query_projection_boundary.
 func TestSObjectContainersTypedMapInstanceOfPreservesEntryMatching(t *testing.T) {
 	machine, _ := runDynamicObjectAliasProgram(t, "")
 	aliasSObjectPruneExecute(t, machine, `
 Object empty = new Map<String,String>();
-System.assertEquals(true, empty instanceof Map<Integer,Account>);
+System.assertEquals(false, empty instanceof Map<Integer,Account>);
 Object populated = new Map<String,Object>{'key'=>'value'};
-System.assertEquals(true, populated instanceof Map<String,String>);
+System.assertEquals(false, populated instanceof Map<String,String>);
 System.assertEquals(false, populated instanceof Map<Integer,String>);
 System.assertEquals(false, populated instanceof Map<String,Account>);
 System.assertEquals(true, populated instanceof Map<String,Object>);

@@ -1,0 +1,385 @@
+{
+  "family": "IteratorEnumNative",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "nativeObservationCount": 6,
+  "orgIdSha256": "d39d3209645956a2aa1492cb81f1b27254052e2856bfc3d19eebb2ac8454d952",
+  "configuration": "Own Developer scratch org; existing administrator; no permission or sharing changes. No data DML in these observations.",
+  "captureProtocol": "Each helper and test class is deployed at its cell API version. Anonymous retains System.debug transport; @IsTest retains the intentional failing OBS assertion.",
+  "sourcesByAPI": {
+    "62.0": {
+      "classes": {
+        "IteratorArgumentProbe62": "public class IteratorArgumentProbe62 {\n    public class FieldCollector {\n        private String selected;\n        public FieldCollector add(List<String> values) {\n            selected = 'list-string';\n            return this;\n        }\n        public FieldCollector add(Set<String> values) {\n            selected = 'set-string';\n            return this;\n        }\n        public FieldCollector add(List<Schema.SObjectField> values) {\n            selected = 'list-field';\n            return this;\n        }\n        public FieldCollector add(Set<Schema.SObjectField> values) {\n            selected = 'set-field';\n            return this;\n        }\n        public FieldCollector add(Iterator<Object> values) {\n            Object value = values.next();\n            selected = value instanceof String ? 'iterator-string:' + (String)value : 'iterator-field:' + String.valueOf((Schema.SObjectField)value);\n            return this;\n        }\n        public String value() {\n            return selected;\n        }\n    }\n    public Object instanceHead(Iterator<Object> values) {\n        return values.next();\n    }\n    public static Object staticHead(Iterator<Object> values) {\n        return values.next();\n    }\n    public static String snapshot() {\n        Map<String,Object> observed = new Map<String,Object>();\n        Iterator<String> words = new List<String>{'Name'}.iterator();\n        Iterator<Schema.SObjectField> fields = new List<Schema.SObjectField>{Account.Name}.iterator();\n        observed.put('overloadedString', new FieldCollector().add(words).value());\n        observed.put('overloadedField', new FieldCollector().add(fields).value());\n        Iterator<String> staticWords = new List<String>{'static'}.iterator();\n        Iterator<Schema.SObjectField> staticFields = new List<Schema.SObjectField>{Account.Name}.iterator();\n        observed.put('staticString', staticHead(staticWords));\n        observed.put('staticField', staticHead(staticFields) == Account.Name);\n        Iterator<String> instanceWords = new List<String>{'instance'}.iterator();\n        Iterator<Schema.SObjectField> instanceFields = new List<Schema.SObjectField>{Account.Name}.iterator();\n        observed.put('instanceString', new IteratorArgumentProbe62().instanceHead(instanceWords));\n        observed.put('instanceField', new IteratorArgumentProbe62().instanceHead(instanceFields) == Account.Name);\n        observed.put('directObject', staticHead(new List<Object>{'direct'}.iterator()));\n        Iterator<Object> objects = new List<Object>{'object-local'}.iterator();\n        observed.put('objectLocal', new IteratorArgumentProbe62().instanceHead(objects));\n        observed.put('listString', new FieldCollector().add(new List<String>{'Name'}).value());\n        observed.put('setString', new FieldCollector().add(new Set<String>{'Name'}).value());\n        observed.put('listField', new FieldCollector().add(new List<Schema.SObjectField>{Account.Name}).value());\n        observed.put('setField', new FieldCollector().add(new Set<Schema.SObjectField>{Account.Name}).value());\n        return JSON.serialize(observed);\n    }\n}\n",
+        "IteratorEnumObservation62": "public class IteratorEnumObservation62 { public static String snapshot() { return JSON.serialize(new Map<String,Object>{'iterator'=>JSON.deserializeUntyped(IteratorArgumentProbe62.snapshot()),'severity'=>JSON.deserializeUntyped(SeverityAliasProbe62.snapshot())}); } }\n",
+        "IteratorEnumTest62": "@IsTest private class IteratorEnumTest62 { @IsTest static void capture() { System.assert(false,'OBS|'+IteratorEnumObservation62.snapshot()); } }\n",
+        "ReverseSeverityContract62": "public interface ReverseSeverityContract62 {\n    void emit(LoggingLevel severity, String body);\n}\n",
+        "SeverityAliasProbe62": "public class SeverityAliasProbe62 {\n    public static List<String> received = new List<String>();\n    public class First implements SeverityContract62 {\n        public void emit(LoggingLevel severity, String body) {\n            received.add('first:' + severity.name() + ':' + body);\n        }\n    }\n    public class Second implements SeverityContract62 {\n        public void emit(LoggingLevel severity, String body) {\n            received.add('second:' + severity.name() + ':' + body);\n        }\n    }\n    public class Reverse implements ReverseSeverityContract62 {\n        public void emit(System.LoggingLevel severity, String body) {\n            received.add('reverse:' + severity.name() + ':' + body);\n        }\n    }\n    public static String snapshot() {\n        received.clear();\n        Map<String,Object> observation = new Map<String,Object>();\n        new First().emit(LoggingLevel.DEBUG, 'direct');\n        observation.put('direct', new List<String>(received));\n        received.clear();\n        SeverityContract62 first = (SeverityContract62)Type.forName('SeverityAliasProbe62.First').newInstance();\n        first.emit(LoggingLevel.INFO, 'reflected');\n        observation.put('first', new List<String>(received));\n        received.clear();\n        SeverityContract62 second = (SeverityContract62)Type.forName('SeverityAliasProbe62.Second').newInstance();\n        second.emit(LoggingLevel.WARN, 'reflected');\n        observation.put('second', new List<String>(received));\n        received.clear();\n        ReverseSeverityContract62 reverse = (ReverseSeverityContract62)Type.forName('SeverityAliasProbe62.Reverse').newInstance();\n        reverse.emit(LoggingLevel.ERROR, 'reflected');\n        observation.put('reverse', new List<String>(received));\n        return JSON.serialize(observation);\n    }\n}\n",
+        "SeverityContract62": "public interface SeverityContract62 {\n    void emit(System.LoggingLevel severity, String body);\n}\n"
+      },
+      "classMetadata": {
+        "IteratorArgumentProbe62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "IteratorEnumObservation62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "IteratorEnumTest62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "ReverseSeverityContract62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "SeverityAliasProbe62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "SeverityContract62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n"
+      },
+      "anonymous": "System.debug('OBS|'+IteratorEnumObservation62.snapshot());\n",
+      "testClass": "IteratorEnumTest62",
+      "testMethod": "capture",
+      "sourceSha256": {
+        "anonymous": "d21577ecb7564e978e35cfed72cdf1291fac152105cfc2649bdded1caa11c3bf",
+        "class:IteratorArgumentProbe62": "193cd6aa67ab018ecd83b47830f9cb37230e500e00aee3eacdc6c0f47c1d17e1",
+        "class:IteratorEnumObservation62": "0b889e8e919cd7d7e0b53f2e380e290e1102ea39f33b6807b18f2c7b2f787a72",
+        "class:IteratorEnumTest62": "ed9a29d3f48e7454dca7739982d7cf5ad2b32a579f2173b648f86ec99699ad65",
+        "class:ReverseSeverityContract62": "923cee812a157c82afa09f311336e68670c48cced9bde44a024c940bd753f55d",
+        "class:SeverityAliasProbe62": "479c14e14b07c342121f9fd7e141e76f90c3047672e795db47e28f06922242f0",
+        "class:SeverityContract62": "04417a301cf590c20d92a168d4f7193f68ac1b3a4551c5bb9180d7287ac31606",
+        "classMetadata:IteratorArgumentProbe62": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51",
+        "classMetadata:IteratorEnumObservation62": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "classMetadata:IteratorEnumTest62": "51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d",
+        "classMetadata:ReverseSeverityContract62": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51",
+        "classMetadata:SeverityAliasProbe62": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51",
+        "classMetadata:SeverityContract62": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+      }
+    },
+    "67.0": {
+      "classes": {
+        "IteratorArgumentProbe67": "public class IteratorArgumentProbe67 {\n    public class FieldCollector {\n        private String selected;\n        public FieldCollector add(List<String> values) {\n            selected = 'list-string';\n            return this;\n        }\n        public FieldCollector add(Set<String> values) {\n            selected = 'set-string';\n            return this;\n        }\n        public FieldCollector add(List<Schema.SObjectField> values) {\n            selected = 'list-field';\n            return this;\n        }\n        public FieldCollector add(Set<Schema.SObjectField> values) {\n            selected = 'set-field';\n            return this;\n        }\n        public FieldCollector add(Iterator<Object> values) {\n            Object value = values.next();\n            selected = value instanceof String ? 'iterator-string:' + (String)value : 'iterator-field:' + String.valueOf((Schema.SObjectField)value);\n            return this;\n        }\n        public String value() {\n            return selected;\n        }\n    }\n    public Object instanceHead(Iterator<Object> values) {\n        return values.next();\n    }\n    public static Object staticHead(Iterator<Object> values) {\n        return values.next();\n    }\n    public static String snapshot() {\n        Map<String,Object> observed = new Map<String,Object>();\n        Iterator<String> words = new List<String>{'Name'}.iterator();\n        Iterator<Schema.SObjectField> fields = new List<Schema.SObjectField>{Account.Name}.iterator();\n        observed.put('overloadedString', new FieldCollector().add(words).value());\n        observed.put('overloadedField', new FieldCollector().add(fields).value());\n        Iterator<String> staticWords = new List<String>{'static'}.iterator();\n        Iterator<Schema.SObjectField> staticFields = new List<Schema.SObjectField>{Account.Name}.iterator();\n        observed.put('staticString', staticHead(staticWords));\n        observed.put('staticField', staticHead(staticFields) == Account.Name);\n        Iterator<String> instanceWords = new List<String>{'instance'}.iterator();\n        Iterator<Schema.SObjectField> instanceFields = new List<Schema.SObjectField>{Account.Name}.iterator();\n        observed.put('instanceString', new IteratorArgumentProbe67().instanceHead(instanceWords));\n        observed.put('instanceField', new IteratorArgumentProbe67().instanceHead(instanceFields) == Account.Name);\n        observed.put('directObject', staticHead(new List<Object>{'direct'}.iterator()));\n        Iterator<Object> objects = new List<Object>{'object-local'}.iterator();\n        observed.put('objectLocal', new IteratorArgumentProbe67().instanceHead(objects));\n        observed.put('listString', new FieldCollector().add(new List<String>{'Name'}).value());\n        observed.put('setString', new FieldCollector().add(new Set<String>{'Name'}).value());\n        observed.put('listField', new FieldCollector().add(new List<Schema.SObjectField>{Account.Name}).value());\n        observed.put('setField', new FieldCollector().add(new Set<Schema.SObjectField>{Account.Name}).value());\n        return JSON.serialize(observed);\n    }\n}\n",
+        "IteratorEnumObservation67": "public class IteratorEnumObservation67 { public static String snapshot() { return JSON.serialize(new Map<String,Object>{'iterator'=>JSON.deserializeUntyped(IteratorArgumentProbe67.snapshot()),'severity'=>JSON.deserializeUntyped(SeverityAliasProbe67.snapshot())}); } }\n",
+        "IteratorEnumTest67": "@IsTest private class IteratorEnumTest67 { @IsTest static void capture() { System.assert(false,'OBS|'+IteratorEnumObservation67.snapshot()); } }\n",
+        "ReverseSeverityContract67": "public interface ReverseSeverityContract67 {\n    void emit(LoggingLevel severity, String body);\n}\n",
+        "SeverityAliasProbe67": "public class SeverityAliasProbe67 {\n    public static List<String> received = new List<String>();\n    public class First implements SeverityContract67 {\n        public void emit(LoggingLevel severity, String body) {\n            received.add('first:' + severity.name() + ':' + body);\n        }\n    }\n    public class Second implements SeverityContract67 {\n        public void emit(LoggingLevel severity, String body) {\n            received.add('second:' + severity.name() + ':' + body);\n        }\n    }\n    public class Reverse implements ReverseSeverityContract67 {\n        public void emit(System.LoggingLevel severity, String body) {\n            received.add('reverse:' + severity.name() + ':' + body);\n        }\n    }\n    public static String snapshot() {\n        received.clear();\n        Map<String,Object> observation = new Map<String,Object>();\n        new First().emit(LoggingLevel.DEBUG, 'direct');\n        observation.put('direct', new List<String>(received));\n        received.clear();\n        SeverityContract67 first = (SeverityContract67)Type.forName('SeverityAliasProbe67.First').newInstance();\n        first.emit(LoggingLevel.INFO, 'reflected');\n        observation.put('first', new List<String>(received));\n        received.clear();\n        SeverityContract67 second = (SeverityContract67)Type.forName('SeverityAliasProbe67.Second').newInstance();\n        second.emit(LoggingLevel.WARN, 'reflected');\n        observation.put('second', new List<String>(received));\n        received.clear();\n        ReverseSeverityContract67 reverse = (ReverseSeverityContract67)Type.forName('SeverityAliasProbe67.Reverse').newInstance();\n        reverse.emit(LoggingLevel.ERROR, 'reflected');\n        observation.put('reverse', new List<String>(received));\n        return JSON.serialize(observation);\n    }\n}\n",
+        "SeverityContract67": "public interface SeverityContract67 {\n    void emit(System.LoggingLevel severity, String body);\n}\n"
+      },
+      "classMetadata": {
+        "IteratorArgumentProbe67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "IteratorEnumObservation67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "IteratorEnumTest67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "ReverseSeverityContract67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "SeverityAliasProbe67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "SeverityContract67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n"
+      },
+      "anonymous": "System.debug('OBS|'+IteratorEnumObservation67.snapshot());\n",
+      "testClass": "IteratorEnumTest67",
+      "testMethod": "capture",
+      "sourceSha256": {
+        "anonymous": "0c6bb5e63bc44a028a45699de297bf22129dc2cf6b39bf3ef3f90fbc904e7c9b",
+        "class:IteratorArgumentProbe67": "8b7d3d8a646a59b7a4815571e25d5c2d0398371b1cd1a86f02e5f741d9822276",
+        "class:IteratorEnumObservation67": "4f9f57acfe25c18164b262843b8656bf9e06f0625c53094d84131b0da9352faf",
+        "class:IteratorEnumTest67": "40d53e0a54cefeec04aa56a19af2b8625ab6449f1cc47ad114886cd84e270574",
+        "class:ReverseSeverityContract67": "c46f1970d08daacf977adb1116e3a0d3cdc5bcb6ef2aefb4e41335a3141d7292",
+        "class:SeverityAliasProbe67": "bf66291eb04602b85c7093284b45d6ce15fca3f34faddaf4642fa1ac7dde6509",
+        "class:SeverityContract67": "7ccfde3b5f4d6e2751860fd1508c2a8399288be97bba48c943fda7e11b140495",
+        "classMetadata:IteratorArgumentProbe67": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "classMetadata:IteratorEnumObservation67": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "classMetadata:IteratorEnumTest67": "17e31f2473b0c9f7048b434edab7d12261a9b8a0b9ede833cb9c3141eeeccb7b",
+        "classMetadata:ReverseSeverityContract67": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "classMetadata:SeverityAliasProbe67": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "classMetadata:SeverityContract67": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+      }
+    },
+    "68.0": {
+      "classes": {
+        "IteratorArgumentProbe68": "public class IteratorArgumentProbe68 {\n    public class FieldCollector {\n        private String selected;\n        public FieldCollector add(List<String> values) {\n            selected = 'list-string';\n            return this;\n        }\n        public FieldCollector add(Set<String> values) {\n            selected = 'set-string';\n            return this;\n        }\n        public FieldCollector add(List<Schema.SObjectField> values) {\n            selected = 'list-field';\n            return this;\n        }\n        public FieldCollector add(Set<Schema.SObjectField> values) {\n            selected = 'set-field';\n            return this;\n        }\n        public FieldCollector add(Iterator<Object> values) {\n            Object value = values.next();\n            selected = value instanceof String ? 'iterator-string:' + (String)value : 'iterator-field:' + String.valueOf((Schema.SObjectField)value);\n            return this;\n        }\n        public String value() {\n            return selected;\n        }\n    }\n    public Object instanceHead(Iterator<Object> values) {\n        return values.next();\n    }\n    public static Object staticHead(Iterator<Object> values) {\n        return values.next();\n    }\n    public static String snapshot() {\n        Map<String,Object> observed = new Map<String,Object>();\n        Iterator<String> words = new List<String>{'Name'}.iterator();\n        Iterator<Schema.SObjectField> fields = new List<Schema.SObjectField>{Account.Name}.iterator();\n        observed.put('overloadedString', new FieldCollector().add(words).value());\n        observed.put('overloadedField', new FieldCollector().add(fields).value());\n        Iterator<String> staticWords = new List<String>{'static'}.iterator();\n        Iterator<Schema.SObjectField> staticFields = new List<Schema.SObjectField>{Account.Name}.iterator();\n        observed.put('staticString', staticHead(staticWords));\n        observed.put('staticField', staticHead(staticFields) == Account.Name);\n        Iterator<String> instanceWords = new List<String>{'instance'}.iterator();\n        Iterator<Schema.SObjectField> instanceFields = new List<Schema.SObjectField>{Account.Name}.iterator();\n        observed.put('instanceString', new IteratorArgumentProbe68().instanceHead(instanceWords));\n        observed.put('instanceField', new IteratorArgumentProbe68().instanceHead(instanceFields) == Account.Name);\n        observed.put('directObject', staticHead(new List<Object>{'direct'}.iterator()));\n        Iterator<Object> objects = new List<Object>{'object-local'}.iterator();\n        observed.put('objectLocal', new IteratorArgumentProbe68().instanceHead(objects));\n        observed.put('listString', new FieldCollector().add(new List<String>{'Name'}).value());\n        observed.put('setString', new FieldCollector().add(new Set<String>{'Name'}).value());\n        observed.put('listField', new FieldCollector().add(new List<Schema.SObjectField>{Account.Name}).value());\n        observed.put('setField', new FieldCollector().add(new Set<Schema.SObjectField>{Account.Name}).value());\n        return JSON.serialize(observed);\n    }\n}\n",
+        "IteratorEnumObservation68": "public class IteratorEnumObservation68 { public static String snapshot() { return JSON.serialize(new Map<String,Object>{'iterator'=>JSON.deserializeUntyped(IteratorArgumentProbe68.snapshot()),'severity'=>JSON.deserializeUntyped(SeverityAliasProbe68.snapshot())}); } }\n",
+        "IteratorEnumTest68": "@IsTest private class IteratorEnumTest68 { @IsTest static void capture() { System.assert(false,'OBS|'+IteratorEnumObservation68.snapshot()); } }\n",
+        "ReverseSeverityContract68": "public interface ReverseSeverityContract68 {\n    void emit(LoggingLevel severity, String body);\n}\n",
+        "SeverityAliasProbe68": "public class SeverityAliasProbe68 {\n    public static List<String> received = new List<String>();\n    public class First implements SeverityContract68 {\n        public void emit(LoggingLevel severity, String body) {\n            received.add('first:' + severity.name() + ':' + body);\n        }\n    }\n    public class Second implements SeverityContract68 {\n        public void emit(LoggingLevel severity, String body) {\n            received.add('second:' + severity.name() + ':' + body);\n        }\n    }\n    public class Reverse implements ReverseSeverityContract68 {\n        public void emit(System.LoggingLevel severity, String body) {\n            received.add('reverse:' + severity.name() + ':' + body);\n        }\n    }\n    public static String snapshot() {\n        received.clear();\n        Map<String,Object> observation = new Map<String,Object>();\n        new First().emit(LoggingLevel.DEBUG, 'direct');\n        observation.put('direct', new List<String>(received));\n        received.clear();\n        SeverityContract68 first = (SeverityContract68)Type.forName('SeverityAliasProbe68.First').newInstance();\n        first.emit(LoggingLevel.INFO, 'reflected');\n        observation.put('first', new List<String>(received));\n        received.clear();\n        SeverityContract68 second = (SeverityContract68)Type.forName('SeverityAliasProbe68.Second').newInstance();\n        second.emit(LoggingLevel.WARN, 'reflected');\n        observation.put('second', new List<String>(received));\n        received.clear();\n        ReverseSeverityContract68 reverse = (ReverseSeverityContract68)Type.forName('SeverityAliasProbe68.Reverse').newInstance();\n        reverse.emit(LoggingLevel.ERROR, 'reflected');\n        observation.put('reverse', new List<String>(received));\n        return JSON.serialize(observation);\n    }\n}\n",
+        "SeverityContract68": "public interface SeverityContract68 {\n    void emit(System.LoggingLevel severity, String body);\n}\n"
+      },
+      "classMetadata": {
+        "IteratorArgumentProbe68": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>68.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "IteratorEnumObservation68": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "IteratorEnumTest68": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "ReverseSeverityContract68": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>68.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "SeverityAliasProbe68": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>68.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "SeverityContract68": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>68.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n"
+      },
+      "anonymous": "System.debug('OBS|'+IteratorEnumObservation68.snapshot());\n",
+      "testClass": "IteratorEnumTest68",
+      "testMethod": "capture",
+      "sourceSha256": {
+        "anonymous": "5524c4130d7f1f95b5ef025e1f6e358193648ecc43ef1547cda8f9386f5870ed",
+        "class:IteratorArgumentProbe68": "676e2f1639472d78fbf5dcfa46e36b655411246a87ed6e37dd998ab4b2b13062",
+        "class:IteratorEnumObservation68": "cdb684b55e73c4c37b585ad0d02bccab33a3285908be039e2c7a4e36be55b211",
+        "class:IteratorEnumTest68": "87ae298329dd17f72af810bf1550f04c6418e4098f4257858aec42785c849fb1",
+        "class:ReverseSeverityContract68": "3723852cd482da00211ecce68053babfee303f55b4d81f7417bb4f54823c288b",
+        "class:SeverityAliasProbe68": "e0dc45f7eab483c89ce0dca63e0327bbfe7a4fda50563ae66f9b608df4a6d2b4",
+        "class:SeverityContract68": "b6809a92ab36cd3be233b75508bfec3693439148b07708415e20d25fd0a39e61",
+        "classMetadata:IteratorArgumentProbe68": "d61a5e940622b0ba248df9de701b26c9b9bb440ffaf0d2325ae8e446eb7bf728",
+        "classMetadata:IteratorEnumObservation68": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+        "classMetadata:IteratorEnumTest68": "f2912b0a45f41538bdd7ba12baca853bffac82ab6937da21b0cad49b78e3b7f7",
+        "classMetadata:ReverseSeverityContract68": "d61a5e940622b0ba248df9de701b26c9b9bb440ffaf0d2325ae8e446eb7bf728",
+        "classMetadata:SeverityAliasProbe68": "d61a5e940622b0ba248df9de701b26c9b9bb440ffaf0d2325ae8e446eb7bf728",
+        "classMetadata:SeverityContract68": "d61a5e940622b0ba248df9de701b26c9b9bb440ffaf0d2325ae8e446eb7bf728"
+      }
+    }
+  },
+  "cells": [
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "observation": {
+        "severity": {
+          "direct": [
+            "first:DEBUG:direct"
+          ],
+          "first": [
+            "first:INFO:reflected"
+          ],
+          "second": [
+            "second:WARN:reflected"
+          ],
+          "reverse": [
+            "reverse:ERROR:reflected"
+          ]
+        },
+        "iterator": {
+          "overloadedString": "iterator-string:Name",
+          "overloadedField": "iterator-field:Name",
+          "staticString": "static",
+          "staticField": true,
+          "instanceString": "instance",
+          "instanceField": true,
+          "directObject": "direct",
+          "objectLocal": "object-local",
+          "listString": "list-string",
+          "setString": "set-string",
+          "listField": "list-field",
+          "setField": "set-field"
+        }
+      },
+      "evidenceSha256": "74c9dfc8825c469369ad19281229ab4f5512824fde8dc913cc3b131e7a0f09e5",
+      "command": "apex run --target-org scratch-org --api-version 62.0 --file native-capture --json",
+      "native": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "transport": "debug"
+      }
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "observation": {
+        "severity": {
+          "direct": [
+            "first:DEBUG:direct"
+          ],
+          "first": [
+            "first:INFO:reflected"
+          ],
+          "second": [
+            "second:WARN:reflected"
+          ],
+          "reverse": [
+            "reverse:ERROR:reflected"
+          ]
+        },
+        "iterator": {
+          "overloadedString": "iterator-string:Name",
+          "overloadedField": "iterator-field:Name",
+          "staticString": "static",
+          "staticField": true,
+          "instanceString": "instance",
+          "instanceField": true,
+          "directObject": "direct",
+          "objectLocal": "object-local",
+          "listString": "list-string",
+          "setString": "set-string",
+          "listField": "list-field",
+          "setField": "set-field"
+        }
+      },
+      "evidenceSha256": "4cb4d206afbf860036984131e8043a6297e44e72686ea4e9015a1c7e94eb9f9a",
+      "command": "apex run test --target-org scratch-org --api-version 62.0 --class-names IteratorEnumTest62 --synchronous --json",
+      "native": {
+        "status": 100,
+        "outcome": "Fail",
+        "transport": "intentional OBS assertion"
+      }
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "observation": {
+        "severity": {
+          "direct": [
+            "first:DEBUG:direct"
+          ],
+          "first": [
+            "first:INFO:reflected"
+          ],
+          "second": [
+            "second:WARN:reflected"
+          ],
+          "reverse": [
+            "reverse:ERROR:reflected"
+          ]
+        },
+        "iterator": {
+          "overloadedString": "iterator-string:Name",
+          "overloadedField": "iterator-field:Name",
+          "staticString": "static",
+          "staticField": true,
+          "instanceString": "instance",
+          "instanceField": true,
+          "directObject": "direct",
+          "objectLocal": "object-local",
+          "listString": "list-string",
+          "setString": "set-string",
+          "listField": "list-field",
+          "setField": "set-field"
+        }
+      },
+      "evidenceSha256": "38f1ee3024b2419d8fe3e7114c8f4b95a96d704045d66712c1940c959cb4d7f5",
+      "command": "apex run --target-org scratch-org --api-version 67.0 --file native-capture --json",
+      "native": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "transport": "debug"
+      }
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "observation": {
+        "severity": {
+          "direct": [
+            "first:DEBUG:direct"
+          ],
+          "first": [
+            "first:INFO:reflected"
+          ],
+          "second": [
+            "second:WARN:reflected"
+          ],
+          "reverse": [
+            "reverse:ERROR:reflected"
+          ]
+        },
+        "iterator": {
+          "overloadedString": "iterator-string:Name",
+          "overloadedField": "iterator-field:Name",
+          "staticString": "static",
+          "staticField": true,
+          "instanceString": "instance",
+          "instanceField": true,
+          "directObject": "direct",
+          "objectLocal": "object-local",
+          "listString": "list-string",
+          "setString": "set-string",
+          "listField": "list-field",
+          "setField": "set-field"
+        }
+      },
+      "evidenceSha256": "2bf516dbb6a205d68125a9122aea09631412f8dcb309a1cfdf6061cf22a11c67",
+      "command": "apex run test --target-org scratch-org --api-version 67.0 --class-names IteratorEnumTest67 --synchronous --json",
+      "native": {
+        "status": 100,
+        "outcome": "Fail",
+        "transport": "intentional OBS assertion"
+      }
+    },
+    {
+      "apiVersion": "68.0",
+      "route": "anonymous",
+      "observation": {
+        "severity": {
+          "direct": [
+            "first:DEBUG:direct"
+          ],
+          "first": [
+            "first:INFO:reflected"
+          ],
+          "second": [
+            "second:WARN:reflected"
+          ],
+          "reverse": [
+            "reverse:ERROR:reflected"
+          ]
+        },
+        "iterator": {
+          "overloadedString": "iterator-string:Name",
+          "overloadedField": "iterator-field:Name",
+          "staticString": "static",
+          "staticField": true,
+          "instanceString": "instance",
+          "instanceField": true,
+          "directObject": "direct",
+          "objectLocal": "object-local",
+          "listString": "list-string",
+          "setString": "set-string",
+          "listField": "list-field",
+          "setField": "set-field"
+        }
+      },
+      "evidenceSha256": "817a019b12fa534288a4717148a72dd7e0e400e459b36264acca4ee5b29b0176",
+      "command": "apex run --target-org scratch-org --api-version 68.0 --file native-capture --json",
+      "native": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "transport": "debug"
+      }
+    },
+    {
+      "apiVersion": "68.0",
+      "route": "isTest",
+      "observation": {
+        "severity": {
+          "direct": [
+            "first:DEBUG:direct"
+          ],
+          "first": [
+            "first:INFO:reflected"
+          ],
+          "second": [
+            "second:WARN:reflected"
+          ],
+          "reverse": [
+            "reverse:ERROR:reflected"
+          ]
+        },
+        "iterator": {
+          "overloadedString": "iterator-string:Name",
+          "overloadedField": "iterator-field:Name",
+          "staticString": "static",
+          "staticField": true,
+          "instanceString": "instance",
+          "instanceField": true,
+          "directObject": "direct",
+          "objectLocal": "object-local",
+          "listString": "list-string",
+          "setString": "set-string",
+          "listField": "list-field",
+          "setField": "set-field"
+        }
+      },
+      "evidenceSha256": "674a1b0366ac4e545e052022f038e3d1f91bce364f72e05921357e4a6b80bdca",
+      "command": "apex run test --target-org scratch-org --api-version 68.0 --class-names IteratorEnumTest68 --synchronous --json",
+      "native": {
+        "status": 100,
+        "outcome": "Fail",
+        "transport": "intentional OBS assertion"
+      }
+    }
+  ],
+  "d7Evidence": {
+    "observationsTsv": "row\tapi\tcontext\tvalue\nIE_62_anonymous\t62\tanonymous\t{\"iterator\":{\"directObject\":\"direct\",\"instanceField\":true,\"instanceString\":\"instance\",\"listField\":\"list-field\",\"listString\":\"list-string\",\"objectLocal\":\"object-local\",\"overloadedField\":\"iterator-field:Name\",\"overloadedString\":\"iterator-string:Name\",\"setField\":\"set-field\",\"setString\":\"set-string\",\"staticField\":true,\"staticString\":\"static\"},\"severity\":{\"direct\":[\"first:DEBUG:direct\"],\"first\":[\"first:INFO:reflected\"],\"reverse\":[\"reverse:ERROR:reflected\"],\"second\":[\"second:WARN:reflected\"]}}\nIE_62_istest\t62\tistest\t{\"iterator\":{\"directObject\":\"direct\",\"instanceField\":true,\"instanceString\":\"instance\",\"listField\":\"list-field\",\"listString\":\"list-string\",\"objectLocal\":\"object-local\",\"overloadedField\":\"iterator-field:Name\",\"overloadedString\":\"iterator-string:Name\",\"setField\":\"set-field\",\"setString\":\"set-string\",\"staticField\":true,\"staticString\":\"static\"},\"severity\":{\"direct\":[\"first:DEBUG:direct\"],\"first\":[\"first:INFO:reflected\"],\"reverse\":[\"reverse:ERROR:reflected\"],\"second\":[\"second:WARN:reflected\"]}}\nIE_67_anonymous\t67\tanonymous\t{\"iterator\":{\"directObject\":\"direct\",\"instanceField\":true,\"instanceString\":\"instance\",\"listField\":\"list-field\",\"listString\":\"list-string\",\"objectLocal\":\"object-local\",\"overloadedField\":\"iterator-field:Name\",\"overloadedString\":\"iterator-string:Name\",\"setField\":\"set-field\",\"setString\":\"set-string\",\"staticField\":true,\"staticString\":\"static\"},\"severity\":{\"direct\":[\"first:DEBUG:direct\"],\"first\":[\"first:INFO:reflected\"],\"reverse\":[\"reverse:ERROR:reflected\"],\"second\":[\"second:WARN:reflected\"]}}\nIE_67_istest\t67\tistest\t{\"iterator\":{\"directObject\":\"direct\",\"instanceField\":true,\"instanceString\":\"instance\",\"listField\":\"list-field\",\"listString\":\"list-string\",\"objectLocal\":\"object-local\",\"overloadedField\":\"iterator-field:Name\",\"overloadedString\":\"iterator-string:Name\",\"setField\":\"set-field\",\"setString\":\"set-string\",\"staticField\":true,\"staticString\":\"static\"},\"severity\":{\"direct\":[\"first:DEBUG:direct\"],\"first\":[\"first:INFO:reflected\"],\"reverse\":[\"reverse:ERROR:reflected\"],\"second\":[\"second:WARN:reflected\"]}}\nIE_68_anonymous\t68\tanonymous\t{\"iterator\":{\"directObject\":\"direct\",\"instanceField\":true,\"instanceString\":\"instance\",\"listField\":\"list-field\",\"listString\":\"list-string\",\"objectLocal\":\"object-local\",\"overloadedField\":\"iterator-field:Name\",\"overloadedString\":\"iterator-string:Name\",\"setField\":\"set-field\",\"setString\":\"set-string\",\"staticField\":true,\"staticString\":\"static\"},\"severity\":{\"direct\":[\"first:DEBUG:direct\"],\"first\":[\"first:INFO:reflected\"],\"reverse\":[\"reverse:ERROR:reflected\"],\"second\":[\"second:WARN:reflected\"]}}\nIE_68_istest\t68\tistest\t{\"iterator\":{\"directObject\":\"direct\",\"instanceField\":true,\"instanceString\":\"instance\",\"listField\":\"list-field\",\"listString\":\"list-string\",\"objectLocal\":\"object-local\",\"overloadedField\":\"iterator-field:Name\",\"overloadedString\":\"iterator-string:Name\",\"setField\":\"set-field\",\"setString\":\"set-string\",\"staticField\":true,\"staticString\":\"static\"},\"severity\":{\"direct\":[\"first:DEBUG:direct\"],\"first\":[\"first:INFO:reflected\"],\"reverse\":[\"reverse:ERROR:reflected\"],\"second\":[\"second:WARN:reflected\"]}}\n",
+    "orgTsvSha256": "1e3b5b80717e136bf165c1ed3ec68ad611cbeb85f127ec51ff1e37998cffa8c6",
+    "runMetadata": "Owned iterator argument and enum signature observations\nDev Hub: scratch-org; disposable scratch alias scratch-org\nOrg ID SHA256: d39d3209645956a2aa1492cb81f1b27254052e2856bfc3d19eebb2ac8454d952\nConfiguration: existing administrator; no permissions, sharing, settings, or data DML changes. No namespaces or packages.\nAPI62.0/67.0/68.0; classes and transport source each match metadata API.\nCommand prefix: HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf\nCreate: org create scratch --target-dev-hub scratch-org --alias scratch-org --duration-days 3 --edition developer --wait 15 --json\nDeploy: project deploy start --target-org scratch-org --source-dir force-app --wait 10 --json\nAPI 62.0 anonymous: apex run --target-org scratch-org --api-version 62.0 --file native-capture --json\nAPI 62.0 istest: apex run test --target-org scratch-org --api-version 62.0 --class-names IteratorEnumTest62 --synchronous --json\nAPI 67.0 anonymous: apex run --target-org scratch-org --api-version 67.0 --file native-capture --json\nAPI 67.0 istest: apex run test --target-org scratch-org --api-version 67.0 --class-names IteratorEnumTest67 --synchronous --json\nAPI 68.0 anonymous: apex run --target-org scratch-org --api-version 68.0 --file native-capture --json\nAPI 68.0 istest: apex run test --target-org scratch-org --api-version 68.0 --class-names IteratorEnumTest68 --synchronous --json\nNamed OBS assertion intentionally fails after computing snapshot; status100 is observation transport, not missing behavior.\nCleanup: org delete scratch --target-org scratch-org --no-prompt --json; status0. alias list --json verifies scratch-org absent.\n",
+    "orgRunSha256": "6766c0e8d4ec62d44881f527f212aaad2437537b948c50b9771b6c2554cf3acd",
+    "rawOrgRunSha256": "03aee7e78051fa98015e0f9b2747c5950a6bf2ea482631ab1b98a5417c0cbde6",
+    "normalization": "Only the local scratch authentication HOME and worktree path are replaced by stable placeholders; original raw ORG-RUN.txt SHA256 retained."
+  }
+}

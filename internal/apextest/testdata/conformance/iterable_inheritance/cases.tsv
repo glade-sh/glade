@@ -1,0 +1,5 @@
+case	shape
+interface_chain	Leaf extends Branch extends Root extends Iterable<Object>
+class_chain	Derived extends Base implements Iterable<Object>
+empty	empty Iterable<Object>
+reflection_control	Type.forName public nested implementation

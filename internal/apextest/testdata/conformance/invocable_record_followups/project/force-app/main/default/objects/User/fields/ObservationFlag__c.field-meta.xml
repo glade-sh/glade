@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>ObservationFlag__c</fullName><label>Observation Flag</label><type>Checkbox</type><defaultValue>false</defaultValue></CustomField>

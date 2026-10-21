@@ -11,6 +11,9 @@ for receiver-level behavior and named limits.
 Use this page when deciding if an Apex loop belongs in Glade.
 The full support map carries the current local contract.
 
+v0.3.0 supports Apex source API 62.0-68.0. Source API below 62.0 is unsupported;
+DataWeave, ConnectApi, and Slack are excluded and unsupported.
+
 ## Start here
 
 Start with parse, check, test, SOQL, DML, triggers, and SObjects.
@@ -29,12 +32,32 @@ platform-wide parity percentage or a verification claim for the current release.
 
 <!--@include: ../../../docs/COMPATIBILITY.md#initial-matrix-->
 
+## FormulaEval
+
+`Formula.builder()` creates a local `FormulaEval.FormulaInstance` for a
+supported formula and context type. An instance can evaluate a record and list
+its referenced fields; template parsing and numeric-null handling are available
+as builder options. Evaluation uses Glade's local formula model, so this does
+not imply complete Salesforce formula parity. An expression outside the
+modeled subset reports a local unsupported-feature error.
+
 ## Detailed source
 
 [What Glade runs locally](/guide/support-map)
 
 For compiler rules, reserved identifiers, and diagnostic propagation, see
 [Apex language compatibility](/reference/apex-language-compatibility).
+
+## Record identity and conversions
+
+Custom metadata records preserve their owner namespace separately from the
+namespace of the metadata type. `NamespacePrefix` and `QualifiedApiName` use
+record ownership in the checked SOQL and identity paths. This does not imply
+that every owner-qualified string is accepted by `getInstance`.
+
+Record-list assignment and explicit casts can fail even when a list is empty;
+the checked method-return conversions have different rules. See
+[Apex execution and conversion details](/reference/apex-language-compatibility#execution-and-conversion-details).
 
 ## Related workflows
 

@@ -9,6 +9,9 @@ Glade reads `glade.yml` from the project tree and layers it with
 `sfdx-project.json` when present. The Glade file carries local runtime choices
 that Salesforce project files do not.
 
+The expanded source API support window needs no new setting. The keys below
+are accepted by this release.
+
 ## Configuration Precedence
 
 Glade resolves settings in this order:
@@ -58,6 +61,7 @@ Use `--force` to replace an existing file.
 | `project.schemaSnapshot` | path string | no imported describe snapshot | Requires `schemaSnapshotSHA256`. |
 | `project.schemaSnapshotSHA256` | string | no snapshot digest | Requires a snapshot and 64 hexadecimal characters matching its exact bytes. |
 | `org.features` | string list | discovered/default local feature set | Unsupported feature names fail validation. |
+| `org.domainUrl` | string | `https://local.glade.example` at runtime | Absolute HTTP(S) origin; no credentials, path, query, or fragment. |
 
 ## Config file
 
@@ -89,6 +93,7 @@ org:
 | `project.schemaSnapshot` | Imported describe schema used by local `check` and `test`. Relative paths resolve from `glade.yml`. |
 | `project.schemaSnapshotSHA256` | Required SHA-256 of the exact snapshot file bytes. |
 | `org.features` | Scratch-org style features for local runtime behavior. |
+| `org.domainUrl` | Canonical HTTP(S) org origin used by `URL.getOrgDomainUrl()`; defaults to `https://local.glade.example`. |
 
 When an SFDX project declares a package dependency and a sibling project in the
 same source workspace declares that package in its own manifest, Glade resolves
@@ -116,6 +121,22 @@ snapshot. Local metadata overrides overlapping snapshot objects and fields.
 The `.glade/symbols` code-intelligence cache remains advisory. It is not read by
 the local Apex runtime; only this explicitly configured snapshot feeds `check`
 and `test`.
+
+## Runtime environment
+
+`org.domainUrl` accepts an absolute HTTP(S) origin and removes a trailing slash.
+It is independent of the incoming server request URL. For example:
+
+```yaml
+org:
+  domainUrl: https://local-org.example.test
+```
+
+Set `GLADE_TEST_TIMEOUT` in the command environment, rather than `glade.yml`,
+for the per-test wall-clock cap (default `10m`; `0` disables it).
+`--test-timeout` overrides the environment. Invalid or negative durations fail
+validation. This also applies to `@TestSetup`, daemon, watch, and `glade dev`
+test runs. It does not change CPU or governor limits.
 
 ## Namespace remaps
 

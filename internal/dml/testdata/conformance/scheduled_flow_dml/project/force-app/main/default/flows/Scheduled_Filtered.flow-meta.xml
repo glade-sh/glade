@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <interviewLabel>Scheduled Filtered {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Scheduled Filtered</label>
+    <processType>AutoLaunchedFlow</processType>
+    <recordCreates>
+        <name>Create_Filtered_Counter</name><label>Create Filtered Counter</label><locationX>0</locationX><locationY>0</locationY>
+        <inputAssignments><field>LastName</field><value><stringValue>flow-run-filtered</stringValue></value></inputAssignments>
+        <inputAssignments><field>AccountId</field><value><elementReference>$Record.Id</elementReference></value></inputAssignments>
+        <object>Contact</object><storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordCreates>
+    <recordUpdates>
+        <name>Update_Filtered</name><label>Update Filtered</label><locationX>0</locationX><locationY>0</locationY>
+        <connector><targetReference>Create_Filtered_Counter</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>Id</field><operator>EqualTo</operator><value><elementReference>$Record.Id</elementReference></value></filters>
+        <inputAssignments><field>Description</field><value><stringValue>filtered</stringValue></value></inputAssignments>
+        <object>Account</object>
+    </recordUpdates>
+    <start>
+        <locationX>0</locationX><locationY>0</locationY><object>Account</object>
+        <schedule><frequency>Daily</frequency><startDate>2026-10-20</startDate><startTime>03:15:00.000Z</startTime></schedule>
+        <filterLogic>and</filterLogic>
+        <filters><field>Name</field><operator>EqualTo</operator><value><stringValue>filtered-insert</stringValue></value></filters>
+        <triggerType>Scheduled</triggerType><connector><targetReference>Update_Filtered</targetReference></connector>
+    </start>
+    <status>Active</status>
+</Flow>

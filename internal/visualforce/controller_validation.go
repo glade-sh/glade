@@ -2,14 +2,17 @@ package visualforce
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
@@ -20,15 +23,13 @@ var visualforceControllerMethodName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]
 // supported controller compiler checks reject it. Unrelated Apex diagnostics
 // remain outside this compile gate.
 func rejectedVisualforceControllers(p project.Project) (map[string]bool, error) {
-	objects, err := schema.LoadProject(p)
+	index, diagnostics, err := visualforceControllerCompilation(p)
 	if err != nil {
 		return nil, err
 	}
-	index := typesys.Build(p, objects)
-	analysis := sema.AnalyzeWithOptions(index, sema.AnalyzeOptions{Diagnostics: true, SuppressPerformanceDiagnostics: true})
 	files := map[string]bool{}
 	syntaxFiles := map[string]bool{}
-	for _, diag := range analysis.Diagnostics {
+	for _, diag := range diagnostics {
 		if sema.IsVisualforceControllerDiagnostic(diag) || isRemotingControllerDiagnostic(index, diag) {
 			files[filepath.Clean(diag.File)] = true
 			if diag.Code == "APEXPARSE001" {
@@ -37,7 +38,11 @@ func rejectedVisualforceControllers(p project.Project) (map[string]bool, error) 
 		}
 	}
 	rejected := map[string]bool{}
+	indexedFiles := map[string]bool{}
 	for _, typ := range index.Types {
+		if !typ.Dependency {
+			indexedFiles[filepath.Clean(typ.File)] = true
+		}
 		if !typ.Dependency && files[filepath.Clean(typ.File)] {
 			rejected[strings.ToLower(typ.Name)] = true
 			if typ.LocalName != "" {
@@ -47,22 +52,57 @@ func rejectedVisualforceControllers(p project.Project) (map[string]bool, error) 
 	}
 	// A blocking parser diagnostic removes type symbols. Recover only the
 	// measured rejected source's retained declaration names, not filename guesses.
+	// A blocking inline query can also leave parsed declarations without indexed
+	// types. Use those declarations only for files with a recognized controller
+	// diagnostic; unrelated Apex syntax errors remain outside this gate.
 	parser := apexast.NewParser()
 	for _, path := range p.ApexFiles {
-		if !syntaxFiles[filepath.Clean(path)] {
+		fileName := filepath.Clean(path)
+		if !syntaxFiles[fileName] && (!files[fileName] || indexedFiles[fileName]) {
 			continue
 		}
 		file, err := parser.ParseFile(path)
 		if err != nil {
 			return nil, err
 		}
-		for _, decl := range file.Declarations {
-			if decl.Kind == apexast.DeclarationClass {
-				rejected[strings.ToLower(decl.Name)] = true
+		for _, declaration := range file.Declarations {
+			if declaration.Kind == apexast.DeclarationClass {
+				rejected[strings.ToLower(declaration.Name)] = true
 			}
 		}
 	}
 	return rejected, nil
+}
+
+// ControllerCompileDiagnostics exposes the native metadata presentation used
+// when rejecting dependent Visualforce controllers. Its inputs are project
+// source and schema, independent of any conformance expectation.
+func ControllerCompileDiagnostics(p project.Project) ([]diagnostic.Diagnostic, error) {
+	_, diagnostics, err := visualforceControllerCompilation(p)
+	return diagnostics, err
+}
+
+func visualforceControllerCompilation(p project.Project) (typesys.Index, []diagnostic.Diagnostic, error) {
+	objects, err := schema.LoadProject(p)
+	if err != nil {
+		return typesys.Index{}, nil, err
+	}
+	index := typesys.Build(p, objects)
+	analysis := sema.AnalyzeWithOptions(index, sema.AnalyzeOptions{Diagnostics: true, SuppressPerformanceDiagnostics: true})
+	ownedSources := make(map[string]bool, len(p.ApexFiles))
+	for _, path := range p.ApexFiles {
+		ownedSources[filepath.Clean(path)] = true
+	}
+	for i, diag := range analysis.Diagnostics {
+		if ownedSources[filepath.Clean(diag.File)] && (diag.Code == "GLADESEMA006" || diag.Code == "GLADESEMA_QUERY_FIELD" || diag.Code == "GLADESEMA_QUERY_OBJECT" || diag.Code == "GLADESEMA_QUERY_RELATIONSHIP") {
+			source, err := os.ReadFile(diag.File)
+			if err != nil {
+				return typesys.Index{}, nil, err
+			}
+			analysis.Diagnostics[i] = sema.VisualforceMetadataDiagnostic(diag, string(source))
+		}
+	}
+	return index, analysis.Diagnostics, nil
 }
 
 func validateCompiledControllerDeclarations(root *MarkupNode, rejected map[string]bool) error {
@@ -86,11 +126,41 @@ func visualforceControllerRoot(tree *MarkupNode) *MarkupNode {
 	return nil
 }
 
+// Metadata-backed pages compile their controller references even when the
+// project contains no Apex classes (authorization and request context missing-controller/extension captures).
+// Source-only VM fixtures can supply their controllers at runtime.
+func hasVisualforceControllerCompilationContext(p project.Project, path string) bool {
+	if len(p.ApexFiles) != 0 {
+		return true
+	}
+	metadata, err := os.Stat(path + "-meta.xml")
+	return err == nil && !metadata.IsDir()
+}
+
+// Metadata-backed standard controllers require an existing SObject, even if
+// their page has no expressions or Apex sources. Render-only fixtures can
+// still receive their schema from the runtime.
+func validateStandardControllerObject(root *MarkupNode, p project.Project) error {
+	name := strings.TrimSpace(root.Attribute("standardcontroller"))
+	if name == "" || root.Attribute("controller") != "" || storage.IsKnownStandardObject(name) {
+		return nil
+	}
+	objects, err := schema.LoadProject(p)
+	if err != nil {
+		return err
+	}
+	for _, object := range objects.Objects {
+		if strings.EqualFold(object.Name, name) || (p.Namespace != "" && strings.EqualFold(object.Name, p.Namespace+"__"+name)) {
+			return nil
+		}
+	}
+	return fmt.Errorf("%s does not exist", name)
+}
+
 // Diagnostic captures at API 59/67 distinguish controller constructors,
 // extension constructors and action methods from ordinary property expressions.
-// Source-free VM fixtures remain runtime-resolved, as with expression validation.
 func validateControllerDeclarations(tree *MarkupNode, classes map[string]apexast.Declaration) error {
-	if tree.Namespace != "apex" || tree.Name != "page" || len(classes) == 0 {
+	if tree.Namespace != "apex" || tree.Name != "page" {
 		return nil
 	}
 	controller := strings.TrimSpace(tree.Attribute("controller"))

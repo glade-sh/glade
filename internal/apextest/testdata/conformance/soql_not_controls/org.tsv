@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"scalar_group":["Cedar"],"scalar_static":["Cedar"],"scalar_ungrouped":{"message":"unexpected token: 'AND'","type":"System.QueryException"},"semi_group":[],"semi_static":[],"semi_ungrouped":{"message":"unexpected token: 'AND'","type":"System.QueryException"}}
+62.0	isTest	{"scalar_group":["Cedar"],"scalar_static":["Cedar"],"scalar_ungrouped":{"message":"unexpected token: 'AND'","type":"System.QueryException"},"semi_group":[],"semi_static":[],"semi_ungrouped":{"message":"unexpected token: 'AND'","type":"System.QueryException"}}
+67.0	anonymous	{"scalar_group":["Cedar"],"scalar_static":["Cedar"],"scalar_ungrouped":{"message":"unexpected token: 'AND'","type":"System.QueryException"},"semi_group":[],"semi_static":[],"semi_ungrouped":{"message":"unexpected token: 'AND'","type":"System.QueryException"}}
+67.0	isTest	{"scalar_group":["Cedar"],"scalar_static":["Cedar"],"scalar_ungrouped":{"message":"unexpected token: 'AND'","type":"System.QueryException"},"semi_group":[],"semi_static":[],"semi_ungrouped":{"message":"unexpected token: 'AND'","type":"System.QueryException"}}

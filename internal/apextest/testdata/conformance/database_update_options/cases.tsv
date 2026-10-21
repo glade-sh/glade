@@ -1,0 +1,11 @@
+observation	native_source_apis	routes
+bareMessage	62.0,67.0	anonymous,isTest
+bareType	62.0,67.0	anonymous,isTest
+optionsFalseCount	62.0,67.0	anonymous,isTest
+optionsFalseMessage	62.0,67.0	anonymous,isTest
+optionsFalseStatus	62.0,67.0	anonymous,isTest
+optionsFalseSuccess	62.0,67.0	anonymous,isTest
+optionsTrueMessage	62.0,67.0	anonymous,isTest
+optionsTrueType	62.0,67.0	anonymous,isTest
+statementMessage	62.0,67.0	anonymous,isTest
+statementType	62.0,67.0	anonymous,isTest

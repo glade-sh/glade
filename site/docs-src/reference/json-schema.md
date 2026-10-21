@@ -40,6 +40,21 @@ Priority commands write a versioned JSON envelope.
 | `suggestions` | array | Next commands to run. |
 | `tests` | array | Flat test rows for `glade test`. |
 | `data` | object | Command-specific detail during migration. |
+| `excludedClasses` | array | Invalid classes, their dependents, and excluded triggers for `glade test`. |
+
+## Test exclusions
+
+`summary.excludedClasses` counts exclusions, including non-test classes and
+triggers. Each `excludedClasses` entry has `className`, `file`, `line`,
+`dependsOn`, `root`, and `message`. A root with multiple errors may include
+`problems`, an array of line/message pairs. Excluded tests appear as
+`compile_error` test rows. Any exclusion makes the command exit `1`.
+
+## Doctor JSON
+
+`glade doctor --json` has its own schema version `1.0`, with fields such as
+`parserOK`, `parserStatus`, and toolchain/project status. It does not use the
+example envelope above. Inspect command-specific schemas before parsing them.
 
 ## Doctor object
 

@@ -1,0 +1,1 @@
+@IsTest private class ScalarObservationTest {@IsTest static void numberText(){System.assert(false,'OBSERVED|numberText|'+JSON.serialize(ScalarObservation.observe()));}}

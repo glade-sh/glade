@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"color":"green","redirect":true,"unqualifiedUrl":"/apex/meadow","qualifiedUrl":"/apex/meadow?color=green"}
+62.0	isTest	{"color":"green","redirect":true,"unqualifiedUrl":"/apex/meadow","qualifiedUrl":"/apex/meadow?color=green"}
+67.0	anonymous	{"color":"green","redirect":true,"unqualifiedUrl":"/apex/meadow","qualifiedUrl":"/apex/meadow?color=green"}
+67.0	isTest	{"color":"green","redirect":true,"unqualifiedUrl":"/apex/meadow","qualifiedUrl":"/apex/meadow?color=green"}

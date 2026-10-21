@@ -23,12 +23,12 @@ import (
 // SemanticABI identifies the behavior of semantic diagnostics, inference,
 // visibility, and exported types. Any change to those behaviors must bump this
 // value so persisted semantic results fail closed.
-const SemanticABI = "sema-v53"
+const SemanticABI = "sema-v68"
 
 // PlatformABI identifies the built-in Salesforce platform model consumed by
 // semantic analysis. Changes to built-in signatures, aliases, or visibility
 // must bump this value so persisted semantic results fail closed.
-const PlatformABI = "salesforce-platform-v46"
+const PlatformABI = "salesforce-platform-v56"
 
 type Result struct {
 	Project     typesys.ProjectInfo      `json:"project"`
@@ -405,7 +405,8 @@ func downgradeSourceDependencySemanticDiagnostics(diagnostics []diagnostic.Diagn
 		}
 		// Same-owner declaration/member collisions must stay hard errors even when
 		// source-backed dependencies are loaded (see GLADETYPE001 severity semantics).
-		if out[i].Code == "GLADESEMA031" || out[i].Code == "GLADESEMA032" {
+		// The captured named-test DTO field rejection is retained as well.
+		if out[i].Code == "GLADESEMA031" || out[i].Code == "GLADESEMA032" || out[i].Code == metadataNamespaceFieldDiagnosticCode {
 			continue
 		}
 		if strings.HasPrefix(out[i].Code, "GLADESEMA") || strings.HasPrefix(out[i].Code, "dependency_") {
@@ -419,6 +420,7 @@ func enrichIndexWithSchemaDerivedObjects(index typesys.Index) typesys.Index {
 	if len(index.Objects) == 0 {
 		return index
 	}
+	index.Objects = schema.WithGeneratedHistoryObjects(index.Objects)
 	out := make([]schema.Object, 0, len(index.Objects)*2)
 	seen := make(map[string]bool, len(index.Objects)*2)
 	for _, object := range index.Objects {
@@ -436,12 +438,16 @@ func enrichIndexWithSchemaDerivedObjects(index typesys.Index) typesys.Index {
 
 func semaEnrichSchemaObject(object schema.Object) schema.Object {
 	if strings.HasSuffix(normalizeName(object.Name), "__mdt") {
+		notGroupable := false
 		for _, field := range []schema.Field{
 			{Name: "DeveloperName", Type: "Text"},
 			{Name: "MasterLabel", Type: "Text"},
 			{Name: "Label", Type: "Text"},
 			{Name: "NamespacePrefix", Type: "Text"},
 			{Name: "QualifiedApiName", Type: "Text"},
+			// Native describes Language as a picklist filterable and sortable
+			// but not groupable; the schema field model has no grouping flag.
+			{Name: "Language", Type: "Picklist", Groupable: &notGroupable},
 		} {
 			object.Fields = semaMergeSchemaField(object.Fields, field)
 		}
@@ -1019,21 +1025,33 @@ func (a *Analyzer) collectAdditionalSemaLocalDecls(typ typesys.TypeSymbol, membe
 	var diagnostics []diagnostic.Diagnostic
 	segment := body[statementStart:end]
 	depth := 0
+	// angle counts open generic brackets. A `>` comparison or `=>` arrow with
+	// no open generic must not close a parenthesis, or the commas of a later
+	// constructor argument list read as additional declarators.
+	angle := 0
 	for i := 0; i < len(segment); i++ {
 		switch segment[i] {
 		case '\'':
 			i = skipSemaString(segment, i)
-		case '(', '[', '{', '<':
+		case '(', '[', '{':
 			depth++
-		case ')', ']', '}', '>':
-			if segment[i] == '>' && i > 0 && segment[i-1] == '=' {
-				continue
-			}
+		case ')', ']', '}':
 			if depth > 0 {
 				depth--
 			}
+		case '<':
+			if i > 0 && isIdentifierByte(segment[i-1]) && i+1 < len(segment) && segment[i+1] != '=' {
+				angle++
+			}
+		case '>':
+			if i > 0 && segment[i-1] == '=' {
+				continue
+			}
+			if angle > 0 {
+				angle--
+			}
 		case ',':
-			if depth != 0 {
+			if depth != 0 || angle != 0 {
 				continue
 			}
 			j := i + 1
@@ -1375,8 +1393,10 @@ func semaBodyEndsWithThrow(body string) bool {
 	if strings.HasPrefix(body, "{") && strings.HasSuffix(body, "}") {
 		body = strings.TrimSpace(body[1 : len(body)-1])
 	}
-	match := trailingThrowPattern.FindStringIndex(body)
-	return match != nil && !newSemaIgnoredText(body).contains(match[0]+strings.Index(strings.ToLower(body[match[0]:match[1]]), "throw"))
+	// Only code semicolons delimit a throw statement; quoted exception text can
+	// contain punctuation that must not truncate the trailing statement match.
+	scanText := maskSemaBindingText(body, newSemaCodeSpans(body))
+	return trailingThrowPattern.FindStringIndex(scanText) != nil
 }
 
 func semaExprContainsComparison(expr string) bool {
@@ -1799,6 +1819,9 @@ func semaLooksLikeSObjectFieldToken(expr string) bool {
 
 func semaLooksLikeSObjectFieldTokenInModel(expr string, model *semaTypeMemberView) bool {
 	parts := strings.Split(strings.TrimSpace(expr), ".")
+	if semaSObjectTypeFieldTokenParts(parts, model) {
+		return true
+	}
 	if len(parts) == 2 && semaFieldTokenPart(parts[0]) && semaFieldTokenPart(parts[1]) && isSemaSObjectLike(parts[0], model) && !strings.EqualFold(parts[1], "SObjectType") && !semaLooksLikeStaticConstantName(parts[1]) {
 		return true
 	}
@@ -1854,8 +1877,57 @@ func semaLooksLikeSObjectTypeTokenInModel(expr string, model *semaTypeMemberView
 	if !strings.EqualFold(parts[len(parts)-1], "SObjectType") {
 		return false
 	}
+	if semaSObjectTypeFieldTokenParts(parts, model) {
+		return false
+	}
 	objectName := parts[len(parts)-2]
 	return isSemaSObjectLike(objectName, model)
+}
+
+// semaSObjectTypeFieldTokenParts reports whether <Object>.SObjectType or
+// Schema.<Object>.SObjectType names the object's SobjectType field token
+// instead of its type token, everywhere: as a value and as a call receiver.
+// Native at 62.0 and 67.0, RecordType: PB05/H1XT5-A argument, PB06/H1XT6-A
+// and lowercase H1XT10-A Schema.SObjectField locals, PB07/H1XT7-A rejection,
+// H1XT14-A Object, H1XT15-A assignment, H1XT8-A getDescribe() receiver,
+// H1XT9-A newSObject() rejected, H1XT11-A Schema.RecordType.SObjectType; and
+// ObjectPermissions (H1XT13-A). Contact has no SobjectType field and keeps
+// the type token (M1 S16, S116). Other objects with an SobjectType field have
+// no row and keep the type token. Callers check locals and fields first.
+func semaSObjectTypeFieldTokenParts(parts []string, model *semaTypeMemberView) bool {
+	objectName := ""
+	switch {
+	case len(parts) == 2 && strings.EqualFold(strings.TrimSpace(parts[1]), "SObjectType"):
+		objectName = strings.TrimSpace(parts[0])
+	case len(parts) == 3 && strings.EqualFold(strings.TrimSpace(parts[0]), "Schema") && strings.EqualFold(strings.TrimSpace(parts[2]), "SObjectType"):
+		objectName = strings.TrimSpace(parts[1])
+	default:
+		return false
+	}
+	if !strings.EqualFold(objectName, "RecordType") && !strings.EqualFold(objectName, "ObjectPermissions") {
+		return false
+	}
+	if model != nil {
+		if members, ok := model.lookup(normalizeName(objectName)); ok && !members.sobject {
+			return false
+		}
+	}
+	return semaStandardObjectHasSObjectTypeField(objectName)
+}
+
+var semaSObjectTypeFieldObjects sync.Map
+
+func semaStandardObjectHasSObjectTypeField(objectName string) bool {
+	key := strings.ToLower(objectName)
+	if cached, ok := semaSObjectTypeFieldObjects.Load(key); ok {
+		return cached.(bool)
+	}
+	found := false
+	if definition, ok := storage.StandardObjectDefinition(objectName); ok {
+		_, found = storage.ResolveFieldName(definition, "", "SObjectType")
+	}
+	semaSObjectTypeFieldObjects.Store(key, found)
+	return found
 }
 
 func semaFieldTokenPart(part string) bool {
@@ -2012,10 +2084,7 @@ func semaTextReceiverType(receiver string, scope map[string]string, model *semaT
 }
 
 func semaResolvedCallReturnType(model *semaTypeMemberView, receiverType, method string, args []semaArg, scope map[string]string, receiverMode string) string {
-	argTypes := make([]string, len(args))
-	for i, arg := range args {
-		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
-	}
+	argTypes := semaArgTypes(args, scope, model)
 	if stubbedType := semaCreateStubReturnTypeFromText(model, receiverType, method, args); stubbedType != "" {
 		return stubbedType
 	}
@@ -2034,7 +2103,7 @@ func semaResolvedCallReturnType(model *semaTypeMemberView, receiverType, method 
 		return sig.returnType
 	}
 	if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
-		return sig.returnType
+		return sig.returnTypeForArity(len(args))
 	}
 	if semaDatabaseDynamicQueryResultCall(receiverType, method) {
 		return "Database.QueryResult"
@@ -2186,10 +2255,19 @@ func semaResolvedImplicitCallReturnType(model *semaTypeMemberView, receiverType,
 	for i, arg := range args {
 		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
 	}
+	candidates := resolveImplicitMemberMethods(model, receiverType, method)
+	// E23E001/004/007/027/032/036: the declared equals(Object) return
+	// takes precedence over the implicit Boolean Object member.
+	if strings.EqualFold(method, "equals") {
+		if candidate, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok && !ambiguous && strings.EqualFold(candidate.owner, receiverType) && !semaResolvedMembersAllPlatformBacked(model, []resolvedMember{candidate}) &&
+			len(candidate.member.Parameters) == 1 && strings.EqualFold(candidate.member.Parameters[0].Type, "Object") {
+			return semaResolvedMemberReturnType(model, candidate)
+		}
+	}
 	if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok && semaArgsMatchAny(sig.params, argTypes, model) {
 		return sig.returnType
 	}
-	if candidate, ok, _ := bestResolvedMemberByArgTypes(resolveImplicitMemberMethods(model, receiverType, method), argTypes, model); ok {
+	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok {
 		return semaResolvedMemberReturnType(model, candidate)
 	}
 	return ""
@@ -2243,8 +2321,16 @@ func semaCommonType(leftType, rightType string, model *semaTypeMemberView) strin
 }
 
 type semaCollectionSignature struct {
-	returnType string
-	params     [][]string
+	returnType        string
+	returnTypeByArity map[int]string
+	params            [][]string
+}
+
+func (sig semaCollectionSignature) returnTypeForArity(argumentCount int) string {
+	if returnType, ok := sig.returnTypeByArity[argumentCount]; ok {
+		return returnType
+	}
+	return sig.returnType
 }
 
 // Salesforce accepts Search.suggest's options argument through an Object
@@ -2663,10 +2749,18 @@ func semaIterableElementTypeInModel(typeName string, model *semaTypeMemberView) 
 	if elementType, ok := semaIterableElementType(typeName); ok {
 		return elementType, true
 	}
-	members, _, ok := semaLookupTypeMembers(model, typeName)
-	if !ok {
+	return semaIterableElementTypeInHierarchy(typeName, model, map[string]bool{})
+}
+
+// semaIterableElementTypeInHierarchy follows implemented and extended
+// interfaces and superclasses, so an interface that extends an interface that
+// extends Iterable<Object> is iterable.
+func semaIterableElementTypeInHierarchy(typeName string, model *semaTypeMemberView, seen map[string]bool) (string, bool) {
+	members, key, ok := semaLookupTypeMembers(model, typeName)
+	if !ok || key == "" || seen[key] {
 		return "", false
 	}
+	seen[key] = true
 	for _, iface := range members.interfaces {
 		base, args := semaGenericBaseAndArgs(iface)
 		if strings.EqualFold(base, "Iterable") {
@@ -2675,6 +2769,14 @@ func semaIterableElementTypeInModel(typeName string, model *semaTypeMemberView) 
 			}
 			return "", true
 		}
+	}
+	for _, iface := range members.interfaces {
+		if elementType, ok := semaIterableElementTypeInHierarchy(resolveNestedTypeReference(model, members.name, iface), model, seen); ok {
+			return elementType, true
+		}
+	}
+	if members.superClass != "" {
+		return semaIterableElementTypeInHierarchy(resolveNestedTypeReference(model, members.name, members.superClass), model, seen)
 	}
 	return "", false
 }
@@ -3351,10 +3453,10 @@ func (a *Analyzer) exportKnownTypes() map[string]TypeReference {
 var (
 	typeIdentifierPattern          = regexp.MustCompile(`[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*`)
 	typeReferencePattern           = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*$`)
-	lineLocalDeclPattern           = regexp.MustCompile(`(?m)^\s*(?:final\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
-	wrappedLocalDeclPattern        = regexp.MustCompile(`(?m)^\s*(?:final\s+)?([A-Za-z_][^\n;=(){}]+)[ \t]*\r?\n\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`)
-	noSpaceGenericLocalDeclPattern = regexp.MustCompile(`(?m)(?:^|[;\n])\s*(?:final\s+)?([A-Za-z_][A-Za-z0-9_.]*\s*<[^;=(){}]+>)([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
-	localDeclPattern               = regexp.MustCompile(`(?m)(?:^|[;{}\n])\s*(?:final\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
+	lineLocalDeclPattern           = regexp.MustCompile(`(?m)^\s*(?:(?:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
+	wrappedLocalDeclPattern        = regexp.MustCompile(`(?m)^\s*(?:(?:final|transient)\s+)?([A-Za-z_][^\n;=(){}]+)[ \t]*\r?\n\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`)
+	noSpaceGenericLocalDeclPattern = regexp.MustCompile(`(?m)(?:^|[;\n])\s*(?:(?:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*\s*<[^;=(){}]+>)([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
+	localDeclPattern               = regexp.MustCompile(`(?m)(?:^|[;{}\n])\s*(?:(?:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
 	enhancedForLocalPattern        = regexp.MustCompile(`(?im)\bfor\s*\(\s*(?:final\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*:`)
 	forHeaderPattern               = regexp.MustCompile(`(?i)\bfor\s*\(`)
 	catchLocalPattern              = regexp.MustCompile(`(?im)\bcatch\s*\(\s*([A-Za-z_][A-Za-z0-9_.]*(?:\s*\|\s*[A-Za-z_][A-Za-z0-9_.]*)*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\)`)
@@ -3607,13 +3709,7 @@ func inferSemaBinaryType(arg string, scope map[string]string) string {
 			return "String"
 		}
 		if isSemaNumericType(leftType) && isSemaNumericType(rightType) {
-			if strings.EqualFold(leftType, "Decimal") || strings.EqualFold(rightType, "Decimal") || strings.EqualFold(leftType, "Double") || strings.EqualFold(rightType, "Double") {
-				return "Decimal"
-			}
-			if strings.EqualFold(leftType, "Long") || strings.EqualFold(rightType, "Long") {
-				return "Long"
-			}
-			return "Integer"
+			return semaNumericResultType(leftType, rightType)
 		}
 	}
 	return ""

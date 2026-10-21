@@ -1,0 +1,801 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 9,
+  "nativeObservationCount": 54,
+  "packetRowsSha256": "bdb07c4592ca774891f1569ddbb47b04d8979873883901e5e60ab5a6c6092167",
+  "nativeJsonSha256": "3371b4658cc7034d1461a6b1e24ebf443dbdfb588c66ae393a06296feaa30e65",
+  "sourceManifestSha256": "cd86500b7b47c95e1fe5992615a7f7169c90dd9d903e6776516d2162a3219255",
+  "rows": [
+    {
+      "id": "C126OWNER_001",
+      "question": "Case.Owner attributes User",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126OWNER_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "9fde484f94275a013fdc3dadbe9071248705b875b6852a2b4bfddefa153a792e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "User",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"User\"},\"FirstName\":\"Ada\"}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "User",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"User\"},\"FirstName\":\"Ada\"}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "User",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"User\"},\"FirstName\":\"Ada\"}}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "c0b576b00d3d5440d6ed3bd96df704153d56070fa48756dd9a9d02120c4c50f6",
+            "67.0": "91ba866a35d3148d4afebdc251f39dee199abe3df14647259c69cb584c90a977",
+            "68.0": "25b0bde40bf0134e32dff915bab3843670c0806f60512739b03e814770666c72"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nCase c=(Case)JSON.deserialize('{\"Owner\":{\"FirstName\":\"Ada\",\"attributes\":{\"type\":\"User\"}}}',Case.class);o.put('json',JSON.serialize(c));o.put('ownerType',String.valueOf(c.Owner.getSObjectType()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126OWNER_001|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126OWNER_001",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "97522136bbc8b95b143c9d429aee64ab227e735c7a480cc214c0876e0947550f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "User",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"User\"},\"FirstName\":\"Ada\"}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "User",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"User\"},\"FirstName\":\"Ada\"}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "User",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"User\"},\"FirstName\":\"Ada\"}}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "7aaf00dd82578d9f440ffd54c4c63d3be51307a4a589e53658311eb7efe2a4af",
+            "67.0": "a2047a0915646b79da5fe1e944572de98f144309950d0f06300bd044d76c5922",
+            "68.0": "e56b9dae0a87fa4b800ec65990473d00829625c1f90d633e8b4f8ed9532a9547"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nCase c=(Case)JSON.deserialize('{\"Owner\":{\"FirstName\":\"Ada\",\"attributes\":{\"type\":\"User\"}}}',Case.class);o.put('json',JSON.serialize(c));o.put('ownerType',String.valueOf(c.Owner.getSObjectType()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126OWNER_001|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126OWNER_002",
+      "question": "Case.Owner attributes Group",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126OWNER_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "eb6d5417f8de04133adc710914885113151ff86681d39adba7e704bf3785251e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "Group",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"Group\"},\"Name\":\"Synthetic Queue\"}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "Group",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"Group\"},\"Name\":\"Synthetic Queue\"}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "Group",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"Group\"},\"Name\":\"Synthetic Queue\"}}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "e5408444e94be4daee18a435c5f74fa5fbd8291ecc5fa758b97fcaa5fa832234",
+            "67.0": "4c63ac1682f497d82c0679fe0a6ae3e2d944f6199487da7d3e93c9311af66f98",
+            "68.0": "f63259ef3c7f5a56e0edf4ac46aa580d14d956141724fa5c319dd5fe0afa9eaf"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nCase c=(Case)JSON.deserialize('{\"Owner\":{\"Name\":\"Synthetic Queue\",\"attributes\":{\"type\":\"Group\"}}}',Case.class);o.put('json',JSON.serialize(c));o.put('ownerType',String.valueOf(c.Owner.getSObjectType()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126OWNER_002|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126OWNER_002",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "a4248501fe92814ac3fd00495805343e3c91c677108ec9bff88090623027c7cb"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "Group",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"Group\"},\"Name\":\"Synthetic Queue\"}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "Group",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"Group\"},\"Name\":\"Synthetic Queue\"}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "Group",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"Group\"},\"Name\":\"Synthetic Queue\"}}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "d34e663bfed5710cf42d53fb6063d28a3c013ad59668e78067601165356a018f",
+            "67.0": "a883ab2fca9a8a1fe326c16ad7bf59fbd86a51cbda706c5b3402aeafc302ebcc",
+            "68.0": "3f1f0a438601a0e85635aa4daa3cff9a6d9dea0fdbd775e4ba40fe8a090b2387"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nCase c=(Case)JSON.deserialize('{\"Owner\":{\"Name\":\"Synthetic Queue\",\"attributes\":{\"type\":\"Group\"}}}',Case.class);o.put('json',JSON.serialize(c));o.put('ownerType',String.valueOf(c.Owner.getSObjectType()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126OWNER_002|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126OWNER_003",
+      "question": "Case.Owner attributes Account",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126OWNER_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "a70a8ce5d7aab13fea97f9a8611aea7cce4d80cee301b9abd3eb1ae7931e3def"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "Account",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "Account",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "Account",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "aaacf354f07f321765a529b4146ba2e4709d2097070c86aac9800a7371b08221",
+            "67.0": "b6642d088792b734356fb467cb01a3ddc1893a1536020c4c04f929a893f0e100",
+            "68.0": "ea037364e0059550ff7f4cb04bacde3ab73ed27614070a8363be1600fc23ceee"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nCase c=(Case)JSON.deserialize('{\"Owner\":{\"Name\":\"Synthetic\",\"attributes\":{\"type\":\"Account\"}}}',Case.class);o.put('json',JSON.serialize(c));o.put('ownerType',String.valueOf(c.Owner.getSObjectType()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126OWNER_003|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126OWNER_003",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "70f375c0d5d034ab0557f18e63fa92b15287774fe82a939f451212fa045c54bd"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "Account",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "Account",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "ownerType": "Account",
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "c5b6db7671f5f8c6416697404571101da16e2960436e9efc685e66a0702bd4ea",
+            "67.0": "d3a2431693d5722421407bdf0be5aabe1f5c4552cc05eb540b7fa782b4173dfa",
+            "68.0": "0d3382f337db9d07456ea25c37cea0f5d040b783ad0062f01dedb0becde42ac7"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nCase c=(Case)JSON.deserialize('{\"Owner\":{\"Name\":\"Synthetic\",\"attributes\":{\"type\":\"Account\"}}}',Case.class);o.put('json',JSON.serialize(c));o.put('ownerType',String.valueOf(c.Owner.getSObjectType()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126OWNER_003|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126OWNER_004",
+      "question": "Case.Owner attributes User",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126OWNER_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "e9e0ccda3f0a2fb30c3cd43162e7f7130e5d7ec038102fa1de7da4347cbe5c10"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "8e189ba10567d85709dbd7139703ea1b5161ecba998b4587ddc04aa55d710ce5",
+            "67.0": "7b673bb2c6abab54800a5b6b187a60995ebc63d793b92b728114f4226bfe5b4d",
+            "68.0": "68f06968eca1f6cedb22284996479332024bb6c812cabf2f93fc5a4ee12beea2"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nCase c=(Case)JSON.deserialize('{\"Owner\":{\"C126Missing\":\"Synthetic\",\"attributes\":{\"type\":\"User\"}}}',Case.class);o.put('json',JSON.serialize(c));o.put('ownerType',String.valueOf(c.Owner.getSObjectType()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126OWNER_004|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126OWNER_004",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "689c101e1dff37a5bd76b559d800273f12e3f9d64f0cc193ec5904294e210aac"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "436ca6d876650e2af18318199bb6fe91f97a0e42522dc5faa8000226c800c9e5",
+            "67.0": "460e7e2d1937d8f6d5bc184c4c694f07b99ddbc8375001cbc66630035cf52de4",
+            "68.0": "f323b2c9c72902921d0db50986eef1fcca9f968096a9fda2a19eb57616197d7f"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nCase c=(Case)JSON.deserialize('{\"Owner\":{\"C126Missing\":\"Synthetic\",\"attributes\":{\"type\":\"User\"}}}',Case.class);o.put('json',JSON.serialize(c));o.put('ownerType',String.valueOf(c.Owner.getSObjectType()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126OWNER_004|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126OWNER_005",
+      "question": "Case.Owner attributes Group",
+      "role": "rejection",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126OWNER_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "f5d52cd361101abd776cca7589882f7fc1c223e90e6e721f3398e87a90932b15"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "7a9ac02eaa6572c6fb4a9c0d345c59590b65456888311441abc334c2a955df02",
+            "67.0": "cb3470fd6fcc40edb77342733dcecb172de893b4a12c237371960eb511c57e2f",
+            "68.0": "1fcae430484a46c544157addee57a730752ae6a404b8656f5aca4e41e29b2690"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nCase c=(Case)JSON.deserialize('{\"Owner\":{\"FirstName\":\"Ada\",\"attributes\":{\"type\":\"Group\"}}}',Case.class);o.put('json',JSON.serialize(c));o.put('ownerType',String.valueOf(c.Owner.getSObjectType()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126OWNER_005|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126OWNER_005",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "771f8aa23a253602b4896c7ee72375b2fa16ea7dae72084678b17e6a3f2517bd"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "889e913318746ecc5ec2a8ecc931f4b3da32e95ff310ce0af7742a07f7bfc8a0",
+            "67.0": "fc35f492bf14a286eb0eac1c8bf61214f330488ddc4023a0878bb9fc10b1090a",
+            "68.0": "9c8bea2a27f11a10190b6f02bf7dc801c5a6c1a85c6b9f515955dedc5101849b"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nCase c=(Case)JSON.deserialize('{\"Owner\":{\"FirstName\":\"Ada\",\"attributes\":{\"type\":\"Group\"}}}',Case.class);o.put('json',JSON.serialize(c));o.put('ownerType',String.valueOf(c.Owner.getSObjectType()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126OWNER_005|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126OWNER_006",
+      "question": "Case.Owner attributes None",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126OWNER_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "9166290aff21d9ca8da205b53cfcc68c70015bd809d55d14becb6fababa9c50e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "03a69e2964da1a54277743d5cfab2da824bbe0dafd38f08f1e7ca4ab5a1cac80",
+            "67.0": "09c96601fee618a044b36ee440eea6fd9e33bf6f5af677fbfa7c7b81a3b54c7d",
+            "68.0": "f6f93ac89a2fa91771d8e6c4e89ec586a33e6e5f88d707f5fec0666c5ef52575"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nCase c=(Case)JSON.deserialize('{\"Owner\":{\"FirstName\":\"Ada\"}}',Case.class);o.put('json',JSON.serialize(c));o.put('ownerType',String.valueOf(c.Owner.getSObjectType()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126OWNER_006|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126OWNER_006",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "f014e4b32904af05410416b1e0d3502274f46a75c287f73d40f3abf2f9a2391a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "exceptionMessage": "Cannot deserialize instance of <unknown> from null value null or request may be missing a required field",
+                "exceptionType": "System.JSONException"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "5c4aa0a8c986b6fc3acf34bcfdd60c1564fa6fc6a53dbb8d6c5549d4dc6e6ced",
+            "67.0": "6258ae5f6c8fa12423efc528ef1c2d8b72f6af5d01b28b6ab6bea66e8d331da0",
+            "68.0": "38b78d7fbaecfd0d2777aa37a44d2e3f629a86f106d698db16e08ee979e5deaa"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nCase c=(Case)JSON.deserialize('{\"Owner\":{\"FirstName\":\"Ada\"}}',Case.class);o.put('json',JSON.serialize(c));o.put('ownerType',String.valueOf(c.Owner.getSObjectType()));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126OWNER_006|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126OWNER_007",
+      "question": "Null polymorphic owner",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126OWNER_007",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "0e01b70d7072e835ba1e2b7f471f1833f113da4eb75934b2671ae4643ec84d37"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":null}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":null}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":null}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "12de7b03038737d279a60020ccb385d361a62351009773f53aa03889cd911be0",
+            "67.0": "ca8341d09d1c1a6f2c72efb8d0fdafb7728c22fc8963f5ec69a27645240678f0",
+            "68.0": "bfcac33d1b325b87f28c7440e9ecd873ca2c14634526be11350c1dda9e9e4096"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nCase c=(Case)JSON.deserialize('{\"Owner\":null}',Case.class);o.put('json',JSON.serialize(c));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126OWNER_007|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126OWNER_007",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "fbac6c18a88a62440bc2ef047086f5b295563ffb136f511d0e5403a0a23e587b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":null}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":null}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Case\"},\"Owner\":null}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "6664cac4ea92b0cfbac58dc0827d57e9ce952e2f11d39464c36c2416c7dddf16",
+            "67.0": "8476b7bc593cbd08d0ec64a30fbb2f87a92c5c673f13482f2c79e7efaac67967",
+            "68.0": "f3489ac74da8f510465cc839063f23a91cc0abdf1147832da0094e45f1e408a7"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nCase c=(Case)JSON.deserialize('{\"Owner\":null}',Case.class);o.put('json',JSON.serialize(c));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126OWNER_007|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126OWNER_008",
+      "question": "Task owner concrete User",
+      "role": "candidate",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126OWNER_008",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "b9032e8c9298f5aa675d6dbdbd155c7f9d579c9ee0f532269df5c691379be348"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Task\"},\"Owner\":{\"attributes\":{\"type\":\"User\"},\"FirstName\":\"Ada\"}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Task\"},\"Owner\":{\"attributes\":{\"type\":\"User\"},\"FirstName\":\"Ada\"}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Task\"},\"Owner\":{\"attributes\":{\"type\":\"User\"},\"FirstName\":\"Ada\"}}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "f70b9fe041cffddf32548a092174e4d9660126f85f83eeafd7e74bbe0f012f81",
+            "67.0": "98d7f06b85bafa30aaf73e43b2e4f8e3ca5d0035481002b93db4e26f2f7be270",
+            "68.0": "fad1ca167cff160583be42a4eb332c268658df998310840135e9baedbb907925"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nTask t=(Task)JSON.deserialize('{\"Owner\":{\"attributes\":{\"type\":\"User\"},\"FirstName\":\"Ada\"}}',Task.class);o.put('json',JSON.serialize(t));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126OWNER_008|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126OWNER_008",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "f6eaceaa3323e0b2cf9ae970a5be8db9abfa25372906f2cd0f2d1a4799594b16"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Task\"},\"Owner\":{\"attributes\":{\"type\":\"User\"},\"FirstName\":\"Ada\"}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Task\"},\"Owner\":{\"attributes\":{\"type\":\"User\"},\"FirstName\":\"Ada\"}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Task\"},\"Owner\":{\"attributes\":{\"type\":\"User\"},\"FirstName\":\"Ada\"}}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "35332ad675422f499251ef9805e7780bc69c752e030c56faed464ecccfac673b",
+            "67.0": "9971b93dedc22a725ac4dfb1a0740b76d25a97dc7a577fd8f9a6306d0110f0d2",
+            "68.0": "6f282efb66941b105e9373379a7861bdc41681a3e34282fdc864046f65134b6d"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nTask t=(Task)JSON.deserialize('{\"Owner\":{\"attributes\":{\"type\":\"User\"},\"FirstName\":\"Ada\"}}',Task.class);o.put('json',JSON.serialize(t));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126OWNER_008|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    },
+    {
+      "id": "C126OWNER_009",
+      "question": "Nonpolymorphic parent envelope",
+      "role": "boundary",
+      "routeDifference": null,
+      "routes": {
+        "anonymous": {
+          "id": "C126OWNER_009",
+          "stage": "observed",
+          "sourceSha256": {
+            "anonymous": "d408a3b4d86bae5d8beeb8bc76b044a70057555ff75e6eab892108bfc7703ac9"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Contact\"},\"Account\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Contact\"},\"Account\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Contact\"},\"Account\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "ae609ffd04ef77795fe8ef25573e1a96924b49ac370a53e94b704d9887aafc79",
+            "67.0": "a00d6c9578d896355e2c0362ebc6062c1f1f588783bb050ef79d90355663926e",
+            "68.0": "ba9da7f95de8f06e2aecec72c9e2747202f723d8a9a9c102ea43fe164fa3bc8c"
+          },
+          "anonymous": "\nclass C126TransportException extends Exception {}\nMap<String,Object> o=new Map<String,Object>();try{\nContact c=(Contact)JSON.deserialize('{\"Account\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}}',Contact.class);o.put('json',JSON.serialize(c));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nthrow new C126TransportException('C126_RESULT|C126OWNER_009|'+JSON.serialize(o));",
+          "objects": {}
+        },
+        "isTest": {
+          "id": "C126OWNER_009",
+          "stage": "observed",
+          "sourceSha256": {
+            "class:C126Test": "f4aa092fe3900c2a1cf5f554111f2bbf1d97b9e814a63d78d55f83bdb1b6a284"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Contact\"},\"Account\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}}"
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Contact\"},\"Account\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}}"
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "json": "{\"attributes\":{\"type\":\"Contact\"},\"Account\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}}"
+              }
+            }
+          },
+          "nativeDiagnosticsByAPI": {},
+          "evidenceSha256ByAPI": {
+            "62.0": "9b994424c2ef007d24b9a4aa7c527e66a3880765c4dc1ce63e93e9909cb7c97f",
+            "67.0": "a9224fc43c58d269116da439497fac97540ae97d37da1a582f60fde3409fdd4d",
+            "68.0": "4c0f1c7a7696218c408dbec93f3d2182e7c11f63bfa4554c1ffa73fe6b9c044d"
+          },
+          "classes": {
+            "C126Test": "@IsTest private class C126Test { @IsTest static void observe(){\n\nMap<String,Object> o=new Map<String,Object>();try{\nContact c=(Contact)JSON.deserialize('{\"Account\":{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Synthetic\"}}',Contact.class);o.put('json',JSON.serialize(c));\n}catch(Exception e){o.put('exceptionType',e.getTypeName());o.put('exceptionMessage',e.getMessage());}\nSystem.assert(false,'C126_RESULT|C126OWNER_009|'+JSON.serialize(o));\n}}"
+          },
+          "tests": [
+            "C126Test"
+          ],
+          "objects": {}
+        }
+      }
+    }
+  ]
+}

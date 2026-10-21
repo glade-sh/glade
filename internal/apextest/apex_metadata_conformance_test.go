@@ -87,7 +87,7 @@ func TestApexMetadataOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 262 || len(data.Controls) != 36 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 262 || len(data.Controls) != 36 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("oracle shape: cases=%d controls=%d APIs=%v", len(data.Cases), len(data.Controls), data.APIVersions)
 	}
 	rows := append(append([]apexMetadataOracleCase{}, data.Cases...), data.Controls...)
@@ -184,6 +184,9 @@ func TestApexMetadataOrgConformance(t *testing.T) {
 				t.Fatalf("helper compile: %v %v", index.Diagnostics, sema.Analyze(index).Diagnostics)
 			}
 			anonymousRunner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true})
+			if api == "68.0" {
+				t.Log("API 68 @IsTest checks are local cross-route checks against anonymous Salesforce answers; no native named-route capture")
+			}
 			var namedSource strings.Builder
 			namedSource.WriteString("@IsTest private class ApexMetadataOracleTest {\n")
 			namedCount := 0

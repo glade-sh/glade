@@ -1,0 +1,20 @@
+{
+  "nativeCells": 192,
+  "predictedBaselineFailingCells": 72,
+  "predictedBaselineFailingRows": [
+    "SUM_SCALE_0",
+    "SUM_CARRY_VALUEOF",
+    "SUM_CARRY_TOSTRING",
+    "SUM_CARRY_CONCAT",
+    "SUM_CARRY_JSON",
+    "SUM_NEGATIVE",
+    "SUM_LARGE",
+    "SUM_BOUNDARY_AT_E7",
+    "SUM_BOUNDARY_MID_E7",
+    "SUM_BOUNDARY_ABOVE_2P53",
+    "SUM_BOUNDARY_NEGATIVE_CARRY",
+    "SUM_EXACT_ANCHOR"
+  ],
+  "expectedAfterPassingCells": 192,
+  "verification": "Source analysis only; coordinator validation required. Numeric seed guards are checked for exact numeric equality, not their incidental string scale."
+}

@@ -1,0 +1,7 @@
+id	shape	contract
+natural	Separate inserts without a delay	Audit timestamps may be equal; first row is not guaranteed to be the later insert
+tied	Equal CreatedDate values set explicitly	Both rows remain eligible to be first under ORDER BY CreatedDate DESC
+processed	Both parents have Processed description	A state check does not identify the renewal parent
+entries	Two entries on the renewal parent	Selecting the original parent yields zero; selecting the renewal yields two
+filtered	Filter lines by renewal parent	One line and two entries
+assumption	Assume first tied line is the renewal	Observed assertion failure on Salesforce; no promised tie ordering

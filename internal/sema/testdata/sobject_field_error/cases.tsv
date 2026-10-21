@@ -1,0 +1,8 @@
+case	question
+OrchardRevenueField	Compile and execute field validation on its receiver
+OrchardNameField	Compile and execute field validation on its receiver
+OrchardFlagField	Compile and execute field validation on its receiver
+OrchardRecordError	Compile and execute field validation on its receiver
+OrchardDecimalValue	Compile and execute field validation on its receiver
+OrchardContainerValue	Compile and execute field validation on its receiver
+OrchardWrongArgument	Compile and execute field validation on its receiver

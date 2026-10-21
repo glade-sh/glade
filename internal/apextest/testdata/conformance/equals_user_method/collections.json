@@ -1,0 +1,949 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "collections",
+  "shapeCount": 6,
+  "nativeObservationCount": 36,
+  "packetRowsSha256": "8c737726ee2d9f757a59656fe1c063b99190b30c1bc5db6d269f837c3041db33",
+  "rows": [
+    {
+      "id": "E23E013",
+      "label": "EqResult Set forced hash collision",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "dada30249149b7be617a49785aefd62bc52ed3ad08f9eb70ba242b7ef6713982",
+            "class:EqFixture": "cdac98403b262c337273b3ce4f154f06e1da3e0abd6fdcf69fa9d627a60c104d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "added": [
+                    true,
+                    true,
+                    false
+                  ],
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "hashCalls": [
+                    3,
+                    2
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"added\":[true,true,false],\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[0,0],\"hashCalls\":[3,2],\"size\":2}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "added": [
+                    true,
+                    true,
+                    false
+                  ],
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "hashCalls": [
+                    3,
+                    2
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"added\":[true,true,false],\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[0,0],\"hashCalls\":[3,2],\"size\":2}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "added": [
+                    true,
+                    true,
+                    false
+                  ],
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "hashCalls": [
+                    3,
+                    2
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"added\":[true,true,false],\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[0,0],\"hashCalls\":[3,2],\"size\":2}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return equals(v);}public Integer hashCode(){hashCalls++;return 7;}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject a=new EqFixture.EqSubject(),b=new EqFixture.EqSubject();Set<EqFixture.EqSubject> s=new Set<EqFixture.EqSubject>();List<Boolean> added=new List<Boolean>{s.add(a),s.add(b),s.add(a)};payload.put('added',added);payload.put('size',s.size());payload.put('containsSame',s.contains(a));payload.put('containsOther',s.contains(b));payload.put('eqCalls',new List<Integer>{a.calls,b.calls});payload.put('hashCalls',new List<Integer>{a.hashCalls,b.hashCalls});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E013|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "cdac98403b262c337273b3ce4f154f06e1da3e0abd6fdcf69fa9d627a60c104d",
+            "class:ObserveE23E013Test": "243fe48e24c69d9a944a61a43e48f9931a59fff1f55c6b89879f48b217837b78"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "added": [
+                    true,
+                    true,
+                    false
+                  ],
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "hashCalls": [
+                    3,
+                    2
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"added\":[true,true,false],\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[0,0],\"hashCalls\":[3,2],\"size\":2}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "added": [
+                    true,
+                    true,
+                    false
+                  ],
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "hashCalls": [
+                    3,
+                    2
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"added\":[true,true,false],\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[0,0],\"hashCalls\":[3,2],\"size\":2}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "added": [
+                    true,
+                    true,
+                    false
+                  ],
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "hashCalls": [
+                    3,
+                    2
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"added\":[true,true,false],\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[0,0],\"hashCalls\":[3,2],\"size\":2}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return equals(v);}public Integer hashCode(){hashCalls++;return 7;}}}",
+            "ObserveE23E013Test": "@IsTest private class ObserveE23E013Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject a=new EqFixture.EqSubject(),b=new EqFixture.EqSubject();Set<EqFixture.EqSubject> s=new Set<EqFixture.EqSubject>();List<Boolean> added=new List<Boolean>{s.add(a),s.add(b),s.add(a)};payload.put('added',added);payload.put('size',s.size());payload.put('containsSame',s.contains(a));payload.put('containsOther',s.contains(b));payload.put('eqCalls',new List<Integer>{a.calls,b.calls});payload.put('hashCalls',new List<Integer>{a.hashCalls,b.hashCalls});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E013|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E013Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E014",
+      "label": "EqResult Map forced hash collision",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "6ad9ab8fae7dbcc8b9d55ebc683d6234061eec4a3cde15d514ff67ad387d6a79",
+            "class:EqFixture": "cdac98403b262c337273b3ce4f154f06e1da3e0abd6fdcf69fa9d627a60c104d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "getOther": 2,
+                  "getSame": 1,
+                  "hashCalls": [
+                    2,
+                    2
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[0,0],\"getOther\":2,\"getSame\":1,\"hashCalls\":[2,2],\"size\":2}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "getOther": 2,
+                  "getSame": 1,
+                  "hashCalls": [
+                    2,
+                    2
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[0,0],\"getOther\":2,\"getSame\":1,\"hashCalls\":[2,2],\"size\":2}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "getOther": 2,
+                  "getSame": 1,
+                  "hashCalls": [
+                    2,
+                    2
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[0,0],\"getOther\":2,\"getSame\":1,\"hashCalls\":[2,2],\"size\":2}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return equals(v);}public Integer hashCode(){hashCalls++;return 7;}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject a=new EqFixture.EqSubject(),b=new EqFixture.EqSubject();Map<EqFixture.EqSubject,Integer> m=new Map<EqFixture.EqSubject,Integer>();m.put(a,1);m.put(b,2);payload.put('size',m.size());payload.put('getSame',m.get(a));payload.put('getOther',m.get(b));payload.put('eqCalls',new List<Integer>{a.calls,b.calls});payload.put('hashCalls',new List<Integer>{a.hashCalls,b.hashCalls});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E014|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "cdac98403b262c337273b3ce4f154f06e1da3e0abd6fdcf69fa9d627a60c104d",
+            "class:ObserveE23E014Test": "6560a48269f5ee3483a1c6a69b194c1c68b49dd97b31b0473e9c24ec73c7d965"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "getOther": 2,
+                  "getSame": 1,
+                  "hashCalls": [
+                    2,
+                    2
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[0,0],\"getOther\":2,\"getSame\":1,\"hashCalls\":[2,2],\"size\":2}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "getOther": 2,
+                  "getSame": 1,
+                  "hashCalls": [
+                    2,
+                    2
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[0,0],\"getOther\":2,\"getSame\":1,\"hashCalls\":[2,2],\"size\":2}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "getOther": 2,
+                  "getSame": 1,
+                  "hashCalls": [
+                    2,
+                    2
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[0,0],\"getOther\":2,\"getSame\":1,\"hashCalls\":[2,2],\"size\":2}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return equals(v);}public Integer hashCode(){hashCalls++;return 7;}}}",
+            "ObserveE23E014Test": "@IsTest private class ObserveE23E014Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject a=new EqFixture.EqSubject(),b=new EqFixture.EqSubject();Map<EqFixture.EqSubject,Integer> m=new Map<EqFixture.EqSubject,Integer>();m.put(a,1);m.put(b,2);payload.put('size',m.size());payload.put('getSame',m.get(a));payload.put('getOther',m.get(b));payload.put('eqCalls',new List<Integer>{a.calls,b.calls});payload.put('hashCalls',new List<Integer>{a.hashCalls,b.hashCalls});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E014|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E014Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E015",
+      "label": "Boolean Set forced hash collision",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "20587a494ba3c9f5ec5c94acf3c694b66b3f3a1430a2e36709460422b084fd2a",
+            "class:EqFixture": "e56195bb81f26b2fe1f6c1562b732ab10d6eca7eaad97be1336f91443251bd00"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "added": [
+                    true,
+                    false,
+                    false
+                  ],
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    2,
+                    2
+                  ],
+                  "hashCalls": [
+                    3,
+                    2
+                  ],
+                  "size": 1
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"added\":[true,false,false],\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[2,2],\"hashCalls\":[3,2],\"size\":1}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "added": [
+                    true,
+                    false,
+                    false
+                  ],
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    2,
+                    2
+                  ],
+                  "hashCalls": [
+                    3,
+                    2
+                  ],
+                  "size": 1
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"added\":[true,false,false],\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[2,2],\"hashCalls\":[3,2],\"size\":1}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "added": [
+                    true,
+                    false,
+                    false
+                  ],
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    2,
+                    2
+                  ],
+                  "hashCalls": [
+                    3,
+                    2
+                  ],
+                  "size": 1
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"added\":[true,false,false],\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[2,2],\"hashCalls\":[3,2],\"size\":1}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Boolean equals(Object v){calls++;return true;}public Boolean eq(Object v){return equals(v);}public Integer hashCode(){hashCalls++;return 7;}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject a=new EqFixture.EqSubject(),b=new EqFixture.EqSubject();Set<EqFixture.EqSubject> s=new Set<EqFixture.EqSubject>();List<Boolean> added=new List<Boolean>{s.add(a),s.add(b),s.add(a)};payload.put('added',added);payload.put('size',s.size());payload.put('containsSame',s.contains(a));payload.put('containsOther',s.contains(b));payload.put('eqCalls',new List<Integer>{a.calls,b.calls});payload.put('hashCalls',new List<Integer>{a.hashCalls,b.hashCalls});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E015|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "e56195bb81f26b2fe1f6c1562b732ab10d6eca7eaad97be1336f91443251bd00",
+            "class:ObserveE23E015Test": "8bee2a11c43eea568ec4ac5955bb4a15499b72aabfdae211a7d54235d71b5830"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "added": [
+                    true,
+                    false,
+                    false
+                  ],
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    2,
+                    2
+                  ],
+                  "hashCalls": [
+                    3,
+                    2
+                  ],
+                  "size": 1
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"added\":[true,false,false],\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[2,2],\"hashCalls\":[3,2],\"size\":1}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "added": [
+                    true,
+                    false,
+                    false
+                  ],
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    2,
+                    2
+                  ],
+                  "hashCalls": [
+                    3,
+                    2
+                  ],
+                  "size": 1
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"added\":[true,false,false],\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[2,2],\"hashCalls\":[3,2],\"size\":1}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "added": [
+                    true,
+                    false,
+                    false
+                  ],
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    2,
+                    2
+                  ],
+                  "hashCalls": [
+                    3,
+                    2
+                  ],
+                  "size": 1
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"added\":[true,false,false],\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[2,2],\"hashCalls\":[3,2],\"size\":1}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Boolean equals(Object v){calls++;return true;}public Boolean eq(Object v){return equals(v);}public Integer hashCode(){hashCalls++;return 7;}}}",
+            "ObserveE23E015Test": "@IsTest private class ObserveE23E015Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject a=new EqFixture.EqSubject(),b=new EqFixture.EqSubject();Set<EqFixture.EqSubject> s=new Set<EqFixture.EqSubject>();List<Boolean> added=new List<Boolean>{s.add(a),s.add(b),s.add(a)};payload.put('added',added);payload.put('size',s.size());payload.put('containsSame',s.contains(a));payload.put('containsOther',s.contains(b));payload.put('eqCalls',new List<Integer>{a.calls,b.calls});payload.put('hashCalls',new List<Integer>{a.hashCalls,b.hashCalls});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E015|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E015Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E016",
+      "label": "Boolean Map forced hash collision",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "f70d8a0f3b530997df528154d44bbeb371a2db89f2fc2276cf41f301c4a60f14",
+            "class:EqFixture": "e56195bb81f26b2fe1f6c1562b732ab10d6eca7eaad97be1336f91443251bd00"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    1,
+                    2
+                  ],
+                  "getOther": 2,
+                  "getSame": 2,
+                  "hashCalls": [
+                    2,
+                    2
+                  ],
+                  "size": 1
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[1,2],\"getOther\":2,\"getSame\":2,\"hashCalls\":[2,2],\"size\":1}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    1,
+                    2
+                  ],
+                  "getOther": 2,
+                  "getSame": 2,
+                  "hashCalls": [
+                    2,
+                    2
+                  ],
+                  "size": 1
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[1,2],\"getOther\":2,\"getSame\":2,\"hashCalls\":[2,2],\"size\":1}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    1,
+                    2
+                  ],
+                  "getOther": 2,
+                  "getSame": 2,
+                  "hashCalls": [
+                    2,
+                    2
+                  ],
+                  "size": 1
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[1,2],\"getOther\":2,\"getSame\":2,\"hashCalls\":[2,2],\"size\":1}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Boolean equals(Object v){calls++;return true;}public Boolean eq(Object v){return equals(v);}public Integer hashCode(){hashCalls++;return 7;}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject a=new EqFixture.EqSubject(),b=new EqFixture.EqSubject();Map<EqFixture.EqSubject,Integer> m=new Map<EqFixture.EqSubject,Integer>();m.put(a,1);m.put(b,2);payload.put('size',m.size());payload.put('getSame',m.get(a));payload.put('getOther',m.get(b));payload.put('eqCalls',new List<Integer>{a.calls,b.calls});payload.put('hashCalls',new List<Integer>{a.hashCalls,b.hashCalls});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E016|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "e56195bb81f26b2fe1f6c1562b732ab10d6eca7eaad97be1336f91443251bd00",
+            "class:ObserveE23E016Test": "4e07f0b64faddee83380d8f70eb528072b8c06fea7c6b5b9234fac0b22110742"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    1,
+                    2
+                  ],
+                  "getOther": 2,
+                  "getSame": 2,
+                  "hashCalls": [
+                    2,
+                    2
+                  ],
+                  "size": 1
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[1,2],\"getOther\":2,\"getSame\":2,\"hashCalls\":[2,2],\"size\":1}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    1,
+                    2
+                  ],
+                  "getOther": 2,
+                  "getSame": 2,
+                  "hashCalls": [
+                    2,
+                    2
+                  ],
+                  "size": 1
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[1,2],\"getOther\":2,\"getSame\":2,\"hashCalls\":[2,2],\"size\":1}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    1,
+                    2
+                  ],
+                  "getOther": 2,
+                  "getSame": 2,
+                  "hashCalls": [
+                    2,
+                    2
+                  ],
+                  "size": 1
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[1,2],\"getOther\":2,\"getSame\":2,\"hashCalls\":[2,2],\"size\":1}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Boolean equals(Object v){calls++;return true;}public Boolean eq(Object v){return equals(v);}public Integer hashCode(){hashCalls++;return 7;}}}",
+            "ObserveE23E016Test": "@IsTest private class ObserveE23E016Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject a=new EqFixture.EqSubject(),b=new EqFixture.EqSubject();Map<EqFixture.EqSubject,Integer> m=new Map<EqFixture.EqSubject,Integer>();m.put(a,1);m.put(b,2);payload.put('size',m.size());payload.put('getSame',m.get(a));payload.put('getOther',m.get(b));payload.put('eqCalls',new List<Integer>{a.calls,b.calls});payload.put('hashCalls',new List<Integer>{a.hashCalls,b.hashCalls});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E016|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E016Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E017",
+      "label": "non-Boolean equals Set default hash boundary",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "eff5960d46db5d506e52574cfcd607e39368713909bc44249c2c2ee0d2442b92",
+            "class:EqFixture": "a0b2281c0778fc3944c75ed9dcd8eba10f789603fe727ada915442ac14668f2f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[0,0],\"size\":2}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[0,0],\"size\":2}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[0,0],\"size\":2}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return equals(v);}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject a=new EqFixture.EqSubject(),b=new EqFixture.EqSubject();Set<EqFixture.EqSubject> s=new Set<EqFixture.EqSubject>{a,b,a};payload.put('size',s.size());payload.put('containsSame',s.contains(a));payload.put('containsOther',s.contains(b));payload.put('eqCalls',new List<Integer>{a.calls,b.calls});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E017|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "a0b2281c0778fc3944c75ed9dcd8eba10f789603fe727ada915442ac14668f2f",
+            "class:ObserveE23E017Test": "34076064cac472dcc949f5a8bc9c95b7e4d1d37dcbb6401d1d1a1e498b7292d3"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[0,0],\"size\":2}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[0,0],\"size\":2}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "containsOther": true,
+                  "containsSame": true,
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"containsOther\":true,\"containsSame\":true,\"eqCalls\":[0,0],\"size\":2}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return equals(v);}}}",
+            "ObserveE23E017Test": "@IsTest private class ObserveE23E017Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject a=new EqFixture.EqSubject(),b=new EqFixture.EqSubject();Set<EqFixture.EqSubject> s=new Set<EqFixture.EqSubject>{a,b,a};payload.put('size',s.size());payload.put('containsSame',s.contains(a));payload.put('containsOther',s.contains(b));payload.put('eqCalls',new List<Integer>{a.calls,b.calls});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E017|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E017Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E018",
+      "label": "non-Boolean equals Map default hash boundary",
+      "role": "boundary",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "7b10f615467c7a8c063acd4526cb268d7004b3424c334392de72372f8e644504",
+            "class:EqFixture": "a0b2281c0778fc3944c75ed9dcd8eba10f789603fe727ada915442ac14668f2f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "getOther": 2,
+                  "getSame": 1,
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[0,0],\"getOther\":2,\"getSame\":1,\"size\":2}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "getOther": 2,
+                  "getSame": 1,
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[0,0],\"getOther\":2,\"getSame\":1,\"size\":2}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "getOther": 2,
+                  "getSame": 1,
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[0,0],\"getOther\":2,\"getSame\":1,\"size\":2}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return equals(v);}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject a=new EqFixture.EqSubject(),b=new EqFixture.EqSubject();Map<EqFixture.EqSubject,Integer> m=new Map<EqFixture.EqSubject,Integer>();m.put(a,1);m.put(b,2);payload.put('size',m.size());payload.put('getSame',m.get(a));payload.put('getOther',m.get(b));payload.put('eqCalls',new List<Integer>{a.calls,b.calls});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E018|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "a0b2281c0778fc3944c75ed9dcd8eba10f789603fe727ada915442ac14668f2f",
+            "class:ObserveE23E018Test": "e1341340531f9451ab3e20d9c38cbbfd907948822f49f9ec154e7bd4b27b29e0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "getOther": 2,
+                  "getSame": 1,
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[0,0],\"getOther\":2,\"getSame\":1,\"size\":2}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "getOther": 2,
+                  "getSame": 1,
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[0,0],\"getOther\":2,\"getSame\":1,\"size\":2}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "eqCalls": [
+                    0,
+                    0
+                  ],
+                  "getOther": 2,
+                  "getSame": 1,
+                  "size": 2
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"eqCalls\":[0,0],\"getOther\":2,\"getSame\":1,\"size\":2}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return equals(v);}}}",
+            "ObserveE23E018Test": "@IsTest private class ObserveE23E018Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject a=new EqFixture.EqSubject(),b=new EqFixture.EqSubject();Map<EqFixture.EqSubject,Integer> m=new Map<EqFixture.EqSubject,Integer>();m.put(a,1);m.put(b,2);payload.put('size',m.size());payload.put('getSame',m.get(a));payload.put('getOther',m.get(b));payload.put('eqCalls',new List<Integer>{a.calls,b.calls});}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E018|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E018Test"
+          ]
+        }
+      }
+    }
+  ]
+}

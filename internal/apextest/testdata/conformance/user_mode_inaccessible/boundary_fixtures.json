@@ -1,0 +1,106 @@
+{
+  "59.0": {
+    "names": {
+      "object": "C185B594f708b41Denied__c",
+      "running": "C185B594f708b41Running",
+      "limited": "C185B594f708b41Limited"
+    },
+    "metadata": {
+      "objects/C185B594f708b41Denied__c/C185B594f708b41Denied__c.object-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>C185B594f708b41 Denied</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>C185B594f708b41 Denied Rows</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+      "permissionsets/C185B594f708b41Running.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185B594f708b41Running</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Opportunity</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>C185B594f708b41Denied__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>",
+      "permissionsets/C185B594f708b41Limited.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185B594f708b41Limited</label><objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>"
+    },
+    "sourceManifestSHA256": "3bc09496d82a82157d5cbe0bed35a94db9dacf14fd356ebccd5a205b479be526"
+  },
+  "62.0": {
+    "names": {
+      "object": "C185B6204f6031dDenied__c",
+      "running": "C185B6204f6031dRunning",
+      "limited": "C185B6204f6031dLimited"
+    },
+    "metadata": {
+      "objects/C185B6204f6031dDenied__c/C185B6204f6031dDenied__c.object-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>C185B6204f6031d Denied</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>C185B6204f6031d Denied Rows</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+      "permissionsets/C185B6204f6031dRunning.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185B6204f6031dRunning</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Opportunity</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>C185B6204f6031dDenied__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>",
+      "permissionsets/C185B6204f6031dLimited.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185B6204f6031dLimited</label><objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>"
+    },
+    "sourceManifestSHA256": "3bc09496d82a82157d5cbe0bed35a94db9dacf14fd356ebccd5a205b479be526"
+  },
+  "63.0": {
+    "names": {
+      "object": "C185B63e9c89babDenied__c",
+      "running": "C185B63e9c89babRunning",
+      "limited": "C185B63e9c89babLimited"
+    },
+    "metadata": {
+      "objects/C185B63e9c89babDenied__c/C185B63e9c89babDenied__c.object-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>C185B63e9c89bab Denied</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>C185B63e9c89bab Denied Rows</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+      "permissionsets/C185B63e9c89babRunning.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185B63e9c89babRunning</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Opportunity</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>C185B63e9c89babDenied__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>",
+      "permissionsets/C185B63e9c89babLimited.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185B63e9c89babLimited</label><objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>"
+    },
+    "sourceManifestSHA256": "3bc09496d82a82157d5cbe0bed35a94db9dacf14fd356ebccd5a205b479be526"
+  },
+  "64.0": {
+    "names": {
+      "object": "C185B64625f86fdDenied__c",
+      "running": "C185B64625f86fdRunning",
+      "limited": "C185B64625f86fdLimited"
+    },
+    "metadata": {
+      "objects/C185B64625f86fdDenied__c/C185B64625f86fdDenied__c.object-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>C185B64625f86fd Denied</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>C185B64625f86fd Denied Rows</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+      "permissionsets/C185B64625f86fdRunning.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185B64625f86fdRunning</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Opportunity</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>C185B64625f86fdDenied__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>",
+      "permissionsets/C185B64625f86fdLimited.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185B64625f86fdLimited</label><objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>"
+    },
+    "sourceManifestSHA256": "3bc09496d82a82157d5cbe0bed35a94db9dacf14fd356ebccd5a205b479be526"
+  },
+  "65.0": {
+    "names": {
+      "object": "C185B65ee5a9dc0Denied__c",
+      "running": "C185B65ee5a9dc0Running",
+      "limited": "C185B65ee5a9dc0Limited"
+    },
+    "metadata": {
+      "objects/C185B65ee5a9dc0Denied__c/C185B65ee5a9dc0Denied__c.object-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>C185B65ee5a9dc0 Denied</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>C185B65ee5a9dc0 Denied Rows</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+      "permissionsets/C185B65ee5a9dc0Running.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185B65ee5a9dc0Running</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Opportunity</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>C185B65ee5a9dc0Denied__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>",
+      "permissionsets/C185B65ee5a9dc0Limited.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185B65ee5a9dc0Limited</label><objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>"
+    },
+    "sourceManifestSHA256": "3bc09496d82a82157d5cbe0bed35a94db9dacf14fd356ebccd5a205b479be526"
+  },
+  "66.0": {
+    "names": {
+      "object": "C185B668dec6e7aDenied__c",
+      "running": "C185B668dec6e7aRunning",
+      "limited": "C185B668dec6e7aLimited"
+    },
+    "metadata": {
+      "objects/C185B668dec6e7aDenied__c/C185B668dec6e7aDenied__c.object-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>C185B668dec6e7a Denied</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>C185B668dec6e7a Denied Rows</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+      "permissionsets/C185B668dec6e7aRunning.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185B668dec6e7aRunning</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Opportunity</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>C185B668dec6e7aDenied__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>",
+      "permissionsets/C185B668dec6e7aLimited.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185B668dec6e7aLimited</label><objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>"
+    },
+    "sourceManifestSHA256": "3bc09496d82a82157d5cbe0bed35a94db9dacf14fd356ebccd5a205b479be526"
+  },
+  "67.0": {
+    "names": {
+      "object": "C185B67c27bae69Denied__c",
+      "running": "C185B67c27bae69Running",
+      "limited": "C185B67c27bae69Limited"
+    },
+    "metadata": {
+      "objects/C185B67c27bae69Denied__c/C185B67c27bae69Denied__c.object-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>C185B67c27bae69 Denied</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>C185B67c27bae69 Denied Rows</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+      "permissionsets/C185B67c27bae69Running.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185B67c27bae69Running</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Opportunity</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>C185B67c27bae69Denied__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>",
+      "permissionsets/C185B67c27bae69Limited.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185B67c27bae69Limited</label><objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>"
+    },
+    "sourceManifestSHA256": "3bc09496d82a82157d5cbe0bed35a94db9dacf14fd356ebccd5a205b479be526"
+  },
+  "68.0": {
+    "names": {
+      "object": "C185B68f0cbe7b5Denied__c",
+      "running": "C185B68f0cbe7b5Running",
+      "limited": "C185B68f0cbe7b5Limited"
+    },
+    "metadata": {
+      "objects/C185B68f0cbe7b5Denied__c/C185B68f0cbe7b5Denied__c.object-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>C185B68f0cbe7b5 Denied</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>C185B68f0cbe7b5 Denied Rows</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+      "permissionsets/C185B68f0cbe7b5Running.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185B68f0cbe7b5Running</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Opportunity</object><viewAllRecords>false</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>C185B68f0cbe7b5Denied__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>",
+      "permissionsets/C185B68f0cbe7b5Limited.permissionset-meta.xml": "<?xml version='1.0' encoding='UTF-8'?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>C185B68f0cbe7b5Limited</label><objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Account</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>"
+    },
+    "sourceManifestSHA256": "3bc09496d82a82157d5cbe0bed35a94db9dacf14fd356ebccd5a205b479be526"
+  }
+}

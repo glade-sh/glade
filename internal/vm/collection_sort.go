@@ -14,6 +14,10 @@ func missingMapValue(receiver Value) Value {
 	return Value{Kind: ValueNull, Type: valueType}
 }
 func (vm *VM) mapFromSObjectList(mapType string, list Value) (Value, error) {
+	return vm.copySObjectListToMap(mapType, list, false)
+}
+
+func (vm *VM) copySObjectListToMap(mapType string, list Value, validateRecords bool) (Value, error) {
 	keyType, valueType, ok := mapTypeArgs(mapType)
 	if !ok {
 		return Null, unsupportedCallError("Map constructor from SObject list")
@@ -21,6 +25,18 @@ func (vm *VM) mapFromSObjectList(mapType string, list Value) (Value, error) {
 	out := Map()
 	out.Type = mapType
 	trustDeclaredValueType := sObjectListDeclaresMapValueType(list, valueType)
+	metadataAliasValueType := false
+	if !validateRecords && !trustDeclaredValueType && strings.EqualFold(keyType, "Id") {
+		// Helper returns canonicalize provider-local record names. Preserve
+		// constructor list-view trust when both names identify that same
+		// installed object, without widening generic lists or putAll.
+		resolved := vm.resolveTypeNameInCurrentExecutionContext(valueType)
+		if _, class := vm.lookupClass(resolved); !class {
+			if objectName, known := vm.resolveObjectName(resolved); known {
+				metadataAliasValueType = sObjectListDeclaresMapValueType(list, objectName)
+			}
+		}
+	}
 	for i, item := range list.List {
 		if item.Kind == ValueNull {
 			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Map constructor from SObject list requires non-null SObject at index %d", i))
@@ -28,8 +44,27 @@ func (vm *VM) mapFromSObjectList(mapType string, list Value) (Value, error) {
 		if item.Kind != ValueObject {
 			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Map constructor from SObject list requires SObject values at index %d", i))
 		}
+		// putAll validates each actual record; construction can retain an
+		// unchecked declared list view. Keep null, kind and Id checks in
+		// their original element order.
+		if validateRecords {
+			if _, mismatch := vm.mapRecordValueMismatch(mapType, item); mismatch {
+				sourceType := list.Type
+				if collectionBase(list.Runtime) == "List" {
+					sourceType = list.Runtime
+				}
+				return Null, newExceptionError("System.TypeException", fmt.Sprintf("Collection store exception putting all %s into %s", vm.typeExceptionSourceName(sourceType), vm.typeExceptionDisplayName(mapType)))
+			}
+		}
 		coerced := item
-		if trustDeclaredValueType {
+		trustItemType := trustDeclaredValueType
+		if metadataAliasValueType {
+			// A class or an unknown record-like spelling cannot supply the
+			// installed-record provenance required by the restored path.
+			matched, handled := vm.schemaRecordValueMatches(item, "SObject")
+			trustItemType = handled && matched && vm.isSObjectType(runtimeObjectType(item))
+		}
+		if trustItemType {
 			if coerced.Runtime == "" && coerced.Type != "" && !strings.EqualFold(coerced.Type, valueType) {
 				coerced.Runtime = coerced.Type
 			}
@@ -45,7 +80,13 @@ func (vm *VM) mapFromSObjectList(mapType string, list Value) (Value, error) {
 		}
 		keyValue, ok := mapConstructorKeyValue(keyType, coerced)
 		if !ok || keyValue.Kind == ValueNull {
-			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Map constructor from SObject list requires non-null %s at index %d", keyType, i))
+			if validateRecords && strings.EqualFold(keyType, "Id") {
+				keyValue = Value{Kind: ValueNull, Type: "Id", sobjectListNullMapKey: true}
+			} else if validateRecords && strings.EqualFold(keyType, "String") {
+				keyValue = Null
+			} else {
+				return Null, newExceptionError("System.TypeException", fmt.Sprintf("Map constructor from SObject list requires non-null %s at index %d", keyType, i))
+			}
 		}
 		key, err := vm.coerceAssignable(keyType, keyValue)
 		if err != nil {
@@ -78,12 +119,7 @@ func sObjectListDeclaresMapValueType(list Value, valueType string) bool {
 func mapConstructorKeyValue(keyType string, record Value) (Value, bool) {
 	if strings.EqualFold(keyType, "Id") || strings.EqualFold(keyType, "String") {
 		value, ok := record.Fields["Id"]
-		if ok {
-			return value, true
-		}
-		if strings.EqualFold(keyType, "Id") {
-			return value, false
-		}
+		return value, ok
 	}
 	for _, preferred := range []string{"Name", "DeveloperName", "MasterLabel"} {
 		if value, ok := record.Fields[preferred]; ok {
@@ -129,6 +165,13 @@ func (vm *VM) mapLookupKey(receiver Value, key Value) string {
 // mapEntryKey resolves hash collisions by Apex equality. The encoded hash is a
 // bucket identity; distinct keys in that bucket need distinct storage slots.
 func (vm *VM) mapEntryKey(receiver Value, key Value) (string, error) {
+	// Native request control header_case_replace replaces a differently cased
+	// header key. Ordinary Apex maps retain their existing key rules.
+	if receiver.Runtime == "pagereference-headers" {
+		if stored, ok := caseInsensitiveStringMapStoredKey(receiver, key); ok {
+			return stored, nil
+		}
+	}
 	base, handled, err := vm.apexObjectHashMapKeyChecked(key)
 	if err != nil {
 		return "", err
@@ -183,7 +226,16 @@ func (vm *VM) resolvedMapLookupKey(receiver Value, key Value) (string, error) {
 			key = coerced
 		}
 	}
-	return vm.mapEntryKey(receiver, key)
+	encoded, err := vm.mapEntryKey(receiver, key)
+	if err != nil {
+		return encoded, err
+	}
+	if _, exists := receiver.Map[encoded]; exists && vm.schemaDefaultMapPresenceCollision(mapStoredKey(receiver, encoded), key) {
+		// The physical payload can match while explicit default presence makes
+		// these records unequal. Preserve insertion and the ordinary fallback.
+		return vacantMapEntryKey(receiver, encoded), nil
+	}
+	return encoded, nil
 }
 func caseInsensitiveStringMapStoredKey(receiver Value, key Value) (string, bool) {
 	if receiver.Kind != ValueMap || key.Kind != ValueString {
@@ -214,7 +266,7 @@ func caseInsensitiveStringMapStoredKey(receiver Value, key Value) (string, bool)
 	return "", false
 }
 func caseInsensitiveStringMap(receiver Value) bool {
-	if receiver.Runtime == "pagereference-parameters" {
+	if receiver.Runtime == "pagereference-parameters" || receiver.Runtime == "pagereference-headers" {
 		return true
 	}
 	if receiver.MapKeys != nil {
@@ -229,7 +281,7 @@ func caseInsensitiveStringMap(receiver Value) bool {
 	return ok && flag.Kind == ValueBool && flag.Bool
 }
 func (vm *VM) putAllSObjectList(receiver Value, list Value) (Value, error) {
-	value, err := vm.mapFromSObjectList(receiver.Type, list)
+	value, err := vm.copySObjectListToMap(receiver.Type, list, true)
 	if err != nil {
 		return receiver, err
 	}
@@ -250,6 +302,7 @@ func (vm *VM) putAllSObjectList(receiver Value, list Value) (Value, error) {
 	return receiver, nil
 }
 func collectionMembers(value Value) []Value {
+	value = value.currentMapKeySet()
 	switch value.Kind {
 	case ValueList:
 		return value.List
@@ -350,6 +403,7 @@ func (vm *VM) iterableCollectionMembers(value Value, result *Result, context str
 	}
 }
 func collectionIterator(value Value) Value {
+	value = value.currentMapKeySet()
 	snapshot := List(append([]Value(nil), collectionMembers(value)...)...)
 	iterator := Object(collectionIteratorType(value.Type))
 	iterator.Fields["__values"] = snapshot
@@ -362,6 +416,7 @@ func (vm *VM) newCollectionIterator(value Value) Value {
 	if len(collectionMembers(value)) > 0 && value.Ref != 0 {
 		vm.beginCollectionTraversal(value)
 		iterator.Fields["__collection"] = value
+		iterator.Fields["__mutationEpoch"] = Int(int64(vm.collectionTraversalMutationEpochs[value.Ref]))
 	}
 	return iterator
 }
@@ -374,6 +429,7 @@ func (vm *VM) releaseCollectionIterator(iterator Value) {
 	key := collectionTraversalKey{kind: collection.Kind, ref: collection.Ref}
 	if vm.activeCollectionTraversals[key] <= 1 {
 		delete(vm.activeCollectionTraversals, key)
+		delete(vm.collectionTraversalMutationEpochs, key.ref)
 	} else {
 		vm.activeCollectionTraversals[key]--
 	}
@@ -385,6 +441,61 @@ func collectionIteratorType(collectionType string) string {
 	}
 	return "Iterator"
 }
+
+// iteratorStringElementError reports the native failure when an Iterator<String>
+// view yields a non-String scalar. Native API 62.0 and 67.0: an Iterator of
+// Integer (H1SI1, H1SI1-A), Long, Double, Decimal or Boolean (H1XS1-A..
+// H1XS4-A) passed for an Iterator<String> parameter compiles, and next()
+// throws "Invalid conversion from runtime type <T> to String". Other element
+// types have no row and keep returning the element.
+func iteratorStringElementError(iteratorType string, element Value) error {
+	if element.Kind != ValueInt && element.Kind != ValueDecimal && element.Kind != ValueBool {
+		return nil
+	}
+	elementType, ok := collectionElementType(iteratorType)
+	if !ok || !strings.EqualFold(strings.TrimPrefix(strings.TrimSpace(elementType), "System."), "String") {
+		return nil
+	}
+	runtime := runtimeValueTypeName(element)
+	if element.Kind == ValueDecimal && strings.EqualFold(element.Runtime, "Double") {
+		runtime = "Double"
+	}
+	switch runtime {
+	case "Integer", "Long", "Double", "Decimal", "Boolean":
+		return newExceptionError("System.TypeException", "Invalid conversion from runtime type "+runtime+" to String")
+	}
+	return nil
+}
+
+// iteratorViewNextResult applies an Iterator<X> view to what a user class's
+// next() returned. Native API 62.0 and 67.0 check the element only at this use
+// site: a scalar read through Iterator<String> throws as the platform iterator
+// does (H1TB6 and -A, like H1TB8 and H1XS1-A..H1XS4-A), and an Account read
+// through Iterator<Contact> is assigned to a Contact without an exception and
+// stays an Account (H1TB7 and -A: "next|true|false"). Other element types have
+// no row and return the value unchanged.
+func (vm *VM) iteratorViewNextResult(view string, value Value) (Value, error) {
+	if collectionBase(view) != "Iterator" {
+		return value, nil
+	}
+	if err := iteratorStringElementError(view, value); err != nil {
+		return Null, err
+	}
+	element, ok := collectionElementType(view)
+	if !ok || value.Kind != ValueObject || value.classInstance || !vm.isSObjectLikeType(value.Type) {
+		return value, nil
+	}
+	element = strings.TrimPrefix(canonicalRuntimePlatformType(element), "Schema.")
+	if strings.EqualFold(element, "SObject") || strings.EqualFold(element, value.Type) || !vm.isSObjectLikeType(element) {
+		return value, nil
+	}
+	if value.Runtime == "" {
+		value.Runtime = value.Type
+	}
+	value.Static = element
+	return value, nil
+}
+
 func isIteratorValue(value Value) bool {
 	return value.Kind == ValueObject && (strings.EqualFold(value.Type, "Iterator") ||
 		hasPrefixFold(value.Type, "iterator<") ||
@@ -414,6 +525,9 @@ func callIteratorMember(receiver Value, method string, args []Value) (Value, Val
 		}
 		if index >= len(values.List) {
 			return Null, receiver, false, true, newExceptionError("NoSuchElementException", "Iterator has no more elements")
+		}
+		if err := iteratorStringElementError(receiver.Type, values.List[index]); err != nil {
+			return Null, receiver, false, true, err
 		}
 		receiver.Fields["__index"] = Int(int64(index + 1))
 		return values.List[index], receiver, true, true, nil

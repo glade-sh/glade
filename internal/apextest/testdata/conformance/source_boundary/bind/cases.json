@@ -1,0 +1,398 @@
+[
+  {
+    "api": "62.0",
+    "id": "static-field",
+    "route": "anonymous",
+    "source": "List<Account> rows=[SELECT Id FROM Account WHERE Name=:AbsentFilter.name];\n",
+    "native": {
+      "success": false,
+      "compiled": false,
+      "compileProblem": "Variable does not exist: AbsentFilter",
+      "line": "1",
+      "column": "56",
+      "exceptionMessage": "",
+      "exceptionStackTrace": ""
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "static-call",
+    "route": "anonymous",
+    "source": "List<Account> rows=[SELECT Id FROM Account WHERE Name=:AbsentFilter.value()];\n",
+    "native": {
+      "success": false,
+      "compiled": false,
+      "compileProblem": "Variable does not exist: AbsentFilter",
+      "line": "1",
+      "column": "56",
+      "exceptionMessage": "",
+      "exceptionStackTrace": ""
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "dynamic-text",
+    "route": "anonymous",
+    "source": "try { Database.query('SELECT Id FROM Account WHERE Name=:AbsentFilter.name'); } catch(Exception e) { System.assert(false,'OBS|'+e.getTypeName()+': '+e.getMessage()); }\n",
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "1",
+      "column": "1",
+      "exceptionMessage": "System.AssertException: Assertion Failed: OBS|System.QueryException: Variable does not exist: AbsentFilter.name",
+      "exceptionStackTrace": "AnonymousBlock: line 1, column 1"
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "dynamic-map",
+    "route": "anonymous",
+    "source": "List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Name=:needle',new Map<String,Object>{'needle'=>AbsentFilter.name},AccessLevel.SYSTEM_MODE);\n",
+    "native": {
+      "success": false,
+      "compiled": false,
+      "compileProblem": "Variable does not exist: AbsentFilter",
+      "line": "1",
+      "column": "121",
+      "exceptionMessage": "",
+      "exceptionStackTrace": ""
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "dynamic-key",
+    "route": "anonymous",
+    "source": "List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Name=:needle',new Map<String,Object>{'needle'=>'synthetic-missing'},AccessLevel.USER_MODE);System.assert(false,'OBS|'+rows.size());\n",
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "1",
+      "column": "1",
+      "exceptionMessage": "System.AssertException: Assertion Failed: OBS|0",
+      "exceptionStackTrace": "AnonymousBlock: line 1, column 1"
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "local-shadow",
+    "route": "anonymous",
+    "source": "Account AbsentFilter=new Account(Name='synthetic-missing');List<Account> rows=[SELECT Id FROM Account WHERE Name=:AbsentFilter.Name];System.assert(false,'OBS|'+rows.size());\n",
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "1",
+      "column": "1",
+      "exceptionMessage": "System.AssertException: Assertion Failed: OBS|0",
+      "exceptionStackTrace": "AnonymousBlock: line 1, column 1"
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "static-field",
+    "route": "anonymous",
+    "source": "List<Account> rows=[SELECT Id FROM Account WHERE Name=:AbsentFilter.name];\n",
+    "native": {
+      "success": false,
+      "compiled": false,
+      "compileProblem": "Variable does not exist: AbsentFilter",
+      "line": "1",
+      "column": "56",
+      "exceptionMessage": "",
+      "exceptionStackTrace": ""
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "static-call",
+    "route": "anonymous",
+    "source": "List<Account> rows=[SELECT Id FROM Account WHERE Name=:AbsentFilter.value()];\n",
+    "native": {
+      "success": false,
+      "compiled": false,
+      "compileProblem": "Variable does not exist: AbsentFilter",
+      "line": "1",
+      "column": "56",
+      "exceptionMessage": "",
+      "exceptionStackTrace": ""
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "dynamic-text",
+    "route": "anonymous",
+    "source": "try { Database.query('SELECT Id FROM Account WHERE Name=:AbsentFilter.name'); } catch(Exception e) { System.assert(false,'OBS|'+e.getTypeName()+': '+e.getMessage()); }\n",
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "1",
+      "column": "1",
+      "exceptionMessage": "System.AssertException: Assertion Failed: OBS|System.QueryException: Variable does not exist: AbsentFilter.name",
+      "exceptionStackTrace": "AnonymousBlock: line 1, column 1"
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "dynamic-map",
+    "route": "anonymous",
+    "source": "List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Name=:needle',new Map<String,Object>{'needle'=>AbsentFilter.name},AccessLevel.SYSTEM_MODE);\n",
+    "native": {
+      "success": false,
+      "compiled": false,
+      "compileProblem": "Variable does not exist: AbsentFilter",
+      "line": "1",
+      "column": "121",
+      "exceptionMessage": "",
+      "exceptionStackTrace": ""
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "dynamic-key",
+    "route": "anonymous",
+    "source": "List<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Name=:needle',new Map<String,Object>{'needle'=>'synthetic-missing'},AccessLevel.USER_MODE);System.assert(false,'OBS|'+rows.size());\n",
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "1",
+      "column": "1",
+      "exceptionMessage": "System.AssertException: Assertion Failed: OBS|0",
+      "exceptionStackTrace": "AnonymousBlock: line 1, column 1"
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "local-shadow",
+    "route": "anonymous",
+    "source": "Account AbsentFilter=new Account(Name='synthetic-missing');List<Account> rows=[SELECT Id FROM Account WHERE Name=:AbsentFilter.Name];System.assert(false,'OBS|'+rows.size());\n",
+    "native": {
+      "success": false,
+      "compiled": true,
+      "compileProblem": "",
+      "line": "1",
+      "column": "1",
+      "exceptionMessage": "System.AssertException: Assertion Failed: OBS|0",
+      "exceptionStackTrace": "AnonymousBlock: line 1, column 1"
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "static-field",
+    "route": "isTest",
+    "className": "BindStaticField62",
+    "source": "@IsTest private class BindStaticField62 {\n@IsTest static void observe(){\nList<Account> rows=[SELECT Id FROM Account WHERE Name=:AbsentFilter.name];\n}\n}\n",
+    "native": {
+      "success": false,
+      "failures": [
+        {
+          "fullName": "BindStaticField62",
+          "componentType": "ApexClass",
+          "problem": "Variable does not exist: AbsentFilter",
+          "lineNumber": 3,
+          "columnNumber": 56
+        }
+      ]
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "static-call",
+    "route": "isTest",
+    "className": "BindStaticCall62",
+    "source": "@IsTest private class BindStaticCall62 {\n@IsTest static void observe(){\nList<Account> rows=[SELECT Id FROM Account WHERE Name=:AbsentFilter.value()];\n}\n}\n",
+    "native": {
+      "success": false,
+      "failures": [
+        {
+          "fullName": "BindStaticCall62",
+          "componentType": "ApexClass",
+          "problem": "Variable does not exist: AbsentFilter",
+          "lineNumber": 3,
+          "columnNumber": 56
+        }
+      ]
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "dynamic-text",
+    "route": "isTest",
+    "className": "BindDynamicText62",
+    "source": "@IsTest private class BindDynamicText62 {\n@IsTest static void observe(){\ntry { Database.query('SELECT Id FROM Account WHERE Name=:AbsentFilter.name'); } catch(Exception e) { System.assert(false,'OBS|'+e.getTypeName()+': '+e.getMessage()); }\n}\n}\n",
+    "native": {
+      "tests": [
+        {
+          "MethodName": "observe",
+          "Outcome": "Fail",
+          "Message": "System.AssertException: Assertion Failed: OBS|System.QueryException: Variable does not exist: AbsentFilter.name",
+          "StackTrace": "Class.BindDynamicText62.observe: line 3, column 1"
+        }
+      ]
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "dynamic-map",
+    "route": "isTest",
+    "className": "BindDynamicMap62",
+    "source": "@IsTest private class BindDynamicMap62 {\n@IsTest static void observe(){\nList<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Name=:needle',new Map<String,Object>{'needle'=>AbsentFilter.name},AccessLevel.SYSTEM_MODE);\n}\n}\n",
+    "native": {
+      "success": false,
+      "failures": [
+        {
+          "fullName": "BindDynamicMap62",
+          "componentType": "ApexClass",
+          "problem": "Variable does not exist: AbsentFilter",
+          "lineNumber": 3,
+          "columnNumber": 121
+        }
+      ]
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "dynamic-key",
+    "route": "isTest",
+    "className": "BindDynamicKey62",
+    "source": "@IsTest private class BindDynamicKey62 {\n@IsTest static void observe(){\nList<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Name=:needle',new Map<String,Object>{'needle'=>'synthetic-missing'},AccessLevel.USER_MODE);System.assert(false,'OBS|'+rows.size());\n}\n}\n",
+    "native": {
+      "tests": [
+        {
+          "MethodName": "observe",
+          "Outcome": "Fail",
+          "Message": "System.AssertException: Assertion Failed: OBS|0",
+          "StackTrace": "Class.BindDynamicKey62.observe: line 3, column 1"
+        }
+      ]
+    }
+  },
+  {
+    "api": "62.0",
+    "id": "local-shadow",
+    "route": "isTest",
+    "className": "BindLocalShadow62",
+    "source": "@IsTest private class BindLocalShadow62 {\n@IsTest static void observe(){\nAccount AbsentFilter=new Account(Name='synthetic-missing');List<Account> rows=[SELECT Id FROM Account WHERE Name=:AbsentFilter.Name];System.assert(false,'OBS|'+rows.size());\n}\n}\n",
+    "native": {
+      "tests": [
+        {
+          "MethodName": "observe",
+          "Outcome": "Fail",
+          "Message": "System.AssertException: Assertion Failed: OBS|0",
+          "StackTrace": "Class.BindLocalShadow62.observe: line 3, column 1"
+        }
+      ]
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "static-field",
+    "route": "isTest",
+    "className": "BindStaticField67",
+    "source": "@IsTest private class BindStaticField67 {\n@IsTest static void observe(){\nList<Account> rows=[SELECT Id FROM Account WHERE Name=:AbsentFilter.name];\n}\n}\n",
+    "native": {
+      "success": false,
+      "failures": [
+        {
+          "fullName": "BindStaticField67",
+          "componentType": "ApexClass",
+          "problem": "Variable does not exist: AbsentFilter",
+          "lineNumber": 3,
+          "columnNumber": 56
+        }
+      ]
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "static-call",
+    "route": "isTest",
+    "className": "BindStaticCall67",
+    "source": "@IsTest private class BindStaticCall67 {\n@IsTest static void observe(){\nList<Account> rows=[SELECT Id FROM Account WHERE Name=:AbsentFilter.value()];\n}\n}\n",
+    "native": {
+      "success": false,
+      "failures": [
+        {
+          "fullName": "BindStaticCall67",
+          "componentType": "ApexClass",
+          "problem": "Variable does not exist: AbsentFilter",
+          "lineNumber": 3,
+          "columnNumber": 56
+        }
+      ]
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "dynamic-text",
+    "route": "isTest",
+    "className": "BindDynamicText67",
+    "source": "@IsTest private class BindDynamicText67 {\n@IsTest static void observe(){\ntry { Database.query('SELECT Id FROM Account WHERE Name=:AbsentFilter.name'); } catch(Exception e) { System.assert(false,'OBS|'+e.getTypeName()+': '+e.getMessage()); }\n}\n}\n",
+    "native": {
+      "tests": [
+        {
+          "MethodName": "observe",
+          "Outcome": "Fail",
+          "Message": "System.AssertException: Assertion Failed: OBS|System.QueryException: Variable does not exist: AbsentFilter.name",
+          "StackTrace": "Class.BindDynamicText67.observe: line 3, column 1"
+        }
+      ]
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "dynamic-map",
+    "route": "isTest",
+    "className": "BindDynamicMap67",
+    "source": "@IsTest private class BindDynamicMap67 {\n@IsTest static void observe(){\nList<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Name=:needle',new Map<String,Object>{'needle'=>AbsentFilter.name},AccessLevel.SYSTEM_MODE);\n}\n}\n",
+    "native": {
+      "success": false,
+      "failures": [
+        {
+          "fullName": "BindDynamicMap67",
+          "componentType": "ApexClass",
+          "problem": "Variable does not exist: AbsentFilter",
+          "lineNumber": 3,
+          "columnNumber": 121
+        }
+      ]
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "dynamic-key",
+    "route": "isTest",
+    "className": "BindDynamicKey67",
+    "source": "@IsTest private class BindDynamicKey67 {\n@IsTest static void observe(){\nList<SObject> rows=Database.queryWithBinds('SELECT Id FROM Account WHERE Name=:needle',new Map<String,Object>{'needle'=>'synthetic-missing'},AccessLevel.USER_MODE);System.assert(false,'OBS|'+rows.size());\n}\n}\n",
+    "native": {
+      "tests": [
+        {
+          "MethodName": "observe",
+          "Outcome": "Fail",
+          "Message": "System.AssertException: Assertion Failed: OBS|0",
+          "StackTrace": "Class.BindDynamicKey67.observe: line 3, column 1"
+        }
+      ]
+    }
+  },
+  {
+    "api": "67.0",
+    "id": "local-shadow",
+    "route": "isTest",
+    "className": "BindLocalShadow67",
+    "source": "@IsTest private class BindLocalShadow67 {\n@IsTest static void observe(){\nAccount AbsentFilter=new Account(Name='synthetic-missing');List<Account> rows=[SELECT Id FROM Account WHERE Name=:AbsentFilter.Name];System.assert(false,'OBS|'+rows.size());\n}\n}\n",
+    "native": {
+      "tests": [
+        {
+          "MethodName": "observe",
+          "Outcome": "Fail",
+          "Message": "System.AssertException: Assertion Failed: OBS|0",
+          "StackTrace": "Class.BindLocalShadow67.observe: line 3, column 1"
+        }
+      ]
+    }
+  }
+]

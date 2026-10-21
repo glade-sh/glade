@@ -1,0 +1,92 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "packetRowsSha256": "02d9b9681f28f2fbc1befbb57bc5581487a6514c4458543a75b1020877d390dd",
+  "source": "Owned platform-event publish metadata observations. No event-order assertion.",
+  "notes": [
+    "Caller CreatedDate and ReplayId stay null after successful publish. Named immediate and after-commit subscribers see nonnull CreatedDate through string/token reads and nonnull ReplayId at both independent delivery endpoints.",
+    "No timing precision, elapsed range, retry, nested delivery or ordering conclusion is asserted. Existing populated-system-field and failed-publication shapes remain outside this capture."
+  ],
+  "files": {
+    "force-app/main/default/classes/ReceiptSink.cls": "public class ReceiptSink {\n  public static void receive(List<SObject> events) {\n    if (!Test.isRunningTest()) return;\n    List<SignalReceipt__c> receipts = new List<SignalReceipt__c>();\n    for(SObject event : events) {\n      Schema.SObjectField token=event.getSObjectType().getDescribe().fields.getMap().get('CreatedDate');\n      Object named=event.get('CreatedDate'), tokenValue=event.get(token);\n      receipts.add(new SignalReceipt__c(Name=(String)event.get('Note__c'),\n        DateKnown__c=named!=null, Consistent__c=named==tokenValue,\n        ReplayKnown__c=event.get('ReplayId')!=null));\n    }\n    insert as system receipts;\n  }\n  public static String receipt(String key) {\n    List<SignalReceipt__c> rows=[SELECT DateKnown__c,Consistent__c,ReplayKnown__c\n      FROM SignalReceipt__c WHERE Name=:key WITH SYSTEM_MODE];\n    if(rows.isEmpty()) return '0';\n    return rows.size()+'/'+rows[0].DateKnown__c+'/'+rows[0].Consistent__c+'/'+rows[0].ReplayKnown__c;\n  }\n  public static String caller(SObject event) {\n    Boolean fresh=event.get('CreatedDate')==null && event.get('ReplayId')==null;\n    Database.SaveResult result=EventBus.publish(event);\n    return fresh+'/'+result.isSuccess()+'/'+(event.get('CreatedDate')==null)+'/'+(event.get('ReplayId')==null);\n  }\n}\n",
+    "force-app/main/default/classes/ReceiptSink.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>{{API}}</apiVersion><status>Active</status></ApexClass>\n",
+    "force-app/main/default/classes/SignalTimeTest.cls": "@IsTest private class SignalTimeTest {\n  @IsTest static void observe() {\n    Test.startTest();\n    String a=ReceiptSink.caller(new InstantSignal__e(Note__c='instant-explicit'));\n    String b=ReceiptSink.caller(new CommittedSignal__e(Note__c='committed-explicit'));\n    Test.getEventBus().deliver();\n    String explicit=ReceiptSink.receipt('instant-explicit')+':'+ReceiptSink.receipt('committed-explicit');\n    String c=ReceiptSink.caller(new InstantSignal__e(Note__c='instant-stop'));\n    String d=ReceiptSink.caller(new CommittedSignal__e(Note__c='committed-stop'));\n    Test.stopTest();\n    String stopped=ReceiptSink.receipt('instant-stop')+':'+ReceiptSink.receipt('committed-stop');\n    System.assert(false,'EVENT_TIME|'+a+':'+b+':'+c+':'+d+';explicit='+explicit+';stop='+stopped);\n  }\n}\n",
+    "force-app/main/default/classes/SignalTimeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>{{API}}</apiVersion><status>Active</status></ApexClass>\n",
+    "force-app/main/default/objects/CommittedSignal__e/CommittedSignal__e.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><label>CommittedSignal</label><pluralLabel>Signals</pluralLabel><publishBehavior>PublishAfterCommit</publishBehavior><fields><fullName>Note__c</fullName><label>Note</label><length>40</length><type>Text</type></fields></CustomObject>\n",
+    "force-app/main/default/objects/InstantSignal__e/InstantSignal__e.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType><label>InstantSignal</label><pluralLabel>Signals</pluralLabel><publishBehavior>PublishImmediately</publishBehavior><fields><fullName>Note__c</fullName><label>Note</label><length>40</length><type>Text</type></fields></CustomObject>\n",
+    "force-app/main/default/objects/SignalReceipt__c/SignalReceipt__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>Signal Receipt</label><pluralLabel>Signal Receipts</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><sharingModel>ReadWrite</sharingModel><fields><fullName>DateKnown__c</fullName><label>DateKnown</label><type>Checkbox</type><defaultValue>false</defaultValue></fields><fields><fullName>Consistent__c</fullName><label>Consistent</label><type>Checkbox</type><defaultValue>false</defaultValue></fields><fields><fullName>ReplayKnown__c</fullName><label>ReplayKnown</label><type>Checkbox</type><defaultValue>false</defaultValue></fields></CustomObject>\n",
+    "force-app/main/default/triggers/CommittedSignalSubscriber.trigger": "trigger CommittedSignalSubscriber on CommittedSignal__e (after insert) { ReceiptSink.receive(Trigger.new); }\n",
+    "force-app/main/default/triggers/CommittedSignalSubscriber.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>{{API}}</apiVersion><status>Active</status></ApexTrigger>\n",
+    "force-app/main/default/triggers/InstantSignalSubscriber.trigger": "trigger InstantSignalSubscriber on InstantSignal__e (after insert) { ReceiptSink.receive(Trigger.new); }\n",
+    "force-app/main/default/triggers/InstantSignalSubscriber.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>{{API}}</apiVersion><status>Active</status></ApexTrigger>\n"
+  },
+  "rows": [
+    {
+      "id": "publication-metadata",
+      "code": "if(Test.isRunningTest()){\n    Test.startTest();\n    String a=ReceiptSink.caller(new InstantSignal__e(Note__c='instant-explicit'));\n    String b=ReceiptSink.caller(new CommittedSignal__e(Note__c='committed-explicit'));\n    Test.getEventBus().deliver();\n    String explicit=ReceiptSink.receipt('instant-explicit')+':'+ReceiptSink.receipt('committed-explicit');\n    String c=ReceiptSink.caller(new InstantSignal__e(Note__c='instant-stop'));\n    String d=ReceiptSink.caller(new CommittedSignal__e(Note__c='committed-stop'));\n    Test.stopTest();\n    String stopped=ReceiptSink.receipt('instant-stop')+':'+ReceiptSink.receipt('committed-stop');\n    p.put('value',a+':'+b+':'+c+':'+d+';explicit='+explicit+';stop='+stopped);}else{String a=ReceiptSink.caller(new InstantSignal__e(Note__c='anonymous-instant'));\nString b=ReceiptSink.caller(new CommittedSignal__e(Note__c='anonymous-committed'));\np.put('value',a+':'+b);\n}",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "value": "true/true/true/true:true/true/true/true"
+          },
+          "expected": {
+            "value": "true/true/true/true:true/true/true/true"
+          }
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "value": "true/true/true/true:true/true/true/true:true/true/true/true:true/true/true/true;explicit=1/true/true/true:1/true/true/true;stop=1/true/true/true:1/true/true/true"
+          },
+          "expected": {
+            "value": "true/true/true/true:true/true/true/true:true/true/true/true:true/true/true/true;explicit=1/true/true/true:1/true/true/true;stop=1/true/true/true:1/true/true/true"
+          }
+        },
+        "67.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "value": "true/true/true/true:true/true/true/true"
+          },
+          "expected": {
+            "value": "true/true/true/true:true/true/true/true"
+          }
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "value": "true/true/true/true:true/true/true/true:true/true/true/true:true/true/true/true;explicit=1/true/true/true:1/true/true/true;stop=1/true/true/true:1/true/true/true"
+          },
+          "expected": {
+            "value": "true/true/true/true:true/true/true/true:true/true/true/true:true/true/true/true;explicit=1/true/true/true:1/true/true/true;stop=1/true/true/true:1/true/true/true"
+          }
+        },
+        "68.0/anonymous": {
+          "status": "runtime",
+          "native": {
+            "value": "true/true/true/true:true/true/true/true"
+          },
+          "expected": {
+            "value": "true/true/true/true:true/true/true/true"
+          }
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "value": "true/true/true/true:true/true/true/true:true/true/true/true:true/true/true/true;explicit=1/true/true/true:1/true/true/true;stop=1/true/true/true:1/true/true/true"
+          },
+          "expected": {
+            "value": "true/true/true/true:true/true/true/true:true/true/true/true:true/true/true/true;explicit=1/true/true/true:1/true/true/true;stop=1/true/true/true:1/true/true/true"
+          }
+        }
+      }
+    }
+  ]
+}

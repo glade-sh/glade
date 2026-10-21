@@ -1,0 +1,187 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "cluster": "no-match-id",
+  "shapeCount": 1,
+  "nativeObservationCount": 4,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "N1_001",
+      "byAPI": {
+        "62.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreN1NoMatchId.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <assignments>\n    <name>Copy_Lookup_Id</name><label>Copy Lookup Id</label><locationX>0</locationX><locationY>0</locationY>\n    <assignmentItems><assignToReference>$Record.Text__c</assignToReference><operator>Assign</operator><value><elementReference>Lookup_Never.Id</elementReference></value></assignmentItems>\n    <connector><targetReference>Check_Lookup_Id</targetReference></connector>\n  </assignments>\n  <assignments>\n    <name>Mark_Missing</name><label>Mark Missing</label><locationX>0</locationX><locationY>0</locationY>\n    <assignmentItems><assignToReference>$Record.Flag__c</assignToReference><operator>Assign</operator><value><booleanValue>true</booleanValue></value></assignmentItems>\n    <assignmentItems><assignToReference>$Record.Trace__c</assignToReference><operator>Assign</operator><value><stringValue>missing</stringValue></value></assignmentItems>\n  </assignments>\n  <assignments>\n    <name>Mark_Present</name><label>Mark Present</label><locationX>0</locationX><locationY>0</locationY>\n    <assignmentItems><assignToReference>$Record.Flag__c</assignToReference><operator>Assign</operator><value><booleanValue>false</booleanValue></value></assignmentItems>\n    <assignmentItems><assignToReference>$Record.Trace__c</assignToReference><operator>Assign</operator><value><stringValue>present</stringValue></value></assignmentItems>\n  </assignments>\n  <decisions>\n    <name>Check_Lookup_Id</name><label>Check Lookup Id</label><locationX>0</locationX><locationY>0</locationY>\n    <defaultConnector><targetReference>Mark_Present</targetReference></defaultConnector><defaultConnectorLabel>Present</defaultConnectorLabel>\n    <rules><name>Missing</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>Lookup_Never.Id</leftValueReference><operator>IsNull</operator><rightValue><booleanValue>true</booleanValue></rightValue></conditions><connector><targetReference>Mark_Missing</targetReference></connector><label>Missing</label></rules>\n  </decisions>\n  <interviewLabel>FlowCoreN1NoMatchId {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreN1NoMatchId</label>\n  <processType>AutoLaunchedFlow</processType>\n  <recordLookups>\n    <name>Lookup_Never</name><label>Lookup Never</label><locationX>0</locationX><locationY>0</locationY>\n    <assignNullValuesIfNoRecordsFound>true</assignNullValuesIfNoRecordsFound><connector><targetReference>Copy_Lookup_Id</targetReference></connector>\n    <filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>n1-no-match</stringValue></value></filters>\n    <getFirstRecordOnly>true</getFirstRecordOnly><object>FlowCoreN1Lookup__c</object><storeOutputAutomatically>true</storeOutputAutomatically>\n  </recordLookups>\n  <start><locationX>0</locationX><locationY>0</locationY><object>FlowCoreN1Record__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType><connector><targetReference>Lookup_Never</targetReference></connector></start>\n  <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/objects/FlowCoreN1Lookup__c/FlowCoreN1Lookup__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Flow Core N1 Lookup</label><pluralLabel>Flow Core N1 Lookups</pluralLabel><nameField><label>Flow Core N1 Lookup Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+            "force-app/main/default/objects/FlowCoreN1Record__c/FlowCoreN1Record__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Flow Core N1 Record</label><pluralLabel>Flow Core N1 Records</pluralLabel><nameField><label>Flow Core N1 Record Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+            "force-app/main/default/objects/FlowCoreN1Record__c/fields/Flag__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Flag__c</fullName><defaultValue>false</defaultValue><label>Flag</label><type>Checkbox</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreN1Record__c/fields/Text__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Text__c</fullName><label>Text</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreN1Record__c/fields/Trace__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Trace__c</fullName><label>Trace</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreN1Record__c/fields/Unit__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Unit__c</fullName><label>Unit</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/permissionsets/FlowCoreN1CaptureAccess.permissionset-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <label>Flow Core N1 Capture Access</label>\n  <objectPermissions><allowCreate>true</allowCreate><allowDelete>false</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>FlowCoreN1Record__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreN1Record__c.Unit__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreN1Record__c.Text__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreN1Record__c.Flag__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreN1Record__c.Trace__c</field><readable>true</readable></fieldPermissions>\n</PermissionSet>\n",
+            "sfdx-project.json": "{\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}],\"namespace\":\"\",\"sfdcLoginUrl\":\"https://login.salesforce.com\",\"sourceApiVersion\":\"62.0\"}\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreN1NoMatchId.flow-meta.xml": "83b6b268ecb75d84c62f5f448a1c629939e23a61c000bcbd622b577e59a053c8",
+            "force-app/main/default/objects/FlowCoreN1Lookup__c/FlowCoreN1Lookup__c.object-meta.xml": "6bed070f4524699aa9c4ea98961077c46463a7bffd1f984a1f3aa5a897030c87",
+            "force-app/main/default/objects/FlowCoreN1Record__c/FlowCoreN1Record__c.object-meta.xml": "1ec8a347ffb924eba18c43db8b6afc1f11aaca149d576beec1bc31c1236aeec1",
+            "force-app/main/default/objects/FlowCoreN1Record__c/fields/Flag__c.field-meta.xml": "7cf80cd6d4fa69409ea8d68c2d1cca13e3213a2dd6bff9d4ac74abbfb63a7eb8",
+            "force-app/main/default/objects/FlowCoreN1Record__c/fields/Text__c.field-meta.xml": "7e1df474ca6f61ed347601c7926458a88ae29d381bb8a984046550df2bf83b45",
+            "force-app/main/default/objects/FlowCoreN1Record__c/fields/Trace__c.field-meta.xml": "3c6607916ff2d1f64efce8f233b4b08a7ace738ba293a0700ef7024f31c9198b",
+            "force-app/main/default/objects/FlowCoreN1Record__c/fields/Unit__c.field-meta.xml": "6219be06afcbb88beee7f8359756efa029ca8d44612f97410521d3ce228534b5",
+            "force-app/main/default/permissionsets/FlowCoreN1CaptureAccess.permissionset-meta.xml": "d3f64c09c15138e86fb70239ff7256e7d3a03888bb048b2de07abe42019b3b13",
+            "sfdx-project.json": "b7e8426cfb79d35a1fef46652341959f4b1ecc656b12cd4bcada9e7fc4ff704f"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "String unitName = 'N1A' + String.valueOf(DateTime.now().getTime());\nFlowCoreN1Record__c subject = new FlowCoreN1Record__c(\n    Name = 'subject', Unit__c = unitName, Text__c = 'seed', Flag__c = false, Trace__c = 'seed'\n);\ninsert subject;\nsubject = [SELECT Text__c, Flag__c, Trace__c FROM FlowCoreN1Record__c WHERE Id = :subject.Id];\nMap<String, Object> payload = new Map<String, Object>{\n    'text' => subject.Text__c,\n    'textIsNull' => subject.Text__c == null,\n    'flag' => subject.Flag__c,\n    'trace' => subject.Trace__c\n};\nSystem.assert(false, 'FLOW_CORE_RESULT|N1_001|' + JSON.serialize(payload));\n",
+              "classes": {},
+              "tests": [],
+              "sourceSha256": {
+                "anonymous": "3bea8c176839d33e80aca50db584ea8bf198bbeb83947116264996f8a1dc788f"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flag": true,
+                  "text": null,
+                  "textIsNull": true,
+                  "trace": "missing"
+                },
+                "native": {
+                  "flag": true,
+                  "text": null,
+                  "textIsNull": true,
+                  "trace": "missing"
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            },
+            "istest": {
+              "anonymous": "",
+              "classes": {
+                "FlowCoreN1ObservationTest": "@IsTest\nprivate class FlowCoreN1ObservationTest {\n    @IsTest\n    static void observe() {\n        String unitName = 'N1T' + String.valueOf(DateTime.now().getTime());\n        FlowCoreN1Record__c subject = new FlowCoreN1Record__c(\n            Name = 'subject', Unit__c = unitName, Text__c = 'seed', Flag__c = false, Trace__c = 'seed'\n        );\n        insert subject;\n        subject = [SELECT Text__c, Flag__c, Trace__c FROM FlowCoreN1Record__c WHERE Id = :subject.Id];\n        Map<String, Object> payload = new Map<String, Object>{\n            'text' => subject.Text__c,\n            'textIsNull' => subject.Text__c == null,\n            'flag' => subject.Flag__c,\n            'trace' => subject.Trace__c\n        };\n        System.assert(false, 'FLOW_CORE_RESULT|N1_001|' + JSON.serialize(payload));\n    }\n}\n"
+              },
+              "tests": [
+                "FlowCoreN1ObservationTest"
+              ],
+              "sourceSha256": {
+                "FlowCoreN1ObservationTest": "97d51c42db28f7dd81eb4732b8f00db4d69e531076c3e3fec9695dccd3daea8f"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flag": true,
+                  "text": null,
+                  "textIsNull": true,
+                  "trace": "missing"
+                },
+                "native": {
+                  "flag": true,
+                  "text": null,
+                  "textIsNull": true,
+                  "trace": "missing"
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            }
+          }
+        },
+        "67.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreN1NoMatchId.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <assignments>\n    <name>Copy_Lookup_Id</name><label>Copy Lookup Id</label><locationX>0</locationX><locationY>0</locationY>\n    <assignmentItems><assignToReference>$Record.Text__c</assignToReference><operator>Assign</operator><value><elementReference>Lookup_Never.Id</elementReference></value></assignmentItems>\n    <connector><targetReference>Check_Lookup_Id</targetReference></connector>\n  </assignments>\n  <assignments>\n    <name>Mark_Missing</name><label>Mark Missing</label><locationX>0</locationX><locationY>0</locationY>\n    <assignmentItems><assignToReference>$Record.Flag__c</assignToReference><operator>Assign</operator><value><booleanValue>true</booleanValue></value></assignmentItems>\n    <assignmentItems><assignToReference>$Record.Trace__c</assignToReference><operator>Assign</operator><value><stringValue>missing</stringValue></value></assignmentItems>\n  </assignments>\n  <assignments>\n    <name>Mark_Present</name><label>Mark Present</label><locationX>0</locationX><locationY>0</locationY>\n    <assignmentItems><assignToReference>$Record.Flag__c</assignToReference><operator>Assign</operator><value><booleanValue>false</booleanValue></value></assignmentItems>\n    <assignmentItems><assignToReference>$Record.Trace__c</assignToReference><operator>Assign</operator><value><stringValue>present</stringValue></value></assignmentItems>\n  </assignments>\n  <decisions>\n    <name>Check_Lookup_Id</name><label>Check Lookup Id</label><locationX>0</locationX><locationY>0</locationY>\n    <defaultConnector><targetReference>Mark_Present</targetReference></defaultConnector><defaultConnectorLabel>Present</defaultConnectorLabel>\n    <rules><name>Missing</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>Lookup_Never.Id</leftValueReference><operator>IsNull</operator><rightValue><booleanValue>true</booleanValue></rightValue></conditions><connector><targetReference>Mark_Missing</targetReference></connector><label>Missing</label></rules>\n  </decisions>\n  <interviewLabel>FlowCoreN1NoMatchId {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreN1NoMatchId</label>\n  <processType>AutoLaunchedFlow</processType>\n  <recordLookups>\n    <name>Lookup_Never</name><label>Lookup Never</label><locationX>0</locationX><locationY>0</locationY>\n    <assignNullValuesIfNoRecordsFound>true</assignNullValuesIfNoRecordsFound><connector><targetReference>Copy_Lookup_Id</targetReference></connector>\n    <filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>n1-no-match</stringValue></value></filters>\n    <getFirstRecordOnly>true</getFirstRecordOnly><object>FlowCoreN1Lookup__c</object><storeOutputAutomatically>true</storeOutputAutomatically>\n  </recordLookups>\n  <start><locationX>0</locationX><locationY>0</locationY><object>FlowCoreN1Record__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType><connector><targetReference>Lookup_Never</targetReference></connector></start>\n  <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/objects/FlowCoreN1Lookup__c/FlowCoreN1Lookup__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Flow Core N1 Lookup</label><pluralLabel>Flow Core N1 Lookups</pluralLabel><nameField><label>Flow Core N1 Lookup Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+            "force-app/main/default/objects/FlowCoreN1Record__c/FlowCoreN1Record__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Flow Core N1 Record</label><pluralLabel>Flow Core N1 Records</pluralLabel><nameField><label>Flow Core N1 Record Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+            "force-app/main/default/objects/FlowCoreN1Record__c/fields/Flag__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Flag__c</fullName><defaultValue>false</defaultValue><label>Flag</label><type>Checkbox</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreN1Record__c/fields/Text__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Text__c</fullName><label>Text</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreN1Record__c/fields/Trace__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Trace__c</fullName><label>Trace</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreN1Record__c/fields/Unit__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Unit__c</fullName><label>Unit</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/permissionsets/FlowCoreN1CaptureAccess.permissionset-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <label>Flow Core N1 Capture Access</label>\n  <objectPermissions><allowCreate>true</allowCreate><allowDelete>false</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>FlowCoreN1Record__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreN1Record__c.Unit__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreN1Record__c.Text__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreN1Record__c.Flag__c</field><readable>true</readable></fieldPermissions>\n  <fieldPermissions><editable>true</editable><field>FlowCoreN1Record__c.Trace__c</field><readable>true</readable></fieldPermissions>\n</PermissionSet>\n",
+            "sfdx-project.json": "{\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}],\"namespace\":\"\",\"sfdcLoginUrl\":\"https://login.salesforce.com\",\"sourceApiVersion\":\"67.0\"}\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreN1NoMatchId.flow-meta.xml": "1cd702160c4833f6d2c07f8bd9fc54fc64b7efe7335814ca20ef2da56a156b2b",
+            "force-app/main/default/objects/FlowCoreN1Lookup__c/FlowCoreN1Lookup__c.object-meta.xml": "6bed070f4524699aa9c4ea98961077c46463a7bffd1f984a1f3aa5a897030c87",
+            "force-app/main/default/objects/FlowCoreN1Record__c/FlowCoreN1Record__c.object-meta.xml": "1ec8a347ffb924eba18c43db8b6afc1f11aaca149d576beec1bc31c1236aeec1",
+            "force-app/main/default/objects/FlowCoreN1Record__c/fields/Flag__c.field-meta.xml": "7cf80cd6d4fa69409ea8d68c2d1cca13e3213a2dd6bff9d4ac74abbfb63a7eb8",
+            "force-app/main/default/objects/FlowCoreN1Record__c/fields/Text__c.field-meta.xml": "7e1df474ca6f61ed347601c7926458a88ae29d381bb8a984046550df2bf83b45",
+            "force-app/main/default/objects/FlowCoreN1Record__c/fields/Trace__c.field-meta.xml": "3c6607916ff2d1f64efce8f233b4b08a7ace738ba293a0700ef7024f31c9198b",
+            "force-app/main/default/objects/FlowCoreN1Record__c/fields/Unit__c.field-meta.xml": "6219be06afcbb88beee7f8359756efa029ca8d44612f97410521d3ce228534b5",
+            "force-app/main/default/permissionsets/FlowCoreN1CaptureAccess.permissionset-meta.xml": "d3f64c09c15138e86fb70239ff7256e7d3a03888bb048b2de07abe42019b3b13",
+            "sfdx-project.json": "d61b0974aa1209f8c42b0c8ee5c67db39431e3014e2a29dd0b5d0c0634a01eca"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "String unitName = 'N1A' + String.valueOf(DateTime.now().getTime());\nFlowCoreN1Record__c subject = new FlowCoreN1Record__c(\n    Name = 'subject', Unit__c = unitName, Text__c = 'seed', Flag__c = false, Trace__c = 'seed'\n);\ninsert subject;\nsubject = [SELECT Text__c, Flag__c, Trace__c FROM FlowCoreN1Record__c WHERE Id = :subject.Id];\nMap<String, Object> payload = new Map<String, Object>{\n    'text' => subject.Text__c,\n    'textIsNull' => subject.Text__c == null,\n    'flag' => subject.Flag__c,\n    'trace' => subject.Trace__c\n};\nSystem.assert(false, 'FLOW_CORE_RESULT|N1_001|' + JSON.serialize(payload));\n",
+              "classes": {},
+              "tests": [],
+              "sourceSha256": {
+                "anonymous": "3bea8c176839d33e80aca50db584ea8bf198bbeb83947116264996f8a1dc788f"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flag": true,
+                  "text": null,
+                  "textIsNull": true,
+                  "trace": "missing"
+                },
+                "native": {
+                  "flag": true,
+                  "text": null,
+                  "textIsNull": true,
+                  "trace": "missing"
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            },
+            "istest": {
+              "anonymous": "",
+              "classes": {
+                "FlowCoreN1ObservationTest": "@IsTest\nprivate class FlowCoreN1ObservationTest {\n    @IsTest\n    static void observe() {\n        String unitName = 'N1T' + String.valueOf(DateTime.now().getTime());\n        FlowCoreN1Record__c subject = new FlowCoreN1Record__c(\n            Name = 'subject', Unit__c = unitName, Text__c = 'seed', Flag__c = false, Trace__c = 'seed'\n        );\n        insert subject;\n        subject = [SELECT Text__c, Flag__c, Trace__c FROM FlowCoreN1Record__c WHERE Id = :subject.Id];\n        Map<String, Object> payload = new Map<String, Object>{\n            'text' => subject.Text__c,\n            'textIsNull' => subject.Text__c == null,\n            'flag' => subject.Flag__c,\n            'trace' => subject.Trace__c\n        };\n        System.assert(false, 'FLOW_CORE_RESULT|N1_001|' + JSON.serialize(payload));\n    }\n}\n"
+              },
+              "tests": [
+                "FlowCoreN1ObservationTest"
+              ],
+              "sourceSha256": {
+                "FlowCoreN1ObservationTest": "97d51c42db28f7dd81eb4732b8f00db4d69e531076c3e3fec9695dccd3daea8f"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "flag": true,
+                  "text": null,
+                  "textIsNull": true,
+                  "trace": "missing"
+                },
+                "native": {
+                  "flag": true,
+                  "text": null,
+                  "textIsNull": true,
+                  "trace": "missing"
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

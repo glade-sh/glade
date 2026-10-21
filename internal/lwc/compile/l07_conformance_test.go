@@ -49,7 +49,7 @@ type l07Carry struct {
 }
 
 // TestL07SalesforceConformance compares every exported org.tsv row exactly.
-// Native API 59/67 answers and runtime sources come from the owned wire
+// Native API 59/67/68 answers and runtime sources come from the owned wire
 // capture (204 rows per API).
 // GLADE_L07_CAPTURE=1 records differences without failing them;
 // GLADE_L07_REPORT selects the per-row TSV. CI needs no Salesforce or capture tools.
@@ -69,7 +69,7 @@ func l07SalesforceConformance(t *testing.T) {
 	if err := json.Unmarshal(data, &cases); err != nil {
 		t.Fatal(err)
 	}
-	versions := []string{"59.0", "67.0"}
+	versions := []string{"59.0", "67.0", "68.0"}
 	seen, groups := map[string]bool{}, map[string]bool{}
 	var compileCases, runtimeCases []l07Case
 	diagnosticRows := 0
@@ -289,7 +289,7 @@ func l07SalesforceConformance(t *testing.T) {
 	}
 }
 
-// D7 fixed-source controls at every API 59-67 and adopted L09 compiler rows.
+// D7 fixed-source controls at every API 59-68 and adopted L09 compiler rows.
 // The apparent 59/67 column difference came from generated class names. Sources
 // and complete native diagnostics are replayed verbatim, without API offsets.
 func l07ReviewCompiler(t *testing.T, capture bool) string {
@@ -320,7 +320,7 @@ func l07ReviewCompiler(t *testing.T, capture bool) string {
 	}
 	var report strings.Builder
 	matches, total := 0, 0
-	for version := 59; version <= 67; version++ {
+	for version := 59; version <= 68; version++ {
 		api := fmt.Sprintf("%d.0", version)
 		var selected []l07Case
 		for _, c := range cases {
@@ -362,11 +362,11 @@ func l07ReviewCompiler(t *testing.T, capture bool) string {
 			fmt.Fprintf(&report, "%s\t%s\tcompile\t%s\t%s\t%s\t\t%s\t%s\t%s\t\n", api, c.ID, status, got, want, diagnosticStatus, l07OneLine(diagnostic), l07OneLine(diagnosticWant))
 		}
 	}
-	if total != 62 {
-		t.Fatalf("L07 requires all 62 review compiler observations, got %d", total)
+	if total != 79 {
+		t.Fatalf("L07 requires all 79 review compiler observations, got %d", total)
 	}
 	fmt.Fprintf(&report, "REVIEW_COMPILER_TOTAL\t%d/%d\n", matches, total)
-	t.Logf("L07 review compiler matches %d/%d (D7 APIs 59-67; L09 APIs 59/67)", matches, total)
+	t.Logf("L07 review compiler matches %d/%d (D7 APIs 59-68; L09 APIs 59/67/68)", matches, total)
 	return report.String()
 }
 
@@ -434,8 +434,8 @@ func l07CompileCases(t *testing.T, api string, cases []l07Case) map[string]compi
 		l07Write(t, filepath.Join(bundle, name+".js-meta.xml"), []byte(`<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion>`+fragment+`</LightningComponentBundle>`))
 	}
 	fixtureAPI := api[:2]
-	if fixtureAPI != "59" && fixtureAPI != "67" {
-		fixtureAPI = "59" // Unchanged owned Apex fixture; D7 controls use no Apex imports.
+	if fixtureAPI != "59" && fixtureAPI != "67" && fixtureAPI != "68" {
+		fixtureAPI = "59" // D7 intermediate controls use no Apex imports.
 	}
 	l07Copy(t, filepath.Join("testdata", "l07_runtime", "api"+fixtureAPI, "force-app", "main", "default", "classes"), filepath.Join(root, "cases", "common", "force-app", "main", "default", "classes"))
 	l07Write(t, filepath.Join(root, "sfdx-project.json"), []byte(`{"packageDirectories":[{"path":"cases","default":true}],"sourceApiVersion":"`+api+`"}`))

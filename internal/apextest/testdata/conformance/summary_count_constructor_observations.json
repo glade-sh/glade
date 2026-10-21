@@ -1,0 +1,547 @@
+{
+  "description": "Owned dynamic COUNT constructor defaults: matched source APIs and fixed legacy helper source chain. Named payloads preserve caller before/after values independently from query visibility failures; no anonymous result is inferred.",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "projectSourceAPI": "61.0",
+  "fixedSourcePins": {
+    "LegacySummaryObservation": 26,
+    "SummaryFactoryAdapter": 29,
+    "SummaryRecordFactory": 31,
+    "SummaryInsertService": 34
+  },
+  "files": {
+    "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"61.0\"}",
+    "force-app/main/default/classes/MatchedSummaryInsertService.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>{{API}}</apiVersion><status>Active</status></ApexClass>",
+    "force-app/main/default/classes/LegacySummaryObservation.cls": "public class LegacySummaryObservation {\n public static String observe(Boolean defaults){\n  ProbeTile__c p=(ProbeTile__c)SummaryFactoryAdapter.make(defaults);p.Name='Summary seed';\n  Map<String,Object> result=new Map<String,Object>{'defaults'=>defaults,'beforeCount'=>p.DotCount__c};\n  SummaryInsertService.save(p);result.put('afterCount',p.DotCount__c);\n  ProbeTile__c q=[SELECT DotCount__c,(SELECT Id FROM Dots__r) FROM ProbeTile__c WHERE Id=:p.Id];\n  result.put('queriedCount',q.DotCount__c);result.put('childListNull',q.Dots__r==null);result.put('childCount',q.Dots__r.size());\n  result.put('count',[SELECT COUNT() FROM ProbeDot__c WHERE ParentTile__c=:p.Id]);\n  AggregateResult a=[SELECT SUM(Amount__c) total FROM ProbeDot__c WHERE ParentTile__c=:p.Id];result.put('sum',a.get('total'));\n  return JSON.serialize(result);\n }\n}",
+    "force-app/main/default/classes/MatchedSummaryFactoryAdapter.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>{{API}}</apiVersion><status>Active</status></ApexClass>",
+    "force-app/main/default/classes/SummaryInsertService.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>34.0</apiVersion><status>Active</status></ApexClass>",
+    "force-app/main/default/classes/SummaryCallerObservationTest.cls": "@IsTest private class SummaryCallerObservationTest {\n @IsTest static void defaultsFalseObservation(){String payload=LegacySummaryObservation.observe(false);System.assert(false,'SUMMARY_FALSE|'+payload);}\n @IsTest static void defaultsTrueObservation(){String payload=LegacySummaryObservation.observe(true);System.assert(false,'SUMMARY_TRUE|'+payload);}\n}",
+    "force-app/main/default/classes/SummaryCallerControlTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>{{API}}</apiVersion><status>Active</status></ApexClass>",
+    "force-app/main/default/classes/SummaryMatchedObservationTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>{{API}}</apiVersion><status>Active</status></ApexClass>",
+    "force-app/main/default/classes/SummaryMatchedObservationTest.cls": "@IsTest private class SummaryMatchedObservationTest {\n @IsTest static void defaultsFalseObservation(){String payload=MatchedSummaryObservation.observe(false);System.assert(false,'MATCHED_FALSE|'+payload);}\n @IsTest static void defaultsTrueObservation(){String payload=MatchedSummaryObservation.observe(true);System.assert(false,'MATCHED_TRUE|'+payload);}\n}",
+    "force-app/main/default/classes/SummaryCallerObservationTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>{{API}}</apiVersion><status>Active</status></ApexClass>",
+    "force-app/main/default/classes/MatchedSummaryObservation.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>{{API}}</apiVersion><status>Active</status></ApexClass>",
+    "force-app/main/default/classes/MatchedSummaryFactoryAdapter.cls": "public class MatchedSummaryFactoryAdapter { public static SObject make(Boolean defaults){return MatchedSummaryRecordFactory.make(defaults);} }",
+    "force-app/main/default/classes/MatchedSummaryRecordFactory.cls": "public class MatchedSummaryRecordFactory { public static SObject make(Boolean defaults){return ProbeTile__c.SObjectType.newSObject(null,defaults);} }",
+    "force-app/main/default/classes/SummaryFactoryAdapter.cls": "public class SummaryFactoryAdapter { public static SObject make(Boolean defaults){return SummaryRecordFactory.make(defaults);} }",
+    "force-app/main/default/classes/SummaryRecordFactory.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>31.0</apiVersion><status>Active</status></ApexClass>",
+    "force-app/main/default/classes/MatchedSummaryInsertService.cls": "public class MatchedSummaryInsertService { public static void save(SObject row){Database.insert(row);} }",
+    "force-app/main/default/classes/SummaryFactoryAdapter.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>29.0</apiVersion><status>Active</status></ApexClass>",
+    "force-app/main/default/classes/MatchedSummaryRecordFactory.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>{{API}}</apiVersion><status>Active</status></ApexClass>",
+    "force-app/main/default/classes/LegacySummaryObservation.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>26.0</apiVersion><status>Active</status></ApexClass>",
+    "force-app/main/default/classes/MatchedSummaryObservation.cls": "public class MatchedSummaryObservation {\n public static String observe(Boolean defaults){\n  ProbeTile__c p=(ProbeTile__c)MatchedSummaryFactoryAdapter.make(defaults);p.Name='Summary seed';\n  Map<String,Object> result=new Map<String,Object>{'defaults'=>defaults,'beforeCount'=>p.DotCount__c};\n  MatchedSummaryInsertService.save(p);result.put('afterCount',p.DotCount__c);\n  ProbeTile__c q=[SELECT DotCount__c,(SELECT Id FROM Dots__r) FROM ProbeTile__c WHERE Id=:p.Id];\n  result.put('queriedCount',q.DotCount__c);result.put('childListNull',q.Dots__r==null);result.put('childCount',q.Dots__r.size());\n  result.put('count',[SELECT COUNT() FROM ProbeDot__c WHERE ParentTile__c=:p.Id]);\n  AggregateResult a=[SELECT SUM(Amount__c) total FROM ProbeDot__c WHERE ParentTile__c=:p.Id];result.put('sum',a.get('total'));\n  return JSON.serialize(result);\n }\n}",
+    "force-app/main/default/classes/SummaryRecordFactory.cls": "public class SummaryRecordFactory { public static SObject make(Boolean defaults){return ProbeTile__c.SObjectType.newSObject(null,defaults);} }",
+    "force-app/main/default/classes/SummaryInsertService.cls": "public class SummaryInsertService { public static void save(SObject row){Database.insert(row);} }",
+    "force-app/main/default/classes/SummaryCallerControlTest.cls": "@IsTest private class SummaryCallerControlTest {\n @IsTest static void concreteCallerRemainsNull(){ProbeTile__c p=new ProbeTile__c(Name='Control seed');insert p;System.assertEquals(null,p.DotCount__c);System.assertEquals(0,[SELECT DotCount__c FROM ProbeTile__c WHERE Id=:p.Id].DotCount__c);}\n @IsTest static void emptyAggregateControls(){System.assertEquals(0,[SELECT COUNT() FROM ProbeDot__c]);AggregateResult c=[SELECT COUNT(Id) total FROM ProbeDot__c];System.assertEquals(0,c.get('total'));AggregateResult a=[SELECT SUM(Amount__c) total FROM ProbeDot__c];System.assertEquals(null,a.get('total'));}\n @IsTest static void emptyChildrenAreMaterialized(){ProbeTile__c p=new ProbeTile__c(Name='Relationship seed');insert p;ProbeTile__c q=[SELECT Id,(SELECT Id FROM Dots__r) FROM ProbeTile__c WHERE Id=:p.Id];System.assertNotEquals(null,q.Dots__r);System.assertEquals(0,q.Dots__r.size());}\n}",
+    "force-app/main/default/objects/ProbeTile__c/ProbeTile__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>ProbeTile</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>ProbeTile rows</pluralLabel><sharingModel>ReadWrite</sharingModel><fields><fullName>DotCount__c</fullName><label>DotCount</label><summaryForeignKey>ProbeDot__c.ParentTile__c</summaryForeignKey><summaryOperation>count</summaryOperation><type>Summary</type></fields></CustomObject>",
+    "force-app/main/default/objects/ProbeDot__c/ProbeDot__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><fields><fullName>ParentTile__c</fullName><label>ParentTile</label><referenceTo>ProbeTile__c</referenceTo><relationshipLabel>Dots</relationshipLabel><relationshipName>Dots</relationshipName><relationshipOrder>0</relationshipOrder><reparentableMasterDetail>false</reparentableMasterDetail><type>MasterDetail</type><writeRequiresMasterRead>false</writeRequiresMasterRead></fields><label>ProbeDot</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>ProbeDot rows</pluralLabel><sharingModel>ControlledByParent</sharingModel><fields><fullName>Amount__c</fullName><label>Amount</label><precision>16</precision><scale>2</scale><type>Number</type></fields></CustomObject>"
+  },
+  "filesByAPI": {
+    "67.0": {
+      "force-app/main/default/classes/MatchedSummaryObservation.cls": "public class MatchedSummaryObservation {\n public static String observe(Boolean defaults){\n  ProbeTile__c p=(ProbeTile__c)MatchedSummaryFactoryAdapter.make(defaults);p.Name='Summary seed';\n  Map<String,Object> result=new Map<String,Object>{'defaults'=>defaults,'beforeCount'=>p.DotCount__c};\n  MatchedSummaryInsertService.save(p);result.put('afterCount',p.DotCount__c);\n  try { ProbeTile__c q=[SELECT DotCount__c,(SELECT Id FROM Dots__r) FROM ProbeTile__c WHERE Id=:p.Id];\n  result.put('queriedCount',q.DotCount__c);result.put('childListNull',q.Dots__r==null);result.put('childCount',q.Dots__r.size());\n  result.put('count',[SELECT COUNT() FROM ProbeDot__c WHERE ParentTile__c=:p.Id]);\n  AggregateResult a=[SELECT SUM(Amount__c) total FROM ProbeDot__c WHERE ParentTile__c=:p.Id];result.put('sum',a.get('total'));\n  } catch(Exception e) { result.put('queryExceptionType',e.getTypeName());result.put('queryExceptionMessage',e.getMessage()); }\n  return JSON.serialize(result);\n }\n}"
+    },
+    "68.0": {
+      "force-app/main/default/classes/MatchedSummaryObservation.cls": "public class MatchedSummaryObservation {\n public static String observe(Boolean defaults){\n  ProbeTile__c p=(ProbeTile__c)MatchedSummaryFactoryAdapter.make(defaults);p.Name='Summary seed';\n  Map<String,Object> result=new Map<String,Object>{'defaults'=>defaults,'beforeCount'=>p.DotCount__c};\n  MatchedSummaryInsertService.save(p);result.put('afterCount',p.DotCount__c);\n  try { ProbeTile__c q=[SELECT DotCount__c,(SELECT Id FROM Dots__r) FROM ProbeTile__c WHERE Id=:p.Id];\n  result.put('queriedCount',q.DotCount__c);result.put('childListNull',q.Dots__r==null);result.put('childCount',q.Dots__r.size());\n  result.put('count',[SELECT COUNT() FROM ProbeDot__c WHERE ParentTile__c=:p.Id]);\n  AggregateResult a=[SELECT SUM(Amount__c) total FROM ProbeDot__c WHERE ParentTile__c=:p.Id];result.put('sum',a.get('total'));\n  } catch(Exception e) { result.put('queryExceptionType',e.getTypeName());result.put('queryExceptionMessage',e.getMessage()); }\n  return JSON.serialize(result);\n }\n}"
+    }
+  },
+  "rows": [
+    {
+      "id": "LEGACY_FALSE",
+      "className": "SummaryCallerObservationTest",
+      "method": "defaultsFalseObservation",
+      "marker": "SUMMARY_FALSE|",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "sum": null,
+            "count": 0,
+            "childCount": 0,
+            "childListNull": false,
+            "queriedCount": 0,
+            "afterCount": null,
+            "beforeCount": null,
+            "defaults": false
+          },
+          "expected": {
+            "sum": null,
+            "count": 0,
+            "childCount": 0,
+            "childListNull": false,
+            "queriedCount": 0,
+            "afterCount": null,
+            "beforeCount": null,
+            "defaults": false
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "sum": null,
+            "count": 0,
+            "childCount": 0,
+            "childListNull": false,
+            "queriedCount": 0,
+            "afterCount": null,
+            "beforeCount": null,
+            "defaults": false
+          },
+          "expected": {
+            "sum": null,
+            "count": 0,
+            "childCount": 0,
+            "childListNull": false,
+            "queriedCount": 0,
+            "afterCount": null,
+            "beforeCount": null,
+            "defaults": false
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "sum": null,
+            "count": 0,
+            "childCount": 0,
+            "childListNull": false,
+            "queriedCount": 0,
+            "afterCount": null,
+            "beforeCount": null,
+            "defaults": false
+          },
+          "expected": {
+            "sum": null,
+            "count": 0,
+            "childCount": 0,
+            "childListNull": false,
+            "queriedCount": 0,
+            "afterCount": null,
+            "beforeCount": null,
+            "defaults": false
+          }
+        }
+      }
+    },
+    {
+      "id": "LEGACY_TRUE",
+      "className": "SummaryCallerObservationTest",
+      "method": "defaultsTrueObservation",
+      "marker": "SUMMARY_TRUE|",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "sum": null,
+            "count": 0,
+            "childCount": 0,
+            "childListNull": false,
+            "queriedCount": 0,
+            "afterCount": 0,
+            "beforeCount": 0,
+            "defaults": true
+          },
+          "expected": {
+            "sum": null,
+            "count": 0,
+            "childCount": 0,
+            "childListNull": false,
+            "queriedCount": 0,
+            "afterCount": 0,
+            "beforeCount": 0,
+            "defaults": true
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "sum": null,
+            "count": 0,
+            "childCount": 0,
+            "childListNull": false,
+            "queriedCount": 0,
+            "afterCount": 0,
+            "beforeCount": 0,
+            "defaults": true
+          },
+          "expected": {
+            "sum": null,
+            "count": 0,
+            "childCount": 0,
+            "childListNull": false,
+            "queriedCount": 0,
+            "afterCount": 0,
+            "beforeCount": 0,
+            "defaults": true
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "sum": null,
+            "count": 0,
+            "childCount": 0,
+            "childListNull": false,
+            "queriedCount": 0,
+            "afterCount": 0,
+            "beforeCount": 0,
+            "defaults": true
+          },
+          "expected": {
+            "sum": null,
+            "count": 0,
+            "childCount": 0,
+            "childListNull": false,
+            "queriedCount": 0,
+            "afterCount": 0,
+            "beforeCount": 0,
+            "defaults": true
+          }
+        }
+      }
+    },
+    {
+      "id": "MATCHED_FALSE",
+      "className": "SummaryMatchedObservationTest",
+      "method": "defaultsFalseObservation",
+      "marker": "MATCHED_FALSE|",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "sum": null,
+            "count": 0,
+            "childCount": 0,
+            "childListNull": false,
+            "queriedCount": 0,
+            "afterCount": null,
+            "beforeCount": null,
+            "defaults": false
+          },
+          "expected": {
+            "sum": null,
+            "count": 0,
+            "childCount": 0,
+            "childListNull": false,
+            "queriedCount": 0,
+            "afterCount": null,
+            "beforeCount": null,
+            "defaults": false
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "queryExceptionMessage": "No such column 'DotCount__c' on entity 'ProbeTile__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+            "queryExceptionType": "System.QueryException",
+            "afterCount": null,
+            "beforeCount": null,
+            "defaults": false
+          },
+          "expected": {
+            "afterCount": null,
+            "beforeCount": null,
+            "defaults": false
+          },
+          "carriedFields": {
+            "queryExceptionType": "The captured query failed after caller lifecycle values were recorded; query access/projection behavior is outside constructor default scope.",
+            "queryExceptionMessage": "The captured query failed after caller lifecycle values were recorded; query access/projection behavior is outside constructor default scope."
+          },
+          "originalUncaughtQuery": {
+            "message": "System.QueryException: No such column 'DotCount__c' on entity 'ProbeTile__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+            "reason": "The original unguarded observer reached a query exception before its terminal payload; the staged observer preserves the lifecycle measurements separately without making this exception a constructor expectation."
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "queryExceptionMessage": "No such column 'DotCount__c' on entity 'ProbeTile__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+            "queryExceptionType": "System.QueryException",
+            "afterCount": null,
+            "beforeCount": null,
+            "defaults": false
+          },
+          "expected": {
+            "afterCount": null,
+            "beforeCount": null,
+            "defaults": false
+          },
+          "carriedFields": {
+            "queryExceptionType": "The captured query failed after caller lifecycle values were recorded; query access/projection behavior is outside constructor default scope.",
+            "queryExceptionMessage": "The captured query failed after caller lifecycle values were recorded; query access/projection behavior is outside constructor default scope."
+          },
+          "originalUncaughtQuery": {
+            "message": "System.QueryException: No such column 'DotCount__c' on entity 'ProbeTile__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+            "reason": "The original unguarded observer reached a query exception before its terminal payload; the staged observer preserves the lifecycle measurements separately without making this exception a constructor expectation."
+          }
+        }
+      }
+    },
+    {
+      "id": "MATCHED_TRUE",
+      "className": "SummaryMatchedObservationTest",
+      "method": "defaultsTrueObservation",
+      "marker": "MATCHED_TRUE|",
+      "cells": {
+        "62.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "62.0/istest": {
+          "status": "runtime",
+          "native": {
+            "sum": null,
+            "count": 0,
+            "childCount": 0,
+            "childListNull": false,
+            "queriedCount": 0,
+            "afterCount": 0,
+            "beforeCount": 0,
+            "defaults": true
+          },
+          "expected": {
+            "sum": null,
+            "count": 0,
+            "childCount": 0,
+            "childListNull": false,
+            "queriedCount": 0,
+            "afterCount": 0,
+            "beforeCount": 0,
+            "defaults": true
+          }
+        },
+        "67.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "67.0/istest": {
+          "status": "runtime",
+          "native": {
+            "queryExceptionMessage": "No such column 'DotCount__c' on entity 'ProbeTile__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+            "queryExceptionType": "System.QueryException",
+            "afterCount": 0,
+            "beforeCount": 0,
+            "defaults": true
+          },
+          "expected": {
+            "afterCount": 0,
+            "beforeCount": 0,
+            "defaults": true
+          },
+          "carriedFields": {
+            "queryExceptionType": "The captured query failed after caller lifecycle values were recorded; query access/projection behavior is outside constructor default scope.",
+            "queryExceptionMessage": "The captured query failed after caller lifecycle values were recorded; query access/projection behavior is outside constructor default scope."
+          },
+          "originalUncaughtQuery": {
+            "message": "System.QueryException: No such column 'DotCount__c' on entity 'ProbeTile__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+            "reason": "The original unguarded observer reached a query exception before its terminal payload; the staged observer preserves the lifecycle measurements separately without making this exception a constructor expectation."
+          }
+        },
+        "68.0/anonymous": {
+          "status": "NOT_RUN",
+          "reason": "A read-only precondition check found no owned fixture objects or helper classes persisted in the authorized scratch org. The named check-only deployment rolls this setup back, so its anonymous twin cannot execute without a persistent setup deployment, which is not authorized. No anonymous behavior is inferred.",
+          "native": {
+            "status": "NOT_RUN"
+          },
+          "expected": {}
+        },
+        "68.0/istest": {
+          "status": "runtime",
+          "native": {
+            "queryExceptionMessage": "No such column 'DotCount__c' on entity 'ProbeTile__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+            "queryExceptionType": "System.QueryException",
+            "afterCount": 0,
+            "beforeCount": 0,
+            "defaults": true
+          },
+          "expected": {
+            "afterCount": 0,
+            "beforeCount": 0,
+            "defaults": true
+          },
+          "carriedFields": {
+            "queryExceptionType": "The captured query failed after caller lifecycle values were recorded; query access/projection behavior is outside constructor default scope.",
+            "queryExceptionMessage": "The captured query failed after caller lifecycle values were recorded; query access/projection behavior is outside constructor default scope."
+          },
+          "originalUncaughtQuery": {
+            "message": "System.QueryException: No such column 'DotCount__c' on entity 'ProbeTile__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.",
+            "reason": "The original unguarded observer reached a query exception before its terminal payload; the staged observer preserves the lifecycle measurements separately without making this exception a constructor expectation."
+          }
+        }
+      }
+    }
+  ],
+  "controls": [
+    {
+      "api": "62.0",
+      "className": "SummaryCallerControlTest",
+      "method": "concreteCallerRemainsNull",
+      "status": "pass",
+      "native": {
+        "result": "pass"
+      }
+    },
+    {
+      "api": "62.0",
+      "className": "SummaryCallerControlTest",
+      "method": "emptyAggregateControls",
+      "status": "pass",
+      "native": {
+        "result": "pass"
+      }
+    },
+    {
+      "api": "62.0",
+      "className": "SummaryCallerControlTest",
+      "method": "emptyChildrenAreMaterialized",
+      "status": "pass",
+      "native": {
+        "result": "pass"
+      }
+    },
+    {
+      "api": "67.0",
+      "className": "SummaryCallerControlTest",
+      "method": "concreteCallerRemainsNull",
+      "status": "carry",
+      "native": {
+        "message": "System.QueryException: No such column 'DotCount__c' on entity 'ProbeTile__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      "reason": "The observed control stopped at a query access/projection exception outside constructor default scope; preserve the exact native exception without asserting unsupported permission behavior."
+    },
+    {
+      "api": "67.0",
+      "className": "SummaryCallerControlTest",
+      "method": "emptyAggregateControls",
+      "status": "carry",
+      "native": {
+        "message": "System.QueryException: Invalid field: 'Amount__c'"
+      },
+      "reason": "The observed control stopped at a query access/projection exception outside constructor default scope; preserve the exact native exception without asserting unsupported permission behavior."
+    },
+    {
+      "api": "67.0",
+      "className": "SummaryCallerControlTest",
+      "method": "emptyChildrenAreMaterialized",
+      "status": "pass",
+      "native": {
+        "result": "pass"
+      }
+    },
+    {
+      "api": "68.0",
+      "className": "SummaryCallerControlTest",
+      "method": "concreteCallerRemainsNull",
+      "status": "carry",
+      "native": {
+        "message": "System.QueryException: No such column 'DotCount__c' on entity 'ProbeTile__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names."
+      },
+      "reason": "The observed control stopped at a query access/projection exception outside constructor default scope; preserve the exact native exception without asserting unsupported permission behavior."
+    },
+    {
+      "api": "68.0",
+      "className": "SummaryCallerControlTest",
+      "method": "emptyAggregateControls",
+      "status": "carry",
+      "native": {
+        "message": "System.QueryException: Invalid field: 'Amount__c'"
+      },
+      "reason": "The observed control stopped at a query access/projection exception outside constructor default scope; preserve the exact native exception without asserting unsupported permission behavior."
+    },
+    {
+      "api": "68.0",
+      "className": "SummaryCallerControlTest",
+      "method": "emptyChildrenAreMaterialized",
+      "status": "pass",
+      "native": {
+        "result": "pass"
+      }
+    }
+  ]
+}

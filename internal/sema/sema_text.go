@@ -231,7 +231,7 @@ func splitLastSemaCall(arg string) (string, string, []semaArg, bool) {
 	if !strings.HasSuffix(arg, ")") {
 		return "", "", nil, false
 	}
-	open := matchingOpenParenBefore(arg, len(arg)-1)
+	open := matchingOpenExpressionParenBefore(arg, len(arg)-1)
 	if open < 0 {
 		return "", "", nil, false
 	}
@@ -312,6 +312,37 @@ func splitBareSemaCall(arg string) (string, []semaArg, bool) {
 	args, haveArgs := callArgumentsAt(arg, open)
 	return method, args, haveArgs
 }
+func matchingOpenExpressionParenBefore(body string, close int) int {
+	if close < 0 || close >= len(body) || body[close] != ')' {
+		return -1
+	}
+	// Match code delimiters only: parentheses inside literal or comment text
+	// cannot open or close a method argument list.
+	var opens []int
+	for i := 0; i <= close; i++ {
+		switch body[i] {
+		case '\'':
+			i = skipSemaString(body, i)
+		case '/':
+			if end, ok := skipSemaComment(body, i); ok {
+				i = end
+			}
+		case '(':
+			opens = append(opens, i)
+		case ')':
+			if len(opens) == 0 {
+				continue
+			}
+			open := opens[len(opens)-1]
+			if i == close {
+				return open
+			}
+			opens = opens[:len(opens)-1]
+		}
+	}
+	return -1
+}
+
 func matchingOpenParenBefore(body string, close int) int {
 	depth := 0
 	for i := close; i >= 0; i-- {

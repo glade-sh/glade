@@ -16,7 +16,7 @@ func TestSQLiteStorePersistsOrgState(t *testing.T) {
 	defer store.Close()
 
 	org := NewOrgState()
-	org.OrgID = "00D000000000001"
+	org.OrgID = "00D000000000mH2"
 	org.Objects["Account"] = ObjectState{
 		Definition: ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]Field{"Name": {APIName: "Name", Type: FieldString}}},
 		Records: map[ID]Record{

@@ -1,0 +1,1430 @@
+{
+  "APIVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "Cluster": "request_persistence",
+  "CellCount": 18,
+  "ObservedCount": 18,
+  "AssertedCount": 18,
+  "CarriedCount": 0,
+  "Cells": [
+    {
+      "ID": "PCT011",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCT011A62Test": "@IsTest private class PcPCT011A62Test {@IsTest static void first(){String r; try { Cache.Org.put('local.PcAlt.PcKPCT011A62Ia','a'); r=String.valueOf(Cache.Org.get('local.PcAlt.PcKPCT011A62Ib')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCT011a|'+pcWire);}@IsTest static void second(){String r; try { Cache.Org.put('local.PcAlt.PcKPCT011A62Ib','b'); r=String.valueOf(Cache.Org.get('local.PcAlt.PcKPCT011A62Ia')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCT011b|'+pcWire);}}"
+        },
+        "Tests": [
+          "PcPCT011A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCT011A62Test": "0461648919d985bd260dbca686f8aaca7e2ff26954e534917a61969769c5ddd5"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": {
+          "first": {
+            "outcome": "value",
+            "value": null
+          },
+          "second": {
+            "outcome": "value",
+            "value": null
+          }
+        },
+        "context": "two-methods-one-test-run",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": {
+        "first": {
+          "outcome": "value",
+          "value": null
+        },
+        "second": {
+          "outcome": "value",
+          "value": null
+        }
+      },
+      "Flow": "paired",
+      "PairedMethods": {
+        "first": "PCT011a",
+        "second": "PCT011b"
+      }
+    },
+    {
+      "ID": "PCT012",
+      "API": "62.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCT012A62Test": "@IsTest private class PcPCT012A62Test {@IsTest static void first(){String r; try { Cache.Session.put('local.PcAlt.PcKPCT012A62Ia','a'); r=String.valueOf(Cache.Session.get('local.PcAlt.PcKPCT012A62Ib')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCT012a|'+pcWire);}@IsTest static void second(){String r; try { Cache.Session.put('local.PcAlt.PcKPCT012A62Ib','b'); r=String.valueOf(Cache.Session.get('local.PcAlt.PcKPCT012A62Ia')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCT012b|'+pcWire);}}"
+        },
+        "Tests": [
+          "PcPCT012A62Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCT012A62Test": "78ec9593e56aedf3da3984cc37710b3f21f33121febe5aac10d2fea2b346365d"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": {
+          "first": {
+            "outcome": "value",
+            "value": null
+          },
+          "second": {
+            "outcome": "value",
+            "value": null
+          }
+        },
+        "context": "two-methods-one-test-run",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": {
+        "first": {
+          "outcome": "value",
+          "value": null
+        },
+        "second": {
+          "outcome": "value",
+          "value": null
+        }
+      },
+      "Flow": "paired",
+      "PairedMethods": {
+        "first": "PCT012a",
+        "second": "PCT012b"
+      }
+    },
+    {
+      "ID": "PCT013",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r=String.valueOf(Cache.Org.get('local.PcAlt.PcKPCT013A62A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCT013A62A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCT013|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "85b68d744a4e04c9d7d5f28bb5ace552ae77a7d100eb77ce20a517cd32953828"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "committed",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "committed",
+      "Flow": "requests",
+      "BeforeAnonymous": "Cache.Org.remove('local.PcAlt.PcKPCT013A62A'); Cache.Org.put('local.PcAlt.PcKPCT013A62A','committed',300); Object pcBefore=Cache.Org.get('local.PcAlt.PcKPCT013A62A'); System.assertEquals('committed',pcBefore,'FIXTURE_ERROR committed seed not stored');",
+      "RollbackWriter": "",
+      "DelaySeconds": 0,
+      "PhaseSHA256": {
+        "BeforeAnonymous": "f29eb606a8361155eadd14f190793961f0836685f0e153194e5a9830e32821c1"
+      }
+    },
+    {
+      "ID": "PCT014",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); r=String.valueOf(Cache.Session.get('local.PcAlt.PcKPCT014A62A')); r=JSON.serialize(new Map<String,Object>{'cache_value'=>r,'reader_session_sha256'=>pcSidHash}); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCT014A62A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCT014|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "cb2c71777c1ccb283c8b02c847b33ffb28ff5fc03da4402678b80469b533532c"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "committed",
+        "session_identity": {
+          "writer_sha256": "c0104471dfdcefa0f95a53cb4fda479e5b88f69689a49e91da45338c51308b12",
+          "reader_sha256": "c0104471dfdcefa0f95a53cb4fda479e5b88f69689a49e91da45338c51308b12",
+          "same_session": true,
+          "interpretation": "same-session"
+        },
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "committed",
+      "Flow": "requests",
+      "BeforeAnonymous": "String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); insert new Account(Name='PcSessPCT014A62A4fc90a38-'+(pcSidHash==null ? 'MISSING' : pcSidHash)); Cache.Session.remove('local.PcAlt.PcKPCT014A62A'); Cache.Session.put('local.PcAlt.PcKPCT014A62A','committed',300); Object pcBefore=Cache.Session.get('local.PcAlt.PcKPCT014A62A'); System.assertEquals('committed',pcBefore,'FIXTURE_ERROR committed seed not stored');",
+      "RollbackWriter": "",
+      "DelaySeconds": 0,
+      "PayloadField": "cache_value",
+      "PhaseSHA256": {
+        "BeforeAnonymous": "d558b4137b3b2360d98c3c4c612dfc8cc23f2d565143d3ce9c0b8338fff30271"
+      }
+    },
+    {
+      "ID": "PCT015",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r=String.valueOf(Cache.Org.get('local.PcAlt.PcKPCT015A62A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCT015A62A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCT015|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "3d8341bd37395a1611f8b63ecf037024d1424123587a5e770b2c4cf125a06b41"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": null,
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": null,
+      "Flow": "requests",
+      "BeforeAnonymous": "Cache.Org.remove('local.PcAlt.PcKPCT015A62A'); Cache.Org.put('local.PcAlt.PcKPCT015A62A','committed',300); Object pcBefore=Cache.Org.get('local.PcAlt.PcKPCT015A62A'); System.assertEquals('committed',pcBefore,'FIXTURE_ERROR committed seed not stored');",
+      "RollbackWriter": "",
+      "DelaySeconds": 305,
+      "PhaseSHA256": {
+        "BeforeAnonymous": "14f7b9b9af61de12ffa17c3e6c43957f5e6b7da7f28e4b3a954b3300f2644014"
+      }
+    },
+    {
+      "ID": "PCT016",
+      "API": "62.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); r=String.valueOf(Cache.Session.get('local.PcAlt.PcKPCT016A62A')); r=JSON.serialize(new Map<String,Object>{'cache_value'=>r,'reader_session_sha256'=>pcSidHash}); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCT016A62A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCT016|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "9d3e05182566c0a2e386c5e8d89ade1adcfa0e8cbd9d5a966607f7b85a01990f"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": null,
+        "session_identity": {
+          "writer_sha256": "c0104471dfdcefa0f95a53cb4fda479e5b88f69689a49e91da45338c51308b12",
+          "reader_sha256": "c0104471dfdcefa0f95a53cb4fda479e5b88f69689a49e91da45338c51308b12",
+          "same_session": true,
+          "interpretation": "same-session"
+        },
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": null,
+      "Flow": "requests",
+      "BeforeAnonymous": "String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); insert new Account(Name='PcSessPCT016A62A69cf7013-'+(pcSidHash==null ? 'MISSING' : pcSidHash)); Cache.Session.remove('local.PcAlt.PcKPCT016A62A'); Cache.Session.put('local.PcAlt.PcKPCT016A62A','committed',300); Object pcBefore=Cache.Session.get('local.PcAlt.PcKPCT016A62A'); System.assertEquals('committed',pcBefore,'FIXTURE_ERROR committed seed not stored');",
+      "RollbackWriter": "",
+      "DelaySeconds": 305,
+      "PayloadField": "cache_value",
+      "PhaseSHA256": {
+        "BeforeAnonymous": "92ad27c6048affd7702dcfc1f6d0a782252cfbcce2717c175bcdcabc4783066b"
+      }
+    },
+    {
+      "ID": "PCT011",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCT011A67Test": "@IsTest private class PcPCT011A67Test {@IsTest static void first(){String r; try { Cache.Org.put('local.PcAlt.PcKPCT011A67Ia','a'); r=String.valueOf(Cache.Org.get('local.PcAlt.PcKPCT011A67Ib')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCT011a|'+pcWire);}@IsTest static void second(){String r; try { Cache.Org.put('local.PcAlt.PcKPCT011A67Ib','b'); r=String.valueOf(Cache.Org.get('local.PcAlt.PcKPCT011A67Ia')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCT011b|'+pcWire);}}"
+        },
+        "Tests": [
+          "PcPCT011A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCT011A67Test": "dda4165efb39468e7c4fb19de267251e5d4793effc7e3d13815caec36eedc6a7"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": {
+          "first": {
+            "outcome": "value",
+            "value": null
+          },
+          "second": {
+            "outcome": "value",
+            "value": null
+          }
+        },
+        "context": "two-methods-one-test-run",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": {
+        "first": {
+          "outcome": "value",
+          "value": null
+        },
+        "second": {
+          "outcome": "value",
+          "value": null
+        }
+      },
+      "Flow": "paired",
+      "PairedMethods": {
+        "first": "PCT011a",
+        "second": "PCT011b"
+      }
+    },
+    {
+      "ID": "PCT012",
+      "API": "67.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCT012A67Test": "@IsTest private class PcPCT012A67Test {@IsTest static void first(){String r; try { Cache.Session.put('local.PcAlt.PcKPCT012A67Ia','a'); r=String.valueOf(Cache.Session.get('local.PcAlt.PcKPCT012A67Ib')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCT012a|'+pcWire);}@IsTest static void second(){String r; try { Cache.Session.put('local.PcAlt.PcKPCT012A67Ib','b'); r=String.valueOf(Cache.Session.get('local.PcAlt.PcKPCT012A67Ia')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCT012b|'+pcWire);}}"
+        },
+        "Tests": [
+          "PcPCT012A67Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCT012A67Test": "dd828aa8ea6822d8a685cdf8264d6ecda27b2a68cde9492dd09935410bff1ade"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": {
+          "first": {
+            "outcome": "value",
+            "value": null
+          },
+          "second": {
+            "outcome": "value",
+            "value": null
+          }
+        },
+        "context": "two-methods-one-test-run",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": {
+        "first": {
+          "outcome": "value",
+          "value": null
+        },
+        "second": {
+          "outcome": "value",
+          "value": null
+        }
+      },
+      "Flow": "paired",
+      "PairedMethods": {
+        "first": "PCT012a",
+        "second": "PCT012b"
+      }
+    },
+    {
+      "ID": "PCT013",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r=String.valueOf(Cache.Org.get('local.PcAlt.PcKPCT013A67A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCT013A67A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCT013|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "7e05b418e64fa51cb6abe17eb4ae35c840dd372ee32405f8257f394245973e95"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "committed",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "committed",
+      "Flow": "requests",
+      "BeforeAnonymous": "Cache.Org.remove('local.PcAlt.PcKPCT013A67A'); Cache.Org.put('local.PcAlt.PcKPCT013A67A','committed',300); Object pcBefore=Cache.Org.get('local.PcAlt.PcKPCT013A67A'); System.assertEquals('committed',pcBefore,'FIXTURE_ERROR committed seed not stored');",
+      "RollbackWriter": "",
+      "DelaySeconds": 0,
+      "PhaseSHA256": {
+        "BeforeAnonymous": "6cd264ea52a65cacbb03181bb024239bea73de3ec875e8a8056236a04ef20fca"
+      }
+    },
+    {
+      "ID": "PCT014",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); r=String.valueOf(Cache.Session.get('local.PcAlt.PcKPCT014A67A')); r=JSON.serialize(new Map<String,Object>{'cache_value'=>r,'reader_session_sha256'=>pcSidHash}); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCT014A67A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCT014|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "ca21fff891ab9078596bc4cf97a461f0681bef1b402b9ecb1c07d8f686fb2e4b"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "committed",
+        "session_identity": {
+          "writer_sha256": "c0104471dfdcefa0f95a53cb4fda479e5b88f69689a49e91da45338c51308b12",
+          "reader_sha256": "c0104471dfdcefa0f95a53cb4fda479e5b88f69689a49e91da45338c51308b12",
+          "same_session": true,
+          "interpretation": "same-session"
+        },
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "committed",
+      "Flow": "requests",
+      "BeforeAnonymous": "String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); insert new Account(Name='PcSessPCT014A67A8b9d557b-'+(pcSidHash==null ? 'MISSING' : pcSidHash)); Cache.Session.remove('local.PcAlt.PcKPCT014A67A'); Cache.Session.put('local.PcAlt.PcKPCT014A67A','committed',300); Object pcBefore=Cache.Session.get('local.PcAlt.PcKPCT014A67A'); System.assertEquals('committed',pcBefore,'FIXTURE_ERROR committed seed not stored');",
+      "RollbackWriter": "",
+      "DelaySeconds": 0,
+      "PayloadField": "cache_value",
+      "PhaseSHA256": {
+        "BeforeAnonymous": "027eaef9088f7d073420f4972aa9e6b76684974b8bba9c87916a5ccabe7e1059"
+      }
+    },
+    {
+      "ID": "PCT015",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r=String.valueOf(Cache.Org.get('local.PcAlt.PcKPCT015A67A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCT015A67A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCT015|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "bb0386d835ad4587e15d5cb4058aa326ccebe9f273e47aae331606154e4b4006"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": null,
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": null,
+      "Flow": "requests",
+      "BeforeAnonymous": "Cache.Org.remove('local.PcAlt.PcKPCT015A67A'); Cache.Org.put('local.PcAlt.PcKPCT015A67A','committed',300); Object pcBefore=Cache.Org.get('local.PcAlt.PcKPCT015A67A'); System.assertEquals('committed',pcBefore,'FIXTURE_ERROR committed seed not stored');",
+      "RollbackWriter": "",
+      "DelaySeconds": 305,
+      "PhaseSHA256": {
+        "BeforeAnonymous": "e76bda5c3243c06d6504a313f7fdf71da8eb7b95d9ab19eaaf7dffad80e50757"
+      }
+    },
+    {
+      "ID": "PCT016",
+      "API": "67.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); r=String.valueOf(Cache.Session.get('local.PcAlt.PcKPCT016A67A')); r=JSON.serialize(new Map<String,Object>{'cache_value'=>r,'reader_session_sha256'=>pcSidHash}); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCT016A67A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCT016|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "172d2a05339bb93cbeabc349215111c08d05bab23e731e39174ff460d91d6c20"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": null,
+        "session_identity": {
+          "writer_sha256": "c0104471dfdcefa0f95a53cb4fda479e5b88f69689a49e91da45338c51308b12",
+          "reader_sha256": "c0104471dfdcefa0f95a53cb4fda479e5b88f69689a49e91da45338c51308b12",
+          "same_session": true,
+          "interpretation": "same-session"
+        },
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": null,
+      "Flow": "requests",
+      "BeforeAnonymous": "String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); insert new Account(Name='PcSessPCT016A67A0f15c077-'+(pcSidHash==null ? 'MISSING' : pcSidHash)); Cache.Session.remove('local.PcAlt.PcKPCT016A67A'); Cache.Session.put('local.PcAlt.PcKPCT016A67A','committed',300); Object pcBefore=Cache.Session.get('local.PcAlt.PcKPCT016A67A'); System.assertEquals('committed',pcBefore,'FIXTURE_ERROR committed seed not stored');",
+      "RollbackWriter": "",
+      "DelaySeconds": 305,
+      "PayloadField": "cache_value",
+      "PhaseSHA256": {
+        "BeforeAnonymous": "04f9e0cc7c1e108f49658ea7c16cf5c262260893971435171cf30b0da5ddaaa1"
+      }
+    },
+    {
+      "ID": "PCT011",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCT011A68Test": "@IsTest private class PcPCT011A68Test {@IsTest static void first(){String r; try { Cache.Org.put('local.PcAlt.PcKPCT011A68Ia','a'); r=String.valueOf(Cache.Org.get('local.PcAlt.PcKPCT011A68Ib')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCT011a|'+pcWire);}@IsTest static void second(){String r; try { Cache.Org.put('local.PcAlt.PcKPCT011A68Ib','b'); r=String.valueOf(Cache.Org.get('local.PcAlt.PcKPCT011A68Ia')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCT011b|'+pcWire);}}"
+        },
+        "Tests": [
+          "PcPCT011A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCT011A68Test": "fdb8335ed5d416a6a432239f0dc7ce0e21ee7d23a8234834d70ae3f8ab0f8838"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": {
+          "first": {
+            "outcome": "value",
+            "value": null
+          },
+          "second": {
+            "outcome": "value",
+            "value": null
+          }
+        },
+        "context": "two-methods-one-test-run",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": {
+        "first": {
+          "outcome": "value",
+          "value": null
+        },
+        "second": {
+          "outcome": "value",
+          "value": null
+        }
+      },
+      "Flow": "paired",
+      "PairedMethods": {
+        "first": "PCT011a",
+        "second": "PCT011b"
+      }
+    },
+    {
+      "ID": "PCT012",
+      "API": "68.0",
+      "Route": "istest",
+      "Launcher": "apex-run-test",
+      "Variant": "extended",
+      "Source": {
+        "Classes": {
+          "PcPCT012A68Test": "@IsTest private class PcPCT012A68Test {@IsTest static void first(){String r; try { Cache.Session.put('local.PcAlt.PcKPCT012A68Ia','a'); r=String.valueOf(Cache.Session.get('local.PcAlt.PcKPCT012A68Ib')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCT012a|'+pcWire);}@IsTest static void second(){String r; try { Cache.Session.put('local.PcAlt.PcKPCT012A68Ib','b'); r=String.valueOf(Cache.Session.get('local.PcAlt.PcKPCT012A68Ia')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } String pcWire = JSON.serialize(r); if (pcWire.length() > 490 && !r.startsWith('EXC|')) { pcWire=JSON.serialize(new Map<String,Object>{'length'=>r.length(),'bytes'=>Blob.valueOf(r).size(),'sha256'=>EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(r))),'prefix'=>r.substring(0,Math.min(r.length(),240))}); }if(pcWire.length()+21>620){pcWire=JSON.serialize(new Map<String,Object>{'transportError'=>'oversize','length'=>r.length()});}System.assert(false,'PCE36_RESULT|PCT012b|'+pcWire);}}"
+        },
+        "Tests": [
+          "PcPCT012A68Test"
+        ]
+      },
+      "SourceSHA256": {
+        "class:PcPCT012A68Test": "8ccbeb4759913ffe1056ca775b2ce40fa109e4bbaefc97995a67860e19931bbc"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": {
+          "first": {
+            "outcome": "value",
+            "value": null
+          },
+          "second": {
+            "outcome": "value",
+            "value": null
+          }
+        },
+        "context": "two-methods-one-test-run",
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": {
+        "first": {
+          "outcome": "value",
+          "value": null
+        },
+        "second": {
+          "outcome": "value",
+          "value": null
+        }
+      },
+      "Flow": "paired",
+      "PairedMethods": {
+        "first": "PCT012a",
+        "second": "PCT012b"
+      }
+    },
+    {
+      "ID": "PCT013",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r=String.valueOf(Cache.Org.get('local.PcAlt.PcKPCT013A68A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCT013A68A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCT013|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "5f8a4dab53043bfce696086e776cb5c8a903a55666f3fa3dc00f8c85ee372041"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "committed",
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "committed",
+      "Flow": "requests",
+      "BeforeAnonymous": "Cache.Org.remove('local.PcAlt.PcKPCT013A68A'); Cache.Org.put('local.PcAlt.PcKPCT013A68A','committed',300); Object pcBefore=Cache.Org.get('local.PcAlt.PcKPCT013A68A'); System.assertEquals('committed',pcBefore,'FIXTURE_ERROR committed seed not stored');",
+      "RollbackWriter": "",
+      "DelaySeconds": 0,
+      "PhaseSHA256": {
+        "BeforeAnonymous": "42d1540943d34889505159752b65a888b35321018a608c3bcc3456f22778df92"
+      }
+    },
+    {
+      "ID": "PCT014",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); r=String.valueOf(Cache.Session.get('local.PcAlt.PcKPCT014A68A')); r=JSON.serialize(new Map<String,Object>{'cache_value'=>r,'reader_session_sha256'=>pcSidHash}); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCT014A68A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCT014|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "6277a978365bd18c34bc0e1a7a0bf7be9f112f0d23228bc1d5a23e2822e50d72"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": "committed",
+        "session_identity": {
+          "writer_sha256": "c0104471dfdcefa0f95a53cb4fda479e5b88f69689a49e91da45338c51308b12",
+          "reader_sha256": "c0104471dfdcefa0f95a53cb4fda479e5b88f69689a49e91da45338c51308b12",
+          "same_session": true,
+          "interpretation": "same-session"
+        },
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": "committed",
+      "Flow": "requests",
+      "BeforeAnonymous": "String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); insert new Account(Name='PcSessPCT014A68A7483e356-'+(pcSidHash==null ? 'MISSING' : pcSidHash)); Cache.Session.remove('local.PcAlt.PcKPCT014A68A'); Cache.Session.put('local.PcAlt.PcKPCT014A68A','committed',300); Object pcBefore=Cache.Session.get('local.PcAlt.PcKPCT014A68A'); System.assertEquals('committed',pcBefore,'FIXTURE_ERROR committed seed not stored');",
+      "RollbackWriter": "",
+      "DelaySeconds": 0,
+      "PayloadField": "cache_value",
+      "PhaseSHA256": {
+        "BeforeAnonymous": "73dcfd9fece50921659c3bcaa051f00fca907bf967b2a460c29f57e98fbcb3c9"
+      }
+    },
+    {
+      "ID": "PCT015",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { r=String.valueOf(Cache.Org.get('local.PcAlt.PcKPCT015A68A')); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Org.remove('local.PcAlt.PcKPCT015A68A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCT015|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "4d58934cce51b1e0c43f3ac9da999f06030a9b4cc1ad5d14549fc8372c5900a7"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 1
+        },
+        "PcAlt": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Organization",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": null,
+        "capacity_layout": {
+          "preferred": "primary",
+          "achieved": "primary",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 1
+            },
+            "PcAlt": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": null,
+      "Flow": "requests",
+      "BeforeAnonymous": "Cache.Org.remove('local.PcAlt.PcKPCT015A68A'); Cache.Org.put('local.PcAlt.PcKPCT015A68A','committed',300); Object pcBefore=Cache.Org.get('local.PcAlt.PcKPCT015A68A'); System.assertEquals('committed',pcBefore,'FIXTURE_ERROR committed seed not stored');",
+      "RollbackWriter": "",
+      "DelaySeconds": 305,
+      "PhaseSHA256": {
+        "BeforeAnonymous": "6c605d9997c9c445a1b9b9f053661086e8c7be8abb4de0656d87414add9c7e90"
+      }
+    },
+    {
+      "ID": "PCT016",
+      "API": "68.0",
+      "Route": "anon",
+      "Launcher": "execute-anonymous",
+      "Variant": "extended",
+      "Source": {
+        "Anonymous": "String r; try { String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); r=String.valueOf(Cache.Session.get('local.PcAlt.PcKPCT016A68A')); r=JSON.serialize(new Map<String,Object>{'cache_value'=>r,'reader_session_sha256'=>pcSidHash}); } catch (Exception pcError) { r='EXC|'+pcError.getTypeName()+'|'+pcError.getMessage(); } try { Cache.Session.remove('local.PcAlt.PcKPCT016A68A'); } catch(Exception pcCleanup) { }String pcWire=JSON.serialize(r);System.assert(false,'PCE36_RESULT|PCT016|'+pcWire);"
+      },
+      "SourceSHA256": {
+        "anonymous": "cc7893d25bc0d0fa749e22bfef2d2f79835ea74a804823bf3d886c8110057776"
+      },
+      "MarkerPrefix": "PCE36_RESULT|",
+      "AllocationMB": {
+        "PcMain": {
+          "Organization": 1,
+          "Session": 0
+        },
+        "PcAlt": {
+          "Organization": 0,
+          "Session": 1
+        },
+        "PcZero": {
+          "Organization": 0,
+          "Session": 0
+        }
+      },
+      "RequiredCapacity": [
+        {
+          "partition": "PcAlt",
+          "scope": "Session",
+          "min_mb": 1
+        }
+      ],
+      "Native": {
+        "outcome": "value",
+        "value": null,
+        "session_identity": {
+          "writer_sha256": "c0104471dfdcefa0f95a53cb4fda479e5b88f69689a49e91da45338c51308b12",
+          "reader_sha256": "c0104471dfdcefa0f95a53cb4fda479e5b88f69689a49e91da45338c51308b12",
+          "same_session": true,
+          "interpretation": "same-session"
+        },
+        "capacity_layout": {
+          "preferred": "session-alt-2mb",
+          "achieved": "session-alt-2mb",
+          "allocation_mb": {
+            "PcMain": {
+              "Organization": 1,
+              "Session": 0
+            },
+            "PcAlt": {
+              "Organization": 0,
+              "Session": 1
+            },
+            "PcZero": {
+              "Organization": 0,
+              "Session": 0
+            }
+          },
+          "verified": true,
+          "missing_required_capacity": [],
+          "default_context_uncertain": false
+        }
+      },
+      "Outcome": "value",
+      "Value": null,
+      "Flow": "requests",
+      "BeforeAnonymous": "String pcSid=UserInfo.getSessionId(); String pcSidHash=pcSid==null ? null : EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256',Blob.valueOf(pcSid))); insert new Account(Name='PcSessPCT016A68A9c00833d-'+(pcSidHash==null ? 'MISSING' : pcSidHash)); Cache.Session.remove('local.PcAlt.PcKPCT016A68A'); Cache.Session.put('local.PcAlt.PcKPCT016A68A','committed',300); Object pcBefore=Cache.Session.get('local.PcAlt.PcKPCT016A68A'); System.assertEquals('committed',pcBefore,'FIXTURE_ERROR committed seed not stored');",
+      "RollbackWriter": "",
+      "DelaySeconds": 305,
+      "PayloadField": "cache_value",
+      "PhaseSHA256": {
+        "BeforeAnonymous": "89b9f0f674b158684d09b3612261517c8c61e50b65ac468d9eb60763d0f0cfe2"
+      }
+    }
+  ]
+}

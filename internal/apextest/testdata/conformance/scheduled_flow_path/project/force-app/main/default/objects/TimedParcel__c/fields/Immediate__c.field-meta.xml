@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Immediate__c</fullName><defaultValue>false</defaultValue><label>Immediate</label><type>Checkbox</type></CustomField>

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "type",
+    "body": "PermissionSetEvent e = new PermissionSetEvent();"
+  },
+  {
+    "id": "operation",
+    "body": "PermissionSetEvent e = new PermissionSetEvent(); e.Operation = 'Assign';"
+  },
+  {
+    "id": "describe",
+    "body": "System.assertEquals(true, Schema.getGlobalDescribe().containsKey('PermissionSetEvent'));"
+  }
+]

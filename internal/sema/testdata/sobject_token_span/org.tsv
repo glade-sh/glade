@@ -1,0 +1,5 @@
+id	api	route	compiled	compileProblem	line	column
+receiver_case	62.0	isTest	false	Variable does not exist: SObjectType	5	10
+receiver_and_member_case	62.0	isTest	false	Variable does not exist: SObjectType	5	10
+receiver_case	67.0	isTest	false	Variable does not exist: SObjectType	5	10
+receiver_and_member_case	67.0	isTest	false	Variable does not exist: SObjectType	5	10

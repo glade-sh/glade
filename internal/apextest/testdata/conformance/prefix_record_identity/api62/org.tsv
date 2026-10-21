@@ -1,0 +1,2 @@
+source_api	route	variant	observation
+62.0	istest	observe	{"accountPrefix":"001","childStable":true,"commentPrefix":"00a","parentStable":true,"prefixDistinct":true,"prefixMatches":true,"referenceStable":true,"relatedName":"parent","typeStable":true}

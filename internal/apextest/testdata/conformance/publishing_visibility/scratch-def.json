@@ -1,0 +1,10 @@
+{
+  "orgName": "Publishing Visibility Probe",
+  "edition": "Developer",
+  "features": [],
+  "settings": {
+    "knowledgeSettings": {
+      "enableKnowledge": false
+    }
+  }
+}

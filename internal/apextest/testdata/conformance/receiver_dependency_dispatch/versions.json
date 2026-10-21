@@ -1,0 +1,1494 @@
+{
+  "cluster": "versions",
+  "cellCount": 52,
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cells": [
+    {
+      "id": "C154R41",
+      "route": "anonymous",
+      "api": "59.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new gladens001.Builder().classApi());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R41|'+JSON.serialize(r));",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "668d6d1bce82b6230b730e90690129e04a74901f976dda7c9f5f9ae47cb0e978"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "62.0"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R41",
+      "route": "istest",
+      "api": "59.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new gladens001.Builder().classApi());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R41|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "b6689b4e9665bc4ad7adc5a8aaa632318ed95fa074ea5095535e50a0e40a1a40"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "62.0"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R42",
+      "route": "istest",
+      "api": "59.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.N1Api67.classApi()+'|'+gladens001.N1Api67.token());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R42|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "14c835fcbf21f24cc2126dbcad8b64e42c94752a7a15d06c96bff016ca7f27a8"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "67.0|pkg"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R43",
+      "route": "istest",
+      "api": "59.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.N1Api68.classApi()+'|'+gladens001.N1Api68.token());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R43|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "f1204adf54dfffb7d7b5d59cb327bdeae91e3899020abca7b2aa9d81aaa9c1f9"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "68.0|pkg"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R41",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new gladens001.Builder().classApi());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R41|'+JSON.serialize(r));",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "668d6d1bce82b6230b730e90690129e04a74901f976dda7c9f5f9ae47cb0e978"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "62.0"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R41",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new gladens001.Builder().classApi());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R41|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "b6689b4e9665bc4ad7adc5a8aaa632318ed95fa074ea5095535e50a0e40a1a40"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "62.0"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R42",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.N1Api67.classApi()+'|'+gladens001.N1Api67.token());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R42|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "14c835fcbf21f24cc2126dbcad8b64e42c94752a7a15d06c96bff016ca7f27a8"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "67.0|pkg"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R43",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.N1Api68.classApi()+'|'+gladens001.N1Api68.token());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R43|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "f1204adf54dfffb7d7b5d59cb327bdeae91e3899020abca7b2aa9d81aaa9c1f9"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "68.0|pkg"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R44",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R44|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "59.0",
+          "Builder": "59.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "8bd1a9698213d34d0d1e337dd5db8e89a871bc45c8631681d0c6c8a4a1000e8c",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R44",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R44|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "59.0",
+          "Builder": "59.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "fc00ed1de4d854203fdcf6946641f2ffe317085b177816b384cc6bbf1c06d5a8"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R45",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R45|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "62.0",
+          "Builder": "62.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "9f39a23d211a4dd3838de234a23bee8ab6df70801e999e8024bdbe68bec5b96d",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R45",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R45|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "62.0",
+          "Builder": "62.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "dd2b5df01704fff2dd53cfce9049fbab4881cf7fdc0b868e3fff66da097dc0b9"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R46",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R46|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "67.0",
+          "Builder": "67.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "f3afa1702a6b6d4bb167b9831305a4b47a3ff6ccb9639654f8cff4d5f0199abb",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R46",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R46|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "67.0",
+          "Builder": "67.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "b8090b996156988d8d26959efde22c7aadba7bf510a1b11c3008e659dbe10b42"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R47",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R47|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "68.0",
+          "Builder": "68.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "3b92510cdf8a4d0ffea39d7c13f6974e1fdbcc73e4d20fb46e1cd0927dc2dcd8",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R47",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R47|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "68.0",
+          "Builder": "68.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "7e7441f3d3d0c80daab78cf011aa3b6105c1101329bc38031d0f8b3b3850e6d8"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R48",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R48|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "62.0",
+          "Builder": "68.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "3b12d7e6e3e92c7d77548808a36c946930ca3cc97732fcfcd928947759d2690e",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R48",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R48|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "62.0",
+          "Builder": "68.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "a52807ec810ef6a230a953adf6dbfc96c271959c698bbce83c192945628c536f"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R49",
+      "route": "anonymous",
+      "api": "62.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R49|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "68.0",
+          "Builder": "62.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "db028cf8376bcf1d72976638bc3b19713c86ef94cc411a8c9b6866227e212d37",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R49",
+      "route": "istest",
+      "api": "62.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R49|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "68.0",
+          "Builder": "62.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "f8277188aa4ca08a38538ce65f0b53a6300fe1845b32ba64ec3e8a0a47d48baf"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R41",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new gladens001.Builder().classApi());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R41|'+JSON.serialize(r));",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "668d6d1bce82b6230b730e90690129e04a74901f976dda7c9f5f9ae47cb0e978"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "62.0"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R41",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new gladens001.Builder().classApi());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R41|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "b6689b4e9665bc4ad7adc5a8aaa632318ed95fa074ea5095535e50a0e40a1a40"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "62.0"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R42",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.N1Api67.classApi()+'|'+gladens001.N1Api67.token());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R42|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "14c835fcbf21f24cc2126dbcad8b64e42c94752a7a15d06c96bff016ca7f27a8"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "67.0|pkg"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R43",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.N1Api68.classApi()+'|'+gladens001.N1Api68.token());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R43|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "f1204adf54dfffb7d7b5d59cb327bdeae91e3899020abca7b2aa9d81aaa9c1f9"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "68.0|pkg"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R44",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R44|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "59.0",
+          "Builder": "59.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "8bd1a9698213d34d0d1e337dd5db8e89a871bc45c8631681d0c6c8a4a1000e8c",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R44",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R44|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "59.0",
+          "Builder": "59.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "fc00ed1de4d854203fdcf6946641f2ffe317085b177816b384cc6bbf1c06d5a8"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R45",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R45|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "62.0",
+          "Builder": "62.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "9f39a23d211a4dd3838de234a23bee8ab6df70801e999e8024bdbe68bec5b96d",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R45",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R45|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "62.0",
+          "Builder": "62.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "dd2b5df01704fff2dd53cfce9049fbab4881cf7fdc0b868e3fff66da097dc0b9"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R46",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R46|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "67.0",
+          "Builder": "67.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "f3afa1702a6b6d4bb167b9831305a4b47a3ff6ccb9639654f8cff4d5f0199abb",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R46",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R46|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "67.0",
+          "Builder": "67.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "b8090b996156988d8d26959efde22c7aadba7bf510a1b11c3008e659dbe10b42"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R47",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R47|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "68.0",
+          "Builder": "68.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "3b92510cdf8a4d0ffea39d7c13f6974e1fdbcc73e4d20fb46e1cd0927dc2dcd8",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R47",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R47|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "68.0",
+          "Builder": "68.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "7e7441f3d3d0c80daab78cf011aa3b6105c1101329bc38031d0f8b3b3850e6d8"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R48",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R48|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "62.0",
+          "Builder": "68.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "3b12d7e6e3e92c7d77548808a36c946930ca3cc97732fcfcd928947759d2690e",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R48",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R48|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "62.0",
+          "Builder": "68.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "a52807ec810ef6a230a953adf6dbfc96c271959c698bbce83c192945628c536f"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R49",
+      "route": "anonymous",
+      "api": "67.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R49|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "68.0",
+          "Builder": "62.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "db028cf8376bcf1d72976638bc3b19713c86ef94cc411a8c9b6866227e212d37",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R49",
+      "route": "istest",
+      "api": "67.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R49|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "68.0",
+          "Builder": "62.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "f8277188aa4ca08a38538ce65f0b53a6300fe1845b32ba64ec3e8a0a47d48baf"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R41",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new gladens001.Builder().classApi());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R41|'+JSON.serialize(r));",
+        "classes": {},
+        "classApis": {},
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "668d6d1bce82b6230b730e90690129e04a74901f976dda7c9f5f9ae47cb0e978"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "62.0"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R41",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new gladens001.Builder().classApi());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R41|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "b6689b4e9665bc4ad7adc5a8aaa632318ed95fa074ea5095535e50a0e40a1a40"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "62.0"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R42",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.N1Api67.classApi()+'|'+gladens001.N1Api67.token());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R42|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "14c835fcbf21f24cc2126dbcad8b64e42c94752a7a15d06c96bff016ca7f27a8"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "67.0|pkg"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R43",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',gladens001.N1Api68.classApi()+'|'+gladens001.N1Api68.token());}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R43|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {},
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:E10Observe": "f1204adf54dfffb7d7b5d59cb327bdeae91e3899020abca7b2aa9d81aaa9c1f9"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "68.0|pkg"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R44",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R44|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "59.0",
+          "Builder": "59.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "8bd1a9698213d34d0d1e337dd5db8e89a871bc45c8631681d0c6c8a4a1000e8c",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R44",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R44|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "59.0",
+          "Builder": "59.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "fc00ed1de4d854203fdcf6946641f2ffe317085b177816b384cc6bbf1c06d5a8"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R45",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R45|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "62.0",
+          "Builder": "62.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "9f39a23d211a4dd3838de234a23bee8ab6df70801e999e8024bdbe68bec5b96d",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R45",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R45|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "62.0",
+          "Builder": "62.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "dd2b5df01704fff2dd53cfce9049fbab4881cf7fdc0b868e3fff66da097dc0b9"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R46",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R46|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "67.0",
+          "Builder": "67.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "f3afa1702a6b6d4bb167b9831305a4b47a3ff6ccb9639654f8cff4d5f0199abb",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R46",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R46|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "67.0",
+          "Builder": "67.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "b8090b996156988d8d26959efde22c7aadba7bf510a1b11c3008e659dbe10b42"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R47",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R47|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "68.0",
+          "Builder": "68.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "3b92510cdf8a4d0ffea39d7c13f6974e1fdbcc73e4d20fb46e1cd0927dc2dcd8",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R47",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R47|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "68.0",
+          "Builder": "68.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "7e7441f3d3d0c80daab78cf011aa3b6105c1101329bc38031d0f8b3b3850e6d8"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R48",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R48|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "62.0",
+          "Builder": "68.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "3b12d7e6e3e92c7d77548808a36c946930ca3cc97732fcfcd928947759d2690e",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R48",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R48|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "62.0",
+          "Builder": "68.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "a52807ec810ef6a230a953adf6dbfc96c271959c698bbce83c192945628c536f"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R49",
+      "route": "anonymous",
+      "api": "68.0",
+      "source": {
+        "anonymous": "Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R49|'+JSON.serialize(r));",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}"
+        },
+        "classApis": {
+          "BuilderBase": "68.0",
+          "Builder": "62.0"
+        },
+        "tests": [],
+        "sourceSHA256": {
+          "anonymous": "db028cf8376bcf1d72976638bc3b19713c86ef94cc411a8c9b6866227e212d37",
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    },
+    {
+      "id": "C154R49",
+      "route": "istest",
+      "api": "68.0",
+      "source": {
+        "anonymous": "",
+        "classes": {
+          "BuilderBase": "public abstract class BuilderBase { protected List<String> insertRecords(Integer n) { return new List<String>{'local'}; } }",
+          "Builder": "public class Builder extends BuilderBase {\n public Builder self() { return this; }\n public List<String> direct(Integer n) { return insertRecords(n); }\n public List<String> chained(Integer n) { return self().insertRecords(n); }\n public List<String> doubleChained(Integer n) { return self().self().insertRecords(n); }\n public List<String> thisQualified(Integer n) { return this.insertRecords(n); }\n public List<String> superQualified(Integer n) { return super.insertRecords(n); }\n}",
+          "E10Observe": "@IsTest private class E10Observe { @IsTest static void observe() { Map<String,Object> r=new Map<String,Object>();try{r.put('value',new Builder().chained(1)[0]);}catch(Exception e){String m=e.getMessage();r.put('value',new Map<String,Object>{'exceptionType'=>e.getTypeName(),'exceptionMessage'=>m==null?null:m.left(200),'exceptionMessageLength'=>m==null?null:m.length()});}System.assert(false,'C126_RESULT|C154R49|'+JSON.serialize(r)); } }"
+        },
+        "classApis": {
+          "BuilderBase": "68.0",
+          "Builder": "62.0"
+        },
+        "tests": [
+          "E10Observe"
+        ],
+        "sourceSHA256": {
+          "class:BuilderBase": "d888111316b8dde762ad88bc505136cad43f28ec4156978166fe7c260a513c6d",
+          "class:Builder": "5a0b7bf41f65f82bf584801771c331d4bfcd40e4bbc1e2a8d99d13b63ce83dbb",
+          "class:E10Observe": "f8277188aa4ca08a38538ce65f0b53a6300fe1845b32ba64ec3e8a0a47d48baf"
+        }
+      },
+      "native": {
+        "outcome": "runtime",
+        "value": {
+          "value": "local"
+        }
+      },
+      "outcome": "runtime"
+    }
+  ]
+}

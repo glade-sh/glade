@@ -1,0 +1,1 @@
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><deploymentStatus>Deployed</deploymentStatus><label>Identity Node</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>Identity Nodes</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>

@@ -129,6 +129,11 @@ func loadProject(p project.Project, bestEffort, validateExpressions bool) (Index
 		}
 		return Index{}, fmt.Errorf("invalid project source API version: %w", err)
 	}
+	if !bestEffort && validateExpressions {
+		if err := ValidateVisualforceAccessMetadata(p); err != nil {
+			return Index{}, err
+		}
+	}
 	if !bestEffort && validateExpressions && len(p.VisualforceComponentFiles) != 0 {
 		if err := validateCustomComponentProject(p); err != nil {
 			return Index{}, err
@@ -192,7 +197,12 @@ func loadProject(p project.Project, bestEffort, validateExpressions bool) (Index
 			if err := validatePresentationControllerTypes(tree, p); err != nil {
 				return Index{}, err
 			}
-			if root := visualforceControllerRoot(tree); validateExpressions && len(p.ApexFiles) != 0 && root != nil && (root.Attribute("controller") != "" || root.Attribute("extensions") != "") {
+			if root := visualforceControllerRoot(tree); validateExpressions && hasVisualforceControllerCompilationContext(p, path) && root != nil {
+				if err := validateStandardControllerObject(root, p); err != nil {
+					return Index{}, err
+				}
+			}
+			if root := visualforceControllerRoot(tree); validateExpressions && hasVisualforceControllerCompilationContext(p, path) && root != nil && (root.Attribute("controller") != "" || root.Attribute("extensions") != "") {
 				if expressions == nil {
 					expressions, err = newExpressionValidationContext(p, &idx)
 					if err != nil {

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <apiVersion>67.0</apiVersion>
+  <assignments>
+    <name>Copy_Lookup_Id</name><label>Copy Lookup Id</label><locationX>0</locationX><locationY>0</locationY>
+    <assignmentItems><assignToReference>$Record.Text__c</assignToReference><operator>Assign</operator><value><elementReference>Lookup_Never.Id</elementReference></value></assignmentItems>
+    <connector><targetReference>Check_Lookup_Id</targetReference></connector>
+  </assignments>
+  <assignments>
+    <name>Mark_Missing</name><label>Mark Missing</label><locationX>0</locationX><locationY>0</locationY>
+    <assignmentItems><assignToReference>$Record.Flag__c</assignToReference><operator>Assign</operator><value><booleanValue>true</booleanValue></value></assignmentItems>
+    <assignmentItems><assignToReference>$Record.Trace__c</assignToReference><operator>Assign</operator><value><stringValue>missing</stringValue></value></assignmentItems>
+  </assignments>
+  <assignments>
+    <name>Mark_Present</name><label>Mark Present</label><locationX>0</locationX><locationY>0</locationY>
+    <assignmentItems><assignToReference>$Record.Flag__c</assignToReference><operator>Assign</operator><value><booleanValue>false</booleanValue></value></assignmentItems>
+    <assignmentItems><assignToReference>$Record.Trace__c</assignToReference><operator>Assign</operator><value><stringValue>present</stringValue></value></assignmentItems>
+  </assignments>
+  <decisions>
+    <name>Check_Lookup_Id</name><label>Check Lookup Id</label><locationX>0</locationX><locationY>0</locationY>
+    <defaultConnector><targetReference>Mark_Present</targetReference></defaultConnector><defaultConnectorLabel>Present</defaultConnectorLabel>
+    <rules><name>Missing</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>Lookup_Never.Id</leftValueReference><operator>IsNull</operator><rightValue><booleanValue>true</booleanValue></rightValue></conditions><connector><targetReference>Mark_Missing</targetReference></connector><label>Missing</label></rules>
+  </decisions>
+  <interviewLabel>FlowCoreN1NoMatchId {!$Flow.CurrentDateTime}</interviewLabel>
+  <label>FlowCoreN1NoMatchId</label>
+  <processType>AutoLaunchedFlow</processType>
+  <recordLookups>
+    <name>Lookup_Never</name><label>Lookup Never</label><locationX>0</locationX><locationY>0</locationY>
+    <assignNullValuesIfNoRecordsFound>true</assignNullValuesIfNoRecordsFound><connector><targetReference>Copy_Lookup_Id</targetReference></connector>
+    <filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>n1-no-match</stringValue></value></filters>
+    <getFirstRecordOnly>true</getFirstRecordOnly><object>FlowCoreN1Lookup__c</object><storeOutputAutomatically>true</storeOutputAutomatically>
+  </recordLookups>
+  <start><locationX>0</locationX><locationY>0</locationY><object>FlowCoreN1Record__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordBeforeSave</triggerType><connector><targetReference>Lookup_Never</targetReference></connector></start>
+  <status>Active</status>
+</Flow>

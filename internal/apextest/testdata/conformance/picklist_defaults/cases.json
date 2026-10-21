@@ -1,0 +1,10 @@
+[
+  {
+    "method": "typeValues",
+    "shape": "Describe returns the active Account.Type values and unrestricted picklist flag"
+  },
+  {
+    "method": "insertValues",
+    "shape": "Database.insert accepts Customer - Direct and Technology Partner Account types"
+  }
+]

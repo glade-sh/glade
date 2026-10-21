@@ -1,0 +1,483 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "changes": [
+    {
+      "behavior": "Retain and order all active flows on an object",
+      "rows": [
+        "F1_001",
+        "F1_002",
+        "F1_003",
+        "F1_004",
+        "F1_006",
+        "F1_007"
+      ],
+      "boundary": [
+        "F1_005"
+      ],
+      "source": "internal/automation/workflow.go"
+    },
+    {
+      "behavior": "Admit explicit Delete only before delete; permit its audit creates and preserve created records",
+      "rows": [
+        "F2_010",
+        "F2_011",
+        "F2_012"
+      ],
+      "boundary": [
+        "F2_001",
+        "F2_002",
+        "F2_003",
+        "F2_004",
+        "F2_005",
+        "F2_006",
+        "F2_007",
+        "F2_008",
+        "F2_009",
+        "F2_013"
+      ],
+      "source": "internal/dml/flow_core_delete.go"
+    },
+    {
+      "behavior": "After-save changed-to-meet AND Equals entries evaluate the prior record",
+      "rows": [
+        "F7_003",
+        "F7_004"
+      ],
+      "boundary": [
+        "F7_001",
+        "F7_002",
+        "F7_005",
+        "F7_006",
+        "F7_007",
+        "F7_008",
+        "F7_009",
+        "F7_010",
+        "F7_011"
+      ],
+      "source": "internal/dml/flow_core_entry.go"
+    },
+    {
+      "behavior": "Reject unknown triggering-record Assign targets, Equals entry fields and trigger enum",
+      "rows": [
+        "F1_005",
+        "F2_013",
+        "F7_011"
+      ],
+      "boundary": [
+        "engine-control",
+        "F1_001",
+        "F2_001",
+        "F7_001"
+      ],
+      "source": "internal/automation/flow_core_validation.go"
+    },
+    {
+      "behavior": "Return scalar String and whole-Number subflow outputs by source name to caller target; initialize captured defaults and render frame formulas",
+      "rows": [
+        "F16_001",
+        "F16_002",
+        "F16_003",
+        "F16_004",
+        "F16_005",
+        "F1_001",
+        "F1_002",
+        "F1_003",
+        "F1_004",
+        "F1_006",
+        "F1_007"
+      ],
+      "boundary": [
+        "F16_006"
+      ],
+      "source": "internal/automation/flow_core_values.go"
+    },
+    {
+      "behavior": "Resolve scalar variable in three-String Equals Delete criteria; report zero matches as a flow-trigger DML error; reject unknown scalar filter",
+      "rows": [
+        "F13_001",
+        "F13_002",
+        "F13_004",
+        "F13_005"
+      ],
+      "boundary": [
+        "F13_003"
+      ],
+      "source": "internal/dml/flow_core_delete_values.go"
+    },
+    {
+      "behavior": "After-save changed-to-meet supports NotEqualTo, IsNull, Contains, and custom OR logic; the observed before-save changed-to-meet flow remains unchanged",
+      "rows": [
+        "F7_012",
+        "F7_013",
+        "F7_014",
+        "F7_015"
+      ],
+      "boundary": [
+        "F7_016"
+      ],
+      "source": "internal/dml/flow_core_entry.go"
+    }
+  ],
+  "unchangedNeighbors": [
+    "Create/Update/CreateAndUpdate admission",
+    "before-save side-effect rejection",
+    "legacy before-delete flows without an explicit Delete mode",
+    "empty entry criteria",
+    "formula entries",
+    "collection deletes",
+    "Delete criteria outside three String Equals filters",
+    "record-create lookup and relationship expressions without interview scalars",
+    "fault-connector recovery",
+    "standard-member validation gaps",
+    "unreadable object schema",
+    "existing flow warnings and file isolation",
+    "assignment default formulas",
+    "entry and lookup operators outside the admitted forms"
+  ],
+  "carried": [
+    {
+      "rows": [
+        "F16_006"
+      ],
+      "apis": [
+        "62.0",
+        "67.0",
+        "68.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "cells": 6,
+      "reason": "Native HTML fragment was redacted; exact intact message required."
+    },
+    {
+      "rows": [
+        "F13_002",
+        "F13_004"
+      ],
+      "apis": [
+        "62.0",
+        "67.0",
+        "68.0"
+      ],
+      "routes": [
+        "anonymous"
+      ],
+      "cells": 6,
+      "reason": "Per-run native Error ID is absent on test route; exact anonymous diagnostic policy required."
+    }
+  ],
+  "comparison": "All non-carried runtime answers agree across APIs and routes after synthetic identifier normalization. Anonymous delete fault Error IDs vary; no API-68-only claim.",
+  "predictedBeforeFailures": 132,
+  "expectedAfterAssertions": 264,
+  "executionVerified": false,
+  "validationHistory": {
+    "validatedTree": "91faf8d64",
+    "beforeFailingLeafCells": 216,
+    "afterFailingTests": [
+      "TestFlowCoreOrderingConformance",
+      "TestFlowCoreSubflowOutputsConformance",
+      "TestFlowCoreDeleteFiltersConformance",
+      "TestFlowRefsRecordConformance"
+    ],
+    "wholePackagesGreen": [
+      "automation",
+      "dml",
+      "storage"
+    ],
+    "mergedFixesAlreadyPresent": "85a4bda78",
+    "finalExecutionVerified": false
+  },
+  "retryChanges": [
+    {
+      "behavior": "Declared String/Number scalar targets bypass object-field validation",
+      "rows": [
+        "F1_001",
+        "F1_002",
+        "F1_003",
+        "F1_004",
+        "F1_006",
+        "F1_007"
+      ],
+      "boundary": [
+        "F1_005"
+      ],
+      "source": "internal/automation/flow_core_validation.go:65"
+    },
+    {
+      "behavior": "Execute active terminal scalar literal Assign through legacy autolaunched start",
+      "rows": [
+        "F16_001",
+        "F16_002",
+        "F16_003",
+        "F16_004",
+        "F16_005"
+      ],
+      "boundary": [
+        "F16_006"
+      ],
+      "source": "internal/automation/flow_core_values.go:73"
+    },
+    {
+      "behavior": "Convert typed deferred no-match error into catchable single-record insert DmlException on both routes",
+      "rows": [
+        "F13_002",
+        "F13_004"
+      ],
+      "source": "internal/vm/flow_core_errors.go:7"
+    }
+  ],
+  "newNativeCells": 426,
+  "newUniqueCells": 378,
+  "totalUniqueCells": 654,
+  "assertedCells": 642,
+  "carriedCells": 12,
+  "newPredictedBeforeFailures": 246,
+  "newExpectedAfterAssertions": 378,
+  "previousAfterRun": {
+    "tree": "1b99a21b6",
+    "exitCode": 0
+  },
+  "additionalChanges": [
+    {
+      "behavior": "Literal StartsWith/EndsWith on present String values for explicit after-save entries and flow lookups",
+      "rows": [
+        "F4F6_001",
+        "F4F6_002",
+        "F4F6_003",
+        "F4F6_004",
+        "F4F6_013",
+        "F4F6_014",
+        "F4F6_015",
+        "F4F6_016"
+      ],
+      "source": "internal/dml/flow_core_conditions.go:9",
+      "neighbors": [
+        "Contains/Equals/NotEqualTo/IsNull unchanged",
+        "prefix null/missing/non-String/variable operands unchanged",
+        "workflow criteria unchanged"
+      ]
+    },
+    {
+      "behavior": "Two-EqualTo OR and three-EqualTo 1 AND (2 OR 3) entries; AND(Boolean field,BEGINS(String field,literal)) filterFormula",
+      "rows": [
+        "F4F6_025",
+        "F4F6_026",
+        "F4F6_027",
+        "F4F6_028",
+        "F4F6_029",
+        "F4F6_030"
+      ],
+      "boundary": [
+        "F4F6_033"
+      ],
+      "source": "internal/automation/flow_core_conditions.go:11",
+      "neighbors": [
+        "before-save and missing trigger mode unchanged",
+        "other logic groups and formula forms unchanged",
+        "changed-to-meet combinations with non-Equals entries unchanged"
+      ]
+    },
+    {
+      "behavior": "Reject unknown direct custom fields in Equals lookup and the admitted entry formula",
+      "rows": [
+        "F4F6_032",
+        "F4F6_033"
+      ],
+      "boundary": [
+        "F4F6_031"
+      ],
+      "source": "internal/automation/flow_core_condition_validation.go:23",
+      "neighbors": [
+        "no schema/unreadable schema/standard-member gaps unchanged"
+      ]
+    },
+    {
+      "behavior": "Number/Currency Add and Subtract with integer/decimal literal or declared scalar operand; String Add; initialize numeric literals and preserve direct record-field operands",
+      "rows": [
+        "F14_001",
+        "F14_002",
+        "F14_003",
+        "F14_004",
+        "F14_005",
+        "F14_006",
+        "F14_007",
+        "F14_008",
+        "F14_009",
+        "F14_010",
+        "F14_011",
+        "F14_012",
+        "F14_013",
+        "F14_014",
+        "F14_025",
+        "F14_026",
+        "F14_027",
+        "F14_028"
+      ],
+      "source": "internal/dml/flow_core_assignments.go:9",
+      "neighbors": [
+        "already-passing Integer Subtract reference result unchanged",
+        "handwritten frames without declarations unchanged",
+        "nonliteral default formulas unchanged"
+      ]
+    },
+    {
+      "behavior": "String/Number collection Add and explicit ascending scalar-item loops",
+      "rows": [
+        "F14_021",
+        "F14_022",
+        "F14_023",
+        "F14_024"
+      ],
+      "boundary": [
+        "F14_017",
+        "F14_018",
+        "F14_019",
+        "F14_020"
+      ],
+      "source": "internal/dml/flow_core_primitive_collections.go:13",
+      "neighbors": [
+        "SObject collections and loops unchanged",
+        "existing AssignCount unchanged",
+        "descending/unspecified primitive loop directions unchanged"
+      ]
+    },
+    {
+      "behavior": "Reject scalar String Subtract and primitive collection AddItem; reject unknown numeric Add operand and unknown String assignment operator",
+      "rows": [
+        "F14_015",
+        "F14_016",
+        "F14_017",
+        "F14_018",
+        "F14_019",
+        "F14_020",
+        "F14_029",
+        "F14_030"
+      ],
+      "source": "internal/automation/flow_core_assignment_validation.go:13",
+      "neighbors": [
+        "record.field AddItem unchanged",
+        "supported scalar operations and collection Add stay admitted"
+      ],
+      "recoveredStoredNativeCells": 36
+    }
+  ],
+  "additionalPredictions": {
+    "entryConditions": {
+      "cells": 198,
+      "baselineFailures": 72,
+      "failureRows": [
+        "F4F6_001",
+        "F4F6_003",
+        "F4F6_013",
+        "F4F6_014",
+        "F4F6_015",
+        "F4F6_016",
+        "F4F6_025",
+        "F4F6_026",
+        "F4F6_027",
+        "F4F6_030",
+        "F4F6_032",
+        "F4F6_033"
+      ]
+    },
+    "assignmentOperators": {
+      "cells": 180,
+      "baselineFailures": 174,
+      "baselinePassingRows": [
+        "F14_004"
+      ],
+      "runtimeCells": 132,
+      "categoryCells": 48
+    }
+  },
+  "latestDeskValidation": {
+    "beforeFailingLeafCells": 234,
+    "focusedPackagesGreen": [
+      "automation",
+      "dml",
+      "storage"
+    ],
+    "conformanceRangeGreen": "N-Z",
+    "remainingFailingTest": "TestFlowCoreEntryConditionsConformance",
+    "remainingFailingLeafCells": 72,
+    "remainingRows": [
+      "F4F6_013",
+      "F4F6_014",
+      "F4F6_015",
+      "F4F6_016",
+      "F4F6_017",
+      "F4F6_018",
+      "F4F6_019",
+      "F4F6_020",
+      "F4F6_021",
+      "F4F6_022",
+      "F4F6_023",
+      "F4F6_024"
+    ],
+    "fixExecutionVerified": false
+  },
+  "lookupPresenceRetry": {
+    "behavior": "Execute the direct automatic first-record lookup followed by a single Id IsNull false decision through an ordered graph; resolve the ID or null into an internal scalar before evaluating the branch.",
+    "rows": [
+      "F4F6_013",
+      "F4F6_014",
+      "F4F6_015",
+      "F4F6_016",
+      "F4F6_017",
+      "F4F6_018",
+      "F4F6_019",
+      "F4F6_020",
+      "F4F6_021",
+      "F4F6_022",
+      "F4F6_023",
+      "F4F6_024"
+    ],
+    "apis": [
+      "62.0",
+      "67.0",
+      "68.0"
+    ],
+    "routes": [
+      "anonymous",
+      "istest"
+    ],
+    "cells": 72,
+    "boundary": [
+      "F4F6_032"
+    ],
+    "source": [
+      "internal/automation/flow_core_lookup_refs.go:12",
+      "internal/automation/flow.go:1704",
+      "internal/automation/flow.go:1958"
+    ],
+    "neighbors": [
+      "The unknown lookup-filter field remains a metadata rejection in all six cells; its rule is cleared by existing schema validation.",
+      "Whole lookup-record IsNull warning unchanged.",
+      "Existing lookup-field equality and lookup-collection IsEmpty projections unchanged (144 older fixture projections inspected).",
+      "Other fields/operators, IsNull true, multi-condition/multi-rule decisions, nonautomatic/collection lookups, indirect connectors, different-object lookups, other trigger modes and changed-to-meet combinations retain their prior projection.",
+      "Schema decision validation and standard-member rules unchanged."
+    ],
+    "nativeComparison": "All 72 payloads agree row by row across the captured APIs and routes; six matched and six missing-record controls. No API-specific behavior.",
+    "expectedAfterEntryAssertions": 198,
+    "expectedAfterTotalAssertions": 642,
+    "carriedCells": 12,
+    "newCarriedCells": 0,
+    "checks": [
+      "gofmt",
+      "git diff --check",
+      "4962 unchanged FlowCore fixture hashes",
+      "static XML shape census"
+    ],
+    "executionVerified": false
+  }
+}

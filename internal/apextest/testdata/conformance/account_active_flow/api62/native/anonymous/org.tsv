@@ -1,0 +1,6 @@
+id	group	route	status	value
+D01	ACCOUNT_ACTIVE_FLOW	anonymous	runtime	{"available":true,"createable":true,"default":false,"deletedWriteable":false,"nillable":false,"type":"BOOLEAN","updateable":true}
+W01	ACCOUNT_ACTIVE_FLOW	anonymous	runtime	{"default":false,"exception":null,"insert":true,"update":false}
+B01	ACCOUNT_ACTIVE_FLOW	anonymous	runtime	{"exception":null,"insert":true,"update":false}
+R01	ACCOUNT_ACTIVE_FLOW	anonymous	runtime	{"exception":null,"insert":true,"update":false}
+N01	ACCOUNT_ACTIVE_FLOW	anonymous	runtime	{"exception":null,"inserted":true}

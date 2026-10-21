@@ -140,6 +140,11 @@ func (vm *VM) generatedUnsupportedFamilyExplicitMethodDefault(method Method, rec
 	}
 	key := generatedUnsupportedFamilyKey(className, apexMethodMemberName(method.Name))
 	switch key {
+	case "commercepayments.notificationclient.record":
+		if class, found := vm.lookupClass(className); found && !class.PlatformType {
+			return Null, false
+		}
+		return vm.paymentNotificationMissingContextResult(args)
 	case "cartextension.cartdeliverygroup.getisdefault":
 		return Bool(false), true
 	case "cartextension.cartdeliverygroup.getisgift":
@@ -173,6 +178,20 @@ func (vm *VM) generatedUnsupportedFamilyExplicitMethodError(method Method, recei
 	}
 	key := generatedUnsupportedFamilyKey(className, apexMethodMemberName(method.Name))
 	switch key {
+	case "commercepayments.notificationclient.record":
+		if class, found := vm.lookupClass(className); found && !class.PlatformType {
+			return nil, false
+		}
+		if vm.testContext != nil && len(args) == 1 {
+			if args[0].Kind == ValueNull {
+				return newExceptionError("NullPointerException", "Attempt to de-reference a null object"), true
+			}
+			if amount := args[0].Fields["amount"]; amount.Kind == ValueNull || amount.Kind == "" {
+				return newExceptionError("commercepayments.PaymentsApiException", "Amount should be set in Notification object"), true
+			}
+			return newExceptionError("UnsupportedOperationException", "commercepayments.NotificationClient.record requires hosted payment context"), true
+		}
+		return newExceptionError("NullPointerException", method.Name+" requires non-null arguments"), true
 	case "wave.querynode.execute":
 		if passiveGeneratedMethod(method) && receiver.Kind == ValueObject && strings.EqualFold(receiver.Type, "wave.QueryNode") {
 			_, _, _, handled, err := callWaveQueryNodeMember(receiver, "execute", args)
@@ -203,7 +222,6 @@ func (vm *VM) generatedUnsupportedFamilyExplicitMethodError(method Method, recei
 		"commercepayments.captureresponse.setretrydecision",
 		"commercepayments.cardpaymentmethodresponse.setcardcategory",
 		"commercepayments.cardpaymentmethodresponse.setcardtypecategory",
-		"commercepayments.notificationclient.record",
 		"commercepayments.paymentmethoddetailsresponse.setalternativepaymentmethod",
 		"commercepayments.paymentmethoddetailsresponse.setcardpaymentmethod",
 		"commercepayments.paymentmethodtokenizationresponse.setretrycategory",
@@ -441,6 +459,7 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 			}
 		}
 		bindPassiveConstructorArgs(&object, ctor, ctorArgs)
+		vm.bindPassivePaymentConstructor(&object, ctor, ctorArgs)
 		if err := vm.bindGeneratedPlatformNamedFields(&object, namedArgs); err != nil {
 			return Null, true, err
 		}
@@ -495,6 +514,13 @@ func initializeGeneratedPlatformValue(object *Value) {
 	}
 	if strings.EqualFold(object.Type, "Metadata.DeployResult") {
 		object.Fields["messages"] = List()
+	}
+	if strings.EqualFold(object.Type, "Database.LeadConvert") {
+		// Apex Reference Guide, LeadConvert: these three flags default to false.
+		// Keep nullable DTO fields and explicit setter values unchanged.
+		for _, field := range []string{"DoNotCreateOpportunity", "OverwriteLeadSource", "SendNotificationEmail"} {
+			object.Fields[passiveAccessorFieldName(*object, field)] = Bool(false)
+		}
 	}
 	if strings.EqualFold(object.Type, "Database.QueryLocator") || strings.EqualFold(object.Type, "QueryLocator") {
 		object.Fields["Records"] = List()

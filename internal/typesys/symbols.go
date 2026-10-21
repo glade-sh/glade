@@ -29,6 +29,8 @@ type Index struct {
 	Objects               []schema.Object                   `json:"objects"`
 	VisualforcePageNames  []string                          `json:"visualforcePageNames,omitempty"`
 	VisualforcePagesKnown bool                              `json:"visualforcePagesKnown,omitempty"`
+	CustomLabelNames      []string                          `json:"customLabelNames,omitempty"`
+	CustomLabelsKnown     bool                              `json:"customLabelsKnown,omitempty"`
 	OrgShapeFeatures      []string                          `json:"orgShapeFeatures,omitempty"`
 	CustomMetadataRecords []schema.CustomMetadataRecord     `json:"customMetadataRecords,omitempty"`
 	CodeIntelSymbols      []packageartifact.CodeIntelSymbol `json:"codeIntelSymbols,omitempty"`
@@ -168,6 +170,7 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 	}
 	artifacts.Sources = sources
 	features := capturedOrgShapeFeatures(p.Root)
+	labelNames, labelsKnown := projectCustomLabels(p)
 	parser := apexast.NewParser()
 	defer parser.Close()
 	idx = Index{
@@ -179,9 +182,11 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 		Objects:               s.Objects,
 		VisualforcePageNames:  projectVisualforcePageNames(p),
 		VisualforcePagesKnown: projectVisualforcePagesKnown(p),
+		CustomLabelNames:      labelNames,
+		CustomLabelsKnown:     labelsKnown,
 		OrgShapeFeatures:      features,
 		CustomMetadataRecords: s.CustomMetadataRecords,
-		projectIdentity:       incrementalProjectIdentityWithFeatures(p, features),
+		projectIdentity:       incrementalProjectIdentityWithFeatures(p, features, labelNames, labelsKnown),
 	}
 	defer func() {
 		if recovered := recover(); recovered != nil {
@@ -1085,6 +1090,8 @@ type incrementalProjectIdentityLedger struct {
 	OrgShapeFeatures      []string
 	VisualforcePageNames  []string
 	VisualforcePagesKnown bool
+	CustomLabelNames      []string
+	CustomLabelsKnown     bool
 	Project               incrementalProjectConfigIdentity
 	ManagedDependencies   []incrementalManagedDependencyIdentity
 	PackageShims          []incrementalPackageShimIdentity
@@ -1111,14 +1118,17 @@ func capturedOrgShapeFeatures(root string) []string {
 }
 
 func incrementalProjectIdentity(p project.Project) string {
-	return incrementalProjectIdentityWithFeatures(p, capturedOrgShapeFeatures(p.Root))
+	labelNames, labelsKnown := projectCustomLabels(p)
+	return incrementalProjectIdentityWithFeatures(p, capturedOrgShapeFeatures(p.Root), labelNames, labelsKnown)
 }
 
-func incrementalProjectIdentityWithFeatures(p project.Project, features []string) string {
+func incrementalProjectIdentityWithFeatures(p project.Project, features, labelNames []string, labelsKnown bool) string {
 	ledger := incrementalProjectIdentityLedger{
 		OrgShapeFeatures:      features,
 		VisualforcePageNames:  projectVisualforcePageNames(p),
 		VisualforcePagesKnown: projectVisualforcePagesKnown(p),
+		CustomLabelNames:      labelNames,
+		CustomLabelsKnown:     labelsKnown,
 		Project:               incrementalProjectConfigForIdentity(p),
 		DependencyDiagnostics: p.DependencyDiagnostics,
 	}
@@ -1370,6 +1380,8 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 		Objects:               previous.Objects,
 		VisualforcePageNames:  previous.VisualforcePageNames,
 		VisualforcePagesKnown: previous.VisualforcePagesKnown,
+		CustomLabelNames:      previous.CustomLabelNames,
+		CustomLabelsKnown:     previous.CustomLabelsKnown,
 		OrgShapeFeatures:      previous.OrgShapeFeatures,
 		CustomMetadataRecords: previous.CustomMetadataRecords,
 		CodeIntelSymbols:      previous.CodeIntelSymbols,

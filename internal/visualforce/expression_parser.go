@@ -300,7 +300,16 @@ func (p *exprParser) parseURLForParameters() (Expression, error) {
 			p.pos++
 			return params, nil
 		}
-		name := p.readIdent()
+		var name string
+		if p.pos < len(p.source) && p.source[p.pos] == '\'' {
+			literal, err := p.parseString()
+			if err != nil {
+				return nil, err
+			}
+			name = literal.(literalExpr).value.Text
+		} else {
+			name = p.readIdent()
+		}
 		if name == "" || !p.matchOperator("=") {
 			return nil, fmt.Errorf("expected URLFOR parameter assignment")
 		}

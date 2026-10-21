@@ -1,0 +1,169 @@
+{
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "sourcesByAPI": {
+    "62.0": {
+      "helperName": "TransientLocalOracle62",
+      "helperSource": "public class TransientLocalOracle62 { transient Map<String,Object> fieldValue=new Map<String,Object>{'field'=>2}; public static String snapshot(){ transient Map<String,Object> payload; payload=new Map<String,Object>{'slot'=>1}; transient Integer quantity=3; Map<String,Object> ordinary=new Map<String,Object>{'slot'=>4}; return JSON.serialize(new Map<String,Object>{'transientMapValue'=>payload.get('slot'),'transientInteger'=>quantity,'ordinaryValue'=>ordinary.get('slot'),'transientFieldValue'=>new TransientLocalOracle62().fieldValue.get('field')}); } }",
+      "helperMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "testName": "TransientLocalObserved62",
+      "testSource": "@IsTest private class TransientLocalObserved62 { @IsTest static void observed(){System.assert(false,'TRANSIENT_LOCAL|'+TransientLocalOracle62.snapshot());} }",
+      "testMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+      "anonymous": "System.debug('TRANSIENT_LOCAL|'+TransientLocalOracle62.snapshot());"
+    },
+    "67.0": {
+      "helperName": "TransientLocalOracle67",
+      "helperSource": "public class TransientLocalOracle67 { transient Map<String,Object> fieldValue=new Map<String,Object>{'field'=>2}; public static String snapshot(){ transient Map<String,Object> payload; payload=new Map<String,Object>{'slot'=>1}; transient Integer quantity=3; Map<String,Object> ordinary=new Map<String,Object>{'slot'=>4}; return JSON.serialize(new Map<String,Object>{'transientMapValue'=>payload.get('slot'),'transientInteger'=>quantity,'ordinaryValue'=>ordinary.get('slot'),'transientFieldValue'=>new TransientLocalOracle67().fieldValue.get('field')}); } }",
+      "helperMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "testName": "TransientLocalObserved67",
+      "testSource": "@IsTest private class TransientLocalObserved67 { @IsTest static void observed(){System.assert(false,'TRANSIENT_LOCAL|'+TransientLocalOracle67.snapshot());} }",
+      "testMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+      "anonymous": "System.debug('TRANSIENT_LOCAL|'+TransientLocalOracle67.snapshot());"
+    },
+    "68.0": {
+      "helperName": "TransientLocalOracle68",
+      "helperSource": "public class TransientLocalOracle68 { transient Map<String,Object> fieldValue=new Map<String,Object>{'field'=>2}; public static String snapshot(){ transient Map<String,Object> payload; payload=new Map<String,Object>{'slot'=>1}; transient Integer quantity=3; Map<String,Object> ordinary=new Map<String,Object>{'slot'=>4}; return JSON.serialize(new Map<String,Object>{'transientMapValue'=>payload.get('slot'),'transientInteger'=>quantity,'ordinaryValue'=>ordinary.get('slot'),'transientFieldValue'=>new TransientLocalOracle68().fieldValue.get('field')}); } }",
+      "helperMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+      "testName": "TransientLocalObserved68",
+      "testSource": "@IsTest private class TransientLocalObserved68 { @IsTest static void observed(){System.assert(false,'TRANSIENT_LOCAL|'+TransientLocalOracle68.snapshot());} }",
+      "testMetadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+      "anonymous": "System.debug('TRANSIENT_LOCAL|'+TransientLocalOracle68.snapshot());"
+    }
+  },
+  "cells": [
+    {
+      "api": "62.0",
+      "context": "anonymous",
+      "map": {
+        "transientFieldValue": 2,
+        "ordinaryValue": 4,
+        "transientInteger": 3,
+        "transientMapValue": 1
+      }
+    },
+    {
+      "api": "62.0",
+      "context": "istest",
+      "map": {
+        "transientFieldValue": 2,
+        "ordinaryValue": 4,
+        "transientInteger": 3,
+        "transientMapValue": 1
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "anonymous",
+      "map": {
+        "transientFieldValue": 2,
+        "ordinaryValue": 4,
+        "transientInteger": 3,
+        "transientMapValue": 1
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "istest",
+      "map": {
+        "transientFieldValue": 2,
+        "ordinaryValue": 4,
+        "transientInteger": 3,
+        "transientMapValue": 1
+      }
+    },
+    {
+      "api": "68.0",
+      "context": "anonymous",
+      "map": {
+        "transientFieldValue": 2,
+        "ordinaryValue": 4,
+        "transientInteger": 3,
+        "transientMapValue": 1
+      }
+    },
+    {
+      "api": "68.0",
+      "context": "istest",
+      "map": {
+        "transientFieldValue": 2,
+        "ordinaryValue": 4,
+        "transientInteger": 3,
+        "transientMapValue": 1
+      }
+    }
+  ],
+  "carries": [],
+  "capture": {
+    "orgIdSHA256": "010019b690934449a5b626663405295675b94925f33421d2dca9f3452c015d9f",
+    "nativeObservationCount": 6,
+    "observedValueCount": 24,
+    "scope": "The anonymous caller invokes a helper method containing transient locals. The named route invokes that same helper from an @IsTest method. Direct transient declarations in the anonymous lexical scope were not captured.",
+    "transport": "Anonymous debug and intentional named observation assertion; the six exported payloads were checked against raw responses.",
+    "sourceSHA256": {
+      "62.0": {
+        "helperSource": "bd0d96f45ab4f0d1c3d529ef93a7aa5291b2a4270cb91cb6badf49274b12cff5",
+        "helperMetadata": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "testSource": "87bd73356cf7ba8efe33949f3a5bbf0b4e67f5933aa1f7c05ce9396738fd1f3e",
+        "testMetadata": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "anonymous": "e2a25231f78ce460244fd66383de6cdf56a414ce7e5d8c2658542c852cd64146"
+      },
+      "67.0": {
+        "helperSource": "4ccc14d10931517464a84f79b7f29e9f1733e563c25a37d04c3bcb32d0c81667",
+        "helperMetadata": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "testSource": "ca83150573542eab1df878c93ff13655856891b2e697fb87e872966f18add4c3",
+        "testMetadata": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "anonymous": "2b6ef8146f34dbee965c6219a461bbb8b5282b6336ff57a8e7f3dcad2cd1802d"
+      },
+      "68.0": {
+        "helperSource": "981b006e380f669e8837bad835a82bad0d54adcc25544d2fe111296ac3ae9632",
+        "helperMetadata": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d",
+        "testSource": "7888cb5e1de5cfb821f8d4e183dc44bb1fce321832c2d4cf30c1314301f9bf8f",
+        "testMetadata": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d",
+        "anonymous": "91da143abcfba5153527dc3f5f862ec8def0f380fce77235ca7c6ea5fc782700"
+      }
+    },
+    "cells": [
+      {
+        "api": "62.0",
+        "context": "anonymous",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version 62.0 --file <synthetic-probe>/api62.apex --json",
+        "rawResponseSha256": "1e790c80544d5e96b7ebc7119d06a7dd444bbf42789e362ea0dde240ff26861f"
+      },
+      {
+        "api": "62.0",
+        "context": "istest",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names TransientLocalObserved62 --synchronous --result-format json --wait 15 --json",
+        "rawResponseSha256": "77db47ab62a341076fa1dbf7f7afe2d599d0d9c688433aa1fad3290e62ac3fe6"
+      },
+      {
+        "api": "67.0",
+        "context": "anonymous",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version 67.0 --file <synthetic-probe>/api67.apex --json",
+        "rawResponseSha256": "5046813215655dafef3d927dee5ab8e21573cc0da516397beaf2edb8d5f3cfc0"
+      },
+      {
+        "api": "67.0",
+        "context": "istest",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names TransientLocalObserved67 --synchronous --result-format json --wait 15 --json",
+        "rawResponseSha256": "bd185b111175bfb46f1fbda526156da39430574fe0c57474c63b36625a7b3074"
+      },
+      {
+        "api": "68.0",
+        "context": "anonymous",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version 68.0 --file <synthetic-probe>/api68.apex --json",
+        "rawResponseSha256": "ae74610d8912fafe1f384cb6f440f1130e34e746b2c449c29cc9474700363a15"
+      },
+      {
+        "api": "68.0",
+        "context": "istest",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names TransientLocalObserved68 --synchronous --result-format json --wait 15 --json",
+        "rawResponseSha256": "5716d89b5088ef1a484f249eb02a00bb210119cf1f266a0e08ff4139634982d0"
+      }
+    ],
+    "orgTSVSHA256": "e013f7eff08ec019a8618d4df2e04fd67605899daf5062104f88f830f41b5fca",
+    "commandPathNormalization": "Authentication home, scratch target alias, and synthetic project paths are replaced by placeholders; command options are unchanged."
+  }
+}

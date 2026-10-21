@@ -261,12 +261,22 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	desc.Fields["label"] = String(definition.Label)
 	desc.Fields["labelPlural"] = String(definition.PluralLabel)
 	desc.Fields["keyPrefix"] = String(definition.KeyPrefix)
+	prefix, prefixKnown := storage.StandardObjectDescribeKeyPrefix(name)
+	metadataNull, _ := storage.StandardObjectMetadata(name, "keyPrefixNull")
+	if (prefixKnown && prefix == nil) || metadataNull == "true" {
+		desc.Fields["keyPrefix"] = Null
+	}
 	desc.Fields["sObjectType"] = sObjectTypeToken(name)
 	desc.Fields["accessible"] = Bool(vm.currentUserObjectPermission(name, "isAccessible"))
 	desc.Fields["createable"] = Bool(vm.currentUserObjectPermission(name, "isCreateable"))
 	desc.Fields["updateable"] = Bool(vm.currentUserObjectPermission(name, "isUpdateable"))
 	desc.Fields["deletable"] = Bool(vm.currentUserObjectPermission(name, "isDeletable"))
 	desc.Fields["queryable"] = Bool(vm.currentUserObjectPermission(name, "isQueryable"))
+	if storage.IsGeneratedHistoryObject(definition) {
+		desc.Fields["createable"] = Bool(false)
+		desc.Fields["updateable"] = Bool(false)
+		desc.Fields["deletable"] = Bool(false)
+	}
 	desc.Fields["searchable"] = Bool(vm.currentUserObjectPermission(name, "isSearchable"))
 	desc.Fields["customSetting"] = Bool(storage.IsCustomSettingDefinition(definition))
 	desc.Fields["custom"] = Bool(isCustomObjectLikeName(definition.APIName))
@@ -298,7 +308,7 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	for fieldName := range definition.Fields {
 		fieldNames = append(fieldNames, fieldName)
 	}
-	sort.Strings(fieldNames)
+	vm.sortDescribeFieldNames(name, definition, fieldNames)
 	for _, fieldName := range fieldNames {
 		field := definition.Fields[fieldName]
 		apiName := field.APIName
@@ -314,7 +324,9 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 		vm.addSObjectFieldMapFieldEntry(&fieldsMap, name, definition, field, token)
 	}
 	defaultFieldNames := []string{"Id", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"}
-	if storage.IsCustomMetadataDefinition(definition) {
+	if storage.IsGeneratedHistoryObject(definition) {
+		defaultFieldNames = nil
+	} else if storage.IsCustomMetadataDefinition(definition) {
 		// Metadata identity fields are already supplied by the schema overlay.
 		// CMT describes have no ordinary record audit, Name or OwnerId fields.
 		defaultFieldNames = []string{"Id", "SystemModstamp"}
@@ -360,6 +372,7 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 		if recordType.ID != "" {
 			key := platformScalar("Id", recordType.ID.String())
 			encodedKey := mapKey(key)
+			byID.MapOrder = append(byID.MapOrder, encodedKey)
 			byID.Map[encodedKey] = value
 			byID.MapKeys[encodedKey] = key
 		}
@@ -386,7 +399,9 @@ func (vm *VM) describeChildRelationshipsForDescribe(receiver *Value) (Value, err
 		return Null, fmt.Errorf("Schema.DescribeSObjectResult token missing object")
 	}
 	childRelationships := List(vm.describeChildRelationships(name.Text)...)
+	childRelationships.Type = "List<Schema.ChildRelationship>"
 	receiver.Fields["childRelationships"] = childRelationships
+	vm.rememberPublishedObjectFieldRefs(*receiver, Null, childRelationships)
 	return childRelationships, nil
 }
 
@@ -620,17 +635,48 @@ func (vm *VM) describeChildRelationships(name string) []Value {
 				continue
 			}
 			if relationshipTargetsObject(relationship, name) {
-				if relationship.ChildRelationship == "" && canDeriveChildRelationshipName(name, childName, relationship) {
+				if relationship.ChildRelationship == "" && !vm.capturedTaskAccountChildRelationship(childName, relationship) && canDeriveChildRelationshipName(name, childName, relationship) {
 					relationship.ChildRelationship = derivedVMChildRelationshipName(childDefinition)
+				}
+				if !vm.contentChildDescribeRelationshipVisible(name, relationship.ChildRelationship) {
+					continue
 				}
 				childRelationships = append(childRelationships, vm.childRelationshipValue(childName, relationship))
 			}
+		}
+	}
+	for _, child := range vm.contentChildRelationships(name) {
+		present := false
+		for _, value := range childRelationships {
+			if relationshipName, ok := value.Fields["relationshipName"]; ok && strings.EqualFold(relationshipName.Text, child.relationship.ChildRelationship) {
+				present = true
+				break
+			}
+		}
+		if !present {
+			childRelationships = append(childRelationships, vm.childRelationshipValue(child.childObject, child.relationship))
 		}
 	}
 	vm.childRelCache.store(target, childRelationships)
 	return childRelationships
 }
 
+// globalDescribeMapType marks the global describe map. Runtime keeps the mark
+// when the map is assigned to a Map<String, Schema.SObjectType> variable, so
+// containsKey/get stay case-insensitive and keySet exposes lower-case keys.
+const globalDescribeMapType = "Schema.GlobalDescribeMap"
+
+func (vm *VM) globalDescribeMapValue() Value {
+	value := vm.schemaGlobalDescribe()
+	value.Runtime = globalDescribeMapType
+	return value
+}
+
+func isGlobalDescribeMap(value Value) bool {
+	return value.Runtime == globalDescribeMapType
+}
+
+// Keep the base alias entries for size(), values() and app/module describes.
 func (vm *VM) schemaDescribeMapAliases(name string) []string {
 	seen := map[string]bool{}
 	var aliases []string
@@ -647,12 +693,88 @@ func (vm *VM) schemaDescribeMapAliases(name string) []string {
 		}
 	}
 	add(name)
+	if vm.ownedNamespacedCustomGlobalDescribe(name) {
+		return aliases
+	}
 	if vm.Org != nil && vm.Org.Namespace != "" {
 		add(storage.NamespaceTokenName(vm.Org.Namespace, name))
 		add(storage.StripNamespaceToken(vm.Org.Namespace, name))
 	}
-	add(stripAnyNamespaceToken(name))
+	if !vm.subscriberNamespacedCustomMetadataDescribe(name) {
+		add(stripAnyNamespaceToken(name))
+	}
 	return aliases
+}
+
+// In an unmanaged subscriber the installed CMT's global
+// describe key retains the type namespace. Other describe aliases are unchanged.
+func (vm *VM) subscriberNamespacedCustomMetadataDescribe(name string) bool {
+	if vm.Org == nil || vm.Org.Namespace != "" || vm.currentCallerNamespace() != "" {
+		return false
+	}
+	if _, namespaced := namespaceTokenPrefix(name); !namespaced {
+		return false
+	}
+	object, exists := vm.Org.Objects[name]
+	return exists && storage.IsCustomMetadataDefinition(object.Definition)
+}
+
+// schemaDescribeLookupAliases are the keys a containsKey/get key may match.
+// Native NS360A/NS361A: a key with another namespace prefix names no object,
+// so the lookup never strips a foreign prefix.
+func (vm *VM) schemaDescribeLookupAliases(key string) []string {
+	return vm.schemaDescribeAliases(key)
+}
+
+func (vm *VM) schemaDescribeAliases(name string) []string {
+	seen := map[string]bool{}
+	var aliases []string
+	add := func(alias string) {
+		alias = strings.ToLower(strings.TrimSpace(alias))
+		if alias == "" || seen[alias] {
+			return
+		}
+		seen[alias] = true
+		aliases = append(aliases, alias)
+	}
+	add(name)
+	if vm.Org != nil && vm.Org.Namespace != "" {
+		add(storage.NamespaceTokenName(vm.Org.Namespace, name))
+		add(storage.StripNamespaceToken(vm.Org.Namespace, name))
+	}
+	return aliases
+}
+
+// The captured containsKey shape is handled here; the existing get lookup path is retained.
+func (vm *VM) globalDescribeContainsKeyNamesObject(key, resolved string) bool {
+	if _, prefixed := namespaceTokenPrefix(strings.TrimSpace(key)); !prefixed && vm.subscriberNamespacedCustomMetadataDescribe(resolved) {
+		return false
+	}
+	return vm.globalDescribeKeyNamesObject(key, resolved)
+}
+
+// globalDescribeKeyNamesObject reports whether a global describe key names the
+// resolved object. Object resolution ignores namespaces; native NS360A/NS361A
+// do not: zzns3__<name> is not a key of <name>. An unprefixed key and the
+// project or caller namespace keep their existing resolution.
+func (vm *VM) globalDescribeKeyNamesObject(key, resolved string) bool {
+	keyNamespace, prefixed := namespaceTokenPrefix(strings.TrimSpace(key))
+	if !prefixed {
+		return true
+	}
+	if resolvedNamespace, ok := namespaceTokenPrefix(resolved); ok && strings.EqualFold(resolvedNamespace, keyNamespace) {
+		return true
+	}
+	namespaces := []string{vm.currentCallerNamespace()}
+	if vm.Org != nil {
+		namespaces = append(namespaces, vm.Org.Namespace)
+	}
+	for _, namespace := range namespaces {
+		if strings.EqualFold(strings.TrimSpace(namespace), keyNamespace) {
+			return true
+		}
+	}
+	return false
 }
 
 func (vm *VM) describeObjectDefinition(objectName string) (string, storage.ObjectDefinition, bool) {
@@ -663,6 +785,9 @@ func (vm *VM) describeObjectDefinition(objectName string) (string, storage.Objec
 	}
 	if definition, ok := storage.StandardObjectDefinition(objectName); ok {
 		return definition.APIName, definition, true
+	}
+	if event, ok := standardChangeEventName(objectName); ok {
+		return event, storage.ObjectDefinition{APIName: event}, true
 	}
 	switch {
 	case strings.EqualFold(objectName, "SObject"):
@@ -919,6 +1044,9 @@ func describeFieldPrecision(field storage.Field) int {
 
 func describeFieldDigits(field storage.Field) int {
 	if field.Type == storage.FieldInteger {
+		if field.Digits > 0 {
+			return field.Digits
+		}
 		return describeFieldPrecision(field)
 	}
 	return 0
@@ -1021,7 +1149,7 @@ func describeFieldGroupable(field storage.Field) bool {
 }
 
 func describeFieldAggregatable(field storage.Field) bool {
-	if field.Type == storage.FieldBoolean || field.Type == storage.FieldMultiPicklist || describeFieldIsLongText(field) {
+	if field.Type == storage.FieldBoolean || field.Type == storage.FieldMultiPicklist || field.Type == storage.FieldTime || describeFieldIsLongText(field) {
 		return false
 	}
 	return true
@@ -1160,6 +1288,9 @@ func (vm *VM) childRelationshipValue(childObject string, relationship storage.Re
 		relationshipName = describeChildRelationshipName(vm.Org.Namespace, childObject, relationshipName)
 	}
 	value.Fields["relationshipName"] = String(relationshipName)
+	if vm.capturedTaskAccountChildRelationship(childObject, relationship) {
+		value.Fields["relationshipName"] = Null
+	}
 	value.Fields["field"] = sObjectFieldToken(childObject, relationship.Field)
 	value.Fields["childSObject"] = sObjectTypeToken(childObject)
 	value.Fields["cascadeDelete"] = Bool(relationship.CascadeDelete)
@@ -1480,6 +1611,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	if cached, ok := vm.lookupFieldDescribeCache(objectName, requestedFieldName); ok {
 		return cached, nil
 	}
+	orgDefinition := definition
 	definition = vm.describePreparedDefinition(objectName, definition)
 	namespace := ""
 	if vm.Org != nil {
@@ -1490,7 +1622,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		fieldName = requestedFieldName
 		if systemField, systemOK := syntheticSObjectSystemField(fieldName); systemOK {
 			fieldName = systemField.APIName
-			field := systemField
+			field := fieldKeyIdDescribeFacets(definition, systemField)
 			return vm.describeSyntheticFieldValue(objectName, fieldName, field)
 		}
 		if vm.canSynthesizeSchemaField(objectName) {
@@ -1522,6 +1654,13 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		}
 	}
 	field = describeFieldWithSystemOverlay(field)
+	field = fieldKeyIdDescribeFacets(definition, field)
+	if length, known := storage.StandardFieldRichTextLength(objectName, field.APIName); known {
+		field.DisplayType = "RICHTEXTAREA"
+		if field.Length <= 0 {
+			field.Length = length
+		}
+	}
 	desc := Object("Schema.DescribeFieldResult")
 	describeName := vm.describeFieldName(field.APIName)
 	desc.Fields["name"] = String(describeName)
@@ -1556,8 +1695,11 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		desc.Fields["calculatedFormula"] = String(field.Formula)
 	}
 	desc.Fields["autoNumber"] = Bool(field.AutoNumber)
-	desc.Fields["caseSensitive"] = Bool(field.CaseSensitive)
+	desc.Fields["caseSensitive"] = Bool(storage.FieldFlagValue(field.DescribeCaseSensitive, field.CaseSensitive))
 	desc.Fields["nameField"] = Bool(isNameFieldDescribe(field))
+	if nameField, known := storage.StandardFieldNameFlag(orgDefinition, field.APIName); known {
+		desc.Fields["nameField"] = Bool(nameField)
+	}
 	desc.Fields["custom"] = Bool(isCustomSchemaName(field.APIName))
 	desc.Fields["length"] = Int(int64(describeFieldLength(field)))
 	desc.Fields["precision"] = Int(int64(describeFieldPrecision(field)))
@@ -1619,7 +1761,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	desc.Fields["groupable"] = Bool(storage.FieldFlagValue(field.Groupable, describeFieldGroupable(field)))
 	desc.Fields["sortable"] = Bool(storage.FieldFlagValue(field.Sortable, describeFieldSortable(field)))
 	desc.Fields["aggregatable"] = Bool(storage.FieldFlagValue(field.Aggregatable, describeFieldAggregatable(field)))
-	desc.Fields["permissionable"] = Bool(storage.FieldFlagValue(field.Permissionable, true))
+	desc.Fields["permissionable"] = Bool(storage.FieldFlagValue(field.Permissionable, !vm.customFieldHasIntrinsicAccess(objectName, field.APIName)))
 	desc.Fields["deprecatedAndHidden"] = Bool(storage.FieldFlagValue(field.DeprecatedAndHidden, false))
 	desc.Fields["restrictedPicklist"] = Bool(field.RestrictedPicklist)
 	desc.Fields["idLookup"] = Bool(field.IDLookup || field.ExternalID)
@@ -1646,6 +1788,9 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		entry.Fields["default"] = Bool(value.Default)
 		entry.Fields["defaultValue"] = Bool(value.Default)
 		entry.Fields["active"] = Bool(value.Active)
+		if validFor, known := picklistJSONValidFor(controllerField, field, value, hasController); known {
+			entry.Fields[picklistJSONValidForField] = validFor
+		}
 		picklistValues = append(picklistValues, entry)
 	}
 	desc.Fields["picklistValues"] = List(picklistValues...)
@@ -1754,7 +1899,11 @@ func (vm *VM) fieldDescribeCacheKeys(objectName, fieldName string) []string {
 }
 
 func (vm *VM) describeSObjectCacheKey(objectName string) string {
-	return vm.describePermissionCacheKey(strings.ToLower(strings.TrimSpace(objectName)))
+	key := vm.describePermissionCacheKey(strings.ToLower(strings.TrimSpace(objectName)))
+	if vm.usesCapturedTaskDescribeFieldOrder(objectName) {
+		key += "|field-order=task65"
+	}
+	return key
 }
 
 func (vm *VM) fieldDescribeCacheKey(objectName, fieldName string) string {
@@ -1864,6 +2013,7 @@ func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field st
 	desc.Fields["type"] = schemaDisplayTypeValue(displayType)
 	desc.Fields["soapType"] = schemaSOAPTypeValue(soapTypeForStorageField(field))
 	desc.Fields["nillable"] = Bool(storage.FieldFlagValue(field.Nillable, !field.Required))
+	desc.Fields["idLookup"] = Bool(field.IDLookup || field.ExternalID)
 	desc.Fields["externalId"] = Bool(false)
 	desc.Fields["unique"] = Bool(false)
 	desc.Fields["encrypted"] = Bool(false)
@@ -1894,7 +2044,7 @@ func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field st
 	desc.Fields["filterable"] = Bool(storage.FieldFlagValue(field.Filterable, true))
 	desc.Fields["groupable"] = Bool(storage.FieldFlagValue(field.Groupable, true))
 	desc.Fields["aggregatable"] = Bool(storage.FieldFlagValue(field.Aggregatable, true))
-	desc.Fields["permissionable"] = Bool(storage.FieldFlagValue(field.Permissionable, true))
+	desc.Fields["permissionable"] = Bool(storage.FieldFlagValue(field.Permissionable, !vm.customFieldHasIntrinsicAccess(objectName, field.APIName)))
 	desc.Fields["deprecatedAndHidden"] = Bool(storage.FieldFlagValue(field.DeprecatedAndHidden, false))
 	token := vm.sObjectFieldTokenFromField(objectName, field)
 	desc.Fields["sObjectField"] = token
@@ -1974,6 +2124,11 @@ func describeFieldWithSystemOverlay(field storage.Field) storage.Field {
 	if !ok {
 		return field
 	}
+	if field.Type == storage.FieldID && strings.EqualFold(field.APIName, "Id") {
+		// FieldKey 003/007/011/016: preserve the declared identity facet
+		// rather than replacing it with the synthetic descriptor's zero value.
+		systemField.IDLookup = field.IDLookup
+	}
 	if field.Label != "" {
 		systemField.Label = field.Label
 	}
@@ -1991,6 +2146,9 @@ func describeFieldWithSystemOverlay(field storage.Field) storage.Field {
 	}
 	if field.Updateable != nil {
 		systemField.Updateable = field.Updateable
+	}
+	if field.Permissionable != nil {
+		systemField.Permissionable = field.Permissionable
 	}
 	if field.Filterable != nil {
 		systemField.Filterable = field.Filterable
@@ -2080,6 +2238,7 @@ func (vm *VM) completeDescribeFieldResult(desc *Value, objectName string, field 
 		desc.Fields["sObjectField"] = vm.sObjectFieldTokenFromField(objectName, field)
 	}
 	completeDescribeFieldResultDefaults(desc)
+	vm.replayDescribeFieldFlags(desc, objectName, field)
 }
 
 func completeDescribeFieldResultDefaults(desc *Value) {
@@ -2193,4 +2352,23 @@ func approxValueSizeSeen(value Value, seen map[approxVisitKey]bool) int {
 	default:
 		return 0
 	}
+}
+
+// Native owner-side custom-object rows expose qualified global-describe keys;
+// local names still resolve through schema tokens, outside this map.
+func (vm *VM) ownedNamespacedCustomGlobalDescribe(name string) bool {
+	if vm.Org == nil || vm.Org.Namespace == "" || !strings.EqualFold(vm.currentCallerNamespace(), vm.Org.Namespace) || !strings.HasSuffix(strings.ToLower(name), "__c") {
+		return false
+	}
+	prefix, qualified := namespaceTokenPrefix(name)
+	if !qualified || !strings.EqualFold(prefix, vm.Org.Namespace) {
+		return false
+	}
+	object, exists := vm.Org.Objects[name]
+	return exists && !storage.IsCustomSettingDefinition(object.Definition)
+}
+
+func (vm *VM) ownedGlobalDescribeLocalKey(key, resolved string) bool {
+	_, qualified := namespaceTokenPrefix(strings.TrimSpace(key))
+	return !qualified && vm.ownedNamespacedCustomGlobalDescribe(resolved)
 }

@@ -1,0 +1,5 @@
+id	class	method	outcome	type	message
+67_aliasOne	AliasedRemoval67	aliasOne	Fail	System.FinalException	Cannot modify a collection while it is being iterated.
+67_aliasTwo	AliasedRemoval67	aliasTwo	Fail	System.FinalException	Cannot modify a collection while it is being iterated.
+67_directOne	AliasedRemoval67	directOne	Fail	System.FinalException	Cannot modify a collection while it is being iterated.
+67_directTwo	AliasedRemoval67	directTwo	Fail	System.FinalException	Cannot modify a collection while it is being iterated.

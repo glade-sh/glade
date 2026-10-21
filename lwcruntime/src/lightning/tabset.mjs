@@ -34,7 +34,7 @@ function renderTabBar($api, $cmp) {
   const overflow = h("li", {
     key: "overflow",
     className: "slds-tabs_default__item slds-tabs_default__overflow-button",
-    attrs: { role: "tab" },
+    attrs: { role: "presentation" },
   }, [c("lightning-button-menu", ButtonMenu, {
     key: 1,
     props: { label: "More", alternativeText: "Tabs", title: "More Tabs", variant: "bare" },

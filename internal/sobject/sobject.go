@@ -2,6 +2,7 @@ package sobject
 
 import (
 	"fmt"
+	"maps"
 	"sort"
 	"strings"
 
@@ -150,55 +151,59 @@ type DescribeSObjectResult struct {
 }
 
 type DescribeFieldResult struct {
-	Name                  string                      `json:"name"`
-	Type                  storage.FieldType           `json:"type"`
-	MasterDetail          bool                        `json:"masterDetail,omitempty"`
-	DisplayType           string                      `json:"displayType,omitempty"`
-	Label                 string                      `json:"label,omitempty"`
-	InlineHelpText        string                      `json:"inlineHelpText,omitempty"`
-	Length                int                         `json:"length,omitempty"`
-	Precision             int                         `json:"precision,omitempty"`
-	Scale                 int                         `json:"scale,omitempty"`
-	ScaleSpecified        bool                        `json:"scaleSpecified,omitempty"`
-	Formula               string                      `json:"formula,omitempty"`
-	FormulaTreatBlanksAs  string                      `json:"formulaTreatBlanksAs,omitempty"`
-	CompoundFieldName     string                      `json:"compoundFieldName,omitempty"`
-	AutoNumber            bool                        `json:"autoNumber,omitempty"`
-	DisplayFormat         string                      `json:"displayFormat,omitempty"`
-	SummarizedField       string                      `json:"summarizedField,omitempty"`
-	SummaryForeignKey     string                      `json:"summaryForeignKey,omitempty"`
-	SummaryOperation      string                      `json:"summaryOperation,omitempty"`
-	SummaryFilterItems    []storage.SummaryFilterItem `json:"summaryFilterItems,omitempty"`
-	FilteredLookupInfo    storage.FilteredLookupInfo  `json:"filteredLookupInfo,omitempty"`
-	Nillable              *bool                       `json:"nillable,omitempty"`
-	DefaultedOnCreate     *bool                       `json:"defaultedOnCreate,omitempty"`
-	Accessible            *bool                       `json:"accessible,omitempty"`
-	Createable            *bool                       `json:"createable,omitempty"`
-	Updateable            *bool                       `json:"updateable,omitempty"`
-	Filterable            *bool                       `json:"filterable,omitempty"`
-	Groupable             *bool                       `json:"groupable,omitempty"`
-	Sortable              *bool                       `json:"sortable,omitempty"`
-	Aggregatable          *bool                       `json:"aggregatable,omitempty"`
-	Permissionable        *bool                       `json:"permissionable,omitempty"`
-	DeprecatedAndHidden   *bool                       `json:"deprecatedAndHidden,omitempty"`
-	ReferenceTo           []string                    `json:"referenceTo,omitempty"`
-	RelationshipName      string                      `json:"relationshipName,omitempty"`
-	RelationshipOrder     *int                        `json:"relationshipOrder,omitempty"`
-	ReparentableMasterDetail bool                     `json:"reparentableMasterDetail,omitempty"`
-	ChildRelationshipName string                      `json:"childRelationshipName,omitempty"`
-	DeleteConstraint      string                      `json:"deleteConstraint,omitempty"`
-	DefaultValue          string                      `json:"defaultValue,omitempty"`
-	Required              bool                        `json:"required,omitempty"`
-	ExternalID            bool                        `json:"externalId,omitempty"`
-	Unique                bool                        `json:"unique,omitempty"`
-	Encrypted             bool                        `json:"encrypted,omitempty"`
-	CaseSensitive         bool                        `json:"caseSensitive,omitempty"`
-	RestrictedPicklist    bool                        `json:"restrictedPicklist,omitempty"`
-	IDLookup              bool                        `json:"idLookup,omitempty"`
-	NamePointing          bool                        `json:"namePointing,omitempty"`
-	PicklistController    string                      `json:"picklistController,omitempty"`
-	PicklistValueSettings []storage.PicklistSetting   `json:"picklistValueSettings,omitempty"`
-	PicklistValues        []storage.PicklistValue     `json:"picklistValues,omitempty"`
+	Name                     string                      `json:"name"`
+	Type                     storage.FieldType           `json:"type"`
+	MasterDetail             bool                        `json:"masterDetail,omitempty"`
+	DisplayType              string                      `json:"displayType,omitempty"`
+	LongTextArea             bool                        `json:"longTextArea,omitempty"`
+	Label                    string                      `json:"label,omitempty"`
+	InlineHelpText           string                      `json:"inlineHelpText,omitempty"`
+	Length                   int                         `json:"length,omitempty"`
+	Precision                int                         `json:"precision,omitempty"`
+	Scale                    int                         `json:"scale,omitempty"`
+	ScaleSpecified           bool                        `json:"scaleSpecified,omitempty"`
+	Formula                  string                      `json:"formula,omitempty"`
+	FormulaTreatBlanksAs     string                      `json:"formulaTreatBlanksAs,omitempty"`
+	CompoundFieldName        string                      `json:"compoundFieldName,omitempty"`
+	AutoNumber               bool                        `json:"autoNumber,omitempty"`
+	DisplayFormat            string                      `json:"displayFormat,omitempty"`
+	SummarizedField          string                      `json:"summarizedField,omitempty"`
+	SummaryForeignKey        string                      `json:"summaryForeignKey,omitempty"`
+	SummaryOperation         string                      `json:"summaryOperation,omitempty"`
+	SummaryFilterItems       []storage.SummaryFilterItem `json:"summaryFilterItems,omitempty"`
+	FilteredLookupInfo       storage.FilteredLookupInfo  `json:"filteredLookupInfo,omitempty"`
+	Nillable                 *bool                       `json:"nillable,omitempty"`
+	DefaultedOnCreate        *bool                       `json:"defaultedOnCreate,omitempty"`
+	Accessible               *bool                       `json:"accessible,omitempty"`
+	Createable               *bool                       `json:"createable,omitempty"`
+	Updateable               *bool                       `json:"updateable,omitempty"`
+	Filterable               *bool                       `json:"filterable,omitempty"`
+	Groupable                *bool                       `json:"groupable,omitempty"`
+	Sortable                 *bool                       `json:"sortable,omitempty"`
+	Aggregatable             *bool                       `json:"aggregatable,omitempty"`
+	Permissionable           *bool                       `json:"permissionable,omitempty"`
+	DeprecatedAndHidden      *bool                       `json:"deprecatedAndHidden,omitempty"`
+	ReferenceTo              []string                    `json:"referenceTo,omitempty"`
+	RelationshipName         string                      `json:"relationshipName,omitempty"`
+	RelationshipOrder        *int                        `json:"relationshipOrder,omitempty"`
+	ReparentableMasterDetail bool                        `json:"reparentableMasterDetail,omitempty"`
+	ChildRelationshipName    string                      `json:"childRelationshipName,omitempty"`
+	DeleteConstraint         string                      `json:"deleteConstraint,omitempty"`
+	DefaultValue             string                      `json:"defaultValue,omitempty"`
+	Required                 bool                        `json:"required,omitempty"`
+	ExternalID               bool                        `json:"externalId,omitempty"`
+	Unique                   bool                        `json:"unique,omitempty"`
+	Encrypted                bool                        `json:"encrypted,omitempty"`
+	CaseSensitive            bool                        `json:"caseSensitive,omitempty"`
+	DescribeCaseSensitive    *bool                       `json:"describeCaseSensitive,omitempty"`
+	RestrictedPicklist       bool                        `json:"restrictedPicklist,omitempty"`
+	IDLookup                 bool                        `json:"idLookup,omitempty"`
+	NamePointing             bool                        `json:"namePointing,omitempty"`
+	PicklistController       string                      `json:"picklistController,omitempty"`
+	PicklistValueSettings    []storage.PicklistSetting   `json:"picklistValueSettings,omitempty"`
+	PicklistValues           []storage.PicklistValue     `json:"picklistValues,omitempty"`
+
+	MetadataRelationshipControllingField string `json:"metadataRelationshipControllingField,omitempty"`
 }
 
 type DescribeRecordTypeInfo struct {
@@ -215,6 +220,7 @@ type DescribeRecordTypeInfo struct {
 func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 	objects, inheritedFields := inheritActivityFields(mergeSchemaObjects(s.Objects))
 	baseObjectNames := objectNames(objects)
+	objects = schema.WithGeneratedHistoryObjects(objects)
 	objects, generatedShareParents := appendGeneratedShareObjects(objects)
 	sort.Slice(objects, func(i, j int) bool { return objects[i].Name < objects[j].Name })
 	baseExplicitPrefixes := make(map[string]string)
@@ -251,6 +257,9 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 		if parent, generated := generatedShareParents[strings.ToLower(object.Name)]; generated {
 			describe.Metadata = map[string]string{"kind": "generatedShare", "parentObject": parent}
 		}
+		if object.GeneratedHistoryParent != "" {
+			describe.Metadata = map[string]string{"kind": "generatedHistory", "parentObject": object.GeneratedHistoryParent}
+		}
 		if strings.HasSuffix(object.Name, "__mdt") {
 			ensureDescribeField(describe.Fields, "DeveloperName", "Text", "Developer Name")
 			ensureDescribeField(describe.Fields, "MasterLabel", "Text", "Master Label")
@@ -268,11 +277,23 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			}
 			describe.Metadata = map[string]string{"kind": "customSetting", "customSettingsType": object.CustomSettingsType}
 		}
-		if object.PublishBehavior != "" {
+		if object.EnableActivities {
 			if describe.Metadata == nil {
 				describe.Metadata = make(map[string]string)
 			}
-			describe.Metadata["publishBehavior"] = object.PublishBehavior
+			describe.Metadata["enableActivities"] = "true"
+		}
+		publishBehavior := object.PublishBehavior
+		if publishBehavior == "" && strings.HasSuffix(object.Name, "__e") {
+			// Metadata API CustomObject: an omitted publishBehavior defaults
+			// to PublishImmediately, independently of event volume.
+			publishBehavior = "PublishImmediately"
+		}
+		if publishBehavior != "" {
+			if describe.Metadata == nil {
+				describe.Metadata = make(map[string]string)
+			}
+			describe.Metadata["publishBehavior"] = publishBehavior
 		}
 		if object.NameField.Type != "" {
 			if !storage.IsKnownStandardObject(object.Name) {
@@ -282,14 +303,21 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				describe.Metadata["nameFieldType"] = object.NameField.Type
 			}
 			describe.Fields["Name"] = DescribeFieldResult{
-				Name:          "Name",
-				Type:          storage.FieldString,
-				DisplayType:   displayFieldType(object.NameField.Type),
-				Label:         labelOrName(object.NameField.Label, "Name"),
-				Required:      true,
-				AutoNumber:    strings.EqualFold(object.NameField.Type, "AutoNumber"),
-				DisplayFormat: object.NameField.DisplayFormat,
-				Length:        nameFieldLength(object.NameField),
+				Name:           "Name",
+				Type:           storage.FieldString,
+				DisplayType:    displayFieldType(object.NameField.Type),
+				Label:          labelOrName(object.NameField.Label, "Name"),
+				Required:       true,
+				AutoNumber:     strings.EqualFold(object.NameField.Type, "AutoNumber"),
+				DisplayFormat:  object.NameField.DisplayFormat,
+				Length:         nameFieldLength(object.NameField),
+				Permissionable: storage.BoolFlag(false),
+			}
+			if schema.FieldKeyTextNameLookup(object) {
+				name := describe.Fields["Name"]
+				name.IDLookup = true
+				name.Nillable = storage.BoolFlag(true)
+				describe.Fields["Name"] = name
 			}
 		}
 		for _, field := range object.Fields {
@@ -301,7 +329,11 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				fieldType = storage.FieldSummary
 			}
 			autoNumber := strings.EqualFold(field.Type, "AutoNumber")
-			var updateable *bool
+			var createable, updateable, nillable, defaultedOnCreate *bool
+			if object.GeneratedHistoryParent != "" || field.GeneratedRecentAccess {
+				createable, updateable = field.Createable, field.Updateable
+				nillable, defaultedOnCreate = field.Nillable, field.DefaultedOnCreate
+			}
 			if strings.EqualFold(field.Type, "MasterDetail") {
 				updateable = storage.BoolFlag(field.ReparentableMasterDetail)
 			}
@@ -320,44 +352,51 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				}
 			}
 			describe.Fields[field.Name] = DescribeFieldResult{
-				Name:                  field.Name,
-				Type:                  fieldType,
-				MasterDetail:          strings.EqualFold(field.Type, "MasterDetail"),
-				DisplayType:           displayFieldType(field.Type),
-				Label:                 labelOrName(field.Label, field.Name),
-				InlineHelpText:        field.InlineHelpText,
-				AutoNumber:            autoNumber,
-				DisplayFormat:         field.DisplayFormat,
-				Length:                field.Length,
-				Precision:             field.Precision,
-				Scale:                 field.Scale,
-				ScaleSpecified:        field.ScaleSpecified,
-				Formula:               field.Formula,
-				FormulaTreatBlanksAs:  field.FormulaTreatBlanksAs,
-				ReferenceTo:           referenceTargets(field.ReferenceTo),
-				SummarizedField:       field.SummarizedField,
-				SummaryForeignKey:     field.SummaryForeignKey,
-				SummaryOperation:      field.SummaryOperation,
-				SummaryFilterItems:    storageSummaryFilters(field.SummaryFilterItems),
-				FilteredLookupInfo:    storageFilteredLookupInfo(field.FilteredLookupInfo),
-				RelationshipOrder:     cloneIntPtr(field.RelationshipOrder),
+				Name:                     field.Name,
+				Type:                     fieldType,
+				MasterDetail:             strings.EqualFold(field.Type, "MasterDetail"),
+				DisplayType:              displayFieldType(field.Type),
+				LongTextArea:             strings.EqualFold(field.Type, "LongTextArea"),
+				Label:                    labelOrName(field.Label, field.Name),
+				InlineHelpText:           field.InlineHelpText,
+				AutoNumber:               autoNumber,
+				DisplayFormat:            field.DisplayFormat,
+				Length:                   field.Length,
+				Precision:                field.Precision,
+				Scale:                    field.Scale,
+				ScaleSpecified:           field.ScaleSpecified,
+				Formula:                  field.Formula,
+				FormulaTreatBlanksAs:     field.FormulaTreatBlanksAs,
+				ReferenceTo:              referenceTargets(field.ReferenceTo),
+				SummarizedField:          field.SummarizedField,
+				SummaryForeignKey:        field.SummaryForeignKey,
+				SummaryOperation:         field.SummaryOperation,
+				SummaryFilterItems:       storageSummaryFilters(field.SummaryFilterItems),
+				FilteredLookupInfo:       storageFilteredLookupInfo(field.FilteredLookupInfo),
+				RelationshipOrder:        cloneIntPtr(field.RelationshipOrder),
 				ReparentableMasterDetail: field.ReparentableMasterDetail,
-				RelationshipName:      field.RelationshipName,
-				ChildRelationshipName: childRelationshipName,
-				DeleteConstraint:      field.DeleteConstraint,
-				DefaultValue:          field.DefaultValue,
-				Required:              field.Required || strings.EqualFold(field.Type, "MasterDetail"),
-				ExternalID:            field.ExternalID,
-				Unique:                field.Unique,
-				CaseSensitive:         field.CaseSensitive,
-				IDLookup:              field.IDLookup || field.ExternalID,
-				Encrypted:             field.Encrypted,
-				RestrictedPicklist:    field.RestrictedPicklist,
-				NamePointing:          len(references) > 1,
-				Updateable:            updateable,
-				PicklistController:    field.PicklistController,
-				PicklistValueSettings: storagePicklistSettings(field.PicklistValueSettings),
-				PicklistValues:        storagePicklistValues(field.PicklistValues),
+				RelationshipName:         field.RelationshipName,
+				ChildRelationshipName:    childRelationshipName,
+				DeleteConstraint:         field.DeleteConstraint,
+				DefaultValue:             field.DefaultValue,
+				Required:                 field.Required || strings.EqualFold(field.Type, "MasterDetail"),
+				ExternalID:               field.ExternalID,
+				Unique:                   field.Unique,
+				CaseSensitive:            field.CaseSensitive,
+				DescribeCaseSensitive:    field.DescribeCaseSensitive,
+				IDLookup:                 field.IDLookup || field.ExternalID,
+				Encrypted:                field.Encrypted,
+				RestrictedPicklist:       field.RestrictedPicklist,
+				NamePointing:             len(references) > 1,
+				Updateable:               updateable,
+				Createable:               createable,
+				Nillable:                 nillable,
+				DefaultedOnCreate:        defaultedOnCreate,
+				PicklistController:       field.PicklistController,
+				PicklistValueSettings:    storagePicklistSettings(field.PicklistValueSettings),
+				PicklistValues:           storagePicklistValues(field.PicklistValues),
+
+				MetadataRelationshipControllingField: field.MetadataRelationshipControllingField,
 			}
 			if len(references) != 0 {
 				parentRelationship := storage.ParentRelationshipName(storage.Field{
@@ -510,13 +549,19 @@ func appendGeneratedShareObjects(objects []schema.Object) ([]schema.Object, map[
 		}
 		seen[key] = true
 		generatedParents[key] = name
+		// Native Private custom-object rows expose a cascading share child;
+		// use the shared relationship lifecycle for delete and undelete.
+		parentDeleteConstraint := ""
+		if strings.EqualFold(object.SharingModel, "Private") {
+			parentDeleteConstraint = "Cascade"
+		}
 		out = append(out, schema.Object{
 			Name:         shareName,
 			Label:        labelOrName(object.Label, name) + " Share",
 			PluralLabel:  labelOrName(object.PluralLabel, name) + " Shares",
 			SharingModel: "ReadWrite",
 			Fields: []schema.Field{
-				{Name: "ParentId", Type: "Lookup", ReferenceTo: []string{name}, RelationshipName: "Parent"},
+				{Name: "ParentId", Type: "Lookup", ReferenceTo: []string{name}, RelationshipName: "Parent", DeleteConstraint: parentDeleteConstraint},
 				{Name: "UserOrGroupId", Type: "Lookup", ReferenceTo: []string{"User", "Group"}, RelationshipName: "UserOrGroup"},
 				{Name: "AccessLevel", Type: "Picklist", PicklistValues: []schema.PicklistValue{
 					{FullName: "Read", Label: "Read", Active: true},
@@ -524,12 +569,12 @@ func appendGeneratedShareObjects(objects []schema.Object) ([]schema.Object, map[
 					{FullName: "All", Label: "All", Active: true},
 				}},
 				{Name: "RowCause", Type: "Picklist", DefaultValue: "Manual", PicklistValues: append([]schema.PicklistValue{
-					{FullName: "Manual", Label: "Manual", Default: true, Active: true},
+					{FullName: "Manual", Label: "Manual Sharing", Default: true, Active: true},
 					{FullName: "Owner", Label: "Owner", Active: true},
 					{FullName: "Rule", Label: "Rule", Active: true},
 					{FullName: "ImplicitChild", Label: "Implicit Child", Active: true},
 					{FullName: "ImplicitParent", Label: "Implicit Parent", Active: true},
-				}, sharingReasonPicklistValues(object.SharingReasons)...),
+				}, sharingReasonPicklistValues(object)...),
 				},
 			},
 		})
@@ -537,14 +582,14 @@ func appendGeneratedShareObjects(objects []schema.Object) ([]schema.Object, map[
 	return out, generatedParents
 }
 
-func sharingReasonPicklistValues(reasons []string) []schema.PicklistValue {
-	values := make([]schema.PicklistValue, 0, len(reasons))
-	for _, reason := range reasons {
+func sharingReasonPicklistValues(object schema.Object) []schema.PicklistValue {
+	values := make([]schema.PicklistValue, 0, len(object.SharingReasons))
+	for _, reason := range object.SharingReasons {
 		name := strings.TrimSpace(reason)
 		if name == "" {
 			continue
 		}
-		values = append(values, schema.PicklistValue{FullName: name, Label: name, Active: true})
+		values = append(values, schema.PicklistValue{FullName: name, Label: labelOrName(object.SharingReasonLabel(name), name), Active: true})
 	}
 	return values
 }
@@ -611,6 +656,22 @@ func mergeSchemaObject(base, overlay schema.Object) schema.Object {
 		if !stringSliceContainsFold(base.SharingReasons, reason) {
 			base.SharingReasons = append(base.SharingReasons, reason)
 		}
+	}
+	if len(base.SharingReasonLabels)+len(overlay.SharingReasonLabels) > 0 {
+		labels := maps.Clone(base.SharingReasonLabels)
+		if labels == nil {
+			labels = make(map[string]string, len(overlay.SharingReasonLabels))
+		}
+		for name, label := range overlay.SharingReasonLabels {
+			for _, token := range base.SharingReasons {
+				if strings.EqualFold(token, name) {
+					name = token
+					break
+				}
+			}
+			labels[name] = label
+		}
+		base.SharingReasonLabels = labels
 	}
 	if overlay.CustomSettingsType != "" {
 		base.CustomSettingsType = overlay.CustomSettingsType
@@ -708,6 +769,9 @@ func (d DescribeSObjectResult) Clone() DescribeSObjectResult {
 	if d.Fields != nil {
 		out.Fields = make(map[string]DescribeFieldResult, len(d.Fields))
 		for name, field := range d.Fields {
+			if field.DescribeCaseSensitive != nil {
+				field.DescribeCaseSensitive = storage.BoolFlag(*field.DescribeCaseSensitive)
+			}
 			field.ReferenceTo = append([]string(nil), field.ReferenceTo...)
 			field.PicklistValues = append([]storage.PicklistValue(nil), field.PicklistValues...)
 			out.Fields[name] = field
@@ -751,54 +815,58 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 	}
 	for name, field := range describe.Fields {
 		definition.Fields[name] = storage.Field{
-			APIName:               field.Name,
-			Label:                 labelOrName(field.Label, field.Name),
-			InlineHelpText:        field.InlineHelpText,
-			Type:                  field.Type,
-			MasterDetail:          field.MasterDetail,
-			DisplayType:           field.DisplayType,
-			Length:                field.Length,
-			Precision:             field.Precision,
-			Scale:                 field.Scale,
-			ScaleSpecified:        field.ScaleSpecified,
-			Formula:               field.Formula,
-			FormulaTreatBlanksAs:  field.FormulaTreatBlanksAs,
-			CompoundFieldName:     field.CompoundFieldName,
-			DefaultValue:          field.DefaultValue,
-			AutoNumber:            field.AutoNumber,
-			DisplayFormat:         field.DisplayFormat,
-			SummarizedField:       field.SummarizedField,
-			SummaryForeignKey:     field.SummaryForeignKey,
-			SummaryOperation:      field.SummaryOperation,
-			SummaryFilterItems:    append([]storage.SummaryFilterItem(nil), field.SummaryFilterItems...),
-			FilteredLookupInfo:    cloneStorageFilteredLookupInfo(field.FilteredLookupInfo),
-			Required:              field.Required,
-			Nillable:              field.Nillable,
-			DefaultedOnCreate:     field.DefaultedOnCreate,
-			Accessible:            field.Accessible,
-			Createable:            field.Createable,
-			Updateable:            field.Updateable,
-			Filterable:            field.Filterable,
-			Groupable:             field.Groupable,
-			Sortable:              field.Sortable,
-			Aggregatable:          field.Aggregatable,
-			Permissionable:        field.Permissionable,
-			DeprecatedAndHidden:   field.DeprecatedAndHidden,
-			ExternalID:            field.ExternalID,
-			Unique:                field.Unique,
-			Encrypted:             field.Encrypted,
-			CaseSensitive:         field.CaseSensitive,
-			RestrictedPicklist:    field.RestrictedPicklist,
-			IDLookup:              field.IDLookup,
-			NamePointing:          field.NamePointing,
-			ReferenceTo:           append([]string(nil), field.ReferenceTo...),
-			RelationshipName:      field.RelationshipName,
-			RelationshipOrder:     cloneIntPtr(field.RelationshipOrder),
+			APIName:                  field.Name,
+			Label:                    labelOrName(field.Label, field.Name),
+			InlineHelpText:           field.InlineHelpText,
+			Type:                     field.Type,
+			MasterDetail:             field.MasterDetail,
+			DisplayType:              field.DisplayType,
+			LongTextArea:             field.LongTextArea,
+			Length:                   field.Length,
+			Precision:                field.Precision,
+			Scale:                    field.Scale,
+			ScaleSpecified:           field.ScaleSpecified,
+			Formula:                  field.Formula,
+			FormulaTreatBlanksAs:     field.FormulaTreatBlanksAs,
+			CompoundFieldName:        field.CompoundFieldName,
+			DefaultValue:             field.DefaultValue,
+			AutoNumber:               field.AutoNumber,
+			DisplayFormat:            field.DisplayFormat,
+			SummarizedField:          field.SummarizedField,
+			SummaryForeignKey:        field.SummaryForeignKey,
+			SummaryOperation:         field.SummaryOperation,
+			SummaryFilterItems:       append([]storage.SummaryFilterItem(nil), field.SummaryFilterItems...),
+			FilteredLookupInfo:       cloneStorageFilteredLookupInfo(field.FilteredLookupInfo),
+			Required:                 field.Required,
+			Nillable:                 field.Nillable,
+			DefaultedOnCreate:        field.DefaultedOnCreate,
+			Accessible:               field.Accessible,
+			Createable:               field.Createable,
+			Updateable:               field.Updateable,
+			Filterable:               field.Filterable,
+			Groupable:                field.Groupable,
+			Sortable:                 field.Sortable,
+			Aggregatable:             field.Aggregatable,
+			Permissionable:           field.Permissionable,
+			DeprecatedAndHidden:      field.DeprecatedAndHidden,
+			ExternalID:               field.ExternalID,
+			Unique:                   field.Unique,
+			Encrypted:                field.Encrypted,
+			CaseSensitive:            field.CaseSensitive,
+			DescribeCaseSensitive:    field.DescribeCaseSensitive,
+			RestrictedPicklist:       field.RestrictedPicklist,
+			IDLookup:                 field.IDLookup,
+			NamePointing:             field.NamePointing,
+			ReferenceTo:              append([]string(nil), field.ReferenceTo...),
+			RelationshipName:         field.RelationshipName,
+			RelationshipOrder:        cloneIntPtr(field.RelationshipOrder),
 			ReparentableMasterDetail: field.ReparentableMasterDetail,
-			ChildRelationshipName: field.ChildRelationshipName,
-			PicklistController:    field.PicklistController,
-			PicklistValueSettings: cloneStoragePicklistSettings(field.PicklistValueSettings),
-			PicklistValues:        append([]storage.PicklistValue(nil), field.PicklistValues...),
+			ChildRelationshipName:    field.ChildRelationshipName,
+			PicklistController:       field.PicklistController,
+			PicklistValueSettings:    cloneStoragePicklistSettings(field.PicklistValueSettings),
+			PicklistValues:           append([]storage.PicklistValue(nil), field.PicklistValues...),
+
+			MetadataRelationshipControllingField: field.MetadataRelationshipControllingField,
 		}
 	}
 	for _, recordType := range describe.RecordTypes {
@@ -838,54 +906,58 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 	}
 	for name, field := range definition.Fields {
 		describe.Fields[name] = DescribeFieldResult{
-			Name:                  field.APIName,
-			Type:                  field.Type,
-			MasterDetail:          field.MasterDetail,
-			DisplayType:           field.DisplayType,
-			Label:                 labelOrName(field.Label, field.APIName),
-			InlineHelpText:        field.InlineHelpText,
-			Length:                field.Length,
-			Precision:             field.Precision,
-			Scale:                 field.Scale,
-			ScaleSpecified:        field.ScaleSpecified,
-			Formula:               field.Formula,
-			FormulaTreatBlanksAs:  field.FormulaTreatBlanksAs,
-			CompoundFieldName:     field.CompoundFieldName,
-			AutoNumber:            field.AutoNumber,
-			DisplayFormat:         field.DisplayFormat,
-			SummarizedField:       field.SummarizedField,
-			SummaryForeignKey:     field.SummaryForeignKey,
-			SummaryOperation:      field.SummaryOperation,
-			SummaryFilterItems:    append([]storage.SummaryFilterItem(nil), field.SummaryFilterItems...),
-			FilteredLookupInfo:    cloneStorageFilteredLookupInfo(field.FilteredLookupInfo),
-			Nillable:              field.Nillable,
-			DefaultedOnCreate:     field.DefaultedOnCreate,
-			Accessible:            field.Accessible,
-			Createable:            field.Createable,
-			Updateable:            field.Updateable,
-			Filterable:            field.Filterable,
-			Groupable:             field.Groupable,
-			Sortable:              field.Sortable,
-			Aggregatable:          field.Aggregatable,
-			Permissionable:        field.Permissionable,
-			DeprecatedAndHidden:   field.DeprecatedAndHidden,
-			ReferenceTo:           append([]string(nil), field.ReferenceTo...),
-			RelationshipName:      field.RelationshipName,
-			RelationshipOrder:     cloneIntPtr(field.RelationshipOrder),
+			Name:                     field.APIName,
+			Type:                     field.Type,
+			MasterDetail:             field.MasterDetail,
+			DisplayType:              field.DisplayType,
+			LongTextArea:             field.LongTextArea,
+			Label:                    labelOrName(field.Label, field.APIName),
+			InlineHelpText:           field.InlineHelpText,
+			Length:                   field.Length,
+			Precision:                field.Precision,
+			Scale:                    field.Scale,
+			ScaleSpecified:           field.ScaleSpecified,
+			Formula:                  field.Formula,
+			FormulaTreatBlanksAs:     field.FormulaTreatBlanksAs,
+			CompoundFieldName:        field.CompoundFieldName,
+			AutoNumber:               field.AutoNumber,
+			DisplayFormat:            field.DisplayFormat,
+			SummarizedField:          field.SummarizedField,
+			SummaryForeignKey:        field.SummaryForeignKey,
+			SummaryOperation:         field.SummaryOperation,
+			SummaryFilterItems:       append([]storage.SummaryFilterItem(nil), field.SummaryFilterItems...),
+			FilteredLookupInfo:       cloneStorageFilteredLookupInfo(field.FilteredLookupInfo),
+			Nillable:                 field.Nillable,
+			DefaultedOnCreate:        field.DefaultedOnCreate,
+			Accessible:               field.Accessible,
+			Createable:               field.Createable,
+			Updateable:               field.Updateable,
+			Filterable:               field.Filterable,
+			Groupable:                field.Groupable,
+			Sortable:                 field.Sortable,
+			Aggregatable:             field.Aggregatable,
+			Permissionable:           field.Permissionable,
+			DeprecatedAndHidden:      field.DeprecatedAndHidden,
+			ReferenceTo:              append([]string(nil), field.ReferenceTo...),
+			RelationshipName:         field.RelationshipName,
+			RelationshipOrder:        cloneIntPtr(field.RelationshipOrder),
 			ReparentableMasterDetail: field.ReparentableMasterDetail,
-			ChildRelationshipName: field.ChildRelationshipName,
-			DefaultValue:          field.DefaultValue,
-			Required:              field.Required,
-			ExternalID:            field.ExternalID,
-			Unique:                field.Unique,
-			Encrypted:             field.Encrypted,
-			CaseSensitive:         field.CaseSensitive,
-			RestrictedPicklist:    field.RestrictedPicklist,
-			IDLookup:              field.IDLookup,
-			NamePointing:          field.NamePointing,
-			PicklistController:    field.PicklistController,
-			PicklistValueSettings: cloneStoragePicklistSettings(field.PicklistValueSettings),
-			PicklistValues:        append([]storage.PicklistValue(nil), field.PicklistValues...),
+			ChildRelationshipName:    field.ChildRelationshipName,
+			DefaultValue:             field.DefaultValue,
+			Required:                 field.Required,
+			ExternalID:               field.ExternalID,
+			Unique:                   field.Unique,
+			Encrypted:                field.Encrypted,
+			CaseSensitive:            field.CaseSensitive,
+			DescribeCaseSensitive:    field.DescribeCaseSensitive,
+			RestrictedPicklist:       field.RestrictedPicklist,
+			IDLookup:                 field.IDLookup,
+			NamePointing:             field.NamePointing,
+			PicklistController:       field.PicklistController,
+			PicklistValueSettings:    cloneStoragePicklistSettings(field.PicklistValueSettings),
+			PicklistValues:           append([]storage.PicklistValue(nil), field.PicklistValues...),
+
+			MetadataRelationshipControllingField: field.MetadataRelationshipControllingField,
 		}
 	}
 	for _, recordType := range definition.RecordTypes {
@@ -944,10 +1016,14 @@ func displayFieldType(raw string) string {
 		return "RICHTEXTAREA"
 	case "email":
 		return "EMAIL"
+	case "phone":
+		return "PHONE"
 	case "url":
 		return "URL"
 	case "autonumber":
 		return "STRING"
+	case "anytype":
+		return "ANYTYPE"
 	default:
 		return string(storageFieldType(raw))
 	}

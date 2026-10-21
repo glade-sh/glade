@@ -1,0 +1,3 @@
+source_api	method	observation
+62.0	checkboxNotEqualCount	{"afterDelete":0,"afterInsert":2,"afterUpdate":1,"empty":0,"omittedEnabled":false}
+67.0	checkboxNotEqualCount	{"afterDelete":0,"afterInsert":2,"afterUpdate":1,"empty":0,"omittedEnabled":false}

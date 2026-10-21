@@ -1,0 +1,6 @@
+id	outcome	value
+split	accepted	oak:pine:0
+upperA	accepted	CA:0
+upperB	accepted	CA:0
+lower	accepted	grove:0
+event	accepted	true

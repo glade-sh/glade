@@ -48,7 +48,9 @@ type l06Carry struct {
 }
 
 // TestL06SalesforceConformance compares the exact exported native row text.
-// identify the compiler and browser observations. The recorded table has 184
+// identify the compiler and browser observations. API 68 uses capture-repair
+// plus the three classification-profiler/api68-repeat controls from
+// glade-tools capture-revision-006197612979012570134077627590975929968485416985686083754456660957615731542258. The recorded table has 184
 // compile/metadata and 56 DOM rows per API. Compiler rows compare the captured
 // outcome and diagnostic text, while DOM rows include every observed frame,
 // error and console entry. Compiler diagnostics retain source positions and
@@ -66,7 +68,7 @@ func TestL06SalesforceConformance(t *testing.T) {
 	if err := json.Unmarshal(data, &cases); err != nil {
 		t.Fatal(err)
 	}
-	versions := []string{"59.0", "67.0"}
+	versions := []string{"59.0", "67.0", "68.0"}
 	seen, groups := map[string]bool{}, map[string]bool{}
 	var compilerCases, runtimeCases []l06Case
 	for _, c := range cases {

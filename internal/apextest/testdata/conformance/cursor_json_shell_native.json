@@ -1,0 +1,274 @@
+{
+  "family": "Opaque Cursor JSON admission",
+  "apiVersion": "64.0",
+  "observationCount": 12,
+  "source": {
+    "id": "cursor_shell64",
+    "classes": {
+      "OwnedCursorShell64": "public class OwnedCursorShell64 {\n public virtual class View {\n  protected Database.Cursor handle;\n  protected View(Database.Cursor value) { handle=value; }\n  public Database.Cursor getHandle() { return handle; }\n  public virtual List<Account> page() { return new List<Account>(); }\n  public virtual Integer size() { return 0; }\n }\n public class LocalView extends View {\n  private List<Account> localRows;\n  public LocalView(Database.Cursor value,List<Account> rows) { super(value); localRows=rows; }\n  public override List<Account> page() { return localRows; }\n  public override Integer size() { return localRows.size(); }\n }\n}",
+      "OwnedCursorShell64Test": "@IsTest private class OwnedCursorShell64Test {@IsTest static void observeAdmission(){Object r; Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null}; try { Database.Cursor c=(Database.Cursor)JSON.deserialize('{\"queryId\":\"0r8Ab12Cd34Ef56\"}',Database.Cursor.class); r=new Map<String,Object>{'nonnull'=>c!=null,'isCursor'=>((Object)c) instanceof Database.Cursor}; observed.put('value',r); } catch(Exception issue) { observed.put('exceptionType',issue.getTypeName()); observed.put('exceptionMessage',issue.getMessage()); } System.assert(false,'NATIVE_RESULT|C1|'+JSON.serialize(observed));}@IsTest static void observeSerialization(){Object r; Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null}; try { Database.Cursor c=(Database.Cursor)JSON.deserialize('{\"queryId\":\"0r8Ab12Cd34Ef56\"}',Database.Cursor.class); r=JSON.serialize(c); observed.put('value',r); } catch(Exception issue) { observed.put('exceptionType',issue.getTypeName()); observed.put('exceptionMessage',issue.getMessage()); } System.assert(false,'NATIVE_RESULT|C2|'+JSON.serialize(observed));}@IsTest static void observeLocalWrapper(){Object r; Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null}; try { Integer beforeQueries=Limits.getQueries(); Database.Cursor c=(Database.Cursor)JSON.deserialize('{\"queryId\":\"0r8Ab12Cd34Ef56\"}',Database.Cursor.class); List<Account> rows=new List<Account>{new Account(Name='owned shell local row')}; OwnedCursorShell64.View v=new OwnedCursorShell64.LocalView(c,rows); List<Account> page=v.page(); r=new Map<String,Object>{'handleNonnull'=>v.getHandle()!=null,'handleIdentity'=>v.getHandle()===c,'pageSize'=>page.size(),'reportedSize'=>v.size(),'rowName'=>page.isEmpty()?null:page[0].Name,'sameRows'=>page===rows,'queryDelta'=>Limits.getQueries()-beforeQueries}; observed.put('value',r); } catch(Exception issue) { observed.put('exceptionType',issue.getTypeName()); observed.put('exceptionMessage',issue.getMessage()); } System.assert(false,'NATIVE_RESULT|C3|'+JSON.serialize(observed));}@IsTest static void observeEmpty(){Object r; Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null}; try { Database.Cursor c=(Database.Cursor)JSON.deserialize('{}',Database.Cursor.class); r=new Map<String,Object>{'nonnull'=>c!=null,'serialized'=>JSON.serialize(c)}; observed.put('value',r); } catch(Exception issue) { observed.put('exceptionType',issue.getTypeName()); observed.put('exceptionMessage',issue.getMessage()); } System.assert(false,'NATIVE_RESULT|K1|'+JSON.serialize(observed));}@IsTest static void observeNull(){Object r; Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null}; try { r=JSON.deserialize('null',Database.Cursor.class)==null; observed.put('value',r); } catch(Exception issue) { observed.put('exceptionType',issue.getTypeName()); observed.put('exceptionMessage',issue.getMessage()); } System.assert(false,'NATIVE_RESULT|K2|'+JSON.serialize(observed));}@IsTest static void observeRegisteredRoundtrip(){Object r; Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null}; try { Savepoint point=Database.setSavepoint(); try { Account seed=new Account(Name='owned cursor json roundtrip'); insert seed; Id seedId=seed.Id; Database.Cursor original=Database.getCursor('SELECT Id,Name FROM Account WHERE Id = :seedId'); String encoded=JSON.serialize(original); Database.Cursor restored=(Database.Cursor)JSON.deserialize(encoded,Database.Cursor.class); List<SObject> rows=restored.fetch(0,1); r=new Map<String,Object>{'originalNonnull'=>original!=null,'restoredNonnull'=>restored!=null,'count'=>restored.getNumRecords(),'fetched'=>rows.size(),'sameId'=>rows.isEmpty()?false:rows[0].Id==seed.Id,'sameName'=>rows.isEmpty()?false:rows[0].get('Name')==seed.Name}; } finally { Database.rollback(point); } observed.put('value',r); } catch(Exception issue) { observed.put('exceptionType',issue.getTypeName()); observed.put('exceptionMessage',issue.getMessage()); } System.assert(false,'NATIVE_RESULT|K3|'+JSON.serialize(observed));}}"
+    },
+    "tests": [
+      "OwnedCursorShell64Test"
+    ],
+    "sourceSha256": {
+      "class:OwnedCursorShell64": "616cf523b751c673ea9e78b1dc9fe97c1c583f6fab9b9b86218ae376ff8aa8ba",
+      "class:OwnedCursorShell64Test": "080a3a699aad06dab303ec36e385272976df37210a8fa851a0a81ea5708fae63"
+    }
+  },
+  "rows": [
+    {
+      "id": "C1",
+      "testMethod": "observeAdmission",
+      "anonymous": "Object r; Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null}; try { Database.Cursor c=(Database.Cursor)JSON.deserialize('{\"queryId\":\"0r8Ab12Cd34Ef56\"}',Database.Cursor.class); r=new Map<String,Object>{'nonnull'=>c!=null,'isCursor'=>((Object)c) instanceof Database.Cursor}; observed.put('value',r); } catch(Exception issue) { observed.put('exceptionType',issue.getTypeName()); observed.put('exceptionMessage',issue.getMessage()); } System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|C1|'+JSON.serialize(observed));",
+      "anonymousSha256": "235d9244d53cc56076114904feb4fe263b2a716ff76daad327fe193d32abfa91",
+      "expected": {
+        "anonymous": {
+          "outcome": "runtime",
+          "value": {
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "value": {
+              "isCursor": true,
+              "nonnull": true
+            }
+          }
+        },
+        "isTest": {
+          "outcome": "runtime",
+          "value": {
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "value": {
+              "isCursor": true,
+              "nonnull": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C2",
+      "testMethod": "observeSerialization",
+      "anonymous": "Object r; Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null}; try { Database.Cursor c=(Database.Cursor)JSON.deserialize('{\"queryId\":\"0r8Ab12Cd34Ef56\"}',Database.Cursor.class); r=JSON.serialize(c); observed.put('value',r); } catch(Exception issue) { observed.put('exceptionType',issue.getTypeName()); observed.put('exceptionMessage',issue.getMessage()); } System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|C2|'+JSON.serialize(observed));",
+      "anonymousSha256": "f30d43509190ea555dc95614e1125123c25a4aaf1cad48aff35e7f76ddd4ca45",
+      "expected": {
+        "anonymous": {
+          "outcome": "runtime",
+          "value": {
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "value": "{\"queryId\":\"0r8Ab12Cd34Ef56\"}"
+          }
+        },
+        "isTest": {
+          "outcome": "runtime",
+          "value": {
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "value": "{\"queryId\":\"0r8Ab12Cd34Ef56\"}"
+          }
+        }
+      }
+    },
+    {
+      "id": "C3",
+      "testMethod": "observeLocalWrapper",
+      "anonymous": "Object r; Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null}; try { Integer beforeQueries=Limits.getQueries(); Database.Cursor c=(Database.Cursor)JSON.deserialize('{\"queryId\":\"0r8Ab12Cd34Ef56\"}',Database.Cursor.class); List<Account> rows=new List<Account>{new Account(Name='owned shell local row')}; OwnedCursorShell64.View v=new OwnedCursorShell64.LocalView(c,rows); List<Account> page=v.page(); r=new Map<String,Object>{'handleNonnull'=>v.getHandle()!=null,'handleIdentity'=>v.getHandle()===c,'pageSize'=>page.size(),'reportedSize'=>v.size(),'rowName'=>page.isEmpty()?null:page[0].Name,'sameRows'=>page===rows,'queryDelta'=>Limits.getQueries()-beforeQueries}; observed.put('value',r); } catch(Exception issue) { observed.put('exceptionType',issue.getTypeName()); observed.put('exceptionMessage',issue.getMessage()); } System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|C3|'+JSON.serialize(observed));",
+      "anonymousSha256": "058df1d4d9ddce0ef7c7b7e60e978e811371f6e8ff1e4a754a35998be010750e",
+      "expected": {
+        "anonymous": {
+          "outcome": "runtime",
+          "value": {
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "value": {
+              "handleIdentity": true,
+              "handleNonnull": true,
+              "pageSize": 1,
+              "queryDelta": 0,
+              "reportedSize": 1,
+              "rowName": "owned shell local row",
+              "sameRows": true
+            }
+          }
+        },
+        "isTest": {
+          "outcome": "runtime",
+          "value": {
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "value": {
+              "handleIdentity": true,
+              "handleNonnull": true,
+              "pageSize": 1,
+              "queryDelta": 0,
+              "reportedSize": 1,
+              "rowName": "owned shell local row",
+              "sameRows": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "K1",
+      "testMethod": "observeEmpty",
+      "anonymous": "Object r; Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null}; try { Database.Cursor c=(Database.Cursor)JSON.deserialize('{}',Database.Cursor.class); r=new Map<String,Object>{'nonnull'=>c!=null,'serialized'=>JSON.serialize(c)}; observed.put('value',r); } catch(Exception issue) { observed.put('exceptionType',issue.getTypeName()); observed.put('exceptionMessage',issue.getMessage()); } System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|K1|'+JSON.serialize(observed));",
+      "anonymousSha256": "5d3aff60a88c5f6d8b0fcd36430ae5dc481cb52575505ebf019680fdafa57a03",
+      "expected": {
+        "anonymous": {
+          "outcome": "runtime",
+          "value": {
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "value": {
+              "nonnull": true,
+              "serialized": "{\"queryId\":null}"
+            }
+          }
+        },
+        "isTest": {
+          "outcome": "runtime",
+          "value": {
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "value": {
+              "nonnull": true,
+              "serialized": "{\"queryId\":null}"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "K2",
+      "testMethod": "observeNull",
+      "anonymous": "Object r; Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null}; try { r=JSON.deserialize('null',Database.Cursor.class)==null; observed.put('value',r); } catch(Exception issue) { observed.put('exceptionType',issue.getTypeName()); observed.put('exceptionMessage',issue.getMessage()); } System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|K2|'+JSON.serialize(observed));",
+      "anonymousSha256": "149d06cd518b0217c77ca5f1727e43522be704308e6b57e4708305f71cf875c0",
+      "expected": {
+        "anonymous": {
+          "outcome": "runtime",
+          "value": {
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "value": true
+          }
+        },
+        "isTest": {
+          "outcome": "runtime",
+          "value": {
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "value": true
+          }
+        }
+      }
+    },
+    {
+      "id": "K3",
+      "testMethod": "observeRegisteredRoundtrip",
+      "anonymous": "Object r; Map<String,Object> observed=new Map<String,Object>{'exceptionType'=>null,'exceptionMessage'=>null}; try { Savepoint point=Database.setSavepoint(); try { Account seed=new Account(Name='owned cursor json roundtrip'); insert seed; Id seedId=seed.Id; Database.Cursor original=Database.getCursor('SELECT Id,Name FROM Account WHERE Id = :seedId'); String encoded=JSON.serialize(original); Database.Cursor restored=(Database.Cursor)JSON.deserialize(encoded,Database.Cursor.class); List<SObject> rows=restored.fetch(0,1); r=new Map<String,Object>{'originalNonnull'=>original!=null,'restoredNonnull'=>restored!=null,'count'=>restored.getNumRecords(),'fetched'=>rows.size(),'sameId'=>rows.isEmpty()?false:rows[0].Id==seed.Id,'sameName'=>rows.isEmpty()?false:rows[0].get('Name')==seed.Name}; } finally { Database.rollback(point); } observed.put('value',r); } catch(Exception issue) { observed.put('exceptionType',issue.getTypeName()); observed.put('exceptionMessage',issue.getMessage()); } System.debug(LoggingLevel.ERROR,'NATIVE_RESULT|K3|'+JSON.serialize(observed));",
+      "anonymousSha256": "088daefd6f5799241670c849c46ebdb0fa27a006754c316945df2a7724e5cbfb",
+      "expected": {
+        "anonymous": {
+          "outcome": "runtime",
+          "value": {
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "value": {
+              "count": 1,
+              "fetched": 1,
+              "originalNonnull": true,
+              "restoredNonnull": true,
+              "sameId": true,
+              "sameName": true
+            }
+          }
+        },
+        "isTest": {
+          "outcome": "runtime",
+          "value": {
+            "exceptionMessage": null,
+            "exceptionType": null,
+            "value": {
+              "count": 1,
+              "fetched": 1,
+              "originalNonnull": true,
+              "restoredNonnull": true,
+              "sameId": true,
+              "sameName": true
+            }
+          }
+        }
+      }
+    }
+  ],
+  "carries": [
+    {
+      "shape": "Opaque handle native getNumRecords/fetch",
+      "nativeValue": null,
+      "reason": "No native count/fetch is called on a synthetic queryId. Admission and list-backed wrapper observations do not establish hosted query resolution, result counts, expiry or method exceptions; local unsupported boundary remains.",
+      "observedReferences": [
+        "C1/anonymous",
+        "C1/isTest",
+        "C2/anonymous",
+        "C2/isTest",
+        "K3/anonymous",
+        "K3/isTest"
+      ],
+      "observedBoundary": "C1 admits this shell; C2 serializes its exact queryId; K3 resolves only the real current-transaction cursor. None establishes fake-handle fetch/count."
+    },
+    {
+      "shape": "Other queryId payloads and deserializeStrict",
+      "nativeValue": null,
+      "reason": "This packet observes one well-formed 15-character opaque token through deserialize only. Numeric, malformed, different-prefix/length and strict-route shapes remain unobserved; no rejection contract is inferred.",
+      "observedReferences": [
+        "C1/anonymous",
+        "C1/isTest",
+        "C2/anonymous",
+        "C2/isTest"
+      ]
+    },
+    {
+      "shape": "API62/67/68",
+      "nativeValue": null,
+      "reason": "The actual sourceAPI64 helper/test and anonymous route were captured first. These rows do not establish other API-version behavior."
+    },
+    {
+      "shape": "Original typed instanceof probe",
+      "nativeValue": "Operation instanceof is always true since an instance of Database.Cursor is always an instance of Database.Cursor",
+      "reason": "The first synthetic source was rejected before runtime. The accepted retry casts its operand to Object; rejected source and deployment are retained separately, with no runtime answer inferred."
+    }
+  ],
+  "provenance": {
+    "oracle": "native-capture",
+    "orgIdSha256": "e337ac51c8ee4bc77d3eb2abd2317af396cb6cf0876f48ab51e48a38b1bfaa3c",
+    "sourceApiVersion": "64.0",
+    "anonymousTransportApi": "64.0",
+    "namedTransportApi": "64.0",
+    "classMetadata": {
+      "OwnedCursorShell64": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>\n",
+      "OwnedCursorShell64Test": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>64.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "sha256": {
+      "native-capture": "cac4612fab1727dc995b4b133199dd100edc2a352505a848b5859b5c305b9b9b",
+      "native-capture #2": "21180cce94135212684208b85a13d0def825ee7670231c01a3e2ae0dc8834712",
+      "native-capture #3": "eb09649bec990ea56cd51b30fca891a501d72aa5ec12a6cc979c95b6bcbc58f8",
+      "native-capture #4": "64dd582f22e4a7294d68489a06863401070dc794d08c41d38790ddc3241ea06b",
+      "native-capture #5": "fee61c684bb4b76e40caa2290640f6143ae2a940982fefb44d15f589c15addba",
+      "native-capture #6": "fa47e682d67a555b85d40e369698039b056252e6b2f9c064ad374a913c8e65ea",
+      "native-capture #7": "d7e0cce689a37059676c17af4c197adbf7a952aa319434936daee834d088a43d",
+      "native-capture #8": "4938e2cc80870dea0d1be44da02fc74278e5534cf2b8474e940a2a6c29e12b2d",
+      "native-capture #9": "a1eb1c95c338edbc67078da69648976f158436a8182b475f8c82a6d25ea47f5b",
+      "native-capture #10": "5734bd46c57f8dff3b178f8337c8301b3a1b7f0ec719a4b39b04162d694df382",
+      "native-capture #11": "35ef703d9054e42df38915dd9ca089418c5278bae26aa34903912be3001253d4",
+      "native-capture #12": "215618b9336958c497f53400880c9b060fb6aba1c87b065a7a6c02717569c7a5",
+      "native-capture #13": "58adc4cfceb76eb2435eaac777d7d31a36b964cd332d94d022783a86aef81a93",
+      "native-capture #14": "616cf523b751c673ea9e78b1dc9fe97c1c583f6fab9b9b86218ae376ff8aa8ba",
+      "native-capture #15": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4",
+      "native-capture #16": "080a3a699aad06dab303ec36e385272976df37210a8fa851a0a81ea5708fae63",
+      "native-capture #17": "545a9b6d1d6413d4ca50d68c57b828e4a69e63a995ae785548539540425286e4"
+    }
+  }
+}

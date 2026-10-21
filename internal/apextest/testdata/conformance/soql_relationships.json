@@ -1,7 +1,8 @@
 {
   "apiVersions": [
     "62.0",
-    "67.0"
+    "67.0",
+    "68.0"
   ],
   "Declarations": {
     "SR": "public class SR {\n public String keys(SObject row) {\n  List<String> xs=new List<String>(row.getPopulatedFieldsAsMap().keySet());\n  xs.sort(); return String.join(xs,'|');\n }\n public String childNames(List<Contact> rows) {\n  List<String> xs=new List<String>();\n  for(Contact row:rows) xs.add(row.LastName);\n  return String.join(xs,'|');\n }\n public String names(List<SObject> rows,String field) {\n  List<String> xs=new List<String>();\n  for(SObject row:rows) xs.add(String.valueOf(row.get(field)));\n  return String.join(xs,'|');\n }\n public String kind(SObject row) {\n  return row==null?'null':String.valueOf(row.getSObjectType());\n }\n}"

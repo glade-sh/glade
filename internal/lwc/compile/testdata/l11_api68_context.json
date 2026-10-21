@@ -1,0 +1,200 @@
+{
+  "api": "68.0",
+  "native_oracle": "native-capture",
+  "native_sha256": "502e95d61e1307bf8dc255eaf26ce031ac1b247757ce4a4e9dbd79f885c0c2d2",
+  "context_oracle": "native-capture#ctrl_metadata_child_edit",
+  "compile_fixture_git_commit": "capture-revision-052892481942536629508328764776734678369590764211384180711185206694034457250027",
+  "compile_fixture_sha256": "3fe47172a4512c0704596353ac3686f4eeaf0552c42b7cc29971d949a06fb801",
+  "native_release_url_prefix": "/services/data/v68.0/",
+  "local_release_url_prefix": "/services/data/v67.0/",
+  "error_id_paths": {
+    "r_relatedInfo_invalid": [
+      "/returned/error/body/id"
+    ],
+    "r_relatedInfos_invalid": [
+      "/returned/error/body/id"
+    ],
+    "r_relatedRecords_fields_missing": [
+      "/returned/error/body/id"
+    ],
+    "r_relatedRecords_relation_bad": [
+      "/returned/error/body/id"
+    ],
+    "r_relatedInfo_bad_relation": [
+      "/returned/error/body/id"
+    ],
+    "r_listInfo_object_empty": [
+      "/returned/error/body/id"
+    ],
+    "r_listInfo_object_unknown": [
+      "/returned/error/body/id"
+    ],
+    "r_objectLists_object_unknown": [
+      "/returned/error/body/id"
+    ],
+    "r_listRecords_object_empty": [
+      "/returned/error/body/id"
+    ],
+    "r_listRecords_object_unknown": [
+      "/returned/error/body/id"
+    ],
+    "r_listInfo_view_empty": [
+      "/returned/error/body/id"
+    ],
+    "r_listInfo_view_unknown": [
+      "/returned/error/body/id"
+    ],
+    "r_listInfo_view_qualified": [
+      "/returned/error/body/id"
+    ],
+    "r_listRecords_view_empty": [
+      "/returned/error/body/id"
+    ],
+    "r_listRecords_view_unknown": [
+      "/returned/error/body/id"
+    ],
+    "r_listRecords_view_qualified": [
+      "/returned/error/body/id"
+    ],
+    "r_legacy_view_missing": [
+      "/returned/error/body/id"
+    ],
+    "r_preferences_second": [
+      "/returned/error/body/id"
+    ],
+    "r_preferences_empty": [
+      "/returned/error/body/id"
+    ],
+    "r_preferences_unknown": [
+      "/returned/error/body/id"
+    ],
+    "r_preferences_qualified": [
+      "/returned/error/body/id"
+    ],
+    "r_createList_null": [
+      "/cleanup/thrown/body/id",
+      "/readback/error/body/id"
+    ],
+    "r_createList_empty": [
+      "/cleanup/thrown/body/id",
+      "/readback/error/body/id"
+    ],
+    "r_createList_bad_object": [
+      "/call/thrown/body/id",
+      "/cleanup/thrown/body/id",
+      "/readback/error/body/id"
+    ],
+    "r_createList_converted": [
+      "/call/thrown/body/id",
+      "/cleanup/thrown/body/id",
+      "/readback/error/body/id"
+    ],
+    "r_createList_missing_view": [
+      "/call/thrown/body/id",
+      "/cleanup/thrown/body/id",
+      "/extraCleanup/thrown/body/id",
+      "/readback/error/body/id"
+    ],
+    "r_updateList_bad_object": [
+      "/call/thrown/body/id"
+    ],
+    "r_updateList_missing_view": [
+      "/call/thrown/body/id",
+      "/extraCleanup/thrown/body/id"
+    ],
+    "r_deleteList_normal": [
+      "/cleanup/thrown/body/id",
+      "/readback/error/body/id"
+    ],
+    "r_deleteList_bad_object": [
+      "/call/thrown/body/id"
+    ],
+    "r_deleteList_converted": [
+      "/cleanup/thrown/body/id",
+      "/readback/error/body/id"
+    ],
+    "r_deleteList_missing_view": [
+      "/call/thrown/body/id",
+      "/extraCleanup/thrown/body/id"
+    ],
+    "r_mutation_hosted_boundary": [
+      "/call/thrown/body/id"
+    ],
+    "r_createList_nested_dto": [
+      "/call/thrown/body/id",
+      "/cleanup/thrown/body/id",
+      "/readback/error/body/id"
+    ]
+  },
+  "release_url_paths": {
+    "r_relatedInfos_normal": [
+      "/returned/data/relatedLists/0/relatedListInfoUrl"
+    ],
+    "r_relatedInfos_record_type_null": [
+      "/returned/data/relatedLists/0/relatedListInfoUrl"
+    ],
+    "r_objectLists_object_lowercase": [
+      "/returned/data/lists/0/url"
+    ],
+    "r_objectLists_normal": [
+      "/returned/data/lists/0/url"
+    ],
+    "r_objectLists_one": [
+      "/returned/data/lists/0/url"
+    ],
+    "r_objectLists_null": [
+      "/returned/data/lists/0/url"
+    ],
+    "r_objectLists_query_empty": [
+      "/returned/data/lists/0/url"
+    ],
+    "r_legacy_view_null": [
+      "/returned/data/lists/0/listUiUrl",
+      "/returned/data/lists/1/listUiUrl",
+      "/returned/data/lists/10/listUiUrl",
+      "/returned/data/lists/11/listUiUrl",
+      "/returned/data/lists/12/listUiUrl",
+      "/returned/data/lists/13/listUiUrl",
+      "/returned/data/lists/2/listUiUrl",
+      "/returned/data/lists/3/listUiUrl",
+      "/returned/data/lists/4/listUiUrl",
+      "/returned/data/lists/5/listUiUrl",
+      "/returned/data/lists/6/listUiUrl",
+      "/returned/data/lists/7/listUiUrl",
+      "/returned/data/lists/8/listUiUrl",
+      "/returned/data/lists/9/listUiUrl"
+    ],
+    "r_legacy_view_empty": [
+      "/returned/data/lists/0/listUiUrl",
+      "/returned/data/lists/1/listUiUrl",
+      "/returned/data/lists/10/listUiUrl",
+      "/returned/data/lists/11/listUiUrl",
+      "/returned/data/lists/12/listUiUrl",
+      "/returned/data/lists/13/listUiUrl",
+      "/returned/data/lists/2/listUiUrl",
+      "/returned/data/lists/3/listUiUrl",
+      "/returned/data/lists/4/listUiUrl",
+      "/returned/data/lists/5/listUiUrl",
+      "/returned/data/lists/6/listUiUrl",
+      "/returned/data/lists/7/listUiUrl",
+      "/returned/data/lists/8/listUiUrl",
+      "/returned/data/lists/9/listUiUrl"
+    ],
+    "r_legacy_view_undefined": [
+      "/returned/data/lists/0/listUiUrl",
+      "/returned/data/lists/1/listUiUrl",
+      "/returned/data/lists/10/listUiUrl",
+      "/returned/data/lists/11/listUiUrl",
+      "/returned/data/lists/12/listUiUrl",
+      "/returned/data/lists/13/listUiUrl",
+      "/returned/data/lists/2/listUiUrl",
+      "/returned/data/lists/3/listUiUrl",
+      "/returned/data/lists/4/listUiUrl",
+      "/returned/data/lists/5/listUiUrl",
+      "/returned/data/lists/6/listUiUrl",
+      "/returned/data/lists/7/listUiUrl",
+      "/returned/data/lists/8/listUiUrl",
+      "/returned/data/lists/9/listUiUrl"
+    ]
+  }
+}

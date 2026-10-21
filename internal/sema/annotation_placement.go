@@ -16,7 +16,23 @@ import (
 var annotationDuplicateLocal = regexp.MustCompile(`redeclares local variable "([^"]+)" in the same scope$`)
 
 func annotationCatalogForTarget(typ typesys.TypeSymbol, target, name, typeName string, modifiers []string, annotations []apexast.Annotation) []diagnostic.Diagnostic {
-	catalog := annotationCatalogDiagnostics(typ.File, typ.Range, annotations)
+	catalogAnnotations := annotations
+	if target == "methods" || target == "fields" || target == "classes" {
+		catalogAnnotations = nil
+		for _, annotation := range annotations {
+			// Native compiler observations accept one positional string on
+			// opaque class, field and method annotations. Other argument
+			// shapes still pass through catalog validation.
+			_, known := apexlang.LookupAnnotation(annotation.Name)
+			if !known && len(annotation.Arguments) == 1 && annotation.Arguments[0].Name == "" {
+				if _, literal := apexStringLiteralValue(annotation.Arguments[0].Value); literal {
+					continue
+				}
+			}
+			catalogAnnotations = append(catalogAnnotations, annotation)
+		}
+	}
+	catalog := annotationCatalogDiagnostics(typ.File, typ.Range, catalogAnnotations)
 	if placement := annotationPlacementDiagnostics(typ, target, name, typeName, modifiers, annotations); len(placement) > 0 {
 		for i := range catalog {
 			catalog[i].NativeMessage = placement[0].NativeMessage

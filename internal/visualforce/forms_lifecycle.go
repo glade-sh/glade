@@ -45,6 +45,11 @@ func formCommandKey(node *MarkupNode, ctx *RenderContext) string {
 	return visualforceComponentClientID(node, ctx)
 }
 
+func isFormActionComponent(node *MarkupNode) bool {
+	return isApexStructureTag(node, "commandButton") || isApexStructureTag(node, "commandLink") ||
+		isApexStructureTag(node, "actionFunction") || isApexStructureTag(node, "actionSupport") || isApexStructureTag(node, "actionPoller")
+}
+
 func ordinaryCommandSharesAction(node *MarkupNode, ctx *RenderContext) bool {
 	if ctx.ComponentReferences == nil {
 		return false
@@ -59,7 +64,7 @@ func ordinaryCommandSharesAction(node *MarkupNode, ctx *RenderContext) bool {
 	}
 	for other, otherScope := range ctx.ComponentReferences.scopes {
 		if other != node && otherScope.container == scope.container &&
-			(isApexStructureTag(other, "commandButton") || isApexStructureTag(other, "commandLink")) &&
+			isFormActionComponent(other) &&
 			strings.TrimSpace(other.Attribute("action")) == action {
 			return true
 		}
@@ -72,7 +77,11 @@ func repeatedCommandSubmission(node *MarkupNode, ctx *RenderContext) (script, ma
 		return "", "", ""
 	}
 	marker = ` data-vf-command="` + html.EscapeString(formCommandKey(node, ctx)) + `"`
-	hook = `GLADEVF.selectCommand(this);`
+	// AJAX puts its command identity directly in request data. Leaving a
+	// hidden form marker would misidentify a later unique-action postback.
+	if !node.HasAttribute("rerender") {
+		hook = `GLADEVF.selectCommand(this);`
+	}
 	if ctx.repeatCommandScripts == nil {
 		ctx.repeatCommandScripts = map[string]bool{}
 	}
@@ -166,7 +175,9 @@ func prepareFormLifecycle(tree *MarkupNode, req *PageRenderRequest, machine *vm.
 		if form != nil && (isApexStructureTag(node, "commandButton") || isApexStructureTag(node, "commandLink")) && strings.TrimSpace(node.Attribute("rerender")) != "" {
 			hasPartialCommand = true
 		}
-		if form != nil && (isApexStructureTag(node, "commandButton") || isApexStructureTag(node, "commandLink")) &&
+		// API59/67 AJAX captures submit typed inputs through the same phases
+		// as command controls, including region and immediate boundaries.
+		if form != nil && isFormActionComponent(node) &&
 			strings.TrimSpace(node.Attribute("action")) == strings.TrimSpace(req.Action) && req.Action != "" {
 			formID := req.FormValues["__vf_form"]
 			commandID := req.FormValues["__vf_command"]

@@ -1,0 +1,216 @@
+{
+  "apiVersions": [
+    "62.0",
+    "68.0"
+  ],
+  "route": "anonymous-declared-class",
+  "metadata": {
+    "force-app/main/default/objects/A28Access__c/A28Access__c.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><enableActivities>false</enableActivities><enableReports>false</enableReports><label>A28 Access Oracle</label><nameField><label>Oracle Name</label><type>Text</type></nameField><pluralLabel>A28 Access Oracles</pluralLabel><sharingModel>Private</sharingModel></CustomObject>\n",
+    "force-app/main/default/objects/A28Access__c/fields/Payload__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Payload__c</fullName><label>Payload</label><length>80</length><type>Text</type></CustomField>\n",
+    "force-app/main/default/objects/A28Access__c/sharingReasons/Oracle__c.sharingReason-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<SharingReason xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Oracle__c</fullName><label>Oracle</label></SharingReason>\n",
+    "force-app/main/default/permissionsets/A28OracleAccess.permissionset-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fieldPermissions><editable>true</editable><field>A28Access__c.Payload__c</field><readable>true</readable></fieldPermissions><label>A28 Oracle Access</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>A28Access__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>\n",
+    "sfdx-project.json": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+    "glade.yml": "org:\n  domainUrl: https://offline.my.salesforce.com\n"
+  },
+  "oracle": {
+    "path": "native-capture",
+    "sha256": "cbcea47483f19cbac1892e949238d7874e18de1b265d1872c6d97aebb3b45667",
+    "rowsSHA256": "35aeb99f6d875bf6d0704ded35bd432c418553d429e3e67b7a0accc5fafc6b50",
+    "sourceBindingsSHA256": "db3ee69b1336e2c96557f9ea4b710b4dcb014041eaf7b1d11fbb2e2763c73fba",
+    "manifestSHA256": "09a3986abe3834e2297830b6543e402de94bac52ce53a6120a5ded973e6f66ed",
+    "canariesPassed": 8,
+    "cleanupSHA256": "db9208a698e25c452ce8cb25a39d2ad4f7c666f83667dbb6611b0fd73aec654c",
+    "orgDeletedVerified": true,
+    "qualification": "Before test only: six typed methods executed inside anonymous-declared classes. No native API67 or named route claim; not part of the main265 qualification.",
+    "superseded": {
+      "source": "native-capture",
+      "api62SHA256": "74c7799963adb0933f518a6ad92de2718d83fa2a6a2988a69b642236d1f4c79f",
+      "api67SHA256": "74c7799963adb0933f518a6ad92de2718d83fa2a6a2988a69b642236d1f4c79f",
+      "rows": {
+        "NC007": {
+          "62.0": "COMPILE_ERROR\t",
+          "67.0": "COMPILE_ERROR\t"
+        },
+        "NC008": {
+          "62.0": "COMPILE_ERROR\t",
+          "67.0": "COMPILE_ERROR\t"
+        },
+        "NC009": {
+          "62.0": "COMPILE_ERROR\t",
+          "67.0": "COMPILE_ERROR\t"
+        },
+        "NC010": {
+          "62.0": "COMPILE_ERROR\t",
+          "67.0": "COMPILE_ERROR\t"
+        },
+        "NC011": {
+          "62.0": "COMPILE_ERROR\t",
+          "67.0": "COMPILE_ERROR\t"
+        },
+        "NC012": {
+          "62.0": "COMPILE_ERROR\t",
+          "67.0": "COMPILE_ERROR\t"
+        }
+      },
+      "qualification": "Blank payloads were unobserved artifacts, not valid native rejection evidence. Fresh API62 answers supersede them; no freshAPI67 answer is inferred."
+    }
+  },
+  "cases": [
+    {
+      "id": "NC007",
+      "code": "Object r; class A28LiteralLevel {public Type token(){return AccessLevel.class;}} r=new A28LiteralLevel().token()!=null; pq.out('NC007',r);",
+      "caseSHA256": "1068e3d65cba9db48157ed1abfc678fe2a88e9dd5eb5e1885554f728b1445493",
+      "anonymous": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nObject r; class A28LiteralLevel {public Type token(){return AccessLevel.class;}} r=new A28LiteralLevel().token()!=null; pq.out('NC007',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "anonymousSHA256": "1c272ee4410be417e2f997a44b3a728e36ccf9f075019c97f8a94dddfe09ad91",
+      "expected": "true",
+      "native": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 8,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "FamilyProbeTransportException: GLADE_FAMILY_ROWS|[\"P|NC007|true\"]"
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 8,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "FamilyProbeTransportException: GLADE_FAMILY_ROWS|[\"P|NC007|true\"]"
+        }
+      }
+    },
+    {
+      "id": "NC008",
+      "code": "Object r; class A28LiteralType {public Type token(){return AccessType.class;}} r=new A28LiteralType().token()!=null; pq.out('NC008',r);",
+      "caseSHA256": "f08812393c35a953cfb9bddf39c2c2a9e71f8a8fe02c888663ed2825b55cb21b",
+      "anonymous": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nObject r; class A28LiteralType {public Type token(){return AccessType.class;}} r=new A28LiteralType().token()!=null; pq.out('NC008',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "anonymousSHA256": "fae2844a5f6106cadba7f406fb12f0e472f225ce0e3007ec6bd3921985bca842",
+      "expected": "true",
+      "native": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 8,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "FamilyProbeTransportException: GLADE_FAMILY_ROWS|[\"P|NC008|true\"]"
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 8,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "FamilyProbeTransportException: GLADE_FAMILY_ROWS|[\"P|NC008|true\"]"
+        }
+      }
+    },
+    {
+      "id": "NC009",
+      "code": "Object r; class A28LiteralObject {public Type token(){return A28Access__c.class;}} r=new A28LiteralObject().token()!=null; pq.out('NC009',r);",
+      "caseSHA256": "e982d66a132f964801c0c9651e9ffd4533d04446a1fd0e1f0189520e37592ddb",
+      "anonymous": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nObject r; class A28LiteralObject {public Type token(){return A28Access__c.class;}} r=new A28LiteralObject().token()!=null; pq.out('NC009',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "anonymousSHA256": "c2402dc29c6557dcf1fca29cca7217714c33589e9e54565eb9f8b59d95c33370",
+      "expected": "true",
+      "native": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 8,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "FamilyProbeTransportException: GLADE_FAMILY_ROWS|[\"P|NC009|true\"]"
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 8,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "FamilyProbeTransportException: GLADE_FAMILY_ROWS|[\"P|NC009|true\"]"
+        }
+      }
+    },
+    {
+      "id": "NC010",
+      "code": "Object r; class A28LiteralSystemLevel {public Type token(){return System.AccessLevel.class;}} r=new A28LiteralSystemLevel().token()!=null; pq.out('NC010',r);",
+      "caseSHA256": "1eac618cd3706837b1340174e73fd6fd08689111c255abe032ce2ab3fad71ba2",
+      "anonymous": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nObject r; class A28LiteralSystemLevel {public Type token(){return System.AccessLevel.class;}} r=new A28LiteralSystemLevel().token()!=null; pq.out('NC010',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "anonymousSHA256": "f6ea9c0eda4a021681bfc7ff65379c3d12e8430eafb9392f66526b91b22ac157",
+      "expected": "true",
+      "native": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 8,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "FamilyProbeTransportException: GLADE_FAMILY_ROWS|[\"P|NC010|true\"]"
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 8,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "FamilyProbeTransportException: GLADE_FAMILY_ROWS|[\"P|NC010|true\"]"
+        }
+      }
+    },
+    {
+      "id": "NC011",
+      "code": "Object r; class A28LiteralSystemType {public Type token(){return System.AccessType.class;}} r=new A28LiteralSystemType().token()!=null; pq.out('NC011',r);",
+      "caseSHA256": "4e4612404d4fce6ff69417f0dad0ceaaa1f86b231a0ae64365b4897f6aea9c57",
+      "anonymous": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nObject r; class A28LiteralSystemType {public Type token(){return System.AccessType.class;}} r=new A28LiteralSystemType().token()!=null; pq.out('NC011',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "anonymousSHA256": "b05ab5e31aedb0f1671cdc7f4429256774c689b7fd36bbcfd0ae519554f0bf69",
+      "expected": "true",
+      "native": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 8,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "FamilyProbeTransportException: GLADE_FAMILY_ROWS|[\"P|NC011|true\"]"
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 8,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "FamilyProbeTransportException: GLADE_FAMILY_ROWS|[\"P|NC011|true\"]"
+        }
+      }
+    },
+    {
+      "id": "NC012",
+      "code": "Object r; class A28LiteralSchemaObject {public Type token(){return Schema.A28Access__c.class;}} r=new A28LiteralSchemaObject().token()!=null; pq.out('NC012',r);",
+      "caseSHA256": "6cca956c3ffe9cc1483dc8f9546815275827ac1ec7d00c180bc7ee7ce5b7c493",
+      "anonymous": "class P { public List<String> rows = new List<String>();\n  public void out(String id, Object v) { rows.add('P|' + id + '|' + String.valueOf(v)); }\n  public void err(String id, Exception e) { rows.add('P|' + id + '|EXC|' + e.getTypeName() + '|' + e.getMessage()); }\n}\nP pq = new P();\nObject r; class A28LiteralSchemaObject {public Type token(){return Schema.A28Access__c.class;}} r=new A28LiteralSchemaObject().token()!=null; pq.out('NC012',r);\nclass FamilyProbeTransportException extends Exception {}\nthrow new FamilyProbeTransportException('GLADE_FAMILY_ROWS|' + JSON.serialize(pq.rows));\n",
+      "anonymousSHA256": "8f8f2e830a00ba1e44afb86d9e71cc2107d62e44094f533ecd6263cd3d462864",
+      "expected": "true",
+      "native": {
+        "62.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 8,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "FamilyProbeTransportException: GLADE_FAMILY_ROWS|[\"P|NC012|true\"]"
+        },
+        "68.0": {
+          "compiled": true,
+          "compileProblem": null,
+          "line": 8,
+          "column": 1,
+          "success": false,
+          "exceptionMessage": "FamilyProbeTransportException: GLADE_FAMILY_ROWS|[\"P|NC012|true\"]"
+        }
+      }
+    }
+  ]
+}

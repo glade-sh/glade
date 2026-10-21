@@ -137,6 +137,9 @@ func TestVisualforceExpressionContractFamily(t *testing.T) {
 		}}
 		machine := vm.New(nil)
 		machine.SetOrg(&org)
+		// V09 supplied_text_input_granted_runtime (API59/67): supplied field
+		// widgets still require an explicitly bound, authorized principal.
+		authorizeFieldRenderingFixture(t, &org, machine)
 		toStringProgram, err := vm.CompileAnonymous(`return 'object-toString-value';`)
 		if err != nil {
 			t.Fatal(err)
@@ -192,6 +195,8 @@ func TestVisualforceExpressionContractFamily(t *testing.T) {
 		}}
 		machine := vm.New(nil)
 		machine.SetOrg(&org)
+		// Same captured granted-access precondition as the listed inputs above.
+		authorizeFieldRenderingFixture(t, &org, machine)
 		account := vm.Object("Account")
 		account.Fields["Name"] = vm.String("Acme")
 		controller := vm.Object("ExpressionListController")

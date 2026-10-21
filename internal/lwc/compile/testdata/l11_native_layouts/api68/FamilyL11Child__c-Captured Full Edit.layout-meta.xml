@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Layout xmlns="http://soap.sforce.com/2006/04/metadata">
+  <layoutSections>
+    <label>Information</label>
+    <style>OneColumn</style>
+    <editHeading>false</editHeading>
+    <layoutColumns>
+      <layoutItems>
+        <behavior>Required</behavior>
+        <field>Name</field>
+      </layoutItems>
+      <layoutItems>
+        <behavior>Edit</behavior>
+        <field>OwnerId</field>
+      </layoutItems>
+    </layoutColumns>
+  </layoutSections>
+  <layoutSections>
+    <label>System Information</label>
+    <style>OneColumn</style>
+    <editHeading>false</editHeading>
+    <layoutColumns>
+      <layoutItems>
+        <behavior>Readonly</behavior>
+        <field>CreatedById</field>
+      </layoutItems>
+      <layoutItems>
+        <behavior>Readonly</behavior>
+        <field>CreatedDate</field>
+      </layoutItems>
+      <layoutItems>
+        <behavior>Readonly</behavior>
+        <field>LastModifiedById</field>
+      </layoutItems>
+      <layoutItems>
+        <behavior>Readonly</behavior>
+        <field>LastModifiedDate</field>
+      </layoutItems>
+    </layoutColumns>
+  </layoutSections>
+</Layout>

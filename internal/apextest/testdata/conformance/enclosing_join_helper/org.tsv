@@ -1,0 +1,7 @@
+source_api	method	observation
+62.0	fieldCall	"{""value"":""7,blue""}"
+62.0	localCall	"{""value"":""7,blue""}"
+67.0	fieldCall	"{""value"":""7,blue""}"
+67.0	localCall	"{""value"":""7,blue""}"
+68.0	fieldCall	"{""value"":""7,blue""}"
+68.0	localCall	"{""value"":""7,blue""}"

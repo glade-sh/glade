@@ -1,0 +1,5 @@
+case	shape
+return_before	Indexed List insertion before the current element followed by return
+return_after	Indexed List insertion after the current element followed by return
+break_before	Indexed List insertion before the current element followed by break
+break_after	Indexed List insertion after the current element followed by break

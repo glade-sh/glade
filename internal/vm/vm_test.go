@@ -439,7 +439,7 @@ func TestDefaultOrgUserIDMatchesWholeRecordConversion(t *testing.T) {
 	}
 	cases := map[string][]storage.Record{
 		"preferred local user":   {user("005-local-user", nil), user("005000000000009", nil)},
-		"preferred fixture user": {user("005000000000001", map[string]storage.Value{"Id": storage.IDValue("005000000000001")})},
+		"preferred fixture user": {user(storage.DefaultUserID, map[string]storage.Value{"Id": storage.IDValue(storage.DefaultUserID)})},
 		"lowest non-automated":   {user("005000000000007", nil), user("005000000000003", nil)},
 		"automated preferred is skipped": {
 			user("005-local-user", map[string]storage.Value{"UserType": storage.StringValue("AutomatedProcess")}),
@@ -4520,50 +4520,6 @@ try {
 	}
 }
 
-func TestFrameworkQualifiedMethodKeysEqualTreatsSObjectListTypesCovariant(t *testing.T) {
-	machine := New(nil)
-	left := Object("framework_QualifiedMethod")
-	left.Fields["typeName"] = String("DML__sfdc_ApexStub")
-	left.Fields["methodName"] = String("updateRecords")
-	left.Fields["methodArgTypes"] = List(platformScalar("Type", "List<Account>"))
-
-	right := Object("framework_QualifiedMethod")
-	right.Fields["typeName"] = String("DML__sfdc_ApexStub")
-	right.Fields["methodName"] = String("updateRecords")
-	right.Fields["methodArgTypes"] = List(platformScalar("Type", "List<SObject>"))
-
-	matched, handled := machine.frameworkQualifiedMethodKeysEqual(left, right)
-	if !handled || !matched {
-		t.Fatalf("frameworkQualifiedMethodKeysEqual matched=%v handled=%v", matched, handled)
-	}
-}
-
-func TestFrameworkMatchesAllArgsTreatsAnySObjectAsSObjectListElementMatcher(t *testing.T) {
-	machine := New(nil)
-	methodArg := Object("framework_MethodArgValues")
-	records := List(Object("Account"))
-	records.Type = "List<Account>"
-	methodArg.Fields["argValues"] = List(records)
-	matchers := List(Object("fflib_MatcherDefinitions.AnySObject"))
-
-	matched, handled, err := machine.frameworkMatchesAllArgs(methodArg, matchers)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !handled || !matched {
-		t.Fatalf("frameworkMatchesAllArgs matched=%v handled=%v", matched, handled)
-	}
-}
-
-func TestFrameworkMatcherEquivalentTreatsPagePathsCaseInsensitive(t *testing.T) {
-	if !frameworkMatcherEquivalent(String("/testPage"), String("/TESTPAGE")) {
-		t.Fatal("page path strings should match without case sensitivity")
-	}
-	if frameworkMatcherEquivalent(String("testPage"), String("TESTPAGE")) {
-		t.Fatal("non-path strings should remain case-sensitive")
-	}
-}
-
 func TestExecInstanceOfSObjectCollectionGenerics(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Account> accounts = new List<Account>{new Account(Name = 'Test')};
@@ -4675,41 +4631,6 @@ System.assert(!('bob' instanceof Id));
 	}
 	if got := machine.evalInstanceOf(platformScalar("Id", "001000000000001AAA"), "String"); got.Kind != ValueBool || !got.Bool {
 		t.Fatalf("platform Id instanceof String = %v, want true", got)
-	}
-}
-
-func TestFrameworkNativeMatcherPrimitiveAndReferenceSemantics(t *testing.T) {
-	machine := New(nil)
-	one := List(String("bob"), String("tom"))
-	two := List(String("bob"), String("tom"))
-	refEq := Object("framework_MatcherDefinitions.RefEq")
-	refEq.Fields["toMatch"] = one
-	if matched, _, err := machine.frameworkMatcherMatches(refEq, one); err != nil || !matched {
-		t.Fatalf("RefEq same reference matched=%v err=%v", matched, err)
-	}
-	if matched, _, err := machine.frameworkMatcherMatches(refEq, two); err != nil || matched {
-		t.Fatalf("RefEq equal different list matched=%v err=%v", matched, err)
-	}
-
-	anyDatetime := Object("framework_MatcherDefinitions.AnyDatetime")
-	if matched, _, err := machine.frameworkMatcherMatches(anyDatetime, platformScalar("Date", "2024-02-29")); err != nil || !matched {
-		t.Fatalf("AnyDatetime date matched=%v err=%v", matched, err)
-	}
-	if matched, _, err := machine.frameworkMatcherMatches(anyDatetime, platformScalar("Datetime", "2024-02-29T12:34:56Z")); err != nil || !matched {
-		t.Fatalf("AnyDatetime datetime matched=%v err=%v", matched, err)
-	}
-
-	anyInteger := Object("framework_MatcherDefinitions.AnyInteger")
-	longValue := Int(9)
-	longValue.Type = "Long"
-	if matched, _, err := machine.frameworkMatcherMatches(anyInteger, Int(9)); err != nil || !matched {
-		t.Fatalf("AnyInteger integer matched=%v err=%v", matched, err)
-	}
-	if matched, _, err := machine.frameworkMatcherMatches(anyInteger, longValue); err != nil || matched {
-		t.Fatalf("AnyInteger long matched=%v err=%v", matched, err)
-	}
-	if matched, _, err := machine.frameworkMatcherMatches(anyInteger, Decimal(9.99)); err != nil || matched {
-		t.Fatalf("AnyInteger decimal matched=%v err=%v", matched, err)
 	}
 }
 
@@ -6190,7 +6111,7 @@ func singleSOQLAssignmentOrg() storage.OrgState {
 			"Name": {APIName: "Name", Type: storage.FieldString},
 		}},
 		Records: map[storage.ID]storage.Record{
-			"00D000000000001": {ID: "00D000000000001", Object: "Organization", Fields: map[string]storage.Value{"Name": storage.StringValue("Local")}},
+			"00D000000000mH2": {ID: "00D000000000mH2", Object: "Organization", Fields: map[string]storage.Value{"Name": storage.StringValue("Local")}},
 		},
 	}
 	return org
@@ -7807,6 +7728,132 @@ func TestCronNextFireTimeOneShotFixedDate(t *testing.T) {
 	}
 }
 
+func TestCronNextFireTimeEvaluatesFieldsInTheClockZone(t *testing.T) {
+	west, err := time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name, expression, want string
+		location               *time.Location
+	}{
+		{"summer", "0 0 17 28 5 ? 2027", "2027-05-29T00:00:00Z", west},
+		{"winter", "0 0 17 28 11 ? 2027", "2027-11-29T01:00:00Z", west},
+		{"year boundary", "0 0 0 1 1 ? 2028", "2028-01-01T08:00:00Z", west},
+		{"far future west", "0 0 0 28 5 ? 2099", "2099-05-28T07:00:00Z", west},
+		{"far future GMT", "0 0 0 28 5 ? 2099", "2099-05-28T00:00:00Z", time.UTC},
+		{"daily", "0 0 9 * * ?", "2026-10-14T16:00:00Z", west},
+		{"hourly", "0 0 * * * ?", "2026-10-13T19:00:00Z", west},
+		{"quarter hour", "0 15 * * * ?", "2026-10-13T19:15:00Z", west},
+		{"monthly day", "0 0 0 15 * ?", "2026-10-15T07:00:00Z", west},
+		{"weekdays", "0 0 9 ? * MON-FRI", "2026-10-14T16:00:00Z", west},
+		{"month end", "0 0 9 L * ?", "2026-10-31T16:00:00Z", west},
+		{"spring gap", "0 30 2 14 3 ? 2027", "", west},
+		{"spring GMT", "0 30 2 14 3 ? 2027", "2027-03-14T02:30:00Z", time.UTC},
+		{"autumn overlap", "0 30 1 7 11 ? 2027", "2027-11-07T09:30:00Z", west},
+		{"autumn GMT", "0 30 1 7 11 ? 2027", "2027-11-07T01:30:00Z", time.UTC},
+		{"past", "0 0 17 28 5 ? 2020", "", west},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			now := time.Date(2026, 10, 13, 18, 30, 0, 0, time.UTC).In(tc.location)
+			got, ok := cronNextFireTime(tc.expression, now)
+			if got != tc.want || ok != (tc.want != "") {
+				t.Fatalf("next fire = %q (%v), want %q", got, ok, tc.want)
+			}
+		})
+	}
+}
+
+func TestCronClockUsesTheRunningUsersTimeZone(t *testing.T) {
+	machine := New(nil)
+	machine.fakeNow = time.Date(2026, 5, 29, 12, 0, 0, 0, time.UTC)
+
+	// Without a configured user the clock stays in UTC.
+	if got, ok := cronNextFireTime("0 0 0 28 5 ? 2099", machine.cronClock()); !ok || got != "2099-05-28T00:00:00Z" {
+		t.Fatalf("default user next fire = %q (%v), want 2099-05-28T00:00:00Z", got, ok)
+	}
+
+	// A user in America/Los_Angeles schedules in local time: midnight on that
+	// date is 07:00 UTC while daylight saving time is in effect.
+	machine.SetCurrentUser(storage.Record{ID: "005-cron-zone", Object: "User", Fields: map[string]storage.Value{"TimeZoneSidKey": storage.StringValue("America/Los_Angeles")}})
+	if got, ok := cronNextFireTime("0 0 0 28 5 ? 2099", machine.cronClock()); !ok || got != "2099-05-28T07:00:00Z" {
+		t.Fatalf("Los Angeles next fire = %q (%v), want 2099-05-28T07:00:00Z", got, ok)
+	}
+	// Winter time uses the standard offset (UTC-8).
+	if got, ok := cronNextFireTime("0 0 0 28 12 ? 2099", machine.cronClock()); !ok || got != "2099-12-28T08:00:00Z" {
+		t.Fatalf("Los Angeles winter next fire = %q (%v), want 2099-12-28T08:00:00Z", got, ok)
+	}
+}
+
+func TestScheduledCronTriggerTimeZoneAndNextFireValues(t *testing.T) {
+	org := storage.NewOrgState()
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.fakeNow = time.Date(2026, 10, 13, 18, 30, 17, 500000000, time.UTC)
+	machine.SetCurrentUser(storage.Record{ID: "005-clock-user", Object: "User", Fields: map[string]storage.Value{"TimeZoneSidKey": storage.StringValue("America/Los_Angeles")}})
+	if err := machine.RegisterClass(Class{Name: "ClockWorker", Interfaces: []string{"Schedulable"}}); err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Id job = System.schedule('clock job', '0 30 1 7 11 ? 2027', new ClockWorker());
+CronTrigger cronTrig = [SELECT Id, NextFireTime, StartTime, PreviousFireTime, EndTime, CronExpression, TimeZoneSidKey, State, TimesTriggered FROM CronTrigger WHERE Id = :job];
+System.assertEquals('America/Los_Angeles', cronTrig.TimeZoneSidKey);
+System.assertEquals('2027-11-07 09:30:00', cronTrig.NextFireTime.formatGmt('yyyy-MM-dd HH:mm:ss'));
+System.assertEquals('2026-10-13 18:30:17', cronTrig.StartTime.formatGmt('yyyy-MM-dd HH:mm:ss'));
+System.assertEquals(null, cronTrig.PreviousFireTime);
+System.assertEquals(null, cronTrig.EndTime);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestScheduledBatchTriggerUsesRelativeGMTTime(t *testing.T) {
+	org := storage.NewOrgState()
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.fakeNow = time.Date(2026, 10, 13, 18, 30, 17, 500000000, time.UTC)
+	machine.SetCurrentUser(storage.Record{ID: "005-clock-user", Object: "User", Fields: map[string]storage.Value{"TimeZoneSidKey": storage.StringValue("America/Los_Angeles")}})
+	if err := machine.RegisterClass(Class{Name: "ClockBatch", Interfaces: []string{"Database.Batchable<SObject>"}}); err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Id job = System.scheduleBatch(new ClockBatch(), 'clock batch', 5, 1);
+CronTrigger cronTrig = [SELECT Id, NextFireTime, StartTime, PreviousFireTime, EndTime, CronExpression, TimeZoneSidKey, State, TimesTriggered FROM CronTrigger WHERE Id = :job];
+System.assertEquals('GMT', cronTrig.TimeZoneSidKey);
+System.assertEquals('SimpleTrigger', cronTrig.CronExpression);
+System.assertEquals(cronTrig.NextFireTime, cronTrig.StartTime);
+System.assertEquals('2026-10-13 18:35:17', cronTrig.NextFireTime.formatGmt('yyyy-MM-dd HH:mm:ss'));
+System.assertEquals(null, cronTrig.PreviousFireTime);
+System.assertEquals(null, cronTrig.EndTime);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTypeForNameScheduledInterfaces(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertNotEquals(null, Type.forName('System.Schedulable'));
+System.assertNotEquals(null, Type.forName('System.SchedulableContext'));
+System.assertNotEquals(null, Type.forName('CronTrigger'));
+System.assertEquals(null, Type.forName('System.CronTrigger'));
+System.assertEquals(null, Type.forName('System.String'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStringJoinUsesCustomIterableIterator(t *testing.T) {
 	iteratorProgram, err := CompileAnonymous(`
 return new List<String>{'first', 'second'}.iterator();
@@ -7838,5 +7885,122 @@ System.assertEquals('first,second', String.join(client, ','));
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// Native NS410A/B and NS480A/B: same-named user cast targets stay unqualified.
+func TestTypeTextCastUsesResolvedClassIdentity(t *testing.T) {
+	machine := New(nil)
+	for _, name := range []string{"Pattern", "Url"} {
+		if err := machine.RegisterClass(Class{Name: name}); err != nil {
+			t.Fatal(err)
+		}
+		if got := machine.typeExceptionDisplayName(strings.ToLower(name)); got != name {
+			t.Fatalf("user %s cast target = %q", name, got)
+		}
+		if got := machine.typeExceptionDisplayName("List<" + name + ">"); got != "List<"+name+">" {
+			t.Fatalf("user list cast target = %q", got)
+		}
+		if got := machine.typeExceptionDisplayName("System." + name); got != "System."+name {
+			t.Fatalf("explicit platform cast target = %q", got)
+		}
+	}
+	for _, name := range []string{"Pattern", "Url"} {
+		machine := New(nil)
+		if err := machine.RegisterClass(Class{Name: name, PlatformType: true}); err != nil {
+			t.Fatal(err)
+		}
+		if got := machine.typeExceptionDisplayName(name); got != "System."+name {
+			t.Fatalf("resolved platform %s cast target = %q", name, got)
+		}
+	}
+}
+
+// Ordinary instances keep the base List[...] and Type:{...} cycle rendering.
+func TestTypeTextStubFormattingDoesNotApplyToOrdinaryInstances(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Ordinary", Fields: map[string]Field{
+		"items": {Name: "items", Type: "List<String>"},
+		"self":  {Name: "self", Type: "Object"},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	value := Object("Ordinary")
+	value.Fields["items"] = List(String("a"))
+	value.Fields["self"] = value
+	want := "Ordinary:[items=List[a], self=Ordinary:{...}]"
+	if got := machine.defaultObjectDisplayString(value); got != want {
+		t.Fatalf("ordinary text = %q, want %q", got, want)
+	}
+	if got := machine.nestedDisplayString(value, make(map[uint64]bool)); got != "Ordinary:{items=List[a], self=Ordinary:{...}}" {
+		t.Fatalf("ordinary object nested in stub state = %q", got)
+	}
+}
+
+func TestTypeTextGlobalDescribePreservesBaseCountsAndOtherDescribeMaps(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Widget__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__c"}}
+	machine.SetOrg(&org)
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectType> globalMap = Schema.getGlobalDescribe();
+System.assertEquals(2, globalMap.size());
+System.assertEquals(2, globalMap.values().size());
+System.assertEquals(1, globalMap.keySet().size());
+System.assert(globalMap.keySet().contains('widget__c'));
+System.assert(!globalMap.keySet().contains('Widget__c'));
+System.assert(globalMap.containsKey('WIDGET__C'));
+System.assertNotEquals(null, globalMap.get('WIDGET__C'));
+System.assert(!globalMap.containsKey('foreign__widget__c'));
+System.assertEquals(null, globalMap.get('foreign__widget__c'));
+System.assertEquals(2, Schema.getAppDescribe('app').size());
+System.assertEquals(2, Schema.getAppDescribe('app').values().size());
+System.assert(Schema.getAppDescribe('app').keySet().contains('Widget__c'));
+System.assertEquals(2, Schema.getModuleDescribe('module').size());
+System.assertEquals(2, Schema.getModuleDescribe('module').values().size());
+System.assert(Schema.getModuleDescribe('module').keySet().contains('Widget__c'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	// The raw app/module map retains base foreign-prefix resolution.
+	raw := machine.schemaGlobalDescribe()
+	if isGlobalDescribeMap(raw) {
+		t.Fatal("base map acquired global-only marker")
+	}
+	if !machine.specialMapContainsKey(raw, String("foreign__widget__c")) {
+		t.Fatal("base app/module containsKey behavior changed")
+	}
+	if _, ok := machine.specialMapLookup(raw, String("foreign__widget__c")); !ok {
+		t.Fatal("base app/module get behavior changed")
+	}
+}
+
+// Source labels keep their prior platform-name behavior; NS4 backs targets only.
+func TestTypeTextCastPlatformSourceWithSameNamedUserClass(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Pattern"}); err != nil {
+		t.Fatal(err)
+	}
+	pattern, err := patternCompile([]Value{String("a")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := machine.typeExceptionSourceName(runtimeValueTypeName(pattern)); got != "System.Pattern" {
+		t.Fatalf("platform Pattern source label = %q", got)
+	}
+	if got := machine.typeExceptionDisplayName("Pattern"); got != "Pattern" {
+		t.Fatalf("user Pattern target label = %q", got)
+	}
+	_, err = machine.coerceCast("Account", pattern)
+	var thrown *apexThrowError
+	if !errors.As(err, &thrown) {
+		t.Fatalf("platform Pattern cast error = %v", err)
+	}
+	if got := thrown.value.Fields["message"].Text; got != "Invalid conversion from runtime type System.Pattern to Account" {
+		t.Fatalf("platform Pattern cast message = %q", got)
 	}
 }

@@ -1,0 +1,5 @@
+source_api	method	observation
+62.0	initialUpload	{"latest":true,"number":"1"}
+62.0	secondUpload	{"secondLatest":true,"secondNumber":"2","firstLatest":false,"firstNumber":"1"}
+67.0	initialUpload	{"latest":true,"number":"1"}
+67.0	secondUpload	{"secondLatest":true,"secondNumber":"2","firstLatest":false,"firstNumber":"1"}

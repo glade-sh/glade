@@ -1,0 +1,586 @@
+{
+  "marker": "NATIVE_MAP_OBSERVATION",
+  "nativeRowCount": 12,
+  "carriedKeyCount": 4,
+  "captures": [
+    {
+      "callerApi": "62.0",
+      "helperApi": "46.0",
+      "transportApi": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "className": "MapListObservation62",
+      "helperName": "MapListShelf46",
+      "sources": {
+        "force-app/main/default/classes/MapListObservation62.cls": {
+          "source": "@IsTest private class MapListObservation62 {\n private static Map<String,Object> fault(Exception error) {\n  return new Map<String,Object>{'status'=>'exception','type'=>error.getTypeName(),'message'=>error.getMessage()};\n }\n private static void inspect(Boolean matching, Integer groupNumber) {\n  Map<String,Object> out=new Map<String,Object>{'callerApi'=>'62.0','helperApi'=>'46.0','namespaceContext'=>'none','matching'=>matching};\n  SObject seed;\n  try {\n   seed=matching ? (SObject)new GlyphCard__c(Name='Matching record') : (SObject)new AtlasCard__c(Name='Different record');\n   insert seed;\n   out.put('fixture',new Map<String,Object>{'status'=>'accepted','actualType'=>String.valueOf(seed.getSObjectType()),'hasId'=>seed.Id!=null});\n  } catch(Exception error) {\n   out.put('fixture',fault(error));\n   emit(out,groupNumber); return;\n  }\n  List<SObject> raw=new List<SObject>{seed};\n  List<GlyphCard__c> declared;\n  Boolean helperAccepted=false;\n  try {\n   declared=MapListShelf46.read(raw);\n   helperAccepted=true;\n   out.put('helperCastReturn',new Map<String,Object>{'status'=>'accepted','declaredType'=>'List<GlyphCard__c>'});\n  } catch(Exception error) { out.put('helperCastReturn',fault(error)); }\n  if(!helperAccepted) {\n   out.put('constructor',new Map<String,Object>{'status'=>'not-run','reason'=>'helper failed'});\n   out.put('retrieval',new Map<String,Object>{'status'=>'not-run','reason'=>'helper failed'});\n   out.put('putAll',new Map<String,Object>{'status'=>'not-run','reason'=>'helper failed'});\n   emit(out,groupNumber); return;\n  }\n  try { out.put('listToken',new Map<String,Object>{'status'=>'accepted','value'=>String.valueOf(declared.getSObjectType())}); }\n  catch(Exception error) { out.put('listToken',fault(error)); }\n  Map<Id,GlyphCard__c> keyed;\n  Boolean constructorAccepted=false;\n  try {\n   keyed=new Map<Id,GlyphCard__c>(declared);\n   constructorAccepted=true;\n   out.put('constructor',new Map<String,Object>{'status'=>'accepted'});\n  } catch(Exception error) { out.put('constructor',fault(error)); }\n  if(constructorAccepted) {\n   try { out.put('mapSummary',new Map<String,Object>{'status'=>'accepted','size'=>keyed.size(),'containsSeed'=>keyed.containsKey(seed.Id)}); }\n   catch(Exception error) { out.put('mapSummary',fault(error)); }\n   try { out.put('mapToken',new Map<String,Object>{'status'=>'accepted','value'=>String.valueOf(keyed.getSObjectType())}); }\n   catch(Exception error) { out.put('mapToken',fault(error)); }\n   try {\n    GlyphCard__c value=keyed.get(seed.Id);\n    out.put('retrieval',new Map<String,Object>{'status'=>'accepted','declaredType'=>'GlyphCard__c','actualType'=>String.valueOf(value.getSObjectType()),'sameId'=>value.Id==seed.Id});\n   } catch(Exception error) { out.put('retrieval',fault(error)); }\n   try {\n    Object boxed=keyed.get(seed.Id);\n    SObject value=(SObject)boxed;\n    out.put('boxedRetrieval',new Map<String,Object>{'status'=>'accepted','actualType'=>String.valueOf(value.getSObjectType()),'sameId'=>value.Id==seed.Id});\n   } catch(Exception error) { out.put('boxedRetrieval',fault(error)); }\n  } else { out.put('retrieval',new Map<String,Object>{'status'=>'not-run','reason'=>'constructor failed'}); }\n  Map<Id,GlyphCard__c> appended=new Map<Id,GlyphCard__c>();\n  try { appended.putAll(declared); out.put('putAll',new Map<String,Object>{'status'=>'accepted'}); }\n  catch(Exception error) { out.put('putAll',fault(error)); }\n  try { out.put('putAllSummary',new Map<String,Object>{'status'=>'accepted','size'=>appended.size(),'containsSeed'=>appended.containsKey(seed.Id)}); }\n  catch(Exception error) { out.put('putAllSummary',fault(error)); }\n  if(appended.containsKey(seed.Id)) {\n   try {\n    GlyphCard__c value=appended.get(seed.Id);\n    out.put('putAllRetrieval',new Map<String,Object>{'status'=>'accepted','actualType'=>String.valueOf(value.getSObjectType()),'sameId'=>value.Id==seed.Id});\n   } catch(Exception error) { out.put('putAllRetrieval',fault(error)); }\n  }\n  emit(out,groupNumber);\n }\n private static void emit(Map<String,Object> out, Integer groupNumber) {\n  List<String> keys=groupNumber==1\n   ? new List<String>{'fixture','helperCastReturn','listToken','constructor','mapSummary','mapToken'}\n   : groupNumber==2 ? new List<String>{'helperCastReturn','retrieval','boxedRetrieval'}\n   : new List<String>{'helperCastReturn','putAll','putAllSummary','putAllRetrieval'};\n  Map<String,Object> selected=new Map<String,Object>();\n  for(String key:keys) if(out.containsKey(key)) selected.put(key,out.get(key));\n  System.assertEquals('NATIVE_MAP_OBSERVATION',JSON.serialize(selected));\n }\n @IsTest static void differentConstruct(){inspect(false,1);}\n @IsTest static void differentRetrieve(){inspect(false,2);}\n @IsTest static void differentPutAll(){inspect(false,3);}\n @IsTest static void matchingConstruct(){inspect(true,1);}\n @IsTest static void matchingRetrieve(){inspect(true,2);}\n @IsTest static void matchingPutAll(){inspect(true,3);}\n}\n",
+          "sha256": "c97d2ff57a1f6f61c3e161ab8f3eb45777e48dbd00ed497b0eee1e3677f9c8fd"
+        },
+        "force-app/main/default/classes/MapListObservation62.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+        },
+        "force-app/main/default/classes/MapListShelf46.cls": {
+          "source": "public class MapListShelf46 { public static List<GlyphCard__c> read(List<SObject> rows){ return (List<GlyphCard__c>)rows; } }\n",
+          "sha256": "7b8c5aaa0fcdd8808c9f70333e9b7b504e9a536bd9609ba7fd94edeeba69ae67"
+        },
+        "force-app/main/default/classes/MapListShelf46.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>46.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "7d21b08c13aa2b367079f3605766080d448638131683895210129eefbe0ecf1d"
+        },
+        "force-app/main/default/objects/AtlasCard__c.object": {
+          "source": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>AtlasCard__c</label><pluralLabel>AtlasCard__cs</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><sharingModel>ReadWrite</sharingModel></CustomObject>",
+          "sha256": "df87fbbb22834d337f090d0d4b13ef62071c0bfe9c8535baf1a84c6e7b764295"
+        },
+        "force-app/main/default/objects/GlyphCard__c.object": {
+          "source": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>GlyphCard__c</label><pluralLabel>GlyphCard__cs</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><sharingModel>ReadWrite</sharingModel></CustomObject>",
+          "sha256": "d054e04320cbee086f31999d83df60fce4d3f8ee8bc3bdb8fa1836059ab220e5"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        }
+      },
+      "deployment": {
+        "id": "0AfEc00000p0r0XKAQ",
+        "checkOnly": true,
+        "done": true,
+        "status": "Failed",
+        "success": false,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 6,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 6,
+        "createdDate": "2026-10-15T01:47:56.000Z",
+        "completedDate": "2026-10-15T01:48:03.000Z"
+      },
+      "rawSha256": {
+        "deploy.json": "6343e90f11227dcf1d0d269791b7d296bcd02c6fe70483cbfb682b659394fb44",
+        "org.tsv": "84bb36ef9cf4918bb49fac47e7b7e1348657199d07829a6239a795a7967c0621",
+        "SOURCE-DIGESTS.json": "498dcd84cca3ef60b6482facacf41b87ed89e7eb06fde4bc8bc660f0c008c64e",
+        "RAW-DIGESTS.json": "cad13dd48e10f6a4f73ca39681966f29258abb0c35006fae0229ca631e5b2259",
+        "ORG-RUN.txt": "ac2ce3326ba41fc7cd8a66a875716643d23d127bf5c4f9b53ecea629640b2616",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09"
+      },
+      "rows": [
+        {
+          "method": "differentConstruct",
+          "nativeFailure": {
+            "id": "01pEc00001GlxisIAB",
+            "message": "System.AssertException: Assertion Failed: Expected: NATIVE_MAP_OBSERVATION, Actual: {\"mapToken\":{\"value\":\"GlyphCard__c\",\"status\":\"accepted\"},\"mapSummary\":{\"containsSeed\":true,\"size\":1,\"status\":\"accepted\"},\"constructor\":{\"status\":\"accepted\"},\"listToken\":{\"value\":null,\"status\":\"accepted\"},\"helperCastReturn\":{\"declaredType\":\"List<GlyphCard__c>\",\"status\":\"accepted\"},\"fixture\":{\"hasId\":true,\"actualType\":\"AtlasCard__c\",\"status\":\"accepted\"}}",
+            "methodName": "differentConstruct",
+            "name": "MapListObservation62",
+            "namespace": null,
+            "packageName": "MapListObservation62",
+            "stackTrace": "Class.MapListObservation62.emit: line 74, column 1\nClass.MapListObservation62.inspect: line 65, column 1\nClass.MapListObservation62.differentConstruct: line 76, column 1",
+            "time": 107,
+            "type": "Class"
+          },
+          "native": {
+            "mapToken": {
+              "value": "GlyphCard__c",
+              "status": "accepted"
+            },
+            "mapSummary": {
+              "containsSeed": true,
+              "size": 1,
+              "status": "accepted"
+            },
+            "constructor": {
+              "status": "accepted"
+            },
+            "listToken": {
+              "value": null,
+              "status": "accepted"
+            },
+            "helperCastReturn": {
+              "declaredType": "List<GlyphCard__c>",
+              "status": "accepted"
+            },
+            "fixture": {
+              "hasId": true,
+              "actualType": "AtlasCard__c",
+              "status": "accepted"
+            }
+          },
+          "carriedKeys": [
+            {
+              "key": "listToken",
+              "reason": "The native null list token differs from the current declared-record token. Collection getSObjectType reflection is tracked separately; retain this native key without asserting its value here."
+            }
+          ]
+        },
+        {
+          "method": "differentPutAll",
+          "nativeFailure": {
+            "id": "01pEc00001GlxisIAB",
+            "message": "System.AssertException: Assertion Failed: Expected: NATIVE_MAP_OBSERVATION, Actual: {\"putAllSummary\":{\"containsSeed\":false,\"size\":0,\"status\":\"accepted\"},\"putAll\":{\"message\":\"Collection store exception putting all List<SObject> into Map<Id,GlyphCard__c>\",\"type\":\"System.TypeException\",\"status\":\"exception\"},\"helperCastReturn\":{\"declaredType\":\"List<GlyphCard__c>\",\"status\":\"accepted\"}}",
+            "methodName": "differentPutAll",
+            "name": "MapListObservation62",
+            "namespace": null,
+            "packageName": "MapListObservation62",
+            "stackTrace": "Class.MapListObservation62.emit: line 74, column 1\nClass.MapListObservation62.inspect: line 65, column 1\nClass.MapListObservation62.differentPutAll: line 78, column 1",
+            "time": 84,
+            "type": "Class"
+          },
+          "native": {
+            "putAllSummary": {
+              "containsSeed": false,
+              "size": 0,
+              "status": "accepted"
+            },
+            "putAll": {
+              "message": "Collection store exception putting all List<SObject> into Map<Id,GlyphCard__c>",
+              "type": "System.TypeException",
+              "status": "exception"
+            },
+            "helperCastReturn": {
+              "declaredType": "List<GlyphCard__c>",
+              "status": "accepted"
+            }
+          },
+          "carriedKeys": []
+        },
+        {
+          "method": "differentRetrieve",
+          "nativeFailure": {
+            "id": "01pEc00001GlxisIAB",
+            "message": "System.AssertException: Assertion Failed: Expected: NATIVE_MAP_OBSERVATION, Actual: {\"boxedRetrieval\":{\"message\":\"Invalid conversion from runtime type AtlasCard__c to GlyphCard__c\",\"type\":\"System.TypeException\",\"status\":\"exception\"},\"retrieval\":{\"message\":\"Invalid conversion from runtime type AtlasCard__c to GlyphCard__c\",\"type\":\"System.TypeException\",\"status\":\"exception\"},\"helperCastReturn\":{\"declaredType\":\"List<GlyphCard__c>\",\"status\":\"accepted\"}}",
+            "methodName": "differentRetrieve",
+            "name": "MapListObservation62",
+            "namespace": null,
+            "packageName": "MapListObservation62",
+            "stackTrace": "Class.MapListObservation62.emit: line 74, column 1\nClass.MapListObservation62.inspect: line 65, column 1\nClass.MapListObservation62.differentRetrieve: line 77, column 1",
+            "time": 93,
+            "type": "Class"
+          },
+          "native": {
+            "boxedRetrieval": {
+              "message": "Invalid conversion from runtime type AtlasCard__c to GlyphCard__c",
+              "type": "System.TypeException",
+              "status": "exception"
+            },
+            "retrieval": {
+              "message": "Invalid conversion from runtime type AtlasCard__c to GlyphCard__c",
+              "type": "System.TypeException",
+              "status": "exception"
+            },
+            "helperCastReturn": {
+              "declaredType": "List<GlyphCard__c>",
+              "status": "accepted"
+            }
+          },
+          "carriedKeys": []
+        },
+        {
+          "method": "matchingConstruct",
+          "nativeFailure": {
+            "id": "01pEc00001GlxisIAB",
+            "message": "System.AssertException: Assertion Failed: Expected: NATIVE_MAP_OBSERVATION, Actual: {\"mapToken\":{\"value\":\"GlyphCard__c\",\"status\":\"accepted\"},\"mapSummary\":{\"containsSeed\":true,\"size\":1,\"status\":\"accepted\"},\"constructor\":{\"status\":\"accepted\"},\"listToken\":{\"value\":null,\"status\":\"accepted\"},\"helperCastReturn\":{\"declaredType\":\"List<GlyphCard__c>\",\"status\":\"accepted\"},\"fixture\":{\"hasId\":true,\"actualType\":\"GlyphCard__c\",\"status\":\"accepted\"}}",
+            "methodName": "matchingConstruct",
+            "name": "MapListObservation62",
+            "namespace": null,
+            "packageName": "MapListObservation62",
+            "stackTrace": "Class.MapListObservation62.emit: line 74, column 1\nClass.MapListObservation62.inspect: line 65, column 1\nClass.MapListObservation62.matchingConstruct: line 79, column 1",
+            "time": 94,
+            "type": "Class"
+          },
+          "native": {
+            "mapToken": {
+              "value": "GlyphCard__c",
+              "status": "accepted"
+            },
+            "mapSummary": {
+              "containsSeed": true,
+              "size": 1,
+              "status": "accepted"
+            },
+            "constructor": {
+              "status": "accepted"
+            },
+            "listToken": {
+              "value": null,
+              "status": "accepted"
+            },
+            "helperCastReturn": {
+              "declaredType": "List<GlyphCard__c>",
+              "status": "accepted"
+            },
+            "fixture": {
+              "hasId": true,
+              "actualType": "GlyphCard__c",
+              "status": "accepted"
+            }
+          },
+          "carriedKeys": [
+            {
+              "key": "listToken",
+              "reason": "The native null list token differs from the current declared-record token. Collection getSObjectType reflection is tracked separately; retain this native key without asserting its value here."
+            }
+          ]
+        },
+        {
+          "method": "matchingPutAll",
+          "nativeFailure": {
+            "id": "01pEc00001GlxisIAB",
+            "message": "System.AssertException: Assertion Failed: Expected: NATIVE_MAP_OBSERVATION, Actual: {\"putAllRetrieval\":{\"sameId\":true,\"actualType\":\"GlyphCard__c\",\"status\":\"accepted\"},\"putAllSummary\":{\"containsSeed\":true,\"size\":1,\"status\":\"accepted\"},\"putAll\":{\"status\":\"accepted\"},\"helperCastReturn\":{\"declaredType\":\"List<GlyphCard__c>\",\"status\":\"accepted\"}}",
+            "methodName": "matchingPutAll",
+            "name": "MapListObservation62",
+            "namespace": null,
+            "packageName": "MapListObservation62",
+            "stackTrace": "Class.MapListObservation62.emit: line 74, column 1\nClass.MapListObservation62.inspect: line 65, column 1\nClass.MapListObservation62.matchingPutAll: line 81, column 1",
+            "time": 87,
+            "type": "Class"
+          },
+          "native": {
+            "putAllRetrieval": {
+              "sameId": true,
+              "actualType": "GlyphCard__c",
+              "status": "accepted"
+            },
+            "putAllSummary": {
+              "containsSeed": true,
+              "size": 1,
+              "status": "accepted"
+            },
+            "putAll": {
+              "status": "accepted"
+            },
+            "helperCastReturn": {
+              "declaredType": "List<GlyphCard__c>",
+              "status": "accepted"
+            }
+          },
+          "carriedKeys": []
+        },
+        {
+          "method": "matchingRetrieve",
+          "nativeFailure": {
+            "id": "01pEc00001GlxisIAB",
+            "message": "System.AssertException: Assertion Failed: Expected: NATIVE_MAP_OBSERVATION, Actual: {\"boxedRetrieval\":{\"sameId\":true,\"actualType\":\"GlyphCard__c\",\"status\":\"accepted\"},\"retrieval\":{\"sameId\":true,\"actualType\":\"GlyphCard__c\",\"declaredType\":\"GlyphCard__c\",\"status\":\"accepted\"},\"helperCastReturn\":{\"declaredType\":\"List<GlyphCard__c>\",\"status\":\"accepted\"}}",
+            "methodName": "matchingRetrieve",
+            "name": "MapListObservation62",
+            "namespace": null,
+            "packageName": "MapListObservation62",
+            "stackTrace": "Class.MapListObservation62.emit: line 74, column 1\nClass.MapListObservation62.inspect: line 65, column 1\nClass.MapListObservation62.matchingRetrieve: line 80, column 1",
+            "time": 93,
+            "type": "Class"
+          },
+          "native": {
+            "boxedRetrieval": {
+              "sameId": true,
+              "actualType": "GlyphCard__c",
+              "status": "accepted"
+            },
+            "retrieval": {
+              "sameId": true,
+              "actualType": "GlyphCard__c",
+              "declaredType": "GlyphCard__c",
+              "status": "accepted"
+            },
+            "helperCastReturn": {
+              "declaredType": "List<GlyphCard__c>",
+              "status": "accepted"
+            }
+          },
+          "carriedKeys": []
+        }
+      ]
+    },
+    {
+      "callerApi": "62.0",
+      "helperApi": "62.0",
+      "transportApi": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "className": "MapListObservation62",
+      "helperName": "MapListShelf62",
+      "sources": {
+        "force-app/main/default/classes/MapListObservation62.cls": {
+          "source": "@IsTest private class MapListObservation62 {\n private static Map<String,Object> fault(Exception error) {\n  return new Map<String,Object>{'status'=>'exception','type'=>error.getTypeName(),'message'=>error.getMessage()};\n }\n private static void inspect(Boolean matching, Integer groupNumber) {\n  Map<String,Object> out=new Map<String,Object>{'callerApi'=>'62.0','helperApi'=>'62.0','namespaceContext'=>'none','matching'=>matching};\n  SObject seed;\n  try {\n   seed=matching ? (SObject)new GlyphCard__c(Name='Matching record') : (SObject)new AtlasCard__c(Name='Different record');\n   insert seed;\n   out.put('fixture',new Map<String,Object>{'status'=>'accepted','actualType'=>String.valueOf(seed.getSObjectType()),'hasId'=>seed.Id!=null});\n  } catch(Exception error) {\n   out.put('fixture',fault(error));\n   emit(out,groupNumber); return;\n  }\n  List<SObject> raw=new List<SObject>{seed};\n  List<GlyphCard__c> declared;\n  Boolean helperAccepted=false;\n  try {\n   declared=MapListShelf62.read(raw);\n   helperAccepted=true;\n   out.put('helperCastReturn',new Map<String,Object>{'status'=>'accepted','declaredType'=>'List<GlyphCard__c>'});\n  } catch(Exception error) { out.put('helperCastReturn',fault(error)); }\n  if(!helperAccepted) {\n   out.put('constructor',new Map<String,Object>{'status'=>'not-run','reason'=>'helper failed'});\n   out.put('retrieval',new Map<String,Object>{'status'=>'not-run','reason'=>'helper failed'});\n   out.put('putAll',new Map<String,Object>{'status'=>'not-run','reason'=>'helper failed'});\n   emit(out,groupNumber); return;\n  }\n  try { out.put('listToken',new Map<String,Object>{'status'=>'accepted','value'=>String.valueOf(declared.getSObjectType())}); }\n  catch(Exception error) { out.put('listToken',fault(error)); }\n  Map<Id,GlyphCard__c> keyed;\n  Boolean constructorAccepted=false;\n  try {\n   keyed=new Map<Id,GlyphCard__c>(declared);\n   constructorAccepted=true;\n   out.put('constructor',new Map<String,Object>{'status'=>'accepted'});\n  } catch(Exception error) { out.put('constructor',fault(error)); }\n  if(constructorAccepted) {\n   try { out.put('mapSummary',new Map<String,Object>{'status'=>'accepted','size'=>keyed.size(),'containsSeed'=>keyed.containsKey(seed.Id)}); }\n   catch(Exception error) { out.put('mapSummary',fault(error)); }\n   try { out.put('mapToken',new Map<String,Object>{'status'=>'accepted','value'=>String.valueOf(keyed.getSObjectType())}); }\n   catch(Exception error) { out.put('mapToken',fault(error)); }\n   try {\n    GlyphCard__c value=keyed.get(seed.Id);\n    out.put('retrieval',new Map<String,Object>{'status'=>'accepted','declaredType'=>'GlyphCard__c','actualType'=>String.valueOf(value.getSObjectType()),'sameId'=>value.Id==seed.Id});\n   } catch(Exception error) { out.put('retrieval',fault(error)); }\n   try {\n    Object boxed=keyed.get(seed.Id);\n    SObject value=(SObject)boxed;\n    out.put('boxedRetrieval',new Map<String,Object>{'status'=>'accepted','actualType'=>String.valueOf(value.getSObjectType()),'sameId'=>value.Id==seed.Id});\n   } catch(Exception error) { out.put('boxedRetrieval',fault(error)); }\n  } else { out.put('retrieval',new Map<String,Object>{'status'=>'not-run','reason'=>'constructor failed'}); }\n  Map<Id,GlyphCard__c> appended=new Map<Id,GlyphCard__c>();\n  try { appended.putAll(declared); out.put('putAll',new Map<String,Object>{'status'=>'accepted'}); }\n  catch(Exception error) { out.put('putAll',fault(error)); }\n  try { out.put('putAllSummary',new Map<String,Object>{'status'=>'accepted','size'=>appended.size(),'containsSeed'=>appended.containsKey(seed.Id)}); }\n  catch(Exception error) { out.put('putAllSummary',fault(error)); }\n  if(appended.containsKey(seed.Id)) {\n   try {\n    GlyphCard__c value=appended.get(seed.Id);\n    out.put('putAllRetrieval',new Map<String,Object>{'status'=>'accepted','actualType'=>String.valueOf(value.getSObjectType()),'sameId'=>value.Id==seed.Id});\n   } catch(Exception error) { out.put('putAllRetrieval',fault(error)); }\n  }\n  emit(out,groupNumber);\n }\n private static void emit(Map<String,Object> out, Integer groupNumber) {\n  List<String> keys=groupNumber==1\n   ? new List<String>{'fixture','helperCastReturn','listToken','constructor','mapSummary','mapToken'}\n   : groupNumber==2 ? new List<String>{'helperCastReturn','retrieval','boxedRetrieval'}\n   : new List<String>{'helperCastReturn','putAll','putAllSummary','putAllRetrieval'};\n  Map<String,Object> selected=new Map<String,Object>();\n  for(String key:keys) if(out.containsKey(key)) selected.put(key,out.get(key));\n  System.assertEquals('NATIVE_MAP_OBSERVATION',JSON.serialize(selected));\n }\n @IsTest static void differentConstruct(){inspect(false,1);}\n @IsTest static void differentRetrieve(){inspect(false,2);}\n @IsTest static void differentPutAll(){inspect(false,3);}\n @IsTest static void matchingConstruct(){inspect(true,1);}\n @IsTest static void matchingRetrieve(){inspect(true,2);}\n @IsTest static void matchingPutAll(){inspect(true,3);}\n}\n",
+          "sha256": "13d0cf5947d7e1bad6b118852f66d3325c1b990cc70bfc719fdc39518c1c38fc"
+        },
+        "force-app/main/default/classes/MapListObservation62.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+        },
+        "force-app/main/default/classes/MapListShelf62.cls": {
+          "source": "public class MapListShelf62 { public static List<GlyphCard__c> read(List<SObject> rows){ return (List<GlyphCard__c>)rows; } }\n",
+          "sha256": "ace16a6012eaa1133f5fb1f7d5d695734eb149ba32871672ae1ba8d3c23e8057"
+        },
+        "force-app/main/default/classes/MapListShelf62.cls-meta.xml": {
+          "source": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+          "sha256": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+        },
+        "force-app/main/default/objects/AtlasCard__c.object": {
+          "source": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>AtlasCard__c</label><pluralLabel>AtlasCard__cs</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><sharingModel>ReadWrite</sharingModel></CustomObject>",
+          "sha256": "df87fbbb22834d337f090d0d4b13ef62071c0bfe9c8535baf1a84c6e7b764295"
+        },
+        "force-app/main/default/objects/GlyphCard__c.object": {
+          "source": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>GlyphCard__c</label><pluralLabel>GlyphCard__cs</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><sharingModel>ReadWrite</sharingModel></CustomObject>",
+          "sha256": "d054e04320cbee086f31999d83df60fce4d3f8ee8bc3bdb8fa1836059ab220e5"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
+        }
+      },
+      "deployment": {
+        "id": "0AfEc00000p0rADKAY",
+        "checkOnly": true,
+        "done": true,
+        "status": "Failed",
+        "success": false,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 6,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 6,
+        "createdDate": "2026-10-15T01:48:36.000Z",
+        "completedDate": "2026-10-15T01:48:40.000Z"
+      },
+      "rawSha256": {
+        "deploy.json": "43cd6ed6a5879883fd1f6dc82f9397f8871ac72fa836cc97b5dd1ac54c306e7f",
+        "org.tsv": "84bb36ef9cf4918bb49fac47e7b7e1348657199d07829a6239a795a7967c0621",
+        "SOURCE-DIGESTS.json": "055aa66c2e9e0948a21eb8989ae933f683c536fd7a8c40466a839e8c9321326f",
+        "RAW-DIGESTS.json": "54fb0c8c8eb6ef7a2436e905672763852393aac88caf6308343373225913f1c4",
+        "ORG-RUN.txt": "52b6c17ebcdc0a03dfc15ebb5054c80166cc66445f372fd6bf80456b540eb18e",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09"
+      },
+      "rows": [
+        {
+          "method": "differentConstruct",
+          "nativeFailure": {
+            "id": "01pEc00001GlyrpIAB",
+            "message": "System.AssertException: Assertion Failed: Expected: NATIVE_MAP_OBSERVATION, Actual: {\"mapToken\":{\"value\":\"GlyphCard__c\",\"status\":\"accepted\"},\"mapSummary\":{\"containsSeed\":true,\"size\":1,\"status\":\"accepted\"},\"constructor\":{\"status\":\"accepted\"},\"listToken\":{\"value\":null,\"status\":\"accepted\"},\"helperCastReturn\":{\"declaredType\":\"List<GlyphCard__c>\",\"status\":\"accepted\"},\"fixture\":{\"hasId\":true,\"actualType\":\"AtlasCard__c\",\"status\":\"accepted\"}}",
+            "methodName": "differentConstruct",
+            "name": "MapListObservation62",
+            "namespace": null,
+            "packageName": "MapListObservation62",
+            "stackTrace": "Class.MapListObservation62.emit: line 74, column 1\nClass.MapListObservation62.inspect: line 65, column 1\nClass.MapListObservation62.differentConstruct: line 76, column 1",
+            "time": 96,
+            "type": "Class"
+          },
+          "native": {
+            "mapToken": {
+              "value": "GlyphCard__c",
+              "status": "accepted"
+            },
+            "mapSummary": {
+              "containsSeed": true,
+              "size": 1,
+              "status": "accepted"
+            },
+            "constructor": {
+              "status": "accepted"
+            },
+            "listToken": {
+              "value": null,
+              "status": "accepted"
+            },
+            "helperCastReturn": {
+              "declaredType": "List<GlyphCard__c>",
+              "status": "accepted"
+            },
+            "fixture": {
+              "hasId": true,
+              "actualType": "AtlasCard__c",
+              "status": "accepted"
+            }
+          },
+          "carriedKeys": [
+            {
+              "key": "listToken",
+              "reason": "The native null list token differs from the current declared-record token. Collection getSObjectType reflection is tracked separately; retain this native key without asserting its value here."
+            }
+          ]
+        },
+        {
+          "method": "differentPutAll",
+          "nativeFailure": {
+            "id": "01pEc00001GlyrpIAB",
+            "message": "System.AssertException: Assertion Failed: Expected: NATIVE_MAP_OBSERVATION, Actual: {\"putAllSummary\":{\"containsSeed\":false,\"size\":0,\"status\":\"accepted\"},\"putAll\":{\"message\":\"Collection store exception putting all List<SObject> into Map<Id,GlyphCard__c>\",\"type\":\"System.TypeException\",\"status\":\"exception\"},\"helperCastReturn\":{\"declaredType\":\"List<GlyphCard__c>\",\"status\":\"accepted\"}}",
+            "methodName": "differentPutAll",
+            "name": "MapListObservation62",
+            "namespace": null,
+            "packageName": "MapListObservation62",
+            "stackTrace": "Class.MapListObservation62.emit: line 74, column 1\nClass.MapListObservation62.inspect: line 65, column 1\nClass.MapListObservation62.differentPutAll: line 78, column 1",
+            "time": 66,
+            "type": "Class"
+          },
+          "native": {
+            "putAllSummary": {
+              "containsSeed": false,
+              "size": 0,
+              "status": "accepted"
+            },
+            "putAll": {
+              "message": "Collection store exception putting all List<SObject> into Map<Id,GlyphCard__c>",
+              "type": "System.TypeException",
+              "status": "exception"
+            },
+            "helperCastReturn": {
+              "declaredType": "List<GlyphCard__c>",
+              "status": "accepted"
+            }
+          },
+          "carriedKeys": []
+        },
+        {
+          "method": "differentRetrieve",
+          "nativeFailure": {
+            "id": "01pEc00001GlyrpIAB",
+            "message": "System.AssertException: Assertion Failed: Expected: NATIVE_MAP_OBSERVATION, Actual: {\"boxedRetrieval\":{\"message\":\"Invalid conversion from runtime type AtlasCard__c to GlyphCard__c\",\"type\":\"System.TypeException\",\"status\":\"exception\"},\"retrieval\":{\"message\":\"Invalid conversion from runtime type AtlasCard__c to GlyphCard__c\",\"type\":\"System.TypeException\",\"status\":\"exception\"},\"helperCastReturn\":{\"declaredType\":\"List<GlyphCard__c>\",\"status\":\"accepted\"}}",
+            "methodName": "differentRetrieve",
+            "name": "MapListObservation62",
+            "namespace": null,
+            "packageName": "MapListObservation62",
+            "stackTrace": "Class.MapListObservation62.emit: line 74, column 1\nClass.MapListObservation62.inspect: line 65, column 1\nClass.MapListObservation62.differentRetrieve: line 77, column 1",
+            "time": 62,
+            "type": "Class"
+          },
+          "native": {
+            "boxedRetrieval": {
+              "message": "Invalid conversion from runtime type AtlasCard__c to GlyphCard__c",
+              "type": "System.TypeException",
+              "status": "exception"
+            },
+            "retrieval": {
+              "message": "Invalid conversion from runtime type AtlasCard__c to GlyphCard__c",
+              "type": "System.TypeException",
+              "status": "exception"
+            },
+            "helperCastReturn": {
+              "declaredType": "List<GlyphCard__c>",
+              "status": "accepted"
+            }
+          },
+          "carriedKeys": []
+        },
+        {
+          "method": "matchingConstruct",
+          "nativeFailure": {
+            "id": "01pEc00001GlyrpIAB",
+            "message": "System.AssertException: Assertion Failed: Expected: NATIVE_MAP_OBSERVATION, Actual: {\"mapToken\":{\"value\":\"GlyphCard__c\",\"status\":\"accepted\"},\"mapSummary\":{\"containsSeed\":true,\"size\":1,\"status\":\"accepted\"},\"constructor\":{\"status\":\"accepted\"},\"listToken\":{\"value\":null,\"status\":\"accepted\"},\"helperCastReturn\":{\"declaredType\":\"List<GlyphCard__c>\",\"status\":\"accepted\"},\"fixture\":{\"hasId\":true,\"actualType\":\"GlyphCard__c\",\"status\":\"accepted\"}}",
+            "methodName": "matchingConstruct",
+            "name": "MapListObservation62",
+            "namespace": null,
+            "packageName": "MapListObservation62",
+            "stackTrace": "Class.MapListObservation62.emit: line 74, column 1\nClass.MapListObservation62.inspect: line 65, column 1\nClass.MapListObservation62.matchingConstruct: line 79, column 1",
+            "time": 67,
+            "type": "Class"
+          },
+          "native": {
+            "mapToken": {
+              "value": "GlyphCard__c",
+              "status": "accepted"
+            },
+            "mapSummary": {
+              "containsSeed": true,
+              "size": 1,
+              "status": "accepted"
+            },
+            "constructor": {
+              "status": "accepted"
+            },
+            "listToken": {
+              "value": null,
+              "status": "accepted"
+            },
+            "helperCastReturn": {
+              "declaredType": "List<GlyphCard__c>",
+              "status": "accepted"
+            },
+            "fixture": {
+              "hasId": true,
+              "actualType": "GlyphCard__c",
+              "status": "accepted"
+            }
+          },
+          "carriedKeys": [
+            {
+              "key": "listToken",
+              "reason": "The native null list token differs from the current declared-record token. Collection getSObjectType reflection is tracked separately; retain this native key without asserting its value here."
+            }
+          ]
+        },
+        {
+          "method": "matchingPutAll",
+          "nativeFailure": {
+            "id": "01pEc00001GlyrpIAB",
+            "message": "System.AssertException: Assertion Failed: Expected: NATIVE_MAP_OBSERVATION, Actual: {\"putAllRetrieval\":{\"sameId\":true,\"actualType\":\"GlyphCard__c\",\"status\":\"accepted\"},\"putAllSummary\":{\"containsSeed\":true,\"size\":1,\"status\":\"accepted\"},\"putAll\":{\"status\":\"accepted\"},\"helperCastReturn\":{\"declaredType\":\"List<GlyphCard__c>\",\"status\":\"accepted\"}}",
+            "methodName": "matchingPutAll",
+            "name": "MapListObservation62",
+            "namespace": null,
+            "packageName": "MapListObservation62",
+            "stackTrace": "Class.MapListObservation62.emit: line 74, column 1\nClass.MapListObservation62.inspect: line 65, column 1\nClass.MapListObservation62.matchingPutAll: line 81, column 1",
+            "time": 67,
+            "type": "Class"
+          },
+          "native": {
+            "putAllRetrieval": {
+              "sameId": true,
+              "actualType": "GlyphCard__c",
+              "status": "accepted"
+            },
+            "putAllSummary": {
+              "containsSeed": true,
+              "size": 1,
+              "status": "accepted"
+            },
+            "putAll": {
+              "status": "accepted"
+            },
+            "helperCastReturn": {
+              "declaredType": "List<GlyphCard__c>",
+              "status": "accepted"
+            }
+          },
+          "carriedKeys": []
+        },
+        {
+          "method": "matchingRetrieve",
+          "nativeFailure": {
+            "id": "01pEc00001GlyrpIAB",
+            "message": "System.AssertException: Assertion Failed: Expected: NATIVE_MAP_OBSERVATION, Actual: {\"boxedRetrieval\":{\"sameId\":true,\"actualType\":\"GlyphCard__c\",\"status\":\"accepted\"},\"retrieval\":{\"sameId\":true,\"actualType\":\"GlyphCard__c\",\"declaredType\":\"GlyphCard__c\",\"status\":\"accepted\"},\"helperCastReturn\":{\"declaredType\":\"List<GlyphCard__c>\",\"status\":\"accepted\"}}",
+            "methodName": "matchingRetrieve",
+            "name": "MapListObservation62",
+            "namespace": null,
+            "packageName": "MapListObservation62",
+            "stackTrace": "Class.MapListObservation62.emit: line 74, column 1\nClass.MapListObservation62.inspect: line 65, column 1\nClass.MapListObservation62.matchingRetrieve: line 80, column 1",
+            "time": 64,
+            "type": "Class"
+          },
+          "native": {
+            "boxedRetrieval": {
+              "sameId": true,
+              "actualType": "GlyphCard__c",
+              "status": "accepted"
+            },
+            "retrieval": {
+              "sameId": true,
+              "actualType": "GlyphCard__c",
+              "declaredType": "GlyphCard__c",
+              "status": "accepted"
+            },
+            "helperCastReturn": {
+              "declaredType": "List<GlyphCard__c>",
+              "status": "accepted"
+            }
+          },
+          "carriedKeys": []
+        }
+      ]
+    }
+  ],
+  "pendingCoverage": {
+    "status": "PENDING-ROWS",
+    "additionalCallerApis": [
+      "67.0",
+      "68.0"
+    ],
+    "additionalRoutes": [
+      "anonymous"
+    ],
+    "namespaceAliases": "unobserved"
+  }
+}

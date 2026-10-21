@@ -56,7 +56,7 @@ func semaPlatformEventWriteMessage(receiver, field string, model *semaTypeMember
 	return ""
 }
 
-func semaPlatformEventCallMessage(receiver, method, mode string, args []string, model *semaTypeMemberView) string {
+func semaPlatformEventCallMessage(receiver, method, mode string, args []string, model *semaTypeMemberView, namedSource bool) string {
 	if !semaDMLPlatformType(model, receiver) {
 		return ""
 	}
@@ -76,8 +76,18 @@ func semaPlatformEventCallMessage(receiver, method, mode string, args []string, 
 			if strings.EqualFold(base, "List") && len(elements) == 1 {
 				recordType = elements[0]
 			}
+			if strings.HasSuffix(strings.ToLower(recordType), "__e") {
+				if members, _, known := semaLookupTypeMembers(model, recordType); !known || members.partialSObject {
+					return "Invalid type: " + recordType
+				}
+			}
 			// P001-P003: the standard event is not directly publishable.
 			if strings.EqualFold(recordType, "BatchApexErrorEvent") && semaDMLRecordType(recordType, model) {
+				// Named methods accept the scalar overload; publication then
+				// follows their source version and execution context.
+				if namedSource && len(args) == 1 && !strings.EqualFold(base, "List") {
+					return ""
+				}
 				return "DML operation Insert not allowed on BatchApexErrorEvent"
 			}
 			if semaDMLRecordType(arg, model) {

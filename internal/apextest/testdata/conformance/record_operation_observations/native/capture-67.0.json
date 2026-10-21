@@ -1,0 +1,80 @@
+{
+  "id": "0Afdq00000EcS85CAF",
+  "status": "Failed",
+  "done": true,
+  "checkOnly": true,
+  "numberComponentErrors": 0,
+  "numberTestErrors": 6,
+  "numberTestsCompleted": 0,
+  "numberTestsTotal": 6,
+  "errors": [],
+  "failures": [
+    {
+      "id": "01pdq00000PmrBkAAJ",
+      "message": "System.AssertException: Assertion Failed: OBSERVED|identifierAccount|{\"updated\":true,\"length\":18,\"zeroSegment\":false}",
+      "methodName": "identifierAccount",
+      "name": "RecordOperationProbeTest",
+      "namespace": null,
+      "packageName": "RecordOperationProbeTest",
+      "stackTrace": "Class.RecordOperationProbeTest.emit: line 23, column 1\nClass.RecordOperationProbeTest.identifierAccount: line 7, column 1",
+      "time": 125,
+      "type": "Class"
+    },
+    {
+      "id": "01pdq00000PmrBkAAJ",
+      "message": "System.AssertException: Assertion Failed: OBSERVED|identifierCustom|{\"updated\":true,\"length\":18,\"zeroSegment\":false}",
+      "methodName": "identifierCustom",
+      "name": "RecordOperationProbeTest",
+      "namespace": null,
+      "packageName": "RecordOperationProbeTest",
+      "stackTrace": "Class.RecordOperationProbeTest.emit: line 23, column 1\nClass.RecordOperationProbeTest.identifierCustom: line 8, column 1",
+      "time": 88,
+      "type": "Class"
+    },
+    {
+      "id": "01pdq00000PmrBkAAJ",
+      "message": "System.AssertException: Assertion Failed: OBSERVED|mergeAll|{\"remaining\":1,\"results\":[{\"errors\":[],\"merged\":2,\"masterMatches\":true,\"success\":true}]}",
+      "methodName": "mergeAll",
+      "name": "RecordOperationProbeTest",
+      "namespace": null,
+      "packageName": "RecordOperationProbeTest",
+      "stackTrace": "Class.RecordOperationProbeTest.emit: line 23, column 1\nClass.RecordOperationProbeTest.mergeAll: line 9, column 1",
+      "time": 255,
+      "type": "Class"
+    },
+    {
+      "id": "01pdq00000PmrBkAAJ",
+      "message": "System.AssertException: Assertion Failed: OBSERVED|mergeEmpty|{\"remaining\":3,\"results\":[{\"errors\":[\"MISSING_ARGUMENT\"],\"merged\":0,\"masterMatches\":true,\"success\":false}]}",
+      "methodName": "mergeEmpty",
+      "name": "RecordOperationProbeTest",
+      "namespace": null,
+      "packageName": "RecordOperationProbeTest",
+      "stackTrace": "Class.RecordOperationProbeTest.emit: line 23, column 1\nClass.RecordOperationProbeTest.mergeEmpty: line 11, column 1",
+      "time": 145,
+      "type": "Class"
+    },
+    {
+      "id": "01pdq00000PmrBkAAJ",
+      "message": "System.AssertException: Assertion Failed: OBSERVED|mergePartial|{\"remaining\":2,\"results\":[{\"errors\":[\"ENTITY_IS_DELETED\"],\"merged\":0,\"masterMatches\":true,\"success\":false}]}",
+      "methodName": "mergePartial",
+      "name": "RecordOperationProbeTest",
+      "namespace": null,
+      "packageName": "RecordOperationProbeTest",
+      "stackTrace": "Class.RecordOperationProbeTest.emit: line 23, column 1\nClass.RecordOperationProbeTest.mergePartial: line 10, column 1",
+      "time": 439,
+      "type": "Class"
+    },
+    {
+      "id": "01pdq00000PmrBkAAJ",
+      "message": "System.AssertException: Assertion Failed: OBSERVED|setupVisibility|{\"singleton\":\"SyntheticExportAccess\",\"inside\":1,\"outside\":1}",
+      "methodName": "setupVisibility",
+      "name": "RecordOperationProbeTest",
+      "namespace": null,
+      "packageName": "RecordOperationProbeTest",
+      "stackTrace": "Class.RecordOperationProbeTest.emit: line 23, column 1\nClass.RecordOperationProbeTest.setupVisibility: line 20, column 1",
+      "time": 186,
+      "type": "Class"
+    }
+  ],
+  "successes": []
+}

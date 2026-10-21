@@ -1,0 +1,2607 @@
+{
+  "cluster": "null",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 5,
+  "nativeObservationCount": 30,
+  "rows": [
+    {
+      "id": "C183ID_081",
+      "group": "NULL_KEY",
+      "label": "Opportunity.Id null key",
+      "role": "boundary",
+      "twin": "C183ID_003",
+      "comparison": "exact",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=Opportunity.Id;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{Opportunity rec=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));rec.put('Id',keyValue);List<Opportunity> records=new List<Opportunity>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{Opportunity rec=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));rec.put('Id',keyValue);List<Opportunity> records=new List<Opportunity>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_081|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "3fbd104fc6363486c7c107a36e9f7d8600524c36e29d8855badedd385f1bb6f6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID081Test": "@IsTest private class KeyObserveC183ID081Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=Opportunity.Id;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{Opportunity rec=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));rec.put('Id',keyValue);List<Opportunity> records=new List<Opportunity>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{Opportunity rec=new Opportunity(Name='Synthetic key',StageName=[SELECT MasterLabel FROM OpportunityStage WHERE IsActive=true ORDER BY SortOrder LIMIT 1].MasterLabel,CloseDate=Date.newInstance(2026,1,15));rec.put('Id',keyValue);List<Opportunity> records=new List<Opportunity>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_081|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID081Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID081Test": "caad95d5f70cd6f59bcb7bb6be88aa9ad7aed3474938eec422efb053ebf1e66a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": true,
+                          "created": true,
+                          "idPresent": true,
+                          "errors": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": true,
+                        "created": true,
+                        "idPresent": true,
+                        "errors": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C183ID_082",
+      "group": "NULL_KEY",
+      "label": "Contact.Email null key",
+      "role": "boundary",
+      "twin": "C183ID_013",
+      "comparison": "exact",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=Contact.Email;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{Contact rec=new Contact(LastName='Synthetic key');rec.put('Email',keyValue);List<Contact> records=new List<Contact>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{Contact rec=new Contact(LastName='Synthetic key');rec.put('Email',keyValue);List<Contact> records=new List<Contact>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_082|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "bf03d81a6b035252691bd25be817fda489eaf40a62c63061503ba26dd8a00c2f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "Email not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "Email not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "Email not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "Email not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "Email not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "Email not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "Email not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "Email not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "Email not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "Email not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "Email not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "Email not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID082Test": "@IsTest private class KeyObserveC183ID082Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=Contact.Email;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{Contact rec=new Contact(LastName='Synthetic key');rec.put('Email',keyValue);List<Contact> records=new List<Contact>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{Contact rec=new Contact(LastName='Synthetic key');rec.put('Email',keyValue);List<Contact> records=new List<Contact>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_082|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID082Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID082Test": "f94c975bb1ec28d499693026ed624a5287e861a3341c9c9eecb8c56a3807b409"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "Email not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "Email not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "Email not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "Email not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "Email not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "Email not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "Email not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "Email not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "Email not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "Email not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "Email not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "Email not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C183ID_083",
+      "group": "NULL_KEY",
+      "label": "KeyFixture__c.ExtText__c null key",
+      "role": "boundary",
+      "twin": "C183ID_023",
+      "comparison": "exact",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=KeyFixture__c.ExtText__c;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.put('ExtText__c',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.put('ExtText__c',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_083|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "92f9dab9f07d3ac5552a2f524f9db59163cb90483b713778c24c1d868e3b6a9f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtText__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtText__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtText__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtText__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtText__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtText__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtText__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtText__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtText__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtText__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtText__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtText__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID083Test": "@IsTest private class KeyObserveC183ID083Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=KeyFixture__c.ExtText__c;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.put('ExtText__c',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.put('ExtText__c',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_083|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID083Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID083Test": "7f8d1cbdc77eb1b8dc6e1a2091889d8b23f7dae7fb42d763bdb49df2c6bc641d"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtText__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtText__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtText__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtText__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtText__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtText__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtText__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtText__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtText__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtText__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtText__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtText__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C183ID_084",
+      "group": "NULL_KEY",
+      "label": "KeyFixture__c.ExtNumber__c null key",
+      "role": "boundary",
+      "twin": "C183ID_026",
+      "comparison": "exact",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=KeyFixture__c.ExtNumber__c;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.put('ExtNumber__c',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.put('ExtNumber__c',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_084|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "6ce590d0c72f611507d1a3de60398ba7a09fab6a8cfca7625c720caabd4ff490"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtNumber__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtNumber__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtNumber__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtNumber__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtNumber__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtNumber__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtNumber__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtNumber__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtNumber__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtNumber__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtNumber__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtNumber__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID084Test": "@IsTest private class KeyObserveC183ID084Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=KeyFixture__c.ExtNumber__c;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.put('ExtNumber__c',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.put('ExtNumber__c',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_084|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID084Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID084Test": "f09de9b3f6a2110b7027c9f5517723f0d7d14a67eb03498b7952890d6ee0912b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtNumber__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtNumber__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtNumber__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtNumber__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtNumber__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtNumber__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtNumber__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtNumber__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtNumber__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtNumber__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtNumber__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtNumber__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C183ID_085",
+      "group": "NULL_KEY",
+      "label": "KeyFixture__c.ExtEmail__c null key",
+      "role": "boundary",
+      "twin": "C183ID_028",
+      "comparison": "exact",
+      "routes": {
+        "anonymous": {
+          "anonymous": "Boolean keepComposedDmlMessage=true;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=KeyFixture__c.ExtEmail__c;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.put('ExtEmail__c',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.put('ExtEmail__c',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);System.assert(false,'C126_RESULT|C183ID_085|'+captureJson);",
+          "sourceSha256": {
+            "anonymous": "ab1b8f03cf048f1a0a4c748493403e22b2afdf39ea99a1057cdbfd75cdb7e366"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtEmail__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtEmail__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtEmail__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtEmail__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtEmail__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtEmail__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtEmail__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtEmail__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtEmail__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtEmail__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtEmail__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtEmail__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "KeyObserveC183ID085Test": "@IsTest private class KeyObserveC183ID085Test{@IsTest static void observe(){Boolean keepComposedDmlMessage=false;Map<String,Object> payload=new Map<String,Object>();List<Object> errorCatalog=new List<Object>();Map<String,Integer> errorIds=new Map<String,Integer>();try{Schema.SObjectField key=KeyFixture__c.ExtEmail__c;Object keyValue=null;List<Object> steps=new List<Object>();Id previousId;{Map<String,Object> step=new Map<String,Object>{'p'=>0};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.put('ExtEmail__c',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}{Map<String,Object> step=new Map<String,Object>{'p'=>1};try{KeyFixture__c rec=new KeyFixture__c(Name='Synthetic key');rec.put('ExtEmail__c',keyValue);List<KeyFixture__c> records=new List<KeyFixture__c>{rec};List<Object> results=new List<Object>();for(Database.UpsertResult u:Database.upsert(records,key,false)){List<Object> failures=new List<Object>();for(Database.Error e:u.getErrors()){List<Object> item=new List<Object>{String.valueOf(e.getStatusCode()),e.getMessage(),e.getFields()};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}failures.add(itemId);}results.add(new Map<String,Object>{'s'=>u.isSuccess(),'c'=>u.isCreated(),'i'=>u.getId()!=null,'e'=>failures});}step.put('r',results);step.put('eq',previousId!=null && rec.Id==previousId);previousId=rec.Id;}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}step.put('t',e.getTypeName());step.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){step.put('x',e.getMessage());}}catch(Exception e){step.put('t',e.getTypeName());step.put('x',e.getMessage());}steps.add(step);}payload.put('s',steps);}catch(DmlException e){List<Object> errors=new List<Object>();for(Integer i=0;i<e.getNumDml();i++){List<Object> item=new List<Object>{String.valueOf(e.getDmlType(i)),e.getDmlMessage(i),e.getDmlFieldNames(i)};String itemJson=JSON.serialize(item);Integer itemId=errorIds.get(itemJson);if(itemId==null){itemId=errorCatalog.size();errorCatalog.add(item);errorIds.put(itemJson,itemId);}errors.add(new List<Object>{e.getDmlIndex(i),itemId});}payload.put('t',e.getTypeName());payload.put('e',errors);if(keepComposedDmlMessage || e.getNumDml()==0){payload.put('x',e.getMessage());}}catch(Exception e){payload.put('t',e.getTypeName());payload.put('x',e.getMessage());}payload.put('v',1);if(!errorCatalog.isEmpty()){payload.put('d',errorCatalog);}String captureJson=JSON.serialize(payload);if(captureJson.length()>555){captureJson=JSON.serialize(new Map<String,Object>{'captureTransportError'=>'payload-too-long','payloadLength'=>captureJson.length()});}System.assert(false,'C126_RESULT|C183ID_085|'+captureJson);}}"
+          },
+          "tests": [
+            "KeyObserveC183ID085Test"
+          ],
+          "sourceSha256": {
+            "class:KeyObserveC183ID085Test": "cad825459aa99e60f9a784aefc752c5af4b172e6d896c690a90393d7e1861c7a"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtEmail__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtEmail__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtEmail__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtEmail__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtEmail__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtEmail__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtEmail__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtEmail__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "steps": [
+                    {
+                      "phase": "first",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtEmail__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "phase": "second",
+                      "idMatchesPrevious": false,
+                      "results": [
+                        {
+                          "success": false,
+                          "created": false,
+                          "idPresent": false,
+                          "errors": [
+                            {
+                              "statusCode": "MISSING_ARGUMENT",
+                              "message": "ExtEmail__c not specified",
+                              "fields": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "value": {
+                "steps": [
+                  {
+                    "phase": "first",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtEmail__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "phase": "second",
+                    "idMatchesPrevious": false,
+                    "results": [
+                      {
+                        "success": false,
+                        "created": false,
+                        "idPresent": false,
+                        "errors": [
+                          {
+                            "statusCode": "MISSING_ARGUMENT",
+                            "message": "ExtEmail__c not specified",
+                            "fields": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

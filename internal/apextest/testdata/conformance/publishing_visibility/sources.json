@@ -1,0 +1,65 @@
+[
+  {
+    "api": "62.0",
+    "id": "null",
+    "className": "PublishingNull62",
+    "anonymous": "Object r;\n\n\n\n\n\n\n\n\n\n\nKbManagement.PublishingService.publishArticle(null,false); r=true;",
+    "named": "@IsTest private class PublishingNull62 {\n@IsTest static void observe() {\nObject r;\n\n\n\n\n\n\n\n\nKbManagement.PublishingService.publishArticle(null,false); r=true;\n}\n}\n"
+  },
+  {
+    "api": "62.0",
+    "id": "missing",
+    "className": "PublishingMissing62",
+    "anonymous": "Object r;\n\n\n\n\n\n\n\n\n\n\nKbManagement.PublishingService.publishArticle('A43MissingArticle',false); r=true;",
+    "named": "@IsTest private class PublishingMissing62 {\n@IsTest static void observe() {\nObject r;\n\n\n\n\n\n\n\n\nKbManagement.PublishingService.publishArticle('A43MissingArticle',false); r=true;\n}\n}\n"
+  },
+  {
+    "api": "62.0",
+    "id": "caught-null",
+    "className": "PublishingCaughtNull62",
+    "anonymous": "Object r;\n\n\n\n\n\n\n\n\n\n\ntry { KbManagement.PublishingService.publishArticle(null,false); r='RETURNED'; } catch(Exception e) { r=e.getTypeName(); }\nSystem.debug('PUBLISH_VISIBILITY|'+String.valueOf(r));",
+    "named": "@IsTest private class PublishingCaughtNull62 {\n@IsTest static void observe() {\nObject r;\n\n\n\n\n\n\n\n\ntry { KbManagement.PublishingService.publishArticle(null,false); r='RETURNED'; } catch(Exception e) { r=e.getTypeName(); }\nSystem.debug('PUBLISH_VISIBILITY|'+String.valueOf(r));\n}\n}\n"
+  },
+  {
+    "api": "67.0",
+    "id": "null",
+    "className": "PublishingNull67",
+    "anonymous": "Object r;\n\n\n\n\n\n\n\n\n\n\nKbManagement.PublishingService.publishArticle(null,false); r=true;",
+    "named": "@IsTest private class PublishingNull67 {\n@IsTest static void observe() {\nObject r;\n\n\n\n\n\n\n\n\nKbManagement.PublishingService.publishArticle(null,false); r=true;\n}\n}\n"
+  },
+  {
+    "api": "67.0",
+    "id": "missing",
+    "className": "PublishingMissing67",
+    "anonymous": "Object r;\n\n\n\n\n\n\n\n\n\n\nKbManagement.PublishingService.publishArticle('A43MissingArticle',false); r=true;",
+    "named": "@IsTest private class PublishingMissing67 {\n@IsTest static void observe() {\nObject r;\n\n\n\n\n\n\n\n\nKbManagement.PublishingService.publishArticle('A43MissingArticle',false); r=true;\n}\n}\n"
+  },
+  {
+    "api": "67.0",
+    "id": "caught-null",
+    "className": "PublishingCaughtNull67",
+    "anonymous": "Object r;\n\n\n\n\n\n\n\n\n\n\ntry { KbManagement.PublishingService.publishArticle(null,false); r='RETURNED'; } catch(Exception e) { r=e.getTypeName(); }\nSystem.debug('PUBLISH_VISIBILITY|'+String.valueOf(r));",
+    "named": "@IsTest private class PublishingCaughtNull67 {\n@IsTest static void observe() {\nObject r;\n\n\n\n\n\n\n\n\ntry { KbManagement.PublishingService.publishArticle(null,false); r='RETURNED'; } catch(Exception e) { r=e.getTypeName(); }\nSystem.debug('PUBLISH_VISIBILITY|'+String.valueOf(r));\n}\n}\n"
+  },
+  {
+    "api": "68.0",
+    "id": "null",
+    "className": "PublishingNull68",
+    "anonymous": "Object r;\n\n\n\n\n\n\n\n\n\n\nKbManagement.PublishingService.publishArticle(null,false); r=true;",
+    "named": "@IsTest private class PublishingNull68 {\n@IsTest static void observe() {\nObject r;\n\n\n\n\n\n\n\n\nKbManagement.PublishingService.publishArticle(null,false); r=true;\n}\n}\n"
+  },
+  {
+    "api": "68.0",
+    "id": "missing",
+    "className": "PublishingMissing68",
+    "anonymous": "Object r;\n\n\n\n\n\n\n\n\n\n\nKbManagement.PublishingService.publishArticle('A43MissingArticle',false); r=true;",
+    "named": "@IsTest private class PublishingMissing68 {\n@IsTest static void observe() {\nObject r;\n\n\n\n\n\n\n\n\nKbManagement.PublishingService.publishArticle('A43MissingArticle',false); r=true;\n}\n}\n"
+  },
+  {
+    "api": "68.0",
+    "id": "caught-null",
+    "className": "PublishingCaughtNull68",
+    "anonymous": "Object r;\n\n\n\n\n\n\n\n\n\n\ntry { KbManagement.PublishingService.publishArticle(null,false); r='RETURNED'; } catch(Exception e) { r=e.getTypeName(); }\nSystem.debug('PUBLISH_VISIBILITY|'+String.valueOf(r));",
+    "named": "@IsTest private class PublishingCaughtNull68 {\n@IsTest static void observe() {\nObject r;\n\n\n\n\n\n\n\n\ntry { KbManagement.PublishingService.publishArticle(null,false); r='RETURNED'; } catch(Exception e) { r=e.getTypeName(); }\nSystem.debug('PUBLISH_VISIBILITY|'+String.valueOf(r));\n}\n}\n"
+  }
+]

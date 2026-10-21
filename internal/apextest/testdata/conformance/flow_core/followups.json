@@ -1,0 +1,1279 @@
+{
+  "cluster": "followups",
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "shapeCount": 11,
+  "nativeObservationCount": 44,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "F7_017",
+      "byAPI": {
+        "62.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7017.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <recordCreates>\n    <name>WriteLog</name>\n    <label>WriteLog</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <inputAssignments>\n      <field>Name</field>\n      <value>\n        <stringValue>FlowCoreF7_log_F7_017</stringValue>\n      </value>\n    </inputAssignments>\n    <inputAssignments>\n      <field>Description</field>\n      <value>\n        <stringValue>Fired</stringValue>\n      </value>\n    </inputAssignments>\n    <object>Account</object>\n    <storeOutputAutomatically>true</storeOutputAutomatically>\n  </recordCreates>\n  <interviewLabel>FlowCoreF7AfterF7017 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7AfterF7017</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>WriteLog</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_017_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Rating</field>\n      <operator>NotEqualTo</operator>\n      <value>\n        <stringValue>Hot</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordAfterSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7017.flow-meta.xml": "918289eaf42ee972979c3a011365b0ddbd8d7116df853ba64e7265172abda21d"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_017_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Hot',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Rating='Warm';update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_017'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_017|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "be3494621c0e883bdba679bb8fef200eb0dd8a3fa564cf04744d825e1f0a1a4a"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7017Observe": "@IsTest private class F7017Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_017_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Hot',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Rating='Warm';update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_017'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_017|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7017Observe"
+              ],
+              "sourceSha256": {
+                "F7017Observe": "a72ea483ede61fb32f7bd0914b726744c3f51cd6e160c237dab43f5ac8e863ca"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            }
+          }
+        },
+        "67.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7017.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <recordCreates>\n    <name>WriteLog</name>\n    <label>WriteLog</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <inputAssignments>\n      <field>Name</field>\n      <value>\n        <stringValue>FlowCoreF7_log_F7_017</stringValue>\n      </value>\n    </inputAssignments>\n    <inputAssignments>\n      <field>Description</field>\n      <value>\n        <stringValue>Fired</stringValue>\n      </value>\n    </inputAssignments>\n    <object>Account</object>\n    <storeOutputAutomatically>true</storeOutputAutomatically>\n  </recordCreates>\n  <interviewLabel>FlowCoreF7AfterF7017 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7AfterF7017</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>WriteLog</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_017_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Rating</field>\n      <operator>NotEqualTo</operator>\n      <value>\n        <stringValue>Hot</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordAfterSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7017.flow-meta.xml": "cd3058e4f50209bf0fa3afb0bd55ba27b5c2d96c2ee7458c58e0a8072a4429ae"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_017_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Hot',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Rating='Warm';update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_017'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_017|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "be3494621c0e883bdba679bb8fef200eb0dd8a3fa564cf04744d825e1f0a1a4a"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7017Observe": "@IsTest private class F7017Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_017_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Hot',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Rating='Warm';update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_017'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_017|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7017Observe"
+              ],
+              "sourceSha256": {
+                "F7017Observe": "a72ea483ede61fb32f7bd0914b726744c3f51cd6e160c237dab43f5ac8e863ca"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "F7_018",
+      "byAPI": {
+        "62.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7018.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <recordCreates>\n    <name>WriteLog</name>\n    <label>WriteLog</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <inputAssignments>\n      <field>Name</field>\n      <value>\n        <stringValue>FlowCoreF7_log_F7_018</stringValue>\n      </value>\n    </inputAssignments>\n    <inputAssignments>\n      <field>Description</field>\n      <value>\n        <stringValue>Fired</stringValue>\n      </value>\n    </inputAssignments>\n    <object>Account</object>\n    <storeOutputAutomatically>true</storeOutputAutomatically>\n  </recordCreates>\n  <interviewLabel>FlowCoreF7AfterF7018 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7AfterF7018</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>WriteLog</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_018_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>NumberOfEmployees</field>\n      <operator>GreaterThan</operator>\n      <value>\n        <numberValue>5</numberValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordAfterSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7018.flow-meta.xml": "1c1e5e33a899d5fd91304faa429a47fbda7c8b941223d213f7c778a468309e3c"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_018_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.NumberOfEmployees=10;update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_018'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_018|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "fb49cd45d48509b81c776e53f5529514674256c920231f9f3c53d8aec97d85ba"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7018Observe": "@IsTest private class F7018Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_018_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.NumberOfEmployees=10;update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_018'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_018|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7018Observe"
+              ],
+              "sourceSha256": {
+                "F7018Observe": "b9c43a8f2693374323ac73354d85c2ac0d96829f185afcc0184e2fb1483d58e0"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            }
+          }
+        },
+        "67.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7018.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <recordCreates>\n    <name>WriteLog</name>\n    <label>WriteLog</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <inputAssignments>\n      <field>Name</field>\n      <value>\n        <stringValue>FlowCoreF7_log_F7_018</stringValue>\n      </value>\n    </inputAssignments>\n    <inputAssignments>\n      <field>Description</field>\n      <value>\n        <stringValue>Fired</stringValue>\n      </value>\n    </inputAssignments>\n    <object>Account</object>\n    <storeOutputAutomatically>true</storeOutputAutomatically>\n  </recordCreates>\n  <interviewLabel>FlowCoreF7AfterF7018 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7AfterF7018</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>WriteLog</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_018_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>NumberOfEmployees</field>\n      <operator>GreaterThan</operator>\n      <value>\n        <numberValue>5</numberValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordAfterSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7018.flow-meta.xml": "2c048bb6548b0c47f617efd92d67e5c824b300f549060e814795bf9ff736379b"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_018_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.NumberOfEmployees=10;update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_018'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_018|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "fb49cd45d48509b81c776e53f5529514674256c920231f9f3c53d8aec97d85ba"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7018Observe": "@IsTest private class F7018Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_018_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.NumberOfEmployees=10;update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_018'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_018|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7018Observe"
+              ],
+              "sourceSha256": {
+                "F7018Observe": "b9c43a8f2693374323ac73354d85c2ac0d96829f185afcc0184e2fb1483d58e0"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "F7_019",
+      "byAPI": {
+        "62.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7019.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <recordCreates>\n    <name>WriteLog</name>\n    <label>WriteLog</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <inputAssignments>\n      <field>Name</field>\n      <value>\n        <stringValue>FlowCoreF7_log_F7_019</stringValue>\n      </value>\n    </inputAssignments>\n    <inputAssignments>\n      <field>Description</field>\n      <value>\n        <stringValue>Fired</stringValue>\n      </value>\n    </inputAssignments>\n    <object>Account</object>\n    <storeOutputAutomatically>true</storeOutputAutomatically>\n  </recordCreates>\n  <interviewLabel>FlowCoreF7AfterF7019 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7AfterF7019</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>WriteLog</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_019_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Phone</field>\n      <operator>Contains</operator>\n      <value>\n        <stringValue>654</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordAfterSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7019.flow-meta.xml": "03d3c6daab76c8a7454256fbc9323d515f8dcd3b7460a49481c6d02c694e48e4"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_019_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Phone='1236540';update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_019'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_019|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "e1d1f27d9b6011a53fd8c4f95aef3b54bf1d92565616e6127594dda0acbe06a8"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7019Observe": "@IsTest private class F7019Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_019_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Phone='1236540';update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_019'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_019|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7019Observe"
+              ],
+              "sourceSha256": {
+                "F7019Observe": "cdfbae890b8fe5e648cadcc5aa572ed0551ec6b73e307ef3e498a9c2b7743421"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            }
+          }
+        },
+        "67.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7019.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <recordCreates>\n    <name>WriteLog</name>\n    <label>WriteLog</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <inputAssignments>\n      <field>Name</field>\n      <value>\n        <stringValue>FlowCoreF7_log_F7_019</stringValue>\n      </value>\n    </inputAssignments>\n    <inputAssignments>\n      <field>Description</field>\n      <value>\n        <stringValue>Fired</stringValue>\n      </value>\n    </inputAssignments>\n    <object>Account</object>\n    <storeOutputAutomatically>true</storeOutputAutomatically>\n  </recordCreates>\n  <interviewLabel>FlowCoreF7AfterF7019 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7AfterF7019</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>WriteLog</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_019_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Phone</field>\n      <operator>Contains</operator>\n      <value>\n        <stringValue>654</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordAfterSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7019.flow-meta.xml": "a6554c86e70c22b8a8727b099429710ab312f071ce9a9b061f55dd21175167c8"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_019_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Phone='1236540';update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_019'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_019|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "e1d1f27d9b6011a53fd8c4f95aef3b54bf1d92565616e6127594dda0acbe06a8"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7019Observe": "@IsTest private class F7019Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_019_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Phone='1236540';update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_019'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_019|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7019Observe"
+              ],
+              "sourceSha256": {
+                "F7019Observe": "cdfbae890b8fe5e648cadcc5aa572ed0551ec6b73e307ef3e498a9c2b7743421"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "F7_020",
+      "byAPI": {
+        "62.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7020.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <recordCreates>\n    <name>WriteLog</name>\n    <label>WriteLog</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <inputAssignments>\n      <field>Name</field>\n      <value>\n        <stringValue>FlowCoreF7_log_F7_020</stringValue>\n      </value>\n    </inputAssignments>\n    <inputAssignments>\n      <field>Description</field>\n      <value>\n        <stringValue>Fired</stringValue>\n      </value>\n    </inputAssignments>\n    <object>Account</object>\n    <storeOutputAutomatically>true</storeOutputAutomatically>\n  </recordCreates>\n  <interviewLabel>FlowCoreF7AfterF7020 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7AfterF7020</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>WriteLog</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_020_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Website</field>\n      <operator>IsNull</operator>\n      <value>\n        <booleanValue>true</booleanValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordAfterSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7020.flow-meta.xml": "4221daf89a71a7b95c564ff8e028256889aaa6ae9ec291e4555d594cbb67b104"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_020_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Website=null;update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_020'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_020|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "8c8f056c5aa65f2e138d3e130a8d50191bf9a05bb172ef96fea542eb705cf10b"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7020Observe": "@IsTest private class F7020Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_020_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Website=null;update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_020'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_020|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7020Observe"
+              ],
+              "sourceSha256": {
+                "F7020Observe": "634f3af10071e2788d68b0b9d5446bfc1eadc2999c25f18066e62d6e62916402"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            }
+          }
+        },
+        "67.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7020.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <recordCreates>\n    <name>WriteLog</name>\n    <label>WriteLog</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <inputAssignments>\n      <field>Name</field>\n      <value>\n        <stringValue>FlowCoreF7_log_F7_020</stringValue>\n      </value>\n    </inputAssignments>\n    <inputAssignments>\n      <field>Description</field>\n      <value>\n        <stringValue>Fired</stringValue>\n      </value>\n    </inputAssignments>\n    <object>Account</object>\n    <storeOutputAutomatically>true</storeOutputAutomatically>\n  </recordCreates>\n  <interviewLabel>FlowCoreF7AfterF7020 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7AfterF7020</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>WriteLog</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_020_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Website</field>\n      <operator>IsNull</operator>\n      <value>\n        <booleanValue>true</booleanValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordAfterSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7020.flow-meta.xml": "7424bf7c75eb3f393fa743f9ca29f6c73cfbbd039fe749637d9ac1844c31818d"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_020_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Website=null;update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_020'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_020|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "8c8f056c5aa65f2e138d3e130a8d50191bf9a05bb172ef96fea542eb705cf10b"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7020Observe": "@IsTest private class F7020Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_020_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Website=null;update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_020'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_020|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7020Observe"
+              ],
+              "sourceSha256": {
+                "F7020Observe": "634f3af10071e2788d68b0b9d5446bfc1eadc2999c25f18066e62d6e62916402"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "F7_021",
+      "byAPI": {
+        "62.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7021.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <recordCreates>\n    <name>WriteLog</name>\n    <label>WriteLog</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <inputAssignments>\n      <field>Name</field>\n      <value>\n        <stringValue>FlowCoreF7_log_F7_021</stringValue>\n      </value>\n    </inputAssignments>\n    <inputAssignments>\n      <field>Description</field>\n      <value>\n        <stringValue>Fired</stringValue>\n      </value>\n    </inputAssignments>\n    <object>Account</object>\n    <storeOutputAutomatically>true</storeOutputAutomatically>\n  </recordCreates>\n  <interviewLabel>FlowCoreF7AfterF7021 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7AfterF7021</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>WriteLog</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>1 AND (2 OR 3)</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_021_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Rating</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>Hot</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Industry</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>Energy</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordAfterSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7021.flow-meta.xml": "b2f40e7c1d80fc8f7366f8d53d12967a2373b12190f3151d626de5017cba10a6"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_021_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Industry='Energy';update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_021'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_021|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "e88fd77b5d7919d00eb7cb0199151516d48327e7bcc8be24d2e4098aa813da54"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7021Observe": "@IsTest private class F7021Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_021_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Industry='Energy';update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_021'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_021|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7021Observe"
+              ],
+              "sourceSha256": {
+                "F7021Observe": "1c9a5e2eaee91537c11d5a75f3c2b4caa294838f2c30786fe8c7e6486d3866f8"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            }
+          }
+        },
+        "67.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7021.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <recordCreates>\n    <name>WriteLog</name>\n    <label>WriteLog</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <inputAssignments>\n      <field>Name</field>\n      <value>\n        <stringValue>FlowCoreF7_log_F7_021</stringValue>\n      </value>\n    </inputAssignments>\n    <inputAssignments>\n      <field>Description</field>\n      <value>\n        <stringValue>Fired</stringValue>\n      </value>\n    </inputAssignments>\n    <object>Account</object>\n    <storeOutputAutomatically>true</storeOutputAutomatically>\n  </recordCreates>\n  <interviewLabel>FlowCoreF7AfterF7021 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7AfterF7021</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>WriteLog</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>1 AND (2 OR 3)</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_021_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Rating</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>Hot</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Industry</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>Energy</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordAfterSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7AfterF7021.flow-meta.xml": "b837b1b6e4b25053a8a9bdfcdc28fb0f8ebb00991aab808b2d3de2be1ea453b4"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_021_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Industry='Energy';update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_021'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_021|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "e88fd77b5d7919d00eb7cb0199151516d48327e7bcc8be24d2e4098aa813da54"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7021Observe": "@IsTest private class F7021Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_021_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Industry='Energy';update subject;subject.BillingCity='Followup';update subject;Integer effects=[SELECT COUNT() FROM Account WHERE Name='FlowCoreF7_log_F7_021'];payload.put('effects',effects);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_021|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7021Observe"
+              ],
+              "sourceSha256": {
+                "F7021Observe": "1c9a5e2eaee91537c11d5a75f3c2b4caa294838f2c30786fe8c7e6486d3866f8"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "effects": 1
+                  }
+                },
+                "value": {
+                  "effects": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "F7_022",
+      "byAPI": {
+        "62.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7022.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.NumberOfEmployees</assignToReference>\n      <operator>Add</operator>\n      <value>\n        <numberValue>1</numberValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7FlagF7022 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7FlagF7022</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_022_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Rating</field>\n      <operator>NotEqualTo</operator>\n      <value>\n        <stringValue>Hot</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/flows/FlowCoreF7ControlF7022.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.Description</assignToReference>\n      <operator>Assign</operator>\n      <value>\n        <stringValue>Control</stringValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7ControlF7022 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7ControlF7022</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>false</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_022_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Rating</field>\n      <operator>NotEqualTo</operator>\n      <value>\n        <stringValue>Hot</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7022.flow-meta.xml": "8a7f5cd81e3a77482714120d517b54af273684057ca1b44e1505d8f74fec824a",
+            "force-app/main/default/flows/FlowCoreF7ControlF7022.flow-meta.xml": "b6610bbfd2f86b8198dd774b6d9b672c1ed1d65d4daf1f7b2bdea4652aa88fce"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_022_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Hot',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Rating='Warm';update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_022|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "6a43c327995ca3fca15a357a8776439cc0463ceb035a49457103ea2880759bd0"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 1
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7022Observe": "@IsTest private class F7022Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_022_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Hot',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Rating='Warm';update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_022|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7022Observe"
+              ],
+              "sourceSha256": {
+                "F7022Observe": "a24331f587044ce61b23304ca82a2931ffea1f36a8aebf149c4d876be36d03ec"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 1
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 1
+                }
+              }
+            }
+          }
+        },
+        "67.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7022.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.NumberOfEmployees</assignToReference>\n      <operator>Add</operator>\n      <value>\n        <numberValue>1</numberValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7FlagF7022 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7FlagF7022</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_022_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Rating</field>\n      <operator>NotEqualTo</operator>\n      <value>\n        <stringValue>Hot</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/flows/FlowCoreF7ControlF7022.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.Description</assignToReference>\n      <operator>Assign</operator>\n      <value>\n        <stringValue>Control</stringValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7ControlF7022 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7ControlF7022</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>false</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_022_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Rating</field>\n      <operator>NotEqualTo</operator>\n      <value>\n        <stringValue>Hot</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7022.flow-meta.xml": "546fe660f0405ca839356285f69e26877a7d95768fa07de301f32be55c054d89",
+            "force-app/main/default/flows/FlowCoreF7ControlF7022.flow-meta.xml": "a1aee91ba5b8872ff81d6cf552a6d63927f209e1c139fae8f797dc7b8f23f827"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_022_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Hot',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Rating='Warm';update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_022|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "6a43c327995ca3fca15a357a8776439cc0463ceb035a49457103ea2880759bd0"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 1
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7022Observe": "@IsTest private class F7022Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_022_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Hot',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Rating='Warm';update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_022|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7022Observe"
+              ],
+              "sourceSha256": {
+                "F7022Observe": "a24331f587044ce61b23304ca82a2931ffea1f36a8aebf149c4d876be36d03ec"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 1
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "F7_023",
+      "byAPI": {
+        "62.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7023.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.NumberOfEmployees</assignToReference>\n      <operator>Add</operator>\n      <value>\n        <numberValue>1</numberValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7FlagF7023 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7FlagF7023</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_023_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>NumberOfEmployees</field>\n      <operator>GreaterThan</operator>\n      <value>\n        <numberValue>5</numberValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/flows/FlowCoreF7ControlF7023.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.Description</assignToReference>\n      <operator>Assign</operator>\n      <value>\n        <stringValue>Control</stringValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7ControlF7023 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7ControlF7023</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>false</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_023_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>NumberOfEmployees</field>\n      <operator>GreaterThan</operator>\n      <value>\n        <numberValue>5</numberValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7023.flow-meta.xml": "dabf0ddebbc10cc05c6ccecf2190f50d490bb0c6d8ea2f2f134b8cc008ae3c6f",
+            "force-app/main/default/flows/FlowCoreF7ControlF7023.flow-meta.xml": "df4f14328df9148b25226ce9d083b8809ea80d20380eefc1fdbcde501f6cb120"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_023_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.NumberOfEmployees=20;update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_023|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "a6071465bcce4cb1549ade3a2cd346cbf359bdecb956233686c609bc8e925e01"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 21
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 21
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7023Observe": "@IsTest private class F7023Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_023_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.NumberOfEmployees=20;update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_023|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7023Observe"
+              ],
+              "sourceSha256": {
+                "F7023Observe": "5ce4b9d94e54661dc47f64a86856e6b7759ece85cbd1e5d4cbbb049ce59196a4"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 21
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 21
+                }
+              }
+            }
+          }
+        },
+        "67.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7023.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.NumberOfEmployees</assignToReference>\n      <operator>Add</operator>\n      <value>\n        <numberValue>1</numberValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7FlagF7023 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7FlagF7023</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_023_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>NumberOfEmployees</field>\n      <operator>GreaterThan</operator>\n      <value>\n        <numberValue>5</numberValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/flows/FlowCoreF7ControlF7023.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.Description</assignToReference>\n      <operator>Assign</operator>\n      <value>\n        <stringValue>Control</stringValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7ControlF7023 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7ControlF7023</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>false</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_023_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>NumberOfEmployees</field>\n      <operator>GreaterThan</operator>\n      <value>\n        <numberValue>5</numberValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7023.flow-meta.xml": "d6f9a80e9a82c0ae6aca232bf9ba758569604dfb1c8b75fa825c28589fcbeb99",
+            "force-app/main/default/flows/FlowCoreF7ControlF7023.flow-meta.xml": "164e554fb042fb2a1427793a289d94da6954f32b47256e854a126ed6d0180001"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_023_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.NumberOfEmployees=20;update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_023|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "a6071465bcce4cb1549ade3a2cd346cbf359bdecb956233686c609bc8e925e01"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 21
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 21
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7023Observe": "@IsTest private class F7023Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_023_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.NumberOfEmployees=20;update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_023|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7023Observe"
+              ],
+              "sourceSha256": {
+                "F7023Observe": "5ce4b9d94e54661dc47f64a86856e6b7759ece85cbd1e5d4cbbb049ce59196a4"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 21
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 21
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "F7_024",
+      "byAPI": {
+        "62.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7024.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.NumberOfEmployees</assignToReference>\n      <operator>Add</operator>\n      <value>\n        <numberValue>1</numberValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7FlagF7024 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7FlagF7024</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_024_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Phone</field>\n      <operator>Contains</operator>\n      <value>\n        <stringValue>654</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/flows/FlowCoreF7ControlF7024.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.Description</assignToReference>\n      <operator>Assign</operator>\n      <value>\n        <stringValue>Control</stringValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7ControlF7024 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7ControlF7024</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>false</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_024_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Phone</field>\n      <operator>Contains</operator>\n      <value>\n        <stringValue>654</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7024.flow-meta.xml": "8fbca98107f210f4866228123d2ffd4ee67b77ec0229f4fa446fb638e160aa80",
+            "force-app/main/default/flows/FlowCoreF7ControlF7024.flow-meta.xml": "3204d0a60e09d28bdc45a3aa744333704a483b90cfc8a8cbce96ecab2d614fc2"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_024_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Phone='1236540';update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_024|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "b0571b1c7618dee733942a5a6807a68a34a13585aee4e16e051efdd19d820210"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 1
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7024Observe": "@IsTest private class F7024Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_024_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Phone='1236540';update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_024|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7024Observe"
+              ],
+              "sourceSha256": {
+                "F7024Observe": "246261c693deed4acb9e87bf101bb6454603a36f4892ea45f4e730d5f0d0d7e8"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 1
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 1
+                }
+              }
+            }
+          }
+        },
+        "67.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7024.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.NumberOfEmployees</assignToReference>\n      <operator>Add</operator>\n      <value>\n        <numberValue>1</numberValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7FlagF7024 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7FlagF7024</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_024_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Phone</field>\n      <operator>Contains</operator>\n      <value>\n        <stringValue>654</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/flows/FlowCoreF7ControlF7024.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.Description</assignToReference>\n      <operator>Assign</operator>\n      <value>\n        <stringValue>Control</stringValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7ControlF7024 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7ControlF7024</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>false</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_024_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Phone</field>\n      <operator>Contains</operator>\n      <value>\n        <stringValue>654</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7024.flow-meta.xml": "316c3cc4cce887774c1935f0ae7bce3746c74699c0a465b1f390bec10fd1d740",
+            "force-app/main/default/flows/FlowCoreF7ControlF7024.flow-meta.xml": "0b3fe31f433adb5149d5bfd2d81e70b4f377f78d8919885cd84b2102f3439290"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_024_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Phone='1236540';update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_024|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "b0571b1c7618dee733942a5a6807a68a34a13585aee4e16e051efdd19d820210"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 1
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7024Observe": "@IsTest private class F7024Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_024_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Phone='1236540';update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_024|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7024Observe"
+              ],
+              "sourceSha256": {
+                "F7024Observe": "246261c693deed4acb9e87bf101bb6454603a36f4892ea45f4e730d5f0d0d7e8"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 1
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "F7_025",
+      "byAPI": {
+        "62.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7025.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.NumberOfEmployees</assignToReference>\n      <operator>Add</operator>\n      <value>\n        <numberValue>1</numberValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7FlagF7025 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7FlagF7025</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_025_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Website</field>\n      <operator>IsNull</operator>\n      <value>\n        <booleanValue>true</booleanValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/flows/FlowCoreF7ControlF7025.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.Description</assignToReference>\n      <operator>Assign</operator>\n      <value>\n        <stringValue>Control</stringValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7ControlF7025 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7ControlF7025</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>false</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_025_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Website</field>\n      <operator>IsNull</operator>\n      <value>\n        <booleanValue>true</booleanValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7025.flow-meta.xml": "32373f252000648a7a8d3a3364a60d269a67e27fd9ab95a2e1962f84d22b93fc",
+            "force-app/main/default/flows/FlowCoreF7ControlF7025.flow-meta.xml": "7ca1aa499545075773b5a14f35c28842f7e1deba74f0a098509d987d6637424a"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_025_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Website=null;update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_025|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "ff5c0b0e8e3ea4452c0f0d32c939a6b6b43a0f5bb12c94521a8b4ace6ef8c1e5"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 1
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7025Observe": "@IsTest private class F7025Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_025_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Website=null;update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_025|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7025Observe"
+              ],
+              "sourceSha256": {
+                "F7025Observe": "996ae0490e84238009cb7adbac0dc74cdb1926d3cbe8aede217c885aa16cee72"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 1
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 1
+                }
+              }
+            }
+          }
+        },
+        "67.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7025.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.NumberOfEmployees</assignToReference>\n      <operator>Add</operator>\n      <value>\n        <numberValue>1</numberValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7FlagF7025 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7FlagF7025</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_025_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Website</field>\n      <operator>IsNull</operator>\n      <value>\n        <booleanValue>true</booleanValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/flows/FlowCoreF7ControlF7025.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.Description</assignToReference>\n      <operator>Assign</operator>\n      <value>\n        <stringValue>Control</stringValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7ControlF7025 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7ControlF7025</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>false</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_025_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Website</field>\n      <operator>IsNull</operator>\n      <value>\n        <booleanValue>true</booleanValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7025.flow-meta.xml": "9c45902ecf5ed3e8b43c639f5539a183fb02aa0baa52e7b6c545c4c118f77f2a",
+            "force-app/main/default/flows/FlowCoreF7ControlF7025.flow-meta.xml": "48dbbee35c2025867c1fad5ddcd9a2b1dd043919106c0152c2066fe97094eeec"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_025_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Website=null;update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_025|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "ff5c0b0e8e3ea4452c0f0d32c939a6b6b43a0f5bb12c94521a8b4ace6ef8c1e5"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 1
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7025Observe": "@IsTest private class F7025Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_025_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Website=null;update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_025|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7025Observe"
+              ],
+              "sourceSha256": {
+                "F7025Observe": "996ae0490e84238009cb7adbac0dc74cdb1926d3cbe8aede217c885aa16cee72"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 1
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "F7_026",
+      "byAPI": {
+        "62.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7026.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.NumberOfEmployees</assignToReference>\n      <operator>Add</operator>\n      <value>\n        <numberValue>1</numberValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7FlagF7026 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7FlagF7026</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>1 AND (2 OR 3)</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_026_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Rating</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>Hot</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Industry</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>Energy</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/flows/FlowCoreF7ControlF7026.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.Description</assignToReference>\n      <operator>Assign</operator>\n      <value>\n        <stringValue>Control</stringValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7ControlF7026 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7ControlF7026</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>false</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>1 AND (2 OR 3)</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_026_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Rating</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>Hot</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Industry</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>Energy</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7026.flow-meta.xml": "36814572ac5e7477dff3a993642e0e034a5fdcc595fa858b59fb50c5b89aff84",
+            "force-app/main/default/flows/FlowCoreF7ControlF7026.flow-meta.xml": "f660afe4a1c9d2026f4e1bcfaaf621d18f3686ac1d34a193e91377a9bc353350"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_026_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Industry='Energy';update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_026|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "afaa03025fa4de7d01b12b828de4ea5655419ecfb8e8b15a9f2b29c57fffe14c"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 1
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7026Observe": "@IsTest private class F7026Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_026_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Industry='Energy';update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_026|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7026Observe"
+              ],
+              "sourceSha256": {
+                "F7026Observe": "9006e32db31136c07cda6e87561b14626e83a1f40b1d83235e1a24204a5b970b"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 1
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 1
+                }
+              }
+            }
+          }
+        },
+        "67.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7026.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.NumberOfEmployees</assignToReference>\n      <operator>Add</operator>\n      <value>\n        <numberValue>1</numberValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7FlagF7026 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7FlagF7026</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>1 AND (2 OR 3)</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_026_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Rating</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>Hot</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Industry</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>Energy</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/flows/FlowCoreF7ControlF7026.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <assignments>\n    <name>MarkFired</name>\n    <label>MarkFired</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <assignmentItems>\n      <assignToReference>$Record.Description</assignToReference>\n      <operator>Assign</operator>\n      <value>\n        <stringValue>Control</stringValue>\n      </value>\n    </assignmentItems>\n  </assignments>\n  <interviewLabel>FlowCoreF7ControlF7026 {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF7ControlF7026</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>MarkFired</targetReference>\n    </connector>\n    <doesRequireRecordChangedToMeetCriteria>false</doesRequireRecordChangedToMeetCriteria>\n    <filterLogic>1 AND (2 OR 3)</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF7_026_subject</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Rating</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>Hot</stringValue>\n      </value>\n    </filters>\n    <filters>\n      <field>Industry</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>Energy</stringValue>\n      </value>\n    </filters>\n    <object>Account</object>\n    <recordTriggerType>Update</recordTriggerType>\n    <triggerType>RecordBeforeSave</triggerType>\n  </start>\n  <status>Active</status>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF7FlagF7026.flow-meta.xml": "c010d2ca52118486de01bb3a6d20a717cb0f83cd8957ca5b714bec919bc674af",
+            "force-app/main/default/flows/FlowCoreF7ControlF7026.flow-meta.xml": "ddbd296f1dc664b9d80608921bbfe1241da77fe83be3db119d86ca56878f81cd"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_026_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Industry='Energy';update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_026|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "afaa03025fa4de7d01b12b828de4ea5655419ecfb8e8b15a9f2b29c57fffe14c"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 1
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 1
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F7026Observe": "@IsTest private class F7026Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='FlowCoreF7_026_subject';Account subject=new Account(Name=unitName,NumberOfEmployees=0,Phone='1230000',Rating='Warm',Industry='Technology',Website='https://old.example',BillingCity='Pending',Description='initial');insert subject;subject.Industry='Energy';update subject;subject=[SELECT Id,NumberOfEmployees,Description,Phone,Rating,Industry,Website,BillingCity FROM Account WHERE Id=:subject.Id];subject.BillingCity='Followup';update subject;subject=[SELECT NumberOfEmployees,Description FROM Account WHERE Id=:subject.Id];payload.put('employees',subject.NumberOfEmployees);payload.put('description',subject.Description);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F7_026|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F7026Observe"
+              ],
+              "sourceSha256": {
+                "F7026Observe": "9006e32db31136c07cda6e87561b14626e83a1f40b1d83235e1a24204a5b970b"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "description": "Control",
+                    "employees": 1
+                  }
+                },
+                "value": {
+                  "description": "Control",
+                  "employees": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "F13_012",
+      "byAPI": {
+        "62.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF13Collision.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <recordDeletes>\n    <name>DeleteTargets</name>\n    <label>DeleteTargets</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <elementReference>Name</elementReference>\n      </value>\n    </filters>\n    <object>Account</object>\n  </recordDeletes>\n  <interviewLabel>FlowCoreF13Collision {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF13Collision</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>DeleteTargets</targetReference>\n    </connector>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>LastName</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF13_012_source</stringValue>\n      </value>\n    </filters>\n    <object>Contact</object>\n    <recordTriggerType>Create</recordTriggerType>\n    <triggerType>RecordAfterSave</triggerType>\n  </start>\n  <status>Active</status>\n  <variables>\n    <name>Name</name>\n    <dataType>String</dataType>\n    <isCollection>false</isCollection>\n    <isInput>false</isInput>\n    <isOutput>false</isOutput>\n    <value>\n      <stringValue>variable-target</stringValue>\n    </value>\n  </variables>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF13Collision.flow-meta.xml": "9bf53311031fee640cd409b8d0ddce112fcd4045809a6c36386777b3934ea8ce"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='F13_012';insert new Account(Name='variable-target');insert new Account(Name='FlowCoreF13_012_source');Contact source=new Contact(LastName='FlowCoreF13_012_source');insert source;payload.put('variableTargetRemaining',[SELECT COUNT() FROM Account WHERE Name='variable-target']);payload.put('sourceNameTargetRemaining',[SELECT COUNT() FROM Account WHERE Name='FlowCoreF13_012_source']);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F13_012|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "14c9584caee35febe2b2773e6cebe5cccac90b4ce702e21b9038229da47241cc"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "sourceNameTargetRemaining": 1,
+                    "variableTargetRemaining": 0
+                  }
+                },
+                "value": {
+                  "sourceNameTargetRemaining": 1,
+                  "variableTargetRemaining": 0
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F13012Observe": "@IsTest private class F13012Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='F13_012';insert new Account(Name='variable-target');insert new Account(Name='FlowCoreF13_012_source');Contact source=new Contact(LastName='FlowCoreF13_012_source');insert source;payload.put('variableTargetRemaining',[SELECT COUNT() FROM Account WHERE Name='variable-target']);payload.put('sourceNameTargetRemaining',[SELECT COUNT() FROM Account WHERE Name='FlowCoreF13_012_source']);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F13_012|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F13012Observe"
+              ],
+              "sourceSha256": {
+                "F13012Observe": "9681ef2803d9142b09520607a8c875bca1b72e9557859ac9127a8d9ff4ca9df3"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "sourceNameTargetRemaining": 1,
+                    "variableTargetRemaining": 0
+                  }
+                },
+                "value": {
+                  "sourceNameTargetRemaining": 1,
+                  "variableTargetRemaining": 0
+                }
+              }
+            }
+          }
+        },
+        "67.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreF13Collision.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <recordDeletes>\n    <name>DeleteTargets</name>\n    <label>DeleteTargets</label>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>Name</field>\n      <operator>EqualTo</operator>\n      <value>\n        <elementReference>Name</elementReference>\n      </value>\n    </filters>\n    <object>Account</object>\n  </recordDeletes>\n  <interviewLabel>FlowCoreF13Collision {!$Flow.CurrentDateTime}</interviewLabel>\n  <label>FlowCoreF13Collision</label>\n  <processType>AutoLaunchedFlow</processType>\n  <start>\n    <locationX>0</locationX>\n    <locationY>0</locationY>\n    <connector>\n      <targetReference>DeleteTargets</targetReference>\n    </connector>\n    <filterLogic>and</filterLogic>\n    <filters>\n      <field>LastName</field>\n      <operator>EqualTo</operator>\n      <value>\n        <stringValue>FlowCoreF13_012_source</stringValue>\n      </value>\n    </filters>\n    <object>Contact</object>\n    <recordTriggerType>Create</recordTriggerType>\n    <triggerType>RecordAfterSave</triggerType>\n  </start>\n  <status>Active</status>\n  <variables>\n    <name>Name</name>\n    <dataType>String</dataType>\n    <isCollection>false</isCollection>\n    <isInput>false</isInput>\n    <isOutput>false</isOutput>\n    <value>\n      <stringValue>variable-target</stringValue>\n    </value>\n  </variables>\n</Flow>\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreF13Collision.flow-meta.xml": "6d307741b969146f8b6bb0e47f86e7f66d7abbd01e05a557ed7d0107d5a1588a"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{String unitName='F13_012';insert new Account(Name='variable-target');insert new Account(Name='FlowCoreF13_012_source');Contact source=new Contact(LastName='FlowCoreF13_012_source');insert source;payload.put('variableTargetRemaining',[SELECT COUNT() FROM Account WHERE Name='variable-target']);payload.put('sourceNameTargetRemaining',[SELECT COUNT() FROM Account WHERE Name='FlowCoreF13_012_source']);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F13_012|'+JSON.serialize(payload));",
+              "sourceSha256": {
+                "anonymous": "14c9584caee35febe2b2773e6cebe5cccac90b4ce702e21b9038229da47241cc"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "sourceNameTargetRemaining": 1,
+                    "variableTargetRemaining": 0
+                  }
+                },
+                "value": {
+                  "sourceNameTargetRemaining": 1,
+                  "variableTargetRemaining": 0
+                }
+              }
+            },
+            "istest": {
+              "classes": {
+                "F13012Observe": "@IsTest private class F13012Observe{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{String unitName='F13_012';insert new Account(Name='variable-target');insert new Account(Name='FlowCoreF13_012_source');Contact source=new Contact(LastName='FlowCoreF13_012_source');insert source;payload.put('variableTargetRemaining',[SELECT COUNT() FROM Account WHERE Name='variable-target']);payload.put('sourceNameTargetRemaining',[SELECT COUNT() FROM Account WHERE Name='FlowCoreF13_012_source']);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage());}System.assert(false,'FLOW_CORE_RESULT|F13_012|'+JSON.serialize(payload));}}"
+              },
+              "tests": [
+                "F13012Observe"
+              ],
+              "sourceSha256": {
+                "F13012Observe": "9681ef2803d9142b09520607a8c875bca1b72e9557859ac9127a8d9ff4ca9df3"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "sourceNameTargetRemaining": 1,
+                    "variableTargetRemaining": 0
+                  }
+                },
+                "value": {
+                  "sourceNameTargetRemaining": 1,
+                  "variableTargetRemaining": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

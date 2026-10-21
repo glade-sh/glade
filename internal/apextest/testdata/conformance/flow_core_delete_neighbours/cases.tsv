@@ -1,0 +1,25 @@
+case_id	api_version	route	shape
+F13_006	62.0	anonymous	three filters with a Number Equals filter
+F13_006	62.0	istest	three filters with a Number Equals filter
+F13_006	67.0	anonymous	three filters with a Number Equals filter
+F13_006	67.0	istest	three filters with a Number Equals filter
+F13_007	62.0	anonymous	three filters with a Boolean Equals filter
+F13_007	62.0	istest	three filters with a Boolean Equals filter
+F13_007	67.0	anonymous	three filters with a Boolean Equals filter
+F13_007	67.0	istest	three filters with a Boolean Equals filter
+F13_008	62.0	anonymous	one String Equals filter
+F13_008	62.0	istest	one String Equals filter
+F13_008	67.0	anonymous	one String Equals filter
+F13_008	67.0	istest	one String Equals filter
+F13_009	62.0	anonymous	two String Equals filters
+F13_009	62.0	istest	two String Equals filters
+F13_009	67.0	anonymous	two String Equals filters
+F13_009	67.0	istest	two String Equals filters
+F13_010	62.0	anonymous	collection variable input to Delete Records
+F13_010	62.0	istest	collection variable input to Delete Records
+F13_010	67.0	anonymous	collection variable input to Delete Records
+F13_010	67.0	istest	collection variable input to Delete Records
+F13_011	62.0	anonymous	record variable field used by a Delete Records filter
+F13_011	62.0	istest	record variable field used by a Delete Records filter
+F13_011	67.0	anonymous	record variable field used by a Delete Records filter
+F13_011	67.0	istest	record variable field used by a Delete Records filter

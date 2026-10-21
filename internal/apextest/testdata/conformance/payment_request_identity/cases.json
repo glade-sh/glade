@@ -1,0 +1,30 @@
+[
+  {
+    "method": "capture_identity",
+    "shape": "Constructor authorization argument is exposed as paymentAuthorizationId"
+  },
+  {
+    "method": "capture_null",
+    "shape": "Null constructor controls"
+  },
+  {
+    "method": "reversal_identity",
+    "shape": "Reversal authorization constructor argument maps to paymentAuthorizationId"
+  },
+  {
+    "method": "card_identity",
+    "shape": "Card wrapper retains constructor reference"
+  },
+  {
+    "method": "notification_empty",
+    "shape": "Missing amount raises a payment API exception"
+  },
+  {
+    "method": "notification_null",
+    "shape": "Null notification dereferences"
+  },
+  {
+    "method": "notification_declined",
+    "shape": "Missing gateway context returns a failed result DTO for a populated decline"
+  }
+]

@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"userRelation":"User","accountRelation":"Account","empty":true}
+62.0	isTest	{"userRelation":"User","accountRelation":"Account","empty":true}
+67.0	anonymous	{"userRelation":"User","accountRelation":"Account","empty":true}
+67.0	isTest	{"userRelation":"User","accountRelation":"Account","empty":true}

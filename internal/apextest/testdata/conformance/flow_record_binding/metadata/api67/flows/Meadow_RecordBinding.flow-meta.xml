@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <apiVersion>67.0</apiVersion>
+  <assignments>
+    <name>PopulateScalar</name><label>PopulateScalar</label><locationX>0</locationX><locationY>0</locationY>
+    <connector><targetReference>UpdateScalar</targetReference></connector>
+    <assignmentItems><assignToReference>pendingRecord.Id</assignToReference><operator>Assign</operator><value><elementReference>targetId</elementReference></value></assignmentItems>
+    <assignmentItems><assignToReference>pendingRecord.Description</assignToReference><operator>Assign</operator><value><stringValue>After</stringValue></value></assignmentItems>
+  </assignments>
+  <assignments>
+    <name>PopulateWithoutId</name><label>PopulateWithoutId</label><locationX>0</locationX><locationY>0</locationY>
+    <connector><targetReference>UpdateScalar</targetReference></connector>
+    <assignmentItems><assignToReference>pendingRecord.Description</assignToReference><operator>Assign</operator><value><stringValue>After</stringValue></value></assignmentItems>
+  </assignments>
+  <assignments>
+    <name>PopulateCollectionRecord</name><label>PopulateCollectionRecord</label><locationX>0</locationX><locationY>0</locationY>
+    <connector><targetReference>AddToCollection</targetReference></connector>
+    <assignmentItems><assignToReference>pendingRecord.Id</assignToReference><operator>Assign</operator><value><elementReference>targetId</elementReference></value></assignmentItems>
+    <assignmentItems><assignToReference>pendingRecord.Description</assignToReference><operator>Assign</operator><value><stringValue>After</stringValue></value></assignmentItems>
+  </assignments>
+  <assignments>
+    <name>AddToCollection</name><label>AddToCollection</label><locationX>0</locationX><locationY>0</locationY>
+    <connector><targetReference>UpdateCollection</targetReference></connector>
+    <assignmentItems><assignToReference>pendingRecords</assignToReference><operator>Add</operator><value><elementReference>pendingRecord</elementReference></value></assignmentItems>
+  </assignments>
+  <decisions>
+    <name>ChooseMode</name><label>ChooseMode</label><locationX>0</locationX><locationY>0</locationY>
+    <defaultConnector><targetReference>UpdateScalar</targetReference></defaultConnector><defaultConnectorLabel>Untouched scalar</defaultConnectorLabel>
+    <rules>
+      <name>ScalarWithId</name><conditionLogic>and</conditionLogic>
+      <conditions><leftValueReference>mode</leftValueReference><operator>EqualTo</operator><rightValue><stringValue>scalar_with_id</stringValue></rightValue></conditions>
+      <connector><targetReference>PopulateScalar</targetReference></connector><label>ScalarWithId</label>
+    </rules>
+    <rules>
+      <name>ScalarMissingId</name><conditionLogic>and</conditionLogic>
+      <conditions><leftValueReference>mode</leftValueReference><operator>EqualTo</operator><rightValue><stringValue>scalar_missing_id</stringValue></rightValue></conditions>
+      <connector><targetReference>PopulateWithoutId</targetReference></connector><label>ScalarMissingId</label>
+    </rules>
+    <rules>
+      <name>EmptyCollection</name><conditionLogic>and</conditionLogic>
+      <conditions><leftValueReference>mode</leftValueReference><operator>EqualTo</operator><rightValue><stringValue>collection_empty</stringValue></rightValue></conditions>
+      <connector><targetReference>UpdateCollection</targetReference></connector><label>EmptyCollection</label>
+    </rules>
+    <rules>
+      <name>PopulatedCollection</name><conditionLogic>and</conditionLogic>
+      <conditions><leftValueReference>mode</leftValueReference><operator>EqualTo</operator><rightValue><stringValue>collection_with_id</stringValue></rightValue></conditions>
+      <connector><targetReference>PopulateCollectionRecord</targetReference></connector><label>PopulatedCollection</label>
+    </rules>
+  </decisions>
+  <interviewLabel>Meadow record binding {!$Flow.CurrentDateTime}</interviewLabel>
+  <label>Meadow record binding</label>
+  <processType>AutoLaunchedFlow</processType>
+  <recordUpdates>
+    <name>UpdateScalar</name><label>UpdateScalar</label><locationX>0</locationX><locationY>0</locationY>
+    <inputReference>pendingRecord</inputReference>
+  </recordUpdates>
+  <recordUpdates>
+    <name>UpdateCollection</name><label>UpdateCollection</label><locationX>0</locationX><locationY>0</locationY>
+    <inputReference>pendingRecords</inputReference>
+  </recordUpdates>
+  <start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>ChooseMode</targetReference></connector></start>
+  <status>Active</status>
+  <variables><name>mode</name><dataType>String</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>true</isOutput></variables>
+  <variables><name>targetId</name><dataType>String</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>true</isOutput></variables>
+  <variables><name>pendingRecord</name><dataType>SObject</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>true</isOutput><objectType>Account</objectType></variables>
+  <variables><name>pendingRecords</name><dataType>SObject</dataType><isCollection>true</isCollection><isInput>true</isInput><isOutput>true</isOutput><objectType>Account</objectType></variables>
+</Flow>

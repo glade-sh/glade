@@ -1,0 +1,6 @@
+case	shape
+mapped_without_controller	Insert with null controller, then update to mapped dependent value
+mapped_with_controller	Insert with matching controller, then update to mapped dependent value
+mapped_with_other_controller	Insert with nonmatching controller, then update to mapped dependent value
+unmapped_without_controller	Insert with null controller, then update to active dependent value with no mapping
+record_type_order	Record names and master flags for one custom record type plus Master

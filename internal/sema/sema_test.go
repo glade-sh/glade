@@ -599,7 +599,7 @@ func TestAnalyzeRecognizesCallableAndStubProviderTypes(t *testing.T) {
 				Kind:       apexast.DeclarationClass,
 				Name:       "Batch",
 				File:       "Batch.cls",
-				Interfaces: []string{"Database.Batchable<Account>"},
+				Interfaces: []string{"Database.Batchable<SObject>"},
 				Members: []typesys.MemberSymbol{
 					{
 						Kind:      apexast.DeclarationMethod,
@@ -1606,7 +1606,7 @@ public class UsesBroadSystemShapes {
     Datetime parsed = Datetime.valueOf((Object) '2026-05-14 00:00:00');
     Schema.DescribeSObjectResult described = account.getSObjectType().getDescribe(SObjectDescribeOptions.DEFERRED);
     account.addError(Account.Name, 'Name is required');
-    Iterable<SObjectField> iterableFields = new List<SObjectField>{ Account.Name };
+    Iterable<SObjectField> iterableFields = nameFields();
     for (SObjectField field : iterableFields) {
       String fieldName = field.getDescribe().getName();
     }
@@ -1622,6 +1622,11 @@ public class UsesBroadSystemShapes {
     ParameterSet parameterSet = ParameterSet.SSN_PARAMETER_SET;
     Boolean entityUpdateable = particle.FieldDefinition.EntityDefinition.RunningUserEntityAccess.IsUpdatable;
     Boolean fieldAccessible = fieldDefinition.RunningUserFieldAccess.IsAccessible;
+  }
+  // No account binding here: inside run, the account parameter is the
+  // receiver of Account.Name (native M1 S05), so the token lives here.
+  public static List<SObjectField> nameFields() {
+    return new List<SObjectField>{ Account.Name };
   }
 }
 `)
@@ -2004,6 +2009,40 @@ public class UsesChainedSObjectType {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+// Native H1XT8-A and H1XT9-A (62.0 and 67.0): RecordType.SObjectType is the
+// SobjectType field token as a call receiver too. getDescribe() is a
+// DescribeFieldResult, and newSObject() does not exist on it.
+func TestAnalyzeRecordTypeSObjectTypeReceiverIsFieldToken(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesRecordTypeToken.cls"), `
+public class UsesRecordTypeToken {
+  public static String describe() {
+    Schema.DescribeFieldResult field = RecordType.SObjectType.getDescribe();
+    return field.getName();
+  }
+  public static String create() {
+    return String.valueOf(RecordType.SObjectType.newSObject());
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesRecordTypeToken.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	var errors []diagnostic.Diagnostic
+	for _, d := range result.Diagnostics {
+		if d.Severity == diagnostic.Error {
+			errors = append(errors, d)
+		}
+	}
+	if len(errors) != 1 || errors[0].NativeMessage != "Method does not exist or incorrect signature: void newSObject() from the type Schema.SObjectField" ||
+		errors[0].Range == nil || errors[0].Range.Start.Line != 8 {
+		t.Fatalf("diagnostics = %#v", result.Diagnostics)
 	}
 }
 

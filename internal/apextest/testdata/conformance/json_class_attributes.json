@@ -1,0 +1,196 @@
+{
+  "fixtures": {
+    "62.0": {
+      "files": {
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"62.0\"}",
+        "force-app/main/default/classes/AttributeMemberProbe.cls": "public class AttributeMemberProbe {\n public class MapEnvelope {public Map<String,String> attributes;public String title;}\n public class TextEnvelope {public String attributes;}\n public class Wrapper {public MapEnvelope item;}\n public static String observe(){\n  String body='{\"attributes\":{\"category\":\"north\",\"type\":\"marker\"},\"title\":\"seed\"}';\n  MapEnvelope plain=(MapEnvelope)JSON.deserialize(body,MapEnvelope.class);\n  MapEnvelope strict=(MapEnvelope)JSON.deserializeStrict(body,MapEnvelope.class);\n  TextEnvelope text=(TextEnvelope)JSON.deserialize('{\"attributes\":\"text\"}',TextEnvelope.class);\n  Wrapper nested=(Wrapper)JSON.deserialize('{\"item\":'+body+'}',Wrapper.class);\n  List<MapEnvelope> listValue=(List<MapEnvelope>)JSON.deserialize('['+body+']',List<MapEnvelope>.class);\n  MapEnvelope nullable=(MapEnvelope)JSON.deserialize('{\"attributes\":null}',MapEnvelope.class);\n  MapEnvelope absent=(MapEnvelope)JSON.deserialize('{}',MapEnvelope.class);\n  Account record=(Account)JSON.deserialize('{\"attributes\":{\"type\":\"Account\"},\"Name\":\"row\"}',Account.class);\n  SObject genericRecord=(SObject)JSON.deserialize('{\"attributes\":{\"type\":\"Account\"},\"Name\":\"row\"}',SObject.class);\n  Map<String,Object> out=new Map<String,Object>();\n  out.put('plainCategory',plain.attributes==null?null:plain.attributes.get('category'));\n  out.put('plainType',plain.attributes==null?null:plain.attributes.get('type'));\n  out.put('strictCategory',strict.attributes==null?null:strict.attributes.get('category'));\n  out.put('textField',text.attributes);\n  out.put('nestedCategory',nested.item.attributes==null?null:nested.item.attributes.get('category'));\n  out.put('listCategory',listValue[0].attributes==null?null:listValue[0].attributes.get('category'));\n  out.put('title',plain.title);\n  out.put('nullAttributes',nullable.attributes==null);\n  out.put('absentAttributes',absent.attributes==null);\n  out.put('recordName',record.Name);\n  out.put('recordType',String.valueOf(record.getSObjectType()));\n  out.put('recordHasMetadataField',record.getPopulatedFieldsAsMap().containsKey('attributes'));\n  out.put('genericRecordType',String.valueOf(genericRecord.getSObjectType()));\n  return JSON.serialize(out);\n }\n}",
+        "force-app/main/default/classes/AttributeMemberProbeTest.cls": "@IsTest private class AttributeMemberProbeTest {@IsTest static void observe(){System.assert(false,'NATIVE_ATTRIBUTES|'+AttributeMemberProbe.observe());}}",
+        "force-app/main/default/classes/AttributeMemberProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/AttributeMemberProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "anonymous.apex": "System.debug('NATIVE_ATTRIBUTES|'+AttributeMemberProbe.observe());"
+      },
+      "sha256": {
+        "sfdx-project.json": "3f6415903c25e013895eb93fa7fbec23956f74b06460f5266f9d0ac53b80ddbc",
+        "force-app/main/default/classes/AttributeMemberProbe.cls": "898bbba6d0740f6c28b5fddc454c9ede5ce36e425b2fc5a1c47229c0932ad977",
+        "force-app/main/default/classes/AttributeMemberProbeTest.cls": "ae2c05b106bb7e37319839db6cb4441404172e400aa6176a7fec1409283c3b46",
+        "force-app/main/default/classes/AttributeMemberProbe.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "force-app/main/default/classes/AttributeMemberProbeTest.cls-meta.xml": "2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa",
+        "anonymous.apex": "2805329e1b2b204deb393d879ef9f7796805d3b6db57ed81bb559e987e3f554a"
+      }
+    },
+    "67.0": {
+      "files": {
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"67.0\"}",
+        "force-app/main/default/classes/AttributeMemberProbe.cls": "public class AttributeMemberProbe {\n public class MapEnvelope {public Map<String,String> attributes;public String title;}\n public class TextEnvelope {public String attributes;}\n public class Wrapper {public MapEnvelope item;}\n public static String observe(){\n  String body='{\"attributes\":{\"category\":\"north\",\"type\":\"marker\"},\"title\":\"seed\"}';\n  MapEnvelope plain=(MapEnvelope)JSON.deserialize(body,MapEnvelope.class);\n  MapEnvelope strict=(MapEnvelope)JSON.deserializeStrict(body,MapEnvelope.class);\n  TextEnvelope text=(TextEnvelope)JSON.deserialize('{\"attributes\":\"text\"}',TextEnvelope.class);\n  Wrapper nested=(Wrapper)JSON.deserialize('{\"item\":'+body+'}',Wrapper.class);\n  List<MapEnvelope> listValue=(List<MapEnvelope>)JSON.deserialize('['+body+']',List<MapEnvelope>.class);\n  MapEnvelope nullable=(MapEnvelope)JSON.deserialize('{\"attributes\":null}',MapEnvelope.class);\n  MapEnvelope absent=(MapEnvelope)JSON.deserialize('{}',MapEnvelope.class);\n  Account record=(Account)JSON.deserialize('{\"attributes\":{\"type\":\"Account\"},\"Name\":\"row\"}',Account.class);\n  SObject genericRecord=(SObject)JSON.deserialize('{\"attributes\":{\"type\":\"Account\"},\"Name\":\"row\"}',SObject.class);\n  Map<String,Object> out=new Map<String,Object>();\n  out.put('plainCategory',plain.attributes==null?null:plain.attributes.get('category'));\n  out.put('plainType',plain.attributes==null?null:plain.attributes.get('type'));\n  out.put('strictCategory',strict.attributes==null?null:strict.attributes.get('category'));\n  out.put('textField',text.attributes);\n  out.put('nestedCategory',nested.item.attributes==null?null:nested.item.attributes.get('category'));\n  out.put('listCategory',listValue[0].attributes==null?null:listValue[0].attributes.get('category'));\n  out.put('title',plain.title);\n  out.put('nullAttributes',nullable.attributes==null);\n  out.put('absentAttributes',absent.attributes==null);\n  out.put('recordName',record.Name);\n  out.put('recordType',String.valueOf(record.getSObjectType()));\n  out.put('recordHasMetadataField',record.getPopulatedFieldsAsMap().containsKey('attributes'));\n  out.put('genericRecordType',String.valueOf(genericRecord.getSObjectType()));\n  return JSON.serialize(out);\n }\n}",
+        "force-app/main/default/classes/AttributeMemberProbeTest.cls": "@IsTest private class AttributeMemberProbeTest {@IsTest static void observe(){System.assert(false,'NATIVE_ATTRIBUTES|'+AttributeMemberProbe.observe());}}",
+        "force-app/main/default/classes/AttributeMemberProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/AttributeMemberProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "anonymous.apex": "System.debug('NATIVE_ATTRIBUTES|'+AttributeMemberProbe.observe());"
+      },
+      "sha256": {
+        "sfdx-project.json": "58a7912dda14c3c2fba252a12fd198a98556f0c44971080e7acdfe0d673c847b",
+        "force-app/main/default/classes/AttributeMemberProbe.cls": "898bbba6d0740f6c28b5fddc454c9ede5ce36e425b2fc5a1c47229c0932ad977",
+        "force-app/main/default/classes/AttributeMemberProbeTest.cls": "ae2c05b106bb7e37319839db6cb4441404172e400aa6176a7fec1409283c3b46",
+        "force-app/main/default/classes/AttributeMemberProbe.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "force-app/main/default/classes/AttributeMemberProbeTest.cls-meta.xml": "490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d",
+        "anonymous.apex": "2805329e1b2b204deb393d879ef9f7796805d3b6db57ed81bb559e987e3f554a"
+      }
+    },
+    "68.0": {
+      "files": {
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"sourceApiVersion\": \"68.0\"}",
+        "force-app/main/default/classes/AttributeMemberProbe.cls": "public class AttributeMemberProbe {\n public class MapEnvelope {public Map<String,String> attributes;public String title;}\n public class TextEnvelope {public String attributes;}\n public class Wrapper {public MapEnvelope item;}\n public static String observe(){\n  String body='{\"attributes\":{\"category\":\"north\",\"type\":\"marker\"},\"title\":\"seed\"}';\n  MapEnvelope plain=(MapEnvelope)JSON.deserialize(body,MapEnvelope.class);\n  MapEnvelope strict=(MapEnvelope)JSON.deserializeStrict(body,MapEnvelope.class);\n  TextEnvelope text=(TextEnvelope)JSON.deserialize('{\"attributes\":\"text\"}',TextEnvelope.class);\n  Wrapper nested=(Wrapper)JSON.deserialize('{\"item\":'+body+'}',Wrapper.class);\n  List<MapEnvelope> listValue=(List<MapEnvelope>)JSON.deserialize('['+body+']',List<MapEnvelope>.class);\n  MapEnvelope nullable=(MapEnvelope)JSON.deserialize('{\"attributes\":null}',MapEnvelope.class);\n  MapEnvelope absent=(MapEnvelope)JSON.deserialize('{}',MapEnvelope.class);\n  Account record=(Account)JSON.deserialize('{\"attributes\":{\"type\":\"Account\"},\"Name\":\"row\"}',Account.class);\n  SObject genericRecord=(SObject)JSON.deserialize('{\"attributes\":{\"type\":\"Account\"},\"Name\":\"row\"}',SObject.class);\n  Map<String,Object> out=new Map<String,Object>();\n  out.put('plainCategory',plain.attributes==null?null:plain.attributes.get('category'));\n  out.put('plainType',plain.attributes==null?null:plain.attributes.get('type'));\n  out.put('strictCategory',strict.attributes==null?null:strict.attributes.get('category'));\n  out.put('textField',text.attributes);\n  out.put('nestedCategory',nested.item.attributes==null?null:nested.item.attributes.get('category'));\n  out.put('listCategory',listValue[0].attributes==null?null:listValue[0].attributes.get('category'));\n  out.put('title',plain.title);\n  out.put('nullAttributes',nullable.attributes==null);\n  out.put('absentAttributes',absent.attributes==null);\n  out.put('recordName',record.Name);\n  out.put('recordType',String.valueOf(record.getSObjectType()));\n  out.put('recordHasMetadataField',record.getPopulatedFieldsAsMap().containsKey('attributes'));\n  out.put('genericRecordType',String.valueOf(genericRecord.getSObjectType()));\n  return JSON.serialize(out);\n }\n}",
+        "force-app/main/default/classes/AttributeMemberProbeTest.cls": "@IsTest private class AttributeMemberProbeTest {@IsTest static void observe(){System.assert(false,'NATIVE_ATTRIBUTES|'+AttributeMemberProbe.observe());}}",
+        "force-app/main/default/classes/AttributeMemberProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/classes/AttributeMemberProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>",
+        "anonymous.apex": "System.debug('NATIVE_ATTRIBUTES|'+AttributeMemberProbe.observe());"
+      },
+      "sha256": {
+        "sfdx-project.json": "c7c1836286b8e2174816c0e0cf313e0938fbb079f1c8c5d2fffd9c67e9d30687",
+        "force-app/main/default/classes/AttributeMemberProbe.cls": "898bbba6d0740f6c28b5fddc454c9ede5ce36e425b2fc5a1c47229c0932ad977",
+        "force-app/main/default/classes/AttributeMemberProbeTest.cls": "ae2c05b106bb7e37319839db6cb4441404172e400aa6176a7fec1409283c3b46",
+        "force-app/main/default/classes/AttributeMemberProbe.cls-meta.xml": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d",
+        "force-app/main/default/classes/AttributeMemberProbeTest.cls-meta.xml": "f823f1f10003a7a169f6c55969169e727d77c71e91329e7d3759aa03897dc54d",
+        "anonymous.apex": "2805329e1b2b204deb393d879ef9f7796805d3b6db57ed81bb559e987e3f554a"
+      }
+    }
+  },
+  "cells": [
+    {
+      "api": "62.0",
+      "context": "anonymous",
+      "fixture": "62.0",
+      "receiptSHA256": "4bed80353727bfd909734b5410165c10375bda5de7525611a190314e579d0b98",
+      "orgIDHash": "19a785078c98eaf8b0c77d9544c46ad18b58496e338ac743dbec0d5a6bc5dff3",
+      "native": {
+        "genericRecordType": "Account",
+        "recordHasMetadataField": false,
+        "recordType": "Account",
+        "recordName": "row",
+        "absentAttributes": true,
+        "nullAttributes": true,
+        "title": "seed",
+        "listCategory": "north",
+        "nestedCategory": "north",
+        "textField": "text",
+        "strictCategory": "north",
+        "plainType": "marker",
+        "plainCategory": "north"
+      }
+    },
+    {
+      "api": "62.0",
+      "context": "istest",
+      "fixture": "62.0",
+      "receiptSHA256": "c5e31bb2d859379823c678b3b9d381e46899573e67aa120079afbd0695a431e0",
+      "orgIDHash": "19a785078c98eaf8b0c77d9544c46ad18b58496e338ac743dbec0d5a6bc5dff3",
+      "native": {
+        "genericRecordType": "Account",
+        "recordHasMetadataField": false,
+        "recordType": "Account",
+        "recordName": "row",
+        "absentAttributes": true,
+        "nullAttributes": true,
+        "title": "seed",
+        "listCategory": "north",
+        "nestedCategory": "north",
+        "textField": "text",
+        "strictCategory": "north",
+        "plainType": "marker",
+        "plainCategory": "north"
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "anonymous",
+      "fixture": "67.0",
+      "receiptSHA256": "9a32f24ec08aba1a63a0cde5e3c978da9478db30c979d48341fe45c841218fa6",
+      "orgIDHash": "19a785078c98eaf8b0c77d9544c46ad18b58496e338ac743dbec0d5a6bc5dff3",
+      "native": {
+        "genericRecordType": "Account",
+        "recordHasMetadataField": false,
+        "recordType": "Account",
+        "recordName": "row",
+        "absentAttributes": true,
+        "nullAttributes": true,
+        "title": "seed",
+        "listCategory": "north",
+        "nestedCategory": "north",
+        "textField": "text",
+        "strictCategory": "north",
+        "plainType": "marker",
+        "plainCategory": "north"
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "istest",
+      "fixture": "67.0",
+      "receiptSHA256": "970782841bc0437e3d76548cc100e14af9104c76e1eee137ac0d78d907897aee",
+      "orgIDHash": "19a785078c98eaf8b0c77d9544c46ad18b58496e338ac743dbec0d5a6bc5dff3",
+      "native": {
+        "genericRecordType": "Account",
+        "recordHasMetadataField": false,
+        "recordType": "Account",
+        "recordName": "row",
+        "absentAttributes": true,
+        "nullAttributes": true,
+        "title": "seed",
+        "listCategory": "north",
+        "nestedCategory": "north",
+        "textField": "text",
+        "strictCategory": "north",
+        "plainType": "marker",
+        "plainCategory": "north"
+      }
+    },
+    {
+      "api": "68.0",
+      "context": "anonymous",
+      "fixture": "68.0",
+      "receiptSHA256": "018909cfec90a41dd294f5dca32f945c1be753ae8f297960bba9fa55b6bf31a9",
+      "orgIDHash": "19a785078c98eaf8b0c77d9544c46ad18b58496e338ac743dbec0d5a6bc5dff3",
+      "native": {
+        "genericRecordType": "Account",
+        "recordHasMetadataField": false,
+        "recordType": "Account",
+        "recordName": "row",
+        "absentAttributes": true,
+        "nullAttributes": true,
+        "title": "seed",
+        "listCategory": "north",
+        "nestedCategory": "north",
+        "textField": "text",
+        "strictCategory": "north",
+        "plainType": "marker",
+        "plainCategory": "north"
+      }
+    },
+    {
+      "api": "68.0",
+      "context": "istest",
+      "fixture": "68.0",
+      "receiptSHA256": "cfd7797c2d938d03eed2557a993d7cb4a18341b2896409ce12a696e43aa3ebf8",
+      "orgIDHash": "19a785078c98eaf8b0c77d9544c46ad18b58496e338ac743dbec0d5a6bc5dff3",
+      "native": {
+        "genericRecordType": "Account",
+        "recordHasMetadataField": false,
+        "recordType": "Account",
+        "recordName": "row",
+        "absentAttributes": true,
+        "nullAttributes": true,
+        "title": "seed",
+        "listCategory": "north",
+        "nestedCategory": "north",
+        "textField": "text",
+        "strictCategory": "north",
+        "plainType": "marker",
+        "plainCategory": "north"
+      }
+    }
+  ],
+  "carries": [
+    "Namespaces and platform DTO targets are outside these plain source-class rows.",
+    "SObject field visibility and collection-mismatch diagnostics are outside this field-mapping capture."
+  ]
+}

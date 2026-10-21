@@ -16,13 +16,25 @@ import (
 
 // Both routes consume the owned Salesforce observations at the source API floor
 // and ceiling. CI reads only this export, including its custom Number field.
+// The API 68 primary anonymous capture at native-capture
+// (SHA-256 d2beeb3a92c4918011f673aa077ef8ffb6bf2c189b682608cb305d85a0680b07)
+// matches the API 67 oracle on all 299 answered rows and is missing R303. The
+// native UNCAUGHT recapture answers R303 with a volatile internal error ID; it
+// stays carried. The review, ordering and diagnostic controls have no API 68
+// capture, so API 68 leaves them unasserted. API 68 capture is anonymous-only,
+// so @IsTest checks at 68 count as legacy local regressions.
 func TestJSONOrgConformance(t *testing.T) {
 	type row struct {
 		ID, Code, Expected, FloorExpected, Carry string
 		Compile, NativeNull                      bool
 	}
 	var data struct {
-		APIVersions        []string `json:"apiVersions"`
+		APIVersions     []string `json:"apiVersions"`
+		API68Uncaptured []string `json:"api68Uncaptured"`
+		API68Recaptured struct {
+			Source   string
+			Expected map[string]string
+		} `json:"api68Recaptured"`
 		Declarations       map[string]string
 		Cases              []row
 		ReviewControls     []row
@@ -36,7 +48,7 @@ func TestJSONOrgConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if len(data.Cases) != 300 || strings.Join(data.APIVersions, ",") != "62.0,67.0" {
+	if len(data.Cases) != 300 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" {
 		t.Fatalf("incomplete JSON oracle: %d rows, APIs %v", len(data.Cases), data.APIVersions)
 	}
 	if len(data.ReviewControls) != 26 {
@@ -47,6 +59,19 @@ func TestJSONOrgConformance(t *testing.T) {
 	}
 	if len(data.DiagnosticControls) != 4 {
 		t.Fatalf("incomplete JSON diagnostic controls: %d rows", len(data.DiagnosticControls))
+	}
+	if len(data.API68Uncaptured) != 0 || len(data.API68Recaptured.Expected) != 1 || data.API68Recaptured.Expected["R303"] == "" || data.API68Recaptured.Source == "" {
+		t.Fatalf("API 68 uncaptured=%v recaptured=%v, want R303 recaptured only", data.API68Uncaptured, data.API68Recaptured.Expected)
+	}
+	// Rows without a native API 68 answer are not asserted at API 68.
+	uncaptured68 := map[string]string{}
+	for _, id := range data.API68Uncaptured {
+		uncaptured68[id] = "no API 68 answer in the primary capture"
+	}
+	for _, controls := range [][]row{data.ReviewControls, data.OrderingControls, data.DiagnosticControls} {
+		for _, tc := range controls {
+			uncaptured68[tc.ID] = "control has no API 68 capture"
+		}
 	}
 	data.Cases = append(data.Cases, data.ReviewControls...)
 	data.Cases = append(data.Cases, data.OrderingControls...)
@@ -96,6 +121,9 @@ func TestJSONOrgConformance(t *testing.T) {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCounts()
 			defer counts.Log(t, "JSON", api, "")
+			if api == "68.0" {
+				t.Log("A18 API 68.0: native capture is anonymous-only; @IsTest checks keep anonymous-backed local assertions and count as legacy, not native named-route evidence")
+			}
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
 			fixtureRoot := "testdata/conformance/json/schema"
@@ -155,6 +183,9 @@ func TestJSONOrgConformance(t *testing.T) {
 					if tc.Carry != "" || strings.HasPrefix(expected, "COMPILE_ERROR") {
 						continue
 					}
+					if _, ok := uncaptured68[tc.ID]; ok && api == "68.0" {
+						continue
+					}
 					namedMethods["observed"+tc.ID] = true
 					fmt.Fprintf(&source, "@IsTest static void observed%s() {\n%s\n}\n", tc.ID, bodyFor(tc, expected))
 				}
@@ -187,6 +218,16 @@ func TestJSONOrgConformance(t *testing.T) {
 				expected := tc.Expected
 				if api == "62.0" {
 					expected = tc.FloorExpected
+				}
+				if reason, ok := uncaptured68[tc.ID]; ok && api == "68.0" {
+					t.Logf("%s excluded at API 68: %s", tc.ID, reason)
+					continue
+				}
+				if recaptured, ok := data.API68Recaptured.Expected[tc.ID]; ok && api == "68.0" {
+					if tc.Carry == "" {
+						t.Fatalf("%s API 68 recapture must stay carried", tc.ID)
+					}
+					expected = recaptured
 				}
 				if tc.Carry != "" {
 					for _, route := range []string{"anonymous", "isTest"} {
@@ -221,7 +262,12 @@ func TestJSONOrgConformance(t *testing.T) {
 						t.Fatal(err)
 					}
 				})
-				counts.RunKind(t, "isTest", tc.ID, tc.ID+"/isTest", kind, func(t *testing.T) {
+				namedKind := kind
+				if api == "68.0" {
+					// API 68 has no native named-route capture.
+					namedKind = "legacy"
+				}
+				counts.RunKind(t, "isTest", tc.ID, tc.ID+"/isTest", namedKind, func(t *testing.T) {
 					methodName := "observed" + tc.ID
 					if rejected {
 						// Rejected source must not change the accepted matrix generation.

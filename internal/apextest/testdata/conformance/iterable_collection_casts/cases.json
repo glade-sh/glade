@@ -1,0 +1,16 @@
+{
+  "list_records": "new List<Account>{new Account(Name='Aster')}",
+  "set_records": "new Set<Account>{new Account(Name='Aster')}",
+  "values_records": "new Map<String,Account>{'one'=>new Account(Name='Aster')}.values()",
+  "list_objects": "new List<Object>{new Account(Name='Aster')}",
+  "set_objects": "new Set<Object>{new Account(Name='Aster')}",
+  "values_objects": "new Map<String,Object>{'one'=>new Account(Name='Aster')}.values()",
+  "list_strings": "new List<String>{'Aster'}",
+  "set_strings": "new Set<String>{'Aster'}",
+  "empty_list": "new List<String>()",
+  "empty_set": "new Set<String>()",
+  "map_control": "new Map<String,Account>{'one'=>new Account(Name='Aster')}",
+  "scalar_control": "7",
+  "null_control": "null",
+  "values_strings": "new Map<String,String>{'one'=>'Aster'}.values()"
+}

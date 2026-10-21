@@ -1,0 +1,226 @@
+{
+  "APIVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "NativeObservationCount": 42,
+  "Files": [
+    {
+      "Path": "native/api62/R001.cls",
+      "SHA256": "ebfc2af43ecf04946352c45475c6c988b934f3ee0ff888e7aceb6af02fe48638"
+    },
+    {
+      "Path": "native/api62/R002.cls",
+      "SHA256": "c549053506a927c5b1360128d592291fee82349ea68be88156643f544bff97c2"
+    },
+    {
+      "Path": "native/api62/R003.cls",
+      "SHA256": "2f9fb54941f76239794a7a22f6336db773f6a5ea0823f6839303eb7fff402f44"
+    },
+    {
+      "Path": "native/api62/R004.cls",
+      "SHA256": "9b92a5ac95cdb4f1cd7e1598c857879530f568f330234be16c5f688661b28a9f"
+    },
+    {
+      "Path": "native/api62/R007.cls",
+      "SHA256": "0bdb85605403fb551604c0797158140437afedcd7d39f49b7e8e895082ee66eb"
+    },
+    {
+      "Path": "native/api62/R005.cls",
+      "SHA256": "4fd9f01f51fffb3756d8b47fbf8b65b3c9bb7d9f9707bebba86f2ab76b394fe5"
+    },
+    {
+      "Path": "native/api62/R008.cls",
+      "SHA256": "564f8700ed3a49d6808984ee34331bba8c39d6fce419b33184219cd9aa7087c7"
+    },
+    {
+      "Path": "native/api62/R006.cls",
+      "SHA256": "b39ebd0de98f88f5aaea0bb34505435862dd79649f21464c3a16ab834b0a8793"
+    },
+    {
+      "Path": "native/api62/R009.cls",
+      "SHA256": "c53665e66e4be10e91b48744a2e6d90be0a2f80b417af4938eabf67324e360ea"
+    },
+    {
+      "Path": "native/api62/R010.cls",
+      "SHA256": "93c44248eb5c2e0b53980cc50d08322ff68a71dcd37c587a3fc4ee69647152c7"
+    },
+    {
+      "Path": "native/api62/CTRL_POS.cls",
+      "SHA256": "9bd76190cceec2557f002d34b2e6b4ea951fecedec3c1e9fd07e404543c1e0d5"
+    },
+    {
+      "Path": "native/api62/CTRL_CAUGHT.cls",
+      "SHA256": "5c523cc292517945a7e457e9cf2226006d2301a3ef1584baaa5022b2bc7ab0b6"
+    },
+    {
+      "Path": "native/api62/CTRL_UNCAUGHT.cls",
+      "SHA256": "f45280395116a7ae4d5517c5c9bdf9bbecc2ca3b57400ef486e0cd35d94ee200"
+    },
+    {
+      "Path": "native/api62/CTRL_COMPILE.cls",
+      "SHA256": "2bc92881c133447eb3dfda8df09efb4ff82567a0801a7096c0677be76d83447d"
+    },
+    {
+      "Path": "native/api62/org.tsv",
+      "SHA256": "2138cd5d63a878389a38fd5ab4305c31963081598d4788a9a9ed29a2b9740aba"
+    },
+    {
+      "Path": "native/api62/RUN-FACTS.txt",
+      "SHA256": "97f2e57b984362290fe87f84756a57c02c791d8cceae2ec095bc337ee2def513"
+    },
+    {
+      "Path": "native/api67/R001.cls",
+      "SHA256": "90e7b82ce5140ee807c76fa0f8e76c083ca528b81ac42c8260faec974aa5ba0d"
+    },
+    {
+      "Path": "native/api67/R002.cls",
+      "SHA256": "19f63191f4d9f452a794b0daa79f428366398bdae891bcda94ab5dc1b6c91364"
+    },
+    {
+      "Path": "native/api67/R003.cls",
+      "SHA256": "705625bc453deafa4236aa0ccedd6ea03cb759e1b9cdeadd3d229aa331a6a9b3"
+    },
+    {
+      "Path": "native/api67/R004.cls",
+      "SHA256": "6068c999e946732fbfd41cf38f8925892a38a2dd82b8e0069cfb0af7fd570aff"
+    },
+    {
+      "Path": "native/api67/R007.cls",
+      "SHA256": "cc4a2b3ee1bd112f3817002d683f927cd4605a5cc886fa2ae8c836933b2df2ce"
+    },
+    {
+      "Path": "native/api67/R005.cls",
+      "SHA256": "317dd650c0676a50f4a267a083f78181e373693c248ca04c484c1cfb557c2001"
+    },
+    {
+      "Path": "native/api67/R008.cls",
+      "SHA256": "330dd14ea3f02c3c519786e858bbd3d0330a6f5ab57507fa5987d605a0db156a"
+    },
+    {
+      "Path": "native/api67/R006.cls",
+      "SHA256": "bfe6ac5684a3c19aecc34f962c05a5ce97eeefe227d085f94dee845a4b783093"
+    },
+    {
+      "Path": "native/api67/R009.cls",
+      "SHA256": "5f4a01a5cfe2f0ef1bf80f382cf50752ffed010973411e20209023701cd1975f"
+    },
+    {
+      "Path": "native/api67/R010.cls",
+      "SHA256": "23a9e8fc846ae49298870b2a3a9df6ebab0d94b090d1932c395056d61f3443da"
+    },
+    {
+      "Path": "native/api67/CTRL_POS.cls",
+      "SHA256": "240ff0a1f3778129e8dcd4efbf119977cf7d4e71bc9c41caae281ea27890fcaf"
+    },
+    {
+      "Path": "native/api67/CTRL_CAUGHT.cls",
+      "SHA256": "712445d3077f736d8353820c705109ac3371afce0a0aee5616613957f3a0abe3"
+    },
+    {
+      "Path": "native/api67/CTRL_UNCAUGHT.cls",
+      "SHA256": "c8ce3e3add8d3ad42d6a686021471d83c80da590bac96f61fb7823f22446620d"
+    },
+    {
+      "Path": "native/api67/CTRL_COMPILE.cls",
+      "SHA256": "5f52a871fa6233d13ad1eb0ef92c18139eaa715154927861b72394cb69f28288"
+    },
+    {
+      "Path": "native/api67/org.tsv",
+      "SHA256": "bcba4a455b7f1c2396b1ddff795bb386de59ddbf8b16b1b769705c3f5cb2e705"
+    },
+    {
+      "Path": "native/api67/RUN-FACTS.txt",
+      "SHA256": "684d0f5038fdaed10114ce06279399cf25146c6e2c17ee63620338fddc2d669b"
+    },
+    {
+      "Path": "native/api68/R001.cls",
+      "SHA256": "96b55afed41204590cbf2f2197a41fce79776e05b064e9b48266a4223f3b4cd5"
+    },
+    {
+      "Path": "native/api68/R002.cls",
+      "SHA256": "68133411b30d4404f65c626cbbc0d7c8e8b6ff112235a5c65cbb9c697d3fd717"
+    },
+    {
+      "Path": "native/api68/R003.cls",
+      "SHA256": "d9d9e1dc0bfcca5f0a583e0e442f693b1a4f8103355f1e42f99629fb37c6fafe"
+    },
+    {
+      "Path": "native/api68/R004.cls",
+      "SHA256": "c054f4d8e758dfcb7d98023a6c59361d3a63c13db0e8070e1cd96d45c146e926"
+    },
+    {
+      "Path": "native/api68/R007.cls",
+      "SHA256": "ae6adfb46093b319a233ff7ae7b4ecd033d6b6082f4ce3b69e49d7baf430775f"
+    },
+    {
+      "Path": "native/api68/R005.cls",
+      "SHA256": "45aee40119f575627746ff64b0dad2b8c5b4f088b9384fdcc171bc8c09229a8d"
+    },
+    {
+      "Path": "native/api68/R008.cls",
+      "SHA256": "d74d2e3f51ffa5b7cffe248896612af1d36f6c0fb25ac4eaae9d529bebba5875"
+    },
+    {
+      "Path": "native/api68/R006.cls",
+      "SHA256": "dace7a3594033bf767fe08b0018f9911c57a7798f81420c008c140211dba9e29"
+    },
+    {
+      "Path": "native/api68/R009.cls",
+      "SHA256": "3ad93496049e6bdc50d991212e29f8cade1a9fec534393a5a530df7b3c5d89f0"
+    },
+    {
+      "Path": "native/api68/R010.cls",
+      "SHA256": "e962ed946f04a9c53860df303e129363af0b657eaa10fee3506e4c3a11f8f2ff"
+    },
+    {
+      "Path": "native/api68/CTRL_POS.cls",
+      "SHA256": "d2111e65d890b80fe791984a2c89f54a2365ed9fd90bde043c4118593551a6fb"
+    },
+    {
+      "Path": "native/api68/CTRL_CAUGHT.cls",
+      "SHA256": "602fb8e20dc644ecdcb9751a883cbed6d847343915adc78e398b8738328d12c9"
+    },
+    {
+      "Path": "native/api68/CTRL_UNCAUGHT.cls",
+      "SHA256": "809e25ba0c81bfb31ab9b6ee859f71f9a762e2689902d603841c680d77e0aa96"
+    },
+    {
+      "Path": "native/api68/CTRL_COMPILE.cls",
+      "SHA256": "0fd24cb05022cea1d63648b73a7af242a5276be6415b19496d9f83b9db968c7a"
+    },
+    {
+      "Path": "native/api68/org.tsv",
+      "SHA256": "6d2f41140ebaa32a7e305814eea14686a5fe710049268c1014bdbf33b5dd48e5"
+    },
+    {
+      "Path": "native/api68/RUN-FACTS.txt",
+      "SHA256": "65cb7c575f08a318a6d41c8b52ad1edefa9fd8d62ed1d653aaa8df207c309551"
+    },
+    {
+      "Path": "fixture/provider/sfdx-project.json",
+      "SHA256": "08553b620b32227fb421a59fe9e870685f31a049bb8fa2136bcca712d0e6e824"
+    },
+    {
+      "Path": "fixture/provider/force-app/main/default/objects/OwnerFlag__mdt.object",
+      "SHA256": "e96f1e27e17b0eb140c0c33117664d5b6a995597092244964b0f65f0290a54ab"
+    },
+    {
+      "Path": "fixture/provider/force-app/main/default/customMetadata/OwnerFlag.ProviderSeed.md",
+      "SHA256": "fea9cf0e9b2f2fa85184125f409fd4f5e00e088f5c532aafb9dacc948c4b1bb5"
+    },
+    {
+      "Path": "fixture/subscriber/sfdx-project.json",
+      "SHA256": "19efa2efee15c5265dd87044c23132247413245a96eefb215da88f9a70304704"
+    },
+    {
+      "Path": "fixture/subscriber/glade.yml",
+      "SHA256": "d2c2f992737c77ac7ad0f9b02eb7370e5005e2b3ef5d8b97a20a6a10d055ca68"
+    },
+    {
+      "Path": "fixture/subscriber/force-app/main/default/customMetadata/gladens001__OwnerFlag.OchreKestrelC419D7f3b9a2.md",
+      "SHA256": "58aa5c63254b228da4503ed05aaecb0a83367ec8a3a3fc3dba49d175924522f7"
+    }
+  ]
+}

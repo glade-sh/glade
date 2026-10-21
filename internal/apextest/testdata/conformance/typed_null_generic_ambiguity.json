@@ -1,0 +1,173 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "cluster": "generic-ambiguity",
+  "shapeCount": 1,
+  "nativeObservationCount": 6,
+  "capturedObservationCount": 6,
+  "packetRowsSha256": "fd89c1212d2e4ba87aad001ff72bea54d0e8f28a0bdb393af72cc51d4c5a54b3",
+  "nativeAnswersSha256": "4651a770309cb61b6f66e523aa069debcea95293c26ac3e83a358a9d1971ac5c",
+  "sourceManifestSha256": "3164f5fc42dba3b344bd172d8721f1722f20f6b35478029ce7a8af178c933d2b",
+  "evidenceSHA256": {
+    "62.0@anonymous": {
+      "tsvSha256": "d3207f68db5632bc09eeaf61fec7c6d6bae3382f0098852aa2a9a6edfeab2a48",
+      "runSha256": "9d44838be7a34c062803ffb7e279b73acfa28d865463335a136ecea977246f75"
+    },
+    "62.0@istest": {
+      "tsvSha256": "47f690e6680100b77ab3a9de63df17971769f4aa6931d8bc4ebc3db4e2165396",
+      "runSha256": "9ac070e9bd71ab3b9ba4d32aadb8227584a4e24627530f904f51e16302d7518b"
+    },
+    "67.0@anonymous": {
+      "tsvSha256": "d3207f68db5632bc09eeaf61fec7c6d6bae3382f0098852aa2a9a6edfeab2a48",
+      "runSha256": "35639d89ccfe1b78301dbd5576a8c4b0677de0d20da54c559b7629c935839139"
+    },
+    "67.0@istest": {
+      "tsvSha256": "47f690e6680100b77ab3a9de63df17971769f4aa6931d8bc4ebc3db4e2165396",
+      "runSha256": "c539330592ce3c9d5f99d9825563969279ea660a4c6b3c1062dc81a2bf67aeff"
+    },
+    "68.0@anonymous": {
+      "tsvSha256": "d3207f68db5632bc09eeaf61fec7c6d6bae3382f0098852aa2a9a6edfeab2a48",
+      "runSha256": "6d2142dc8227613e0c73792d581ec1f5b56f109228603907192d8e128a66a017"
+    },
+    "68.0@istest": {
+      "tsvSha256": "47f690e6680100b77ab3a9de63df17971769f4aa6931d8bc4ebc3db4e2165396",
+      "runSha256": "4afe1949540dcb7373065039fb5b913d605a2126f779ca15bff62adeb8a7a0d6"
+    }
+  },
+  "rows": [
+    {
+      "id": "C156TN_103",
+      "question": "generic member overloads untyped literal",
+      "role": "ambiguity-candidate",
+      "twin": "C156TN_050",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "class TN103Node {}\nclass TN103Dispatch { public String pick(String v){return 'string';} public String pick(TN103Node v){return 'node';} }\nString r;r=new TN103Dispatch().pick(null);System.assert(false,'C156_RESULT|C156TN_103|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "24161df134388041bf725524f5618237381b5d94c08e19da427839445efc4e52"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "compiled": false,
+                "compileProblem": "Ambiguous method signature: void pick(NULL)",
+                "line": 3,
+                "column": 32,
+                "success": false,
+                "exceptionMessage": null
+              },
+              "outcome": "reject",
+              "primary": "Ambiguous method signature: void pick(NULL)"
+            },
+            "67.0": {
+              "native": {
+                "compiled": false,
+                "compileProblem": "Ambiguous method signature: void pick(NULL)",
+                "line": 3,
+                "column": 32,
+                "success": false,
+                "exceptionMessage": null
+              },
+              "outcome": "reject",
+              "primary": "Ambiguous method signature: void pick(NULL)"
+            },
+            "68.0": {
+              "native": {
+                "compiled": false,
+                "compileProblem": "Ambiguous method signature: void pick(NULL)",
+                "line": 3,
+                "column": 32,
+                "success": false,
+                "exceptionMessage": null
+              },
+              "outcome": "reject",
+              "primary": "Ambiguous method signature: void pick(NULL)"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN103Observe": "@IsTest private class TN103Observe{@IsTest static void observe(){String r;r=new TN103Dispatch().pick(null);System.assert(false,'C156_RESULT|C156TN_103|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}",
+            "TN103Node": "public class TN103Node {}",
+            "TN103Dispatch": "public class TN103Dispatch { public String pick(String v){return 'string';} public String pick(TN103Node v){return 'node';} }"
+          },
+          "tests": [
+            "TN103Observe"
+          ],
+          "sourceSha256": {
+            "class:TN103Observe": "e5420e29b99dd44f3b833fa6031bfcfb9521d0fa3bb4335d42adb009b4000e33",
+            "class:TN103Node": "840031e58d4e0943f1c64d0a017d9b190900ec17d4d17f700ecedfeb39b80bf2",
+            "class:TN103Dispatch": "6646658d8635665f08025a254b7aa79032c0a9f93643db0cdb7979c05fbae0d7"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "TN103Observe",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Ambiguous method signature: void pick(NULL)"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "reject",
+              "primary": "Ambiguous method signature: void pick(NULL)"
+            },
+            "67.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "TN103Observe",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Ambiguous method signature: void pick(NULL)"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "reject",
+              "primary": "Ambiguous method signature: void pick(NULL)"
+            },
+            "68.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "TN103Observe",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Ambiguous method signature: void pick(NULL)"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "reject",
+              "primary": "Ambiguous method signature: void pick(NULL)"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

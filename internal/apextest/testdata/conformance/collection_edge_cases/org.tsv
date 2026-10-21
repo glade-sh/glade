@@ -1,0 +1,7 @@
+source_api	method	observation
+62.0	absent_children	{"newIdNull":true,"newNull":true,"originalCount":1,"removedNull":true}
+62.0	iterator_store	{"ordinary":"System.TypeException","stored":1,"textStored":2}
+62.0	widened_numeric	{"assignedInteger":true,"assignedLong":true,"castInteger":true,"castLong":true,"identical":true}
+67.0	absent_children	{"newIdNull":true,"newNull":true,"originalCount":1,"removedNull":true}
+67.0	iterator_store	{"ordinary":"System.TypeException","stored":1,"textStored":2}
+67.0	widened_numeric	{"assignedInteger":true,"assignedLong":true,"castInteger":true,"castLong":true,"identical":true}

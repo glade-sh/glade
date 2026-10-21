@@ -73,10 +73,13 @@ func TestCollectionEnhancedForTraversalIdentityAndNestedCounts(t *testing.T) {
 					releaseOuter()
 				}
 			}()
-			if _, handled, err := call("alias", alias, "add", []Value{Int(2)}); !handled || err == nil {
+			if _, handled, err := call("alias", alias, "add", []Value{Int(2)}); !handled || (err != nil) != (kind == ValueList) {
 				t.Fatalf("alias structural add: handled=%v error=%v", handled, err)
 			}
 			if kind == ValueSet {
+				if err := machine.collectionTraversalMutationError(alias, 0); err == nil {
+					t.Fatal("Set insertion did not invalidate the iterator continuation")
+				}
 				value, handled, err := call("alias", alias, "add", []Value{Int(1)})
 				if !handled || err != nil || value.Kind != ValueBool || value.Bool {
 					t.Fatalf("duplicate Set add = %#v handled=%v error=%v", value, handled, err)
@@ -102,7 +105,7 @@ func TestCollectionEnhancedForTraversalIdentityAndNestedCounts(t *testing.T) {
 			if machine.activeCollectionTraversals[key] != 1 {
 				t.Fatalf("outer count after inner release = %d, want 1", machine.activeCollectionTraversals[key])
 			}
-			if _, handled, err := call("alias", alias, "add", []Value{Int(2)}); !handled || err == nil {
+			if _, handled, err := call("alias", alias, "add", []Value{Int(2)}); !handled || (err != nil) != (kind == ValueList) {
 				t.Fatalf("inner release unlocked outer: handled=%v error=%v", handled, err)
 			}
 			if err := machine.CloneRuntime(nil).rejectActiveCollectionAdd(original); err != nil {

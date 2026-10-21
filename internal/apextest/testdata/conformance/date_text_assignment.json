@@ -1,0 +1,272 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "nativeObservationCount": 4,
+  "metadataFiles": {
+    "force-app/main/default/objects/ScalarWrite__c/ScalarWrite__c.object-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <deploymentStatus>Deployed</deploymentStatus>\n    <label>Scalar Write</label>\n    <nameField><label>Scalar Write Name</label><type>Text</type></nameField>\n    <pluralLabel>Scalar Writes</pluralLabel>\n    <sharingModel>ReadWrite</sharingModel>\n</CustomObject>\n",
+    "force-app/main/default/objects/ScalarWrite__c/fields/DateValue__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <fullName>DateValue__c</fullName>\n    <label>Date Value</label>\n    <required>false</required>\n    <type>Date</type>\n</CustomField>\n",
+    "force-app/main/default/objects/ScalarWrite__c/fields/TextValue__c.field-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <fullName>TextValue__c</fullName>\n    <label>Text Value</label>\n    <length>80</length>\n    <required>false</required>\n    <type>Text</type>\n</CustomField>\n"
+  },
+  "metadataFileSHA256": {
+    "force-app/main/default/objects/ScalarWrite__c/ScalarWrite__c.object-meta.xml": "dbb35d96971e1527a4733fc86c00cc5612ead2a1816db7bc3def829ee1d77cf8",
+    "force-app/main/default/objects/ScalarWrite__c/fields/DateValue__c.field-meta.xml": "621d94b9471fe5341802a1ff93ba00c12544ba89f876b6ef0573d0bfcffdafec",
+    "force-app/main/default/objects/ScalarWrite__c/fields/TextValue__c.field-meta.xml": "32bf7876692e179219b2e0e5007c052e68ecb0102cc0a92a526279bef3a29a07"
+  },
+  "fixtures": {
+    "62.0": {
+      "classes": {
+        "ScalarWriteProbe62": "public class ScalarWriteProbe62 {\n    private static Map<String, Object> putText(Object input) {\n        ScalarWrite__c record = new ScalarWrite__c(Name = 'sentinel', TextValue__c = 'before');\n        Map<String, Object> row = new Map<String, Object>();\n        String stage = 'before-put';\n        try {\n            stage = 'calling-put';\n            record.put('TextValue__c', input);\n            stage = 'assigned';\n            row.put('success', true);\n        } catch (Exception error) {\n            row.put('success', false);\n            row.put('exceptionType', error.getTypeName());\n            row.put('exceptionMessage', error.getMessage());\n        }\n        Object stored = record.get('TextValue__c');\n        row.put('stage', stage);\n        row.put('storedJSON', JSON.serialize(stored));\n        row.put('isString', stored instanceof String);\n        row.put('isDate', stored instanceof Date);\n        row.put('isNull', stored == null);\n        row.put('preservedSeedName', record.Name);\n        return row;\n    }\n\n    private static Map<String, Object> putDate() {\n        ScalarWrite__c record = new ScalarWrite__c(Name = 'sentinel', DateValue__c = Date.newInstance(2024, 6, 7));\n        Map<String, Object> row = new Map<String, Object>();\n        String stage = 'before-put';\n        Object input = Date.newInstance(2025, 1, 2);\n        try {\n            stage = 'calling-put';\n            record.put('DateValue__c', input);\n            stage = 'assigned';\n            row.put('success', true);\n        } catch (Exception error) {\n            row.put('success', false);\n            row.put('exceptionType', error.getTypeName());\n            row.put('exceptionMessage', error.getMessage());\n        }\n        Object stored = record.get('DateValue__c');\n        row.put('stage', stage);\n        row.put('storedJSON', JSON.serialize(stored));\n        row.put('isString', stored instanceof String);\n        row.put('isDate', stored instanceof Date);\n        row.put('isNull', stored == null);\n        row.put('preservedSeedName', record.Name);\n        return row;\n    }\n\n    public static String observe() {\n        return JSON.serialize(new Map<String, Object>{\n            'dateToText' => putText(Date.newInstance(2025, 1, 2)),\n            'stringToText' => putText('after'),\n            'nullToText' => putText(null),\n            'dateToDate' => putDate()\n        });\n    }\n}\n",
+        "ScalarWriteProbe62Test": "@IsTest\nprivate class ScalarWriteProbe62Test {\n    @IsTest static void observe() {\n        System.assert(false, 'DATE_ROWS|' + ScalarWriteProbe62.observe() + '|DATE_END');\n    }\n}\n"
+      },
+      "classMetadata": {
+        "ScalarWriteProbe62": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "ScalarWriteProbe62Test": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n"
+      },
+      "sourceSHA256": {
+        "ScalarWriteProbe62": "87a8bf5af0802becd66c1bde34a75fc31052febd9ca5b5d573d34a5fc9068e59",
+        "ScalarWriteProbe62Test": "fe225dc6fc8303d261684a903648e33388f48743041dad19ab3a7e5ac8ccc6e1"
+      },
+      "metadataSHA256": {
+        "ScalarWriteProbe62": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51",
+        "ScalarWriteProbe62Test": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+      },
+      "anonymous": "System.debug(LoggingLevel.ERROR, 'DATE_ROWS|' + ScalarWriteProbe62.observe() + '|DATE_END');\n",
+      "anonymousSHA256": "43db00dfe0c0f2b286bd88cafb0f4d937bc761aeed7c4883593f3a9d6cfa8a02",
+      "testClass": "ScalarWriteProbe62Test"
+    },
+    "67.0": {
+      "classes": {
+        "ScalarWriteProbe67": "public class ScalarWriteProbe67 {\n    private static Map<String, Object> putText(Object input) {\n        ScalarWrite__c record = new ScalarWrite__c(Name = 'sentinel', TextValue__c = 'before');\n        Map<String, Object> row = new Map<String, Object>();\n        String stage = 'before-put';\n        try {\n            stage = 'calling-put';\n            record.put('TextValue__c', input);\n            stage = 'assigned';\n            row.put('success', true);\n        } catch (Exception error) {\n            row.put('success', false);\n            row.put('exceptionType', error.getTypeName());\n            row.put('exceptionMessage', error.getMessage());\n        }\n        Object stored = record.get('TextValue__c');\n        row.put('stage', stage);\n        row.put('storedJSON', JSON.serialize(stored));\n        row.put('isString', stored instanceof String);\n        row.put('isDate', stored instanceof Date);\n        row.put('isNull', stored == null);\n        row.put('preservedSeedName', record.Name);\n        return row;\n    }\n\n    private static Map<String, Object> putDate() {\n        ScalarWrite__c record = new ScalarWrite__c(Name = 'sentinel', DateValue__c = Date.newInstance(2024, 6, 7));\n        Map<String, Object> row = new Map<String, Object>();\n        String stage = 'before-put';\n        Object input = Date.newInstance(2025, 1, 2);\n        try {\n            stage = 'calling-put';\n            record.put('DateValue__c', input);\n            stage = 'assigned';\n            row.put('success', true);\n        } catch (Exception error) {\n            row.put('success', false);\n            row.put('exceptionType', error.getTypeName());\n            row.put('exceptionMessage', error.getMessage());\n        }\n        Object stored = record.get('DateValue__c');\n        row.put('stage', stage);\n        row.put('storedJSON', JSON.serialize(stored));\n        row.put('isString', stored instanceof String);\n        row.put('isDate', stored instanceof Date);\n        row.put('isNull', stored == null);\n        row.put('preservedSeedName', record.Name);\n        return row;\n    }\n\n    public static String observe() {\n        return JSON.serialize(new Map<String, Object>{\n            'dateToText' => putText(Date.newInstance(2025, 1, 2)),\n            'stringToText' => putText('after'),\n            'nullToText' => putText(null),\n            'dateToDate' => putDate()\n        });\n    }\n}\n",
+        "ScalarWriteProbe67Test": "@IsTest\nprivate class ScalarWriteProbe67Test {\n    @IsTest static void observe() {\n        System.assert(false, 'DATE_ROWS|' + ScalarWriteProbe67.observe() + '|DATE_END');\n    }\n}\n"
+      },
+      "classMetadata": {
+        "ScalarWriteProbe67": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+        "ScalarWriteProbe67Test": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n"
+      },
+      "sourceSHA256": {
+        "ScalarWriteProbe67": "4553e8766d147fc6180c945292bf2849e33bf66c81513f81b58ba7edaa77c9bb",
+        "ScalarWriteProbe67Test": "8eefb533578c38d315f10e2c1e66b3fbad7fe2d981c2d267c3aa6ea7cee5daf5"
+      },
+      "metadataSHA256": {
+        "ScalarWriteProbe67": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "ScalarWriteProbe67Test": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+      },
+      "anonymous": "System.debug(LoggingLevel.ERROR, 'DATE_ROWS|' + ScalarWriteProbe67.observe() + '|DATE_END');\n",
+      "anonymousSHA256": "67e5c2de8be82903c5e26ebf92f22720ad17373e84aca456ea67005bcf46a268",
+      "testClass": "ScalarWriteProbe67Test"
+    }
+  },
+  "cells": [
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "istest",
+      "native": {
+        "dateToDate": {
+          "preservedSeedName": "sentinel",
+          "isNull": false,
+          "isDate": true,
+          "isString": false,
+          "storedJSON": "\"2025-01-02\"",
+          "stage": "assigned",
+          "success": true
+        },
+        "nullToText": {
+          "preservedSeedName": "sentinel",
+          "isNull": true,
+          "isDate": false,
+          "isString": false,
+          "storedJSON": "null",
+          "stage": "assigned",
+          "success": true
+        },
+        "stringToText": {
+          "preservedSeedName": "sentinel",
+          "isNull": false,
+          "isDate": false,
+          "isString": true,
+          "storedJSON": "\"after\"",
+          "stage": "assigned",
+          "success": true
+        },
+        "dateToText": {
+          "preservedSeedName": "sentinel",
+          "isNull": false,
+          "isDate": false,
+          "isString": true,
+          "storedJSON": "\"before\"",
+          "stage": "calling-put",
+          "exceptionMessage": "Illegal assignment from Date to String",
+          "exceptionType": "System.SObjectException",
+          "success": false
+        }
+      },
+      "nativeJSONSHA256": "71bc3c6d5efe6fa9421387cef64a0cef5c86fee1143a30f6ed7068ae6c14d2f3",
+      "rawSHA256": "99a90ffe9977aa84a8e4e14e607c2734253d9d54be28292e6b7223fd7bbb2910",
+      "deploymentID": "0Afgw000000O4iUCAS",
+      "deploymentSHA256": "481258ed7c3bc19787eff9b43731645f067a8db48313b96388baea43ee24ea33",
+      "orgIdSHA256": "8a4f37d5e33773918f4efdca03addc3ca447a799c5ea1bc75b91812667d16504",
+      "sourceStatus": "intentional assertion observation"
+    },
+    {
+      "api": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "native": {
+        "dateToDate": {
+          "preservedSeedName": "sentinel",
+          "isNull": false,
+          "isDate": true,
+          "isString": false,
+          "storedJSON": "\"2025-01-02\"",
+          "stage": "assigned",
+          "success": true
+        },
+        "nullToText": {
+          "preservedSeedName": "sentinel",
+          "isNull": true,
+          "isDate": false,
+          "isString": false,
+          "storedJSON": "null",
+          "stage": "assigned",
+          "success": true
+        },
+        "stringToText": {
+          "preservedSeedName": "sentinel",
+          "isNull": false,
+          "isDate": false,
+          "isString": true,
+          "storedJSON": "\"after\"",
+          "stage": "assigned",
+          "success": true
+        },
+        "dateToText": {
+          "preservedSeedName": "sentinel",
+          "isNull": false,
+          "isDate": false,
+          "isString": true,
+          "storedJSON": "\"before\"",
+          "stage": "calling-put",
+          "exceptionMessage": "Illegal assignment from Date to String",
+          "exceptionType": "System.SObjectException",
+          "success": false
+        }
+      },
+      "nativeJSONSHA256": "71bc3c6d5efe6fa9421387cef64a0cef5c86fee1143a30f6ed7068ae6c14d2f3",
+      "rawSHA256": "4379d082adba93155e4b978901fcb64a9e7b2dd955d21a82331b57276821f1ec",
+      "deploymentID": "0Afgw000000O4iUCAS",
+      "deploymentSHA256": "481258ed7c3bc19787eff9b43731645f067a8db48313b96388baea43ee24ea33",
+      "orgIdSHA256": "8a4f37d5e33773918f4efdca03addc3ca447a799c5ea1bc75b91812667d16504",
+      "sourceStatus": "success/debug observation"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "istest",
+      "native": {
+        "dateToDate": {
+          "preservedSeedName": "sentinel",
+          "isNull": false,
+          "isDate": true,
+          "isString": false,
+          "storedJSON": "\"2025-01-02\"",
+          "stage": "assigned",
+          "success": true
+        },
+        "nullToText": {
+          "preservedSeedName": "sentinel",
+          "isNull": true,
+          "isDate": false,
+          "isString": false,
+          "storedJSON": "null",
+          "stage": "assigned",
+          "success": true
+        },
+        "stringToText": {
+          "preservedSeedName": "sentinel",
+          "isNull": false,
+          "isDate": false,
+          "isString": true,
+          "storedJSON": "\"after\"",
+          "stage": "assigned",
+          "success": true
+        },
+        "dateToText": {
+          "preservedSeedName": "sentinel",
+          "isNull": false,
+          "isDate": false,
+          "isString": true,
+          "storedJSON": "\"before\"",
+          "stage": "calling-put",
+          "exceptionMessage": "Illegal assignment from Date to String",
+          "exceptionType": "System.SObjectException",
+          "success": false
+        }
+      },
+      "nativeJSONSHA256": "71bc3c6d5efe6fa9421387cef64a0cef5c86fee1143a30f6ed7068ae6c14d2f3",
+      "rawSHA256": "0f3cfd3add4a878233a476dfa4e351095c2d55bf5e63b08f17e11f828406d9d0",
+      "deploymentID": "0Afgw000000O4iUCAS",
+      "deploymentSHA256": "481258ed7c3bc19787eff9b43731645f067a8db48313b96388baea43ee24ea33",
+      "orgIdSHA256": "8a4f37d5e33773918f4efdca03addc3ca447a799c5ea1bc75b91812667d16504",
+      "sourceStatus": "intentional assertion observation"
+    },
+    {
+      "api": "67.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "native": {
+        "dateToDate": {
+          "preservedSeedName": "sentinel",
+          "isNull": false,
+          "isDate": true,
+          "isString": false,
+          "storedJSON": "\"2025-01-02\"",
+          "stage": "assigned",
+          "success": true
+        },
+        "nullToText": {
+          "preservedSeedName": "sentinel",
+          "isNull": true,
+          "isDate": false,
+          "isString": false,
+          "storedJSON": "null",
+          "stage": "assigned",
+          "success": true
+        },
+        "stringToText": {
+          "preservedSeedName": "sentinel",
+          "isNull": false,
+          "isDate": false,
+          "isString": true,
+          "storedJSON": "\"after\"",
+          "stage": "assigned",
+          "success": true
+        },
+        "dateToText": {
+          "preservedSeedName": "sentinel",
+          "isNull": false,
+          "isDate": false,
+          "isString": true,
+          "storedJSON": "\"before\"",
+          "stage": "calling-put",
+          "exceptionMessage": "Illegal assignment from Date to String",
+          "exceptionType": "System.SObjectException",
+          "success": false
+        }
+      },
+      "nativeJSONSHA256": "71bc3c6d5efe6fa9421387cef64a0cef5c86fee1143a30f6ed7068ae6c14d2f3",
+      "rawSHA256": "16fd8f5640efc46837fb39289b536ce0c7ea3c4cddd2536989896d4ae00ffca1",
+      "deploymentID": "0Afgw000000O4iUCAS",
+      "deploymentSHA256": "481258ed7c3bc19787eff9b43731645f067a8db48313b96388baea43ee24ea33",
+      "orgIdSHA256": "8a4f37d5e33773918f4efdca03addc3ca447a799c5ea1bc75b91812667d16504",
+      "sourceStatus": "success/debug observation"
+    }
+  ],
+  "scope": "Dynamic put Date into custom Text rejects before mutation; String/null and Date-to-Date controls. No other scalar, TextArea, Picklist, direct assignment or DML generalization."
+}

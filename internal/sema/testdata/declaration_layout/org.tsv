@@ -1,0 +1,33 @@
+api	case	accepted	message
+62.0	GardenUpperBranch	true	-
+62.0	GardenLineBreak	true	-
+62.0	GardenDmlList	true	-
+62.0	GardenBadAnnotation	true	-
+62.0	GardenBadDate	false	Illegal assignment from Datetime to Date
+62.0	GardenBadScope	false	Variable does not exist: seeds
+67.0	GardenUpperBranch	true	-
+67.0	GardenLineBreak	true	-
+67.0	GardenDmlList	true	-
+67.0	GardenBadAnnotation	true	-
+67.0	GardenBadDate	false	Illegal assignment from Datetime to Date
+67.0	GardenBadScope	false	Variable does not exist: seeds
+62.0	GardenOpaqueField	true	-
+62.0	GardenBareField	false	Annotation does not exist: OpaqueMarker | Annotation does not exist: OpaqueMarker
+62.0	GardenNumericField	false	Unexpected token '@'. | Unexpected token '@'. | Extra ')', at '1'. | Invalid constructor name: OpaqueMarker
+62.0	GardenMultiField	false	Unexpected token '@'. | Unexpected token '@'. | Expecting ')' but was: 'a' | Invalid constructor name: OpaqueMarker
+62.0	GardenOpaqueClass	true	-
+62.0	GardenLocalAnnotation	true	-
+62.0	GardenCommentBreak	true	-
+62.0	GardenDmlArray	true	-
+67.0	GardenOpaqueField	true	-
+67.0	GardenBareField	false	Annotation does not exist: OpaqueMarker | Annotation does not exist: OpaqueMarker
+67.0	GardenNumericField	false	Unexpected token '@'. | Unexpected token '@'. | Extra ')', at '1'. | Invalid constructor name: OpaqueMarker
+67.0	GardenMultiField	false	Unexpected token '@'. | Unexpected token '@'. | Expecting ')' but was: 'a' | Invalid constructor name: OpaqueMarker
+67.0	GardenOpaqueClass	true	-
+67.0	GardenLocalAnnotation	true	-
+67.0	GardenCommentBreak	true	-
+67.0	GardenDmlArray	true	-
+62.0	GardenCompactDml	true	-
+62.0	GardenDecimalConstructor	false	Constructor not defined: [GardenDecimalConstructor].<Constructor>(Decimal)
+67.0	GardenCompactDml	true	-
+67.0	GardenDecimalConstructor	false	Constructor not defined: [GardenDecimalConstructor].<Constructor>(Decimal)

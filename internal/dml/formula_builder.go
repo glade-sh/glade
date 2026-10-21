@@ -193,14 +193,17 @@ func (p *formulaParser) formulaFunctionType(name string, args []formulaValue) (f
 	name = strings.ToUpper(name)
 	counts := map[string]int{
 		"NOT": 1, "ISNEW": 0, "ISBLANK": 1, "ISNULL": 1, "BLANKVALUE": 2, "NULLVALUE": 2,
-		"CONTAINS": 2, "BEGINS": 2, "LEFT": 2, "RIGHT": 2, "MID": 3, "CASESAFEID": 1, "SUBSTITUTE": 3,
+		"CONTAINS": 2, "BEGINS": 2, "FIND": 2, "LEFT": 2, "RIGHT": 2, "MID": 3, "CASESAFEID": 1, "SUBSTITUTE": 3,
 		"BR": 0, "REGEX": 2, "ISPICKVAL": 2, "TEXT": 1, "LOWER": 1, "UPPER": 1, "TRIM": 1,
-		"LPAD": 3, "RPAD": 3, "TODAY": 0, "NOW": 0, "DATE": 3, "DAY": 1, "MONTH": 1, "YEAR": 1,
+		"LPAD": 3, "RPAD": 3, "TODAY": 0, "NOW": 0, "DATE": 3, "DAY": 1, "DAYOFYEAR": 1, "MONTH": 1, "YEAR": 1,
 		"ADDMONTHS": 2, "DATEVALUE": 1, "DATETIMEVALUE": 1, "TIMEVALUE": 1, "WEEKDAY": 1,
 		"FLOOR": 1, "CEILING": 1, "ROUND": 2, "ABS": 1, "MOD": 2, "LEN": 1, "SQRT": 1,
 		"EXP": 1, "LN": 1, "LOG": 1, "POWER": 2, "SIGN": 3, "VALUE": 1, "ISNUMBER": 1, "IF": 3,
 	}
 	count, known := counts[name]
+	if name == "FIND" && len(args) == 3 {
+		count = 3
+	}
 	if known && len(args) != count {
 		p.validationMessage = fmt.Sprintf("Incorrect number of parameters for function '%s()'. Expected %d, received %d", name, count, len(args))
 		return formulaValue{}, false
@@ -239,7 +242,7 @@ func (p *formulaParser) formulaFunctionType(name string, args []formulaValue) (f
 		return formulaValue{kind: formulaDate, fieldType: storage.FieldDateTime}, true
 	case "TIMEVALUE":
 		return formulaValue{kind: formulaString, fieldType: storage.FieldTime}, true
-	case "DAY", "MONTH", "YEAR", "WEEKDAY", "FLOOR", "CEILING", "ROUND", "ABS", "MOD", "LEN", "SQRT", "EXP", "LN", "LOG", "POWER", "SIGN", "VALUE", "MIN", "MAX":
+	case "DAY", "DAYOFYEAR", "MONTH", "YEAR", "WEEKDAY", "FLOOR", "CEILING", "ROUND", "ABS", "MOD", "LEN", "FIND", "SQRT", "EXP", "LN", "LOG", "POWER", "SIGN", "VALUE", "MIN", "MAX":
 		return formulaValue{kind: formulaNumber}, true
 	default:
 		return formulaValue{kind: formulaString}, true

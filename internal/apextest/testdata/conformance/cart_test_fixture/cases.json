@@ -1,0 +1,1 @@
+[{"method":"cart_fixture","shape":"Cart utility persists its returned cart and getCart reads that identity"},{"method":"distinct_carts","shape":"Repeated creation produces distinct persisted carts"}]

@@ -27,9 +27,10 @@ type Workflow struct {
 }
 
 type Flow struct {
-	ObjectName string             `json:"objectName"`
-	Rules      []storage.FlowRule `json:"rules,omitempty"`
-	File       string             `json:"file,omitempty"`
+	ObjectName  string             `json:"objectName"`
+	Rules       []storage.FlowRule `json:"rules,omitempty"`
+	Declaration *storage.FlowRule  `json:"declaration,omitempty"`
+	File        string             `json:"file,omitempty"`
 }
 
 type workflowXML struct {
@@ -94,16 +95,18 @@ type workflowRecipientXML struct {
 	Recipient string `xml:"recipient"`
 }
 
+// LoadProject loads every workflow and flow file in the project. A file that
+// cannot be read or parsed is skipped with a GLADEAUTO003 warning naming it;
+// the remaining files still load, so one bad file never disables the rest of
+// the project's automation.
 func LoadProject(p project.Project) (Index, error) {
 	idx := Index{}
-	workflowUpdates, err := loadProjectWorkflowFieldUpdates(p.WorkflowFiles)
-	if err != nil {
-		return Index{}, err
-	}
+	workflowUpdates := loadProjectWorkflowFieldUpdates(p.WorkflowFiles)
 	for _, path := range p.WorkflowFiles {
 		workflow, diagnostics, err := loadWorkflowWithUpdates(path, workflowUpdates[objectNameFromWorkflowPath(path)])
 		if err != nil {
-			return Index{}, err
+			idx.Diagnostics = append(idx.Diagnostics, loadFailure(path, "workflow", objectNameFromWorkflowPath(path), err))
+			continue
 		}
 		idx.Workflows = append(idx.Workflows, workflow)
 		idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
@@ -111,10 +114,26 @@ func LoadProject(p project.Project) (Index, error) {
 	for _, path := range p.FlowFiles {
 		flow, diagnostics, err := loadFlow(path)
 		if err != nil {
-			return Index{}, err
+			idx.Diagnostics = append(idx.Diagnostics, loadFailure(path, "flow", flowFileName(path), err))
+			continue
 		}
 		idx.Flows = append(idx.Flows, flow)
 		idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
+	}
+	if err := flowRefsValidateProjectDecisions(p, &idx); err != nil {
+		return Index{}, err
+	}
+	if err := flowCoreValidateProjectEntries(p, &idx); err != nil {
+		return Index{}, err
+	}
+	if err := flowCoreValidateProjectConditions(p, &idx); err != nil {
+		return Index{}, err
+	}
+	if err := flowCoreValidateProjectAssignments(p, &idx); err != nil {
+		return Index{}, err
+	}
+	if err := flowCoreValidateProjectDeleteFilters(p, &idx); err != nil {
+		return Index{}, err
 	}
 	sort.Slice(idx.Workflows, func(i, j int) bool { return idx.Workflows[i].ObjectName < idx.Workflows[j].ObjectName })
 	sort.Slice(idx.Flows, func(i, j int) bool { return idx.Flows[i].ObjectName < idx.Flows[j].ObjectName })
@@ -134,7 +153,11 @@ func ApplyToOrg(org *storage.OrgState, idx Index) {
 		object.Definition.WorkflowRules = append([]storage.WorkflowRule(nil), workflow.Rules...)
 		org.Objects[objectName] = object
 	}
+	flowObjects := make(map[string]bool)
 	for _, flow := range idx.Flows {
+		if flow.Declaration != nil {
+			org.Metadata.FlowDeclarations = append(org.Metadata.FlowDeclarations, *flow.Declaration)
+		}
 		if strings.TrimSpace(flow.ObjectName) == "" {
 			org.Metadata.Flows = append(org.Metadata.Flows, flow.Rules...)
 			continue
@@ -144,7 +167,11 @@ func ApplyToOrg(org *storage.OrgState, idx Index) {
 			continue
 		}
 		object := org.Objects[objectName]
-		object.Definition.FlowRules = append([]storage.FlowRule(nil), flow.Rules...)
+		if !flowObjects[objectName] {
+			object.Definition.FlowRules = nil
+			flowObjects[objectName] = true
+		}
+		object.Definition.FlowRules = append(object.Definition.FlowRules, flow.Rules...)
 		org.Objects[objectName] = object
 	}
 }
@@ -285,16 +312,18 @@ func loadWorkflowWithUpdates(path string, externalUpdates map[string]storage.Wor
 	return workflow, diagnostics, nil
 }
 
-func loadProjectWorkflowFieldUpdates(paths []string) (map[string]map[string]storage.WorkflowFieldUpdate, error) {
+// loadProjectWorkflowFieldUpdates skips files it cannot read or parse;
+// LoadProject reports each of them when it loads that file.
+func loadProjectWorkflowFieldUpdates(paths []string) map[string]map[string]storage.WorkflowFieldUpdate {
 	out := make(map[string]map[string]storage.WorkflowFieldUpdate)
 	for _, path := range paths {
 		data, err := os.ReadFile(path)
 		if err != nil {
-			return nil, err
+			continue
 		}
 		var raw workflowXML
 		if err := xml.Unmarshal(data, &raw); err != nil {
-			return nil, err
+			continue
 		}
 		objectName := objectNameFromWorkflowPath(path)
 		if out[objectName] == nil {
@@ -302,7 +331,7 @@ func loadProjectWorkflowFieldUpdates(paths []string) (map[string]map[string]stor
 		}
 		mergeWorkflowFieldUpdates(out[objectName], raw.FieldUpdates)
 	}
-	return out, nil
+	return out
 }
 
 func mergeWorkflowFieldUpdates(updates map[string]storage.WorkflowFieldUpdate, rawUpdates []workflowFieldUpdateXML) {
@@ -326,6 +355,16 @@ func unsupported(path, rule, message string) diagnostic.Diagnostic {
 		message = rule + ": " + message
 	}
 	return diagnostic.Diagnostic{Severity: diagnostic.Warning, Code: "GLADEAUTO001", Message: message, File: path}
+}
+
+// loadFailure reports an automation file that could not be read or parsed.
+// Nothing in the file runs; every other automation file still loads.
+func loadFailure(path, kind, name string, err error) diagnostic.Diagnostic {
+	message := fmt.Sprintf("%s file could not be loaded and will not run: %v", kind, err)
+	if name != "" {
+		message = name + ": " + message
+	}
+	return diagnostic.Diagnostic{Severity: diagnostic.Warning, Code: "GLADEAUTO003", Message: message, File: path}
 }
 
 func objectNameFromWorkflowPath(path string) string {

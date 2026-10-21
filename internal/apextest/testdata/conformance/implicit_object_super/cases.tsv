@@ -1,0 +1,4 @@
+case	shape
+hash	Implicit Object super hash is stable and matches System.hashCode
+equals	Implicit Object super equality uses self identity, distinct and null controls
+explicit	Explicit superclass method dispatch

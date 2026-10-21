@@ -54,3 +54,48 @@ func applyProjectCustomPermissionRecords(org *storage.OrgState, p project.Projec
 	org.IDSequences = generator.Sequences
 	org.Objects["CustomPermission"] = state
 }
+
+// Enabled custom permissions are queryable access settings, not only names on
+// PermissionSet. See Salesforce's admin_troubleshoot_queries Access Settings
+// section. Resolve existing metadata only; never synthesize a missing permission.
+func applyProjectCustomPermissionGrants(org *storage.OrgState, parentID storage.ID, permissions []storage.Value, generator *storage.IDGenerator) {
+	if org == nil || generator == nil || len(permissions) == 0 {
+		return
+	}
+	storage.EnsureStandardObject(org, "SetupEntityAccess")
+	state := org.Objects["SetupEntityAccess"]
+	for _, permission := range permissions {
+		permissionID, ok := recordFieldID(org.Objects["CustomPermission"], "DeveloperName", permission.String)
+		if !ok {
+			continue
+		}
+		exists := false
+		for _, record := range state.Records {
+			parent, _ := record.GetField("ParentId")
+			entity, _ := record.GetField("SetupEntityId")
+			if storageIDValueEqualsText(parent, string(parentID)) && storageIDValueEqualsText(entity, string(permissionID)) {
+				exists = true
+				break
+			}
+		}
+		if exists {
+			continue
+		}
+		id, err := generator.Next("SetupEntityAccess")
+		for err == nil {
+			if _, _, occupied := storage.LookupRecordByID(state.Records, id); !occupied {
+				break
+			}
+			id, err = generator.Next("SetupEntityAccess")
+		}
+		if err != nil {
+			continue
+		}
+		state.Records[id] = storage.Record{ID: id, Object: "SetupEntityAccess", Fields: map[string]storage.Value{
+			"ParentId":        storage.IDValue(parentID),
+			"SetupEntityId":   storage.IDValue(permissionID),
+			"SetupEntityType": storage.StringValue("CustomPermission"),
+		}}
+	}
+	org.Objects["SetupEntityAccess"] = state
+}

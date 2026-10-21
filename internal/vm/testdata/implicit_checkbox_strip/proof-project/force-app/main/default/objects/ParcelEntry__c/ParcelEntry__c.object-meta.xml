@@ -1,0 +1,1 @@
+<CustomObject><label>Parcel Entry</label><pluralLabel>Parcel Entries</pluralLabel><nameField><type>Text</type><label>Entry Name</label></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>

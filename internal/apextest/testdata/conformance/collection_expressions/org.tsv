@@ -1,0 +1,103 @@
+case_id	api	context	status	observed
+V01	62	istest	OBSERVED	{"returnedNull":true,"size":1}
+V01	62	anonymous	OBSERVED	{"returnedNull":true,"size":1}
+V02	62	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":107,"fullName":"ExpressionProbeV0262","lineNumber":1,"problem":"Illegal conversion from void to Object"},{"columnNumber":107,"fullName":"ExpressionTestV0262","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0262 : Illegal conversion from void to Object"}]}
+V02	62	anonymous	COMPILE-REJECTED	{"column":"100","compileProblem":"Illegal conversion from void to Object","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+V03	62	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":91,"fullName":"ExpressionProbeV0362","lineNumber":1,"problem":"Illegal conversion from Object to Integer"},{"columnNumber":91,"fullName":"ExpressionTestV0362","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0362 : Illegal conversion from Object to Integer"}]}
+V03	62	anonymous	COMPILE-REJECTED	{"column":"84","compileProblem":"Illegal conversion from Object to Integer","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+V04	62	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":88,"fullName":"ExpressionProbeV0462","lineNumber":1,"problem":"Void method must not return a value"},{"columnNumber":88,"fullName":"ExpressionTestV0462","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0462 : Void method must not return a value"}]}
+V04	62	anonymous	COMPILE-REJECTED	{"column":"81","compileProblem":"Void method must not return a value","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+V05	62	istest	OBSERVED	{"completed":true,"size":1}
+V05	62	anonymous	OBSERVED	{"completed":true,"size":1}
+V06	62	istest	OBSERVED	{"completed":true,"size":1}
+V06	62	anonymous	OBSERVED	{"completed":true,"size":1}
+V07	62	istest	OBSERVED	{"returnedNull":true,"size":1}
+V07	62	anonymous	OBSERVED	{"returnedNull":true,"size":1}
+V08	62	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":122,"fullName":"ExpressionProbeV0862","lineNumber":1,"problem":"Illegal conversion from Object to Integer"},{"columnNumber":122,"fullName":"ExpressionTestV0862","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0862 : Illegal conversion from Object to Integer"}]}
+V08	62	anonymous	COMPILE-REJECTED	{"column":"115","compileProblem":"Illegal conversion from Object to Integer","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+F01	62	istest	OBSERVED	{"emptyNull":true,"last":"last","size":0}
+F01	62	anonymous	OBSERVED	{"emptyNull":true,"last":"last","size":0}
+F04	62	istest	OBSERVED	{"size":0,"ticks":5}
+F04	62	anonymous	OBSERVED	{"size":0,"ticks":5}
+V01	67	istest	OBSERVED	{"returnedNull":true,"size":1}
+V01	67	anonymous	OBSERVED	{"returnedNull":true,"size":1}
+V02	67	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":107,"fullName":"ExpressionProbeV0267","lineNumber":1,"problem":"Illegal conversion from void to Object"},{"columnNumber":107,"fullName":"ExpressionTestV0267","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0267 : Illegal conversion from void to Object"}]}
+V02	67	anonymous	COMPILE-REJECTED	{"column":"100","compileProblem":"Illegal conversion from void to Object","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+V03	67	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":91,"fullName":"ExpressionProbeV0367","lineNumber":1,"problem":"Illegal conversion from Object to Integer"},{"columnNumber":91,"fullName":"ExpressionTestV0367","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0367 : Illegal conversion from Object to Integer"}]}
+V03	67	anonymous	COMPILE-REJECTED	{"column":"84","compileProblem":"Illegal conversion from Object to Integer","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+V04	67	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":88,"fullName":"ExpressionProbeV0467","lineNumber":1,"problem":"Void method must not return a value"},{"columnNumber":88,"fullName":"ExpressionTestV0467","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0467 : Void method must not return a value"}]}
+V04	67	anonymous	COMPILE-REJECTED	{"column":"81","compileProblem":"Void method must not return a value","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+V05	67	istest	OBSERVED	{"completed":true,"size":1}
+V05	67	anonymous	OBSERVED	{"completed":true,"size":1}
+V06	67	istest	OBSERVED	{"completed":true,"size":1}
+V06	67	anonymous	OBSERVED	{"completed":true,"size":1}
+V07	67	istest	OBSERVED	{"returnedNull":true,"size":1}
+V07	67	anonymous	OBSERVED	{"returnedNull":true,"size":1}
+V08	67	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":122,"fullName":"ExpressionProbeV0867","lineNumber":1,"problem":"Illegal conversion from Object to Integer"},{"columnNumber":122,"fullName":"ExpressionTestV0867","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0867 : Illegal conversion from Object to Integer"}]}
+V08	67	anonymous	COMPILE-REJECTED	{"column":"115","compileProblem":"Illegal conversion from Object to Integer","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+F01	67	istest	OBSERVED	{"emptyNull":true,"last":"last","size":0}
+F01	67	anonymous	OBSERVED	{"emptyNull":true,"last":"last","size":0}
+F04	67	istest	OBSERVED	{"size":0,"ticks":5}
+F04	67	anonymous	OBSERVED	{"size":0,"ticks":5}
+V01	68	istest	OBSERVED	{"returnedNull":true,"size":1}
+V01	68	anonymous	OBSERVED	{"returnedNull":true,"size":1}
+V02	68	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":107,"fullName":"ExpressionProbeV0268","lineNumber":1,"problem":"Illegal conversion from void to Object"},{"columnNumber":107,"fullName":"ExpressionTestV0268","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0268 : Illegal conversion from void to Object"}]}
+V02	68	anonymous	COMPILE-REJECTED	{"column":"100","compileProblem":"Illegal conversion from void to Object","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+V03	68	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":91,"fullName":"ExpressionProbeV0368","lineNumber":1,"problem":"Illegal conversion from Object to Integer"},{"columnNumber":91,"fullName":"ExpressionTestV0368","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0368 : Illegal conversion from Object to Integer"}]}
+V03	68	anonymous	COMPILE-REJECTED	{"column":"84","compileProblem":"Illegal conversion from Object to Integer","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+V04	68	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":88,"fullName":"ExpressionProbeV0468","lineNumber":1,"problem":"Void method must not return a value"},{"columnNumber":88,"fullName":"ExpressionTestV0468","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0468 : Void method must not return a value"}]}
+V04	68	anonymous	COMPILE-REJECTED	{"column":"81","compileProblem":"Void method must not return a value","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+V05	68	istest	OBSERVED	{"completed":true,"size":1}
+V05	68	anonymous	OBSERVED	{"completed":true,"size":1}
+V06	68	istest	OBSERVED	{"completed":true,"size":1}
+V06	68	anonymous	OBSERVED	{"completed":true,"size":1}
+V07	68	istest	OBSERVED	{"returnedNull":true,"size":1}
+V07	68	anonymous	OBSERVED	{"returnedNull":true,"size":1}
+V08	68	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":122,"fullName":"ExpressionProbeV0868","lineNumber":1,"problem":"Illegal conversion from Object to Integer"},{"columnNumber":122,"fullName":"ExpressionTestV0868","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0868 : Illegal conversion from Object to Integer"}]}
+V08	68	anonymous	COMPILE-REJECTED	{"column":"115","compileProblem":"Illegal conversion from Object to Integer","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+F01	68	istest	OBSERVED	{"emptyNull":true,"last":"last","size":0}
+F01	68	anonymous	OBSERVED	{"emptyNull":true,"last":"last","size":0}
+F04	68	istest	OBSERVED	{"size":0,"ticks":5}
+F04	68	anonymous	OBSERVED	{"size":0,"ticks":5}
+V09	62	anonymous	COMPILE-REJECTED	{"column":"103","compileProblem":"Illegal conversion from void to Object","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+V12	62	anonymous	COMPILE-REJECTED	{"column":"104","compileProblem":"Illegal conversion from void to Integer","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+V10	62	anonymous	OBSERVED	{"returnedNull":true,"size":0}
+V11	62	anonymous	COMPILE-REJECTED	{"column":"121","compileProblem":"Illegal conversion from Object to String","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+F02	62	anonymous	OBSERVED	{"size":0,"ticks":3}
+F03	62	anonymous	OBSERVED	{"size":0,"ticks":0}
+V09	67	anonymous	COMPILE-REJECTED	{"column":"103","compileProblem":"Illegal conversion from void to Object","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+V12	67	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":111,"fullName":"ExpressionProbeV1267","lineNumber":1,"problem":"Illegal conversion from void to Integer"},{"columnNumber":111,"fullName":"ExpressionTestV1267","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV1267 : Illegal conversion from void to Integer"}]}
+V12	67	anonymous	COMPILE-REJECTED	{"column":"104","compileProblem":"Illegal conversion from void to Integer","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+V10	67	istest	OBSERVED	{"returnedNull":true,"size":0}
+V10	67	anonymous	OBSERVED	{"returnedNull":true,"size":0}
+V11	67	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":128,"fullName":"ExpressionProbeV1167","lineNumber":1,"problem":"Illegal conversion from Object to String"},{"columnNumber":128,"fullName":"ExpressionTestV1167","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV1167 : Illegal conversion from Object to String"}]}
+V11	67	anonymous	COMPILE-REJECTED	{"column":"121","compileProblem":"Illegal conversion from Object to String","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+F02	67	istest	OBSERVED	{"size":0,"ticks":3}
+F02	67	anonymous	OBSERVED	{"size":0,"ticks":3}
+F03	67	istest	OBSERVED	{"size":0,"ticks":0}
+F03	67	anonymous	OBSERVED	{"size":0,"ticks":0}
+V09	68	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":110,"fullName":"ExpressionProbeV0968","lineNumber":1,"problem":"Illegal conversion from void to Object"},{"columnNumber":110,"fullName":"ExpressionTestV0968","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0968 : Illegal conversion from void to Object"}]}
+V09	68	anonymous	COMPILE-REJECTED	{"column":"103","compileProblem":"Illegal conversion from void to Object","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+V12	68	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":111,"fullName":"ExpressionProbeV1268","lineNumber":1,"problem":"Illegal conversion from void to Integer"},{"columnNumber":111,"fullName":"ExpressionTestV1268","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV1268 : Illegal conversion from void to Integer"}]}
+V12	68	anonymous	COMPILE-REJECTED	{"column":"104","compileProblem":"Illegal conversion from void to Integer","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+V10	68	istest	OBSERVED	{"returnedNull":true,"size":0}
+V10	68	anonymous	OBSERVED	{"returnedNull":true,"size":0}
+V11	68	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":128,"fullName":"ExpressionProbeV1168","lineNumber":1,"problem":"Illegal conversion from Object to String"},{"columnNumber":128,"fullName":"ExpressionTestV1168","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV1168 : Illegal conversion from Object to String"}]}
+V11	68	anonymous	COMPILE-REJECTED	{"column":"121","compileProblem":"Illegal conversion from Object to String","compiled":false,"exceptionMessage":"","exceptionStackTrace":"","line":"1"}
+F02	68	istest	OBSERVED	{"size":0,"ticks":3}
+F02	68	anonymous	OBSERVED	{"size":0,"ticks":3}
+F03	68	istest	OBSERVED	{"size":0,"ticks":0}
+F03	68	anonymous	OBSERVED	{"size":0,"ticks":0}
+V09	62	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":110,"fullName":"ExpressionProbeV0962","lineNumber":1,"problem":"Illegal conversion from void to Object"},{"columnNumber":110,"fullName":"ExpressionTestV0962","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0962 : Illegal conversion from void to Object"}]}
+V12	62	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":111,"fullName":"ExpressionProbeV1262","lineNumber":1,"problem":"Illegal conversion from void to Integer"},{"columnNumber":111,"fullName":"ExpressionTestV1262","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV1262 : Illegal conversion from void to Integer"}]}
+V10	62	istest	OBSERVED	{"returnedNull":true,"size":0}
+V11	62	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":128,"fullName":"ExpressionProbeV1162","lineNumber":1,"problem":"Illegal conversion from Object to String"},{"columnNumber":128,"fullName":"ExpressionTestV1162","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV1162 : Illegal conversion from Object to String"}]}
+F02	62	istest	OBSERVED	{"size":0,"ticks":3}
+F03	62	istest	OBSERVED	{"size":0,"ticks":0}
+V09	67	istest	COMPILE-REJECTED	{"errors":[{"columnNumber":110,"fullName":"ExpressionProbeV0967","lineNumber":1,"problem":"Illegal conversion from void to Object"},{"columnNumber":110,"fullName":"ExpressionTestV0967","lineNumber":1,"problem":"Dependent class is invalid and needs recompilation:\n Class ExpressionProbeV0967 : Illegal conversion from void to Object"}]}
+P01	62	istest	OBSERVED	{"size":0,"values":["Existing Customer - Upgrade","Existing Customer - Replacement","Existing Customer - Downgrade","New Customer"]}
+P01	62	anonymous	OBSERVED	{"size":0,"values":["Existing Customer - Upgrade","Existing Customer - Replacement","Existing Customer - Downgrade","New Customer"]}
+P01	67	istest	OBSERVED	{"size":0,"values":["Existing Customer - Upgrade","Existing Customer - Replacement","Existing Customer - Downgrade","New Customer"]}
+P01	67	anonymous	OBSERVED	{"size":0,"values":["Existing Customer - Upgrade","Existing Customer - Replacement","Existing Customer - Downgrade","New Customer"]}
+P01	68	istest	OBSERVED	{"size":0,"values":["Existing Customer - Upgrade","Existing Customer - Replacement","Existing Customer - Downgrade","New Customer"]}
+P01	68	anonymous	OBSERVED	{"size":0,"values":["Existing Customer - Upgrade","Existing Customer - Replacement","Existing Customer - Downgrade","New Customer"]}

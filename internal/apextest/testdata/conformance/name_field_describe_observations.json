@@ -1,0 +1,86 @@
+{
+  "anonymousSource": "Map<String,Boolean> cells = new Map<String,Boolean>{'Case.CaseNumber'=>Case.CaseNumber.getDescribe().isNameField(),'PermissionSetLicense.DeveloperName'=>PermissionSetLicense.DeveloperName.getDescribe().isNameField(),'Case.Subject'=>Case.Subject.getDescribe().isNameField(),'Account.Name'=>Account.Name.getDescribe().isNameField(),'PermissionSetLicense.MasterLabel'=>PermissionSetLicense.MasterLabel.getDescribe().isNameField()};\nSystem.debug('NAME_FIELD|'+JSON.serialize(cells));\n",
+  "anonymousSourceSHA256": "680f4132b09c41218b07f7501414d368c88fcde84d003c5dd3752d309f22668e",
+  "fixtures": {
+    "62.0": {
+      "className": "NameFieldProbe62",
+      "source": "@IsTest private class NameFieldProbe62 { @IsTest static void observe() { Map<String,Boolean> cells = new Map<String,Boolean>{'Case.CaseNumber'=>Case.CaseNumber.getDescribe().isNameField(),'PermissionSetLicense.DeveloperName'=>PermissionSetLicense.DeveloperName.getDescribe().isNameField(),'Case.Subject'=>Case.Subject.getDescribe().isNameField(),'Account.Name'=>Account.Name.getDescribe().isNameField(),'PermissionSetLicense.MasterLabel'=>PermissionSetLicense.MasterLabel.getDescribe().isNameField()}; System.assert(false, 'NAME_FIELD|'+JSON.serialize(cells)); } }\n",
+      "sourceSHA256": "8a653ef31f9ad3b3b2c84e2a20ca82cefcf1c0fd8162d43a88b92751effeddd0",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+    },
+    "67.0": {
+      "className": "NameFieldProbe67",
+      "source": "@IsTest private class NameFieldProbe67 { @IsTest static void observe() { Map<String,Boolean> cells = new Map<String,Boolean>{'Case.CaseNumber'=>Case.CaseNumber.getDescribe().isNameField(),'PermissionSetLicense.DeveloperName'=>PermissionSetLicense.DeveloperName.getDescribe().isNameField(),'Case.Subject'=>Case.Subject.getDescribe().isNameField(),'Account.Name'=>Account.Name.getDescribe().isNameField(),'PermissionSetLicense.MasterLabel'=>PermissionSetLicense.MasterLabel.getDescribe().isNameField()}; System.assert(false, 'NAME_FIELD|'+JSON.serialize(cells)); } }\n",
+      "sourceSHA256": "eeb5742e78736e063de88183113d26043c0aded2bb3f7d17495834b84302c5bb",
+      "metadata": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "metadataSHA256": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+    }
+  },
+  "cells": [
+    {
+      "api": "62.0",
+      "context": "anonymous",
+      "transportAPI": "62.0",
+      "rawAnswerSHA256": "eb046411469837f399e67a5bf17be449ee1c70bb4a6da0c2f60fbb09205c0533",
+      "answers": {
+        "PermissionSetLicense.MasterLabel": false,
+        "Account.Name": true,
+        "Case.Subject": false,
+        "PermissionSetLicense.DeveloperName": true,
+        "Case.CaseNumber": true
+      }
+    },
+    {
+      "api": "62.0",
+      "context": "istest",
+      "transportAPI": "67.0",
+      "rawAnswerSHA256": "4bde7effc8362ef6a0fe3dda78b8ca828cb226ea29085098f7f45b34a6819a83",
+      "answers": {
+        "PermissionSetLicense.MasterLabel": false,
+        "Account.Name": true,
+        "Case.Subject": false,
+        "PermissionSetLicense.DeveloperName": true,
+        "Case.CaseNumber": true
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "anonymous",
+      "transportAPI": "67.0",
+      "rawAnswerSHA256": "17620748cdce8b95d929db95e21cac3a8952c6f76c53c97f6df2fdbab17e141c",
+      "answers": {
+        "PermissionSetLicense.MasterLabel": false,
+        "Account.Name": true,
+        "Case.Subject": false,
+        "PermissionSetLicense.DeveloperName": true,
+        "Case.CaseNumber": true
+      }
+    },
+    {
+      "api": "67.0",
+      "context": "istest",
+      "transportAPI": "67.0",
+      "rawAnswerSHA256": "3e9f148a42cc5b98e5beab77ba1e30f165e1532aa0d88b839014cb1ac0e0bff1",
+      "answers": {
+        "PermissionSetLicense.MasterLabel": false,
+        "Account.Name": true,
+        "Case.Subject": false,
+        "PermissionSetLicense.DeveloperName": true,
+        "Case.CaseNumber": true
+      }
+    }
+  ],
+  "provenance": {
+    "orgIdSHA256": "04a58dd26a83c1ec339870c9385318efaa66874b9cbd1c01a7a7855820655dc4",
+    "deploymentId": "0AfE200000r0QonKAE",
+    "deploymentTransportAPI": "67.0",
+    "scope": "Nonnamespaced owned scratch org; direct scalar field describe only."
+  },
+  "uncaptured": [
+    {
+      "scope": "API68 live routes",
+      "reason": "No new API68 native cell was requested; replay covers exact named and anonymous source62/67 only."
+    }
+  ]
+}

@@ -147,7 +147,7 @@ func (e *Engine) buildDeleteContext() *deleteContext {
 				if child.System.IsDeleted {
 					continue
 				}
-				value, ok := child.Fields[relation.Field]
+				value, ok := child.GetField(relation.Field)
 				if !ok {
 					continue
 				}
@@ -246,7 +246,7 @@ func (e *Engine) referenceIndexForRelation(childObject, field string, ctx *delet
 	return index
 }
 
-func upsertExternalID(definition storage.ObjectDefinition, namespace string, record storage.Record, externalIDField string) (string, storage.Value, bool, error) {
+func upsertExternalID(definition storage.ObjectDefinition, namespace string, record storage.Record, externalIDField string, allowIDLookup bool) (string, storage.Value, bool, error) {
 	if externalIDField != "" {
 		fieldName := externalIDField
 		if canonical, ok := storage.ResolveFieldName(definition, namespace, fieldName); ok {
@@ -256,7 +256,7 @@ func upsertExternalID(definition storage.ObjectDefinition, namespace string, rec
 		if !ok {
 			return "", storage.Value{}, false, dmlErrorf("INVALID_FIELD", []string{externalIDField}, "dml: unknown external id field %s.%s", record.Object, externalIDField)
 		}
-		if !field.ExternalID && !(strings.EqualFold(fieldName, "Name") && storage.IsCustomSettingDefinition(definition)) {
+		if !field.ExternalID && !(allowIDLookup && field.IDLookup) && !(strings.EqualFold(fieldName, "Name") && storage.IsCustomSettingDefinition(definition)) {
 			return "", storage.Value{}, false, dmlErrorf("INVALID_FIELD", []string{fieldName}, "dml: field %s.%s is not an external id", record.Object, fieldName)
 		}
 		value, ok := record.Fields[fieldName]
@@ -305,15 +305,95 @@ func (e *Engine) clearDeletedParentReferences(objectName string, id storage.ID, 
 				e.IsolationJournal.RecordUpdate(relation.childObject, childID, child)
 			}
 			updated := child.Clone()
-			delete(updated.Fields, relation.field)
+			field := relation.field
+			if canonical, ok := storage.ResolveFieldName(childObject.Definition, e.Org.Namespace, field); ok {
+				field = canonical
+			}
+			if updated.ClearedReferences == nil {
+				updated.ClearedReferences = make(map[string]storage.ClearedReference)
+			}
+			for name := range updated.ClearedReferences {
+				if strings.EqualFold(name, field) {
+					delete(updated.ClearedReferences, name)
+				}
+			}
+			e.rememberClearedLookup(&updated, childObject.Definition, field, id)
+			updated.ClearedReferences[field] = storage.ClearedReference{ParentObject: objectName, ParentID: idFromStorageValue(value)}
+			deleteCaseInsensitiveFieldAlias(childObject.Definition, e.Org.Namespace, updated.Fields, field)
+			delete(updated.Fields, field)
+			deleteExplicitNull(updated.ExplicitNulls, field)
 			if updated.ExplicitNulls == nil {
 				updated.ExplicitNulls = make(map[string]bool)
 			}
-			updated.ExplicitNulls[relation.field] = true
+			updated.ExplicitNulls[field] = true
 			e.removeUniqueIndexRecord(relation.childObject, childObject.Definition, child)
 			childObject.Records[childID] = updated
 			// Parent DML does not rebuild this indirectly changed child object.
 			// Drop its candidate indexes so queries scan the updated records.
+			childObject.Indexes = nil
+			e.Org.Objects[relation.childObject] = childObject
+			e.addUniqueIndexRecord(relation.childObject, childObject.Definition, updated)
+		}
+	}
+}
+
+// Undeleting a parent restores the optional lookups its deletion cleared,
+// including children updated sparsely or explicitly assigned null meanwhile.
+func (e *Engine) restoreDeletedParentReferences(objectName string, id storage.ID) {
+	var relations []deleteRelation
+	for childName, child := range e.Org.Objects {
+		for _, relation := range child.Definition.Relations {
+			if !relation.SetNullOnDelete {
+				continue
+			}
+			for _, parentName := range relation.ParentObjects {
+				if parent, ok := storage.ResolveObjectName(*e.Org, parentName); ok && parent == objectName {
+					relations = append(relations, deleteRelation{childObject: childName, field: relation.Field})
+					break
+				}
+			}
+		}
+	}
+	for _, relation := range relations {
+		childObject := e.Org.Objects[relation.childObject]
+		field := relation.field
+		if canonical, ok := storage.ResolveFieldName(childObject.Definition, e.Org.Namespace, field); ok {
+			field = canonical
+		}
+		for childID, child := range childObject.Records {
+			if child.System.IsDeleted {
+				continue
+			}
+			provenanceField := ""
+			var reference storage.ClearedReference
+			for name, saved := range child.ClearedReferences {
+				if strings.EqualFold(name, field) && strings.EqualFold(saved.ParentObject, objectName) && storage.IDsEqual(saved.ParentID, id) {
+					provenanceField, reference = name, saved
+					break
+				}
+			}
+			if provenanceField == "" {
+				continue
+			}
+			storage.EnsureMutableObjectRecords(e.Org, relation.childObject)
+			childObject = e.Org.Objects[relation.childObject]
+			child = childObject.Records[childID]
+			if e.IsolationJournal != nil {
+				e.IsolationJournal.RecordUpdate(relation.childObject, childID, child)
+			}
+			updated := child.Clone()
+			delete(updated.ClearedReferences, provenanceField)
+			value, present := child.GetField(field)
+			if !present || value.Kind == storage.ValueNull {
+				if updated.Fields == nil {
+					updated.Fields = make(map[string]storage.Value)
+				}
+				deleteCaseInsensitiveFieldAlias(childObject.Definition, e.Org.Namespace, updated.Fields, field)
+				updated.Fields[field] = storage.IDValue(reference.ParentID)
+				deleteExplicitNull(updated.ExplicitNulls, field)
+			}
+			e.removeUniqueIndexRecord(relation.childObject, childObject.Definition, child)
+			childObject.Records[childID] = updated
 			childObject.Indexes = nil
 			e.Org.Objects[relation.childObject] = childObject
 			e.addUniqueIndexRecord(relation.childObject, childObject.Definition, updated)

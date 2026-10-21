@@ -1,0 +1,1015 @@
+{
+  "apiVersions": [
+    "59.0",
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 8,
+  "nativeObservationCount": 64,
+  "sourcePacketRowsSHA256": "3053ea628c66ebe1c53bb1a6912eaa8de9583308927559faf6e1e8c93365b3cd",
+  "captureManifestSHA256": "121a4c2e0c9f130d0fd9e5341a802bd0f372e2a0dc1328a454bb103e2b405dd8",
+  "productBase": "capture-revision-100674082189950676909464270273097705397729225196210387419024790090144103579119",
+  "nativeComplete": true,
+  "cleanupVerified": true,
+  "captureReceipts": [
+    {
+      "api": "59.0",
+      "route": "anonymous",
+      "rows": 55,
+      "orgTSVSHA256": "781b4ccedadcd0ca3fac9e4cc6cc1a9b7252ea8ef22c3c783a10ae410fbd4c35",
+      "orgRunSHA256": "036fc9fcb34a8cd6450ecaf495c63c53d4fdb9a383e7a7d353e8d2dabec65338",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "59.0",
+      "route": "isTest",
+      "rows": 94,
+      "orgTSVSHA256": "bda9649d8e8909259d77d74ea8d6a5531119be4da8e93d0f78a7ce9827c6ba85",
+      "orgRunSHA256": "9ff5bb097b9e73872b50b7e622816bcd9244929d6f657245d438370d3d53b527",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "rows": 55,
+      "orgTSVSHA256": "4d742e7d3d53d70c8cc50531f9dcaee061e4f06ef0547b61896df7f0c577a0bb",
+      "orgRunSHA256": "aca1bd244908967ad5aecd1a013f388b2dfbbe9a02dd3655d1b13fef2a114d31",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "rows": 94,
+      "orgTSVSHA256": "3e7c66d69491e4628b3ee3721b46ce67c0af7283a8ef78beee5b5224e6be7dad",
+      "orgRunSHA256": "2dec49992a75e9233086cfeaac6cbb0200a4b3c60448fb36370b037cc90a1f89",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "rows": 55,
+      "orgTSVSHA256": "dd8d1d0ce57f90a509a1583aa964bb37cdab6183d5c4da629ddb7c1c46f13747",
+      "orgRunSHA256": "64d9910cebed6e4384822bc31866198b7d72f4c7447830b4efd1b8881d1bef7d",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "rows": 94,
+      "orgTSVSHA256": "b09e8fe10751aa4900ca19466319d783fedef55d3128165d1c110edfafbfd3a1",
+      "orgRunSHA256": "97f3f1ca25ef6c1fe86e938ddd85e510b720eb2e47ce06de04319c356badfebf",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "68.0",
+      "route": "anonymous",
+      "rows": 55,
+      "orgTSVSHA256": "39e36de3b06b7067ed4ff0d34f758c54f6c7f49963914ad85b0d9a36cbd63083",
+      "orgRunSHA256": "66185096968f6326ae17d247a0b8242c10cb34533a813f8ff531eb8e04e2b8a2",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    },
+    {
+      "api": "68.0",
+      "route": "isTest",
+      "rows": 94,
+      "orgTSVSHA256": "8dbcc7b888c8cf9b248e8a1e6ecf2c1a6afbedf6d006bf84ac5f158d89692318",
+      "orgRunSHA256": "a2a3630274ce6b87b3c1ea6e25b862ee42f635b2df13e7a0fb34353838d07755",
+      "complete": true,
+      "transportControlsVerified": true,
+      "releaseDrift": "same release/org; 59/62/67/68"
+    }
+  ],
+  "rows": [
+    {
+      "id": "C186FE_034",
+      "label": "account-A",
+      "twin": "C186FE_035",
+      "routes": {
+        "anonymous": {
+          "id": "C186FE_034",
+          "shapeStyle": "sobject",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": true,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": true
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": true,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": true,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": true,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": true
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "ffdf3a0e314c520948cbc57c8cd52834bd9bf9564d08ad56efb20270290bebb2"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};Account ctx;try{ctx=new Account(Name='A');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(Account.class).withFormula('Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_034|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C186FE_034",
+          "shapeStyle": "sobject",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": true,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": true
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": true,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": true,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": true,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": true
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186FE034Test": "3142e4a951bf4e28617668478495f46873446439fc8107d0c54a70ad30b5796c"
+          },
+          "classes": {
+            "C186FE034Test": "@IsTest private class C186FE034Test {@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};Account ctx;try{ctx=new Account(Name='A');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(Account.class).withFormula('Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_034|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C186FE034Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C186FE_035",
+      "label": "account-B",
+      "twin": "C186FE_034",
+      "routes": {
+        "anonymous": {
+          "id": "C186FE_035",
+          "shapeStyle": "sobject",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "1754ce21fd13191a984c61637fbde2f1af6e3779469e26a97a66b8ca00f48c18"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};Account ctx;try{ctx=new Account(Name='B');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(Account.class).withFormula('Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_035|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C186FE_035",
+          "shapeStyle": "sobject",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186FE035Test": "2fcbcce75bd055a01588e3ec0523458bdf68e8f49059464f994ac1d21d420524"
+          },
+          "classes": {
+            "C186FE035Test": "@IsTest private class C186FE035Test {@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};Account ctx;try{ctx=new Account(Name='B');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(Account.class).withFormula('Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_035|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C186FE035Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C186FE_036",
+      "label": "account-null",
+      "twin": "C186FE_034",
+      "routes": {
+        "anonymous": {
+          "id": "C186FE_036",
+          "shapeStyle": "sobject",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "63e9345921055a6ccdbb5e22b8d63e4a301b31558778e7f0f8a502aefcd5d9cb"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};Account ctx;try{ctx=new Account();if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(Account.class).withFormula('Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_036|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C186FE_036",
+          "shapeStyle": "sobject",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186FE036Test": "7cf236224288ba75f0cc509eb36f8b895d5f8153301ee8b280eeaa7dfd0a8a0c"
+          },
+          "classes": {
+            "C186FE036Test": "@IsTest private class C186FE036Test {@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};Account ctx;try{ctx=new Account();if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(Account.class).withFormula('Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_036|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C186FE036Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C186FE_037",
+      "label": "account-contains-null",
+      "twin": "C186FE_034",
+      "routes": {
+        "anonymous": {
+          "id": "C186FE_037",
+          "shapeStyle": "sobject",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": true,
+                "phase": "done",
+                "result": null
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": true,
+                "phase": "done",
+                "result": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": true,
+                "phase": "done",
+                "result": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": true,
+                "phase": "done",
+                "result": null
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "1cb71eabe43e40202d07ed55844452aaeffbefb347e75a1730d5fb6ee36ad97c"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};Account ctx;try{ctx=new Account();if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(Account.class).withFormula('CONTAINS(Name, \"A\")').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_037|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C186FE_037",
+          "shapeStyle": "sobject",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": true,
+                "phase": "done",
+                "result": null
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": true,
+                "phase": "done",
+                "result": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": true,
+                "phase": "done",
+                "result": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": true,
+                "phase": "done",
+                "result": null
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186FE037Test": "d28d0c80cd955fa2f5518c22b011337187d5a997ddf96fc9969e6cfc447451e0"
+          },
+          "classes": {
+            "C186FE037Test": "@IsTest private class C186FE037Test {@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};Account ctx;try{ctx=new Account();if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(Account.class).withFormula('CONTAINS(Name, \"A\")').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_037|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C186FE037Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C186FE_094",
+      "label": "account-token-A",
+      "twin": "C186FE_034",
+      "routes": {
+        "anonymous": {
+          "id": "C186FE_094",
+          "shapeStyle": "sobject",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": true,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": true
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": true,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": true,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": true,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": true
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "94fbbce3ce03556b86b767c31daf83242e75d039dc47a6ee38b5038b8689099c"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};Account ctx;try{ctx=new Account(Name='A');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(Account.SObjectType).withFormula('Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_094|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C186FE_094",
+          "shapeStyle": "sobject",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": true,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": true
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": true,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": true
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": true,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": true
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": true,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": true
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186FE094Test": "7a9bf25319e412ebda16a1fce0719a61bbf3028aeb99d2ac4d0f0f1f21edb69b"
+          },
+          "classes": {
+            "C186FE094Test": "@IsTest private class C186FE094Test {@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};Account ctx;try{ctx=new Account(Name='A');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(Account.SObjectType).withFormula('Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_094|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C186FE094Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C186FE_095",
+      "label": "account-token-B",
+      "twin": "C186FE_035",
+      "routes": {
+        "anonymous": {
+          "id": "C186FE_095",
+          "shapeStyle": "sobject",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "8ce918cf40ea1a906a83854b4347df0fbcde68abd8b5b417fb2bf859d819c48e"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};Account ctx;try{ctx=new Account(Name='B');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(Account.SObjectType).withFormula('Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_095|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C186FE_095",
+          "shapeStyle": "sobject",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186FE095Test": "41bf0ec9bbd3a4dd2d90837bdcb3023fc31bb2d45765f20348c91527837744f6"
+          },
+          "classes": {
+            "C186FE095Test": "@IsTest private class C186FE095Test {@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};Account ctx;try{ctx=new Account(Name='B');if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(Account.SObjectType).withFormula('Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_095|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C186FE095Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C186FE_096",
+      "label": "account-token-null",
+      "twin": "C186FE_036",
+      "routes": {
+        "anonymous": {
+          "id": "C186FE_096",
+          "shapeStyle": "sobject",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "e94b38e5eae52fbb98dc93fd7c1cd25eb70bcd59be2a8f45b10d4303229ccb98"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};Account ctx;try{ctx=new Account();if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(Account.SObjectType).withFormula('Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_096|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C186FE_096",
+          "shapeStyle": "sobject",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": false,
+                "phase": "done",
+                "result": false
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186FE096Test": "b1823359eb8d60a2040b489f32fea1d116aa594fe3458a31e5cb31229802f153"
+          },
+          "classes": {
+            "C186FE096Test": "@IsTest private class C186FE096Test {@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};Account ctx;try{ctx=new Account();if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(Account.SObjectType).withFormula('Name = \"A\"').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_096|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C186FE096Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "C186FE_097",
+      "label": "account-token-contains-null",
+      "twin": "C186FE_037",
+      "routes": {
+        "anonymous": {
+          "id": "C186FE_097",
+          "shapeStyle": "sobject",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": true,
+                "phase": "done",
+                "result": null
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": true,
+                "phase": "done",
+                "result": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": true,
+                "phase": "done",
+                "result": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": true,
+                "phase": "done",
+                "result": null
+              }
+            }
+          },
+          "sourceSha256": {
+            "anonymous": "60ac661068f92219bca85679b7843161c1bb4229388ecfcf1ea1e503f2fab7c4"
+          },
+          "anonymous": "Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};Account ctx;try{ctx=new Account();if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(Account.SObjectType).withFormula('CONTAINS(Name, \"A\")').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_097|'+JSON.serialize(v));"
+        },
+        "isTest": {
+          "id": "C186FE_097",
+          "shapeStyle": "sobject",
+          "routeExclusions": "Both legal routes retained.",
+          "expectedByAPI": {
+            "59.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": true,
+                "phase": "done",
+                "result": null
+              }
+            },
+            "62.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": true,
+                "phase": "done",
+                "result": null
+              }
+            },
+            "67.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": true,
+                "phase": "done",
+                "result": null
+              }
+            },
+            "68.0": {
+              "outcome": "runtime",
+              "value": {
+                "downstreamTrue": false,
+                "fixtureError": false,
+                "isNull": true,
+                "phase": "done",
+                "result": null
+              }
+            }
+          },
+          "sourceSha256": {
+            "class:C186FE097Test": "f61bdcbcc97566f7bb8f8059673d829b0c2292a110e05183cf9758a8ae0ceb4a"
+          },
+          "classes": {
+            "C186FE097Test": "@IsTest private class C186FE097Test {@IsTest static void observe(){Map<String,Object> v=new Map<String,Object>{'phase'=>'setup','fixtureError'=>false};Account ctx;try{ctx=new Account();if(v.get('fixtureError')==false){v.put('phase','build');FormulaEval.FormulaInstance formula=Formula.builder().withReturnType(FormulaEval.FormulaReturnType.Boolean).withGlobalVariables(FormulaEval.FormulaGlobal.values()).withType(Account.SObjectType).withFormula('CONTAINS(Name, \"A\")').build();v.put('phase','evaluate');Object evaluated=formula.evaluate(ctx);v.put('result',evaluated);v.put('isNull',evaluated==null);v.put('downstreamTrue',evaluated==true);v.put('phase','done');}}catch(Exception e){v.put('exceptionType',e.getTypeName());String exceptionText=e.getMessage();v.put('exceptionMessage',exceptionText==null?null:exceptionText.left(500));if(v.get('phase')=='setup'){v.put('fixtureError',true);}}System.assert(false,'C126_RESULT|C186FE_097|'+JSON.serialize(v));}}"
+          },
+          "tests": [
+            "C186FE097Test"
+          ]
+        }
+      }
+    }
+  ]
+}

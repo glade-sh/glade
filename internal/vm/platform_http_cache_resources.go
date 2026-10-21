@@ -586,6 +586,9 @@ func callRestRequestMember(receiver Value, method string, args []Value) (Value, 
 			params = typedMap("Map<String,String>")
 		}
 		key := mapKey(args[0])
+		if _, exists := params.Map[key]; !exists {
+			params.MapOrder = append(params.MapOrder, key)
+		}
 		params.Map[key] = args[1]
 		params.MapKeys[key] = args[0]
 		receiver.Fields["params"] = params
@@ -672,6 +675,84 @@ func callMultiStaticResourceCalloutMockMember(receiver Value, method string, arg
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+// Direct interface calls and Http.send share the configured resource lookup.
+func (vm *VM) callStaticResourceMockResponse(mock Value, args []Value) (Value, Value, bool, bool, error) {
+	if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "HttpRequest") {
+		return Null, mock, false, true, fmt.Errorf("%s.respond expects HttpRequest", mock.Type)
+	}
+	if vm.testContext != nil && mock.Type == "StaticResourceCalloutMock" {
+		if name, missing := vm.missingNamedStaticResourceMock(mock); missing {
+			return Null, mock, false, true, newExceptionError("NullPointerException", "Static Resource not found: "+name)
+		}
+	}
+	response, err := vm.localHTTPMockResponse(mock, args[0])
+	return response, mock, false, true, err
+}
+
+// Named test observations distinguish an absent resource from an existing empty
+// or unavailable body. Only the absent-resource case has a captured exception.
+func (vm *VM) missingNamedStaticResourceMock(mock Value) (string, bool) {
+	if vm.testContext == nil || vm.currentMethod.Namespace != "" || vm.currentExecutionNamespace() != "" || vm.Org != nil && vm.Org.Namespace != "" {
+		return "", false
+	}
+	switch vm.currentMethod.APIVersion {
+	case "62.0", "66.0", "67.0", "68.0":
+	default:
+		return "", false
+	}
+	resource, ok := mock.Fields["staticResource"]
+	if vm.Org == nil || !ok || resource.Kind != ValueString || strings.TrimSpace(resource.Text) == "" {
+		return "", false
+	}
+	for _, entry := range vm.Org.Metadata.StaticResources {
+		if strings.EqualFold(entry.Name, resource.Text) {
+			return "", false
+		}
+	}
+	for _, entry := range vm.Org.Metadata.ContentAssets {
+		if strings.EqualFold(entry.Name, resource.Text) {
+			return "", false
+		}
+	}
+	if object, ok := vm.Org.Objects["StaticResource"]; ok {
+		for _, record := range object.Records {
+			if staticResourceNameMatches(record, resource.Text) {
+				return "", false
+			}
+		}
+	}
+	return resource.Text, true
+}
+
+func (vm *VM) hasConfiguredStaticResourceMockBody(mock Value) bool {
+	resource, ok := mock.Fields["staticResource"]
+	if vm.Org == nil || !ok || resource.Kind != ValueString || strings.TrimSpace(resource.Text) == "" {
+		return false
+	}
+	for _, entry := range vm.Org.Metadata.StaticResources {
+		if strings.EqualFold(entry.Name, resource.Text) && entry.Content != "" {
+			return true
+		}
+	}
+	object, ok := vm.Org.Objects["StaticResource"]
+	if !ok {
+		return false
+	}
+	for _, record := range object.Records {
+		if !staticResourceNameMatches(record, resource.Text) {
+			continue
+		}
+		for _, field := range []string{"Body", "Content"} {
+			if value, ok := record.GetField(field); ok {
+				if _, ok := staticResourceBodyValue(value); ok {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func (vm *VM) localHTTPMockResponse(mock Value, request Value) (Value, error) {
@@ -819,12 +900,15 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 		if len(args) != 0 {
 			return Null, receiver, fmt.Errorf("%s.getCapacity expects no arguments", receiver.Type)
 		}
+		if value, ok := vm.cacheCapturedCapacity(scope, name.Text); ok {
+			return value, receiver, nil
+		}
 		return Decimal(100), receiver, nil
 	case "isavailable":
 		if len(args) != 0 {
 			return Null, receiver, fmt.Errorf("%s.isAvailable expects no arguments", receiver.Type)
 		}
-		return Bool(true), receiver, nil
+		return Bool(vm.cacheCapturedSessionAvailable(scope, name.Text)), receiver, nil
 	case "getname":
 		if len(args) != 0 {
 			return Null, receiver, fmt.Errorf("%s.getName expects no arguments", receiver.Type)
@@ -853,6 +937,9 @@ func cachePartitionPlatformObjectType(typeName string) bool {
 
 func generatedPlatformObjectMemberReceiver(typeName string) bool {
 	return isExceptionType(typeName) ||
+		// The stored error code is text; its runtime getter returns StatusCode.
+		// A passive catalog getter must retain that conversion.
+		strings.EqualFold(typeName, "Database.Error") ||
 		(queueableDuplicateSignaturePlatformObjectType(typeName) && !strings.EqualFold(typeName, "Builder")) ||
 		strings.EqualFold(typeName, "compression.ZipWriter") ||
 		strings.EqualFold(typeName, "compression.ZipReader") ||
@@ -860,6 +947,9 @@ func generatedPlatformObjectMemberReceiver(typeName string) bool {
 		strings.EqualFold(typeName, "DataWeave.Result") ||
 		strings.EqualFold(typeName, "FormulaEval.FormulaBuilder") ||
 		strings.EqualFold(typeName, "FormulaEval.FormulaInstance") ||
+		strings.EqualFold(typeName, "Flow.Interview") ||
+		strings.EqualFold(typeName, "Search.SearchResults") ||
+		strings.EqualFold(typeName, "Search.SearchResult") ||
 		cachePartitionPlatformObjectType(typeName) ||
 		strings.EqualFold(typeName, "UserProvisioning.FlowProvisionBase") ||
 		strings.EqualFold(typeName, "UserProvisioning.UserProvisioningPlugin") ||
@@ -1000,8 +1090,14 @@ func (vm *VM) cacheGetValue(callee string, args []Value, receiverPartition strin
 	if err != nil {
 		return Null, err
 	}
+	if err := vm.cacheCapturedAsyncSessionAccess(callee, partition, args); err != nil {
+		return Null, err
+	}
 	if len(args) == 2 && args[0].Kind == ValueNull {
 		return Null, newNullDereferenceError(callee)
+	}
+	if err := vm.cacheCapturedDataSiloRead(callee, args, receiverPartition); err != nil {
+		return Null, err
 	}
 	return vm.cacheGetOrLoad(callee, keyArg.Text, partition, cacheKeyForArgs(args, key), cacheBuilderArg(args), key)
 }
@@ -1118,6 +1214,11 @@ func (vm *VM) cacheStaticDefaultKeys(callee string, args []Value) (Value, error)
 	if len(args) != 0 {
 		return Null, fmt.Errorf("%s expects 0 arguments", callee)
 	}
+	if callee == "Cache.Org.getKeys" {
+		if err := vm.cacheRequireCapturedDefault(callee); err != nil {
+			return Null, err
+		}
+	}
 	out := Set()
 	out.Type = "Set<String>"
 	for _, key := range vm.cacheKeys(cachePartitionKey(cachePartitionTypeFromCallee(callee), vm.cacheDefaultName())) {
@@ -1216,6 +1317,10 @@ func cacheNormalizePartitionName(name string) string {
 // Cache put/get retain shared references within a transaction (PC001-PC006,
 // PC101-PC106). Multi-get, builder and scan paths use the same store.
 func (vm *VM) cacheGet(partition, key string) (Value, bool) {
+	if _, present := vm.platformCache[partition][key]; !present {
+		vm.cacheRestoreTestSetupString(partition, key)
+		vm.cacheRestoreCommittedString(partition, key)
+	}
 	entries := vm.platformCache[partition]
 	if entries == nil {
 		return Null, false
@@ -1249,6 +1354,7 @@ func (vm *VM) cacheKeys(partition string) []string {
 }
 
 func (vm *VM) cachePut(partition, key string, value Value, ttlSeconds int64) {
+	vm.cacheInvalidateTestSetupString(partition, key)
 	if vm.platformCache == nil {
 		vm.platformCache = make(map[string]map[string]cacheEntry)
 	}
@@ -1263,6 +1369,7 @@ func (vm *VM) cachePut(partition, key string, value Value, ttlSeconds int64) {
 		entry.ExpireAt = vm.fakeNow.Add(time.Duration(ttlSeconds) * time.Second)
 	}
 	entries[key] = entry
+	vm.cacheForgetCommittedString(partition, key)
 	vm.rememberCacheValueRefs(partition, key, value)
 }
 
@@ -1490,6 +1597,8 @@ func (vm *VM) rememberCacheValueRefs(partition, key string, value Value) {
 }
 
 func (vm *VM) cacheDelete(partition, key string) {
+	vm.cacheInvalidateTestSetupString(partition, key)
+	vm.cacheForgetCommittedString(partition, key)
 	delete(vm.platformCache[partition], key)
 	vm.forgetStaticValueRefsInField(staticFieldRef{ClassName: partition, FieldName: key})
 	vm.advanceAliasContainmentMutation()

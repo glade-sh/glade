@@ -6,20 +6,43 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+func apexDatetimeDisplayText(instant time.Time) string {
+	return instant.UTC().Format("2006-01-02 15:04:05")
+}
+
 func (vm *VM) displayString(value Value, result *Result) (string, error) {
+	converted, err := vm.displayStringValue(value, result)
+	if err != nil {
+		return "", err
+	}
+	return converted.String(), nil
+}
+
+func (vm *VM) displayStringValue(value Value, result *Result) (Value, error) {
 	if idText, ok := typedIDValueText(value); ok {
-		return displayIDText(idText), nil
+		return String(displayIDText(idText)), nil
+	}
+	// Crash guard only, native behavior uncaptured: see collection_display_guard.go.
+	if (value.Kind == ValueList || value.Kind == ValueSet || value.Kind == ValueMap) && collectionDisplayRecurses(value) {
+		return Null, recursiveCollectionDisplayError()
 	}
 	switch value.Kind {
 	case ValueList:
-		return vm.displayList(value.List, result)
+		if vm.cacheCapturedAPI() && strings.EqualFold(value.Type, "List<Blob>") && len(value.List) == 1 &&
+			value.List[0].Kind == ValueObject && strings.EqualFold(value.List[0].Type, "Blob") && !value.List[0].projectClass {
+			return String(fmt.Sprintf("(Blob[%d])", len(blobText(value.List[0])))), nil
+		}
+		text, err := vm.displayList(value.List, result)
+		return String(text), err
 	case ValueSet:
-		return vm.displaySet(value.Set, result)
+		text, err := vm.displaySet(value.Set, result)
+		return String(text), err
 	case ValueMap:
 		// Direct ordinary class values use native
 		// short names or custom toString; other map shapes retain their text.
@@ -32,91 +55,102 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 				var err error
 				text, err = vm.displayString(item, result)
 				if err != nil {
-					return "", err
+					return Null, err
 				}
 			}
 			parts = append(parts, mapStoredKey(value, key).String()+"="+text)
 		}
-		return "{" + strings.Join(parts, ", ") + "}", nil
+		return String("{" + strings.Join(parts, ", ") + "}"), nil
 	case ValueObject:
 	default:
-		return value.String(), nil
+		return String(value.String()), nil
 	}
 	if value.Type == "Type" {
 		if text := typeValueText(value); text != "" {
 			if objectName, ok := vm.resolveObjectName(text); ok {
-				return vm.sObjectTypeDisplayName(objectName), nil
+				return String(vm.sObjectTypeDisplayName(objectName)), nil
 			}
-			return text, nil
+			return String(text), nil
 		}
 	}
 	if strings.EqualFold(value.Type, "UUID") {
 		if text, err := platformScalarText(value, "UUID"); err == nil {
-			return text, nil
+			return String(text), nil
 		}
 	}
 	if strings.EqualFold(value.Type, "AccessLevel") {
-		return accessLevelString(value), nil
+		return String(accessLevelString(value)), nil
 	}
 	if strings.EqualFold(value.Type, "String") {
 		if text, err := platformScalarText(value, "String"); err == nil {
-			return text, nil
+			return String(text), nil
 		}
 	}
 	if _, ok := stubProxyTypeName(value); ok {
-		return value.String(), nil
+		if _, declared, ambiguous := vm.resolveInstanceMethodForArgs(value.Type, "toString", nil); !declared && !ambiguous {
+			return String(vm.stubProxyDisplayString(value, make(map[uint64]bool))), nil
+		}
 	}
 	if strings.EqualFold(value.Type, "Date") {
 		if text, err := platformScalarText(value, "Date"); err == nil {
-			return text + " 00:00:00", nil
+			return String(text + " 00:00:00"), nil
 		}
+	}
+	if strings.EqualFold(value.Type, "Datetime") {
+		instant, err := parsePlatformDatetime(value)
+		if err != nil {
+			return Null, err
+		}
+		return String(apexDatetimeDisplayText(instant)), nil
 	}
 	if strings.EqualFold(value.Type, "Schema.SObjectField") {
 		if fieldName, ok := value.Fields["field"]; ok && fieldName.Kind == ValueString {
-			return fieldName.Text, nil
+			return String(fieldName.Text), nil
 		}
 	}
 	if strings.EqualFold(value.Type, "Schema.SObjectType") {
 		if objectName, ok := value.Fields["object"]; ok && objectName.Kind == ValueString {
-			return vm.sObjectTypeDisplayName(objectName.Text), nil
+			return String(vm.sObjectTypeDisplayName(objectName.Text)), nil
 		}
 	}
 	if value.Type == "LoggingLevel" && isLoggingLevelName(value.Text) {
-		return value.Text, nil
+		return String(value.Text), nil
 	}
 	if value.Type == "RoundingMode" && isDecimalRoundingModeName(value.Text) {
-		return value.Text, nil
+		return String(value.Text), nil
 	}
 	if value.Type == "StatusCode" && value.Text != "" {
-		return value.Text, nil
+		return String(value.Text), nil
 	}
 	if class, ok := vm.Classes[value.Type]; ok && len(class.EnumValues) > 0 && value.Text != "" {
-		return value.Text, nil
+		return String(value.Text), nil
 	}
 	if value.Text != "" && strings.Contains(value.Type, ".") {
-		return value.Text, nil
+		return String(value.Text), nil
 	}
 	if isExceptionType(value.Type) {
-		return exceptionToString(value), nil
-	}
-	if text, ok, err := vm.frameworkQualifiedMethodVerifierDisplayString(value, result); ok || err != nil {
-		return text, err
+		return String(vm.exceptionToString(value)), nil
 	}
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(value.Type, "toString", nil)
 	if ambiguous {
-		return "", vm.ambiguousOverloadError("toString", nil)
+		return Null, vm.ambiguousOverloadError("toString", nil)
 	}
 	if !ok {
-		return vm.defaultObjectDisplayString(value), nil
+		return String(vm.defaultObjectDisplayString(value)), nil
 	}
 	out, err := vm.callMethodWithReceiver(target, value, nil, result)
 	if err != nil {
-		return "", err
+		return Null, err
+	}
+	// Native string conversion preserves a null override result. Text display
+	// renders it as "null", while String.valueOf keeps the null String.
+	if out.Kind == ValueNull {
+		return out, nil
 	}
 	if out.Kind != ValueString {
-		return "", fmt.Errorf("%s returned %s, want String", target.Name, out.Kind)
+		return Null, fmt.Errorf("%s returned %s, want String", target.Name, out.Kind)
 	}
-	return out.Text, nil
+	return out, nil
 }
 
 func (vm *VM) defaultObjectDisplayString(value Value) string {
@@ -140,16 +174,20 @@ func (vm *VM) defaultObjectDisplayString(value Value) string {
 	// brackets, even when a field has a platform scalar's value/message name.
 	// Synthetic objects with undeclared payload fields retain their scalar path.
 	if vm.hasDeclaredOrdinaryClassFields(value) {
-		fields := make([]string, 0, len(value.Fields))
-		for name := range value.Fields {
-			fields = append(fields, name)
+		if vm.typeMatches(value.Type, "StubProvider", make(map[string]bool)) {
+			text = vm.stubProviderDisplayString(value, make(map[uint64]bool))
+		} else {
+			fields := make([]string, 0, len(value.Fields))
+			for name := range value.Fields {
+				fields = append(fields, name)
+			}
+			sort.Strings(fields)
+			parts := make([]string, 0, len(fields))
+			for _, name := range fields {
+				parts = append(parts, name+"="+valueStringWithSeen(value.Fields[name], map[uint64]bool{value.Ref: true}))
+			}
+			text = value.Type + ":[" + strings.Join(parts, ", ") + "]"
 		}
-		sort.Strings(fields)
-		parts := make([]string, 0, len(fields))
-		for _, name := range fields {
-			parts = append(parts, name+"="+valueStringWithSeen(value.Fields[name], map[uint64]bool{value.Ref: true}))
-		}
-		text = value.Type + ":[" + strings.Join(parts, ", ") + "]"
 	}
 	if !strings.Contains(value.Type, ".") {
 		return text
@@ -160,6 +198,133 @@ func (vm *VM) defaultObjectDisplayString(value Value) string {
 	}
 	shortName := value.Type[strings.LastIndex(value.Type, ".")+1:]
 	return shortName + strings.TrimPrefix(text, value.Type)
+}
+
+// stubProviderDisplayString is the provider state inside native stub text.
+// Field values use nestedDisplayString, so an object already being printed
+// reads (already output) (NS312B).
+func (vm *VM) stubProviderDisplayString(value Value, seen map[uint64]bool) string {
+	if value.Ref != 0 {
+		if seen[value.Ref] {
+			return "(already output)"
+		}
+		seen[value.Ref] = true
+		defer delete(seen, value.Ref)
+	}
+	fields := make([]string, 0, len(value.Fields))
+	for name := range value.Fields {
+		fields = append(fields, name)
+	}
+	sort.Strings(fields)
+	parts := make([]string, 0, len(fields))
+	for _, name := range fields {
+		parts = append(parts, name+"="+vm.nestedDisplayString(value.Fields[name], seen))
+	}
+	return value.Type + ":[" + strings.Join(parts, ", ") + "]"
+}
+
+// Native namespace_RAW_VALUE/RAW_STRING and AFTER_FULL (APIs 62/67/68):
+// the generated stub and its provider use local names in their owning org.
+// This is a display label; resolved type tokens and field values stay intact.
+func (vm *VM) stubObjectDisplayName(typeName string) string {
+	if vm == nil || vm.Org == nil {
+		return typeName
+	}
+	namespace := strings.TrimSpace(vm.Org.Namespace)
+	if namespace != "" && hasPrefixFold(typeName, namespace+".") {
+		return typeName[len(namespace)+1:]
+	}
+	return typeName
+}
+
+func (vm *VM) stubProxyDisplayTypeName(value Value) (string, bool) {
+	stubbedType, ok := stubProxyTypeName(value)
+	if !ok {
+		return "", false
+	}
+	return vm.stubObjectDisplayName(stubbedType) + "__sfdc_ApexStub", true
+}
+
+// nestedDisplayString renders a field value inside an object's String.valueOf
+// text. Only stubs and their providers recurse with the shared seen set,
+// and a List prints as (...): native NS310A seen=() and NS312A calls=(add).
+func (vm *VM) nestedDisplayString(value Value, seen map[uint64]bool) string {
+	switch value.Kind {
+	case ValueObject:
+		// The declaredType provider field keeps its qualified Type text in
+		// native namespace_RAW_VALUE and AFTER_FULL, unlike the stub label.
+		if strings.EqualFold(value.Type, "Type") {
+			if text := typeValueText(value); text != "" {
+				return text
+			}
+		}
+		if _, ok := stubProxyTypeName(value); ok {
+			return vm.stubProxyDisplayString(value, seen)
+		}
+		if vm.hasDeclaredOrdinaryClassFields(value) && vm.typeMatches(value.Type, "StubProvider", make(map[string]bool)) {
+			text := vm.stubProviderDisplayString(value, seen)
+			if strings.HasPrefix(text, value.Type+":") {
+				return vm.stubObjectDisplayName(value.Type) + strings.TrimPrefix(text, value.Type)
+			}
+			return text
+		}
+	case ValueList:
+		parts := make([]string, 0, len(value.List))
+		for _, item := range value.List {
+			parts = append(parts, vm.nestedDisplayString(item, seen))
+		}
+		return "(" + strings.Join(parts, ", ") + ")"
+	}
+	return valueStringWithSeen(value, seen)
+}
+
+// stubProxyDisplayString is String.valueOf of a Test.createStub proxy, in and
+// out of the provider and through concatenation. Native NS310A, NS310B and
+// NS320A: <Type>__sfdc_ApexStub:[stubProvider=<provider>], with the provider's
+// current state; NS312A: the stubbed class's instance fields come first as
+// <DeclaringClass>.<field>=<value>; NS312B: an object already being printed
+// reads (already output).
+func (vm *VM) stubProxyDisplayString(value Value, seen map[uint64]bool) string {
+	return vm.stubProxyDisplayStringForOperation(value, seen, false)
+}
+
+// Generic display uses the owning-org display name. Explicit string conversion
+// APIs opt into their separately captured provider text and local stub name.
+func (vm *VM) stubProxyDisplayStringForOperation(value Value, seen map[uint64]bool, explicitString bool) string {
+	stubbedType, _ := stubProxyTypeName(value)
+	displayType, _ := vm.stubProxyDisplayTypeName(value)
+	if value.Ref != 0 {
+		if seen[value.Ref] {
+			return "(already output)"
+		}
+		seen[value.Ref] = true
+		defer delete(seen, value.Ref)
+	}
+	names := make([]string, 0, len(value.Fields))
+	for name := range value.Fields {
+		if !strings.HasPrefix(name, "__glade") {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	parts := make([]string, 0, len(names)+1)
+	for _, name := range names {
+		owner := stubbedType
+		if _, declaring, ok := vm.lookupField(stubbedType, name); ok && declaring != "" {
+			owner = declaring
+		}
+		parts = append(parts, owner+"."+name+"="+vm.nestedDisplayString(value.Fields[name], seen))
+	}
+	provider := vm.currentStubProvider(value)
+	if explicitString {
+		parts = append(parts, "stubProvider="+vm.stubNamespaceProviderText(value, provider, seen))
+		if localName, captured := vm.stubNamespaceFieldlessProxyName(value); captured {
+			displayType = localName + "__sfdc_ApexStub"
+		}
+	} else {
+		parts = append(parts, "stubProvider="+vm.nestedDisplayString(provider, seen))
+	}
+	return displayType + ":[" + strings.Join(parts, ", ") + "]"
 }
 
 func (vm *VM) hasDeclaredOrdinaryClassFields(value Value) bool {
@@ -200,58 +365,6 @@ func (vm *VM) sObjectTypeDisplayName(typeName string) string {
 	return displayName
 }
 
-func (vm *VM) equalCurrentNamespaceApexStubText(left, right string) bool {
-	if vm == nil || vm.Org == nil || strings.TrimSpace(vm.Org.Namespace) == "" {
-		return false
-	}
-	if !strings.Contains(left, "__sfdc_ApexStub") || !strings.Contains(right, "__sfdc_ApexStub") {
-		return false
-	}
-	return vm.normalizeCurrentNamespaceApexStubText(left) == vm.normalizeCurrentNamespaceApexStubText(right)
-}
-
-func (vm *VM) normalizeCurrentNamespaceApexStubText(text string) string {
-	namespace := strings.TrimSpace(vm.Org.Namespace)
-	if namespace == "" || !strings.Contains(text, "__sfdc_ApexStub") {
-		return text
-	}
-	return strings.ReplaceAll(text, namespace+".", "")
-}
-
-func (vm *VM) frameworkQualifiedMethodVerifierDisplayString(value Value, result *Result) (string, bool, error) {
-	if value.Kind != ValueObject || !strings.EqualFold(frameworkMockSupportType(value.Type), "QualifiedMethod") {
-		return "", false, nil
-	}
-	if !vm.inFrameworkMethodVerifierFrame() {
-		return "", false, nil
-	}
-	typeName := objectStringField(value, "typeName")
-	if before, after, ok := strings.Cut(typeName, "."); ok && before != "" && strings.Contains(after, "__sfdc_ApexStub") {
-		if vm != nil && vm.Org != nil && strings.EqualFold(before, strings.TrimSpace(vm.Org.Namespace)) {
-			typeName = after
-		}
-	}
-	methodName := objectStringField(value, "methodName")
-	_, argTypes, _ := objectFieldValue(value, "methodArgTypes")
-	argsText, err := vm.displayString(argTypes, result)
-	if err != nil {
-		return "", true, err
-	}
-	return typeName + "." + methodName + argsText, true, nil
-}
-
-func (vm *VM) inFrameworkMethodVerifierFrame() bool {
-	if strings.EqualFold(frameworkMockSupportType(vm.currentMethod.ClassName), "MethodVerifier") {
-		return true
-	}
-	for _, frame := range vm.callStack {
-		if strings.EqualFold(frameworkMockSupportType(classNameFromMethod(frame.Symbol)), "MethodVerifier") {
-			return true
-		}
-	}
-	return false
-}
-
 func (vm *VM) displayList(values []Value, result *Result) (string, error) {
 	parts := make([]string, 0, len(values))
 	for _, item := range values {
@@ -282,6 +395,8 @@ const (
 	// Reserved internal field name; authored JSON values never grant loaded-reference authority.
 	sobjectLoadedReferencesField             = "__glade_loaded_references"
 	sobjectQueriedFieldsField                = "__glade_queried_fields"
+	sobjectModifiedSinceQueryField           = "__glade_modified_since_query"
+	sobjectSubqueryProjectionField           = "__glade_subquery_projection"
 	sobjectExplicitFieldsField               = "__glade_explicit_fields"
 	sobjectSetFieldsField                    = "__glade_set_fields"
 	sobjectUserSetFieldsField                = "__glade_user_set_fields"
@@ -299,10 +414,10 @@ const (
 )
 
 func isInternalSObjectField(field string) bool {
-	if field == sobjectPublishedEventIDField {
+	if field == sobjectPublishedEventIDField || field == jsonCapturedOwnerProjectionField || field == databaseAsyncLocatorField || isLexicalInstanceFieldStorage(field) {
 		return true
 	}
-	return field == sobjectLoadedReferencesField || field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectExplicitFieldsField || field == sobjectSetFieldsField || field == sobjectUserSetFieldsField || field == sobjectDefaultedFieldsField || field == sobjectDMLOptionsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField || field == sobjectParentProjectionField || field == sobjectStrippedChildRelationshipsField || field == sobjectCloneMarkerField || field == sobjectCloneSourceIDField || field == sobjectEventOperationIDField
+	return field == sobjectLoadedReferencesField || field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectModifiedSinceQueryField || field == sobjectSubqueryProjectionField || field == sobjectExplicitFieldsField || field == sobjectSetFieldsField || field == sobjectUserSetFieldsField || field == sobjectDefaultedFieldsField || field == sobjectDMLOptionsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField || field == sobjectParentProjectionField || field == sobjectStrippedChildRelationshipsField || field == sobjectCloneMarkerField || field == sobjectCloneSourceIDField || field == sobjectEventOperationIDField
 }
 
 func vmImplicitDMLField(field storage.Field) bool {
@@ -452,7 +567,7 @@ func unmarkExplicitSObjectField(value *Value, field string) {
 		return
 	}
 	delete(selected.Map, mapKey(String(strings.ToLower(field))))
-	if len(selected.Map) == 0 {
+	if len(selected.Map) == 0 && len(selected.Fields) == 0 {
 		delete(value.Fields, sobjectExplicitFieldsField)
 		return
 	}
@@ -501,6 +616,7 @@ func markUserSetSObjectField(value *Value, field string) {
 	}
 	selected.MapKeys[encoded] = keyValue
 	value.Fields[sobjectUserSetFieldsField] = selected
+	markSObjectModifiedSinceQuery(value)
 }
 
 func markDefaultedSObjectField(value *Value, field string) {
@@ -568,6 +684,7 @@ func setExplicitSObjectField(value *Value, field string, fieldValue Value) {
 	if value.Fields == nil {
 		value.Fields = make(map[string]Value)
 	}
+	clearScaleZeroNumberDynamicInput(value, field)
 	clearSObjectFieldAliasValues(value, field)
 	unmarkSObjectFieldMarker(value, sobjectDefaultedFieldsField, field)
 	value.Fields[field] = fieldValue
@@ -633,7 +750,7 @@ func unmarkSObjectFieldMarker(value *Value, marker, field string) {
 	key := mapKey(String(strings.ToLower(field)))
 	delete(selected.Map, key)
 	delete(selected.MapKeys, key)
-	if len(selected.Map) == 0 {
+	if len(selected.Map) == 0 && len(selected.Fields) == 0 {
 		delete(value.Fields, marker)
 		return
 	}
@@ -805,6 +922,9 @@ func (vm *VM) unqueriedSObjectFieldError(receiver Value, field string, enforceDM
 	if isExplicitSObjectField(receiver, field) {
 		return nil
 	}
+	if vm.legacyModifiedQueryCanReadNull(receiver, field) {
+		return nil
+	}
 	if vm.loadedChildRelationshipForField(receiver, field) {
 		return nil
 	}
@@ -813,17 +933,22 @@ func (vm *VM) unqueriedSObjectFieldError(receiver Value, field string, enforceDM
 	}
 	// Omitted lookups and parents remain unavailable even when the stored
 	// relationship is null. DML and trigger views retain their separate rules.
+	if !isTriggerSObject(receiver) {
+		if relation, exists := vm.parentRelationshipForName(receiver, field); exists {
+			// Queried custom metadata and FieldDefinition rows must select their
+			// named-metadata parents. Other virtual schema references retain their
+			// existing resolver.
+			_, reference, known := vm.sObjectFieldDefinition(receiver.Type, relation.Field)
+			_, _, kind, custom := vm.customDataObject(receiver.Type)
+			requiresSelectedParent := (custom && kind == "custom metadata") || strings.EqualFold(receiver.Type, "FieldDefinition")
+			if requiresSelectedParent || (!known || !fieldReferencesNamedMetadata(reference)) && !isParentProjectionSObject(receiver) {
+				return newExceptionError("SObjectException", fmt.Sprintf("SObject row was retrieved via SOQL without querying the requested field: %s.%s", receiver.Type, field))
+			}
+		}
+	}
 	if !isTriggerSObject(receiver) && !isParentProjectionSObject(receiver) {
 		if _, definition, exists := vm.sObjectFieldDefinition(receiver.Type, field); exists && definition.Type == storage.FieldReference {
 			return newExceptionError("SObjectException", fmt.Sprintf("SObject row was retrieved via SOQL without querying the requested field: %s.%s", receiver.Type, field))
-		}
-		if relation, exists := vm.parentRelationshipForName(receiver, field); exists {
-			// Named metadata references use the existing metadata resolver rather
-			// than an ordinary record projection (EntityDefinition/FieldDefinition).
-			_, reference, known := vm.sObjectFieldDefinition(receiver.Type, relation.Field)
-			if !known || !fieldReferencesNamedMetadata(reference) {
-				return newExceptionError("SObjectException", fmt.Sprintf("SObject row was retrieved via SOQL without querying the requested field: %s.%s", receiver.Type, field))
-			}
 		}
 	}
 	if vm.unqueriedLookupFieldCanDefaultNull(receiver, field) {
@@ -1627,6 +1752,11 @@ func (vm *VM) sObjectFieldDefinition(typeName, field string) (storage.ObjectDefi
 }
 
 func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, bool) {
+	// An allowed legacy omission is null, without materializing a stored value,
+	// schema default or formula after the omission error has been suppressed.
+	if vm.legacyModifiedQueryCanReadNull(receiver, field) {
+		return Null, true
+	}
 	if isExplicitSObjectField(receiver, field) {
 		if _, fieldDef, ok := vm.sObjectFieldDefinition(receiver.Type, field); ok {
 			if defaultValue, ok := storage.DefaultValueForField(fieldDef); ok {
@@ -1696,6 +1826,13 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 		if !isTriggerSObject(receiver) {
 			return storageFieldNullValue(fieldDef), true
 		}
+		// A missing COUNT value on the supplied trigger snapshot denotes
+		// its empty count, not a fresh read of the current child storage.
+		if strings.EqualFold(fieldDef.SummaryOperation, "count") {
+			if value, ok := emptySummaryStorageValue(fieldDef); ok {
+				return vmValueFromStorage(value), true
+			}
+		}
 		if dmlAccessibleSObject(receiver) {
 			if value, ok := emptySummaryStorageValue(fieldDef); ok {
 				return vmValueFromStorage(value), true
@@ -1741,7 +1878,7 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 	return storageFieldNullValue(fieldDef), true
 }
 
-func (vm *VM) unknownSObjectFieldError(receiver Value, field string) error {
+func (vm *VM) unknownSObjectFieldError(receiver Value, field string, requireDeclared ...bool) error {
 	if vm == nil || vm.Org == nil || receiver.Kind != ValueObject {
 		return nil
 	}
@@ -1761,7 +1898,7 @@ func (vm *VM) unknownSObjectFieldError(receiver Value, field string) error {
 	if _, ok := syntheticSObjectSystemField(field); ok {
 		return nil
 	}
-	if _, queried := receiver.Fields[sobjectQueriedFieldsField]; !queried && isCustomObjectLikeName(objectName) && !vm.hasPlatformEventMetadata(objectName) {
+	if _, queried := receiver.Fields[sobjectQueriedFieldsField]; !queried && isCustomObjectLikeName(objectName) && !vm.hasPlatformEventMetadata(objectName) && (len(requireDeclared) == 0 || !requireDeclared[0]) {
 		if synthetic := syntheticSchemaField(field); synthetic.APIName != "" {
 			return nil
 		}
@@ -2230,6 +2367,16 @@ func (vm *VM) parentRelationshipValueForRelationName(receiver Value, relation st
 	if !ok || lookupValue.Kind == ValueNull {
 		return vm.parentRelationshipTypedNull(relation)
 	}
+	if relationReferencesObject(relation, "EntityDefinition") || relationReferencesObject(relation, "FieldDefinition") {
+		if _, _, kind, custom := vm.customDataObject(receiver.Type); custom && kind == "custom metadata" {
+			// Cached accessors resolve parents; queried records select them explicitly.
+			// Fresh scalar references do not populate an in-memory parent graph.
+			_, cached := sobjectReadOnlyReason(receiver)
+			if !cached && !vm.queriedSObjectFieldsIncludes(receiver, relation.ParentRelationship) {
+				return vm.parentRelationshipTypedNull(relation)
+			}
+		}
+	}
 	if value, ok := vm.namedMetadataParentRelationshipValue(relation, lookupValue); ok {
 		return value
 	}
@@ -2526,7 +2673,7 @@ func (vm *VM) formulaRecordFromSObject(value Value) (storage.Record, bool) {
 			// Formula reads must not inherit DML's write restriction. Keep the
 			// original Trigger record readonly while
 			// preserving the admitted Decimal lifecycle's after-trigger reads.
-			value = cloneValuePreserveRefs(value)
+			value = vm.cloneValuePreserveRefs(value)
 			delete(value.Fields, sobjectReadOnlyField)
 		}
 	}

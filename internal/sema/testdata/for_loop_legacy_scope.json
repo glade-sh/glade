@@ -1,0 +1,27 @@
+{
+  "scope": "Source61 classic-for initializer followed by an enclosing same-named local. Other legacy binding kinds are unobserved. Runtime16 retained as native evidence; this conformance test asserts compilation only.",
+  "rows": [
+    {
+      "id": "classic-initializer-then-local",
+      "apiVersion": "61.0",
+      "context": "istest",
+      "source": "@IsTest private class ScopeSourceProbe {\n    public static Integer run() {\n        Integer total = 0;\n        for (Integer index = 1; index <= 3; index++) { total += index; }\n        Integer index = 10;\n        return total + index;\n    }\n    @IsTest static void observed() {\n        System.assert(false, 'SCOPE_RESULT|' + run());\n    }\n}\n",
+      "sourceSha256": "647cba0993b1d167392ed07dc25a1a570fb63a68c6db383937ee518852f846af",
+      "compiled": true,
+      "observedResult": 16,
+      "transport": "intentional assertion",
+      "nativeMessage": "System.AssertException: Assertion Failed: SCOPE_RESULT|16"
+    },
+    {
+      "id": "classic-initializer-then-local",
+      "apiVersion": "61.0",
+      "context": "anonymous",
+      "source": "Integer total = 0;\nfor (Integer index = 1; index <= 3; index++) { total += index; }\nInteger index = 10;\nSystem.debug('SCOPE_RESULT|' + (total + index));\n",
+      "sourceSha256": "e7fbe0efa588cde103a0919919045c990aa763b88ed15050a931f7d72060c905",
+      "compiled": true,
+      "observedResult": 16,
+      "transport": "USER_DEBUG",
+      "nativeMessage": "SCOPE_RESULT|16"
+    }
+  ]
+}

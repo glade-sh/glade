@@ -1,0 +1,1 @@
+@IsTest private class MetadataOwner62CTRLCOMPILE { @IsTest static void observed(){Integer value='synthetic mismatch';} }

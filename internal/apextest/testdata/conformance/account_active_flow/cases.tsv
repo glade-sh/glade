@@ -1,0 +1,6 @@
+id	shape
+D01	Account active describe and deleted-field control
+W01	direct default, insert true, update false
+B01	before-save insert true then update false
+R01	after-save related Account true then false
+N01	after-save null Account lookup

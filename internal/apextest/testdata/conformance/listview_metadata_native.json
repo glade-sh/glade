@@ -1,0 +1,34 @@
+{
+  "captures": [
+    {
+      "api": "62.0",
+      "nativeStatus": "Succeeded",
+      "testsCompleted": 1,
+      "receiptSHA256": "1029e04966f8cc07073f717af659433425dc66fc2824e144936fc8a9962bbd3b",
+      "files": {
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"namespace\": \"\", \"sourceApiVersion\": \"62.0\"}",
+        "force-app/main/default/classes/OwnedViewQueryTest.cls": "@IsTest private class OwnedViewQueryTest {\n @IsTest static void metadataRows() {\n  List<ListView> views=[SELECT Id,Name,DeveloperName,SobjectType,NamespacePrefix,IsSoqlCompatible FROM ListView WHERE SobjectType='OwnedViewRecord__c' AND DeveloperName IN ('OwnedViewAll','OwnedViewEnabled') WITH SYSTEM_MODE ORDER BY DeveloperName];\n  System.assertEquals(2,views.size());\n  for(ListView view:views){System.assertEquals('OwnedViewRecord__c',view.SobjectType);System.assertEquals(null,view.NamespacePrefix);System.assertEquals(true,view.IsSoqlCompatible);System.assertNotEquals(null,view.Id);System.assertNotEquals(null,view.Name);}\n  ListView chosen=[SELECT Id,Name,DeveloperName,IsSoqlCompatible FROM ListView WHERE SobjectType='OwnedViewRecord__c' AND DeveloperName='OwnedViewAll' AND IsSoqlCompatible=true WITH SYSTEM_MODE LIMIT 1];System.assertEquals('Owned All',chosen.Name);\n }\n}",
+        "force-app/main/default/classes/OwnedViewQueryTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/objects/OwnedViewRecord__c/OwnedViewRecord__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Owned View Record</label><pluralLabel>Owned View Records</pluralLabel><deploymentStatus>Deployed</deploymentStatus><nameField><label>Name</label><type>Text</type></nameField><sharingModel>ReadWrite</sharingModel></CustomObject>",
+        "force-app/main/default/objects/OwnedViewRecord__c/fields/Enabled__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Enabled__c</fullName><label>Enabled</label><type>Checkbox</type><defaultValue>false</defaultValue></CustomField>",
+        "force-app/main/default/objects/OwnedViewRecord__c/listViews/OwnedViewAll.listView-meta.xml": "<ListView xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>OwnedViewAll</fullName><columns>NAME</columns><filterScope>Everything</filterScope><label>Owned All</label></ListView>",
+        "force-app/main/default/objects/OwnedViewRecord__c/listViews/OwnedViewEnabled.listView-meta.xml": "<ListView xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>OwnedViewEnabled</fullName><columns>NAME</columns><filterScope>Everything</filterScope><filters><field>Enabled__c</field><operation>equals</operation><value>1</value></filters><label>Owned Enabled</label></ListView>"
+      }
+    },
+    {
+      "api": "67.0",
+      "nativeStatus": "Succeeded",
+      "testsCompleted": 1,
+      "receiptSHA256": "62fcbd39aeff3f75858b41215e64a01f07f52827eefa33416b348e73c1d0bc46",
+      "files": {
+        "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"namespace\": \"\", \"sourceApiVersion\": \"67.0\"}",
+        "force-app/main/default/classes/OwnedViewQueryTest.cls": "@IsTest private class OwnedViewQueryTest {\n @IsTest static void metadataRows() {\n  List<ListView> views=[SELECT Id,Name,DeveloperName,SobjectType,NamespacePrefix,IsSoqlCompatible FROM ListView WHERE SobjectType='OwnedViewRecord__c' AND DeveloperName IN ('OwnedViewAll','OwnedViewEnabled') WITH SYSTEM_MODE ORDER BY DeveloperName];\n  System.assertEquals(2,views.size());\n  for(ListView view:views){System.assertEquals('OwnedViewRecord__c',view.SobjectType);System.assertEquals(null,view.NamespacePrefix);System.assertEquals(true,view.IsSoqlCompatible);System.assertNotEquals(null,view.Id);System.assertNotEquals(null,view.Name);}\n  ListView chosen=[SELECT Id,Name,DeveloperName,IsSoqlCompatible FROM ListView WHERE SobjectType='OwnedViewRecord__c' AND DeveloperName='OwnedViewAll' AND IsSoqlCompatible=true WITH SYSTEM_MODE LIMIT 1];System.assertEquals('Owned All',chosen.Name);\n }\n}",
+        "force-app/main/default/classes/OwnedViewQueryTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>",
+        "force-app/main/default/objects/OwnedViewRecord__c/OwnedViewRecord__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Owned View Record</label><pluralLabel>Owned View Records</pluralLabel><deploymentStatus>Deployed</deploymentStatus><nameField><label>Name</label><type>Text</type></nameField><sharingModel>ReadWrite</sharingModel></CustomObject>",
+        "force-app/main/default/objects/OwnedViewRecord__c/fields/Enabled__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Enabled__c</fullName><label>Enabled</label><type>Checkbox</type><defaultValue>false</defaultValue></CustomField>",
+        "force-app/main/default/objects/OwnedViewRecord__c/listViews/OwnedViewAll.listView-meta.xml": "<ListView xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>OwnedViewAll</fullName><columns>NAME</columns><filterScope>Everything</filterScope><label>Owned All</label></ListView>",
+        "force-app/main/default/objects/OwnedViewRecord__c/listViews/OwnedViewEnabled.listView-meta.xml": "<ListView xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>OwnedViewEnabled</fullName><columns>NAME</columns><filterScope>Everything</filterScope><filters><field>Enabled__c</field><operation>equals</operation><value>1</value></filters><label>Owned Enabled</label></ListView>"
+      }
+    }
+  ]
+}

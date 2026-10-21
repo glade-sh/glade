@@ -31,7 +31,7 @@ func semaCollectionMethodSignature(receiverType, method string) (semaCollectionS
 				return semaCollectionSignature{returnType: "Schema.SObjectType", params: [][]string{{}}}, true
 			}
 		case "add":
-			return semaCollectionSignature{returnType: "void", params: [][]string{{args[0]}, {"Integer", args[0]}}}, true
+			return semaCollectionSignature{returnType: "void", returnTypeByArity: map[int]string{1: "Object"}, params: [][]string{{args[0]}, {"Integer", args[0]}}}, true
 		case "addall":
 			return semaCollectionSignature{returnType: "void", params: [][]string{{"List<" + args[0] + ">"}, {"Set<" + args[0] + ">"}, {"Iterable<" + args[0] + ">"}}}, true
 		case "clear":

@@ -1,0 +1,18 @@
+{
+  "observations": 774,
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "rows_per_api_per_route": 129,
+  "routes": [
+    "anonymous",
+    "istest"
+  ],
+  "source_manifest_sha256": "05b673a141ac81404a96705380c9c32e69135ae2f4b784deb48b08f694fa4e1f",
+  "native_answers": 774,
+  "no_answer_rows": 0,
+  "fixture_cleanup_verified": true,
+  "requires_scratch_deletion_verification": true
+}

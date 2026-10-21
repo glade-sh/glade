@@ -143,21 +143,25 @@ func TestVersionDiscoveryRoot(t *testing.T) {
 func TestUnsupportedAPIVersionRouting(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
-	for _, version := range []string{"64.0", "68.0", "67.1", "junk"} {
+	for _, version := range []string{"30.0", "64.0", "69.0", "67.1", "junk"} {
+		// Data routes use the GET paths of the captured route rows
+		// (rest_sobjects, rest_tooling_sobjects, rest_composite_root and their
+		// floor rows). SOAP and Bulk v1 are POST routes with local routing only.
 		for _, route := range []struct {
-			name string
-			path string
-			soap bool
+			name   string
+			method string
+			path   string
+			soap   bool
 		}{
-			{name: "rest", path: "/services/data/v" + version + "/sobjects"},
-			{name: "tooling", path: "/services/data/v" + version + "/tooling"},
-			{name: "composite", path: "/services/data/v" + version + "/composite"},
-			{name: "soap", path: "/services/Soap/u/" + version + "/00D000000000001", soap: true},
-			{name: "bulk-v1", path: "/services/async/" + version + "/job"},
+			{name: "rest", method: http.MethodGet, path: "/services/data/v" + version + "/sobjects"},
+			{name: "tooling", method: http.MethodGet, path: "/services/data/v" + version + "/tooling/sobjects"},
+			{name: "composite", method: http.MethodGet, path: "/services/data/v" + version + "/composite"},
+			{name: "soap", method: http.MethodPost, path: "/services/Soap/u/" + version + "/00D000000000mH2", soap: true},
+			{name: "bulk-v1", method: http.MethodPost, path: "/services/async/" + version + "/job"},
 		} {
 			t.Run(route.name+"/"+version, func(t *testing.T) {
 				rec := httptest.NewRecorder()
-				handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, route.path, strings.NewReader("")))
+				handler.ServeHTTP(rec, httptest.NewRequest(route.method, route.path, strings.NewReader("")))
 				if route.soap {
 					if rec.Code != http.StatusInternalServerError || !strings.Contains(rec.Body.String(), "sf:INVALID_VERSION") || !strings.Contains(rec.Body.String(), "unsupported API version "+version) {
 						t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
@@ -168,7 +172,20 @@ func TestUnsupportedAPIVersionRouting(t *testing.T) {
 				if route.name != "bulk-v1" {
 					requested = "v" + version
 				}
-				assertSalesforceError(t, rec, http.StatusNotFound, "NOT_FOUND", "unsupported API version "+requested)
+				// Data routes answer versions Salesforce does not serve with its
+				// own bodies: 410 GONE below 31.0 and 404 NOT_FOUND above the
+				// window. Versions it serves outside the window, malformed
+				// versions and Bulk v1 keep the local message.
+				status, code, message := http.StatusNotFound, "NOT_FOUND", "unsupported API version "+requested
+				if route.name != "bulk-v1" {
+					switch version {
+					case "30.0":
+						status, code, message = http.StatusGone, "GONE", nativeRetiredRESTVersionMessage
+					case "69.0":
+						message = nativeUnservedRESTVersionMessage
+					}
+				}
+				assertSalesforceError(t, rec, status, code, message)
 			})
 		}
 	}
@@ -197,7 +214,7 @@ func TestUnsupportedStoredRESTAPIVersion(t *testing.T) {
 		method string
 		path   string
 	}{
-		{method: http.MethodGet, path: "/id/00D000000000001/005000000000001"},
+		{method: http.MethodGet, path: "/id/00D000000000mH2/005000000000001"},
 		{method: http.MethodGet, path: "/services/oauth2/userinfo"},
 		{method: http.MethodPost, path: "/services/oauth2/token"},
 	} {
@@ -1797,7 +1814,7 @@ func TestDiscoveryIdentityAndUserInfoRejectUnsupportedMethods(t *testing.T) {
 	}{
 		{name: "version-discovery-post", method: http.MethodPost, path: "/services/data"},
 		{name: "resource-discovery-post", method: http.MethodPost, path: serverTestDataPath},
-		{name: "identity-post", method: http.MethodPost, path: "/id/00D000000000001/005000000000001"},
+		{name: "identity-post", method: http.MethodPost, path: "/id/00D000000000mH2/005000000000001"},
 		{name: "userinfo-post", method: http.MethodPost, path: "/services/oauth2/userinfo"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1848,29 +1865,26 @@ func TestSObjectResourceShape(t *testing.T) {
 	}
 
 	var payload struct {
-		Name           string            `json:"name"`
-		Label          string            `json:"label"`
-		KeyPrefix      string            `json:"keyPrefix"`
-		Custom         bool              `json:"custom"`
-		ObjectDescribe string            `json:"objectDescribe"`
-		RecentItems    string            `json:"recentItems"`
-		Describe       string            `json:"describe"`
-		URL            string            `json:"url"`
-		URLs           map[string]string `json:"urls"`
-		Fields         any               `json:"fields"`
-		Records        any               `json:"records"`
+		ObjectDescribe struct {
+			Name      string            `json:"name"`
+			Label     string            `json:"label"`
+			KeyPrefix string            `json:"keyPrefix"`
+			Custom    bool              `json:"custom"`
+			URLs      map[string]string `json:"urls"`
+		} `json:"objectDescribe"`
+		RecentItems []map[string]any `json:"recentItems"`
+		Fields      any              `json:"fields"`
+		Records     any              `json:"records"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
 		t.Fatal(err)
 	}
-	if payload.Name != "Account" || payload.Label != "Account" || payload.KeyPrefix != "001" || payload.Custom {
+	describe := payload.ObjectDescribe
+	if describe.Name != "Account" || describe.Label != "Account" || describe.KeyPrefix != "001" || describe.Custom {
 		t.Fatalf("object identity payload = %#v", payload)
 	}
-	if payload.ObjectDescribe != serverTestDataPath+"/sobjects/Account/describe" ||
-		payload.RecentItems != serverTestDataPath+"/sobjects/Account/recent" ||
-		payload.Describe != payload.ObjectDescribe ||
-		payload.URL != serverTestDataPath+"/sobjects/Account" {
-		t.Fatalf("object URL payload = %#v", payload)
+	if payload.RecentItems == nil {
+		t.Fatal("recentItems must be an array")
 	}
 	wantURLs := map[string]string{
 		"rowTemplate":     serverTestDataPath + "/sobjects/Account/{ID}",
@@ -1888,8 +1902,8 @@ func TestSObjectResourceShape(t *testing.T) {
 		"listviews":       serverTestDataPath + "/sobjects/Account/listviews",
 	}
 	for name, url := range wantURLs {
-		if payload.URLs[name] != url {
-			t.Fatalf("urls[%s] = %q, want %q; payload=%#v", name, payload.URLs[name], url, payload)
+		if describe.URLs[name] != url {
+			t.Fatalf("urls[%s] = %q, want %q; payload=%#v", name, describe.URLs[name], url, payload)
 		}
 	}
 	if payload.Fields != nil || payload.Records != nil {
@@ -2060,18 +2074,16 @@ func TestRequestedAPIVersionAppearsInSObjectURLs(t *testing.T) {
 		t.Fatalf("object status = %d body=%s", object.Code, object.Body.String())
 	}
 	var objectPayload struct {
-		ObjectDescribe string            `json:"objectDescribe"`
-		RecentItems    string            `json:"recentItems"`
-		URL            string            `json:"url"`
-		URLs           map[string]string `json:"urls"`
+		ObjectDescribe struct {
+			URLs map[string]string `json:"urls"`
+		} `json:"objectDescribe"`
+		RecentItems []map[string]any `json:"recentItems"`
 	}
 	if err := json.Unmarshal(object.Body.Bytes(), &objectPayload); err != nil {
 		t.Fatal(err)
 	}
-	if objectPayload.URL != serverAlternateDataPath+"/sobjects/Account" ||
-		objectPayload.ObjectDescribe != serverAlternateDataPath+"/sobjects/Account/describe" ||
-		objectPayload.RecentItems != serverAlternateDataPath+"/sobjects/Account/recent" ||
-		objectPayload.URLs["rowTemplate"] != serverAlternateDataPath+"/sobjects/Account/{ID}" {
+	if objectPayload.ObjectDescribe.URLs["describe"] != serverAlternateDataPath+"/sobjects/Account/describe" ||
+		objectPayload.ObjectDescribe.URLs["rowTemplate"] != serverAlternateDataPath+"/sobjects/Account/{ID}" {
 		t.Fatalf("object versioned URLs = %#v", objectPayload)
 	}
 
@@ -4392,6 +4404,10 @@ func TestGLADEStateEndpointReportsSummaryAndResetSupport(t *testing.T) {
 }
 
 func TestGLADEResetScopesPreserveAndClearExpectedState(t *testing.T) {
+	// Ten profiles: the eight standard seeds, the captured Chatter Free profile
+	// (storage a recorded revision), plus the identity-only Automated
+	// Process profile that derived from the captured non-null event-callback
+	// ProfileId (storage a recorded revision). Its name, license and grants are unobserved.
 	tests := []struct {
 		name         string
 		scope        string
@@ -4400,11 +4416,11 @@ func TestGLADEResetScopesPreserveAndClearExpectedState(t *testing.T) {
 		wantProfiles int
 		wantNoOps    string
 	}{
-		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 8},
-		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 8},
-		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 8},
-		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 8},
-		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 8, wantNoOps: "limits,async"},
+		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 10},
+		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 10},
+		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 10},
+		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 10},
+		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 10, wantNoOps: "limits,async"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -4513,7 +4529,7 @@ func TestIdentityLimitsDescribeRecentAndNormalRESTPayloads(t *testing.T) {
 	}
 
 	identity := httptest.NewRecorder()
-	handler.ServeHTTP(identity, httptest.NewRequest(http.MethodGet, "/id/00D000000000001/005000000000001", nil))
+	handler.ServeHTTP(identity, httptest.NewRequest(http.MethodGet, "/id/00D000000000mH2/005000000000001", nil))
 	if identity.Code != http.StatusOK || !bytes.Contains(identity.Body.Bytes(), []byte(`"user_id"`)) {
 		t.Fatalf("identity status = %d body=%s", identity.Code, identity.Body.String())
 	}
@@ -4613,7 +4629,7 @@ func TestLocalUserContextDefaultsToDeterministicUser(t *testing.T) {
 	if err := json.Unmarshal(userinfo.Body.Bytes(), &payload); err != nil {
 		t.Fatal(err)
 	}
-	if payload["user_id"] != "005000000000001" || payload["preferred_username"] != "system@example.invalid" {
+	if payload["user_id"] != storage.DefaultUserID || payload["preferred_username"] != "system@example.invalid" {
 		t.Fatalf("userinfo payload = %#v", payload)
 	}
 }
@@ -4646,7 +4662,7 @@ func TestLocalUserContextHeaderSelectsUserForIdentity(t *testing.T) {
 	addUser(&org, "005000000000123", "ada@example.test", "ada.alias@example.test", "Ada Trail")
 	handler := New(&org)
 
-	req := httptest.NewRequest(http.MethodGet, "/id/00D000000000001/005000000000001", nil)
+	req := httptest.NewRequest(http.MethodGet, "/id/00D000000000mH2/005000000000001", nil)
 	req.Header.Set("X-GLADE-User-Id", "005000000000123")
 	identity := httptest.NewRecorder()
 	handler.ServeHTTP(identity, req)
@@ -4679,7 +4695,7 @@ func TestLocalUserContextUnknownHeaderFallsBackToDeterministicDefault(t *testing
 	if err := json.Unmarshal(userinfo.Body.Bytes(), &payload); err != nil {
 		t.Fatal(err)
 	}
-	if payload["user_id"] != "005000000000001" {
+	if payload["user_id"] != storage.DefaultUserID {
 		t.Fatalf("userinfo payload = %#v", payload)
 	}
 }
@@ -4688,7 +4704,7 @@ func TestLocalUserContextUsesLexicographicUserWhenDefaultMissing(t *testing.T) {
 	org := testOrg()
 	storage.EnsureDeterministicPlatformData(&org)
 	userObject := org.Objects["User"]
-	delete(userObject.Records, "005000000000001")
+	delete(userObject.Records, storage.DefaultUserID)
 	userObject.Records["005000000000200"] = userRecordForTest("005000000000200", "zulu@example.test", "zulu@example.test", "Zulu User")
 	userObject.Records["005000000000100"] = userRecordForTest("005000000000100", "alpha@example.test", "alpha@example.test", "Alpha User")
 	org.Objects["User"] = userObject
@@ -4732,7 +4748,7 @@ func TestIdentityAndUserInfoExposeConservativeOpenIDShape(t *testing.T) {
 		t.Fatalf("userinfo urls = %#v", userPayload["urls"])
 	}
 
-	identityReq := httptest.NewRequest(http.MethodGet, "/id/00D000000000001/005000000000123", nil)
+	identityReq := httptest.NewRequest(http.MethodGet, "/id/00D000000000mH2/005000000000123", nil)
 	identity := httptest.NewRecorder()
 	handler.ServeHTTP(identity, identityReq)
 	if identity.Code != http.StatusOK {
@@ -4790,7 +4806,7 @@ func TestOAuthTokenReturnsDeterministicLocalBearer(t *testing.T) {
 	if payload["access_token"] != "local-005000000000123" || payload["token_type"] != "Bearer" || payload["issued_at"] != "0" {
 		t.Fatalf("token payload = %#v", payload)
 	}
-	if !strings.Contains(payload["id"].(string), "/id/00D000000000001/005000000000123") || payload["instance_url"] == "" {
+	if !strings.Contains(payload["id"].(string), "/id/00D000000000mH2/005000000000123") || payload["instance_url"] == "" {
 		t.Fatalf("token identity payload = %#v", payload)
 	}
 }

@@ -103,7 +103,10 @@ func EscapeVisualforceJavaScriptString(raw string) string {
 }
 
 func VisualforceCSPHeaderValue() string {
-	return "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'"
+	// Native authorization and request context controls capture policy keywords, omitting Salesforce hosts.
+	// The local policy uses its own origin for each captured self directive.
+	// Preserve the combined baseline and explicit policy header shape.
+	return "upgrade-insecure-requests, default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'; font-src 'self'; frame-src 'self'; media-src 'none'; object-src 'none'"
 }
 
 type VisualforcePageHeaderOptions struct {
@@ -179,6 +182,9 @@ func (o VisualforcePageHeaderOptions) Apply(header http.Header, now time.Time) {
 	}
 	if o.CSPHeader {
 		header.Set("Content-Security-Policy", VisualforceCSPHeaderValue())
+	} else {
+		// Both absent and false cspHeader retain the native baseline policy.
+		header.Set("Content-Security-Policy", "upgrade-insecure-requests")
 	}
 	if strings.TrimSpace(o.ContentType) != "" {
 		header.Set("Content-Type", strings.TrimSpace(o.ContentType))

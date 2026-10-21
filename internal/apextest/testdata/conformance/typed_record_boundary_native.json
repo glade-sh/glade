@@ -1,0 +1,1315 @@
+{
+  "family": "TypedRecordBoundaryNative",
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "nativeObservationCount": 6,
+  "orgIdSha256": "7490675c4d2e0b6fa6ab22e2f6a6346d1159826376f91213cf915c22f74932e9",
+  "configuration": "Own Developer scratch existing administrator; synthetic data with explicit rollback; no grants/settings changes.",
+  "captureProtocol": "Exact source metadata per API, anonymous and intentional OBS assertion. One invalid JSON leaf per diagnostic payload.",
+  "sourcesByAPI": {
+    "62.0": {
+      "classes": {
+        "AuditObservation62": "public class AuditObservation62 {\n public static Map<String,Object> snapshot(){\n  Contact row=new Contact(LastName='Audit');insert row;Id rowId=row.Id;Contact selected=[SELECT Id,CreatedDate FROM Contact WHERE Id=:rowId];\n  Map<String,Object> data=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(selected,false));\n  Contact direct=(Contact)JSON.deserialize(JSON.serialize(selected,false),Contact.class);\n  Dom.Document document=new Dom.Document();Dom.XmlNode root=document.createRootElement('Record',null,null);\n  if(data.containsKey('CreatedDate'))root.addChildElement('CreatedDate',null,null).addTextNode((String)data.get('CreatedDate'));\n  String text=null;XmlStreamReader reader=new XmlStreamReader(document.toXmlString());\n  while(reader.hasNext()){if(reader.getEventType()==XmlTag.CHARACTERS)text=reader.getText();reader.next();}\n  Contact stream=(Contact)JSON.deserialize(JSON.serialize(new Map<String,Object>{'CreatedDate'=>text}),Contact.class);\n  return new Map<String,Object>{'keys'=>RecordPopulationObservation62.keys(data),'populatedKeys'=>RecordPopulationObservation62.keys(selected.getPopulatedFieldsAsMap()),'hasCreated'=>data.containsKey('CreatedDate'),'directMatch'=>direct.CreatedDate==selected.CreatedDate,'streamText'=>text!=null,'streamMatch'=>stream.CreatedDate==selected.CreatedDate};\n }\n}\n",
+        "CompoundObservation62": "public class CompoundObservation62 {\n public static Map<String,Object> snapshot(){\n  Account row=new Account(Name='Compound',BillingStreet='1 Survey',BillingCity='Study');insert row;Id rowId=row.Id;Account selected=[SELECT Id,Name,BillingAddress,CreatedDate FROM Account WHERE Id=:rowId];\n  Map<String,Object> data=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(selected,false));\n  Account restored=(Account)JSON.deserialize(JSON.serialize(selected,false),Account.class);\n  Map<String,Object> seeded=new Map<String,Object>(Account.SObjectType.newSObject(row.Id).getPopulatedFieldsAsMap());List<String> seededKeys=RecordPopulationObservation62.keys(seeded);\n  seeded.put('Name','Mapped');seeded.put('BillingAddress',selected.get('BillingAddress'));seeded.put('CreatedDate',selected.CreatedDate);\n  Account mapped=(Account)JSON.deserialize(JSON.serialize(seeded),Account.class);\n  return new Map<String,Object>{'keys'=>RecordPopulationObservation62.keys(data),'populatedKeys'=>RecordPopulationObservation62.keys(selected.getPopulatedFieldsAsMap()),'addressKey'=>data.containsKey('BillingAddress'),'cityMatch'=>((Address)restored.get('BillingAddress')).getCity()=='Study','dateMatch'=>restored.CreatedDate==selected.CreatedDate,'seededKeys'=>seededKeys,'mappedId'=>mapped.Id==row.Id,'mappedCity'=>((Address)mapped.get('BillingAddress')).getCity()=='Study','mappedDate'=>mapped.CreatedDate==selected.CreatedDate};\n }\n}\n",
+        "RecordPopulationObservation62": "public class RecordPopulationObservation62 {\n public static List<String> keys(Map<String,Object> value){List<String> names=new List<String>(value.keySet());names.sort();return names;}\n public static Map<String,Object> view(Contact row){\n  Map<String,Object> data=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row,false));\n  return new Map<String,Object>{'jsonKeys'=>keys(data),'populatedKeys'=>keys(row.getPopulatedFieldsAsMap()),'owner'=>data.containsKey('OwnerId'),'ownerMatches'=>data.get('OwnerId')==null?false:((Id)data.get('OwnerId'))==UserInfo.getUserId()};\n }\n public static Map<String,Object> snapshot(){\n  Contact row=new Contact(FirstName='Owned',LastName='Implicit');Map<String,Object> out=new Map<String,Object>{'fresh'=>view(row)};insert row;out.put('inserted',view(row));\n  Contact restored=(Contact)JSON.deserialize(JSON.serialize(row,false),Contact.class);out.put('roundtripEqual',row==restored);out.put('roundtripMethod',row.equals(restored));out.put('restored',view(restored));\n  Contact explicitOwner=new Contact(FirstName='Owned',LastName='Explicit',OwnerId=UserInfo.getUserId());out.put('explicitBefore',view(explicitOwner));insert explicitOwner;out.put('explicitAfter',view(explicitOwner));\n  row.OwnerId=UserInfo.getUserId();out.put('assignedAfter',view(row));\n  Id rowId=row.Id;Contact selected=[SELECT Id,FirstName,LastName,OwnerId FROM Contact WHERE Id=:rowId];out.put('queriedOwner',view(selected));\n  return out;\n }\n}\n",
+        "TypedListObservation62": "public class TypedListObservation62 {\n public class Box {public List<String> entries;}\n public static List<String> problem(String payload,Type target) {\n  try{JSON.deserialize(payload,target);return new List<String>{'accepted'};}\n  catch(Exception e){return new List<String>{e.getTypeName(),e.getMessage()};}\n }\n public static Map<String,Object> snapshot(){\n  Box valid=(Box)JSON.deserialize('{\"entries\":[\"LeafOne\"]}',Box.class);\n  Box absent=(Box)JSON.deserialize('{\"entries\":null}',Box.class);\n  return new Map<String,Object>{'root'=>problem('\"LeafOne\"',List<String>.class),'nested'=>problem('{\"entries\":\"LeafOne\"}',Box.class),'inList'=>problem('[{\"entries\":[\"ok\"]},{\"entries\":\"LeafTwo\"}]',List<Box>.class),'escaped'=>problem('{\"entries\":\"Leaf\\\\\\\"One\"}',Box.class),'objectControl'=>problem('{\"entries\":{}}',Box.class),'numberControl'=>problem('{\"entries\":7}',Box.class),'valid'=>valid.entries,'nullControl'=>absent.entries,'emptyControl'=>((Box)JSON.deserialize('{\"entries\":[]}',Box.class)).entries};\n }\n}\n",
+        "TypedRecordNativeTest62": "@IsTest private class TypedRecordNativeTest62 {@IsTest static void capture(){System.assert(false,'OBS|'+TypedRecordSnapshot62.snapshot());}}\n",
+        "TypedRecordSnapshot62": "public class TypedRecordSnapshot62 {\n public static String snapshot(){Savepoint point=Database.setSavepoint();try{return JSON.serialize(new Map<String,Object>{'lists'=>TypedListObservation62.snapshot(),'records'=>RecordPopulationObservation62.snapshot(),'audit'=>AuditObservation62.snapshot(),'compound'=>CompoundObservation62.snapshot()});}finally{Database.rollback(point);}}\n}\n"
+      },
+      "classMetadata": {
+        "AuditObservation62": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "CompoundObservation62": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "RecordPopulationObservation62": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "TypedListObservation62": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "TypedRecordNativeTest62": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+        "TypedRecordSnapshot62": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+      },
+      "anonymous": "System.debug('OBS|'+TypedRecordSnapshot62.snapshot());\n",
+      "testClass": "TypedRecordNativeTest62",
+      "testMethod": "capture",
+      "sourceSha256": {
+        "anonymous": "73d97116959f3db2db5d26b907c04370c36a6f40eb7c9e37bcd011454cd7e624",
+        "class:AuditObservation62": "6b8255f3a84b4711c7af1c24b0ffba3dff9ab739ccf2be4886b6a3aa672f4cdd",
+        "class:CompoundObservation62": "b3294738b0e00787f96c50ced03349326e5daa5cd1415c4e234c1be9904cd33a",
+        "class:RecordPopulationObservation62": "c3c4fee6ea34c9fdcc626f3cf74a9fe383a90dadd3e2e7965a667044dc8b308c",
+        "class:TypedListObservation62": "393a517a099e84e81b2d67edfe939a55c42c67a8e0f53831ff114186656d5988",
+        "class:TypedRecordNativeTest62": "349af1eac3adf702001a0e663ff522d6a2942c6b233330fea181a2b687cf6ca3",
+        "class:TypedRecordSnapshot62": "49fbaac541c468f5e26d5659e58fc5a89ae00ca3ec03958df299b596fd75d6da",
+        "classMetadata:AuditObservation62": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "classMetadata:CompoundObservation62": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "classMetadata:RecordPopulationObservation62": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "classMetadata:TypedListObservation62": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "classMetadata:TypedRecordNativeTest62": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+        "classMetadata:TypedRecordSnapshot62": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+      }
+    },
+    "67.0": {
+      "classes": {
+        "AuditObservation67": "public class AuditObservation67 {\n public static Map<String,Object> snapshot(){\n  Contact row=new Contact(LastName='Audit');insert row;Id rowId=row.Id;Contact selected=[SELECT Id,CreatedDate FROM Contact WHERE Id=:rowId];\n  Map<String,Object> data=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(selected,false));\n  Contact direct=(Contact)JSON.deserialize(JSON.serialize(selected,false),Contact.class);\n  Dom.Document document=new Dom.Document();Dom.XmlNode root=document.createRootElement('Record',null,null);\n  if(data.containsKey('CreatedDate'))root.addChildElement('CreatedDate',null,null).addTextNode((String)data.get('CreatedDate'));\n  String text=null;XmlStreamReader reader=new XmlStreamReader(document.toXmlString());\n  while(reader.hasNext()){if(reader.getEventType()==XmlTag.CHARACTERS)text=reader.getText();reader.next();}\n  Contact stream=(Contact)JSON.deserialize(JSON.serialize(new Map<String,Object>{'CreatedDate'=>text}),Contact.class);\n  return new Map<String,Object>{'keys'=>RecordPopulationObservation67.keys(data),'populatedKeys'=>RecordPopulationObservation67.keys(selected.getPopulatedFieldsAsMap()),'hasCreated'=>data.containsKey('CreatedDate'),'directMatch'=>direct.CreatedDate==selected.CreatedDate,'streamText'=>text!=null,'streamMatch'=>stream.CreatedDate==selected.CreatedDate};\n }\n}\n",
+        "CompoundObservation67": "public class CompoundObservation67 {\n public static Map<String,Object> snapshot(){\n  Account row=new Account(Name='Compound',BillingStreet='1 Survey',BillingCity='Study');insert row;Id rowId=row.Id;Account selected=[SELECT Id,Name,BillingAddress,CreatedDate FROM Account WHERE Id=:rowId];\n  Map<String,Object> data=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(selected,false));\n  Account restored=(Account)JSON.deserialize(JSON.serialize(selected,false),Account.class);\n  Map<String,Object> seeded=new Map<String,Object>(Account.SObjectType.newSObject(row.Id).getPopulatedFieldsAsMap());List<String> seededKeys=RecordPopulationObservation67.keys(seeded);\n  seeded.put('Name','Mapped');seeded.put('BillingAddress',selected.get('BillingAddress'));seeded.put('CreatedDate',selected.CreatedDate);\n  Account mapped=(Account)JSON.deserialize(JSON.serialize(seeded),Account.class);\n  return new Map<String,Object>{'keys'=>RecordPopulationObservation67.keys(data),'populatedKeys'=>RecordPopulationObservation67.keys(selected.getPopulatedFieldsAsMap()),'addressKey'=>data.containsKey('BillingAddress'),'cityMatch'=>((Address)restored.get('BillingAddress')).getCity()=='Study','dateMatch'=>restored.CreatedDate==selected.CreatedDate,'seededKeys'=>seededKeys,'mappedId'=>mapped.Id==row.Id,'mappedCity'=>((Address)mapped.get('BillingAddress')).getCity()=='Study','mappedDate'=>mapped.CreatedDate==selected.CreatedDate};\n }\n}\n",
+        "RecordPopulationObservation67": "public class RecordPopulationObservation67 {\n public static List<String> keys(Map<String,Object> value){List<String> names=new List<String>(value.keySet());names.sort();return names;}\n public static Map<String,Object> view(Contact row){\n  Map<String,Object> data=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row,false));\n  return new Map<String,Object>{'jsonKeys'=>keys(data),'populatedKeys'=>keys(row.getPopulatedFieldsAsMap()),'owner'=>data.containsKey('OwnerId'),'ownerMatches'=>data.get('OwnerId')==null?false:((Id)data.get('OwnerId'))==UserInfo.getUserId()};\n }\n public static Map<String,Object> snapshot(){\n  Contact row=new Contact(FirstName='Owned',LastName='Implicit');Map<String,Object> out=new Map<String,Object>{'fresh'=>view(row)};insert row;out.put('inserted',view(row));\n  Contact restored=(Contact)JSON.deserialize(JSON.serialize(row,false),Contact.class);out.put('roundtripEqual',row==restored);out.put('roundtripMethod',row.equals(restored));out.put('restored',view(restored));\n  Contact explicitOwner=new Contact(FirstName='Owned',LastName='Explicit',OwnerId=UserInfo.getUserId());out.put('explicitBefore',view(explicitOwner));insert explicitOwner;out.put('explicitAfter',view(explicitOwner));\n  row.OwnerId=UserInfo.getUserId();out.put('assignedAfter',view(row));\n  Id rowId=row.Id;Contact selected=[SELECT Id,FirstName,LastName,OwnerId FROM Contact WHERE Id=:rowId];out.put('queriedOwner',view(selected));\n  return out;\n }\n}\n",
+        "TypedListObservation67": "public class TypedListObservation67 {\n public class Box {public List<String> entries;}\n public static List<String> problem(String payload,Type target) {\n  try{JSON.deserialize(payload,target);return new List<String>{'accepted'};}\n  catch(Exception e){return new List<String>{e.getTypeName(),e.getMessage()};}\n }\n public static Map<String,Object> snapshot(){\n  Box valid=(Box)JSON.deserialize('{\"entries\":[\"LeafOne\"]}',Box.class);\n  Box absent=(Box)JSON.deserialize('{\"entries\":null}',Box.class);\n  return new Map<String,Object>{'root'=>problem('\"LeafOne\"',List<String>.class),'nested'=>problem('{\"entries\":\"LeafOne\"}',Box.class),'inList'=>problem('[{\"entries\":[\"ok\"]},{\"entries\":\"LeafTwo\"}]',List<Box>.class),'escaped'=>problem('{\"entries\":\"Leaf\\\\\\\"One\"}',Box.class),'objectControl'=>problem('{\"entries\":{}}',Box.class),'numberControl'=>problem('{\"entries\":7}',Box.class),'valid'=>valid.entries,'nullControl'=>absent.entries,'emptyControl'=>((Box)JSON.deserialize('{\"entries\":[]}',Box.class)).entries};\n }\n}\n",
+        "TypedRecordNativeTest67": "@IsTest private class TypedRecordNativeTest67 {@IsTest static void capture(){System.assert(false,'OBS|'+TypedRecordSnapshot67.snapshot());}}\n",
+        "TypedRecordSnapshot67": "public class TypedRecordSnapshot67 {\n public static String snapshot(){Savepoint point=Database.setSavepoint();try{return JSON.serialize(new Map<String,Object>{'lists'=>TypedListObservation67.snapshot(),'records'=>RecordPopulationObservation67.snapshot(),'audit'=>AuditObservation67.snapshot(),'compound'=>CompoundObservation67.snapshot()});}finally{Database.rollback(point);}}\n}\n"
+      },
+      "classMetadata": {
+        "AuditObservation67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "CompoundObservation67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "RecordPopulationObservation67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "TypedListObservation67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "TypedRecordNativeTest67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+        "TypedRecordSnapshot67": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+      },
+      "anonymous": "System.debug('OBS|'+TypedRecordSnapshot67.snapshot());\n",
+      "testClass": "TypedRecordNativeTest67",
+      "testMethod": "capture",
+      "sourceSha256": {
+        "anonymous": "9467cec597b463d08efdfcda5171bb7ddb3d1c789694397bd8fa78cb76300b4a",
+        "class:AuditObservation67": "eefa1494be9cae66370d28e21fea1b6f23beb548713ce35bdbf22c9131231df8",
+        "class:CompoundObservation67": "f48615d3df0276de4bc385d4afb514c7684a7439ab8f7e265a544c9d5ff257ee",
+        "class:RecordPopulationObservation67": "efd4973187e2876daf0495e840f2d60c6b6174fbe42dfd09359af6502f211cd0",
+        "class:TypedListObservation67": "fa6bf16aa760ffe5ec3742ae9b5f1d19c8876c47b9f99f04a88c9544658b2006",
+        "class:TypedRecordNativeTest67": "9bc4db94fef7ed77816794ac8915d2ec9ca34638adde93f1a3026d8485acd840",
+        "class:TypedRecordSnapshot67": "0775171944025ec8a842245bfa56fab80edee4e805d5f2797dd98e3ca59da4fb",
+        "classMetadata:AuditObservation67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "classMetadata:CompoundObservation67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "classMetadata:RecordPopulationObservation67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "classMetadata:TypedListObservation67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "classMetadata:TypedRecordNativeTest67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+        "classMetadata:TypedRecordSnapshot67": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+      }
+    },
+    "68.0": {
+      "classes": {
+        "AuditObservation68": "public class AuditObservation68 {\n public static Map<String,Object> snapshot(){\n  Contact row=new Contact(LastName='Audit');insert row;Id rowId=row.Id;Contact selected=[SELECT Id,CreatedDate FROM Contact WHERE Id=:rowId];\n  Map<String,Object> data=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(selected,false));\n  Contact direct=(Contact)JSON.deserialize(JSON.serialize(selected,false),Contact.class);\n  Dom.Document document=new Dom.Document();Dom.XmlNode root=document.createRootElement('Record',null,null);\n  if(data.containsKey('CreatedDate'))root.addChildElement('CreatedDate',null,null).addTextNode((String)data.get('CreatedDate'));\n  String text=null;XmlStreamReader reader=new XmlStreamReader(document.toXmlString());\n  while(reader.hasNext()){if(reader.getEventType()==XmlTag.CHARACTERS)text=reader.getText();reader.next();}\n  Contact stream=(Contact)JSON.deserialize(JSON.serialize(new Map<String,Object>{'CreatedDate'=>text}),Contact.class);\n  return new Map<String,Object>{'keys'=>RecordPopulationObservation68.keys(data),'populatedKeys'=>RecordPopulationObservation68.keys(selected.getPopulatedFieldsAsMap()),'hasCreated'=>data.containsKey('CreatedDate'),'directMatch'=>direct.CreatedDate==selected.CreatedDate,'streamText'=>text!=null,'streamMatch'=>stream.CreatedDate==selected.CreatedDate};\n }\n}\n",
+        "CompoundObservation68": "public class CompoundObservation68 {\n public static Map<String,Object> snapshot(){\n  Account row=new Account(Name='Compound',BillingStreet='1 Survey',BillingCity='Study');insert row;Id rowId=row.Id;Account selected=[SELECT Id,Name,BillingAddress,CreatedDate FROM Account WHERE Id=:rowId];\n  Map<String,Object> data=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(selected,false));\n  Account restored=(Account)JSON.deserialize(JSON.serialize(selected,false),Account.class);\n  Map<String,Object> seeded=new Map<String,Object>(Account.SObjectType.newSObject(row.Id).getPopulatedFieldsAsMap());List<String> seededKeys=RecordPopulationObservation68.keys(seeded);\n  seeded.put('Name','Mapped');seeded.put('BillingAddress',selected.get('BillingAddress'));seeded.put('CreatedDate',selected.CreatedDate);\n  Account mapped=(Account)JSON.deserialize(JSON.serialize(seeded),Account.class);\n  return new Map<String,Object>{'keys'=>RecordPopulationObservation68.keys(data),'populatedKeys'=>RecordPopulationObservation68.keys(selected.getPopulatedFieldsAsMap()),'addressKey'=>data.containsKey('BillingAddress'),'cityMatch'=>((Address)restored.get('BillingAddress')).getCity()=='Study','dateMatch'=>restored.CreatedDate==selected.CreatedDate,'seededKeys'=>seededKeys,'mappedId'=>mapped.Id==row.Id,'mappedCity'=>((Address)mapped.get('BillingAddress')).getCity()=='Study','mappedDate'=>mapped.CreatedDate==selected.CreatedDate};\n }\n}\n",
+        "RecordPopulationObservation68": "public class RecordPopulationObservation68 {\n public static List<String> keys(Map<String,Object> value){List<String> names=new List<String>(value.keySet());names.sort();return names;}\n public static Map<String,Object> view(Contact row){\n  Map<String,Object> data=(Map<String,Object>)JSON.deserializeUntyped(JSON.serialize(row,false));\n  return new Map<String,Object>{'jsonKeys'=>keys(data),'populatedKeys'=>keys(row.getPopulatedFieldsAsMap()),'owner'=>data.containsKey('OwnerId'),'ownerMatches'=>data.get('OwnerId')==null?false:((Id)data.get('OwnerId'))==UserInfo.getUserId()};\n }\n public static Map<String,Object> snapshot(){\n  Contact row=new Contact(FirstName='Owned',LastName='Implicit');Map<String,Object> out=new Map<String,Object>{'fresh'=>view(row)};insert row;out.put('inserted',view(row));\n  Contact restored=(Contact)JSON.deserialize(JSON.serialize(row,false),Contact.class);out.put('roundtripEqual',row==restored);out.put('roundtripMethod',row.equals(restored));out.put('restored',view(restored));\n  Contact explicitOwner=new Contact(FirstName='Owned',LastName='Explicit',OwnerId=UserInfo.getUserId());out.put('explicitBefore',view(explicitOwner));insert explicitOwner;out.put('explicitAfter',view(explicitOwner));\n  row.OwnerId=UserInfo.getUserId();out.put('assignedAfter',view(row));\n  Id rowId=row.Id;Contact selected=[SELECT Id,FirstName,LastName,OwnerId FROM Contact WHERE Id=:rowId];out.put('queriedOwner',view(selected));\n  return out;\n }\n}\n",
+        "TypedListObservation68": "public class TypedListObservation68 {\n public class Box {public List<String> entries;}\n public static List<String> problem(String payload,Type target) {\n  try{JSON.deserialize(payload,target);return new List<String>{'accepted'};}\n  catch(Exception e){return new List<String>{e.getTypeName(),e.getMessage()};}\n }\n public static Map<String,Object> snapshot(){\n  Box valid=(Box)JSON.deserialize('{\"entries\":[\"LeafOne\"]}',Box.class);\n  Box absent=(Box)JSON.deserialize('{\"entries\":null}',Box.class);\n  return new Map<String,Object>{'root'=>problem('\"LeafOne\"',List<String>.class),'nested'=>problem('{\"entries\":\"LeafOne\"}',Box.class),'inList'=>problem('[{\"entries\":[\"ok\"]},{\"entries\":\"LeafTwo\"}]',List<Box>.class),'escaped'=>problem('{\"entries\":\"Leaf\\\\\\\"One\"}',Box.class),'objectControl'=>problem('{\"entries\":{}}',Box.class),'numberControl'=>problem('{\"entries\":7}',Box.class),'valid'=>valid.entries,'nullControl'=>absent.entries,'emptyControl'=>((Box)JSON.deserialize('{\"entries\":[]}',Box.class)).entries};\n }\n}\n",
+        "TypedRecordNativeTest68": "@IsTest private class TypedRecordNativeTest68 {@IsTest static void capture(){System.assert(false,'OBS|'+TypedRecordSnapshot68.snapshot());}}\n",
+        "TypedRecordSnapshot68": "public class TypedRecordSnapshot68 {\n public static String snapshot(){Savepoint point=Database.setSavepoint();try{return JSON.serialize(new Map<String,Object>{'lists'=>TypedListObservation68.snapshot(),'records'=>RecordPopulationObservation68.snapshot(),'audit'=>AuditObservation68.snapshot(),'compound'=>CompoundObservation68.snapshot()});}finally{Database.rollback(point);}}\n}\n"
+      },
+      "classMetadata": {
+        "AuditObservation68": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "CompoundObservation68": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "RecordPopulationObservation68": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "TypedListObservation68": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "TypedRecordNativeTest68": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+        "TypedRecordSnapshot68": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+      },
+      "anonymous": "System.debug('OBS|'+TypedRecordSnapshot68.snapshot());\n",
+      "testClass": "TypedRecordNativeTest68",
+      "testMethod": "capture",
+      "sourceSha256": {
+        "anonymous": "cb9acc6aa3846294b5782e45037b9d466b8baee060646200c62647e5eaec268a",
+        "class:AuditObservation68": "db9ea328cc96e17e23a594db3fedbf8d755f47b3088bea98c19ffe871a0d9d04",
+        "class:CompoundObservation68": "c0b11b73174f194819ea25b00798ee0c0b3bffc3ae037231298ddeb8b958c35e",
+        "class:RecordPopulationObservation68": "e615ccab83941b842363be93dd3102e3b20ccbfe919bd969a59782bf0324918c",
+        "class:TypedListObservation68": "48a7f4a317c23c6f3cf16319b50fd56a223b9a2546040a039c1c232c016d2491",
+        "class:TypedRecordNativeTest68": "9b5f93b4ceba07900414732c14b95f29f93531321a6c54a4c4857469e27be6ab",
+        "class:TypedRecordSnapshot68": "05cf144ee8c2c7a0bc53a43c3570bd1621f9fc84788452090c5604df9ce0c08a",
+        "classMetadata:AuditObservation68": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "classMetadata:CompoundObservation68": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "classMetadata:RecordPopulationObservation68": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "classMetadata:TypedListObservation68": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "classMetadata:TypedRecordNativeTest68": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+        "classMetadata:TypedRecordSnapshot68": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147"
+      }
+    }
+  },
+  "cells": [
+    {
+      "apiVersion": "62.0",
+      "route": "anonymous",
+      "observation": {
+        "compound": {
+          "mappedDate": true,
+          "mappedCity": true,
+          "mappedId": true,
+          "seededKeys": [
+            "Id"
+          ],
+          "dateMatch": true,
+          "cityMatch": true,
+          "addressKey": true,
+          "populatedKeys": [
+            "BillingAddress",
+            "CreatedDate",
+            "Id",
+            "Name"
+          ],
+          "keys": [
+            "BillingAddress",
+            "CreatedDate",
+            "Id",
+            "Name",
+            "attributes"
+          ]
+        },
+        "audit": {
+          "streamMatch": true,
+          "streamText": true,
+          "directMatch": true,
+          "hasCreated": true,
+          "populatedKeys": [
+            "CreatedDate",
+            "Id"
+          ],
+          "keys": [
+            "CreatedDate",
+            "Id",
+            "attributes"
+          ]
+        },
+        "records": {
+          "queriedOwner": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "assignedAfter": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "explicitAfter": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "explicitBefore": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "restored": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "attributes"
+            ]
+          },
+          "roundtripMethod": true,
+          "roundtripEqual": true,
+          "inserted": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "attributes"
+            ]
+          },
+          "fresh": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "LastName",
+              "attributes"
+            ]
+          }
+        },
+        "lists": {
+          "emptyControl": [],
+          "nullControl": null,
+          "valid": [
+            "LeafOne"
+          ],
+          "numberControl": [
+            "System.JSONException",
+            "Expected List<String> but found null at [line:1, column:2]"
+          ],
+          "objectControl": [
+            "System.JSONException",
+            "Expected List<String> but found { at [line:1, column:2]"
+          ],
+          "escaped": [
+            "System.JSONException",
+            "Expected List<String> but found \"Leaf\"One\" at [line:1, column:2]"
+          ],
+          "inList": [
+            "System.JSONException",
+            "Expected List<String> but found \"LeafTwo\" at [line:1, column:22]"
+          ],
+          "nested": [
+            "System.JSONException",
+            "Expected List<String> but found \"LeafOne\" at [line:1, column:2]"
+          ],
+          "root": [
+            "System.JSONException",
+            "Malformed JSON: Expected '[' at the beginning of List/Set"
+          ]
+        }
+      },
+      "evidenceSha256": "ab122e7f1e3728037ebedd4372c065495f2e6b3b2566d690f55d1255d312bc12",
+      "command": "apex run --target-org scratch-org --api-version 62.0 --file native-capture --json",
+      "native": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "transport": "debug"
+      }
+    },
+    {
+      "apiVersion": "62.0",
+      "route": "isTest",
+      "observation": {
+        "compound": {
+          "mappedDate": true,
+          "mappedCity": true,
+          "mappedId": true,
+          "seededKeys": [
+            "Id"
+          ],
+          "dateMatch": true,
+          "cityMatch": true,
+          "addressKey": true,
+          "populatedKeys": [
+            "BillingAddress",
+            "CreatedDate",
+            "Id",
+            "Name"
+          ],
+          "keys": [
+            "BillingAddress",
+            "CreatedDate",
+            "Id",
+            "Name",
+            "attributes"
+          ]
+        },
+        "audit": {
+          "streamMatch": true,
+          "streamText": true,
+          "directMatch": true,
+          "hasCreated": true,
+          "populatedKeys": [
+            "CreatedDate",
+            "Id"
+          ],
+          "keys": [
+            "CreatedDate",
+            "Id",
+            "attributes"
+          ]
+        },
+        "records": {
+          "queriedOwner": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "assignedAfter": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "explicitAfter": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "explicitBefore": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "restored": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "attributes"
+            ]
+          },
+          "roundtripMethod": true,
+          "roundtripEqual": true,
+          "inserted": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "attributes"
+            ]
+          },
+          "fresh": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "LastName",
+              "attributes"
+            ]
+          }
+        },
+        "lists": {
+          "emptyControl": [],
+          "nullControl": null,
+          "valid": [
+            "LeafOne"
+          ],
+          "numberControl": [
+            "System.JSONException",
+            "Expected List<String> but found null at [line:1, column:2]"
+          ],
+          "objectControl": [
+            "System.JSONException",
+            "Expected List<String> but found { at [line:1, column:2]"
+          ],
+          "escaped": [
+            "System.JSONException",
+            "Expected List<String> but found \"Leaf\"One\" at [line:1, column:2]"
+          ],
+          "inList": [
+            "System.JSONException",
+            "Expected List<String> but found \"LeafTwo\" at [line:1, column:22]"
+          ],
+          "nested": [
+            "System.JSONException",
+            "Expected List<String> but found \"LeafOne\" at [line:1, column:2]"
+          ],
+          "root": [
+            "System.JSONException",
+            "Malformed JSON: Expected '[' at the beginning of List/Set"
+          ]
+        }
+      },
+      "evidenceSha256": "2b5bab4847402563942a970c0640475ca37d30f45f9fe5c71b8520de39b0014c",
+      "command": "apex run test --target-org scratch-org --api-version 62.0 --class-names TypedRecordNativeTest62 --synchronous --json",
+      "native": {
+        "status": 100,
+        "outcome": "Fail",
+        "transport": "intentional OBS assertion"
+      }
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "anonymous",
+      "observation": {
+        "compound": {
+          "mappedDate": true,
+          "mappedCity": true,
+          "mappedId": true,
+          "seededKeys": [
+            "Id"
+          ],
+          "dateMatch": true,
+          "cityMatch": true,
+          "addressKey": true,
+          "populatedKeys": [
+            "BillingAddress",
+            "CreatedDate",
+            "Id",
+            "Name"
+          ],
+          "keys": [
+            "BillingAddress",
+            "CreatedDate",
+            "Id",
+            "Name",
+            "attributes"
+          ]
+        },
+        "audit": {
+          "streamMatch": true,
+          "streamText": true,
+          "directMatch": true,
+          "hasCreated": true,
+          "populatedKeys": [
+            "CreatedDate",
+            "Id"
+          ],
+          "keys": [
+            "CreatedDate",
+            "Id",
+            "attributes"
+          ]
+        },
+        "records": {
+          "queriedOwner": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "assignedAfter": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "explicitAfter": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "explicitBefore": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "restored": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "attributes"
+            ]
+          },
+          "roundtripMethod": true,
+          "roundtripEqual": true,
+          "inserted": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "attributes"
+            ]
+          },
+          "fresh": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "LastName",
+              "attributes"
+            ]
+          }
+        },
+        "lists": {
+          "emptyControl": [],
+          "nullControl": null,
+          "valid": [
+            "LeafOne"
+          ],
+          "numberControl": [
+            "System.JSONException",
+            "Expected List<String> but found null at [line:1, column:2]"
+          ],
+          "objectControl": [
+            "System.JSONException",
+            "Expected List<String> but found { at [line:1, column:2]"
+          ],
+          "escaped": [
+            "System.JSONException",
+            "Expected List<String> but found \"Leaf\"One\" at [line:1, column:2]"
+          ],
+          "inList": [
+            "System.JSONException",
+            "Expected List<String> but found \"LeafTwo\" at [line:1, column:22]"
+          ],
+          "nested": [
+            "System.JSONException",
+            "Expected List<String> but found \"LeafOne\" at [line:1, column:2]"
+          ],
+          "root": [
+            "System.JSONException",
+            "Malformed JSON: Expected '[' at the beginning of List/Set"
+          ]
+        }
+      },
+      "evidenceSha256": "ae2b0bc83e705b04d40633cfb3182cda4ca3b6e246fb09f516423f755f52ef58",
+      "command": "apex run --target-org scratch-org --api-version 67.0 --file native-capture --json",
+      "native": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "transport": "debug"
+      }
+    },
+    {
+      "apiVersion": "67.0",
+      "route": "isTest",
+      "observation": {
+        "compound": {
+          "mappedDate": true,
+          "mappedCity": true,
+          "mappedId": true,
+          "seededKeys": [
+            "Id"
+          ],
+          "dateMatch": true,
+          "cityMatch": true,
+          "addressKey": true,
+          "populatedKeys": [
+            "BillingAddress",
+            "CreatedDate",
+            "Id",
+            "Name"
+          ],
+          "keys": [
+            "BillingAddress",
+            "CreatedDate",
+            "Id",
+            "Name",
+            "attributes"
+          ]
+        },
+        "audit": {
+          "streamMatch": true,
+          "streamText": true,
+          "directMatch": true,
+          "hasCreated": true,
+          "populatedKeys": [
+            "CreatedDate",
+            "Id"
+          ],
+          "keys": [
+            "CreatedDate",
+            "Id",
+            "attributes"
+          ]
+        },
+        "records": {
+          "queriedOwner": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "assignedAfter": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "explicitAfter": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "explicitBefore": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "restored": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "attributes"
+            ]
+          },
+          "roundtripMethod": true,
+          "roundtripEqual": true,
+          "inserted": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "attributes"
+            ]
+          },
+          "fresh": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "LastName",
+              "attributes"
+            ]
+          }
+        },
+        "lists": {
+          "emptyControl": [],
+          "nullControl": null,
+          "valid": [
+            "LeafOne"
+          ],
+          "numberControl": [
+            "System.JSONException",
+            "Expected List<String> but found null at [line:1, column:2]"
+          ],
+          "objectControl": [
+            "System.JSONException",
+            "Expected List<String> but found { at [line:1, column:2]"
+          ],
+          "escaped": [
+            "System.JSONException",
+            "Expected List<String> but found \"Leaf\"One\" at [line:1, column:2]"
+          ],
+          "inList": [
+            "System.JSONException",
+            "Expected List<String> but found \"LeafTwo\" at [line:1, column:22]"
+          ],
+          "nested": [
+            "System.JSONException",
+            "Expected List<String> but found \"LeafOne\" at [line:1, column:2]"
+          ],
+          "root": [
+            "System.JSONException",
+            "Malformed JSON: Expected '[' at the beginning of List/Set"
+          ]
+        }
+      },
+      "evidenceSha256": "ae775830fc0a24ab1ce3cb36f1ab4d149f3c95d2ef4689407621e78fe333f214",
+      "command": "apex run test --target-org scratch-org --api-version 67.0 --class-names TypedRecordNativeTest67 --synchronous --json",
+      "native": {
+        "status": 100,
+        "outcome": "Fail",
+        "transport": "intentional OBS assertion"
+      }
+    },
+    {
+      "apiVersion": "68.0",
+      "route": "anonymous",
+      "observation": {
+        "compound": {
+          "mappedDate": true,
+          "mappedCity": true,
+          "mappedId": true,
+          "seededKeys": [
+            "Id"
+          ],
+          "dateMatch": true,
+          "cityMatch": true,
+          "addressKey": true,
+          "populatedKeys": [
+            "BillingAddress",
+            "CreatedDate",
+            "Id",
+            "Name"
+          ],
+          "keys": [
+            "BillingAddress",
+            "CreatedDate",
+            "Id",
+            "Name",
+            "attributes"
+          ]
+        },
+        "audit": {
+          "streamMatch": true,
+          "streamText": true,
+          "directMatch": true,
+          "hasCreated": true,
+          "populatedKeys": [
+            "CreatedDate",
+            "Id"
+          ],
+          "keys": [
+            "CreatedDate",
+            "Id",
+            "attributes"
+          ]
+        },
+        "records": {
+          "queriedOwner": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "assignedAfter": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "explicitAfter": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "explicitBefore": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "restored": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "attributes"
+            ]
+          },
+          "roundtripMethod": true,
+          "roundtripEqual": true,
+          "inserted": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "attributes"
+            ]
+          },
+          "fresh": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "LastName",
+              "attributes"
+            ]
+          }
+        },
+        "lists": {
+          "emptyControl": [],
+          "nullControl": null,
+          "valid": [
+            "LeafOne"
+          ],
+          "numberControl": [
+            "System.JSONException",
+            "Expected List<String> but found null at [line:1, column:2]"
+          ],
+          "objectControl": [
+            "System.JSONException",
+            "Expected List<String> but found { at [line:1, column:2]"
+          ],
+          "escaped": [
+            "System.JSONException",
+            "Expected List<String> but found \"Leaf\"One\" at [line:1, column:2]"
+          ],
+          "inList": [
+            "System.JSONException",
+            "Expected List<String> but found \"LeafTwo\" at [line:1, column:22]"
+          ],
+          "nested": [
+            "System.JSONException",
+            "Expected List<String> but found \"LeafOne\" at [line:1, column:2]"
+          ],
+          "root": [
+            "System.JSONException",
+            "Malformed JSON: Expected '[' at the beginning of List/Set"
+          ]
+        }
+      },
+      "evidenceSha256": "de47212fbbf06d47d186b7f44caa06439a59bd94e327913e6e7b1122762c523e",
+      "command": "apex run --target-org scratch-org --api-version 68.0 --file native-capture --json",
+      "native": {
+        "status": 0,
+        "success": true,
+        "compiled": true,
+        "transport": "debug"
+      }
+    },
+    {
+      "apiVersion": "68.0",
+      "route": "isTest",
+      "observation": {
+        "compound": {
+          "mappedDate": true,
+          "mappedCity": true,
+          "mappedId": true,
+          "seededKeys": [
+            "Id"
+          ],
+          "dateMatch": true,
+          "cityMatch": true,
+          "addressKey": true,
+          "populatedKeys": [
+            "BillingAddress",
+            "CreatedDate",
+            "Id",
+            "Name"
+          ],
+          "keys": [
+            "BillingAddress",
+            "CreatedDate",
+            "Id",
+            "Name",
+            "attributes"
+          ]
+        },
+        "audit": {
+          "streamMatch": true,
+          "streamText": true,
+          "directMatch": true,
+          "hasCreated": true,
+          "populatedKeys": [
+            "CreatedDate",
+            "Id"
+          ],
+          "keys": [
+            "CreatedDate",
+            "Id",
+            "attributes"
+          ]
+        },
+        "records": {
+          "queriedOwner": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "assignedAfter": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "explicitAfter": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "explicitBefore": {
+            "ownerMatches": true,
+            "owner": true,
+            "populatedKeys": [
+              "FirstName",
+              "LastName",
+              "OwnerId"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "LastName",
+              "OwnerId",
+              "attributes"
+            ]
+          },
+          "restored": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "attributes"
+            ]
+          },
+          "roundtripMethod": true,
+          "roundtripEqual": true,
+          "inserted": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "Id",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "Id",
+              "LastName",
+              "attributes"
+            ]
+          },
+          "fresh": {
+            "ownerMatches": false,
+            "owner": false,
+            "populatedKeys": [
+              "FirstName",
+              "LastName"
+            ],
+            "jsonKeys": [
+              "FirstName",
+              "LastName",
+              "attributes"
+            ]
+          }
+        },
+        "lists": {
+          "emptyControl": [],
+          "nullControl": null,
+          "valid": [
+            "LeafOne"
+          ],
+          "numberControl": [
+            "System.JSONException",
+            "Expected List<String> but found null at [line:1, column:2]"
+          ],
+          "objectControl": [
+            "System.JSONException",
+            "Expected List<String> but found { at [line:1, column:2]"
+          ],
+          "escaped": [
+            "System.JSONException",
+            "Expected List<String> but found \"Leaf\"One\" at [line:1, column:2]"
+          ],
+          "inList": [
+            "System.JSONException",
+            "Expected List<String> but found \"LeafTwo\" at [line:1, column:22]"
+          ],
+          "nested": [
+            "System.JSONException",
+            "Expected List<String> but found \"LeafOne\" at [line:1, column:2]"
+          ],
+          "root": [
+            "System.JSONException",
+            "Malformed JSON: Expected '[' at the beginning of List/Set"
+          ]
+        }
+      },
+      "evidenceSha256": "6c244ef3725a14b5ef7cb743d02be1b59b3b3587f487777fea2c4c7212388f66",
+      "command": "apex run test --target-org scratch-org --api-version 68.0 --class-names TypedRecordNativeTest68 --synchronous --json",
+      "native": {
+        "status": 100,
+        "outcome": "Fail",
+        "transport": "intentional OBS assertion"
+      }
+    }
+  ],
+  "d7Evidence": {
+    "observationsTsv": "row\tapi\tcontext\tvalue\nTRB_62_anon\t62\tanonymous\t{\"compound\":{\"mappedDate\":true,\"mappedCity\":true,\"mappedId\":true,\"seededKeys\":[\"Id\"],\"dateMatch\":true,\"cityMatch\":true,\"addressKey\":true,\"populatedKeys\":[\"BillingAddress\",\"CreatedDate\",\"Id\",\"Name\"],\"keys\":[\"BillingAddress\",\"CreatedDate\",\"Id\",\"Name\",\"attributes\"]},\"audit\":{\"streamMatch\":true,\"streamText\":true,\"directMatch\":true,\"hasCreated\":true,\"populatedKeys\":[\"CreatedDate\",\"Id\"],\"keys\":[\"CreatedDate\",\"Id\",\"attributes\"]},\"records\":{\"queriedOwner\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"assignedAfter\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"explicitAfter\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"explicitBefore\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"LastName\",\"OwnerId\",\"attributes\"]},\"restored\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"attributes\"]},\"roundtripMethod\":true,\"roundtripEqual\":true,\"inserted\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"attributes\"]},\"fresh\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"LastName\",\"attributes\"]}},\"lists\":{\"emptyControl\":[],\"nullControl\":null,\"valid\":[\"LeafOne\"],\"numberControl\":[\"System.JSONException\",\"Expected List<String> but found null at [line:1, column:2]\"],\"objectControl\":[\"System.JSONException\",\"Expected List<String> but found { at [line:1, column:2]\"],\"escaped\":[\"System.JSONException\",\"Expected List<String> but found \\\"Leaf\\\"One\\\" at [line:1, column:2]\"],\"inList\":[\"System.JSONException\",\"Expected List<String> but found \\\"LeafTwo\\\" at [line:1, column:22]\"],\"nested\":[\"System.JSONException\",\"Expected List<String> but found \\\"LeafOne\\\" at [line:1, column:2]\"],\"root\":[\"System.JSONException\",\"Malformed JSON: Expected '[' at the beginning of List/Set\"]}}\nTRB_62_test\t62\tistest\t{\"compound\":{\"mappedDate\":true,\"mappedCity\":true,\"mappedId\":true,\"seededKeys\":[\"Id\"],\"dateMatch\":true,\"cityMatch\":true,\"addressKey\":true,\"populatedKeys\":[\"BillingAddress\",\"CreatedDate\",\"Id\",\"Name\"],\"keys\":[\"BillingAddress\",\"CreatedDate\",\"Id\",\"Name\",\"attributes\"]},\"audit\":{\"streamMatch\":true,\"streamText\":true,\"directMatch\":true,\"hasCreated\":true,\"populatedKeys\":[\"CreatedDate\",\"Id\"],\"keys\":[\"CreatedDate\",\"Id\",\"attributes\"]},\"records\":{\"queriedOwner\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"assignedAfter\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"explicitAfter\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"explicitBefore\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"LastName\",\"OwnerId\",\"attributes\"]},\"restored\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"attributes\"]},\"roundtripMethod\":true,\"roundtripEqual\":true,\"inserted\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"attributes\"]},\"fresh\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"LastName\",\"attributes\"]}},\"lists\":{\"emptyControl\":[],\"nullControl\":null,\"valid\":[\"LeafOne\"],\"numberControl\":[\"System.JSONException\",\"Expected List<String> but found null at [line:1, column:2]\"],\"objectControl\":[\"System.JSONException\",\"Expected List<String> but found { at [line:1, column:2]\"],\"escaped\":[\"System.JSONException\",\"Expected List<String> but found \\\"Leaf\\\"One\\\" at [line:1, column:2]\"],\"inList\":[\"System.JSONException\",\"Expected List<String> but found \\\"LeafTwo\\\" at [line:1, column:22]\"],\"nested\":[\"System.JSONException\",\"Expected List<String> but found \\\"LeafOne\\\" at [line:1, column:2]\"],\"root\":[\"System.JSONException\",\"Malformed JSON: Expected '[' at the beginning of List/Set\"]}}\nTRB_67_anon\t67\tanonymous\t{\"compound\":{\"mappedDate\":true,\"mappedCity\":true,\"mappedId\":true,\"seededKeys\":[\"Id\"],\"dateMatch\":true,\"cityMatch\":true,\"addressKey\":true,\"populatedKeys\":[\"BillingAddress\",\"CreatedDate\",\"Id\",\"Name\"],\"keys\":[\"BillingAddress\",\"CreatedDate\",\"Id\",\"Name\",\"attributes\"]},\"audit\":{\"streamMatch\":true,\"streamText\":true,\"directMatch\":true,\"hasCreated\":true,\"populatedKeys\":[\"CreatedDate\",\"Id\"],\"keys\":[\"CreatedDate\",\"Id\",\"attributes\"]},\"records\":{\"queriedOwner\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"assignedAfter\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"explicitAfter\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"explicitBefore\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"LastName\",\"OwnerId\",\"attributes\"]},\"restored\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"attributes\"]},\"roundtripMethod\":true,\"roundtripEqual\":true,\"inserted\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"attributes\"]},\"fresh\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"LastName\",\"attributes\"]}},\"lists\":{\"emptyControl\":[],\"nullControl\":null,\"valid\":[\"LeafOne\"],\"numberControl\":[\"System.JSONException\",\"Expected List<String> but found null at [line:1, column:2]\"],\"objectControl\":[\"System.JSONException\",\"Expected List<String> but found { at [line:1, column:2]\"],\"escaped\":[\"System.JSONException\",\"Expected List<String> but found \\\"Leaf\\\"One\\\" at [line:1, column:2]\"],\"inList\":[\"System.JSONException\",\"Expected List<String> but found \\\"LeafTwo\\\" at [line:1, column:22]\"],\"nested\":[\"System.JSONException\",\"Expected List<String> but found \\\"LeafOne\\\" at [line:1, column:2]\"],\"root\":[\"System.JSONException\",\"Malformed JSON: Expected '[' at the beginning of List/Set\"]}}\nTRB_67_test\t67\tistest\t{\"compound\":{\"mappedDate\":true,\"mappedCity\":true,\"mappedId\":true,\"seededKeys\":[\"Id\"],\"dateMatch\":true,\"cityMatch\":true,\"addressKey\":true,\"populatedKeys\":[\"BillingAddress\",\"CreatedDate\",\"Id\",\"Name\"],\"keys\":[\"BillingAddress\",\"CreatedDate\",\"Id\",\"Name\",\"attributes\"]},\"audit\":{\"streamMatch\":true,\"streamText\":true,\"directMatch\":true,\"hasCreated\":true,\"populatedKeys\":[\"CreatedDate\",\"Id\"],\"keys\":[\"CreatedDate\",\"Id\",\"attributes\"]},\"records\":{\"queriedOwner\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"assignedAfter\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"explicitAfter\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"explicitBefore\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"LastName\",\"OwnerId\",\"attributes\"]},\"restored\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"attributes\"]},\"roundtripMethod\":true,\"roundtripEqual\":true,\"inserted\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"attributes\"]},\"fresh\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"LastName\",\"attributes\"]}},\"lists\":{\"emptyControl\":[],\"nullControl\":null,\"valid\":[\"LeafOne\"],\"numberControl\":[\"System.JSONException\",\"Expected List<String> but found null at [line:1, column:2]\"],\"objectControl\":[\"System.JSONException\",\"Expected List<String> but found { at [line:1, column:2]\"],\"escaped\":[\"System.JSONException\",\"Expected List<String> but found \\\"Leaf\\\"One\\\" at [line:1, column:2]\"],\"inList\":[\"System.JSONException\",\"Expected List<String> but found \\\"LeafTwo\\\" at [line:1, column:22]\"],\"nested\":[\"System.JSONException\",\"Expected List<String> but found \\\"LeafOne\\\" at [line:1, column:2]\"],\"root\":[\"System.JSONException\",\"Malformed JSON: Expected '[' at the beginning of List/Set\"]}}\nTRB_68_anon\t68\tanonymous\t{\"compound\":{\"mappedDate\":true,\"mappedCity\":true,\"mappedId\":true,\"seededKeys\":[\"Id\"],\"dateMatch\":true,\"cityMatch\":true,\"addressKey\":true,\"populatedKeys\":[\"BillingAddress\",\"CreatedDate\",\"Id\",\"Name\"],\"keys\":[\"BillingAddress\",\"CreatedDate\",\"Id\",\"Name\",\"attributes\"]},\"audit\":{\"streamMatch\":true,\"streamText\":true,\"directMatch\":true,\"hasCreated\":true,\"populatedKeys\":[\"CreatedDate\",\"Id\"],\"keys\":[\"CreatedDate\",\"Id\",\"attributes\"]},\"records\":{\"queriedOwner\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"assignedAfter\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"explicitAfter\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"explicitBefore\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"LastName\",\"OwnerId\",\"attributes\"]},\"restored\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"attributes\"]},\"roundtripMethod\":true,\"roundtripEqual\":true,\"inserted\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"attributes\"]},\"fresh\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"LastName\",\"attributes\"]}},\"lists\":{\"emptyControl\":[],\"nullControl\":null,\"valid\":[\"LeafOne\"],\"numberControl\":[\"System.JSONException\",\"Expected List<String> but found null at [line:1, column:2]\"],\"objectControl\":[\"System.JSONException\",\"Expected List<String> but found { at [line:1, column:2]\"],\"escaped\":[\"System.JSONException\",\"Expected List<String> but found \\\"Leaf\\\"One\\\" at [line:1, column:2]\"],\"inList\":[\"System.JSONException\",\"Expected List<String> but found \\\"LeafTwo\\\" at [line:1, column:22]\"],\"nested\":[\"System.JSONException\",\"Expected List<String> but found \\\"LeafOne\\\" at [line:1, column:2]\"],\"root\":[\"System.JSONException\",\"Malformed JSON: Expected '[' at the beginning of List/Set\"]}}\nTRB_68_test\t68\tistest\t{\"compound\":{\"mappedDate\":true,\"mappedCity\":true,\"mappedId\":true,\"seededKeys\":[\"Id\"],\"dateMatch\":true,\"cityMatch\":true,\"addressKey\":true,\"populatedKeys\":[\"BillingAddress\",\"CreatedDate\",\"Id\",\"Name\"],\"keys\":[\"BillingAddress\",\"CreatedDate\",\"Id\",\"Name\",\"attributes\"]},\"audit\":{\"streamMatch\":true,\"streamText\":true,\"directMatch\":true,\"hasCreated\":true,\"populatedKeys\":[\"CreatedDate\",\"Id\"],\"keys\":[\"CreatedDate\",\"Id\",\"attributes\"]},\"records\":{\"queriedOwner\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"assignedAfter\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"explicitAfter\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"OwnerId\",\"attributes\"]},\"explicitBefore\":{\"ownerMatches\":true,\"owner\":true,\"populatedKeys\":[\"FirstName\",\"LastName\",\"OwnerId\"],\"jsonKeys\":[\"FirstName\",\"LastName\",\"OwnerId\",\"attributes\"]},\"restored\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"attributes\"]},\"roundtripMethod\":true,\"roundtripEqual\":true,\"inserted\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"Id\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"Id\",\"LastName\",\"attributes\"]},\"fresh\":{\"ownerMatches\":false,\"owner\":false,\"populatedKeys\":[\"FirstName\",\"LastName\"],\"jsonKeys\":[\"FirstName\",\"LastName\",\"attributes\"]}},\"lists\":{\"emptyControl\":[],\"nullControl\":null,\"valid\":[\"LeafOne\"],\"numberControl\":[\"System.JSONException\",\"Expected List<String> but found null at [line:1, column:2]\"],\"objectControl\":[\"System.JSONException\",\"Expected List<String> but found { at [line:1, column:2]\"],\"escaped\":[\"System.JSONException\",\"Expected List<String> but found \\\"Leaf\\\"One\\\" at [line:1, column:2]\"],\"inList\":[\"System.JSONException\",\"Expected List<String> but found \\\"LeafTwo\\\" at [line:1, column:22]\"],\"nested\":[\"System.JSONException\",\"Expected List<String> but found \\\"LeafOne\\\" at [line:1, column:2]\"],\"root\":[\"System.JSONException\",\"Malformed JSON: Expected '[' at the beginning of List/Set\"]}}\n",
+    "orgTsvSha256": "22d897e811a87c1bdd15b7c3963315ab66bfb4787c3190239b3c79504ac3c829",
+    "runMetadata": "Owned Developer scratch scratch-org from scratch-org, duration3days, existing administrator. All sf commands prefixed HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true. Synthetic Account/Contact data and classes only; no permissions/sharing/settings/namespace/package changes. Top-level snapshot explicitly rolls back all data in anonymous and named contexts.\nOrg id SHA256 7490675c4d2e0b6fa6ab22e2f6a6346d1159826376f91213cf915c22f74932e9\nCreate: sf org create scratch --target-dev-hub scratch-org --alias scratch-org --duration-days 3 --edition developer --wait 15 --json status0.\nFinal deploy cwd <worktree>/probe/typed_record_boundary/source: sf project deploy start --source-dir force-app --target-org scratch-org --wait 15 --json status0; raw /tmp/b60-k9-typed-record-deploy-copy.json SHA256 0c95cee6abf277e03ff423ba02e19ce91fbbdd21c0a373b63449e483c2fc8d4f\nEach helper and named test uses matching API62/67/68 metadata; anonymous also selects matching transport API. Compound shape copies getPopulatedFieldsAsMap into an ordinary Map before augmentation, as required by observed native read-only result. Earlier un-copied map probe failed FinalException and is excluded; raw preserved under ignored raw-readonly-map-setup-failure. No map-mutability runtime fix. Each invalid-list payload has exactly one invalid leaf; no multi-error precedence claim. Quoted diagnostic values have zero literal backslashes; JSON/HTML transport escaping is decoded once each.\nsf apex run --target-org scratch-org --api-version 62.0 --file native-capture --json; observedstatus 0\nsf apex run test --target-org scratch-org --api-version 62.0 --class-names TypedRecordNativeTest62 --synchronous --json; observedstatus 100\nsf apex run --target-org scratch-org --api-version 67.0 --file native-capture --json; observedstatus 0\nsf apex run test --target-org scratch-org --api-version 67.0 --class-names TypedRecordNativeTest67 --synchronous --json; observedstatus 100\nsf apex run --target-org scratch-org --api-version 68.0 --file native-capture --json; observedstatus 0\nsf apex run test --target-org scratch-org --api-version 68.0 --class-names TypedRecordNativeTest68 --synchronous --json; observedstatus 100\nCleanup: sf org delete scratch --target-org scratch-org --no-prompt --json status0; sf alias list --json status0, ownalias absent. RawdeleteSHA256 1d10318c24c93a73755200eaf3463785c56d98a9a266638fe9b7c15da35dcccc; aliasesSHA256 07abfd234e3c2c6e4776f9c2b47f3dd9dabf65620954417896fba95a07ee5a6f\n",
+    "orgRunSha256": "fcddf879a96e2c8ac74104fb50a36081331b04ca2863dd124d7d214d95dee937",
+    "rawOrgRunSha256": "c43bce953bfe8be2ea1e8cc10f3c9b4e8c5443de42baf7415d54020531706967",
+    "normalization": "Only authentication HOME/worktree paths replaced by stable placeholders; raw D7 digest retained."
+  }
+}

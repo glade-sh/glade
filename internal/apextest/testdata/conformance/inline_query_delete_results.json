@@ -1,0 +1,129 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "shapeCount": 1,
+  "nativeObservationCount": 6,
+  "rows": [
+    {
+      "id": "QD01",
+      "expected": {
+        "outcome": "runtime",
+        "value": "empty:0|many:2:true:true|limit:1:true|scalar:true|cast:true|named:1:true"
+      },
+      "routes": {
+        "anonymous": {
+          "id": "QD01A",
+          "anonymous": "Savepoint sp = Database.setSavepoint();\nString observed = QueryDeleteProbe.observe();\nDatabase.rollback(sp);\nSystem.assert(false, 'P|QD01A|' + observed);\n",
+          "setupClasses": {
+            "QueryDeleteProbe": "public class QueryDeleteProbe {\n    public static List<Database.DeleteResult> erase(String name) {\n        return Database.delete([SELECT Id FROM Account WHERE Name = :name WITH SYSTEM_MODE]);\n    }\n    public static String observe() {\n        List<Database.DeleteResult> empty = erase('OwnedDeleteAbsent');\n        insert new List<Account>{new Account(Name='OwnedDeleteMany'), new Account(Name='OwnedDeleteMany')};\n        List<Database.DeleteResult> many = erase('OwnedDeleteMany');\n        insert new Account(Name='OwnedDeleteLimit');\n        List<Database.DeleteResult> limited = Database.delete([SELECT Id FROM Account WHERE Name = 'OwnedDeleteLimit' WITH SYSTEM_MODE LIMIT 1]);\n        Account scalar = new Account(Name='OwnedDeleteScalar');\n        insert scalar;\n        Database.DeleteResult single = Database.delete(scalar);\n        insert new Account(Name='OwnedDeleteCast');\n        Database.DeleteResult casted = Database.delete((Account)[SELECT Id FROM Account WHERE Name = 'OwnedDeleteCast' WITH SYSTEM_MODE LIMIT 1]);\n        List<Account> named = new List<Account>{new Account(Name='OwnedDeleteNamed')};\n        insert named;\n        List<Database.DeleteResult> namedResults = Database.delete(named);\n        return 'empty:' + empty.size() + '|many:' + many.size() + ':' + many[0].isSuccess() + ':' + many[1].isSuccess()\n            + '|limit:' + limited.size() + ':' + limited[0].isSuccess() + '|scalar:' + single.isSuccess()\n            + '|cast:' + casted.isSuccess() + '|named:' + namedResults.size() + ':' + namedResults[0].isSuccess();\n    }\n}\n"
+          },
+          "stage": "runtime",
+          "sourceSha256": {
+            "anonymous": "76e5bf2815d724a6ca84946ff7045faf3a91dbf69ef29ff9f4cb2d8c81f11158",
+            "setupClass:QueryDeleteProbe": "459993d4749e42304cd29db7d46f56f38206855b16026a9d41f0e1190031cac8"
+          }
+        },
+        "isTest": {
+          "id": "QD01T",
+          "classes": {
+            "QueryDeleteProbe": "public class QueryDeleteProbe {\n    public static List<Database.DeleteResult> erase(String name) {\n        return Database.delete([SELECT Id FROM Account WHERE Name = :name WITH SYSTEM_MODE]);\n    }\n    public static String observe() {\n        List<Database.DeleteResult> empty = erase('OwnedDeleteAbsent');\n        insert new List<Account>{new Account(Name='OwnedDeleteMany'), new Account(Name='OwnedDeleteMany')};\n        List<Database.DeleteResult> many = erase('OwnedDeleteMany');\n        insert new Account(Name='OwnedDeleteLimit');\n        List<Database.DeleteResult> limited = Database.delete([SELECT Id FROM Account WHERE Name = 'OwnedDeleteLimit' WITH SYSTEM_MODE LIMIT 1]);\n        Account scalar = new Account(Name='OwnedDeleteScalar');\n        insert scalar;\n        Database.DeleteResult single = Database.delete(scalar);\n        insert new Account(Name='OwnedDeleteCast');\n        Database.DeleteResult casted = Database.delete((Account)[SELECT Id FROM Account WHERE Name = 'OwnedDeleteCast' WITH SYSTEM_MODE LIMIT 1]);\n        List<Account> named = new List<Account>{new Account(Name='OwnedDeleteNamed')};\n        insert named;\n        List<Database.DeleteResult> namedResults = Database.delete(named);\n        return 'empty:' + empty.size() + '|many:' + many.size() + ':' + many[0].isSuccess() + ':' + many[1].isSuccess()\n            + '|limit:' + limited.size() + ':' + limited[0].isSuccess() + '|scalar:' + single.isSuccess()\n            + '|cast:' + casted.isSuccess() + '|named:' + namedResults.size() + ':' + namedResults[0].isSuccess();\n    }\n}\n",
+            "QueryDeleteSpec": "@IsTest private class QueryDeleteSpec { @IsTest static void observe() { System.assert(false, 'P|QD01T|' + QueryDeleteProbe.observe()); } }\n"
+          },
+          "tests": [
+            "QueryDeleteSpec"
+          ],
+          "stage": "runtime",
+          "sourceSha256": {
+            "class:QueryDeleteProbe": "459993d4749e42304cd29db7d46f56f38206855b16026a9d41f0e1190031cac8",
+            "class:QueryDeleteSpec": "173bc3a0d47130d9fae075fa8080921d67b9575028c8f1d5edbc7b5c5712aaca"
+          }
+        }
+      }
+    }
+  ],
+  "cells": [
+    {
+      "api": "62.0",
+      "route": "anonymous",
+      "id": "QD01A",
+      "native": "empty:0|many:2:true:true|limit:1:true|scalar:true|cast:true|named:1:true",
+      "nativeSHA256": "c2c9f5382e0a641c2d311d25595101f157ea9b26b78fc281bfe16e0905a6d26e",
+      "rawReceiptSHA256": "acc8f71a038ad4f9ca5fc4d9aca71bd4eea907ac429228063242ddab12ef2d3a"
+    },
+    {
+      "api": "62.0",
+      "route": "isTest",
+      "id": "QD01T",
+      "native": "empty:0|many:2:true:true|limit:1:true|scalar:true|cast:true|named:1:true",
+      "nativeSHA256": "c2c9f5382e0a641c2d311d25595101f157ea9b26b78fc281bfe16e0905a6d26e",
+      "rawReceiptSHA256": "5ae3bef13ffbe89ffe493fe0d48d2abc09ed838e938f8f910ce4b61f2689293e"
+    },
+    {
+      "api": "67.0",
+      "route": "anonymous",
+      "id": "QD01A",
+      "native": "empty:0|many:2:true:true|limit:1:true|scalar:true|cast:true|named:1:true",
+      "nativeSHA256": "c2c9f5382e0a641c2d311d25595101f157ea9b26b78fc281bfe16e0905a6d26e",
+      "rawReceiptSHA256": "265f43380e0858a2fac25c57749ee47f189d6fbec08de5a7b918ef6428f5b855"
+    },
+    {
+      "api": "67.0",
+      "route": "isTest",
+      "id": "QD01T",
+      "native": "empty:0|many:2:true:true|limit:1:true|scalar:true|cast:true|named:1:true",
+      "nativeSHA256": "c2c9f5382e0a641c2d311d25595101f157ea9b26b78fc281bfe16e0905a6d26e",
+      "rawReceiptSHA256": "c7e29fae104c83fc0624777ff40624f40f36c208f2f559e542fc28f1d9ebda48"
+    },
+    {
+      "api": "68.0",
+      "route": "anonymous",
+      "id": "QD01A",
+      "native": "empty:0|many:2:true:true|limit:1:true|scalar:true|cast:true|named:1:true",
+      "nativeSHA256": "c2c9f5382e0a641c2d311d25595101f157ea9b26b78fc281bfe16e0905a6d26e",
+      "rawReceiptSHA256": "6aecbbb7ed882e453a7fd2dea494964ce6dcec115c46ba8f48c2f9eddc46b72b"
+    },
+    {
+      "api": "68.0",
+      "route": "isTest",
+      "id": "QD01T",
+      "native": "empty:0|many:2:true:true|limit:1:true|scalar:true|cast:true|named:1:true",
+      "nativeSHA256": "c2c9f5382e0a641c2d311d25595101f157ea9b26b78fc281bfe16e0905a6d26e",
+      "rawReceiptSHA256": "8d274383779f5cdd922754573ed58e8f9c92e52a365810172e2523939e349dfb"
+    }
+  ],
+  "classMetadataByAPI": {
+    "62.0": {
+      "QueryDeleteProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "QueryDeleteSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "67.0": {
+      "QueryDeleteProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n",
+      "QueryDeleteSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>\n"
+    },
+    "68.0": {
+      "QueryDeleteProbe": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n",
+      "QueryDeleteSpec": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>68.0</apiVersion><status>Active</status></ApexClass>\n"
+    }
+  },
+  "classMetadataSHA256": {
+    "62.0": {
+      "QueryDeleteProbe": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "QueryDeleteSpec": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86"
+    },
+    "67.0": {
+      "QueryDeleteProbe": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "QueryDeleteSpec": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
+    },
+    "68.0": {
+      "QueryDeleteProbe": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147",
+      "QueryDeleteSpec": "b2e3792c107b0847d64e7f88998de877818c2fb8519ed956c766f7aa33caf147"
+    }
+  }
+}

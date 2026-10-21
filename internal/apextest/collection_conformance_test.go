@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -16,13 +17,26 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// The data is a credential-free export of owned API62 and API67 scratch-org probes.
-// Both executeAnonymous and the real @IsTest runner consume the same rows.
+// The data is a credential-free export of owned API62, API67 and API68
+// scratch-org probes. A direct API68 anonymous recapture supplies R231.
+// The @IsTest route checks local execution against those anonymous answers;
+// API68 named counts are local legacy checks, not native named observations.
 func TestCollectionConformanceAPI67(t *testing.T) {
 	var data struct {
-		APIVersion  string   `json:"apiVersion"`
-		APIVersions []string `json:"apiVersions"`
-		Cases       []struct {
+		APIVersion    string   `json:"apiVersion"`
+		APIVersions   []string `json:"apiVersions"`
+		CeilingOracle struct {
+			APIVersion               string   `json:"apiVersion"`
+			Rows                     int      `json:"rows"`
+			Observed                 int      `json:"observed"`
+			NativeUnobserved         []string `json:"nativeUnobserved"`
+			DirectNativeObservations []struct {
+				ID, Route, ExceptionMessage, CodeSHA256 string
+				Compiled                                bool
+				Success                                 *bool
+			} `json:"directNativeObservations"`
+		} `json:"ceilingOracle"`
+		Cases []struct {
 			ID            string `json:"id"`
 			Code          string `json:"code"`
 			Expected      string `json:"expected"`
@@ -36,8 +50,30 @@ func TestCollectionConformanceAPI67(t *testing.T) {
 	if err = json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	if strings.Join(data.APIVersions, ",") != "62.0,67.0" {
-		t.Fatalf("oracle API versions=%v, want 62.0,67.0", data.APIVersions)
+	if strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" ||
+		data.CeilingOracle.APIVersion != "68.0" || data.CeilingOracle.Rows != len(data.Cases) ||
+		data.CeilingOracle.Rows != 262 || data.CeilingOracle.Observed != 262 ||
+		len(data.CeilingOracle.NativeUnobserved) != 0 || len(data.CeilingOracle.DirectNativeObservations) != 1 {
+		t.Fatalf("incomplete API68 oracle: versions=%v rows=%d ceiling=%+v", data.APIVersions, len(data.Cases), data.CeilingOracle)
+	}
+	observation := data.CeilingOracle.DirectNativeObservations[0]
+	if observation.ID != "R231" || observation.Route != "anonymous" || !observation.Compiled ||
+		observation.Success == nil || *observation.Success {
+		t.Fatalf("invalid direct API68 observation: %+v", observation)
+	}
+	recovered := false
+	for _, row := range data.Cases {
+		if row.ID != observation.ID {
+			continue
+		}
+		recovered = true
+		if row.Expected != "UNCAUGHT|"+observation.ExceptionMessage || row.FloorExpected != row.Expected ||
+			observation.CodeSHA256 != fmt.Sprintf("%x", sha256.Sum256([]byte(row.Code))) {
+			t.Fatalf("direct API68 source or exception differs from retained R231 endpoints")
+		}
+	}
+	if !recovered {
+		t.Fatal("direct API68 observation has no R231 case")
 	}
 	nativeCompilerRows := map[string]string{}
 	for _, row := range data.Cases {
@@ -53,6 +89,9 @@ func TestCollectionConformanceAPI67(t *testing.T) {
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "collections", api)
+			if api == "68.0" {
+				t.Log("API68: 262 anonymous native answers including direct R231; named assertions remain local legacy checks")
+			}
 			root := t.TempDir()
 			classPath := filepath.Join(root, "CollectionConformance.cls")
 			var class strings.Builder
@@ -80,6 +119,9 @@ func TestCollectionConformanceAPI67(t *testing.T) {
 						if api == "62.0" {
 							anonymousKind = mismatches.Kind(row.ID, "anonymous")
 							namedKind = mismatches.Kind(row.ID, "@IsTest")
+						}
+						if api == "68.0" {
+							namedKind = "legacy"
 						}
 						counts.TrackKind(t, "anonymous", anonymousKind, 1)
 						counts.TrackKind(t, "@IsTest", namedKind, 1)
@@ -113,7 +155,7 @@ func TestCollectionConformanceAPI67(t *testing.T) {
 					}
 				}
 				kind := "exact"
-				if api == "67.0" && !strings.HasPrefix(row.Expected, "UNCAUGHT|") {
+				if api != "62.0" && !strings.HasPrefix(row.Expected, "UNCAUGHT|") {
 					kind = "legacy"
 				}
 				t.Run(row.ID+"/anonymous", func(t *testing.T) {
@@ -153,7 +195,10 @@ func TestCollectionConformanceAPI67(t *testing.T) {
 					delete(expectedMethods, c.MethodName)
 					t.Run(c.MethodName+"/isTest", func(t *testing.T) {
 						kind := "exact"
-						if _, boundary := expectedErrors[c.MethodName]; api == "67.0" && !boundary {
+						if _, boundary := expectedErrors[c.MethodName]; api != "62.0" && !boundary {
+							kind = "legacy"
+						}
+						if api == "68.0" {
 							kind = "legacy"
 						}
 						counts.TrackKind(t, "@IsTest", kind, 1)

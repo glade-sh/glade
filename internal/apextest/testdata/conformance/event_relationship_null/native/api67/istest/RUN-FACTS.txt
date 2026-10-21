@@ -1,0 +1,12 @@
+api=67.0
+context=istest
+rows=12
+native_complete=true
+helper_class_api=67.0
+wrapper_class_api=67.0
+helper_source_sha256=dd4cb8a18ae3d4fcf9dc73116f2e22a36bc852459c7ad538ca91ed5295534b96
+captured_utc=2026-10-15T14:59:11.758170+00:00
+transport=intentional terminal assertion carrying observed JSON; not a behavioral assertion
+wrapper_source_sha256=8a4822c6c0f58870f743d442efb1ebb442b2387b13be8f88a57580d4b749bbf1
+anonymous_source_sha256=0867f70840a5d8906f8c232d4bd7bbc62db7f23272204a3b9c150e2d3b246c71
+deployment_success=true

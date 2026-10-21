@@ -13,7 +13,8 @@
       "template": "<template><button data-run onclick={run}>Run</button><pre data-result>{result}</pre></template>",
       "expected": {
         "59.0": "COMPILE_OK",
-        "67.0": "COMPILE_OK"
+        "67.0": "COMPILE_OK",
+        "68.0": "COMPILE_OK"
       },
       "source_index": 1
     },
@@ -26,7 +27,8 @@
       "template": "<template><button data-run onclick={run}>Run</button><pre data-result>{result}</pre></template>",
       "expected": {
         "59.0": "COMPILE_OK",
-        "67.0": "COMPILE_OK"
+        "67.0": "COMPILE_OK",
+        "68.0": "COMPILE_OK"
       },
       "source_index": 3
     },
@@ -39,7 +41,8 @@
       "template": "<template><button data-run onclick={run}>Run</button><pre data-result>{result}</pre></template>",
       "expected": {
         "59.0": "COMPILE_OK",
-        "67.0": "COMPILE_OK"
+        "67.0": "COMPILE_OK",
+        "68.0": "COMPILE_OK"
       },
       "source_index": 5
     },
@@ -52,7 +55,8 @@
       "template": "<template><button data-run onclick={run}>Run</button><pre data-result>{result}</pre></template>",
       "expected": {
         "59.0": "COMPILE_OK",
-        "67.0": "COMPILE_OK"
+        "67.0": "COMPILE_OK",
+        "68.0": "COMPILE_OK"
       },
       "source_index": 7
     },
@@ -63,7 +67,8 @@
       "apex_base": "controller",
       "expected": {
         "59.0": "COMPILE_OK",
-        "67.0": "COMPILE_OK"
+        "67.0": "COMPILE_OK",
+        "68.0": "COMPILE_OK"
       },
       "source_index": 8
     },
@@ -74,7 +79,8 @@
       "apex_base": "dto",
       "expected": {
         "59.0": "COMPILE_OK",
-        "67.0": "COMPILE_OK"
+        "67.0": "COMPILE_OK",
+        "68.0": "COMPILE_OK"
       },
       "source_index": 9
     },
@@ -85,7 +91,8 @@
       "apex_base": "exception",
       "expected": {
         "59.0": "COMPILE_OK",
-        "67.0": "COMPILE_OK"
+        "67.0": "COMPILE_OK",
+        "68.0": "COMPILE_OK"
       },
       "source_index": 10
     },
@@ -97,11 +104,13 @@
       "template": "<template><button data-run onclick={run}>Run</button><pre data-result>{result}</pre></template>",
       "expected": {
         "59.0": "DOM|{\"rejected\":{\"body\":{\"exceptionType\":\"FamilyL08ReviewV59LocalException\",\"isUserDefinedException\":true,\"message\":\"L08 top-level custom\",\"stackTracePresent\":true},\"errorType\":\"fetchResponse\",\"headers\":{},\"ok\":false,\"status\":500,\"statusText\":\"Server Error\"}}",
-        "67.0": "DOM|{\"rejected\":{\"body\":{\"exceptionType\":\"FamilyL08ReviewV67LocalException\",\"isUserDefinedException\":true,\"message\":\"L08 top-level custom\",\"stackTracePresent\":true},\"errorType\":\"fetchResponse\",\"headers\":{},\"ok\":false,\"status\":500,\"statusText\":\"Server Error\"}}"
+        "67.0": "DOM|{\"rejected\":{\"body\":{\"exceptionType\":\"FamilyL08ReviewV67LocalException\",\"isUserDefinedException\":true,\"message\":\"L08 top-level custom\",\"stackTracePresent\":true},\"errorType\":\"fetchResponse\",\"headers\":{},\"ok\":false,\"status\":500,\"statusText\":\"Server Error\"}}",
+        "68.0": "DOM|{\"rejected\":{\"body\":{\"exceptionType\":\"FamilyL08ReviewV68LocalException\",\"isUserDefinedException\":true,\"message\":\"L08 top-level custom\",\"stackTracePresent\":true},\"errorType\":\"fetchResponse\",\"headers\":{},\"ok\":false,\"status\":500,\"statusText\":\"Server Error\"}}"
       },
       "compile_expected": {
         "59.0": "COMPILE_OK",
-        "67.0": "COMPILE_OK"
+        "67.0": "COMPILE_OK",
+        "68.0": "COMPILE_OK"
       }
     },
     {
@@ -112,11 +121,13 @@
       "template": "<template><button data-run onclick={run}>Run</button><pre data-result>{result}</pre></template>",
       "expected": {
         "59.0": "DOM|{\"value\":{\"count\":7,\"label\":\"CONTROL\",\"visibleField\":\"VISIBLE\"}}",
-        "67.0": "DOM|{\"value\":{\"count\":7,\"label\":\"CONTROL\",\"visibleField\":\"VISIBLE\"}}"
+        "67.0": "DOM|{\"value\":{\"count\":7,\"label\":\"CONTROL\",\"visibleField\":\"VISIBLE\"}}",
+        "68.0": "DOM|{\"value\":{\"count\":7,\"label\":\"CONTROL\",\"visibleField\":\"VISIBLE\"}}"
       },
       "compile_expected": {
         "59.0": "COMPILE_OK",
-        "67.0": "COMPILE_OK"
+        "67.0": "COMPILE_OK",
+        "68.0": "COMPILE_OK"
       }
     },
     {
@@ -127,11 +138,13 @@
       "template": "<template><button data-run onclick={run}>Run</button><pre data-result>{result}</pre></template>",
       "expected": {
         "59.0": "DOM|{\"data\":{\"type\":\"undefined\"},\"error\":{\"body\":{\"exceptionType\":\"FamilyL08ReviewV59LocalException\",\"isUserDefinedException\":true,\"message\":\"L08 top-level custom\",\"stackTracePresent\":true},\"errorType\":\"fetchResponse\",\"headers\":{},\"ok\":false,\"status\":500,\"statusText\":\"Server Error\"}}",
-        "67.0": "DOM|{\"data\":{\"type\":\"undefined\"},\"error\":{\"body\":{\"exceptionType\":\"FamilyL08ReviewV67LocalException\",\"isUserDefinedException\":true,\"message\":\"L08 top-level custom\",\"stackTracePresent\":true},\"errorType\":\"fetchResponse\",\"headers\":{},\"ok\":false,\"status\":500,\"statusText\":\"Server Error\"}}"
+        "67.0": "DOM|{\"data\":{\"type\":\"undefined\"},\"error\":{\"body\":{\"exceptionType\":\"FamilyL08ReviewV67LocalException\",\"isUserDefinedException\":true,\"message\":\"L08 top-level custom\",\"stackTracePresent\":true},\"errorType\":\"fetchResponse\",\"headers\":{},\"ok\":false,\"status\":500,\"statusText\":\"Server Error\"}}",
+        "68.0": "DOM|{\"data\":{\"type\":\"undefined\"},\"error\":{\"body\":{\"exceptionType\":\"FamilyL08ReviewV68LocalException\",\"isUserDefinedException\":true,\"message\":\"L08 top-level custom\",\"stackTracePresent\":true},\"errorType\":\"fetchResponse\",\"headers\":{},\"ok\":false,\"status\":500,\"statusText\":\"Server Error\"}}"
       },
       "compile_expected": {
         "59.0": "COMPILE_OK",
-        "67.0": "COMPILE_OK"
+        "67.0": "COMPILE_OK",
+        "68.0": "COMPILE_OK"
       }
     },
     {
@@ -142,11 +155,13 @@
       "template": "<template><button data-run onclick={run}>Run</button><pre data-result>{result}</pre></template>",
       "expected": {
         "59.0": "DOM|{\"data\":{\"count\":7,\"label\":\"CONTROL\",\"visibleField\":\"VISIBLE\"},\"error\":{\"type\":\"undefined\"}}",
-        "67.0": "DOM|{\"data\":{\"count\":7,\"label\":\"CONTROL\",\"visibleField\":\"VISIBLE\"},\"error\":{\"type\":\"undefined\"}}"
+        "67.0": "DOM|{\"data\":{\"count\":7,\"label\":\"CONTROL\",\"visibleField\":\"VISIBLE\"},\"error\":{\"type\":\"undefined\"}}",
+        "68.0": "DOM|{\"data\":{\"count\":7,\"label\":\"CONTROL\",\"visibleField\":\"VISIBLE\"},\"error\":{\"type\":\"undefined\"}}"
       },
       "compile_expected": {
         "59.0": "COMPILE_OK",
-        "67.0": "COMPILE_OK"
+        "67.0": "COMPILE_OK",
+        "68.0": "COMPILE_OK"
       }
     }
   ]

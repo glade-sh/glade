@@ -1,0 +1,1297 @@
+{
+  "apiVersions": [
+    "52.0",
+    "62.0",
+    "67.0"
+  ],
+  "routes": [
+    "isTest",
+    "anonymous"
+  ],
+  "namespaceContext": "none",
+  "knownRows": 28,
+  "pendingCoverage": [
+    "Namespace contexts, mixed helper/caller source versions and other source APIs were not observed by this packet.",
+    "Anonymous uncaught trace positions and rendering are not replayed; full raw trace digests remain retained.",
+    "Source52 cycles are observed here. Existing classes_lifecycle C003 supplies anonymous62/67/68 direct-cycle observations; its named62/67 records prove compilation only."
+  ],
+  "captures": [
+    {
+      "context": "api52",
+      "kind": "positive",
+      "sourceAPI": "52.0",
+      "callerAPI": "52.0",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "testClass": "NestedConstructorObservation",
+      "marker": "NESTED_CONSTRUCTOR_OBSERVATION ",
+      "sourceAPIs": {
+        "NestedConstructorObservation": "52.0",
+        "OwnedBranch": "52.0",
+        "OwnedNestBase": "52.0",
+        "OwnedNestLeaf": "52.0"
+      },
+      "sources": {
+        "force-app/main/default/classes/NestedConstructorObservation.cls": {
+          "source": "@IsTest\nprivate class NestedConstructorObservation {\n    private static void emit(Map<String,Object> row) {\n        row.put('branchCalls',OwnedBranch.calls);\n        row.put('baseCalls',OwnedNestBase.calls);\n        row.put('leafCalls',OwnedNestLeaf.leafCalls);\n        System.assertEquals('capture','NESTED_CONSTRUCTOR_OBSERVATION '+JSON.serialize(row));\n    }\n    private static void failure(Map<String,Object> row,Exception issue) {\n        row.put('exceptionType',issue.getTypeName());\n        row.put('exceptionMessage',issue.getMessage());\n    }\n    @IsTest static void finiteBranch() {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'construct'};\n        try {\n            OwnedBranch root=new OwnedBranch('root',new List<String>{'left','right'});\n            row.put('stage','readFields');\n            row.put('root',root.label);\n            row.put('labels',new List<String>{root.children[0].label,root.children[1].label});\n            row.put('leafSizes',new List<Integer>{root.children[0].children.size(),root.children[1].children.size()});\n            row.put('distinct',root!==root.children[0] && root.children[0]!==root.children[1]);\n            row.put('stage','complete');\n        } catch(Exception issue) { failure(row,issue); }\n        emit(row);\n    }\n    @IsTest static void inheritedBase() {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'construct'};\n        try {\n            OwnedNestLeaf root=new OwnedNestLeaf(2);\n            row.put('stage','readFields');\n            row.put('depths',new List<Integer>{root.depth,root.child.depth,root.child.child.depth});\n            row.put('terminalNull',root.child.child.child==null);\n            row.put('distinct',root!==root.child && root.child!==root.child.child);\n            row.put('stage','complete');\n        } catch(Exception issue) { failure(row,issue); }\n        emit(row);\n    }\n    @IsTest static void siblingAndSequential() {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'firstConstruct'};\n        try {\n            OwnedBranch first=new OwnedBranch('first',new List<String>{'left','right'});\n            row.put('stage','secondConstruct');\n            OwnedBranch second=new OwnedBranch('second',new List<String>{'other'});\n            row.put('stage','mutateFirstSibling');\n            first.children[0].label='changed';\n            first.children[0].children.add(new OwnedBranch('extra'));\n            row.put('labels',new List<String>{first.children[0].label,first.children[1].label,second.children[0].label});\n            row.put('sizes',new List<Integer>{first.children[0].children.size(),first.children[1].children.size(),second.children[0].children.size()});\n            row.put('distinctRoots',first!==second);\n            row.put('stage','complete');\n        } catch(Exception issue) { failure(row,issue); }\n        emit(row);\n    }\n    @IsTest static void emptyAndSequentialControls() {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'emptyBranch'};\n        try {\n            OwnedBranch branch=new OwnedBranch('empty',new List<String>());\n            row.put('stage','oneArgEmptyBranch');\n            OwnedBranch other=new OwnedBranch('other');\n            row.put('stage','firstLeaf');\n            OwnedNestLeaf first=new OwnedNestLeaf(0);\n            row.put('stage','secondLeaf');\n            OwnedNestLeaf second=new OwnedNestLeaf(0);\n            row.put('branchSizes',new List<Integer>{branch.children.size(),other.children.size()});\n            row.put('depths',new List<Integer>{first.depth,second.depth});\n            row.put('bothTerminal',first.child==null && second.child==null);\n            row.put('distinct',branch!==other && first!==second);\n            row.put('stage','complete');\n        } catch(Exception issue) { failure(row,issue); }\n        emit(row);\n    }\n}\n",
+          "sha256": "c4bfac67509ee1fb0b78b6aefd9a2f3a5653374d53469e74bc1c5e22d0ae7543"
+        },
+        "force-app/main/default/classes/NestedConstructorObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>52.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292"
+        },
+        "force-app/main/default/classes/OwnedBranch.cls": {
+          "source": "public class OwnedBranch {\n    public static Integer calls=0;\n    public String label;\n    public List<OwnedBranch> children=new List<OwnedBranch>();\n    public OwnedBranch(String label) {\n        this(label,new List<String>());\n    }\n    public OwnedBranch(String label,List<String> names) {\n        this.label=label;\n        calls++;\n        for(String childName:names) {\n            children.add(new OwnedBranch(childName));\n        }\n    }\n}\n",
+          "sha256": "8630c9c3facb54ea7c70a1bd35c7c4471ed3fc0ba772d078b27299cacdf4db5d"
+        },
+        "force-app/main/default/classes/OwnedBranch.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>52.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292"
+        },
+        "force-app/main/default/classes/OwnedNestBase.cls": {
+          "source": "public virtual class OwnedNestBase {\n    public static Integer calls=0;\n    public Integer depth;\n    public OwnedNestBase child;\n    public OwnedNestBase(Integer depth) {\n        this(depth,true);\n    }\n    public OwnedNestBase(Integer depth,Boolean marker) {\n        this.depth=depth;\n        calls++;\n        if(depth>0) {\n            child=new OwnedNestLeaf(depth-1);\n        }\n    }\n}\n",
+          "sha256": "39f7d1fb4dfbdff7191d722da68f7508edf3ad2eaee33b95c93ad3c5af5c1023"
+        },
+        "force-app/main/default/classes/OwnedNestBase.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>52.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292"
+        },
+        "force-app/main/default/classes/OwnedNestLeaf.cls": {
+          "source": "public class OwnedNestLeaf extends OwnedNestBase {\n    public static Integer leafCalls=0;\n    public OwnedNestLeaf(Integer depth) {\n        super(depth);\n        leafCalls++;\n    }\n}\n",
+          "sha256": "7e525e0e15adf7cd6b4a406971eb7fa94a1a4bff9f7281f11383a5b1cdbca663"
+        },
+        "force-app/main/default/classes/OwnedNestLeaf.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>52.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        }
+      },
+      "sourceDigests": {
+        "force-app/main/default/classes/NestedConstructorObservation.cls": "c4bfac67509ee1fb0b78b6aefd9a2f3a5653374d53469e74bc1c5e22d0ae7543",
+        "force-app/main/default/classes/NestedConstructorObservation.cls-meta.xml": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292",
+        "force-app/main/default/classes/OwnedBranch.cls": "8630c9c3facb54ea7c70a1bd35c7c4471ed3fc0ba772d078b27299cacdf4db5d",
+        "force-app/main/default/classes/OwnedBranch.cls-meta.xml": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292",
+        "force-app/main/default/classes/OwnedNestBase.cls": "39f7d1fb4dfbdff7191d722da68f7508edf3ad2eaee33b95c93ad3c5af5c1023",
+        "force-app/main/default/classes/OwnedNestBase.cls-meta.xml": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292",
+        "force-app/main/default/classes/OwnedNestLeaf.cls": "7e525e0e15adf7cd6b4a406971eb7fa94a1a4bff9f7281f11383a5b1cdbca663",
+        "force-app/main/default/classes/OwnedNestLeaf.cls-meta.xml": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292",
+        "sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+      },
+      "rawSHA256": {
+        "org.tsv": "78f0fac4aef0a4b4c543a2b675efaa070d68d27e929233889c964465f2be2aa0",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "0cb4b99f19832e72462b9a9c821f7ab1f4aeab7c0ac0f105a0e2d4593c099899",
+        "deploy.command.json": "d6f6297e4f34b8f3eecf6d64d445c0779b0683e0df8b670fb2a6b36fd012e898",
+        "ORG-RUN.txt": "ce70a73b63a8da46b75ce92d8ccd3cb70744b8b29a6e9cd8abeed99e7f8a5142",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "3d8e1f119d16f548ef04797f61440c3005d3031146779016c38aaa548e18f3ed"
+      },
+      "rows": [
+        {
+          "id": "emptyAndSequentialControls",
+          "native": {
+            "leafCalls": 2,
+            "baseCalls": 2,
+            "branchCalls": 2,
+            "distinct": true,
+            "bothTerminal": true,
+            "depths": [
+              0,
+              0
+            ],
+            "branchSizes": [
+              0,
+              0
+            ],
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: NESTED_CONSTRUCTOR_OBSERVATION {\"leafCalls\":2,\"baseCalls\":2,\"branchCalls\":2,\"distinct\":true,\"bothTerminal\":true,\"depths\":[0,0],\"branchSizes\":[0,0],\"stage\":\"complete\"}",
+            "methodName": "emptyAndSequentialControls",
+            "name": "NestedConstructorObservation",
+            "stackTrace": "Class.NestedConstructorObservation.emit: line 7, column 1\nClass.NestedConstructorObservation.emptyAndSequentialControls: line 70, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "finiteBranch",
+          "native": {
+            "leafCalls": 0,
+            "baseCalls": 0,
+            "branchCalls": 3,
+            "distinct": true,
+            "leafSizes": [
+              0,
+              0
+            ],
+            "labels": [
+              "left",
+              "right"
+            ],
+            "root": "root",
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: NESTED_CONSTRUCTOR_OBSERVATION {\"leafCalls\":0,\"baseCalls\":0,\"branchCalls\":3,\"distinct\":true,\"leafSizes\":[0,0],\"labels\":[\"left\",\"right\"],\"root\":\"root\",\"stage\":\"complete\"}",
+            "methodName": "finiteBranch",
+            "name": "NestedConstructorObservation",
+            "stackTrace": "Class.NestedConstructorObservation.emit: line 7, column 1\nClass.NestedConstructorObservation.finiteBranch: line 24, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "inheritedBase",
+          "native": {
+            "leafCalls": 3,
+            "baseCalls": 3,
+            "branchCalls": 0,
+            "distinct": true,
+            "terminalNull": true,
+            "depths": [
+              2,
+              1,
+              0
+            ],
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: NESTED_CONSTRUCTOR_OBSERVATION {\"leafCalls\":3,\"baseCalls\":3,\"branchCalls\":0,\"distinct\":true,\"terminalNull\":true,\"depths\":[2,1,0],\"stage\":\"complete\"}",
+            "methodName": "inheritedBase",
+            "name": "NestedConstructorObservation",
+            "stackTrace": "Class.NestedConstructorObservation.emit: line 7, column 1\nClass.NestedConstructorObservation.inheritedBase: line 36, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "siblingAndSequential",
+          "native": {
+            "leafCalls": 0,
+            "baseCalls": 0,
+            "branchCalls": 6,
+            "distinctRoots": true,
+            "sizes": [
+              1,
+              0,
+              0
+            ],
+            "labels": [
+              "changed",
+              "right",
+              "other"
+            ],
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: NESTED_CONSTRUCTOR_OBSERVATION {\"leafCalls\":0,\"baseCalls\":0,\"branchCalls\":6,\"distinctRoots\":true,\"sizes\":[1,0,0],\"labels\":[\"changed\",\"right\",\"other\"],\"stage\":\"complete\"}",
+            "methodName": "siblingAndSequential",
+            "name": "NestedConstructorObservation",
+            "stackTrace": "Class.NestedConstructorObservation.emit: line 7, column 1\nClass.NestedConstructorObservation.siblingAndSequential: line 52, column 1",
+            "type": "Class"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0Afcb00000CtJntCAF",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 4,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 4
+      }
+    },
+    {
+      "context": "api62",
+      "kind": "positive",
+      "sourceAPI": "62.0",
+      "callerAPI": "62.0",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "testClass": "NestedConstructorObservation",
+      "marker": "NESTED_CONSTRUCTOR_OBSERVATION ",
+      "sourceAPIs": {
+        "NestedConstructorObservation": "62.0",
+        "OwnedBranch": "62.0",
+        "OwnedNestBase": "62.0",
+        "OwnedNestLeaf": "62.0"
+      },
+      "sources": {
+        "force-app/main/default/classes/NestedConstructorObservation.cls": {
+          "source": "@IsTest\nprivate class NestedConstructorObservation {\n    private static void emit(Map<String,Object> row) {\n        row.put('branchCalls',OwnedBranch.calls);\n        row.put('baseCalls',OwnedNestBase.calls);\n        row.put('leafCalls',OwnedNestLeaf.leafCalls);\n        System.assertEquals('capture','NESTED_CONSTRUCTOR_OBSERVATION '+JSON.serialize(row));\n    }\n    private static void failure(Map<String,Object> row,Exception issue) {\n        row.put('exceptionType',issue.getTypeName());\n        row.put('exceptionMessage',issue.getMessage());\n    }\n    @IsTest static void finiteBranch() {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'construct'};\n        try {\n            OwnedBranch root=new OwnedBranch('root',new List<String>{'left','right'});\n            row.put('stage','readFields');\n            row.put('root',root.label);\n            row.put('labels',new List<String>{root.children[0].label,root.children[1].label});\n            row.put('leafSizes',new List<Integer>{root.children[0].children.size(),root.children[1].children.size()});\n            row.put('distinct',root!==root.children[0] && root.children[0]!==root.children[1]);\n            row.put('stage','complete');\n        } catch(Exception issue) { failure(row,issue); }\n        emit(row);\n    }\n    @IsTest static void inheritedBase() {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'construct'};\n        try {\n            OwnedNestLeaf root=new OwnedNestLeaf(2);\n            row.put('stage','readFields');\n            row.put('depths',new List<Integer>{root.depth,root.child.depth,root.child.child.depth});\n            row.put('terminalNull',root.child.child.child==null);\n            row.put('distinct',root!==root.child && root.child!==root.child.child);\n            row.put('stage','complete');\n        } catch(Exception issue) { failure(row,issue); }\n        emit(row);\n    }\n    @IsTest static void siblingAndSequential() {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'firstConstruct'};\n        try {\n            OwnedBranch first=new OwnedBranch('first',new List<String>{'left','right'});\n            row.put('stage','secondConstruct');\n            OwnedBranch second=new OwnedBranch('second',new List<String>{'other'});\n            row.put('stage','mutateFirstSibling');\n            first.children[0].label='changed';\n            first.children[0].children.add(new OwnedBranch('extra'));\n            row.put('labels',new List<String>{first.children[0].label,first.children[1].label,second.children[0].label});\n            row.put('sizes',new List<Integer>{first.children[0].children.size(),first.children[1].children.size(),second.children[0].children.size()});\n            row.put('distinctRoots',first!==second);\n            row.put('stage','complete');\n        } catch(Exception issue) { failure(row,issue); }\n        emit(row);\n    }\n    @IsTest static void emptyAndSequentialControls() {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'emptyBranch'};\n        try {\n            OwnedBranch branch=new OwnedBranch('empty',new List<String>());\n            row.put('stage','oneArgEmptyBranch');\n            OwnedBranch other=new OwnedBranch('other');\n            row.put('stage','firstLeaf');\n            OwnedNestLeaf first=new OwnedNestLeaf(0);\n            row.put('stage','secondLeaf');\n            OwnedNestLeaf second=new OwnedNestLeaf(0);\n            row.put('branchSizes',new List<Integer>{branch.children.size(),other.children.size()});\n            row.put('depths',new List<Integer>{first.depth,second.depth});\n            row.put('bothTerminal',first.child==null && second.child==null);\n            row.put('distinct',branch!==other && first!==second);\n            row.put('stage','complete');\n        } catch(Exception issue) { failure(row,issue); }\n        emit(row);\n    }\n}\n",
+          "sha256": "c4bfac67509ee1fb0b78b6aefd9a2f3a5653374d53469e74bc1c5e22d0ae7543"
+        },
+        "force-app/main/default/classes/NestedConstructorObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+        },
+        "force-app/main/default/classes/OwnedBranch.cls": {
+          "source": "public class OwnedBranch {\n    public static Integer calls=0;\n    public String label;\n    public List<OwnedBranch> children=new List<OwnedBranch>();\n    public OwnedBranch(String label) {\n        this(label,new List<String>());\n    }\n    public OwnedBranch(String label,List<String> names) {\n        this.label=label;\n        calls++;\n        for(String childName:names) {\n            children.add(new OwnedBranch(childName));\n        }\n    }\n}\n",
+          "sha256": "8630c9c3facb54ea7c70a1bd35c7c4471ed3fc0ba772d078b27299cacdf4db5d"
+        },
+        "force-app/main/default/classes/OwnedBranch.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+        },
+        "force-app/main/default/classes/OwnedNestBase.cls": {
+          "source": "public virtual class OwnedNestBase {\n    public static Integer calls=0;\n    public Integer depth;\n    public OwnedNestBase child;\n    public OwnedNestBase(Integer depth) {\n        this(depth,true);\n    }\n    public OwnedNestBase(Integer depth,Boolean marker) {\n        this.depth=depth;\n        calls++;\n        if(depth>0) {\n            child=new OwnedNestLeaf(depth-1);\n        }\n    }\n}\n",
+          "sha256": "39f7d1fb4dfbdff7191d722da68f7508edf3ad2eaee33b95c93ad3c5af5c1023"
+        },
+        "force-app/main/default/classes/OwnedNestBase.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+        },
+        "force-app/main/default/classes/OwnedNestLeaf.cls": {
+          "source": "public class OwnedNestLeaf extends OwnedNestBase {\n    public static Integer leafCalls=0;\n    public OwnedNestLeaf(Integer depth) {\n        super(depth);\n        leafCalls++;\n    }\n}\n",
+          "sha256": "7e525e0e15adf7cd6b4a406971eb7fa94a1a4bff9f7281f11383a5b1cdbca663"
+        },
+        "force-app/main/default/classes/OwnedNestLeaf.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        }
+      },
+      "sourceDigests": {
+        "force-app/main/default/classes/NestedConstructorObservation.cls": "c4bfac67509ee1fb0b78b6aefd9a2f3a5653374d53469e74bc1c5e22d0ae7543",
+        "force-app/main/default/classes/NestedConstructorObservation.cls-meta.xml": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51",
+        "force-app/main/default/classes/OwnedBranch.cls": "8630c9c3facb54ea7c70a1bd35c7c4471ed3fc0ba772d078b27299cacdf4db5d",
+        "force-app/main/default/classes/OwnedBranch.cls-meta.xml": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51",
+        "force-app/main/default/classes/OwnedNestBase.cls": "39f7d1fb4dfbdff7191d722da68f7508edf3ad2eaee33b95c93ad3c5af5c1023",
+        "force-app/main/default/classes/OwnedNestBase.cls-meta.xml": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51",
+        "force-app/main/default/classes/OwnedNestLeaf.cls": "7e525e0e15adf7cd6b4a406971eb7fa94a1a4bff9f7281f11383a5b1cdbca663",
+        "force-app/main/default/classes/OwnedNestLeaf.cls-meta.xml": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51",
+        "sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+      },
+      "rawSHA256": {
+        "org.tsv": "78f0fac4aef0a4b4c543a2b675efaa070d68d27e929233889c964465f2be2aa0",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "e37788414176f41cfd0b9b7200a2d7f2823954acd27acab38209ac86bc8c32ac",
+        "deploy.command.json": "d6f6297e4f34b8f3eecf6d64d445c0779b0683e0df8b670fb2a6b36fd012e898",
+        "ORG-RUN.txt": "aad8056595f64497d1297c2b5f8ece7f77a11766bfce203649e775d2c02e277a",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "c8ece810270fb2840023b2c9a8b63cb103ebfc932c486bdfb47562a084c2f606"
+      },
+      "rows": [
+        {
+          "id": "emptyAndSequentialControls",
+          "native": {
+            "leafCalls": 2,
+            "baseCalls": 2,
+            "branchCalls": 2,
+            "distinct": true,
+            "bothTerminal": true,
+            "depths": [
+              0,
+              0
+            ],
+            "branchSizes": [
+              0,
+              0
+            ],
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: NESTED_CONSTRUCTOR_OBSERVATION {\"leafCalls\":2,\"baseCalls\":2,\"branchCalls\":2,\"distinct\":true,\"bothTerminal\":true,\"depths\":[0,0],\"branchSizes\":[0,0],\"stage\":\"complete\"}",
+            "methodName": "emptyAndSequentialControls",
+            "name": "NestedConstructorObservation",
+            "stackTrace": "Class.NestedConstructorObservation.emit: line 7, column 1\nClass.NestedConstructorObservation.emptyAndSequentialControls: line 70, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "finiteBranch",
+          "native": {
+            "leafCalls": 0,
+            "baseCalls": 0,
+            "branchCalls": 3,
+            "distinct": true,
+            "leafSizes": [
+              0,
+              0
+            ],
+            "labels": [
+              "left",
+              "right"
+            ],
+            "root": "root",
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: NESTED_CONSTRUCTOR_OBSERVATION {\"leafCalls\":0,\"baseCalls\":0,\"branchCalls\":3,\"distinct\":true,\"leafSizes\":[0,0],\"labels\":[\"left\",\"right\"],\"root\":\"root\",\"stage\":\"complete\"}",
+            "methodName": "finiteBranch",
+            "name": "NestedConstructorObservation",
+            "stackTrace": "Class.NestedConstructorObservation.emit: line 7, column 1\nClass.NestedConstructorObservation.finiteBranch: line 24, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "inheritedBase",
+          "native": {
+            "leafCalls": 3,
+            "baseCalls": 3,
+            "branchCalls": 0,
+            "distinct": true,
+            "terminalNull": true,
+            "depths": [
+              2,
+              1,
+              0
+            ],
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: NESTED_CONSTRUCTOR_OBSERVATION {\"leafCalls\":3,\"baseCalls\":3,\"branchCalls\":0,\"distinct\":true,\"terminalNull\":true,\"depths\":[2,1,0],\"stage\":\"complete\"}",
+            "methodName": "inheritedBase",
+            "name": "NestedConstructorObservation",
+            "stackTrace": "Class.NestedConstructorObservation.emit: line 7, column 1\nClass.NestedConstructorObservation.inheritedBase: line 36, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "siblingAndSequential",
+          "native": {
+            "leafCalls": 0,
+            "baseCalls": 0,
+            "branchCalls": 6,
+            "distinctRoots": true,
+            "sizes": [
+              1,
+              0,
+              0
+            ],
+            "labels": [
+              "changed",
+              "right",
+              "other"
+            ],
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: NESTED_CONSTRUCTOR_OBSERVATION {\"leafCalls\":0,\"baseCalls\":0,\"branchCalls\":6,\"distinctRoots\":true,\"sizes\":[1,0,0],\"labels\":[\"changed\",\"right\",\"other\"],\"stage\":\"complete\"}",
+            "methodName": "siblingAndSequential",
+            "name": "NestedConstructorObservation",
+            "stackTrace": "Class.NestedConstructorObservation.emit: line 7, column 1\nClass.NestedConstructorObservation.siblingAndSequential: line 52, column 1",
+            "type": "Class"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0Afcb00000CtCb9CAF",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 4,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 4
+      }
+    },
+    {
+      "context": "api67",
+      "kind": "positive",
+      "sourceAPI": "67.0",
+      "callerAPI": "67.0",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "testClass": "NestedConstructorObservation",
+      "marker": "NESTED_CONSTRUCTOR_OBSERVATION ",
+      "sourceAPIs": {
+        "NestedConstructorObservation": "67.0",
+        "OwnedBranch": "67.0",
+        "OwnedNestBase": "67.0",
+        "OwnedNestLeaf": "67.0"
+      },
+      "sources": {
+        "force-app/main/default/classes/NestedConstructorObservation.cls": {
+          "source": "@IsTest\nprivate class NestedConstructorObservation {\n    private static void emit(Map<String,Object> row) {\n        row.put('branchCalls',OwnedBranch.calls);\n        row.put('baseCalls',OwnedNestBase.calls);\n        row.put('leafCalls',OwnedNestLeaf.leafCalls);\n        System.assertEquals('capture','NESTED_CONSTRUCTOR_OBSERVATION '+JSON.serialize(row));\n    }\n    private static void failure(Map<String,Object> row,Exception issue) {\n        row.put('exceptionType',issue.getTypeName());\n        row.put('exceptionMessage',issue.getMessage());\n    }\n    @IsTest static void finiteBranch() {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'construct'};\n        try {\n            OwnedBranch root=new OwnedBranch('root',new List<String>{'left','right'});\n            row.put('stage','readFields');\n            row.put('root',root.label);\n            row.put('labels',new List<String>{root.children[0].label,root.children[1].label});\n            row.put('leafSizes',new List<Integer>{root.children[0].children.size(),root.children[1].children.size()});\n            row.put('distinct',root!==root.children[0] && root.children[0]!==root.children[1]);\n            row.put('stage','complete');\n        } catch(Exception issue) { failure(row,issue); }\n        emit(row);\n    }\n    @IsTest static void inheritedBase() {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'construct'};\n        try {\n            OwnedNestLeaf root=new OwnedNestLeaf(2);\n            row.put('stage','readFields');\n            row.put('depths',new List<Integer>{root.depth,root.child.depth,root.child.child.depth});\n            row.put('terminalNull',root.child.child.child==null);\n            row.put('distinct',root!==root.child && root.child!==root.child.child);\n            row.put('stage','complete');\n        } catch(Exception issue) { failure(row,issue); }\n        emit(row);\n    }\n    @IsTest static void siblingAndSequential() {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'firstConstruct'};\n        try {\n            OwnedBranch first=new OwnedBranch('first',new List<String>{'left','right'});\n            row.put('stage','secondConstruct');\n            OwnedBranch second=new OwnedBranch('second',new List<String>{'other'});\n            row.put('stage','mutateFirstSibling');\n            first.children[0].label='changed';\n            first.children[0].children.add(new OwnedBranch('extra'));\n            row.put('labels',new List<String>{first.children[0].label,first.children[1].label,second.children[0].label});\n            row.put('sizes',new List<Integer>{first.children[0].children.size(),first.children[1].children.size(),second.children[0].children.size()});\n            row.put('distinctRoots',first!==second);\n            row.put('stage','complete');\n        } catch(Exception issue) { failure(row,issue); }\n        emit(row);\n    }\n    @IsTest static void emptyAndSequentialControls() {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'emptyBranch'};\n        try {\n            OwnedBranch branch=new OwnedBranch('empty',new List<String>());\n            row.put('stage','oneArgEmptyBranch');\n            OwnedBranch other=new OwnedBranch('other');\n            row.put('stage','firstLeaf');\n            OwnedNestLeaf first=new OwnedNestLeaf(0);\n            row.put('stage','secondLeaf');\n            OwnedNestLeaf second=new OwnedNestLeaf(0);\n            row.put('branchSizes',new List<Integer>{branch.children.size(),other.children.size()});\n            row.put('depths',new List<Integer>{first.depth,second.depth});\n            row.put('bothTerminal',first.child==null && second.child==null);\n            row.put('distinct',branch!==other && first!==second);\n            row.put('stage','complete');\n        } catch(Exception issue) { failure(row,issue); }\n        emit(row);\n    }\n}\n",
+          "sha256": "c4bfac67509ee1fb0b78b6aefd9a2f3a5653374d53469e74bc1c5e22d0ae7543"
+        },
+        "force-app/main/default/classes/NestedConstructorObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/OwnedBranch.cls": {
+          "source": "public class OwnedBranch {\n    public static Integer calls=0;\n    public String label;\n    public List<OwnedBranch> children=new List<OwnedBranch>();\n    public OwnedBranch(String label) {\n        this(label,new List<String>());\n    }\n    public OwnedBranch(String label,List<String> names) {\n        this.label=label;\n        calls++;\n        for(String childName:names) {\n            children.add(new OwnedBranch(childName));\n        }\n    }\n}\n",
+          "sha256": "8630c9c3facb54ea7c70a1bd35c7c4471ed3fc0ba772d078b27299cacdf4db5d"
+        },
+        "force-app/main/default/classes/OwnedBranch.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/OwnedNestBase.cls": {
+          "source": "public virtual class OwnedNestBase {\n    public static Integer calls=0;\n    public Integer depth;\n    public OwnedNestBase child;\n    public OwnedNestBase(Integer depth) {\n        this(depth,true);\n    }\n    public OwnedNestBase(Integer depth,Boolean marker) {\n        this.depth=depth;\n        calls++;\n        if(depth>0) {\n            child=new OwnedNestLeaf(depth-1);\n        }\n    }\n}\n",
+          "sha256": "39f7d1fb4dfbdff7191d722da68f7508edf3ad2eaee33b95c93ad3c5af5c1023"
+        },
+        "force-app/main/default/classes/OwnedNestBase.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "force-app/main/default/classes/OwnedNestLeaf.cls": {
+          "source": "public class OwnedNestLeaf extends OwnedNestBase {\n    public static Integer leafCalls=0;\n    public OwnedNestLeaf(Integer depth) {\n        super(depth);\n        leafCalls++;\n    }\n}\n",
+          "sha256": "7e525e0e15adf7cd6b4a406971eb7fa94a1a4bff9f7281f11383a5b1cdbca663"
+        },
+        "force-app/main/default/classes/OwnedNestLeaf.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        }
+      },
+      "sourceDigests": {
+        "force-app/main/default/classes/NestedConstructorObservation.cls": "c4bfac67509ee1fb0b78b6aefd9a2f3a5653374d53469e74bc1c5e22d0ae7543",
+        "force-app/main/default/classes/NestedConstructorObservation.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "force-app/main/default/classes/OwnedBranch.cls": "8630c9c3facb54ea7c70a1bd35c7c4471ed3fc0ba772d078b27299cacdf4db5d",
+        "force-app/main/default/classes/OwnedBranch.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "force-app/main/default/classes/OwnedNestBase.cls": "39f7d1fb4dfbdff7191d722da68f7508edf3ad2eaee33b95c93ad3c5af5c1023",
+        "force-app/main/default/classes/OwnedNestBase.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "force-app/main/default/classes/OwnedNestLeaf.cls": "7e525e0e15adf7cd6b4a406971eb7fa94a1a4bff9f7281f11383a5b1cdbca663",
+        "force-app/main/default/classes/OwnedNestLeaf.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+      },
+      "rawSHA256": {
+        "org.tsv": "78f0fac4aef0a4b4c543a2b675efaa070d68d27e929233889c964465f2be2aa0",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "222a2adf2f6ba5fbf5b13cddc985064680263b8f4dc3e3133deab9355ac42f31",
+        "deploy.command.json": "d6f6297e4f34b8f3eecf6d64d445c0779b0683e0df8b670fb2a6b36fd012e898",
+        "ORG-RUN.txt": "b5a4455a32010b4c42fe5d705946110bb993c6b90b6e6b0d41156ec04d3a1b5e",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "edf6cb097e0cb11d97a2671418ba8a51f210f77b44c8d566aef7606926c0e95a"
+      },
+      "rows": [
+        {
+          "id": "emptyAndSequentialControls",
+          "native": {
+            "leafCalls": 2,
+            "baseCalls": 2,
+            "branchCalls": 2,
+            "distinct": true,
+            "bothTerminal": true,
+            "depths": [
+              0,
+              0
+            ],
+            "branchSizes": [
+              0,
+              0
+            ],
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: NESTED_CONSTRUCTOR_OBSERVATION {\"leafCalls\":2,\"baseCalls\":2,\"branchCalls\":2,\"distinct\":true,\"bothTerminal\":true,\"depths\":[0,0],\"branchSizes\":[0,0],\"stage\":\"complete\"}",
+            "methodName": "emptyAndSequentialControls",
+            "name": "NestedConstructorObservation",
+            "stackTrace": "Class.NestedConstructorObservation.emit: line 7, column 1\nClass.NestedConstructorObservation.emptyAndSequentialControls: line 70, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "finiteBranch",
+          "native": {
+            "leafCalls": 0,
+            "baseCalls": 0,
+            "branchCalls": 3,
+            "distinct": true,
+            "leafSizes": [
+              0,
+              0
+            ],
+            "labels": [
+              "left",
+              "right"
+            ],
+            "root": "root",
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: NESTED_CONSTRUCTOR_OBSERVATION {\"leafCalls\":0,\"baseCalls\":0,\"branchCalls\":3,\"distinct\":true,\"leafSizes\":[0,0],\"labels\":[\"left\",\"right\"],\"root\":\"root\",\"stage\":\"complete\"}",
+            "methodName": "finiteBranch",
+            "name": "NestedConstructorObservation",
+            "stackTrace": "Class.NestedConstructorObservation.emit: line 7, column 1\nClass.NestedConstructorObservation.finiteBranch: line 24, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "inheritedBase",
+          "native": {
+            "leafCalls": 3,
+            "baseCalls": 3,
+            "branchCalls": 0,
+            "distinct": true,
+            "terminalNull": true,
+            "depths": [
+              2,
+              1,
+              0
+            ],
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: NESTED_CONSTRUCTOR_OBSERVATION {\"leafCalls\":3,\"baseCalls\":3,\"branchCalls\":0,\"distinct\":true,\"terminalNull\":true,\"depths\":[2,1,0],\"stage\":\"complete\"}",
+            "methodName": "inheritedBase",
+            "name": "NestedConstructorObservation",
+            "stackTrace": "Class.NestedConstructorObservation.emit: line 7, column 1\nClass.NestedConstructorObservation.inheritedBase: line 36, column 1",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "siblingAndSequential",
+          "native": {
+            "leafCalls": 0,
+            "baseCalls": 0,
+            "branchCalls": 6,
+            "distinctRoots": true,
+            "sizes": [
+              1,
+              0,
+              0
+            ],
+            "labels": [
+              "changed",
+              "right",
+              "other"
+            ],
+            "stage": "complete"
+          },
+          "nativeFailure": {
+            "message": "System.AssertException: Assertion Failed: Expected: capture, Actual: NESTED_CONSTRUCTOR_OBSERVATION {\"leafCalls\":0,\"baseCalls\":0,\"branchCalls\":6,\"distinctRoots\":true,\"sizes\":[1,0,0],\"labels\":[\"changed\",\"right\",\"other\"],\"stage\":\"complete\"}",
+            "methodName": "siblingAndSequential",
+            "name": "NestedConstructorObservation",
+            "stackTrace": "Class.NestedConstructorObservation.emit: line 7, column 1\nClass.NestedConstructorObservation.siblingAndSequential: line 52, column 1",
+            "type": "Class"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0Afcb00000CtIewCAF",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 4,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 4
+      }
+    },
+    {
+      "context": "anonymous-api52",
+      "kind": "positive",
+      "sourceAPI": "52.0",
+      "callerAPI": "52.0",
+      "projectAPI": "62.0",
+      "transportAPI": "52.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "testClass": "",
+      "marker": "NESTED_CONSTRUCTOR_OBSERVATION|",
+      "sourceAPIs": {
+        "OwnedBranch": "52.0",
+        "OwnedNestBase": "52.0",
+        "OwnedNestLeaf": "52.0"
+      },
+      "sources": {
+        "project/force-app/main/default/classes/OwnedBranch.cls": {
+          "source": "public class OwnedBranch {\n    public static Integer calls=0;\n    public String label;\n    public List<OwnedBranch> children=new List<OwnedBranch>();\n    public OwnedBranch(String label) {\n        this(label,new List<String>());\n    }\n    public OwnedBranch(String label,List<String> names) {\n        this.label=label;\n        calls++;\n        for(String childName:names) {\n            children.add(new OwnedBranch(childName));\n        }\n    }\n}\n",
+          "sha256": "8630c9c3facb54ea7c70a1bd35c7c4471ed3fc0ba772d078b27299cacdf4db5d"
+        },
+        "project/force-app/main/default/classes/OwnedBranch.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>52.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292"
+        },
+        "project/force-app/main/default/classes/OwnedNestBase.cls": {
+          "source": "public virtual class OwnedNestBase {\n    public static Integer calls=0;\n    public Integer depth;\n    public OwnedNestBase child;\n    public OwnedNestBase(Integer depth) {\n        this(depth,true);\n    }\n    public OwnedNestBase(Integer depth,Boolean marker) {\n        this.depth=depth;\n        calls++;\n        if(depth>0) {\n            child=new OwnedNestLeaf(depth-1);\n        }\n    }\n}\n",
+          "sha256": "39f7d1fb4dfbdff7191d722da68f7508edf3ad2eaee33b95c93ad3c5af5c1023"
+        },
+        "project/force-app/main/default/classes/OwnedNestBase.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>52.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292"
+        },
+        "project/force-app/main/default/classes/OwnedNestLeaf.cls": {
+          "source": "public class OwnedNestLeaf extends OwnedNestBase {\n    public static Integer leafCalls=0;\n    public OwnedNestLeaf(Integer depth) {\n        super(depth);\n        leafCalls++;\n    }\n}\n",
+          "sha256": "7e525e0e15adf7cd6b4a406971eb7fa94a1a4bff9f7281f11383a5b1cdbca663"
+        },
+        "project/force-app/main/default/classes/OwnedNestLeaf.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>52.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292"
+        },
+        "project/sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        }
+      },
+      "sourceDigests": {
+        "observe.apex": "37fe37a6e0dfba6b140c9efd354bd936a52ad2d1597b1a83e9fe5a6a26164501",
+        "project/force-app/main/default/classes/OwnedBranch.cls": "8630c9c3facb54ea7c70a1bd35c7c4471ed3fc0ba772d078b27299cacdf4db5d",
+        "project/force-app/main/default/classes/OwnedBranch.cls-meta.xml": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292",
+        "project/force-app/main/default/classes/OwnedNestBase.cls": "39f7d1fb4dfbdff7191d722da68f7508edf3ad2eaee33b95c93ad3c5af5c1023",
+        "project/force-app/main/default/classes/OwnedNestBase.cls-meta.xml": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292",
+        "project/force-app/main/default/classes/OwnedNestLeaf.cls": "7e525e0e15adf7cd6b4a406971eb7fa94a1a4bff9f7281f11383a5b1cdbca663",
+        "project/force-app/main/default/classes/OwnedNestLeaf.cls-meta.xml": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292",
+        "project/sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+      },
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "run.command.json": "b37ae2bbe7696bbc896a1252bc253f020f11f8b23525e3efcb886fdcbae11e2d",
+        "org.tsv": "f182a4f650de204916c02a5e77d2448a5976dceb15d3e15dbe8c841381f6b56c",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "deploy-retry.command.json": "c1f4766e35723c3faf66bf6ab0049405cb59d3e091f40a881a2f6a9edb5fb338",
+        "source.apex": "37fe37a6e0dfba6b140c9efd354bd936a52ad2d1597b1a83e9fe5a6a26164501",
+        "setup-result.json": "490e0a5405c80a31b998c13122d3bca26b0807e4881a8dd4bb8d92e6709fa2f9",
+        "deploy-retry.json": "acc0403088be6591ef7f854ca2c1470658419b9f0e36011ad09fe5b64fc800a6",
+        "run.json": "257968330933703c45693adf00035b1b2ef83f4bec14dccc2ddbce5eca009530",
+        "ORG-RUN.txt": "eb9c58d7783a32276b7180d96453ea8678c24ac85a391e10366973f1d73cda53",
+        "deploy-retry.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "3b5237ba542f02cb1110abc70b25b372e0bf3fd777aab6cbfb8571fdc6452612"
+      },
+      "rows": [
+        {
+          "id": "0",
+          "native": {
+            "leafCalls": 0,
+            "baseCalls": 0,
+            "branchCalls": 3,
+            "distinct": true,
+            "leafSizes": [
+              0,
+              0
+            ],
+            "labels": [
+              "left",
+              "right"
+            ],
+            "root": "root",
+            "stage": "complete"
+          }
+        },
+        {
+          "id": "1",
+          "native": {
+            "leafCalls": 3,
+            "baseCalls": 3,
+            "branchCalls": 0,
+            "distinct": true,
+            "terminalNull": true,
+            "depths": [
+              2,
+              1,
+              0
+            ],
+            "stage": "complete"
+          }
+        },
+        {
+          "id": "2",
+          "native": {
+            "leafCalls": 0,
+            "baseCalls": 0,
+            "branchCalls": 6,
+            "distinctRoots": true,
+            "sizes": [
+              1,
+              0,
+              0
+            ],
+            "labels": [
+              "changed",
+              "right",
+              "other"
+            ],
+            "stage": "complete"
+          }
+        },
+        {
+          "id": "3",
+          "native": {
+            "leafCalls": 2,
+            "baseCalls": 2,
+            "branchCalls": 2,
+            "distinct": true,
+            "bothTerminal": true,
+            "depths": [
+              0,
+              0
+            ],
+            "branchSizes": [
+              0,
+              0
+            ],
+            "stage": "complete"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0Afcb00000CtKDhCAN",
+        "status": "Succeeded",
+        "done": true,
+        "checkOnly": false,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 0,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 0
+      },
+      "source": {
+        "source": "for(String cell:new List<String>{'finiteBranch','inheritedBase','siblingAndSequential','emptyAndSequentialControls'}) {\n    OwnedBranch.calls=0;\n    OwnedNestBase.calls=0;\n    OwnedNestLeaf.leafCalls=0;\n    if(cell=='finiteBranch') {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'construct'};\n        try {\n            OwnedBranch root=new OwnedBranch('root',new List<String>{'left','right'});\n            row.put('stage','readFields');\n            row.put('root',root.label);\n            row.put('labels',new List<String>{root.children[0].label,root.children[1].label});\n            row.put('leafSizes',new List<Integer>{root.children[0].children.size(),root.children[1].children.size()});\n            row.put('distinct',root!==root.children[0] && root.children[0]!==root.children[1]);\n            row.put('stage','complete');\n        } catch(Exception issue) { row.put('exceptionType',issue.getTypeName()); row.put('exceptionMessage',issue.getMessage()); }\n        row.put('branchCalls',OwnedBranch.calls);\n        row.put('baseCalls',OwnedNestBase.calls);\n        row.put('leafCalls',OwnedNestLeaf.leafCalls);\n        System.debug('NESTED_CONSTRUCTOR_OBSERVATION|'+JSON.serialize(row));\n        }\n    if(cell=='inheritedBase') {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'construct'};\n        try {\n            OwnedNestLeaf root=new OwnedNestLeaf(2);\n            row.put('stage','readFields');\n            row.put('depths',new List<Integer>{root.depth,root.child.depth,root.child.child.depth});\n            row.put('terminalNull',root.child.child.child==null);\n            row.put('distinct',root!==root.child && root.child!==root.child.child);\n            row.put('stage','complete');\n        } catch(Exception issue) { row.put('exceptionType',issue.getTypeName()); row.put('exceptionMessage',issue.getMessage()); }\n        row.put('branchCalls',OwnedBranch.calls);\n        row.put('baseCalls',OwnedNestBase.calls);\n        row.put('leafCalls',OwnedNestLeaf.leafCalls);\n        System.debug('NESTED_CONSTRUCTOR_OBSERVATION|'+JSON.serialize(row));\n        }\n    if(cell=='siblingAndSequential') {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'firstConstruct'};\n        try {\n            OwnedBranch first=new OwnedBranch('first',new List<String>{'left','right'});\n            row.put('stage','secondConstruct');\n            OwnedBranch second=new OwnedBranch('second',new List<String>{'other'});\n            row.put('stage','mutateFirstSibling');\n            first.children[0].label='changed';\n            first.children[0].children.add(new OwnedBranch('extra'));\n            row.put('labels',new List<String>{first.children[0].label,first.children[1].label,second.children[0].label});\n            row.put('sizes',new List<Integer>{first.children[0].children.size(),first.children[1].children.size(),second.children[0].children.size()});\n            row.put('distinctRoots',first!==second);\n            row.put('stage','complete');\n        } catch(Exception issue) { row.put('exceptionType',issue.getTypeName()); row.put('exceptionMessage',issue.getMessage()); }\n        row.put('branchCalls',OwnedBranch.calls);\n        row.put('baseCalls',OwnedNestBase.calls);\n        row.put('leafCalls',OwnedNestLeaf.leafCalls);\n        System.debug('NESTED_CONSTRUCTOR_OBSERVATION|'+JSON.serialize(row));\n        }\n    if(cell=='emptyAndSequentialControls') {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'emptyBranch'};\n        try {\n            OwnedBranch branch=new OwnedBranch('empty',new List<String>());\n            row.put('stage','oneArgEmptyBranch');\n            OwnedBranch other=new OwnedBranch('other');\n            row.put('stage','firstLeaf');\n            OwnedNestLeaf first=new OwnedNestLeaf(0);\n            row.put('stage','secondLeaf');\n            OwnedNestLeaf second=new OwnedNestLeaf(0);\n            row.put('branchSizes',new List<Integer>{branch.children.size(),other.children.size()});\n            row.put('depths',new List<Integer>{first.depth,second.depth});\n            row.put('bothTerminal',first.child==null && second.child==null);\n            row.put('distinct',branch!==other && first!==second);\n            row.put('stage','complete');\n        } catch(Exception issue) { row.put('exceptionType',issue.getTypeName()); row.put('exceptionMessage',issue.getMessage()); }\n        row.put('branchCalls',OwnedBranch.calls);\n        row.put('baseCalls',OwnedNestBase.calls);\n        row.put('leafCalls',OwnedNestLeaf.leafCalls);\n        System.debug('NESTED_CONSTRUCTOR_OBSERVATION|'+JSON.serialize(row));\n        }\n}\n",
+        "sha256": "37fe37a6e0dfba6b140c9efd354bd936a52ad2d1597b1a83e9fe5a6a26164501"
+      },
+      "execution": {
+        "status": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      }
+    },
+    {
+      "context": "anonymous-api62",
+      "kind": "positive",
+      "sourceAPI": "62.0",
+      "callerAPI": "62.0",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "testClass": "",
+      "marker": "NESTED_CONSTRUCTOR_OBSERVATION|",
+      "sourceAPIs": {
+        "OwnedBranch": "62.0",
+        "OwnedNestBase": "62.0",
+        "OwnedNestLeaf": "62.0"
+      },
+      "sources": {
+        "project/force-app/main/default/classes/OwnedBranch.cls": {
+          "source": "public class OwnedBranch {\n    public static Integer calls=0;\n    public String label;\n    public List<OwnedBranch> children=new List<OwnedBranch>();\n    public OwnedBranch(String label) {\n        this(label,new List<String>());\n    }\n    public OwnedBranch(String label,List<String> names) {\n        this.label=label;\n        calls++;\n        for(String childName:names) {\n            children.add(new OwnedBranch(childName));\n        }\n    }\n}\n",
+          "sha256": "8630c9c3facb54ea7c70a1bd35c7c4471ed3fc0ba772d078b27299cacdf4db5d"
+        },
+        "project/force-app/main/default/classes/OwnedBranch.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+        },
+        "project/force-app/main/default/classes/OwnedNestBase.cls": {
+          "source": "public virtual class OwnedNestBase {\n    public static Integer calls=0;\n    public Integer depth;\n    public OwnedNestBase child;\n    public OwnedNestBase(Integer depth) {\n        this(depth,true);\n    }\n    public OwnedNestBase(Integer depth,Boolean marker) {\n        this.depth=depth;\n        calls++;\n        if(depth>0) {\n            child=new OwnedNestLeaf(depth-1);\n        }\n    }\n}\n",
+          "sha256": "39f7d1fb4dfbdff7191d722da68f7508edf3ad2eaee33b95c93ad3c5af5c1023"
+        },
+        "project/force-app/main/default/classes/OwnedNestBase.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+        },
+        "project/force-app/main/default/classes/OwnedNestLeaf.cls": {
+          "source": "public class OwnedNestLeaf extends OwnedNestBase {\n    public static Integer leafCalls=0;\n    public OwnedNestLeaf(Integer depth) {\n        super(depth);\n        leafCalls++;\n    }\n}\n",
+          "sha256": "7e525e0e15adf7cd6b4a406971eb7fa94a1a4bff9f7281f11383a5b1cdbca663"
+        },
+        "project/force-app/main/default/classes/OwnedNestLeaf.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>62.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51"
+        },
+        "project/sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        }
+      },
+      "sourceDigests": {
+        "observe.apex": "37fe37a6e0dfba6b140c9efd354bd936a52ad2d1597b1a83e9fe5a6a26164501",
+        "project/force-app/main/default/classes/OwnedBranch.cls": "8630c9c3facb54ea7c70a1bd35c7c4471ed3fc0ba772d078b27299cacdf4db5d",
+        "project/force-app/main/default/classes/OwnedBranch.cls-meta.xml": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51",
+        "project/force-app/main/default/classes/OwnedNestBase.cls": "39f7d1fb4dfbdff7191d722da68f7508edf3ad2eaee33b95c93ad3c5af5c1023",
+        "project/force-app/main/default/classes/OwnedNestBase.cls-meta.xml": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51",
+        "project/force-app/main/default/classes/OwnedNestLeaf.cls": "7e525e0e15adf7cd6b4a406971eb7fa94a1a4bff9f7281f11383a5b1cdbca663",
+        "project/force-app/main/default/classes/OwnedNestLeaf.cls-meta.xml": "3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51",
+        "project/sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+      },
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "run.command.json": "29b428847012ad88db2ee2481a3fabb2cc62fe7a11cbe6630df91fe8ac2969cd",
+        "org.tsv": "f182a4f650de204916c02a5e77d2448a5976dceb15d3e15dbe8c841381f6b56c",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "deploy-retry.command.json": "c1f4766e35723c3faf66bf6ab0049405cb59d3e091f40a881a2f6a9edb5fb338",
+        "source.apex": "37fe37a6e0dfba6b140c9efd354bd936a52ad2d1597b1a83e9fe5a6a26164501",
+        "setup-result.json": "748da4d9b13229b9d7f766f55bd3ea79512c8d0553c0bf9561e07414376e863f",
+        "deploy-retry.json": "ed9a2e594ec5a8779a362d34096e23b67de722a40c7d7d5eab68b2174f40b614",
+        "run.json": "fe3ea353cc9e0e866610d5f7816ff08b67959cc94f1af7cd3808034e3d488618",
+        "ORG-RUN.txt": "d6b41cce3366e2237d0d5becc826ff2d1ecdb3e622611d656183a98c111cda29",
+        "deploy-retry.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "91adf8ba74e0fed733eb40840db0b7fc528816e1c0d33dd156f6c6610df5957f"
+      },
+      "rows": [
+        {
+          "id": "0",
+          "native": {
+            "leafCalls": 0,
+            "baseCalls": 0,
+            "branchCalls": 3,
+            "distinct": true,
+            "leafSizes": [
+              0,
+              0
+            ],
+            "labels": [
+              "left",
+              "right"
+            ],
+            "root": "root",
+            "stage": "complete"
+          }
+        },
+        {
+          "id": "1",
+          "native": {
+            "leafCalls": 3,
+            "baseCalls": 3,
+            "branchCalls": 0,
+            "distinct": true,
+            "terminalNull": true,
+            "depths": [
+              2,
+              1,
+              0
+            ],
+            "stage": "complete"
+          }
+        },
+        {
+          "id": "2",
+          "native": {
+            "leafCalls": 0,
+            "baseCalls": 0,
+            "branchCalls": 6,
+            "distinctRoots": true,
+            "sizes": [
+              1,
+              0,
+              0
+            ],
+            "labels": [
+              "changed",
+              "right",
+              "other"
+            ],
+            "stage": "complete"
+          }
+        },
+        {
+          "id": "3",
+          "native": {
+            "leafCalls": 2,
+            "baseCalls": 2,
+            "branchCalls": 2,
+            "distinct": true,
+            "bothTerminal": true,
+            "depths": [
+              0,
+              0
+            ],
+            "branchSizes": [
+              0,
+              0
+            ],
+            "stage": "complete"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0Afcb00000CtKFJCA3",
+        "status": "Succeeded",
+        "done": true,
+        "checkOnly": false,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 0,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 0
+      },
+      "source": {
+        "source": "for(String cell:new List<String>{'finiteBranch','inheritedBase','siblingAndSequential','emptyAndSequentialControls'}) {\n    OwnedBranch.calls=0;\n    OwnedNestBase.calls=0;\n    OwnedNestLeaf.leafCalls=0;\n    if(cell=='finiteBranch') {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'construct'};\n        try {\n            OwnedBranch root=new OwnedBranch('root',new List<String>{'left','right'});\n            row.put('stage','readFields');\n            row.put('root',root.label);\n            row.put('labels',new List<String>{root.children[0].label,root.children[1].label});\n            row.put('leafSizes',new List<Integer>{root.children[0].children.size(),root.children[1].children.size()});\n            row.put('distinct',root!==root.children[0] && root.children[0]!==root.children[1]);\n            row.put('stage','complete');\n        } catch(Exception issue) { row.put('exceptionType',issue.getTypeName()); row.put('exceptionMessage',issue.getMessage()); }\n        row.put('branchCalls',OwnedBranch.calls);\n        row.put('baseCalls',OwnedNestBase.calls);\n        row.put('leafCalls',OwnedNestLeaf.leafCalls);\n        System.debug('NESTED_CONSTRUCTOR_OBSERVATION|'+JSON.serialize(row));\n        }\n    if(cell=='inheritedBase') {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'construct'};\n        try {\n            OwnedNestLeaf root=new OwnedNestLeaf(2);\n            row.put('stage','readFields');\n            row.put('depths',new List<Integer>{root.depth,root.child.depth,root.child.child.depth});\n            row.put('terminalNull',root.child.child.child==null);\n            row.put('distinct',root!==root.child && root.child!==root.child.child);\n            row.put('stage','complete');\n        } catch(Exception issue) { row.put('exceptionType',issue.getTypeName()); row.put('exceptionMessage',issue.getMessage()); }\n        row.put('branchCalls',OwnedBranch.calls);\n        row.put('baseCalls',OwnedNestBase.calls);\n        row.put('leafCalls',OwnedNestLeaf.leafCalls);\n        System.debug('NESTED_CONSTRUCTOR_OBSERVATION|'+JSON.serialize(row));\n        }\n    if(cell=='siblingAndSequential') {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'firstConstruct'};\n        try {\n            OwnedBranch first=new OwnedBranch('first',new List<String>{'left','right'});\n            row.put('stage','secondConstruct');\n            OwnedBranch second=new OwnedBranch('second',new List<String>{'other'});\n            row.put('stage','mutateFirstSibling');\n            first.children[0].label='changed';\n            first.children[0].children.add(new OwnedBranch('extra'));\n            row.put('labels',new List<String>{first.children[0].label,first.children[1].label,second.children[0].label});\n            row.put('sizes',new List<Integer>{first.children[0].children.size(),first.children[1].children.size(),second.children[0].children.size()});\n            row.put('distinctRoots',first!==second);\n            row.put('stage','complete');\n        } catch(Exception issue) { row.put('exceptionType',issue.getTypeName()); row.put('exceptionMessage',issue.getMessage()); }\n        row.put('branchCalls',OwnedBranch.calls);\n        row.put('baseCalls',OwnedNestBase.calls);\n        row.put('leafCalls',OwnedNestLeaf.leafCalls);\n        System.debug('NESTED_CONSTRUCTOR_OBSERVATION|'+JSON.serialize(row));\n        }\n    if(cell=='emptyAndSequentialControls') {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'emptyBranch'};\n        try {\n            OwnedBranch branch=new OwnedBranch('empty',new List<String>());\n            row.put('stage','oneArgEmptyBranch');\n            OwnedBranch other=new OwnedBranch('other');\n            row.put('stage','firstLeaf');\n            OwnedNestLeaf first=new OwnedNestLeaf(0);\n            row.put('stage','secondLeaf');\n            OwnedNestLeaf second=new OwnedNestLeaf(0);\n            row.put('branchSizes',new List<Integer>{branch.children.size(),other.children.size()});\n            row.put('depths',new List<Integer>{first.depth,second.depth});\n            row.put('bothTerminal',first.child==null && second.child==null);\n            row.put('distinct',branch!==other && first!==second);\n            row.put('stage','complete');\n        } catch(Exception issue) { row.put('exceptionType',issue.getTypeName()); row.put('exceptionMessage',issue.getMessage()); }\n        row.put('branchCalls',OwnedBranch.calls);\n        row.put('baseCalls',OwnedNestBase.calls);\n        row.put('leafCalls',OwnedNestLeaf.leafCalls);\n        System.debug('NESTED_CONSTRUCTOR_OBSERVATION|'+JSON.serialize(row));\n        }\n}\n",
+        "sha256": "37fe37a6e0dfba6b140c9efd354bd936a52ad2d1597b1a83e9fe5a6a26164501"
+      },
+      "execution": {
+        "status": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      }
+    },
+    {
+      "context": "anonymous-api67",
+      "kind": "positive",
+      "sourceAPI": "67.0",
+      "callerAPI": "67.0",
+      "projectAPI": "62.0",
+      "transportAPI": "67.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "testClass": "",
+      "marker": "NESTED_CONSTRUCTOR_OBSERVATION|",
+      "sourceAPIs": {
+        "OwnedBranch": "67.0",
+        "OwnedNestBase": "67.0",
+        "OwnedNestLeaf": "67.0"
+      },
+      "sources": {
+        "project/force-app/main/default/classes/OwnedBranch.cls": {
+          "source": "public class OwnedBranch {\n    public static Integer calls=0;\n    public String label;\n    public List<OwnedBranch> children=new List<OwnedBranch>();\n    public OwnedBranch(String label) {\n        this(label,new List<String>());\n    }\n    public OwnedBranch(String label,List<String> names) {\n        this.label=label;\n        calls++;\n        for(String childName:names) {\n            children.add(new OwnedBranch(childName));\n        }\n    }\n}\n",
+          "sha256": "8630c9c3facb54ea7c70a1bd35c7c4471ed3fc0ba772d078b27299cacdf4db5d"
+        },
+        "project/force-app/main/default/classes/OwnedBranch.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "project/force-app/main/default/classes/OwnedNestBase.cls": {
+          "source": "public virtual class OwnedNestBase {\n    public static Integer calls=0;\n    public Integer depth;\n    public OwnedNestBase child;\n    public OwnedNestBase(Integer depth) {\n        this(depth,true);\n    }\n    public OwnedNestBase(Integer depth,Boolean marker) {\n        this.depth=depth;\n        calls++;\n        if(depth>0) {\n            child=new OwnedNestLeaf(depth-1);\n        }\n    }\n}\n",
+          "sha256": "39f7d1fb4dfbdff7191d722da68f7508edf3ad2eaee33b95c93ad3c5af5c1023"
+        },
+        "project/force-app/main/default/classes/OwnedNestBase.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "project/force-app/main/default/classes/OwnedNestLeaf.cls": {
+          "source": "public class OwnedNestLeaf extends OwnedNestBase {\n    public static Integer leafCalls=0;\n    public OwnedNestLeaf(Integer depth) {\n        super(depth);\n        leafCalls++;\n    }\n}\n",
+          "sha256": "7e525e0e15adf7cd6b4a406971eb7fa94a1a4bff9f7281f11383a5b1cdbca663"
+        },
+        "project/force-app/main/default/classes/OwnedNestLeaf.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>67.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32"
+        },
+        "project/sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        }
+      },
+      "sourceDigests": {
+        "observe.apex": "37fe37a6e0dfba6b140c9efd354bd936a52ad2d1597b1a83e9fe5a6a26164501",
+        "project/force-app/main/default/classes/OwnedBranch.cls": "8630c9c3facb54ea7c70a1bd35c7c4471ed3fc0ba772d078b27299cacdf4db5d",
+        "project/force-app/main/default/classes/OwnedBranch.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "project/force-app/main/default/classes/OwnedNestBase.cls": "39f7d1fb4dfbdff7191d722da68f7508edf3ad2eaee33b95c93ad3c5af5c1023",
+        "project/force-app/main/default/classes/OwnedNestBase.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "project/force-app/main/default/classes/OwnedNestLeaf.cls": "7e525e0e15adf7cd6b4a406971eb7fa94a1a4bff9f7281f11383a5b1cdbca663",
+        "project/force-app/main/default/classes/OwnedNestLeaf.cls-meta.xml": "a242f6e22b472afffbd726be71165de394e417355cdf1edd81b5601278ddea32",
+        "project/sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+      },
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "run.command.json": "f2048262a01e8afe51f608e02b444ce8e4486f472d7e42a4e6895c0a2595aaa2",
+        "org.tsv": "f182a4f650de204916c02a5e77d2448a5976dceb15d3e15dbe8c841381f6b56c",
+        "errors.json": "c95ca86cb3b301e8c4e603d7543d9357a11e51d09ebcfb9e733642a25ff9f010",
+        "deploy-retry.command.json": "c1f4766e35723c3faf66bf6ab0049405cb59d3e091f40a881a2f6a9edb5fb338",
+        "source.apex": "37fe37a6e0dfba6b140c9efd354bd936a52ad2d1597b1a83e9fe5a6a26164501",
+        "setup-result.json": "192d5b7adae3545eb8a2bf14ec8af0f8e5b1040e519d71660012ad664a7ad715",
+        "deploy-retry.json": "29ce5d48a428a9db09082439758898457ea9c344984457c489df621485ab8759",
+        "run.json": "49dacd9bf6d551760b9005e6c6220e45761058ebe260eeb255a51222762222a3",
+        "ORG-RUN.txt": "b089d792b60048e4c531d0e295cc710be697fe00e7c054edfa29f70a0b36257c",
+        "deploy-retry.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "74a4f64a4421779e00fc5b3bcafe86947315735ea6ee352bc5159146e199384d"
+      },
+      "rows": [
+        {
+          "id": "0",
+          "native": {
+            "leafCalls": 0,
+            "baseCalls": 0,
+            "branchCalls": 3,
+            "distinct": true,
+            "leafSizes": [
+              0,
+              0
+            ],
+            "labels": [
+              "left",
+              "right"
+            ],
+            "root": "root",
+            "stage": "complete"
+          }
+        },
+        {
+          "id": "1",
+          "native": {
+            "leafCalls": 3,
+            "baseCalls": 3,
+            "branchCalls": 0,
+            "distinct": true,
+            "terminalNull": true,
+            "depths": [
+              2,
+              1,
+              0
+            ],
+            "stage": "complete"
+          }
+        },
+        {
+          "id": "2",
+          "native": {
+            "leafCalls": 0,
+            "baseCalls": 0,
+            "branchCalls": 6,
+            "distinctRoots": true,
+            "sizes": [
+              1,
+              0,
+              0
+            ],
+            "labels": [
+              "changed",
+              "right",
+              "other"
+            ],
+            "stage": "complete"
+          }
+        },
+        {
+          "id": "3",
+          "native": {
+            "leafCalls": 2,
+            "baseCalls": 2,
+            "branchCalls": 2,
+            "distinct": true,
+            "bothTerminal": true,
+            "depths": [
+              0,
+              0
+            ],
+            "branchSizes": [
+              0,
+              0
+            ],
+            "stage": "complete"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0Afcb00000Ct8iqCAB",
+        "status": "Succeeded",
+        "done": true,
+        "checkOnly": false,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 0,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 0
+      },
+      "source": {
+        "source": "for(String cell:new List<String>{'finiteBranch','inheritedBase','siblingAndSequential','emptyAndSequentialControls'}) {\n    OwnedBranch.calls=0;\n    OwnedNestBase.calls=0;\n    OwnedNestLeaf.leafCalls=0;\n    if(cell=='finiteBranch') {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'construct'};\n        try {\n            OwnedBranch root=new OwnedBranch('root',new List<String>{'left','right'});\n            row.put('stage','readFields');\n            row.put('root',root.label);\n            row.put('labels',new List<String>{root.children[0].label,root.children[1].label});\n            row.put('leafSizes',new List<Integer>{root.children[0].children.size(),root.children[1].children.size()});\n            row.put('distinct',root!==root.children[0] && root.children[0]!==root.children[1]);\n            row.put('stage','complete');\n        } catch(Exception issue) { row.put('exceptionType',issue.getTypeName()); row.put('exceptionMessage',issue.getMessage()); }\n        row.put('branchCalls',OwnedBranch.calls);\n        row.put('baseCalls',OwnedNestBase.calls);\n        row.put('leafCalls',OwnedNestLeaf.leafCalls);\n        System.debug('NESTED_CONSTRUCTOR_OBSERVATION|'+JSON.serialize(row));\n        }\n    if(cell=='inheritedBase') {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'construct'};\n        try {\n            OwnedNestLeaf root=new OwnedNestLeaf(2);\n            row.put('stage','readFields');\n            row.put('depths',new List<Integer>{root.depth,root.child.depth,root.child.child.depth});\n            row.put('terminalNull',root.child.child.child==null);\n            row.put('distinct',root!==root.child && root.child!==root.child.child);\n            row.put('stage','complete');\n        } catch(Exception issue) { row.put('exceptionType',issue.getTypeName()); row.put('exceptionMessage',issue.getMessage()); }\n        row.put('branchCalls',OwnedBranch.calls);\n        row.put('baseCalls',OwnedNestBase.calls);\n        row.put('leafCalls',OwnedNestLeaf.leafCalls);\n        System.debug('NESTED_CONSTRUCTOR_OBSERVATION|'+JSON.serialize(row));\n        }\n    if(cell=='siblingAndSequential') {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'firstConstruct'};\n        try {\n            OwnedBranch first=new OwnedBranch('first',new List<String>{'left','right'});\n            row.put('stage','secondConstruct');\n            OwnedBranch second=new OwnedBranch('second',new List<String>{'other'});\n            row.put('stage','mutateFirstSibling');\n            first.children[0].label='changed';\n            first.children[0].children.add(new OwnedBranch('extra'));\n            row.put('labels',new List<String>{first.children[0].label,first.children[1].label,second.children[0].label});\n            row.put('sizes',new List<Integer>{first.children[0].children.size(),first.children[1].children.size(),second.children[0].children.size()});\n            row.put('distinctRoots',first!==second);\n            row.put('stage','complete');\n        } catch(Exception issue) { row.put('exceptionType',issue.getTypeName()); row.put('exceptionMessage',issue.getMessage()); }\n        row.put('branchCalls',OwnedBranch.calls);\n        row.put('baseCalls',OwnedNestBase.calls);\n        row.put('leafCalls',OwnedNestLeaf.leafCalls);\n        System.debug('NESTED_CONSTRUCTOR_OBSERVATION|'+JSON.serialize(row));\n        }\n    if(cell=='emptyAndSequentialControls') {\n        Map<String,Object> row=new Map<String,Object>{'stage'=>'emptyBranch'};\n        try {\n            OwnedBranch branch=new OwnedBranch('empty',new List<String>());\n            row.put('stage','oneArgEmptyBranch');\n            OwnedBranch other=new OwnedBranch('other');\n            row.put('stage','firstLeaf');\n            OwnedNestLeaf first=new OwnedNestLeaf(0);\n            row.put('stage','secondLeaf');\n            OwnedNestLeaf second=new OwnedNestLeaf(0);\n            row.put('branchSizes',new List<Integer>{branch.children.size(),other.children.size()});\n            row.put('depths',new List<Integer>{first.depth,second.depth});\n            row.put('bothTerminal',first.child==null && second.child==null);\n            row.put('distinct',branch!==other && first!==second);\n            row.put('stage','complete');\n        } catch(Exception issue) { row.put('exceptionType',issue.getTypeName()); row.put('exceptionMessage',issue.getMessage()); }\n        row.put('branchCalls',OwnedBranch.calls);\n        row.put('baseCalls',OwnedNestBase.calls);\n        row.put('leafCalls',OwnedNestLeaf.leafCalls);\n        System.debug('NESTED_CONSTRUCTOR_OBSERVATION|'+JSON.serialize(row));\n        }\n}\n",
+        "sha256": "37fe37a6e0dfba6b140c9efd354bd936a52ad2d1597b1a83e9fe5a6a26164501"
+      },
+      "execution": {
+        "status": 0,
+        "compiled": true,
+        "success": true,
+        "compileProblem": "",
+        "exceptionMessage": ""
+      }
+    },
+    {
+      "context": "cycle-api52",
+      "kind": "cycle",
+      "sourceAPI": "52.0",
+      "callerAPI": "52.0",
+      "projectAPI": "62.0",
+      "transportAPI": "62.0",
+      "route": "isTest",
+      "namespaceContext": "none",
+      "testClass": "NestedCycleObservation",
+      "marker": "",
+      "sourceAPIs": {
+        "NestedCycleObservation": "52.0",
+        "OwnedDirectCycle": "52.0",
+        "OwnedMutualCycle": "52.0"
+      },
+      "sources": {
+        "force-app/main/default/classes/NestedCycleObservation.cls": {
+          "source": "@IsTest\nprivate class NestedCycleObservation {\n    @IsTest static void directCycle() {\n        OwnedDirectCycle value=new OwnedDirectCycle('leaf');\n    }\n    @IsTest static void mutualCycle() {\n        OwnedMutualCycle value=new OwnedMutualCycle('leaf');\n    }\n}\n",
+          "sha256": "99ea519c237d6424029514156bfaae283563b7e464c57d500737a8a54da18db7"
+        },
+        "force-app/main/default/classes/NestedCycleObservation.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>52.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292"
+        },
+        "force-app/main/default/classes/OwnedDirectCycle.cls": {
+          "source": "public class OwnedDirectCycle {\n    public OwnedDirectCycle(String value) {\n        this(value);\n    }\n}\n",
+          "sha256": "32ebe0b7c93d2a00e400888e5077de47e77f33d104899cbb94ebe629ed2ddf20"
+        },
+        "force-app/main/default/classes/OwnedDirectCycle.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>52.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292"
+        },
+        "force-app/main/default/classes/OwnedMutualCycle.cls": {
+          "source": "public class OwnedMutualCycle {\n    public OwnedMutualCycle(String value) {\n        this(value,true);\n    }\n    public OwnedMutualCycle(String value,Boolean marker) {\n        this(value);\n    }\n}\n",
+          "sha256": "b58a4d13317f1e9c8ce7c4989d5c5a3f45c056382ea09f5aaf9403bad58157ca"
+        },
+        "force-app/main/default/classes/OwnedMutualCycle.cls-meta.xml": {
+          "source": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n    <apiVersion>52.0</apiVersion>\n    <status>Active</status>\n</ApexClass>\n",
+          "sha256": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292"
+        },
+        "sfdx-project.json": {
+          "source": "{\n  \"packageDirectories\": [\n    {\n      \"path\": \"force-app\",\n      \"default\": true\n    }\n  ],\n  \"namespace\": \"\",\n  \"sourceApiVersion\": \"62.0\"\n}\n",
+          "sha256": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+        }
+      },
+      "sourceDigests": {
+        "force-app/main/default/classes/NestedCycleObservation.cls": "99ea519c237d6424029514156bfaae283563b7e464c57d500737a8a54da18db7",
+        "force-app/main/default/classes/NestedCycleObservation.cls-meta.xml": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292",
+        "force-app/main/default/classes/OwnedDirectCycle.cls": "32ebe0b7c93d2a00e400888e5077de47e77f33d104899cbb94ebe629ed2ddf20",
+        "force-app/main/default/classes/OwnedDirectCycle.cls-meta.xml": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292",
+        "force-app/main/default/classes/OwnedMutualCycle.cls": "b58a4d13317f1e9c8ce7c4989d5c5a3f45c056382ea09f5aaf9403bad58157ca",
+        "force-app/main/default/classes/OwnedMutualCycle.cls-meta.xml": "f909a52b88b943e0e9afdfd65fac7480fdabaf332c659e8cb68822c8092e1292",
+        "sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9"
+      },
+      "rawSHA256": {
+        "org.tsv": "ef66802803da2086e7c0af44299abc2a0b1272bf4e9788f3474997349db400a4",
+        "errors.json": "26896e9c71b5af7a85d5a3c7ba98aecffc96439c96e64a94592f30b39e5a6c09",
+        "deploy.json": "2a884e6a4a4ac39f70001a8df9dbc7dce89e1ab69a88623252385c020cbf7985",
+        "deploy.command.json": "130cc603ced45b8d3701c8e44190f62d7032b8a0bbda2ea783d113889593db78",
+        "ORG-RUN.txt": "81e1126ee0b804e46e6e78839d1088960d3c1bc8e2d6e3bec166f1a94a461d40",
+        "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source-digests.json": "8b86e8c98c127df2f988c31b2a9332c8929a0ae7d1ce006ba0c1e1607e6e80d1"
+      },
+      "rows": [
+        {
+          "id": "directCycle",
+          "native": {
+            "uncaught": "System.LimitException: Maximum stack depth reached: 1001"
+          },
+          "nativeFailure": {
+            "message": "System.LimitException: Maximum stack depth reached: 1001",
+            "methodName": "directCycle",
+            "name": "NestedCycleObservation",
+            "stackTrace": "Class.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3, column 1\nClass.OwnedDirectCycle.<init>: line 3,",
+            "type": "Class"
+          }
+        },
+        {
+          "id": "mutualCycle",
+          "native": {
+            "uncaught": "System.LimitException: Maximum stack depth reached: 1001"
+          },
+          "nativeFailure": {
+            "message": "System.LimitException: Maximum stack depth reached: 1001",
+            "methodName": "mutualCycle",
+            "name": "NestedCycleObservation",
+            "stackTrace": "Class.OwnedMutualCycle.<init>: line 3, column 1\nClass.OwnedMutualCycle.<init>: line 6, column 1\nClass.OwnedMutualCycle.<init>: line 3, column 1\nClass.OwnedMutualCycle.<init>: line 6, column 1\nClass.OwnedMutualCycle.<init>: line 3, column 1\nClass.OwnedMutualCycle.<init>: line 6, column 1\nClass.OwnedMutualCycle.<init>: line 3, column 1\nClass.OwnedMutualCycle.<init>: line 6, column 1\nClass.OwnedMutualCycle.<init>: line 3, column 1\nClass.OwnedMutualCycle.<init>: line 6, column 1\nClass.OwnedMutualCycle.<init>: line 3, column 1\nClass.OwnedMutualCycle.<init>: line 6, column 1\nClass.OwnedMutualCycle.<init>: line 3, column 1\nClass.OwnedMutualCycle.<init>: line 6, column 1\nClass.OwnedMutualCycle.<init>: line 3, column 1\nClass.OwnedMutualCycle.<init>: line 6, column 1\nClass.OwnedMutualCycle.<init>: line 3, column 1\nClass.OwnedMutualCycle.<init>: line 6, column 1\nClass.OwnedMutualCycle.<init>: line 3, column 1\nClass.OwnedMutualCycle.<init>: line 6, column 1\nClass.OwnedMutualCycle.<init>: line 3, column 1\nClass.OwnedMutualCycle.<init>: line 6, column 1\nClass.OwnedMutualCycle.<init>: line 3, column 1\nClass.OwnedMutualCycle.<init>: line 6, column 1\nClass.OwnedMutualCycle.<init>: line 3,",
+            "type": "Class"
+          }
+        }
+      ],
+      "deployment": {
+        "id": "0Afcb00000CtK0nCAF",
+        "status": "Failed",
+        "done": true,
+        "checkOnly": true,
+        "numberComponentErrors": 0,
+        "numberTestErrors": 2,
+        "numberTestsCompleted": 0,
+        "numberTestsTotal": 2
+      }
+    },
+    {
+      "context": "cycle-anonymous-api52/direct",
+      "kind": "cycle",
+      "sourceAPI": "52.0",
+      "callerAPI": "52.0",
+      "projectAPI": "",
+      "transportAPI": "52.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "testClass": "",
+      "marker": "",
+      "sourceAPIs": {},
+      "sources": {},
+      "sourceDigests": {
+        "observe.apex": "079480ef2a48e7bfcc456192fcc9694ba911504b1471893b1fe49473985742dc"
+      },
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "run.command.json": "718cf8675ec24df4a569cdf530cabb4aeecf8ddccbe2693b5f0b84c106070fc9",
+        "org.tsv": "dbcbd936bbe55cb9b17ff58546150c72cde8dbd3c5e9e6471efadb2a51225b91",
+        "errors.json": "ff14ea067c72315dd41d2aed86db705cbb0aa83a1bb9fb1487f0a6666b68cf95",
+        "source.apex": "079480ef2a48e7bfcc456192fcc9694ba911504b1471893b1fe49473985742dc",
+        "run.json": "346705d589488ac3110d3ed324d81f3b862dd35c092d53af5c1878e5a94b764a",
+        "ORG-RUN.txt": "c9a246b5317fec673218e1f17189ccf65e537bf07d0c157570e5808b0a71ca5f",
+        "source-digests.json": "43a8b82f07aded7f686bedd3ffda576ed5b14d32a39d83402e1e5aa7d37db138"
+      },
+      "rows": [
+        {
+          "id": "direct",
+          "native": {
+            "compiled": true,
+            "success": false,
+            "compileProblem": "",
+            "exceptionMessage": "System.LimitException: Maximum stack depth reached: 1001"
+          }
+        }
+      ],
+      "source": {
+        "source": "class OwnedDirectCycle {\n    public OwnedDirectCycle(String value) { this(value); }\n}\nOwnedDirectCycle value=new OwnedDirectCycle('leaf');\n",
+        "sha256": "079480ef2a48e7bfcc456192fcc9694ba911504b1471893b1fe49473985742dc"
+      },
+      "execution": {
+        "status": 1,
+        "compiled": true,
+        "success": false,
+        "compileProblem": "",
+        "exceptionMessage": "System.LimitException: Maximum stack depth reached: 1001"
+      },
+      "exceptionTraceSHA256": "8cf33500e8c21d4a14825927ae3f2023f21feac7549a3e1d258c91195c65b023"
+    },
+    {
+      "context": "cycle-anonymous-api52/mutual",
+      "kind": "cycle",
+      "sourceAPI": "52.0",
+      "callerAPI": "52.0",
+      "projectAPI": "",
+      "transportAPI": "52.0",
+      "route": "anonymous",
+      "namespaceContext": "none",
+      "testClass": "",
+      "marker": "",
+      "sourceAPIs": {},
+      "sources": {},
+      "sourceDigests": {
+        "observe.apex": "bf5f066d9ec57e03ee9f7d292e235abb982e93b7a85068812d00daeeacf48ba4"
+      },
+      "rawSHA256": {
+        "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "run.command.json": "398e2c1bdbdb3a6f36c6e73519fcb3686c052600141dd10a59a4a216cbbdec77",
+        "org.tsv": "0b5207d2babead3ae871f55f08ec134474b97feba6f2337c8cfec6bfe8c20770",
+        "errors.json": "ff14ea067c72315dd41d2aed86db705cbb0aa83a1bb9fb1487f0a6666b68cf95",
+        "source.apex": "bf5f066d9ec57e03ee9f7d292e235abb982e93b7a85068812d00daeeacf48ba4",
+        "run.json": "bc8bad66bea5d44441b2e607edd618906573a8145cdf796ff0a9c33c75f21513",
+        "ORG-RUN.txt": "6da24a9d3f367ea67a1e57d5aea864b97078d82809c4e24ec6379d52ecd0f354",
+        "source-digests.json": "0874d31d6a772b405a45a7c865abfc85b8f95ad0f018795d79e034ca0538712c"
+      },
+      "rows": [
+        {
+          "id": "mutual",
+          "native": {
+            "compiled": true,
+            "success": false,
+            "compileProblem": "",
+            "exceptionMessage": "System.LimitException: Maximum stack depth reached: 1001"
+          }
+        }
+      ],
+      "source": {
+        "source": "class OwnedMutualCycle {\n    public OwnedMutualCycle(String value) { this(value,true); } public OwnedMutualCycle(String value,Boolean marker) { this(value); }\n}\nOwnedMutualCycle value=new OwnedMutualCycle('leaf');\n",
+        "sha256": "bf5f066d9ec57e03ee9f7d292e235abb982e93b7a85068812d00daeeacf48ba4"
+      },
+      "execution": {
+        "status": 1,
+        "compiled": true,
+        "success": false,
+        "compileProblem": "",
+        "exceptionMessage": "System.LimitException: Maximum stack depth reached: 1001"
+      },
+      "exceptionTraceSHA256": "ef5d938eed1f5d0fd0afc28d1b116b72abcb0e9b8f21853939a279e337259d9b"
+    }
+  ]
+}

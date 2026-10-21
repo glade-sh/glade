@@ -1,0 +1,327 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "cluster": "lifecycle-before-save",
+  "shapeCount": 1,
+  "nativeObservationCount": 4,
+  "carriedObservationCount": 0,
+  "rows": [
+    {
+      "id": "N2_001",
+      "byAPI": {
+        "62.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreN2CreateOnly.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <assignments><name>Set_Text</name><label>Set Text</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Text__c</assignToReference><operator>Assign</operator><value><stringValue>create-hit</stringValue></value></assignmentItems></assignments>\n  <interviewLabel>FlowCoreN2CreateOnly {!$Flow.CurrentDateTime}</interviewLabel><label>Flow Core N2 Create Only</label><processType>AutoLaunchedFlow</processType>\n  <start><locationX>0</locationX><locationY>0</locationY><object>FlowCoreN2Record__c</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordBeforeSave</triggerType><connector><targetReference>Set_Text</targetReference></connector></start>\n  <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/flows/FlowCoreN2UpdateOnly.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>62.0</apiVersion>\n  <assignments><name>Set_Text</name><label>Set Text</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.UpdateMark__c</assignToReference><operator>Assign</operator><value><stringValue>update-hit</stringValue></value></assignmentItems></assignments>\n  <interviewLabel>FlowCoreN2UpdateOnly {!$Flow.CurrentDateTime}</interviewLabel><label>Flow Core N2 Update Only</label><processType>AutoLaunchedFlow</processType>\n  <start><locationX>0</locationX><locationY>0</locationY><object>FlowCoreN2Record__c</object><recordTriggerType>Update</recordTriggerType><triggerType>RecordBeforeSave</triggerType><connector><targetReference>Set_Text</targetReference></connector></start>\n  <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/objects/FlowCoreN2Record__c/FlowCoreN2Record__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Flow Core N2 Record</label><pluralLabel>Flow Core N2 Records</pluralLabel><nameField><label>Flow Core N2 Record Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+            "force-app/main/default/objects/FlowCoreN2Record__c/fields/ExternalKey__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>ExternalKey__c</fullName><externalId>true</externalId><label>External Key</label><length>80</length><required>false</required><type>Text</type><unique>true</unique></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreN2Record__c/fields/Text__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Text__c</fullName><label>Text</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreN2Record__c/fields/Unit__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Unit__c</fullName><label>Unit</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreN2Record__c/fields/UpdateMark__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>UpdateMark__c</fullName><label>Update Mark</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/permissionsets/FlowCoreN2CaptureAccess.permissionset-meta.xml": "<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Flow Core N2 Capture Access</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>false</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>FlowCoreN2Record__c</object><viewAllRecords>true</viewAllRecords></objectPermissions><fieldPermissions><editable>true</editable><field>FlowCoreN2Record__c.Unit__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>FlowCoreN2Record__c.ExternalKey__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>FlowCoreN2Record__c.Text__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>FlowCoreN2Record__c.UpdateMark__c</field><readable>true</readable></fieldPermissions></PermissionSet>\n",
+            "sfdx-project.json": "{\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}],\"namespace\":\"\",\"sfdcLoginUrl\":\"https://login.salesforce.com\",\"sourceApiVersion\":\"62.0\"}\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreN2CreateOnly.flow-meta.xml": "659936fa1328c3697060a997ff756d7fcd6a1868664e9253a8c301796a49f7d5",
+            "force-app/main/default/flows/FlowCoreN2UpdateOnly.flow-meta.xml": "d61046e943faaaf242d73c6061bceab94c0183c245538d305b47c4595c63a447",
+            "force-app/main/default/objects/FlowCoreN2Record__c/FlowCoreN2Record__c.object-meta.xml": "9b0e2cda5ad65f85e0ffaad1f93afa908baa11d9feb580e787232e955f218d63",
+            "force-app/main/default/objects/FlowCoreN2Record__c/fields/ExternalKey__c.field-meta.xml": "78d276c4b2bccddf88a1ddee3e5ce3ebe30c2e5870eb4c90692828c0b8224979",
+            "force-app/main/default/objects/FlowCoreN2Record__c/fields/Text__c.field-meta.xml": "7e1df474ca6f61ed347601c7926458a88ae29d381bb8a984046550df2bf83b45",
+            "force-app/main/default/objects/FlowCoreN2Record__c/fields/Unit__c.field-meta.xml": "6219be06afcbb88beee7f8359756efa029ca8d44612f97410521d3ce228534b5",
+            "force-app/main/default/objects/FlowCoreN2Record__c/fields/UpdateMark__c.field-meta.xml": "40a4b6033522c83f234d5613c240664006ceb859e2f862760b79bbf9748020ae",
+            "force-app/main/default/permissionsets/FlowCoreN2CaptureAccess.permissionset-meta.xml": "a5c43523c9c90db9816b809e63f927972773c770bcd813cb361d50c60dc6853e",
+            "sfdx-project.json": "b7e8426cfb79d35a1fef46652341959f4b1ecc656b12cd4bcada9e7fc4ff704f"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "String unitName = 'N2' + String.valueOf(DateTime.now().getTime());\nMap<String, Object> payload = new Map<String, Object>();\nFlowCoreN2Record__c inserted = new FlowCoreN2Record__c(Name='insert', Unit__c=unitName, ExternalKey__c=unitName+'-insert', Text__c='seed');\ninsert inserted;\ninserted = [SELECT Text__c, UpdateMark__c FROM FlowCoreN2Record__c WHERE Id=:inserted.Id];\npayload.put('insert', new Map<String, Object>{'text' => inserted.Text__c, 'updateMark' => inserted.UpdateMark__c});\ninserted.Text__c='before-update'; inserted.UpdateMark__c='seed-update'; update inserted;\ninserted = [SELECT Text__c, UpdateMark__c FROM FlowCoreN2Record__c WHERE Id=:inserted.Id];\npayload.put('update', new Map<String, Object>{'text' => inserted.Text__c, 'updateMark' => inserted.UpdateMark__c});\nFlowCoreN2Record__c externalInsert = new FlowCoreN2Record__c(Name='external-insert', Unit__c=unitName, ExternalKey__c=unitName+'-external-insert', Text__c='seed');\nupsert externalInsert ExternalKey__c;\nexternalInsert = [SELECT Text__c, UpdateMark__c FROM FlowCoreN2Record__c WHERE Id=:externalInsert.Id];\npayload.put('upsertExternalInsert', new Map<String, Object>{'text' => externalInsert.Text__c, 'updateMark' => externalInsert.UpdateMark__c});\nFlowCoreN2Record__c externalSeed = new FlowCoreN2Record__c(Name='external-update', Unit__c=unitName, ExternalKey__c=unitName+'-external-update', Text__c='seed');\ninsert externalSeed;\nFlowCoreN2Record__c externalUpdate = new FlowCoreN2Record__c(Name='external-update', Unit__c=unitName, ExternalKey__c=externalSeed.ExternalKey__c, Text__c='before-external-upsert', UpdateMark__c='seed-update');\nupsert externalUpdate ExternalKey__c;\nexternalUpdate = [SELECT Text__c, UpdateMark__c FROM FlowCoreN2Record__c WHERE Id=:externalUpdate.Id];\npayload.put('upsertExternalUpdate', new Map<String, Object>{'text' => externalUpdate.Text__c, 'updateMark' => externalUpdate.UpdateMark__c});\nFlowCoreN2Record__c idSeed = new FlowCoreN2Record__c(Name='id-update', Unit__c=unitName, ExternalKey__c=unitName+'-id-update', Text__c='seed');\ninsert idSeed;\nFlowCoreN2Record__c idUpdate = new FlowCoreN2Record__c(Id=idSeed.Id, Name='id-update', Unit__c=unitName, ExternalKey__c=idSeed.ExternalKey__c, Text__c='before-id-upsert', UpdateMark__c='seed-update');\nupsert idUpdate;\nidUpdate = [SELECT Text__c, UpdateMark__c FROM FlowCoreN2Record__c WHERE Id=:idSeed.Id];\npayload.put('upsertIdUpdate', new Map<String, Object>{'text' => idUpdate.Text__c, 'updateMark' => idUpdate.UpdateMark__c});\nSystem.assert(false, 'FLOW_CORE_RESULT|N2_001|' + JSON.serialize(payload));\n",
+              "classes": {},
+              "tests": [],
+              "sourceSha256": {
+                "anonymous": "29ab0dad2a78f713fe66e4b01e07d182df8e19b1f83a4ae4ce9be093d6fb3284"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "insert": {
+                    "text": "create-hit",
+                    "updateMark": null
+                  },
+                  "update": {
+                    "text": "before-update",
+                    "updateMark": "update-hit"
+                  },
+                  "upsertExternalInsert": {
+                    "text": "create-hit",
+                    "updateMark": null
+                  },
+                  "upsertExternalUpdate": {
+                    "text": "before-external-upsert",
+                    "updateMark": "update-hit"
+                  },
+                  "upsertIdUpdate": {
+                    "text": "before-id-upsert",
+                    "updateMark": "update-hit"
+                  }
+                },
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "insert": {
+                      "text": "create-hit",
+                      "updateMark": null
+                    },
+                    "update": {
+                      "text": "before-update",
+                      "updateMark": "update-hit"
+                    },
+                    "upsertExternalInsert": {
+                      "text": "create-hit",
+                      "updateMark": null
+                    },
+                    "upsertExternalUpdate": {
+                      "text": "before-external-upsert",
+                      "updateMark": "update-hit"
+                    },
+                    "upsertIdUpdate": {
+                      "text": "before-id-upsert",
+                      "updateMark": "update-hit"
+                    }
+                  }
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            },
+            "istest": {
+              "anonymous": "",
+              "classes": {
+                "FlowCoreN2ObservationTest": "@IsTest private class FlowCoreN2ObservationTest {\n    private static Map<String, Object> read(Id recordId) {\n        FlowCoreN2Record__c row = [SELECT Text__c, UpdateMark__c FROM FlowCoreN2Record__c WHERE Id=:recordId];\n        return new Map<String, Object>{'text' => row.Text__c, 'updateMark' => row.UpdateMark__c};\n    }\n    @IsTest static void observe() {\n        String unitName = 'N2' + String.valueOf(DateTime.now().getTime());\n        Map<String, Object> payload = new Map<String, Object>();\n        FlowCoreN2Record__c inserted = new FlowCoreN2Record__c(Name='insert', Unit__c=unitName, ExternalKey__c=unitName+'-insert', Text__c='seed');\n        insert inserted;\n        payload.put('insert', read(inserted.Id));\n        inserted.Text__c='before-update'; inserted.UpdateMark__c='seed-update'; update inserted;\n        payload.put('update', read(inserted.Id));\n        FlowCoreN2Record__c externalInsert = new FlowCoreN2Record__c(Name='external-insert', Unit__c=unitName, ExternalKey__c=unitName+'-external-insert', Text__c='seed');\n        upsert externalInsert ExternalKey__c;\n        payload.put('upsertExternalInsert', read(externalInsert.Id));\n        FlowCoreN2Record__c externalSeed = new FlowCoreN2Record__c(Name='external-update', Unit__c=unitName, ExternalKey__c=unitName+'-external-update', Text__c='seed');\n        insert externalSeed;\n        FlowCoreN2Record__c externalUpdate = new FlowCoreN2Record__c(Name='external-update', Unit__c=unitName, ExternalKey__c=externalSeed.ExternalKey__c, Text__c='before-external-upsert', UpdateMark__c='seed-update');\n        upsert externalUpdate ExternalKey__c;\n        payload.put('upsertExternalUpdate', read(externalUpdate.Id));\n        FlowCoreN2Record__c idSeed = new FlowCoreN2Record__c(Name='id-update', Unit__c=unitName, ExternalKey__c=unitName+'-id-update', Text__c='seed');\n        insert idSeed;\n        FlowCoreN2Record__c idUpdate = new FlowCoreN2Record__c(Id=idSeed.Id, Name='id-update', Unit__c=unitName, ExternalKey__c=idSeed.ExternalKey__c, Text__c='before-id-upsert', UpdateMark__c='seed-update');\n        upsert idUpdate;\n        payload.put('upsertIdUpdate', read(idSeed.Id));\n        System.assert(false, 'FLOW_CORE_RESULT|N2_001|' + JSON.serialize(payload));\n    }\n}\n"
+              },
+              "tests": [
+                "FlowCoreN2ObservationTest"
+              ],
+              "sourceSha256": {
+                "FlowCoreN2ObservationTest": "f537f12493c274ff93e9bc96628b75e574d0e6d68e75c9d1d709bc7f0cf2d2ea"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "insert": {
+                    "text": "create-hit",
+                    "updateMark": null
+                  },
+                  "update": {
+                    "text": "before-update",
+                    "updateMark": "update-hit"
+                  },
+                  "upsertExternalInsert": {
+                    "text": "create-hit",
+                    "updateMark": null
+                  },
+                  "upsertExternalUpdate": {
+                    "text": "before-external-upsert",
+                    "updateMark": "update-hit"
+                  },
+                  "upsertIdUpdate": {
+                    "text": "before-id-upsert",
+                    "updateMark": "update-hit"
+                  }
+                },
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "insert": {
+                      "text": "create-hit",
+                      "updateMark": null
+                    },
+                    "update": {
+                      "text": "before-update",
+                      "updateMark": "update-hit"
+                    },
+                    "upsertExternalInsert": {
+                      "text": "create-hit",
+                      "updateMark": null
+                    },
+                    "upsertExternalUpdate": {
+                      "text": "before-external-upsert",
+                      "updateMark": "update-hit"
+                    },
+                    "upsertIdUpdate": {
+                      "text": "before-id-upsert",
+                      "updateMark": "update-hit"
+                    }
+                  }
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            }
+          }
+        },
+        "67.0": {
+          "rejectedFlowFiles": [],
+          "files": {
+            "force-app/main/default/flows/FlowCoreN2CreateOnly.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <assignments><name>Set_Text</name><label>Set Text</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Text__c</assignToReference><operator>Assign</operator><value><stringValue>create-hit</stringValue></value></assignmentItems></assignments>\n  <interviewLabel>FlowCoreN2CreateOnly {!$Flow.CurrentDateTime}</interviewLabel><label>Flow Core N2 Create Only</label><processType>AutoLaunchedFlow</processType>\n  <start><locationX>0</locationX><locationY>0</locationY><object>FlowCoreN2Record__c</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordBeforeSave</triggerType><connector><targetReference>Set_Text</targetReference></connector></start>\n  <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/flows/FlowCoreN2UpdateOnly.flow-meta.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  <apiVersion>67.0</apiVersion>\n  <assignments><name>Set_Text</name><label>Set Text</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.UpdateMark__c</assignToReference><operator>Assign</operator><value><stringValue>update-hit</stringValue></value></assignmentItems></assignments>\n  <interviewLabel>FlowCoreN2UpdateOnly {!$Flow.CurrentDateTime}</interviewLabel><label>Flow Core N2 Update Only</label><processType>AutoLaunchedFlow</processType>\n  <start><locationX>0</locationX><locationY>0</locationY><object>FlowCoreN2Record__c</object><recordTriggerType>Update</recordTriggerType><triggerType>RecordBeforeSave</triggerType><connector><targetReference>Set_Text</targetReference></connector></start>\n  <status>Active</status>\n</Flow>\n",
+            "force-app/main/default/objects/FlowCoreN2Record__c/FlowCoreN2Record__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Flow Core N2 Record</label><pluralLabel>Flow Core N2 Records</pluralLabel><nameField><label>Flow Core N2 Record Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+            "force-app/main/default/objects/FlowCoreN2Record__c/fields/ExternalKey__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>ExternalKey__c</fullName><externalId>true</externalId><label>External Key</label><length>80</length><required>false</required><type>Text</type><unique>true</unique></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreN2Record__c/fields/Text__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Text__c</fullName><label>Text</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreN2Record__c/fields/Unit__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Unit__c</fullName><label>Unit</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/objects/FlowCoreN2Record__c/fields/UpdateMark__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>UpdateMark__c</fullName><label>Update Mark</label><length>80</length><type>Text</type></CustomField>\n",
+            "force-app/main/default/permissionsets/FlowCoreN2CaptureAccess.permissionset-meta.xml": "<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>Flow Core N2 Capture Access</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>false</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>FlowCoreN2Record__c</object><viewAllRecords>true</viewAllRecords></objectPermissions><fieldPermissions><editable>true</editable><field>FlowCoreN2Record__c.Unit__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>FlowCoreN2Record__c.ExternalKey__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>FlowCoreN2Record__c.Text__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>FlowCoreN2Record__c.UpdateMark__c</field><readable>true</readable></fieldPermissions></PermissionSet>\n",
+            "sfdx-project.json": "{\"packageDirectories\":[{\"path\":\"force-app\",\"default\":true}],\"namespace\":\"\",\"sfdcLoginUrl\":\"https://login.salesforce.com\",\"sourceApiVersion\":\"67.0\"}\n"
+          },
+          "sourceSha256": {
+            "force-app/main/default/flows/FlowCoreN2CreateOnly.flow-meta.xml": "5a6380df6579774df1599c8e4a5f5a5b8a37f9dada6368916cd2b545bed47d97",
+            "force-app/main/default/flows/FlowCoreN2UpdateOnly.flow-meta.xml": "b198d5a2c597af9e655594621624595a40d0611cc8ff896191542f3529f96c5b",
+            "force-app/main/default/objects/FlowCoreN2Record__c/FlowCoreN2Record__c.object-meta.xml": "9b0e2cda5ad65f85e0ffaad1f93afa908baa11d9feb580e787232e955f218d63",
+            "force-app/main/default/objects/FlowCoreN2Record__c/fields/ExternalKey__c.field-meta.xml": "78d276c4b2bccddf88a1ddee3e5ce3ebe30c2e5870eb4c90692828c0b8224979",
+            "force-app/main/default/objects/FlowCoreN2Record__c/fields/Text__c.field-meta.xml": "7e1df474ca6f61ed347601c7926458a88ae29d381bb8a984046550df2bf83b45",
+            "force-app/main/default/objects/FlowCoreN2Record__c/fields/Unit__c.field-meta.xml": "6219be06afcbb88beee7f8359756efa029ca8d44612f97410521d3ce228534b5",
+            "force-app/main/default/objects/FlowCoreN2Record__c/fields/UpdateMark__c.field-meta.xml": "40a4b6033522c83f234d5613c240664006ceb859e2f862760b79bbf9748020ae",
+            "force-app/main/default/permissionsets/FlowCoreN2CaptureAccess.permissionset-meta.xml": "a5c43523c9c90db9816b809e63f927972773c770bcd813cb361d50c60dc6853e",
+            "sfdx-project.json": "d61b0974aa1209f8c42b0c8ee5c67db39431e3014e2a29dd0b5d0c0634a01eca"
+          },
+          "routes": {
+            "anonymous": {
+              "anonymous": "String unitName = 'N2' + String.valueOf(DateTime.now().getTime());\nMap<String, Object> payload = new Map<String, Object>();\nFlowCoreN2Record__c inserted = new FlowCoreN2Record__c(Name='insert', Unit__c=unitName, ExternalKey__c=unitName+'-insert', Text__c='seed');\ninsert inserted;\ninserted = [SELECT Text__c, UpdateMark__c FROM FlowCoreN2Record__c WHERE Id=:inserted.Id];\npayload.put('insert', new Map<String, Object>{'text' => inserted.Text__c, 'updateMark' => inserted.UpdateMark__c});\ninserted.Text__c='before-update'; inserted.UpdateMark__c='seed-update'; update inserted;\ninserted = [SELECT Text__c, UpdateMark__c FROM FlowCoreN2Record__c WHERE Id=:inserted.Id];\npayload.put('update', new Map<String, Object>{'text' => inserted.Text__c, 'updateMark' => inserted.UpdateMark__c});\nFlowCoreN2Record__c externalInsert = new FlowCoreN2Record__c(Name='external-insert', Unit__c=unitName, ExternalKey__c=unitName+'-external-insert', Text__c='seed');\nupsert externalInsert ExternalKey__c;\nexternalInsert = [SELECT Text__c, UpdateMark__c FROM FlowCoreN2Record__c WHERE Id=:externalInsert.Id];\npayload.put('upsertExternalInsert', new Map<String, Object>{'text' => externalInsert.Text__c, 'updateMark' => externalInsert.UpdateMark__c});\nFlowCoreN2Record__c externalSeed = new FlowCoreN2Record__c(Name='external-update', Unit__c=unitName, ExternalKey__c=unitName+'-external-update', Text__c='seed');\ninsert externalSeed;\nFlowCoreN2Record__c externalUpdate = new FlowCoreN2Record__c(Name='external-update', Unit__c=unitName, ExternalKey__c=externalSeed.ExternalKey__c, Text__c='before-external-upsert', UpdateMark__c='seed-update');\nupsert externalUpdate ExternalKey__c;\nexternalUpdate = [SELECT Text__c, UpdateMark__c FROM FlowCoreN2Record__c WHERE Id=:externalUpdate.Id];\npayload.put('upsertExternalUpdate', new Map<String, Object>{'text' => externalUpdate.Text__c, 'updateMark' => externalUpdate.UpdateMark__c});\nFlowCoreN2Record__c idSeed = new FlowCoreN2Record__c(Name='id-update', Unit__c=unitName, ExternalKey__c=unitName+'-id-update', Text__c='seed');\ninsert idSeed;\nFlowCoreN2Record__c idUpdate = new FlowCoreN2Record__c(Id=idSeed.Id, Name='id-update', Unit__c=unitName, ExternalKey__c=idSeed.ExternalKey__c, Text__c='before-id-upsert', UpdateMark__c='seed-update');\nupsert idUpdate;\nidUpdate = [SELECT Text__c, UpdateMark__c FROM FlowCoreN2Record__c WHERE Id=:idSeed.Id];\npayload.put('upsertIdUpdate', new Map<String, Object>{'text' => idUpdate.Text__c, 'updateMark' => idUpdate.UpdateMark__c});\nSystem.assert(false, 'FLOW_CORE_RESULT|N2_001|' + JSON.serialize(payload));\n",
+              "classes": {},
+              "tests": [],
+              "sourceSha256": {
+                "anonymous": "29ab0dad2a78f713fe66e4b01e07d182df8e19b1f83a4ae4ce9be093d6fb3284"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "insert": {
+                    "text": "create-hit",
+                    "updateMark": null
+                  },
+                  "update": {
+                    "text": "before-update",
+                    "updateMark": "update-hit"
+                  },
+                  "upsertExternalInsert": {
+                    "text": "create-hit",
+                    "updateMark": null
+                  },
+                  "upsertExternalUpdate": {
+                    "text": "before-external-upsert",
+                    "updateMark": "update-hit"
+                  },
+                  "upsertIdUpdate": {
+                    "text": "before-id-upsert",
+                    "updateMark": "update-hit"
+                  }
+                },
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "insert": {
+                      "text": "create-hit",
+                      "updateMark": null
+                    },
+                    "update": {
+                      "text": "before-update",
+                      "updateMark": "update-hit"
+                    },
+                    "upsertExternalInsert": {
+                      "text": "create-hit",
+                      "updateMark": null
+                    },
+                    "upsertExternalUpdate": {
+                      "text": "before-external-upsert",
+                      "updateMark": "update-hit"
+                    },
+                    "upsertIdUpdate": {
+                      "text": "before-id-upsert",
+                      "updateMark": "update-hit"
+                    }
+                  }
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            },
+            "istest": {
+              "anonymous": "",
+              "classes": {
+                "FlowCoreN2ObservationTest": "@IsTest private class FlowCoreN2ObservationTest {\n    private static Map<String, Object> read(Id recordId) {\n        FlowCoreN2Record__c row = [SELECT Text__c, UpdateMark__c FROM FlowCoreN2Record__c WHERE Id=:recordId];\n        return new Map<String, Object>{'text' => row.Text__c, 'updateMark' => row.UpdateMark__c};\n    }\n    @IsTest static void observe() {\n        String unitName = 'N2' + String.valueOf(DateTime.now().getTime());\n        Map<String, Object> payload = new Map<String, Object>();\n        FlowCoreN2Record__c inserted = new FlowCoreN2Record__c(Name='insert', Unit__c=unitName, ExternalKey__c=unitName+'-insert', Text__c='seed');\n        insert inserted;\n        payload.put('insert', read(inserted.Id));\n        inserted.Text__c='before-update'; inserted.UpdateMark__c='seed-update'; update inserted;\n        payload.put('update', read(inserted.Id));\n        FlowCoreN2Record__c externalInsert = new FlowCoreN2Record__c(Name='external-insert', Unit__c=unitName, ExternalKey__c=unitName+'-external-insert', Text__c='seed');\n        upsert externalInsert ExternalKey__c;\n        payload.put('upsertExternalInsert', read(externalInsert.Id));\n        FlowCoreN2Record__c externalSeed = new FlowCoreN2Record__c(Name='external-update', Unit__c=unitName, ExternalKey__c=unitName+'-external-update', Text__c='seed');\n        insert externalSeed;\n        FlowCoreN2Record__c externalUpdate = new FlowCoreN2Record__c(Name='external-update', Unit__c=unitName, ExternalKey__c=externalSeed.ExternalKey__c, Text__c='before-external-upsert', UpdateMark__c='seed-update');\n        upsert externalUpdate ExternalKey__c;\n        payload.put('upsertExternalUpdate', read(externalUpdate.Id));\n        FlowCoreN2Record__c idSeed = new FlowCoreN2Record__c(Name='id-update', Unit__c=unitName, ExternalKey__c=unitName+'-id-update', Text__c='seed');\n        insert idSeed;\n        FlowCoreN2Record__c idUpdate = new FlowCoreN2Record__c(Id=idSeed.Id, Name='id-update', Unit__c=unitName, ExternalKey__c=idSeed.ExternalKey__c, Text__c='before-id-upsert', UpdateMark__c='seed-update');\n        upsert idUpdate;\n        payload.put('upsertIdUpdate', read(idSeed.Id));\n        System.assert(false, 'FLOW_CORE_RESULT|N2_001|' + JSON.serialize(payload));\n    }\n}\n"
+              },
+              "tests": [
+                "FlowCoreN2ObservationTest"
+              ],
+              "sourceSha256": {
+                "FlowCoreN2ObservationTest": "f537f12493c274ff93e9bc96628b75e574d0e6d68e75c9d1d709bc7f0cf2d2ea"
+              },
+              "expected": {
+                "outcome": "runtime",
+                "value": {
+                  "insert": {
+                    "text": "create-hit",
+                    "updateMark": null
+                  },
+                  "update": {
+                    "text": "before-update",
+                    "updateMark": "update-hit"
+                  },
+                  "upsertExternalInsert": {
+                    "text": "create-hit",
+                    "updateMark": null
+                  },
+                  "upsertExternalUpdate": {
+                    "text": "before-external-upsert",
+                    "updateMark": "update-hit"
+                  },
+                  "upsertIdUpdate": {
+                    "text": "before-id-upsert",
+                    "updateMark": "update-hit"
+                  }
+                },
+                "native": {
+                  "outcome": "runtime",
+                  "value": {
+                    "insert": {
+                      "text": "create-hit",
+                      "updateMark": null
+                    },
+                    "update": {
+                      "text": "before-update",
+                      "updateMark": "update-hit"
+                    },
+                    "upsertExternalInsert": {
+                      "text": "create-hit",
+                      "updateMark": null
+                    },
+                    "upsertExternalUpdate": {
+                      "text": "before-external-upsert",
+                      "updateMark": "update-hit"
+                    },
+                    "upsertIdUpdate": {
+                      "text": "before-id-upsert",
+                      "updateMark": "update-hit"
+                    }
+                  }
+                },
+                "primary": "",
+                "carryReason": "",
+                "exceptionType": "",
+                "message": ""
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

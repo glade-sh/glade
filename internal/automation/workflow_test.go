@@ -1501,7 +1501,7 @@ func TestLoadProjectFlowLookupCanReferenceInputVariable(t *testing.T) {
 	}
 }
 
-func TestLoadProjectFlowRejectsLookupConditionWithEffectBranch(t *testing.T) {
+func TestLoadProjectFlowFirstRecordNullDecisionKeepsLookupOrder(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "flows", "Widget_Lookup_Decision.flow-meta.xml")
 	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -1535,8 +1535,19 @@ func TestLoadProjectFlowRejectsLookupConditionWithEffectBranch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(idx.Diagnostics) == 0 {
-		t.Fatalf("expected lookup decision diagnostic")
+	if len(idx.Diagnostics) != 0 || len(idx.Flows) != 1 || len(idx.Flows[0].Rules) != 1 {
+		t.Fatalf("lookup decision load: diagnostics=%#v flows=%#v", idx.Diagnostics, idx.Flows)
+	}
+	steps := idx.Flows[0].Rules[0].Steps
+	if len(steps) != 2 || steps[0].Kind != "recordLookup" || steps[1].Kind != "decision" || len(steps[1].Branches) != 1 {
+		t.Fatalf("lookup must precede decision: %#v", steps)
+	}
+	branch := steps[1].Branches[0]
+	if len(branch.Criteria) != 1 || branch.Criteria[0].Field != steps[0].RecordLookup.Name || branch.Criteria[0].Operation != "isNull" || branch.Criteria[0].Value != "false" {
+		t.Fatalf("first-record null criterion = %#v", branch.Criteria)
+	}
+	if len(branch.Steps) != 1 || branch.Steps[0].Kind != "recordCreate" {
+		t.Fatalf("decision effect = %#v", branch.Steps)
 	}
 }
 

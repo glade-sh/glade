@@ -1,0 +1,103 @@
+{
+  "api": "62.0",
+  "status": "SucceededPartial",
+  "completedDate": "2026-10-19T13:19:02.000Z",
+  "failures": [
+    {
+      "fullName": "ReachabilitySlice0",
+      "problem": "Unreachable statement",
+      "lineNumber": 5,
+      "columnNumber": 1
+    },
+    {
+      "fullName": "ReachabilitySlice1",
+      "problem": "Unreachable statement",
+      "lineNumber": 5,
+      "columnNumber": 1
+    },
+    {
+      "fullName": "ReachabilitySlice10",
+      "problem": "Unreachable statement",
+      "lineNumber": 5,
+      "columnNumber": 1
+    },
+    {
+      "fullName": "ReachabilitySlice11",
+      "problem": "Unreachable statement",
+      "lineNumber": 6,
+      "columnNumber": 1
+    },
+    {
+      "fullName": "ReachabilitySlice12",
+      "problem": "Unreachable statement",
+      "lineNumber": 6,
+      "columnNumber": 1
+    },
+    {
+      "fullName": "ReachabilitySlice16",
+      "problem": "Unreachable statement",
+      "lineNumber": 5,
+      "columnNumber": 1
+    },
+    {
+      "fullName": "ReachabilitySlice18",
+      "problem": "Unreachable statement",
+      "lineNumber": 6,
+      "columnNumber": 8
+    },
+    {
+      "fullName": "ReachabilitySlice2",
+      "problem": "Unreachable statement",
+      "lineNumber": 5,
+      "columnNumber": 1
+    },
+    {
+      "fullName": "ReachabilitySlice3",
+      "problem": "Unreachable statement",
+      "lineNumber": 5,
+      "columnNumber": 1
+    },
+    {
+      "fullName": "ReachabilitySlice4",
+      "problem": "Unreachable statement",
+      "lineNumber": 5,
+      "columnNumber": 1
+    },
+    {
+      "fullName": "ReachabilitySlice5",
+      "problem": "Unreachable statement",
+      "lineNumber": 6,
+      "columnNumber": 1
+    },
+    {
+      "fullName": "ReachabilitySlice6",
+      "problem": "Unreachable statement",
+      "lineNumber": 6,
+      "columnNumber": 1
+    },
+    {
+      "fullName": "ReachabilitySlice7",
+      "problem": "Unreachable statement",
+      "lineNumber": 6,
+      "columnNumber": 1
+    },
+    {
+      "fullName": "ReachabilitySlice8",
+      "problem": "Unreachable statement",
+      "lineNumber": 6,
+      "columnNumber": 1
+    },
+    {
+      "fullName": "ReachabilitySlice9",
+      "problem": "Unreachable statement",
+      "lineNumber": 5,
+      "columnNumber": 1
+    }
+  ],
+  "successes": [
+    "ReachabilitySlice13",
+    "ReachabilitySlice14",
+    "ReachabilitySlice15",
+    "ReachabilitySlice17"
+  ]
+}

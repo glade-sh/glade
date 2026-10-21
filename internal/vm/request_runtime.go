@@ -706,7 +706,7 @@ func (vm *VM) quickActionResult(request Value, executionResult *Result) (Value, 
 	if !found || record.Kind != ValueObject || !strings.EqualFold(record.Type, action.TargetObject) {
 		return Null, unsupportedCallError("QuickAction.performQuickAction request record for " + action.TargetObject)
 	}
-	rows, err := vm.applyDMLWithRecordAccess("insert", record, true, "", dml.Options{}, executionResult, false)
+	rows, err := vm.applyDMLWithRecordAccess("insert", record, true, "", dml.Options{}, executionResult, "")
 	if err != nil {
 		return Null, err
 	}
@@ -899,6 +899,9 @@ func quickActionDefaultGetterValue(typeName, method string) Value {
 }
 
 func (vm *VM) kbPublishingServiceVoid(callee string, args []Value) (Value, error) {
+	if callee == "KbManagement.PublishingService.publishArticle" {
+		return vm.publishKnowledgeArticle(args)
+	}
 	if err := vm.validateKbPublishingServiceArgs(callee, args); err != nil {
 		return Null, err
 	}
@@ -916,7 +919,6 @@ func (vm *VM) validateKbPublishingServiceArgs(callee string, args []Value) error
 		"KbManagement.PublishingService.editArchivedArticle":                 {ValueString},
 		"KbManagement.PublishingService.editOnlineArticle":                   {ValueString, ValueBool},
 		"KbManagement.PublishingService.editPublishedTranslation":            {ValueString, ValueString, ValueBool},
-		"KbManagement.PublishingService.publishArticle":                      {ValueString, ValueBool},
 		"KbManagement.PublishingService.restoreOldVersion":                   {ValueString, ValueInt},
 		"KbManagement.PublishingService.scheduleForPublication":              {ValueString, ValueObject},
 		"KbManagement.PublishingService.setTranslationToIncomplete":          {ValueString},

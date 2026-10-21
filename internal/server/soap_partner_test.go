@@ -254,7 +254,7 @@ func partnerSOAPEnvelope(body string) string {
 
 func partnerSOAPPost(handler http.Handler, body string) *httptest.ResponseRecorder {
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/services/Soap/u/65.0/00D000000000001", strings.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/services/Soap/u/65.0/00D000000000mH2", strings.NewReader(body))
 	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
 	handler.ServeHTTP(rec, req)
 	return rec

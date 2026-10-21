@@ -1,0 +1,21 @@
+case_id	api_version	route	shape
+F7_012	62.0	anonymous	NotEqualTo changed-to-meet filter
+F7_012	62.0	istest	NotEqualTo changed-to-meet filter
+F7_012	67.0	anonymous	NotEqualTo changed-to-meet filter
+F7_012	67.0	istest	NotEqualTo changed-to-meet filter
+F7_013	62.0	anonymous	IsNull changed-to-meet filter
+F7_013	62.0	istest	IsNull changed-to-meet filter
+F7_013	67.0	anonymous	IsNull changed-to-meet filter
+F7_013	67.0	istest	IsNull changed-to-meet filter
+F7_014	62.0	anonymous	Contains changed-to-meet filter
+F7_014	62.0	istest	Contains changed-to-meet filter
+F7_014	67.0	anonymous	Contains changed-to-meet filter
+F7_014	67.0	istest	Contains changed-to-meet filter
+F7_015	62.0	anonymous	custom OR logic changed-to-meet filter
+F7_015	62.0	istest	custom OR logic changed-to-meet filter
+F7_015	67.0	anonymous	custom OR logic changed-to-meet filter
+F7_015	67.0	istest	custom OR logic changed-to-meet filter
+F7_016	62.0	anonymous	before-save changed-to-meet filter
+F7_016	62.0	istest	before-save changed-to-meet filter
+F7_016	67.0	anonymous	before-save changed-to-meet filter
+F7_016	67.0	istest	before-save changed-to-meet filter

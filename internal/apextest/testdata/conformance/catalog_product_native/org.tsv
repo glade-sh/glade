@@ -1,0 +1,7 @@
+source_api	method	observation
+62.0	linePriceDerivation	{"finalAmount":61.00,"thirdTotalPrice":21.00,"thirdUnitPrice":7.00,"secondAmount":40.00,"secondTotalPrice":40.00,"secondUnitPrice":20.00,"firstAmount":50.00,"firstTotalPrice":50.00,"firstUnitPrice":25.00,"inputUnitPrice":null}
+62.0	linePriceUpdates	{"finalAmount":0.00,"pairAmount":11.00,"deletedAmount":0.00,"fullAmount":48.00,"fullTotal":48.00,"fullUnit":12.00,"fullResult":"success","totalAmount":60.00,"totalTotal":60.00,"totalUnit":15.00,"quantityAmount":20.00,"quantityTotal":20.00,"quantityUnit":5.00}
+62.0	productVisibility	{"locatorCount":1,"dynamicCount":1,"literalCount":1,"systemCount":1}
+67.0	linePriceDerivation	{"finalAmount":61.00,"thirdTotalPrice":21.00,"thirdUnitPrice":7.00,"secondAmount":40.00,"secondTotalPrice":40.00,"secondUnitPrice":20.00,"firstAmount":50.00,"firstTotalPrice":50.00,"firstUnitPrice":25.00,"inputUnitPrice":null}
+67.0	linePriceUpdates	{"finalAmount":0.00,"pairAmount":11.00,"deletedAmount":0.00,"fullAmount":48.00,"fullTotal":48.00,"fullUnit":12.00,"fullResult":"success","totalAmount":60.00,"totalTotal":60.00,"totalUnit":15.00,"quantityAmount":20.00,"quantityTotal":20.00,"quantityUnit":5.00}
+67.0	productVisibility	{"locatorCount":1,"dynamicCount":1,"literalCount":1,"systemCount":1}

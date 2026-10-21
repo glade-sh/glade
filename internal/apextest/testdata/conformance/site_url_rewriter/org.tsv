@@ -1,0 +1,16 @@
+source_api	case	observation
+62.0	map	/x?mapped=1
+62.0	gen	2:/f/a
+62.0	instanceof	true
+62.0	cast	true
+62.0	null	System.NullPointerException
+67.0	map	/x?mapped=1
+67.0	gen	2:/f/a
+67.0	instanceof	true
+67.0	cast	true
+67.0	null	System.NullPointerException
+68.0	map	/x?mapped=1
+68.0	gen	2:/f/a
+68.0	instanceof	true
+68.0	cast	true
+68.0	null	System.NullPointerException

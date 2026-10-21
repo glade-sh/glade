@@ -1,0 +1,5 @@
+owned_scratch_deleted=true
+dev_hub_scratch_status=Deleted
+active_scratch_rows=0
+verification_scope=only the scratch org created for these observations
+local_alias_removed=true

@@ -37,6 +37,7 @@ func TestProtocolWiringV1MapsEveryRunOptionAndLimitCap(t *testing.T) {
 		TraceAll:             true,
 		SlowTestThresholdMS:  211,
 		TimeoutMS:            300_017,
+		TimeoutSource:        "environment",
 		Parallelism:          7,
 		ParallelMethods:      false,
 		NoDiskCache:          true,
@@ -57,6 +58,7 @@ func TestProtocolWiringV1MapsEveryRunOptionAndLimitCap(t *testing.T) {
 		TraceAll:            true,
 		SlowTestThresholdMS: 211,
 		TimeoutMS:           300_017,
+		TimeoutSource:       "environment",
 		Parallelism:         7,
 		ParallelMethods:     false,
 		NoDiskCache:         true,
@@ -502,7 +504,7 @@ func TestProtocolWiringV1ServerReadDeadlineRejectsSlowloris(t *testing.T) {
 	defer client.Close()
 	serveErr := make(chan error, 1)
 	go func() { serveErr <- server.serveConn(context.Background(), serverConn) }()
-	if _, err := io.WriteString(client, `{"version":1,"op":"ping"`); err != nil {
+	if _, err := io.WriteString(client, `{"version":3,"op":"ping"`); err != nil {
 		t.Fatal(err)
 	}
 
@@ -641,7 +643,7 @@ func TestProtocolWiringV1ServerLifecycleAndMismatch(t *testing.T) {
 		server.serveConn(context.Background(), serverConn)
 		close(done)
 	}()
-	if _, err := fmt.Fprintln(client, `{"version":2,"op":"run","id":"mismatch","run":{"parallelism":1}}`); err != nil {
+	if _, err := fmt.Fprintln(client, `{"version":1,"op":"run","id":"mismatch","run":{"parallelism":1}}`); err != nil {
 		t.Fatal(err)
 	}
 	mismatch, err := DecodeResponseV1(bufio.NewReader(client))

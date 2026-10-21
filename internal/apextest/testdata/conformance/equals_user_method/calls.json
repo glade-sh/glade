@@ -1,0 +1,1213 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cluster": "calls",
+  "shapeCount": 12,
+  "nativeObservationCount": 72,
+  "packetRowsSha256": "8c737726ee2d9f757a59656fe1c063b99190b30c1bc5db6d269f837c3041db33",
+  "rows": [
+    {
+      "id": "E23E001",
+      "label": "EqResult implicit equals(Object)",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "b207c8f0de6a55552e9115d20a772bf11fd6c3c76ecef3960551d4037764ad01",
+            "class:EqFixture": "a0b2281c0778fc3944c75ed9dcd8eba10f789603fe727ada915442ac14668f2f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return equals(v);}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.eq(null).value);payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E001|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "a0b2281c0778fc3944c75ed9dcd8eba10f789603fe727ada915442ac14668f2f",
+            "class:ObserveE23E001Test": "f4690c278246d898e7d02d8ecf8af1c74e2252b333bafd3f62ecc52df3a0123e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return equals(v);}}}",
+            "ObserveE23E001Test": "@IsTest private class ObserveE23E001Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.eq(null).value);payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E001|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E001Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E002",
+      "label": "EqResult explicit equals(Object)",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "de557f3d2ad6d3899eab9f158a833524c1af34a1bc514e94a07828298402d6b4",
+            "class:EqFixture": "05d02e1982ac5aba525283cf7fe09d51a76ac968bf944db67e11fc0c89f8e214"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return this.equals(v);}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.eq(null).value);payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E002|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "05d02e1982ac5aba525283cf7fe09d51a76ac968bf944db67e11fc0c89f8e214",
+            "class:ObserveE23E002Test": "17c65fc0d671850db85b7d8b39306c28d4b92a73f9913b07a9d5c2a078872939"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return this.equals(v);}}}",
+            "ObserveE23E002Test": "@IsTest private class ObserveE23E002Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.eq(null).value);payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E002|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E002Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E003",
+      "label": "EqResult outside equals(Object)",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "3290518db866f63136e31e1adef3d2b1a0fa40856930b4cef1780db9d313a828",
+            "class:EqFixture": "a0b2281c0778fc3944c75ed9dcd8eba10f789603fe727ada915442ac14668f2f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return equals(v);}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.equals(null).value);payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E003|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "a0b2281c0778fc3944c75ed9dcd8eba10f789603fe727ada915442ac14668f2f",
+            "class:ObserveE23E003Test": "39b7003fcb6a24fd5ea1a5711dcdb08bdd19e19427a9cb2a5b42c6d6eb058d79"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqResult {public Integer value=41;}public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public EqResult equals(Object v){calls++;return new EqResult();}public EqResult eq(Object v){return equals(v);}}}",
+            "ObserveE23E003Test": "@IsTest private class ObserveE23E003Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.equals(null).value);payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E003|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E003Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E004",
+      "label": "Integer implicit equals(Object)",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "097a78c3e234f68292890e815c74d4cc9999853ff8d9ca926c22674c8611ed1a",
+            "class:EqFixture": "fc83508ef0ef7943e375641a2fb9a156a87ddf2e5deb3bae3ee35cb25b224698"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Integer equals(Object v){calls++;return 41;}public Integer eq(Object v){return equals(v);}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.eq(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E004|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "fc83508ef0ef7943e375641a2fb9a156a87ddf2e5deb3bae3ee35cb25b224698",
+            "class:ObserveE23E004Test": "f713807e1fa31296835556ff9e21f66396480990ca6d9a9e399efa32786f6292"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Integer equals(Object v){calls++;return 41;}public Integer eq(Object v){return equals(v);}}}",
+            "ObserveE23E004Test": "@IsTest private class ObserveE23E004Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.eq(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E004|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E004Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E005",
+      "label": "Integer explicit equals(Object)",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "4debebd3fe689865a242e5d4940f8e76eb06f043ef400b339958ef7e3b4c85b9",
+            "class:EqFixture": "91e28235b00d701bd83f565705abf64d15d9e55e7e46718057e6a0a9f72038f1"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Integer equals(Object v){calls++;return 41;}public Integer eq(Object v){return this.equals(v);}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.eq(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E005|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "91e28235b00d701bd83f565705abf64d15d9e55e7e46718057e6a0a9f72038f1",
+            "class:ObserveE23E005Test": "cfd9ebe25d21131020af7779339f9d08ab51612f35889c28565cb474c33885e7"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Integer equals(Object v){calls++;return 41;}public Integer eq(Object v){return this.equals(v);}}}",
+            "ObserveE23E005Test": "@IsTest private class ObserveE23E005Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.eq(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E005|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E005Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E006",
+      "label": "Integer outside equals(Object)",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "98d164e4f0c5df0d29ba672f9c5d2831cc648c4d53f8c1d38081ecd9113af6f1",
+            "class:EqFixture": "fc83508ef0ef7943e375641a2fb9a156a87ddf2e5deb3bae3ee35cb25b224698"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Integer equals(Object v){calls++;return 41;}public Integer eq(Object v){return equals(v);}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.equals(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E006|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "fc83508ef0ef7943e375641a2fb9a156a87ddf2e5deb3bae3ee35cb25b224698",
+            "class:ObserveE23E006Test": "4422c748869a6ea00f5e0a77c11b2f447a7e2bf9c25eb8b07d1b2d7ce17c6fd5"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": 41
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":41}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Integer equals(Object v){calls++;return 41;}public Integer eq(Object v){return equals(v);}}}",
+            "ObserveE23E006Test": "@IsTest private class ObserveE23E006Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.equals(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E006|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E006Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E007",
+      "label": "String implicit equals(Object)",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "1d32c050e08cfd984dc4c92497f6c86b6fb3d4cfb7706ce828982f14db834f1e",
+            "class:EqFixture": "0b96a990c93d527db898633b85c22874def77c38ce7b2b71d348173787942f2e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public String equals(Object v){calls++;return 'user-equals';}public String eq(Object v){return equals(v);}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.eq(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E007|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "0b96a990c93d527db898633b85c22874def77c38ce7b2b71d348173787942f2e",
+            "class:ObserveE23E007Test": "588381084861d5677089352c7add0d7a18ba9f925d33cc6e200502ea41f32e5b"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public String equals(Object v){calls++;return 'user-equals';}public String eq(Object v){return equals(v);}}}",
+            "ObserveE23E007Test": "@IsTest private class ObserveE23E007Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.eq(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E007|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E007Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E008",
+      "label": "String explicit equals(Object)",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "0abd32feb49af7814689c4ac678858232cd64fd4a67a44e5945f883c446736e3",
+            "class:EqFixture": "217be5162db27d3ed1da08b6673dac6b5188a57940eaa376e1f51bc26e48aaea"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public String equals(Object v){calls++;return 'user-equals';}public String eq(Object v){return this.equals(v);}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.eq(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E008|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "217be5162db27d3ed1da08b6673dac6b5188a57940eaa376e1f51bc26e48aaea",
+            "class:ObserveE23E008Test": "9cb8acfd38144d6c97e5e95bc31e1ea5f040a098178babc3ef8f8cd18d476ead"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public String equals(Object v){calls++;return 'user-equals';}public String eq(Object v){return this.equals(v);}}}",
+            "ObserveE23E008Test": "@IsTest private class ObserveE23E008Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.eq(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E008|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E008Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E009",
+      "label": "String outside equals(Object)",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "4b14e2bbe8707ed48eee07d2ad2ecd9ce9382deb7a2085489ba83f7bd6815d2b",
+            "class:EqFixture": "0b96a990c93d527db898633b85c22874def77c38ce7b2b71d348173787942f2e"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public String equals(Object v){calls++;return 'user-equals';}public String eq(Object v){return equals(v);}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.equals(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E009|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "0b96a990c93d527db898633b85c22874def77c38ce7b2b71d348173787942f2e",
+            "class:ObserveE23E009Test": "b570c16f0c758a4b62e54cc645cf86f93bc54f24b689f0423e3352678a6c1b57"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": "user-equals"
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":\"user-equals\"}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public String equals(Object v){calls++;return 'user-equals';}public String eq(Object v){return equals(v);}}}",
+            "ObserveE23E009Test": "@IsTest private class ObserveE23E009Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.equals(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E009|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E009Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E010",
+      "label": "Boolean implicit equals(Object)",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "7e3597b500442d50766e665de225182542178902ef4f8a30628607638137f2ab",
+            "class:EqFixture": "7c044c8f7be8661dac6884213cc11d9b5083a0c19592746b9e46f4bbee160cf0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Boolean equals(Object v){calls++;return true;}public Boolean eq(Object v){return equals(v);}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.eq(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E010|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "7c044c8f7be8661dac6884213cc11d9b5083a0c19592746b9e46f4bbee160cf0",
+            "class:ObserveE23E010Test": "ee7d269ab053d59a6dc1cf4f2feff8b0286309289d0b4e413c684e324f4eac97"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Boolean equals(Object v){calls++;return true;}public Boolean eq(Object v){return equals(v);}}}",
+            "ObserveE23E010Test": "@IsTest private class ObserveE23E010Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.eq(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E010|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E010Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E011",
+      "label": "Boolean explicit equals(Object)",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "48851a8e5ecc15b3cc5709e17fd17c0c92cac42533490aaed1cee20b7ee34268",
+            "class:EqFixture": "69cfdc0f53f3f6be94cd23bd6c2b925f340728192ec545d5ec7e4afc935d1327"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Boolean equals(Object v){calls++;return true;}public Boolean eq(Object v){return this.equals(v);}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.eq(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E011|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "69cfdc0f53f3f6be94cd23bd6c2b925f340728192ec545d5ec7e4afc935d1327",
+            "class:ObserveE23E011Test": "603f44de399e34d57116e82131922f26f0e4b303def2f702724f9afca7f22403"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Boolean equals(Object v){calls++;return true;}public Boolean eq(Object v){return this.equals(v);}}}",
+            "ObserveE23E011Test": "@IsTest private class ObserveE23E011Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.eq(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E011|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E011Test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "E23E012",
+      "label": "Boolean outside equals(Object)",
+      "role": "positive-or-rejection",
+      "routes": {
+        "anonymous": {
+          "sourceSha256": {
+            "anonymous": "bca9415e007d2dba6e6cb0642857e591f0d12607e98e14e8ead32dc40343ead2",
+            "class:EqFixture": "7c044c8f7be8661dac6884213cc11d9b5083a0c19592746b9e46f4bbee160cf0"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Boolean equals(Object v){calls++;return true;}public Boolean eq(Object v){return equals(v);}}}"
+          },
+          "anonymous": "Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.equals(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E012|'+packetJson);"
+        },
+        "isTest": {
+          "sourceSha256": {
+            "class:EqFixture": "7c044c8f7be8661dac6884213cc11d9b5083a0c19592746b9e46f4bbee160cf0",
+            "class:ObserveE23E012Test": "f5a75098e122dd0d930aff07dfaa2979227058bb7da4663b2cc82d1740a0e9c6"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            },
+            "67.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            },
+            "68.0": {
+              "native": {
+                "outcome": "runtime",
+                "value": {
+                  "calls": 1,
+                  "returned": true
+                }
+              },
+              "outcome": "runtime",
+              "value": "{\"calls\":1,\"returned\":true}"
+            }
+          },
+          "classes": {
+            "EqFixture": "public class EqFixture {public class EqSubject {public Integer calls=0;public Integer hashCalls=0;public Boolean equals(Object v){calls++;return true;}public Boolean eq(Object v){return equals(v);}}}",
+            "ObserveE23E012Test": "@IsTest private class ObserveE23E012Test{@IsTest static void observe(){Map<String,Object> payload=new Map<String,Object>();try{EqFixture.EqSubject s=new EqFixture.EqSubject();payload.put('returned',s.equals(null));payload.put('calls',s.calls);}catch(Exception e){payload.put('exceptionType',e.getTypeName());payload.put('exceptionMessage',e.getMessage()==null?null:e.getMessage().left(300));}String packetJson=JSON.serialize(payload);String packetMessage=(String)payload.get('exceptionMessage');if(packetMessage!=null && packetJson.length()>550){while(packetMessage.length()>0 && packetJson.length()>550){packetMessage=packetMessage.left(packetMessage.length()-1);payload.put('exceptionMessage',packetMessage);packetJson=JSON.serialize(payload);}}if(packetJson.length()>550){packetJson=JSON.serialize(new Map<String,Object>{'packetError'=>'payload-bound','length'=>packetJson.length()});}System.assert(false,'E23_RESULT|E23E012|'+packetJson);}}"
+          },
+          "tests": [
+            "ObserveE23E012Test"
+          ]
+        }
+      }
+    }
+  ]
+}

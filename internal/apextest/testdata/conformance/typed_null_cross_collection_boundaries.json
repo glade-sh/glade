@@ -1,0 +1,304 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "cluster": "cross-collection-boundaries",
+  "shapeCount": 2,
+  "nativeObservationCount": 12,
+  "capturedObservationCount": 12,
+  "packetRowsSha256": "fd89c1212d2e4ba87aad001ff72bea54d0e8f28a0bdb393af72cc51d4c5a54b3",
+  "nativeAnswersSha256": "4651a770309cb61b6f66e523aa069debcea95293c26ac3e83a358a9d1971ac5c",
+  "sourceManifestSha256": "3164f5fc42dba3b344bd172d8721f1722f20f6b35478029ce7a8af178c933d2b",
+  "evidenceSHA256": {
+    "62.0@anonymous": {
+      "tsvSha256": "d3207f68db5632bc09eeaf61fec7c6d6bae3382f0098852aa2a9a6edfeab2a48",
+      "runSha256": "9d44838be7a34c062803ffb7e279b73acfa28d865463335a136ecea977246f75"
+    },
+    "62.0@istest": {
+      "tsvSha256": "47f690e6680100b77ab3a9de63df17971769f4aa6931d8bc4ebc3db4e2165396",
+      "runSha256": "9ac070e9bd71ab3b9ba4d32aadb8227584a4e24627530f904f51e16302d7518b"
+    },
+    "67.0@anonymous": {
+      "tsvSha256": "d3207f68db5632bc09eeaf61fec7c6d6bae3382f0098852aa2a9a6edfeab2a48",
+      "runSha256": "35639d89ccfe1b78301dbd5576a8c4b0677de0d20da54c559b7629c935839139"
+    },
+    "67.0@istest": {
+      "tsvSha256": "47f690e6680100b77ab3a9de63df17971769f4aa6931d8bc4ebc3db4e2165396",
+      "runSha256": "c539330592ce3c9d5f99d9825563969279ea660a4c6b3c1062dc81a2bf67aeff"
+    },
+    "68.0@anonymous": {
+      "tsvSha256": "d3207f68db5632bc09eeaf61fec7c6d6bae3382f0098852aa2a9a6edfeab2a48",
+      "runSha256": "6d2142dc8227613e0c73792d581ec1f5b56f109228603907192d8e128a66a017"
+    },
+    "68.0@istest": {
+      "tsvSha256": "47f690e6680100b77ab3a9de63df17971769f4aa6931d8bc4ebc3db4e2165396",
+      "runSha256": "4afe1949540dcb7373065039fb5b913d605a2126f779ca15bff62adeb8a7a0d6"
+    }
+  },
+  "rows": [
+    {
+      "id": "C156TN_090",
+      "question": "null Set<Node> field passed to List overloads",
+      "role": "compile-rejection-candidate",
+      "twin": "C156TN_008",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "class TN090Node {}\nclass TN090Dispatch { public String pick(List<String> v){return 'strings';} public String pick(List<Object> v){return 'objects';} public String pick(List<Id> v){return 'ids';} }\nclass TN090Bag { public Set<TN090Node> items; }\nString r;r=new TN090Dispatch().pick(new TN090Bag().items);System.assert(false,'C156_RESULT|C156TN_090|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "a3c0e248c2d02b68f06d7741e6ed167a2ae397e6580f93db2dea82aadf072c2c"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "compiled": false,
+                "compileProblem": "Method does not exist or incorrect signature: void pick(Set<TN090Node>) from the type TN090Dispatch",
+                "line": 4,
+                "column": 32,
+                "success": false,
+                "exceptionMessage": null
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void pick(Set<TN090Node>) from the type TN090Dispatch"
+            },
+            "67.0": {
+              "native": {
+                "compiled": false,
+                "compileProblem": "Method does not exist or incorrect signature: void pick(Set<TN090Node>) from the type TN090Dispatch",
+                "line": 4,
+                "column": 32,
+                "success": false,
+                "exceptionMessage": null
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void pick(Set<TN090Node>) from the type TN090Dispatch"
+            },
+            "68.0": {
+              "native": {
+                "compiled": false,
+                "compileProblem": "Method does not exist or incorrect signature: void pick(Set<TN090Node>) from the type TN090Dispatch",
+                "line": 4,
+                "column": 32,
+                "success": false,
+                "exceptionMessage": null
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void pick(Set<TN090Node>) from the type TN090Dispatch"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN090Observe": "@IsTest private class TN090Observe{@IsTest static void observe(){String r;r=new TN090Dispatch().pick(new TN090Bag().items);System.assert(false,'C156_RESULT|C156TN_090|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}",
+            "TN090Node": "public class TN090Node {}",
+            "TN090Dispatch": "public class TN090Dispatch { public String pick(List<String> v){return 'strings';} public String pick(List<Object> v){return 'objects';} public String pick(List<Id> v){return 'ids';} }",
+            "TN090Bag": "public class TN090Bag { public Set<TN090Node> items; }"
+          },
+          "tests": [
+            "TN090Observe"
+          ],
+          "sourceSha256": {
+            "class:TN090Observe": "0a705d42db5b197b0384d8cf192be7c3712d091526d8e81ef332a28f9426b0fb",
+            "class:TN090Node": "9429896879edb27ed5400233009548cce4542153cffe283df5ab5b89874c21f2",
+            "class:TN090Dispatch": "ccaa0308b6a65623dbc43abc463c81be6232811a19763f70fbc0bd2b9ec83513",
+            "class:TN090Bag": "db0a3025b8355cda9905d8217d92bfbcbce05fc973264f6516555badace7dd24"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "TN090Observe",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method does not exist or incorrect signature: void pick(Set<TN090Node>) from the type TN090Dispatch"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void pick(Set<TN090Node>) from the type TN090Dispatch"
+            },
+            "67.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "TN090Observe",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method does not exist or incorrect signature: void pick(Set<TN090Node>) from the type TN090Dispatch"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void pick(Set<TN090Node>) from the type TN090Dispatch"
+            },
+            "68.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "TN090Observe",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method does not exist or incorrect signature: void pick(Set<TN090Node>) from the type TN090Dispatch"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void pick(Set<TN090Node>) from the type TN090Dispatch"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C156TN_091",
+      "question": "null Map<String,Node> field passed to List overloads",
+      "role": "compile-rejection-candidate",
+      "twin": "C156TN_008",
+      "disposition": "conformance",
+      "routes": {
+        "anonymous": {
+          "anonymous": "class TN091Node {}\nclass TN091Dispatch { public String pick(List<String> v){return 'strings';} public String pick(List<Object> v){return 'objects';} public String pick(List<Id> v){return 'ids';} }\nclass TN091Bag { public Map<String,TN091Node> items; }\nString r;r=new TN091Dispatch().pick(new TN091Bag().items);System.assert(false,'C156_RESULT|C156TN_091|'+JSON.serialize(new Map<String,Object>{'r'=>r}));",
+          "sourceSha256": {
+            "anonymous": "c049a2bb617e44b6590fc7502bf5714af8ab53eeb68fe393673d419ff2fee33f"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "compiled": false,
+                "compileProblem": "Method does not exist or incorrect signature: void pick(Map<String,TN091Node>) from the type TN091Dispatch",
+                "line": 4,
+                "column": 32,
+                "success": false,
+                "exceptionMessage": null
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void pick(Map<String,TN091Node>) from the type TN091Dispatch"
+            },
+            "67.0": {
+              "native": {
+                "compiled": false,
+                "compileProblem": "Method does not exist or incorrect signature: void pick(Map<String,TN091Node>) from the type TN091Dispatch",
+                "line": 4,
+                "column": 32,
+                "success": false,
+                "exceptionMessage": null
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void pick(Map<String,TN091Node>) from the type TN091Dispatch"
+            },
+            "68.0": {
+              "native": {
+                "compiled": false,
+                "compileProblem": "Method does not exist or incorrect signature: void pick(Map<String,TN091Node>) from the type TN091Dispatch",
+                "line": 4,
+                "column": 32,
+                "success": false,
+                "exceptionMessage": null
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void pick(Map<String,TN091Node>) from the type TN091Dispatch"
+            }
+          }
+        },
+        "isTest": {
+          "classes": {
+            "TN091Observe": "@IsTest private class TN091Observe{@IsTest static void observe(){String r;r=new TN091Dispatch().pick(new TN091Bag().items);System.assert(false,'C156_RESULT|C156TN_091|'+JSON.serialize(new Map<String,Object>{'r'=>r}));}}",
+            "TN091Node": "public class TN091Node {}",
+            "TN091Dispatch": "public class TN091Dispatch { public String pick(List<String> v){return 'strings';} public String pick(List<Object> v){return 'objects';} public String pick(List<Id> v){return 'ids';} }",
+            "TN091Bag": "public class TN091Bag { public Map<String,TN091Node> items; }"
+          },
+          "tests": [
+            "TN091Observe"
+          ],
+          "sourceSha256": {
+            "class:TN091Observe": "0b27f3dfdde72305b7c10b545f917e732fa90ec85731ff529e888ec71cb909d4",
+            "class:TN091Node": "52bf0bdbd8995988b437036a843c0a647568ed7966071111ecfea99fd0e3fec9",
+            "class:TN091Dispatch": "0274ad8720fcb1801c082c506758fd4b48a7252da62d3ac617404ea2aef13381",
+            "class:TN091Bag": "1383d2890a42771c1ed94a2ab74fd80b06749837cc720fcf151e80854c9ec975"
+          },
+          "expectedByAPI": {
+            "62.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "TN091Observe",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method does not exist or incorrect signature: void pick(Map<String,TN091Node>) from the type TN091Dispatch"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void pick(Map<String,TN091Node>) from the type TN091Dispatch"
+            },
+            "67.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "TN091Observe",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method does not exist or incorrect signature: void pick(Map<String,TN091Node>) from the type TN091Dispatch"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void pick(Map<String,TN091Node>) from the type TN091Dispatch"
+            },
+            "68.0": {
+              "native": {
+                "status": "Failed",
+                "checkOnly": true,
+                "code": null,
+                "compile": [
+                  {
+                    "name": "TN091Observe",
+                    "type": "ApexClass",
+                    "line": 1,
+                    "problem": "Method does not exist or incorrect signature: void pick(Map<String,TN091Node>) from the type TN091Dispatch"
+                  }
+                ],
+                "testFailures": [],
+                "testPasses": []
+              },
+              "outcome": "reject",
+              "primary": "Method does not exist or incorrect signature: void pick(Map<String,TN091Node>) from the type TN091Dispatch"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

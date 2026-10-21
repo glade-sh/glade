@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <apiVersion>67.0</apiVersion>
+  <assignments><name>Set_Text</name><label>Set Text</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>$Record.Text__c</assignToReference><operator>Assign</operator><value><stringValue>create-hit</stringValue></value></assignmentItems></assignments>
+  <interviewLabel>FlowCoreN2CreateOnly {!$Flow.CurrentDateTime}</interviewLabel><label>Flow Core N2 Create Only</label><processType>AutoLaunchedFlow</processType>
+  <start><locationX>0</locationX><locationY>0</locationY><object>FlowCoreN2Record__c</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordBeforeSave</triggerType><connector><targetReference>Set_Text</targetReference></connector></start>
+  <status>Active</status>
+</Flow>
