@@ -38,3 +38,43 @@ func TestStandardObjectConstructorStillRejectsFeatureGatedFields(t *testing.T) {
 		}
 	}
 }
+
+// Only ordinary standard fields the catalog omits are opened. Custom and
+// relationship custom fields on a standard object stay strict (metadata is
+// complete for them), at every checked API version.
+func TestStandardObjectConstructorKeepsCustomFieldsStrictAtEveryAPI(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		index := typesys.Index{Project: typesys.ProjectInfo{SourceAPIVersion: api}}
+		for _, source := range []string{
+			"Account a = new Account(Name = 'x', Missing__c = 'y');",
+			"Account a = new Account(Name = 'x', Missing__r = null);",
+		} {
+			if result := AnalyzeAnonymous(index, source, api); !result.HasErrors() {
+				t.Errorf("API %s %q: undefined custom field was accepted", api, source)
+			}
+		}
+		if result := AnalyzeAnonymous(index, "Account a = new Account(Name = 'x', Tradestyle = 'y');", api); result.HasErrors() {
+			t.Errorf("API %s: ordinary missing standard field was rejected: %v", api, result.Diagnostics)
+		}
+	}
+}
+
+// The same rules hold when the constructor sits inside a named class.
+func TestStandardObjectConstructorFieldRulesInNamedClass(t *testing.T) {
+	cases := []struct {
+		name, field string
+		wantError   bool
+	}{
+		{"ordinary standard field omitted from the catalog", "Tradestyle", false},
+		{"custom field", "Missing__c", true},
+		{"feature-gated person account field", "FirstName", true},
+	}
+	for _, c := range cases {
+		result := analyzeDeclarationProject(t, map[string]string{
+			"CtorProbe.cls": "public class CtorProbe { public static Account build() { return new Account(Name = 'x', " + c.field + " = 'y'); } }",
+		})
+		if result.HasErrors() != c.wantError {
+			t.Errorf("%s: HasErrors=%v want %v: %v", c.name, result.HasErrors(), c.wantError, result.Diagnostics)
+		}
+	}
+}
