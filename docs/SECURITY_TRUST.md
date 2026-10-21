@@ -20,6 +20,12 @@ not public issues. If GitHub reporting is unavailable, use
   that compiled Go analysis follows the build, so this path setting alone does
   not prove generated Go is excluded from the database or that analysis will
   finish within the budget. Hosted execution still needs verification.
+  Both profiles exclude `go/cookie-httponly-not-set` and
+  `go/cookie-secure-not-set`: they never finished in run 39616762308. The only
+  cookie sink is the Visualforce Apex Cookie emulation in
+  `internal/server/visualforce.go`, which writes the flags the Apex program
+  set. A server test pins those flags, and a source scan fails if another
+  non-test file sets a cookie.
 - `gosec` uploads SARIF for source-pattern review.
 - `npm audit --omit=dev --audit-level=high` checks packaged JavaScript
   production dependencies in the LWC toolchain and VS Code extension.

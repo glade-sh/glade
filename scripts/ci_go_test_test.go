@@ -1126,6 +1126,8 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		"go/uncontrolled-allocation-size",
 		"go/unsafe-quoting",
 		"go/unvalidated-url-redirection",
+		"go/cookie-httponly-not-set",
+		"go/cookie-secure-not-set",
 	}
 	prWaivers := []string{
 		"go/incomplete-hostname-regexp",
@@ -1133,6 +1135,8 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		"go/weak-sensitive-data-hashing",
 		"go/allocation-size-overflow",
 		"go/incorrect-integer-conversion",
+		"go/cookie-httponly-not-set",
+		"go/cookie-secure-not-set",
 	}
 	const initPin = "uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1"
 	if count := strings.Count(codeql, initPin); count != 2 {
@@ -1211,7 +1215,8 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	assertCodeQLProfileWaivers(t, prInit, prWaivers)
 	assertCodeQLProfileWaivers(t, fullInit, fullBranchWaivers)
 	// The completed full-profile scan in run 38072152005 resolved these 27
-	// queries. Its two isolated queries are the only additional full waivers.
+	// queries. Its two isolated queries and the two cookie queries that never
+	// finished in run 39616762308 are the only other waivers.
 	fullProfileQueries := []string{
 		"go/request-forgery",
 		"go/html-template-escaping-bypass-xss",
@@ -1249,8 +1254,8 @@ func TestSecurityWorkflowContract(t *testing.T) {
 			retained++
 		}
 	}
-	if retained != 27 {
-		t.Errorf("full CodeQL profile retains %d observed queries, want 27", retained)
+	if retained != 25 {
+		t.Errorf("full CodeQL profile retains %d observed queries, want 25", retained)
 	}
 	for _, query := range []string{"go/unsafe-quoting", "go/unvalidated-url-redirection"} {
 		if strings.Contains(prInit, query) {

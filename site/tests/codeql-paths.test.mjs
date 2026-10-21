@@ -15,5 +15,7 @@ for (const [route, step] of [
     assert.match(block, /          config: \|\n            paths-ignore:\n              - '\*\*\/\*_generated\.go'\n/);
     assert.match(block, /            queries:\n              - uses: security-extended\n/);
     assert.match(block, /            query-filters:\n/);
+    assert.match(block, /                    - go\/cookie-httponly-not-set\n/);
+    assert.match(block, /                    - go\/cookie-secure-not-set\n/);
   });
 }

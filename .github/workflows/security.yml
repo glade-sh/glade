@@ -165,6 +165,13 @@ jobs:
                     # This query was the only one still running when PR run
                     # 30205055311 hit its 60-minute job timeout.
                     - go/incorrect-integer-conversion
+                    # These two never finished in run 39616762308 (25 of 27
+                    # queries done within 3 minutes). The only cookie sink is
+                    # the Visualforce Apex Cookie emulation in
+                    # internal/server/visualforce.go, whose Secure and HttpOnly
+                    # come from the Apex program. Tests pin that sink.
+                    - go/cookie-httponly-not-set
+                    - go/cookie-secure-not-set
           build-mode: manual
       - name: Initialize full-branch CodeQL
         if: github.event_name != 'pull_request' || github.event.pull_request.changed_files >= 300
@@ -200,6 +207,13 @@ jobs:
                     # Small PR diff-informed analysis retains both queries.
                     - go/unsafe-quoting
                     - go/unvalidated-url-redirection
+                    # These two never finished in run 39616762308 (25 of 27
+                    # queries done within 3 minutes). The only cookie sink is
+                    # the Visualforce Apex Cookie emulation in
+                    # internal/server/visualforce.go, whose Secure and HttpOnly
+                    # come from the Apex program. Tests pin that sink.
+                    - go/cookie-httponly-not-set
+                    - go/cookie-secure-not-set
           build-mode: manual
       - name: Build Glade for CodeQL
         run: go build -o "${RUNNER_TEMP}/glade-codeql" ./cmd/glade
