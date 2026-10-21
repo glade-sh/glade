@@ -21,3 +21,20 @@ func TestStandardObjectConstructorAcceptsStandardFieldMissingFromCatalog(t *test
 		}
 	}
 }
+
+// Fields that exist only under an org feature (Person Account names, the state
+// and country picklists, optional gated fields) are not catalog gaps: with the
+// feature off, native rejects them at compile time, so Glade must too.
+func TestStandardObjectConstructorStillRejectsFeatureGatedFields(t *testing.T) {
+	index := typesys.Index{Project: typesys.ProjectInfo{SourceAPIVersion: "67.0"}}
+	for _, source := range []string{
+		"Account a = new Account(FirstName = 'x');",
+		"Account a = new Account(LastName = 'x', PersonEmail = 'y');",
+		"Contact c = new Contact(LastName = 'x', IsPersonAccount = true);",
+		"Account a = new Account(Name = 'x', BillingStateCode = 'CA');",
+	} {
+		if result := AnalyzeAnonymous(index, source, "67.0"); !result.HasErrors() {
+			t.Errorf("%q: feature-gated standard field was accepted", source)
+		}
+	}
+}
