@@ -228,3 +228,28 @@ func TestSourceUnitGenerationRunClassAndCustomMetadataRoutesRejectTraversal(t *t
 		})
 	}
 }
+
+func TestProjectMetadataGenerationSourceRootPathBoundaries(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "source")
+	for _, tc := range []struct {
+		name, root, path string
+		allowed          bool
+	}{
+		{"child", root, filepath.Join(root, "nested", "file.xml"), true},
+		{"cleaned-child", root, root + "/nested/../file.xml", true},
+		{"dot-prefixed-child", root, filepath.Join(root, "..owned", "file.xml"), true},
+		{"parent", root, root + "/../file.xml", false},
+		{"sibling-prefix", root, root + "-other/file.xml", false},
+		{"missing-root", "", filepath.Join(root, "file.xml"), false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			path, err := sourceRootPath(tc.root, tc.path)
+			if (err == nil) != tc.allowed {
+				t.Fatalf("sourceRootPath = %q, %v, allowed=%v", path, err, tc.allowed)
+			}
+			if tc.allowed && path != filepath.Clean(tc.path) {
+				t.Fatalf("path = %q, want cleaned %q", path, tc.path)
+			}
+		})
+	}
+}

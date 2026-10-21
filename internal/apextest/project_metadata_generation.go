@@ -2,7 +2,10 @@ package apextest
 
 import (
 	"crypto/sha256"
+	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/resource"
@@ -31,7 +34,7 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 			paths = append(paths, loaded.PermissionSetGroupFiles...)
 			paths = append(paths, resource.SetupRecordMetadataFiles(loaded)...)
 			for _, path := range paths {
-				data, err := os.ReadFile(path) // #nosec G304 -- metadata path comes from the loaded project snapshot.
+				data, err := readProjectMetadataFile(loaded, path)
 				if err != nil {
 					return err
 				}
@@ -63,6 +66,7 @@ func (cache *sourceCache) readCapturedProjectMetadata(path string) ([]byte, erro
 	cache.mu.RLock()
 	body, exists := cache.projectMetadataBodies[path]
 	prepared := cache.projectMetadataPrepared
+	capturedProject := cache.capturedProject
 	cache.mu.RUnlock()
 	if exists {
 		return []byte(body), nil
@@ -70,7 +74,10 @@ func (cache *sourceCache) readCapturedProjectMetadata(path string) ([]byte, erro
 	if prepared {
 		return nil, incompleteSourceSnapshotError("missing captured project metadata " + path)
 	}
-	return os.ReadFile(path) // #nosec G304 -- indexed project metadata path for an uncaptured snapshot.
+	if capturedProject == nil {
+		return nil, fmt.Errorf("metadata path %q has no indexed source root", path)
+	}
+	return readProjectMetadataFile(*capturedProject, path)
 }
 
 func (cache *sourceCache) capturedProjectSnapshot(root string) (project.Project, error) {
@@ -80,5 +87,72 @@ func (cache *sourceCache) capturedProjectSnapshot(root string) (project.Project,
 	if captured != nil && captured.Root == root {
 		return *captured, nil
 	}
-	return project.Load(root)
+	loaded, err := project.Load(root)
+	if err == nil {
+		cache.seedProjectSnapshot(&loaded)
+	}
+	return loaded, err
+}
+
+// sourceRootPath preserves relative path semantics while checking containment
+// using absolute, cleaned paths. A sibling with the same prefix is not a child.
+func sourceRootPath(root, path string) (string, error) {
+	if strings.TrimSpace(root) == "" {
+		return "", fmt.Errorf("path %q has no indexed source root", path)
+	}
+	absRoot, err := filepath.Abs(filepath.Clean(root))
+	if err != nil {
+		return "", err
+	}
+	absPath, err := filepath.Abs(filepath.Clean(path))
+	if err != nil {
+		return "", err
+	}
+	rel, err := filepath.Rel(absRoot, absPath)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("path %q is outside source root %q", path, root)
+	}
+	return filepath.Clean(path), nil
+}
+
+func readSourceRootFile(root, path string) ([]byte, error) {
+	path, err := sourceRootPath(root, path)
+	if err != nil {
+		return nil, err
+	}
+	return os.ReadFile(filepath.Clean(path))
+}
+
+func readProjectMetadataFile(snapshot project.Project, path string) ([]byte, error) {
+	seen := make(map[*project.Project]bool)
+	var sourceRoot func(*project.Project) string
+	sourceRoot = func(p *project.Project) string {
+		if p == nil || seen[p] {
+			return ""
+		}
+		seen[p] = true
+		if _, err := sourceRootPath(p.Root, path); err == nil {
+			return p.Root
+		}
+		for _, dep := range p.ManagedPackageDependencies {
+			if dep.Status == "loaded" {
+				if root := sourceRoot(dep.Project); root != "" {
+					return root
+				}
+			}
+		}
+		for _, shim := range p.PackageShims {
+			if shim.Status == "loaded" {
+				if root := sourceRoot(shim.Project); root != "" {
+					return root
+				}
+			}
+		}
+		return ""
+	}
+	root := sourceRoot(&snapshot)
+	if root == "" {
+		return nil, fmt.Errorf("metadata path %q is outside source root %q", path, snapshot.Root)
+	}
+	return readSourceRootFile(root, path)
 }

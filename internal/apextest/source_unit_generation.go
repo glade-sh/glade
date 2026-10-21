@@ -36,26 +36,33 @@ func captureRuntimeSourceUnits(index typesys.Index, generation *runtimeMetadataG
 	files := make(map[string]string)
 	for _, record := range index.CustomMetadataRecords {
 		if strings.TrimSpace(record.File) != "" {
-			files[filepath.Clean(record.File)] = filepath.Clean(index.Project.Root)
+			files[filepath.Clean(record.File)] = index.Project.Root
 		}
 	}
 	for _, typ := range index.Types {
 		if typ.Dependency || !typ.HasSourceSnapshot() || strings.TrimSpace(typ.File) == "" {
 			continue
 		}
-		root := filepath.Clean(typ.SourceRoot)
-		if root == "." {
-			root = filepath.Clean(index.Project.Root)
+		root := typ.SourceRoot
+		if strings.TrimSpace(root) == "" || filepath.Clean(root) == "." {
+			root = index.Project.Root
 		}
 		files[filepath.Clean(typ.File)] = root
 	}
 	for file, root := range files {
+		if _, err := sourceRootPath(root, file); err != nil {
+			return nil, err
+		}
+		absRoot, err := filepath.Abs(filepath.Clean(root))
+		if err != nil {
+			return nil, err
+		}
 		unit := "file:" + file
 		for dir := filepath.Dir(file); dir != "" && dir != "."; dir = filepath.Dir(dir) {
 			marker := filepath.Join(dir, "sfdx-project.json")
 			input, captured := generation.inputs[marker]
 			if !captured {
-				data, err := os.ReadFile(marker) // #nosec G304 -- fixed SFDX marker name under an indexed source ancestor.
+				data, err := readSourceRootFile(root, marker)
 				if err != nil && !os.IsNotExist(err) {
 					return nil, err
 				}
@@ -70,7 +77,11 @@ func captureRuntimeSourceUnits(index typesys.Index, generation *runtimeMetadataG
 				unit = runtimeSourceTreeKey(dir, file)
 				break
 			}
-			if dir == root || filepath.Dir(dir) == dir {
+			absDir, err := filepath.Abs(dir)
+			if err != nil {
+				return nil, err
+			}
+			if absDir == absRoot || filepath.Dir(dir) == dir {
 				break
 			}
 		}
