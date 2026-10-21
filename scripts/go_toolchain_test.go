@@ -46,3 +46,43 @@ func TestGoToolchainPins(t *testing.T) {
 		})
 	}
 }
+
+func TestGoToolchainWorkflowAndCacheRoutesMatchModule(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "go.mod"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	match := regexp.MustCompile(`(?m)^go (\d+\.\d+\.\d+)$`).FindStringSubmatch(string(data))
+	if len(match) != 2 {
+		t.Fatal("module must pin a Go patch version")
+	}
+	version := match[1]
+	workflows, err := filepath.Glob(filepath.Join("..", ".github", "workflows", "*.y*ml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	goPin := regexp.MustCompile(`(?m)^\s+go-version: ["']?([\d.]+)`)
+	cachePin := regexp.MustCompile(`go-(?:mod|build)-[^\n]*\b(1\.\d+\.\d+)\b`)
+	var pins, caches int
+	for _, workflow := range workflows {
+		data, err := os.ReadFile(workflow)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, pin := range goPin.FindAllStringSubmatch(string(data), -1) {
+			pins++
+			if pin[1] != version {
+				t.Errorf("%s toolchain = %s, module = %s", workflow, pin[1], version)
+			}
+		}
+		for _, pin := range cachePin.FindAllStringSubmatch(string(data), -1) {
+			caches++
+			if pin[1] != version {
+				t.Errorf("%s cache toolchain = %s, module = %s", workflow, pin[1], version)
+			}
+		}
+	}
+	if pins == 0 || caches == 0 {
+		t.Fatalf("empty workflow toolchain/cache selection: pins=%d caches=%d", pins, caches)
+	}
+}

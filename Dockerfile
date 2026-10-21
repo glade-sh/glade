@@ -15,7 +15,7 @@
 #
 #   docker build -t glade-playground .
 
-FROM golang:1.26 AS build
+FROM golang:1.26.10 AS build
 WORKDIR /src
 
 # Download public module dependencies. The replaced parser module is local

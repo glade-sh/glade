@@ -57,6 +57,8 @@ installation. It is a planning range, not a confidence interval.
 
 ## Local comparison
 
+Current builds pin Go 1.26.10. The measurements below retain their recorded toolchain.
+
 [measurements.tsv](measurements.tsv) records bounded local comparisons of the
 integration tip before schema/lazy-index changes and the current integration
 base. Go 1.26.9,
