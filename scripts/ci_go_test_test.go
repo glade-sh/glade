@@ -776,7 +776,7 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 		t.Error("Apex duration history input and matrix jobs must be read-only")
 	}
 	for _, want := range []string{
-		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "apextest-duration-history-v1", "runner.os", "runner.arch", "1.26.9", "hashFiles('go.sum')",
+		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "apextest-duration-history-v1", "runner.os", "runner.arch", "1.26.10", "hashFiles('go.sum')",
 		"CI_APEXTEST_HISTORY_PATH", "CI_DURATION_HISTORY_CACHE_REF", "github.event.pull_request.base.sha", "github.event.before",
 		"mkdir -p ci-artifacts/apextest-history-input", "apextest-duration-history.json", "name: apextest-history-input",
 		"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0",
@@ -981,7 +981,7 @@ func TestCIGoCacheOwnership(t *testing.T) {
 		}
 		for _, key := range keys {
 			for _, dimension := range []string{
-				"cache-v1", "1.26.9", "runner.os", "runner.arch", sumExpression,
+				"cache-v1", "1.26.10", "runner.os", "runner.arch", sumExpression,
 				"github.sha", "github.run_id", "github.run_attempt",
 			} {
 				if !strings.Contains(key, dimension) {
@@ -1015,7 +1015,7 @@ func TestCIGoCacheOwnership(t *testing.T) {
 	if got := strings.Count(security, "ci-test-${{ hashFiles('go.sum') }}-"); got != 6 {
 		t.Errorf("security.yml digest-scoped ci-test restore prefixes = %d, want 6", got)
 	}
-	if got := strings.Count(security, "1.26.9-ci-test-"); got != 12 {
+	if got := strings.Count(security, "1.26.10-ci-test-"); got != 12 {
 		t.Errorf("security.yml ci-test restore prefixes = %d, want 12", got)
 	}
 
@@ -2094,7 +2094,7 @@ func browserWorkflowProblem(workflow string) string {
 		"github.event_name != 'pull_request'",
 		"run_expensive=$UNCONDITIONAL",
 		"uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0",
-		"go-version: \"1.26.9\"",
+		"go-version: \"1.26.10\"",
 		"cache: false",
 		"uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0",
 		"node-version: \"22\"",
@@ -3135,7 +3135,7 @@ func TestCINodeIntegrationWorkflowAndPurePartition(t *testing.T) {
 	node := jobs["node-integration"]
 	for _, marker := range []string{
 		"runs-on: ubuntu-latest", "timeout-minutes: 30", "GOMAXPROCS: \"2\"",
-		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.9\"", "cache: false",
+		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.10\"", "cache: false",
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", "node-version: \"22\"", "cache: npm",
 		"cache-dependency-path: third_party/lwc/package-lock.json", "npm ci --prefix third_party/lwc",
 		"scripts/ci-go-test.sh node-integration", "ci-node-integration",
@@ -3235,7 +3235,7 @@ func TestCINestedSourcesWorkflowContract(t *testing.T) {
 	for _, marker := range []string{
 		"runs-on: ubuntu-latest", "timeout-minutes: 30",
 		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
-		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.9\"", "cache: false",
+		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.10\"", "cache: false",
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", "node-version: \"22\"",
 		"- name: Test vendored parser", "(cd third_party/glade-apex-parser && go test ./...)",
 		"- name: Test vendored parser without CGO", "(cd third_party/glade-apex-parser && CGO_ENABLED=0 go test ./...)",
@@ -3455,9 +3455,9 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 		job := jobs[jobName]
 		sumPath := "go.sum"
 		for _, marker := range []string{
-			"GOMAXPROCS: \"2\"", "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.9\"", "cache: false",
+			"GOMAXPROCS: \"2\"", "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.10\"", "cache: false",
 			"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "continue-on-error: true", "if: success()",
-			"${{ runner.os }}-${{ runner.arch }}-1.26.9-" + namespace,
+			"${{ runner.os }}-${{ runner.arch }}-1.26.10-" + namespace,
 			"${{ hashFiles('" + sumPath + "') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
 		} {
 			if !strings.Contains(job, marker) {
@@ -3609,7 +3609,7 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 	for _, want := range []string{
 		"timeout-minutes: 30",
 		"GOMAXPROCS: \"2\"",
-		"go-version: \"1.26.9\"",
+		"go-version: \"1.26.10\"",
 		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
 		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0",
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0",
@@ -3619,8 +3619,8 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 		"shard: [0, 1]",
 		"cache: false",
 		"ci-apextest-${{ matrix.shard }}",
-		"go-mod-v1-1.26.9-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
-		"go-build-v1-1.26.9-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+		"go-mod-v1-1.26.10-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+		"go-build-v1-1.26.10-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
 		"scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
 		"if: always()",
 		"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0",

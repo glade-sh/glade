@@ -30,7 +30,7 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 		"macos-15-intel",
 		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
 		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0",
-		`go-version: "1.26.9"`,
+		`go-version: "1.26.10"`,
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0",
 		`node-version: "22"`,
 		"shared-payload:",
@@ -530,7 +530,7 @@ func TestReleaseBuildRejectsDirtyWorktree(t *testing.T) {
 	out := runReleaseBuildFixtureError(t, root, script, npmLog, filepath.Join(root, "platform-dist"), map[string]string{
 		"RELEASE_SHARED_PAYLOAD_ARCHIVE": filepath.Join(payloadDist, "glade-shared-payload.tar.gz"),
 		"RELEASE_SHARED_PAYLOAD_SHA256":  filepath.Join(payloadDist, "glade-shared-payload.tar.gz.sha256"),
-		"FAKE_GIT_STATUS":                 "?? .release-shared/payload.tar.gz\n",
+		"FAKE_GIT_STATUS":                "?? .release-shared/payload.tar.gz\n",
 	})
 	if !strings.Contains(out, "release build requires a clean Git worktree") {
 		t.Fatalf("dirty-worktree rejection lacked release diagnostic:\n%s", out)

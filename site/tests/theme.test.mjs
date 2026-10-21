@@ -196,13 +196,13 @@ test("release notes record final v0.2.12 validation", () => {
 });
 
 test("launch docs identify v0.3.0 and retain historical release notes", () => {
-  const unreleased = releaseNotes.match(/^## (?:Unreleased|v\d+\.\d+\.\d+)[ \t]*\r?\n([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
-  assert.ok(unreleased, "release notes should contain a current release section");
-  const unreleasedText = unreleased[1].replace(/\s+/g, " ");
-  assert.match(unreleasedText, /playground --example refinement-service --once/);
-  assert.match(unreleasedText, /JSON schema advances to `1\.1`/);
-  assert.match(unreleasedText, /readinessScope: "apex"/);
-  assert.match(unreleasedText, /Salesforce was not contacted/);
+  const current = releaseNotes.split("## v0.3.0\n")[1]?.split(/\n## /)[0];
+  assert.ok(current, "release notes should contain a v0.3.0 section");
+  const currentText = current.replace(/\s+/g, " ");
+  assert.match(currentText, /playground --example refinement-service --once/);
+  assert.match(currentText, /JSON schema advances to `1\.1`/);
+  assert.match(currentText, /readinessScope: "apex"/);
+  assert.match(currentText, /Salesforce was not contacted/);
 
   const candidate = releaseNotes.match(/^## v0\.2\.15 - 2026-09-04\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(candidate, "release notes should contain a v0.2.15 section");
