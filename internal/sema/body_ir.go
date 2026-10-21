@@ -3381,8 +3381,20 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 				item.Message = "Field is not writeable: " + fieldName
 				return []diagnostic.Diagnostic{item}
 			}
+			// Constructor initializers require a declared field. Field-path
+			// resolution can instead return an opaque compatibility fallback.
+			field, exists := semaResolveField(model, resolvedTypeName, arg.Name, make(map[string]bool))
+			if !exists {
+				if members, _, known := semaLookupTypeMembers(model, resolvedTypeName); known && members.sobject && !members.partialSObject && !members.externalPackageSObject && !strings.EqualFold(members.name, "SObject") {
+					message := "Field does not exist: " + arg.Name + " on " + resolvedTypeName
+					item := semaFieldAccessDiagnostic(typ, member, arg.Name, message, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)
+					item.NativeMessage = message
+					diagnostics = append(diagnostics, item)
+				}
+				continue
+			}
 			// Partial schema fields may exist without a known Apex value type.
-			if field, ok := semaResolveFieldPath(model, resolvedTypeName, arg.Name); ok && field.member.Type != "" {
+			if field.member.Type != "" {
 				target := resolvedTypeName + "." + arg.Name
 				items := a.checkIRAssignmentType(typ, member, field.member.Type, target, arg.Expr, &scope, pos, bodyOffset, source, model, "initializes")
 				for i := range items {

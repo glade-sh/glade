@@ -419,7 +419,7 @@ private class BadBodyTest {
 	if summary := run.Summary(); summary.Total != 1 || summary.CompileErrors != 1 || summary.Passed != 0 || summary.Failed != 0 {
 		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
 	}
-	if problem := firstRunProblem(run); !strings.Contains(problem, "constructs unknown type") || !strings.Contains(problem, "MissingHelper") {
+	if problem := firstRunProblem(run); !strings.Contains(problem, "GLADESEMA006: Invalid type: MissingHelper") {
 		t.Fatalf("problem = %q", problem)
 	}
 }

@@ -1725,6 +1725,7 @@
       "ID": "R244",
       "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.send(null); r='sent';",
       "Expected": "EXC|System.HandledException|Missing required input parameter: customNotifTypeId",
+      "NamedExpected": "sent",
       "Group": "custom-notifications/send-validation",
       "Compile": false
     },
@@ -1732,6 +1733,7 @@
       "ID": "R245",
       "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.send(new Set<String>()); r='sent';",
       "Expected": "EXC|System.HandledException|Missing required input parameter: customNotifTypeId",
+      "NamedExpected": "sent",
       "Group": "custom-notifications/send-validation",
       "Compile": false
     },
@@ -1739,6 +1741,7 @@
       "ID": "R246",
       "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.send(new Set<String>{'005000000000001'}); r='sent';",
       "Expected": "EXC|System.HandledException|Missing required input parameter: customNotifTypeId",
+      "NamedExpected": "sent",
       "Group": "custom-notifications/send-validation",
       "Compile": false
     },
@@ -1746,6 +1749,7 @@
       "ID": "R247",
       "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.send(new Set<String>{null}); r='sent';",
       "Expected": "EXC|System.HandledException|Missing required input parameter: customNotifTypeId",
+      "NamedExpected": "sent",
       "Group": "custom-notifications/send-validation",
       "Compile": false
     },
@@ -2254,18 +2258,21 @@
       "ID": "M021",
       "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTargetId('001000000000001'); n.send(new Set<String>{'005000000000001'}); r='sent';",
       "Expected": "EXC|System.HandledException|Missing required input parameter: customNotifTypeId",
+      "NamedExpected": "sent",
       "Group": "messaging/adjacent-control"
     },
     {
       "ID": "M022",
       "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTargetPageRef('{\"type\":\"standard__namedPage\",\"attributes\":{\"pageName\":\"home\"}}'); n.send(new Set<String>{'005000000000001'}); r='sent';",
       "Expected": "EXC|System.HandledException|Missing required input parameter: customNotifTypeId",
+      "NamedExpected": "sent",
       "Group": "messaging/adjacent-control"
     },
     {
       "ID": "M023",
       "Code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setTargetId('000000000000000'); n.send(new Set<String>{'005000000000001'}); r='sent';",
       "Expected": "EXC|System.HandledException|Missing required input parameter: customNotifTypeId",
+      "NamedExpected": "sent",
       "Group": "messaging/adjacent-control"
     },
     {

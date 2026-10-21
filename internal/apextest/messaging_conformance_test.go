@@ -176,6 +176,8 @@ func TestMessagingOrgConformance(t *testing.T) {
 				if strings.HasPrefix(tc.Expected, "COMPILE_ERROR") {
 					continue
 				}
+				// Named notification sends suppress payload validation; see
+				// collection_and_boundary/org.tsv, notification_shape and invalid_target.
 				namedCase := tc
 				if tc.NamedExpected != "" {
 					namedCase.Expected = tc.NamedExpected

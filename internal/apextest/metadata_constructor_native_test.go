@@ -45,6 +45,9 @@ func TestMetadataConstructorNativeRejection(t *testing.T) {
 			if !result.HasErrors() {
 				t.Fatalf("native rejected <%s>; Glade accepted constructor: %s", rows[1][2], constructor)
 			}
+			if len(result.Diagnostics) != 1 || result.Diagnostics[0].NativeMessage != rows[1][2] {
+				t.Fatalf("native rejection=%q; Glade diagnostics=%+v", rows[1][2], result.Diagnostics)
+			}
 		})
 	}
 }
