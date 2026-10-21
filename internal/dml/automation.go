@@ -2298,11 +2298,12 @@ func evaluateFlowValueCriteria(value storage.Value, item storage.WorkflowCriteri
 		return compareFormulaValues(flowFormulaValue(value), formulaValue{kind: formulaString, text: want}, "<="), true
 	case "contains":
 		// Native rows (invocable_flow_action Contains rows): false when the
-		// value is null, true for an empty needle.
+		// value is null, true for an empty needle. Text comparison is
+		// case-insensitive per the Flow condition operators reference.
 		if value.Kind == storage.ValueNull {
 			return false, true
 		}
-		return strings.Contains(workflowValueString(value), want), true
+		return strings.Contains(strings.ToLower(workflowValueString(value)), strings.ToLower(want)), true
 	case "isnull", "isblank", "isempty":
 		blank := value.Kind == storage.ValueNull || (value.Kind != storage.ValueDecimal && workflowValueString(value) == "")
 		if want == "" || strings.EqualFold(want, "true") {
@@ -2969,6 +2970,7 @@ func (e *Engine) executeFlowSubflow(subflow storage.FlowSubflow, source storage.
 
 func (e *Engine) runSubflow(rule storage.FlowRule, def storage.ObjectDefinition, subflow storage.FlowSubflow, source storage.Record, sourceDefinition storage.ObjectDefinition, frame *flowFrame) error {
 	subflowFrame := newFlowFrame()
+	subflowFrame.autolaunched = frame.autolaunched
 	subflowFrame.stepTargets = rule.StepTargets
 	subflowFrame.textTemplates = cloneFlowTextTemplates(rule.TextTemplates)
 	flowCoreSeedScalarDefaults(rule.Variables, subflowFrame)

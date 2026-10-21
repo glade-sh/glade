@@ -127,7 +127,7 @@ func (e *Engine) invocableFlowRecordCriterion(item storage.WorkflowCriteriaItem,
 		if value.Kind == storage.ValueNull || rightNull {
 			return false, true, true
 		}
-		return strings.Contains(workflowValueString(value), trimFormulaLiteral(item.Value)), true, true
+		return strings.Contains(strings.ToLower(workflowValueString(value)), strings.ToLower(trimFormulaLiteral(item.Value))), true, true
 	}
 	matches, supported := evaluateFlowValueCriteria(value, item)
 	return matches, supported, true
