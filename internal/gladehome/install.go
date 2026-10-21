@@ -17,6 +17,12 @@ import (
 
 // InstallFrom copies source-built toolchain assets from a glade checkout into UserShareDir().
 func InstallFrom(src string) error {
+	installMu.Lock()
+	defer installMu.Unlock()
+	return installFrom(src)
+}
+
+func installFrom(src string) error {
 	src, ok := validateRoot(src)
 	if !ok {
 		return fmt.Errorf("source %q is not a glade checkout with an installed LWC toolchain (run npm install in third_party/lwc)", src)

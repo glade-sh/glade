@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 // RepoRoot locates a glade source checkout (go.mod + LWC toolchain). Use this for
@@ -52,6 +53,9 @@ func Root() (string, error) {
 	return "", fmt.Errorf("glade LWC toolchain not found; run `glade toolchain install` from a glade checkout or set GLADE_HOME")
 }
 
+// installMu serializes installs into the user-global toolchain directory.
+var installMu sync.Mutex
+
 // EnsureRoot returns the user-global toolchain directory, installing from a discovered
 // source checkout when needed.
 func EnsureRoot() (string, error) {
@@ -61,11 +65,19 @@ func EnsureRoot() (string, error) {
 	if root, ok := userShareRoot(); ok {
 		return root, nil
 	}
+	// Callers share one install. Hold the lock through the check and the copy
+	// so a second caller neither resets a tree being copied nor reinstalls one
+	// that is already complete.
+	installMu.Lock()
+	defer installMu.Unlock()
+	if root, ok := userShareRoot(); ok {
+		return root, nil
+	}
 	src, err := findInstallSource()
 	if err != nil {
 		return "", err
 	}
-	if err := InstallFrom(src); err != nil {
+	if err := installFrom(src); err != nil {
 		return "", err
 	}
 	root, ok := userShareRoot()
