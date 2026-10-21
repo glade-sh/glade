@@ -8,7 +8,9 @@ import (
 
 // A scalar String input compared with the Contains operator, run through the
 // Flow.Interview path (InvocableFlow unset). Contains is false when the left
-// side is null and true on a substring match. Native rows for the operator on
+// side is null and true on a substring match. Salesforce documents Flow text
+// comparisons as case-insensitive; the mixed-case rows follow that
+// documentation and have no native capture yet. Native rows for the operator on
 // record fields: TestInvocableFlowActionContainsDecisionRows (API 62.0).
 func TestAutolaunchedFlowScalarContainsDecision(t *testing.T) {
 	rule := storage.FlowRule{
@@ -18,7 +20,7 @@ func TestAutolaunchedFlowScalarContainsDecision(t *testing.T) {
 			{Name: "route", DataType: "String", IsOutput: true},
 		},
 		Steps: []storage.FlowStep{{Kind: "decision", Branches: []storage.FlowBranch{
-			{Name: "hasAt", Criteria: []storage.WorkflowCriteriaItem{{Field: "target", Operation: "Contains", Value: "@"}},
+			{Name: "hasAt", Criteria: []storage.WorkflowCriteriaItem{{Field: "target", Operation: "Contains", Value: "Mail."}},
 				Steps: []storage.FlowStep{{Kind: "assignment", Assignment: storage.FlowAssignment{Name: "A", Target: "route", Operator: "Assign", LiteralValue: "address"}}}},
 			{Name: "other", Default: true,
 				Steps: []storage.FlowStep{{Kind: "assignment", Assignment: storage.FlowAssignment{Name: "B", Target: "route", Operator: "Assign", LiteralValue: "id"}}}},
@@ -29,7 +31,9 @@ func TestAutolaunchedFlowScalarContainsDecision(t *testing.T) {
 		input map[string]storage.Value
 		want  string
 	}{
-		{"match", map[string]storage.Value{"target": storage.StringValue("a@b.example")}, "address"},
+		{"match", map[string]storage.Value{"target": storage.StringValue("x@Mail.example")}, "address"},
+		{"lower case value", map[string]storage.Value{"target": storage.StringValue("x@mail.example")}, "address"},
+		{"upper case value", map[string]storage.Value{"target": storage.StringValue("X@MAIL.EXAMPLE")}, "address"},
 		{"no match", map[string]storage.Value{"target": storage.StringValue("003000000000001")}, "id"},
 		{"empty", map[string]storage.Value{"target": storage.StringValue("")}, "id"},
 		{"null", map[string]storage.Value{"target": storage.NullValue()}, "id"},
