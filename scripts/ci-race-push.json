@@ -27,6 +27,7 @@
       "TestCompatDispatchesToLinkedPlugin",
       "TestConnectedMalformedFailedShardResponseWritesNoArtifacts",
       "TestConnectedRunKeepsArtifactPathsClientLocal",
+      "TestConnectedRunUsesPublishedTestSelection",
       "TestConnectedShardPlanPreservesExactSelectorFailures",
       "TestConnectedShardPlanRequiresExactUniqueIndexesBeforeArtifacts",
       "TestConnectedShardPlanWritesOnlyClientFiles",
