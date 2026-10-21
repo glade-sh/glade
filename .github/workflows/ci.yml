@@ -62,7 +62,7 @@ jobs:
       - run: npm run check:built --prefix site
       - name: Install Playwright Chromium
         working-directory: site
-        run: npx playwright install chromium
+        run: ../scripts/ci-install-playwright.sh npx playwright install chromium
       - name: Run rendered site checks
         env:
           GLADE_SITE_PREBUILT: "1"
@@ -505,7 +505,7 @@ jobs:
       - name: Install browser conformance dependencies
         run: npm ci --prefix lwcruntime
       - name: Install conformance Chromium
-        run: ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
+        run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
       - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-server-and-playground.json server-and-playground -- scripts/ci-go-test.sh lane server-and-playground
       - name: Save Go module cache
         if: success()
@@ -922,7 +922,7 @@ jobs:
       - name: Install browser conformance dependencies
         run: npm ci --prefix lwcruntime
       - name: Install conformance Chromium
-        run: ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
+        run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
       - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-repoguard.json repoguard -- scripts/ci-go-test.sh lane repoguard
         if: matrix.lane == 'remaining-go'
       - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-remaining-go.json remaining-go -- scripts/ci-go-test.sh lane remaining-go
@@ -1140,11 +1140,11 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     needs: [apextest-history-input, test-binaries]
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 100
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1]
+        shard: [0, 1, 2, 3, 4, 5]
     env:
       CGO_ENABLED: "1"
       CI_TEST_BIN_DIR: /tmp/glade-test-binaries
@@ -1153,6 +1153,7 @@ jobs:
       GOMODCACHE: /tmp/go-mod-ci-apextest-${{ matrix.shard }}
       GOCACHE: /tmp/go-build-ci-apextest-${{ matrix.shard }}
       CI_APEXTEST_ARTIFACT_DIR: ci-artifacts/apextest-${{ matrix.shard }}
+      CI_APEXTEST_SHARDS: "6"
       CI_APEXTEST_HISTORY_PATH: /tmp/glade-apextest-duration-history/apextest-duration-history.json
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -1219,7 +1220,7 @@ jobs:
           pattern: apex-shard-*
           path: /tmp/apextest-history-input
       - name: Refresh and guard Apex duration history
-        run: scripts/ci-go-test.sh apex-history-refresh /tmp/apextest-history-input/apex-shard-0 /tmp/apextest-history-input/apex-shard-1 /tmp/glade-apextest-duration-history/apextest-duration-history.json
+        run: scripts/ci-go-test.sh apex-history-refresh /tmp/glade-apextest-duration-history/apextest-duration-history.json /tmp/apextest-history-input/apex-shard-0 /tmp/apextest-history-input/apex-shard-1 /tmp/apextest-history-input/apex-shard-2 /tmp/apextest-history-input/apex-shard-3 /tmp/apextest-history-input/apex-shard-4 /tmp/apextest-history-input/apex-shard-5
       - name: Save Apex duration history
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true

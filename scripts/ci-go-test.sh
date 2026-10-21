@@ -1079,6 +1079,11 @@ run_test_matrix_shard() {
 	if [[ "${mode}" == "local-release" ]]; then
 		test_args=(-count=1 -timeout=90m)
 	fi
+	if [[ "${mode}" == "apex-ci" ]]; then
+		test_args=(-count=1 -timeout=90m)
+		index_pattern='^[0-5]$'
+		index_description='between 0 and 5'
+	fi
 	if [[ "${mode}" == "lwc-compile" ]]; then
 		test_args=(-count=1 -timeout=90m)
 		index_pattern='^[0-7]$'
@@ -1196,20 +1201,34 @@ run_apextest_matrix_shard() {
 	local index="${1:-}"
 	local mode="${2:-test}"
 	local label="Apex"
+	local shard_count="${CI_APEXTEST_SHARDS:-2}"
+	local index_pattern='^[01]$'
 	if [[ "${mode}" == "local-release" ]]; then
 		label="local-release Apex"
+		shard_count="2"
+		index_pattern='^[01]$'
+	elif [[ "${shard_count}" == "6" ]]; then
+		mode="apex-ci"
+		index_pattern='^[0-5]$'
+	elif [[ "${shard_count}" != "2" ]]; then
+		echo "CI_APEXTEST_SHARDS must be 2 or 6" >&2
+		return 2
 	fi
 	local artifact_suffix="invalid"
 	local history_path=""
-	[[ "${index}" =~ ^[01]$ ]] && artifact_suffix="${index}"
+	[[ "${index}" =~ ${index_pattern} ]] && artifact_suffix="${index}"
 	if [[ -s "${CI_APEXTEST_HISTORY_PATH:-}" ]]; then
 		history_path="${CI_APEXTEST_HISTORY_PATH}"
 	fi
 	# The generic runner executes the legacy Apex operations exactly once:
 	# GOFLAGS="${GOFLAGS:+${GOFLAGS} }-vet=off" go test -list '^Test' "${apex_package}"
 	# planner+=(--history "${CI_APEXTEST_HISTORY_PATH}")
-	# run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=30m -run "${regex}" "${apex_package}"
-	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/apextest" "./internal/apextest" "apextest" "${label}" "${CI_APEXTEST_ARTIFACT_DIR:-ci-artifacts/apextest-${artifact_suffix}}" "${history_path}" "0" "${mode}"
+	# run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=90m -run "${regex}" "${apex_package}"
+	# CI opts into six shards with CI_APEXTEST_SHARDS=6; local helpers default to
+	# two shards. Six CI shards budget about 65 minutes at twice the observed aggregate
+	# work per shard. Allow 90 minutes for cold history and runner variance.
+	# Local release trains retain their established two-shard partition.
+	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/apextest" "./internal/apextest" "apextest" "${label}" "${CI_APEXTEST_ARTIFACT_DIR:-ci-artifacts/apextest-${artifact_suffix}}" "${history_path}" "0" "${mode}" "${shard_count}"
 }
 
 run_sema_matrix_shard() {
@@ -1467,13 +1486,19 @@ try:
         reject("passing and deferred terminal union does not exactly match all discovered tests")
     import statistics
     median = statistics.median(shard_elapsed)
-    # Preserve the two-shard Apex/sema balance gate. LWC's indivisible long
+    # Preserve the two-shard Apex/sema balance gate. A validated PR sema
+    # imbalance is advisory so first-run timings can seed the next plan.
+    # Push and scheduled runs keep the strict balance gate. LWC's indivisible long
     # tests can exceed 1.5x its eight-shard median even with an optimal plan;
     # rejecting that evidence would prevent the next run from balancing it.
     if SHARD_COUNT == 2:
         for index, elapsed in enumerate(shard_elapsed):
             if elapsed > 1.5 * median:
-                reject(f"shard {index} elapsed {elapsed:.6f}s exceeds 1.5x two-shard median {median:.6f}s")
+                message = f"shard {index} elapsed {elapsed:.6f}s exceeds 1.5x two-shard median {median:.6f}s"
+                if PACKAGE == "github.com/glade-sh/glade/internal/sema" and os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
+                    print(f"::warning::{LABEL} duration history balance: {message}; retaining validated PR timings")
+                else:
+                    reject(message)
 
     history = {
         "version": 1,
@@ -1505,7 +1530,17 @@ PY
 }
 
 refresh_apextest_history() {
-	refresh_test_history "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0" "2" "${3:-}" "${1:-}" "${2:-}"
+	# Keep the two-shard local train interface; CI uses output then all six dirs.
+	if [[ "$#" -eq 3 ]]; then
+		refresh_test_history "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0" "2" "$3" "$1" "$2"
+	elif [[ "$#" -eq 7 ]]; then
+		local output="$1"
+		shift
+		refresh_test_history "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0" "6" "${output}" "$@"
+	else
+		echo "usage: scripts/ci-go-test.sh apex-history-refresh {OUTPUT SHARD_0_DIR ... SHARD_5_DIR | SHARD_0_DIR SHARD_1_DIR OUTPUT}" >&2
+		return 2
+	fi
 }
 
 refresh_sema_history() {
@@ -1731,7 +1766,8 @@ main() {
 			run_apextest_matrix_shard "${2:-}"
 			;;
 		apex-history-refresh)
-			refresh_apextest_history "${2:-}" "${3:-}" "${4:-}"
+			shift
+			refresh_apextest_history "$@"
 			;;
 		sema-shard)
 			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh sema-shard 0|1" >&2; return 2; fi
@@ -1777,7 +1813,7 @@ main() {
 			validate_sema_equivalence "${2:-}" "${3:-}" "${4:-}" "${5:-}"
 			;;
 		*)
-			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0|1|apex-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-shard 0|1|lwc-compile-shard 0-7|lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_7_DIR|visualforce-shard 0-3|visualforce-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|visualforce-history-bootstrap OUTPUT EVENTS|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
+			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0-5|apex-history-refresh OUTPUT SHARD_0_DIR ... SHARD_5_DIR (or SHARD_0_DIR SHARD_1_DIR OUTPUT)|sema-shard 0|1|lwc-compile-shard 0-7|lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_7_DIR|visualforce-shard 0-3|visualforce-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|visualforce-history-bootstrap OUTPUT EVENTS|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
 			return 2
 			;;
 	esac

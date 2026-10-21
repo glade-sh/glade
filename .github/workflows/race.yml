@@ -341,7 +341,7 @@ jobs:
       - name: Install browser conformance dependencies
         run: npm ci --prefix lwcruntime
       - name: Install conformance Chromium
-        run: ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
+        run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
       - name: Run assigned browser race shard
         env:
           PACKAGE: ${{ matrix.package }}
@@ -506,7 +506,7 @@ jobs:
         run: npm ci --prefix lwcruntime
       - name: Install conformance Chromium
         if: ${{ contains(fromJSON('["./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
-        run: ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
+        run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
       - name: Resolve artifact name
         id: artifact
         env:
@@ -689,7 +689,7 @@ jobs:
         run: |
           npm ci --prefix third_party/lwc
           npm ci --prefix lwcruntime
-          ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
+          scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
       - name: Run concurrent Go tests
         run: python3 scripts/ci-race-push.py run "${{ matrix.index }}"
       - name: Upload push race evidence

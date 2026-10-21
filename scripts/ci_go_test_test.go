@@ -796,8 +796,8 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 20 {
 		t.Errorf("cache save count = %d, want existing DAG writers plus Apex, sema, LWC and Visualforce history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
-	if strings.Count(workflow, "shard: [0, 1]") != 2 {
-		t.Error("workflow must contain the Apex and sema two-native-shard matrices")
+	if strings.Count(workflow, "shard: [0, 1]") != 1 || strings.Count(workflow, "shard: [0, 1, 2, 3, 4, 5]") != 1 {
+		t.Error("workflow must contain the six-shard Apex and two-shard sema matrices")
 	}
 	if matches, _ := filepath.Glob(filepath.Join("..", "**", "*duration-history*.json")); len(matches) != 0 {
 		t.Fatalf("tracked duration history candidates: %v", matches)
@@ -1101,7 +1101,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	codeql := jobs["codeql"]
 	for _, want := range []string{
 		"name: CodeQL",
-		"timeout-minutes: 45",
+		"timeout-minutes: 100",
 		"languages: go",
 		"config: |",
 		"- uses: security-extended",
@@ -1197,7 +1197,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	if strings.Contains(codeql, "\n    continue-on-error:") || strings.Contains(analyze, "continue-on-error:") {
 		t.Error("CodeQL scan and analysis must fail on query errors")
 	}
-	for _, want := range []string{"timeout-minutes: 40", "category: codeql-go"} {
+	for _, want := range []string{"timeout-minutes: 90", "category: codeql-go"} {
 		if !strings.Contains(analyze, want) {
 			t.Errorf("CodeQL analyze step missing %q", want)
 		}
@@ -3375,7 +3375,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 			t.Errorf("%s timeout is not %s minutes", name, timeout)
 		}
 	}
-	if !strings.Contains(jobs["apextest"], "timeout-minutes: 35") || !strings.Contains(jobs["apextest-history"], "timeout-minutes: 5") {
+	if !strings.Contains(jobs["apextest"], "timeout-minutes: 100") || !strings.Contains(jobs["apextest-history"], "timeout-minutes: 5") {
 		t.Error("Apex job timeouts changed")
 	}
 }
@@ -3491,7 +3491,7 @@ func TestCIParallelDAGPreservesApexAndUsesRootCheckout(t *testing.T) {
 	input := jobs["apextest-history-input"]
 	history := jobs["apextest-history"]
 	for _, marker := range []string{
-		"needs: [apextest-history-input, test-binaries]", "shard: [0, 1]", "timeout-minutes: 35", "scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
+		"needs: [apextest-history-input, test-binaries]", "shard: [0, 1, 2, 3, 4, 5]", "timeout-minutes: 100", "scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
 		"CI_APEXTEST_HISTORY_PATH", "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0", "name: apextest-history-input",
 		"actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0", "name: apex-shard-${{ matrix.shard }}",
 	} {
@@ -3555,7 +3555,7 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 		`kill -0 "${pid}"`,
 		"./internal/apextest",
 		`go test -list '^Test' "${apex_package}"`,
-		`run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=30m -run "${regex}" "${apex_package}"`,
+		`run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=90m -run "${regex}" "${apex_package}"`,
 		"CI_SHARD_PLANNER",
 		"validation-summary.json",
 		`run_package_lane "gladecli"`,
@@ -3616,7 +3616,7 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 		"scripts/ci-go-test.sh lane remaining-go",
 		"apextest:",
 		"matrix:",
-		"shard: [0, 1]",
+		"shard: [0, 1, 2, 3, 4, 5]",
 		"cache: false",
 		"ci-apextest-${{ matrix.shard }}",
 		"go-mod-v1-1.26.10-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
@@ -3643,8 +3643,8 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 	if strings.Count(workflowText, "go test -json") != 0 {
 		t.Fatal("ci.yml must delegate the native Apex run to the tested wrapper")
 	}
-	if strings.Count(workflowText, "shard: [0, 1]") != 2 {
-		t.Fatal("ci.yml must define two-cell Apex and sema matrices")
+	if strings.Count(workflowText, "shard: [0, 1]") != 1 || strings.Count(workflowText, "shard: [0, 1, 2, 3, 4, 5]") != 1 {
+		t.Fatal("ci.yml must define six Apex cells and two sema cells")
 	}
 	if strings.Contains(workflowText, ".ci-artifacts") || strings.Contains(scriptText, ".ci-artifacts") {
 		t.Fatal("Apex evidence must use a non-hidden path so upload-artifact includes it by default")

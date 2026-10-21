@@ -453,7 +453,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 		{"      - name: Restore LWC npm cache", lwcConsumers, "actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"},
 		{"      - name: Install LWC toolchain", lwcConsumers, "run: npm ci --prefix third_party/lwc"},
 		{"      - name: Install browser conformance dependencies", browserConsumers, "run: npm ci --prefix lwcruntime"},
-		{"      - name: Install conformance Chromium", browserConsumers, "run: ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium"},
+		{"      - name: Install conformance Chromium", browserConsumers, "run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium"},
 	} {
 		step := workflowStepBlockText(raceJob, requirement.marker)
 		if !strings.Contains(step, "if: ${{ "+requirement.selector+" }}") || !strings.Contains(step, requirement.command) {

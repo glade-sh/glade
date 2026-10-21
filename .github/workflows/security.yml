@@ -80,7 +80,8 @@ jobs:
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # Leave setup and log upload time around the larger analysis budget.
+    timeout-minutes: 100
     permissions:
       actions: read
       contents: read
@@ -199,7 +200,7 @@ jobs:
       - name: Build Glade for CodeQL
         run: go build -o "${RUNNER_TEMP}/glade-codeql" ./cmd/glade
       - name: Analyze CodeQL
-        timeout-minutes: 40
+        timeout-minutes: 90
         uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
           category: codeql-go

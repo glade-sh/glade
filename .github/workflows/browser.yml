@@ -182,7 +182,7 @@ jobs:
         working-directory: source
         run: |
           set -o pipefail
-          ./lwcruntime/node_modules/.bin/playwright install chromium 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/playwright-install.log"
+          scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install chromium 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/playwright-install.log"
 
       - name: Run browser authorities
         if: steps.scope.outputs.run_expensive == 'true'

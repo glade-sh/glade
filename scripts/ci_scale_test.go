@@ -14,7 +14,7 @@ import (
 
 func TestCIScaleApexWorkflowRoutes(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
-	for _, marker := range []string{"shard: [0, 1, 2, 3, 4, 5]", "timeout-minutes: 100", "fail-fast: false"} {
+	for _, marker := range []string{"shard: [0, 1, 2, 3, 4, 5]", "CI_APEXTEST_SHARDS: \"6\"", "timeout-minutes: 100", "fail-fast: false"} {
 		if !strings.Contains(jobs["apextest"], marker) {
 			t.Errorf("Apex matrix missing %q", marker)
 		}
@@ -95,7 +95,7 @@ func check(t *testing.T) {
 					binaryDir = binaries
 				}
 				cmd.Env = append(os.Environ(), "CI_TEST_BIN_DIR="+binaryDir, "CI_SHARD_PLANNER="+planner,
-					"CI_TESTLOG_RENDERER="+renderer, "CI_APEXTEST_ARTIFACT_DIR="+dir, "CI_APEXTEST_HISTORY_PATH=")
+					"CI_TESTLOG_RENDERER="+renderer, "CI_APEXTEST_ARTIFACT_DIR="+dir, "CI_APEXTEST_HISTORY_PATH=", "CI_APEXTEST_SHARDS=6")
 				if out, err := cmd.CombinedOutput(); err != nil {
 					t.Fatalf("Apex %s shard %d: %v\n%s", route, index, err, out)
 				}
@@ -113,7 +113,79 @@ func check(t *testing.T) {
 			if err != nil || json.Unmarshal(data, &history) != nil || !history.Complete || len(history.Tests) != 12 {
 				t.Fatalf("history must cover the exact project union: %v %s", err, data)
 			}
+			plan, err := exec.Command(planner, "--package", fixturePackage, "--shards", "6",
+				"--tests", filepath.Join(dirs[0], "discovery.txt"), "--history", output).Output()
+			var replanned struct{ HistoryUsed bool }
+			if err != nil || json.Unmarshal(plan, &replanned) != nil || !replanned.HistoryUsed {
+				t.Fatalf("six-shard planner must consume refreshed history: %v %s", err, plan)
+			}
+			if err := os.Remove(filepath.Join(dirs[5], "events.json")); err != nil {
+				t.Fatal(err)
+			}
+			cmd = exec.Command("bash", append([]string{wrapper, "apex-history-refresh", output}, dirs...)...)
+			if out, err := cmd.CombinedOutput(); err == nil || !strings.Contains(string(out), "duration history refresh rejected") {
+				t.Fatalf("history must reject missing evidence from the last shard: %v %s", err, out)
+			}
+			if _, err := os.Stat(output); !os.IsNotExist(err) {
+				t.Fatalf("failed six-shard refresh left stale output: %v", err)
+			}
 		})
+	}
+}
+
+func TestCIScaleApexLocalHelperRetainsTwoShardRoute(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "scripts"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	wrapper, err := filepath.Abs("ci-go-test.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	helper, err := os.ReadFile("apextest-shards.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeApexFixtureExecutable(t, filepath.Join(root, "scripts/apextest-shards.sh"), string(helper))
+	writeApexFixtureExecutable(t, filepath.Join(root, "scripts/ci-go-test.sh"), fmt.Sprintf("#!/bin/sh\nexec %q \"$@\"\n", wrapper))
+	planner := filepath.Join(root, "planner")
+	if out, err := exec.Command(realGoCommand(t), "build", "-o", planner, "./internal/cishard").CombinedOutput(); err != nil {
+		t.Fatalf("planner build: %v\n%s", err, out)
+	}
+	// The local helper launches concurrent workers. Stub their Go commands so
+	// this contract checks the complete route without running parallel suites.
+	writeApexFixtureExecutable(t, filepath.Join(root, "go"), `#!/usr/bin/env python3
+import json, sys
+names = ["TestLocal%02d" % i for i in range(12)]
+package = "github.com/glade-sh/glade/internal/apextest"
+if "-list" in sys.argv:
+    print("\n".join(names)); sys.exit(0)
+assert "-timeout=30m" in sys.argv, sys.argv
+import re
+pattern = sys.argv[sys.argv.index("-run")+1].replace("(?:", "(")
+for name in names:
+    if re.fullmatch(pattern, name):
+        print(json.dumps(dict(Action="pass", Package=package, Test=name, Elapsed=1)))
+print(json.dumps(dict(Action="pass", Package=package, Elapsed=1)))
+`)
+	writeApexFixtureExecutable(t, filepath.Join(root, "renderer"), "#!/bin/sh\ncat >/dev/null\n")
+	artifacts := filepath.Join(root, "artifacts")
+	cmd := exec.Command("bash", filepath.Join(root, "scripts/apextest-shards.sh"), artifacts)
+	cmd.Dir = root
+	cmd.Env = append(os.Environ(), "PATH="+root+":"+os.Getenv("PATH"), "CI_SHARD_PLANNER="+planner,
+		"CI_TESTLOG_RENDERER="+filepath.Join(root, "renderer"), "CI_APEXTEST_SHARDS=", "CI_TEST_BIN_DIR=", "CI_APEXTEST_HISTORY_PATH=")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		logs := string(out)
+		for index := range 2 {
+			data, _ := os.ReadFile(filepath.Join(artifacts, fmt.Sprintf("shard-%d.log", index)))
+			logs += string(data)
+		}
+		t.Fatalf("local two-worker route failed: %v\n%s", err, logs)
+	}
+	data, err := os.ReadFile(filepath.Join(artifacts, "duration-history.json"))
+	var history struct{ Tests []struct{ Name string } }
+	if err != nil || json.Unmarshal(data, &history) != nil || len(history.Tests) != 12 {
+		t.Fatalf("local route did not retain the full two-shard union: %v %s", err, data)
 	}
 }
 
@@ -128,7 +200,8 @@ func TestCIScaleCodeQLJobAndAnalyzeRoutes(t *testing.T) {
 	}
 }
 
-func TestCIScaleSemaPullRequestHistoryRoute(t *testing.T) {
+func scaleSemaHistoryFixture(t *testing.T) apexHistoryFixture {
+	t.Helper()
 	fixture := semaPairFixture(t)
 	for index, dir := range fixture.shards {
 		data, err := os.ReadFile(filepath.Join(dir, "events.json"))
@@ -154,6 +227,11 @@ func TestCIScaleSemaPullRequestHistoryRoute(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	return fixture
+}
+
+func TestCIScaleSemaPullRequestHistoryRoute(t *testing.T) {
+	fixture := scaleSemaHistoryFixture(t)
 	cmd := exec.Command("bash", "ci-go-test.sh", "sema-history-refresh", fixture.shards[0], fixture.shards[1], fixture.output)
 	cmd.Env = append(os.Environ(), "GITHUB_EVENT_NAME=pull_request")
 	out, err := cmd.CombinedOutput()
@@ -165,12 +243,57 @@ func TestCIScaleSemaPullRequestHistoryRoute(t *testing.T) {
 	}
 }
 
+func TestCIScaleSemaStrictAndCorruptHistoryRouteTwins(t *testing.T) {
+	for _, tc := range []struct{ event, corrupt string }{
+		{"push", ""}, {"schedule", ""}, {"workflow_dispatch", ""}, {"", ""},
+		{"pull_request", "missing shard"}, {"pull_request", "malformed JSON"},
+		{"pull_request", "failed test"}, {"pull_request", "invalid summary"},
+	} {
+		t.Run(tc.event+"/"+tc.corrupt, func(t *testing.T) {
+			fixture := scaleSemaHistoryFixture(t)
+			switch tc.corrupt {
+			case "missing shard":
+				fixture.shards[1] = filepath.Join(fixture.root, "missing")
+			case "malformed JSON":
+				if err := os.WriteFile(filepath.Join(fixture.shards[1], "plan.json"), []byte("{"), 0600); err != nil {
+					t.Fatal(err)
+				}
+			case "failed test", "invalid summary":
+				file, old, replacement := "events.json", `"Action":"pass"`, `"Action":"fail"`
+				if tc.corrupt == "invalid summary" {
+					file, old, replacement = "validation-summary.json", `"valid": true`, `"valid": false`
+				}
+				path := filepath.Join(fixture.shards[1], file)
+				data, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !strings.Contains(string(data), old) {
+					t.Fatal("corruption did not match fixture")
+				}
+				if err := os.WriteFile(path, []byte(strings.Replace(string(data), old, replacement, 1)), 0600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			cmd := exec.Command("bash", "ci-go-test.sh", "sema-history-refresh", fixture.shards[0], fixture.shards[1], fixture.output)
+			cmd.Env = append(os.Environ(), "GITHUB_EVENT_NAME="+tc.event)
+			if out, err := cmd.CombinedOutput(); err == nil {
+				t.Fatalf("non-PR imbalance or corrupt evidence must fail: %s", out)
+			}
+			if _, err := os.Stat(fixture.output); !os.IsNotExist(err) {
+				t.Fatalf("rejected history was published: %v", err)
+			}
+		})
+	}
+}
+
 func TestCIScalePlaywrightWorkflowRouteTwins(t *testing.T) {
 	for _, filename := range []string{"ci.yml", "browser.yml", "race.yml"} {
 		var workflow struct {
 			Jobs map[string]struct {
 				Steps []struct {
-					Run string
+					Run              string
+					WorkingDirectory string `yaml:"working-directory"`
 				}
 			}
 		}
@@ -186,7 +309,51 @@ func TestCIScalePlaywrightWorkflowRouteTwins(t *testing.T) {
 				count++
 				t.Run(filename+"/"+job, func(t *testing.T) {
 					if !strings.Contains(step.Run, "scripts/ci-install-playwright.sh ") {
-						t.Errorf("browser install route lacks resilient helper: %s", step.Run)
+						t.Fatalf("browser install route lacks resilient helper: %s", step.Run)
+					}
+					root := t.TempDir()
+					project := root
+					if step.WorkingDirectory == "source" {
+						project = filepath.Join(root, "source")
+					}
+					for _, dir := range []string{"scripts", "site", "lwcruntime/node_modules/.bin"} {
+						if err := os.MkdirAll(filepath.Join(project, dir), 0700); err != nil {
+							t.Fatal(err)
+						}
+					}
+					if err := os.MkdirAll(filepath.Join(root, "ci-artifacts/browser"), 0700); err != nil {
+						t.Fatal(err)
+					}
+					helper, err := os.ReadFile("ci-install-playwright.sh")
+					if err != nil {
+						t.Fatal(err)
+					}
+					writeApexFixtureExecutable(t, filepath.Join(project, "scripts/ci-install-playwright.sh"), string(helper))
+					browser := `#!/bin/bash
+echo "$PLAYWRIGHT_DOWNLOAD_HOST $*" >>"$FIXTURE_ROOT/calls"
+count=$(wc -l <"$FIXTURE_ROOT/calls")
+if (( count < 3 )); then echo 'getaddrinfo ENOTFOUND'; exit 17; fi
+`
+					writeApexFixtureExecutable(t, filepath.Join(project, "lwcruntime/node_modules/.bin/playwright"), browser)
+					writeApexFixtureExecutable(t, filepath.Join(root, "playwright"), browser)
+					writeApexFixtureExecutable(t, filepath.Join(root, "npx"), "#!/bin/sh\nshift\nexec \"$FIXTURE_ROOT/playwright\" \"$@\"\n")
+					for _, command := range []string{"npm", "sleep"} {
+						writeApexFixtureExecutable(t, filepath.Join(root, command), "#!/bin/sh\nexit 0\n")
+					}
+					cmd := exec.Command("bash", "-eo", "pipefail", "-c", step.Run)
+					cmd.Dir = filepath.Join(root, step.WorkingDirectory)
+					cmd.Env = append(os.Environ(), "PATH="+root+":"+os.Getenv("PATH"), "FIXTURE_ROOT="+root,
+						"PLAYWRIGHT_DOWNLOAD_HOST=", "GITHUB_WORKSPACE="+root)
+					if out, err := cmd.CombinedOutput(); err != nil {
+						t.Fatalf("workflow install must recover: %v\n%s", err, out)
+					}
+					calls, err := os.ReadFile(filepath.Join(root, "calls"))
+					args := "install chromium"
+					if strings.Contains(step.Run, "--with-deps") {
+						args = "install --with-deps chromium"
+					}
+					if err != nil || string(calls) != strings.Repeat("https://cdn.playwright.dev "+args+"\n", 3) {
+						t.Fatalf("workflow retry changed browser args: %v %s", err, calls)
 					}
 				})
 			}
@@ -195,6 +362,23 @@ func TestCIScalePlaywrightWorkflowRouteTwins(t *testing.T) {
 		if count != want {
 			t.Errorf("%s browser install routes = %d, want %d", filename, count, want)
 		}
+	}
+}
+
+func TestCIScalePlaywrightPermanentFailureAndHostOverrideRoutes(t *testing.T) {
+	root := t.TempDir()
+	writeApexFixtureExecutable(t, filepath.Join(root, "playwright"), "#!/bin/sh\nprintf '%s|%s|%s\\n' \"$PLAYWRIGHT_DOWNLOAD_HOST\" \"$1\" \"$2\" >>\"$FIXTURE_ROOT/calls\"\nexit 17\n")
+	writeApexFixtureExecutable(t, filepath.Join(root, "sleep"), "#!/bin/sh\nexit 0\n")
+	cmd := exec.Command("bash", "ci-install-playwright.sh", filepath.Join(root, "playwright"), "argument with spaces", "chromium")
+	cmd.Env = append(os.Environ(), "PATH="+root+":"+os.Getenv("PATH"), "FIXTURE_ROOT="+root,
+		"PLAYWRIGHT_DOWNLOAD_HOST=https://download.example.test")
+	out, err := cmd.CombinedOutput()
+	if exit, ok := err.(*exec.ExitError); !ok || exit.ExitCode() != 17 {
+		t.Fatalf("permanent install failure must retain status 17: %v\n%s", err, out)
+	}
+	calls, _ := os.ReadFile(filepath.Join(root, "calls"))
+	if string(calls) != strings.Repeat("https://download.example.test|argument with spaces|chromium\n", 3) {
+		t.Fatalf("permanent failure must be bounded and preserve arguments/host: %s", calls)
 	}
 }
 
