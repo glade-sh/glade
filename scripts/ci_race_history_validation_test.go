@@ -91,3 +91,22 @@ func TestCIRaceOptionalTimingDownloadFailureRouteStagesFallback(t *testing.T) {
 		t.Fatalf("fallback must omit timing history: %v", err)
 	}
 }
+
+func TestCIRaceDownloadedHistoryRouteStagesValidatedInput(t *testing.T) {
+	root := t.TempDir()
+	history := filepath.Join(root, "history.json")
+	const body = "{\"validated\":true}\n"
+	if err := os.WriteFile(history, []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("bash", "-e", "-o", "pipefail", "-c", raceHistoryStepScript(t, raceHistoryWorkflowStep(t, "Stage shared LWC duration history")))
+	cmd.Dir = root
+	cmd.Env = append(os.Environ(), "CI_LWC_COMPILE_HISTORY_PATH="+history)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("stage valid timing history: %v: %s", err, output)
+	}
+	data, err := os.ReadFile(filepath.Join(root, "ci-artifacts", "race-lwc-history-input", "lwc-compile-duration-history.json"))
+	if err != nil || string(data) != body {
+		t.Fatalf("staged history bytes=%q err=%v", data, err)
+	}
+}

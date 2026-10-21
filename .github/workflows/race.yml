@@ -129,6 +129,7 @@ jobs:
           done
           echo "::warning::Validated LWC timings unavailable; using deterministic scheduling fallback"
       - name: Download LWC timing evidence
+        id: lwc-timing-download
         if: steps.lwc-history.outputs.run_id != ''
         continue-on-error: true
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -138,11 +139,15 @@ jobs:
           pattern: go-test-lwc-compile-shard-*
           path: /tmp/race-lwc-predecessor
       - name: Validate LWC duration history
-        if: steps.lwc-history.outputs.run_id != ''
+        if: steps.lwc-history.outputs.run_id != '' && steps.lwc-timing-download.outcome == 'success'
         run: |
-          if ! scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" /tmp/race-lwc-predecessor/go-test-lwc-compile-shard-{0..7}; then
+          if scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" /tmp/race-lwc-predecessor/go-test-lwc-compile-shard-{0..7}; then
+            :
+          else
+            status=$?
             rm -f "$CI_LWC_COMPILE_HISTORY_PATH"
-            echo "::warning::LWC timing evidence unavailable or invalid; using deterministic scheduling fallback"
+            echo "::error::Downloaded LWC timing evidence is invalid" >&2
+            exit "$status"
           fi
       - name: Stage shared LWC duration history
         run: |
@@ -183,7 +188,6 @@ jobs:
       - name: Restore Go module cache
         id: restore-go-mod-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
         with:
           path: ~/go/pkg/mod
           key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-race-test-binaries-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -193,7 +197,6 @@ jobs:
       - name: Restore Go build cache
         id: restore-go-build-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
         with:
           path: ~/.cache/go-build
           key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-race-test-binaries-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -214,14 +217,12 @@ jobs:
       - name: Save Go module cache
         if: success()
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
         with:
           path: ~/go/pkg/mod
           key: ${{ steps.restore-go-mod-cache.outputs.cache-primary-key }}
       - name: Save Go build cache
         if: success()
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
         with:
           path: ~/.cache/go-build
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
