@@ -1446,6 +1446,15 @@ func loadSFDXProject(root string) (sfdxProject, error) {
 	return cfg, nil
 }
 
+// PackageRoots returns the absolute, cleaned package directories the loader
+// resolves for this project, including entries that sit outside Root.
+func (p Project) PackageRoots() []string {
+	if strings.TrimSpace(p.Root) == "" {
+		return nil
+	}
+	return packageRoots(p.Root, p.PackageDirectories, false)
+}
+
 func packageRoots(root string, packageDirs []PackageDirectory, includeConventionalRoots bool) []string {
 	seen := make(map[string]bool)
 	var roots []string

@@ -119,6 +119,24 @@ func sourceRootPath(root, path string) (string, error) {
 	return filepath.Clean(path), nil
 }
 
+// projectSourceRoots lists the project root followed by every resolved package
+// directory that sits outside it. The loader resolves packageDirectories and
+// project.packageDirs entries such as "../shared" relative to the root, so
+// their files are indexed and must pass the same containment check. Package
+// directories inside the root are already covered by the root itself.
+func projectSourceRoots(p *project.Project) []string {
+	if p == nil || strings.TrimSpace(p.Root) == "" {
+		return nil
+	}
+	roots := []string{p.Root}
+	for _, pkgRoot := range p.PackageRoots() {
+		if _, err := sourceRootPath(p.Root, pkgRoot); err != nil {
+			roots = append(roots, pkgRoot)
+		}
+	}
+	return roots
+}
+
 // loadedProjectRoots lists the root of the project and of every loaded
 // dependency or shim project beneath it, the same set the index reads from.
 func loadedProjectRoots(snapshot project.Project) []string {
@@ -130,9 +148,7 @@ func loadedProjectRoots(snapshot project.Project) []string {
 			return
 		}
 		seen[p] = true
-		if strings.TrimSpace(p.Root) != "" {
-			roots = append(roots, p.Root)
-		}
+		roots = append(roots, projectSourceRoots(p)...)
 		for _, dep := range p.ManagedPackageDependencies {
 			if dep.Status == "loaded" {
 				visit(dep.Project)
@@ -181,8 +197,10 @@ func readProjectMetadataFile(snapshot project.Project, path string) ([]byte, err
 			return ""
 		}
 		seen[p] = true
-		if _, err := sourceRootPath(p.Root, path); err == nil {
-			return p.Root
+		for _, root := range projectSourceRoots(p) {
+			if _, err := sourceRootPath(root, path); err == nil {
+				return root
+			}
 		}
 		for _, dep := range p.ManagedPackageDependencies {
 			if dep.Status == "loaded" {
