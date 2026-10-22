@@ -1019,14 +1019,16 @@ func (vm *VM) asyncJobDue(job AsyncJob) bool {
 		job.Kind == "ScheduledApex" && vm.activeTestScheduledReuse(job) {
 		return true
 	}
+	if vm.testContext != nil && vm.testContext.Stopped && job.Kind == "ScheduledApex" && vm.scheduledClassNested(job) {
+		// An inner-class Schedulable does not run after stopTest, whatever its
+		// cron; its rows stay queued. The check must not depend on Draining, or
+		// the drain's settle test sees a job its passes never run.
+		return false
+	}
 	if vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining {
-		if job.Kind == "Queueable" {
-			return true
-		}
 		// stopTest runs collected top-level schedules even in a future year.
-		// An inner-class Schedulable does not run there; its rows stay queued.
-		if job.Kind == "ScheduledApex" {
-			return !vm.scheduledClassNested(job)
+		if job.Kind == "Queueable" || job.Kind == "ScheduledApex" {
+			return true
 		}
 	}
 	return job.NotBefore.IsZero() || !job.NotBefore.After(vm.fakeNow)
