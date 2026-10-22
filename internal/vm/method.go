@@ -160,7 +160,9 @@ type Class struct {
 	IsAbstract           bool
 	IsInterface          bool
 	IsTest               bool
-	Dependency           bool
+	// Nested records a type declared inside another type, from the type system.
+	Nested     bool
+	Dependency bool
 }
 
 func (vm *VM) RegisterClass(class Class) error {
@@ -396,6 +398,7 @@ func mergeDuplicateClass(existing, incoming Class) Class {
 	if preferIncoming {
 		merged.IsAbstract = incoming.IsAbstract
 		merged.IsInterface = incoming.IsInterface
+		merged.Nested = incoming.Nested
 		merged.Dependency = incoming.Dependency
 	}
 	merged.IsTest = merged.IsTest || incoming.IsTest
