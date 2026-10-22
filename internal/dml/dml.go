@@ -246,6 +246,7 @@ func (e *Engine) RunAutolaunchedFlowWithOutput(rule storage.FlowRule, input Flow
 		return output, fmt.Errorf("autolaunched flow %s requires an engine", rule.Name)
 	}
 	frame := newFlowFrame()
+	frame.autolaunched = true
 	frame.stepTargets = rule.StepTargets
 	frame.textTemplates = cloneFlowTextTemplates(rule.TextTemplates)
 	for name, value := range input.Scalars {

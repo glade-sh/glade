@@ -1766,6 +1766,15 @@ func semaEnsureStandardSObjectTypeMembers(model *semaTypeMemberView, key string,
 		return members
 	}
 	hydrated := semaBuildStandardSObjectMembers(members.name)
+	// Hydration adds catalog fields. It must not drop what the project
+	// metadata already recorded on this entry, such as a partial extension of
+	// the standard object, which keeps unknown fields open.
+	hydrated.namespace = members.namespace
+	hydrated.generatedHistory = members.generatedHistory
+	hydrated.platformEvent = members.platformEvent
+	hydrated.externalPackageSObject = members.externalPackageSObject
+	hydrated.partialSObject = members.partialSObject
+	hydrated.syntheticChildRelationshipAliases = members.syntheticChildRelationshipAliases
 	for fieldKey, field := range members.fields {
 		hydrated.fields[fieldKey] = field
 	}
