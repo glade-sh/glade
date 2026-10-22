@@ -1,0 +1,74 @@
+api	route	method	observation
+62.0	deploy	v01AsIs	OBS v01AsIs batch=1 sched=1 queue=0 cron=1
+62.0	deploy	v02SchedAlone	OBS v02SchedAlone batch=0 sched=1 queue=0 cron=1
+62.0	deploy	v03BatchAlone	OBS v03BatchAlone batch=1 sched=0 queue=0 cron=0
+62.0	deploy	v04BatchSchedQueue	OBS v04BatchSchedQueue batch=1 sched=1 queue=1 cron=1
+62.0	deploy	v05SchedBeforeBatch	OBS v05SchedBeforeBatch batch=1 sched=1 queue=0 cron=1
+62.0	deploy	v06BatchSched2099	OBS v06BatchSched2099 batch=1 sched=1 queue=0 cron=1
+62.0	deploy	v07Sched2099Alone	OBS v07Sched2099Alone batch=0 sched=1 queue=0 cron=1
+62.0	deploy	v08BatchDefaultScope	OBS v08BatchDefaultScope batch=1 sched=1 queue=0 cron=1
+62.0	deploy	v09SchedQueueNoBatch	OBS v09SchedQueueNoBatch batch=0 sched=1 queue=1 cron=1
+62.0	deploy	v10SchedNoStartTest	OBS v10SchedNoStartTest batch=0 sched=1 queue=0 cron=1
+62.0	deploy	w01InnerInline	OBS w01InnerInline batch=1 sched=0 cron=1
+62.0	deploy	w02HelperTop	OBS w02HelperTop batch=1 sched=1 cron=1
+62.0	deploy	w03HelperInner	OBS w03HelperInner batch=1 sched=0 cron=1
+62.0	deploy	w04InnerAlone	OBS w04InnerAlone batch=0 sched=0 cron=1
+62.0	deploy	w05InnerBatchNoSeedQuery	OBS w05PreCounts batch=1 sched=0 cron=1
+62.0	deploy	w06TopHelperPreCounts	OBS w06TopHelperPreCounts batch=1 sched=1 cron=1
+62.0	deploy	w07TestClassInner	OBS w07TestClassInner batch=0 sched=0 cron=1
+62.0	deploy	w08Inner2099	OBS w08Inner2099 batch=0 sched=0 cron=1
+62.0	deploy	w09InnerNoStartTest	OBS w09InnerNoStartTest batch=0 sched=0 cron=1
+67.0	deploy	v01AsIs	OBS v01AsIs batch=1 sched=1 queue=0 cron=1
+67.0	deploy	v02SchedAlone	OBS v02SchedAlone batch=0 sched=1 queue=0 cron=1
+67.0	deploy	v03BatchAlone	OBS v03BatchAlone batch=1 sched=0 queue=0 cron=0
+67.0	deploy	v04BatchSchedQueue	OBS v04BatchSchedQueue batch=1 sched=1 queue=1 cron=1
+67.0	deploy	v05SchedBeforeBatch	OBS v05SchedBeforeBatch batch=1 sched=1 queue=0 cron=1
+67.0	deploy	v06BatchSched2099	OBS v06BatchSched2099 batch=1 sched=1 queue=0 cron=1
+67.0	deploy	v07Sched2099Alone	OBS v07Sched2099Alone batch=0 sched=1 queue=0 cron=1
+67.0	deploy	v08BatchDefaultScope	OBS v08BatchDefaultScope batch=1 sched=1 queue=0 cron=1
+67.0	deploy	v09SchedQueueNoBatch	OBS v09SchedQueueNoBatch batch=0 sched=1 queue=1 cron=1
+67.0	deploy	v10SchedNoStartTest	OBS v10SchedNoStartTest batch=0 sched=1 queue=0 cron=1
+67.0	deploy	w01InnerInline	OBS w01InnerInline batch=1 sched=0 cron=1
+67.0	deploy	w02HelperTop	OBS w02HelperTop batch=1 sched=1 cron=1
+67.0	deploy	w03HelperInner	OBS w03HelperInner batch=1 sched=0 cron=1
+67.0	deploy	w04InnerAlone	OBS w04InnerAlone batch=0 sched=0 cron=1
+67.0	deploy	w05InnerBatchNoSeedQuery	OBS w05PreCounts batch=1 sched=0 cron=1
+67.0	deploy	w06TopHelperPreCounts	OBS w06TopHelperPreCounts batch=1 sched=1 cron=1
+67.0	deploy	w07TestClassInner	OBS w07TestClassInner batch=0 sched=0 cron=1
+67.0	deploy	w08Inner2099	OBS w08Inner2099 batch=0 sched=0 cron=1
+67.0	deploy	w09InnerNoStartTest	OBS w09InnerNoStartTest batch=0 sched=0 cron=1
+68.0	deploy	v01AsIs	OBS v01AsIs batch=1 sched=1 queue=0 cron=1
+68.0	deploy	v02SchedAlone	OBS v02SchedAlone batch=0 sched=1 queue=0 cron=1
+68.0	deploy	v03BatchAlone	OBS v03BatchAlone batch=1 sched=0 queue=0 cron=0
+68.0	deploy	v04BatchSchedQueue	OBS v04BatchSchedQueue batch=1 sched=1 queue=1 cron=1
+68.0	deploy	v05SchedBeforeBatch	OBS v05SchedBeforeBatch batch=1 sched=1 queue=0 cron=1
+68.0	deploy	v06BatchSched2099	OBS v06BatchSched2099 batch=1 sched=1 queue=0 cron=1
+68.0	deploy	v07Sched2099Alone	OBS v07Sched2099Alone batch=0 sched=1 queue=0 cron=1
+68.0	deploy	v08BatchDefaultScope	OBS v08BatchDefaultScope batch=1 sched=1 queue=0 cron=1
+68.0	deploy	v09SchedQueueNoBatch	OBS v09SchedQueueNoBatch batch=0 sched=1 queue=1 cron=1
+68.0	deploy	v10SchedNoStartTest	OBS v10SchedNoStartTest batch=0 sched=1 queue=0 cron=1
+68.0	deploy	w01InnerInline	OBS w01InnerInline batch=1 sched=0 cron=1
+68.0	deploy	w02HelperTop	OBS w02HelperTop batch=1 sched=1 cron=1
+68.0	deploy	w03HelperInner	OBS w03HelperInner batch=1 sched=0 cron=1
+68.0	deploy	w04InnerAlone	OBS w04InnerAlone batch=0 sched=0 cron=1
+68.0	deploy	w05InnerBatchNoSeedQuery	OBS w05PreCounts batch=1 sched=0 cron=1
+68.0	deploy	w06TopHelperPreCounts	OBS w06TopHelperPreCounts batch=1 sched=1 cron=1
+68.0	deploy	w07TestClassInner	OBS w07TestClassInner batch=0 sched=0 cron=1
+68.0	deploy	w08Inner2099	OBS w08Inner2099 batch=0 sched=0 cron=1
+68.0	deploy	w09InnerNoStartTest	OBS w09InnerNoStartTest batch=0 sched=0 cron=1
+68.0	synchronous	v01AsIs	OBS v01AsIs batch=1 sched=1 queue=0 cron=1
+68.0	synchronous	v02SchedAlone	OBS v02SchedAlone batch=0 sched=1 queue=0 cron=1
+68.0	synchronous	v03BatchAlone	OBS v03BatchAlone batch=1 sched=0 queue=0 cron=0
+68.0	synchronous	v04BatchSchedQueue	OBS v04BatchSchedQueue batch=1 sched=1 queue=1 cron=1
+68.0	synchronous	v05SchedBeforeBatch	OBS v05SchedBeforeBatch batch=1 sched=1 queue=0 cron=1
+68.0	synchronous	v06BatchSched2099	OBS v06BatchSched2099 batch=1 sched=1 queue=0 cron=1
+68.0	synchronous	v07Sched2099Alone	OBS v07Sched2099Alone batch=0 sched=1 queue=0 cron=1
+68.0	synchronous	v08BatchDefaultScope	OBS v08BatchDefaultScope batch=1 sched=1 queue=0 cron=1
+68.0	synchronous	v09SchedQueueNoBatch	OBS v09SchedQueueNoBatch batch=0 sched=1 queue=1 cron=1
+68.0	synchronous	v10SchedNoStartTest	OBS v10SchedNoStartTest batch=0 sched=1 queue=0 cron=1
+68.0	synchronous	w01InnerInline	OBS w01InnerInline batch=1 sched=0 cron=1
+68.0	synchronous	w02HelperTop	OBS w02HelperTop batch=1 sched=1 cron=1
+68.0	synchronous	w03HelperInner	OBS w03HelperInner batch=1 sched=0 cron=1
+68.0	synchronous	w04InnerAlone	OBS w04InnerAlone batch=0 sched=0 cron=1
+68.0	synchronous	w05InnerBatchNoSeedQuery	OBS w05PreCounts batch=1 sched=0 cron=1
+68.0	synchronous	w06TopHelperPreCounts	OBS w06TopHelperPreCounts batch=1 sched=1 cron=1

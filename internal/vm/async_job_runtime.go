@@ -1003,6 +1003,11 @@ func (vm *VM) nextDrainableAsyncJobIndex(jobs []AsyncJob, startIndex int) int {
 	}
 	return -1
 }
+func (vm *VM) scheduledClassNested(job AsyncJob) bool {
+	class, ok := vm.lookupClass(job.Object.Type)
+	return ok && class.Nested
+}
+
 func (vm *VM) asyncJobDue(job AsyncJob) bool {
 	if job.ScheduledAborted && !vm.activeTestScheduledReuse(job) {
 		return false
@@ -1014,8 +1019,14 @@ func (vm *VM) asyncJobDue(job AsyncJob) bool {
 		job.Kind == "ScheduledApex" && vm.activeTestScheduledReuse(job) {
 		return true
 	}
+	if vm.testContext != nil && vm.testContext.Stopped && job.Kind == "ScheduledApex" && vm.scheduledClassNested(job) {
+		// An inner-class Schedulable does not run after stopTest, whatever its
+		// cron; its rows stay queued. The check must not depend on Draining, or
+		// the drain's settle test sees a job its passes never run.
+		return false
+	}
 	if vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining {
-		// stopTest runs collected schedules even in a future year.
+		// stopTest runs collected top-level schedules even in a future year.
 		if job.Kind == "Queueable" || job.Kind == "ScheduledApex" {
 			return true
 		}
