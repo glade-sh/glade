@@ -1,0 +1,3 @@
+source_api	map_json_order	map_key_set_order	grouped_aggregate_alias	parent_projection_requery	date_format_no	date_format_no_NO	datetime_format_no	datetime_format_no_NO	locale_key_status
+62.0	{"section":{"section_key_2":"value2","section_key":"value"}}	section_key,section_key_2	["Social","Web"]	{"ownerIdPresent":true,"parentName":"Synthetic Parent","hasParent":true,"rowCount":1}	23.11.2025	23.11.2025	23.11.2025, 14:30	23.11.2025, 14:30	no=accepted,no_NO=accepted,nb_NO=rejected
+67.0	{"section":{"section_key_2":"value2","section_key":"value"}}	section_key,section_key_2	["Social","Web"]	{"ownerIdPresent":true,"parentName":"Synthetic Parent","hasParent":true,"rowCount":1}	23.11.2025	23.11.2025	23.11.2025, 14:30	23.11.2025, 14:30	no=accepted,no_NO=accepted,nb_NO=rejected

@@ -306,3 +306,40 @@ func TestApplyCustomMetadataRecordsSetsLanguageToOrgDefault(t *testing.T) {
 		t.Fatalf("Language = %#v, want en_US", got)
 	}
 }
+
+func TestApplyCustomMetadataRecordsCanonicalNameRouteTwins(t *testing.T) {
+	for _, namespace := range []string{"", "sprout"} {
+		for _, qualified := range []bool{false, true} {
+			name := "DefaultProbe__mdt"
+			if namespace != "" {
+				name = namespace + "__" + name
+			}
+			route := "local-record-name"
+			input := "DefaultProbe__mdt"
+			if qualified {
+				input = name
+				route = "qualified-record-name"
+			}
+			t.Run(namespace+"/"+route, func(t *testing.T) {
+				org := NewOrgState()
+				org.Namespace = namespace
+				org.Objects[name] = ObjectState{Definition: ObjectDefinition{APIName: name, KeyPrefix: "m09", Fields: map[string]Field{}}}
+				if err := ApplyCustomMetadataRecords(&org, []schema.CustomMetadataRecord{{ObjectName: input, DeveloperName: "Product"}}); err != nil {
+					t.Fatal(err)
+				}
+				if len(org.Objects) != 1 {
+					t.Fatalf("prefix preparation introduced schema aliases: %+v", org.Objects)
+				}
+				state := org.Objects[name]
+				if state.Definition.KeyPrefix != "m09" || len(state.Records) != 1 {
+					t.Fatalf("canonical type changed: %+v", state)
+				}
+				for id, row := range state.Records {
+					if string(id[:3]) != "m09" || row.Object != name {
+						t.Fatalf("record identity changed: %+v", row)
+					}
+				}
+			})
+		}
+	}
+}

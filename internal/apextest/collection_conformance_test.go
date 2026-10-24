@@ -18,7 +18,7 @@ import (
 )
 
 // The data is a credential-free export of owned API62, API67 and API68
-// scratch-org probes. A direct API68 anonymous recapture supplies R231.
+// scratch org probes. A direct API68 anonymous recapture supplies R231.
 // The @IsTest route checks local execution against those anonymous answers;
 // API68 named counts are local legacy checks, not native named observations.
 func TestCollectionConformanceAPI67(t *testing.T) {

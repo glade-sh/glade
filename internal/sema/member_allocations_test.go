@@ -2,11 +2,15 @@ package sema
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -419,14 +423,63 @@ func TestReferenceNestedTypeResolutionPreservesPrecedence(t *testing.T) {
 }
 
 func TestInheritedNestedClassPrecedesStandardSObject(t *testing.T) {
-	view := allocationTestView(
-		typeMembers{name: "BaseController", kind: apexast.DeclarationClass},
-		typeMembers{name: "BaseController.Note", kind: apexast.DeclarationClass, nestingDepth: 1},
-		typeMembers{name: "DerivedController", kind: apexast.DeclarationClass, superClass: "BaseController"},
-		typeMembers{name: "Note", kind: apexast.DeclarationClass, sobject: true, syntheticStandardSObject: true},
-	)
-	if got := resolveNestedTypeName(view, "DerivedController", "Note"); got != "BaseController.Note" {
-		t.Fatalf("inherited nested class should win over standard Note sObject: got %q", got)
+	t.Run("resolver", func(t *testing.T) {
+		view := allocationTestView(
+			typeMembers{name: "BaseController", kind: apexast.DeclarationClass},
+			typeMembers{name: "BaseController.Note", kind: apexast.DeclarationClass, nestingDepth: 1},
+			typeMembers{name: "DerivedController", kind: apexast.DeclarationClass, superClass: "BaseController"},
+			typeMembers{name: "Note", kind: apexast.DeclarationClass, sobject: true, syntheticStandardSObject: true},
+		)
+		if got := resolveNestedTypeName(view, "DerivedController", "Note"); got != "BaseController.Note" {
+			t.Fatalf("inherited nested class should win over standard Note sObject: got %q", got)
+		}
+	})
+
+	// Native deployment and local/field observations for both inherited types
+	// are retained in project_sobject_collision/{ORG-RUN.txt,org.tsv}. Analyze
+	// the captured project too: a hand-built member view bypasses the model
+	// construction and top-level project Note collision that caused the break.
+	fixture := filepath.Join("..", "apextest", "testdata", "conformance", "project_sobject_collision", "project", "force-app", "main", "default", "classes")
+	files, err := filepath.Glob(filepath.Join(fixture, "*.cls"))
+	if err != nil || len(files) != 9 {
+		t.Fatalf("native project classes: %v, %v", files, err)
+	}
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			root := t.TempDir()
+			paths := make([]string, 0, len(files))
+			for _, file := range files {
+				source, err := os.ReadFile(file)
+				if err != nil {
+					t.Fatal(err)
+				}
+				path := filepath.Join(root, filepath.Base(file))
+				writeSemaFile(t, path, string(source))
+				paths = append(paths, path)
+			}
+			index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: paths}, schema.Schema{})
+			if index.HasErrors() || len(index.Types) == 0 {
+				t.Fatalf("native project did not parse: %v", index.Diagnostics)
+			}
+			t.Run("project_analyzer_ordinary_and_isTest_local_and_field", func(t *testing.T) {
+				if result := Analyze(index); len(result.Diagnostics) != 0 {
+					t.Fatalf("native project compiled; analyzer diagnostics: %v", result.Diagnostics)
+				}
+			})
+			t.Run("anonymous_analyzer_local_and_field", func(t *testing.T) {
+				result := AnalyzeAnonymous(index, `
+DerivedController contacts = new DerivedController();
+String contactLocal = contacts.variableValue();
+String contactField = contacts.contact.sfObject;
+DerivedNoteController notes = new DerivedNoteController();
+String noteLocal = notes.variableValue();
+String noteField = notes.note.sfObject;
+`, api)
+				if len(result.Diagnostics) != 0 {
+					t.Fatalf("inherited Apex types must retain their fields: %v", result.Diagnostics)
+				}
+			})
+		})
 	}
 }
 

@@ -1,0 +1,6 @@
+case	routes	observation
+A	API62/67 anonymous/istest	eighteen-character parent relationship
+B	API62/67 anonymous/istest	short parent relationship
+C	API62/67 anonymous/istest	fifteen-character parent relationship
+label_count	API62/67 anonymous/istest	parent relationship filter
+partial_deploy	API62/67	reject unknown type; retain valid parent and child records

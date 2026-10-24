@@ -1,0 +1,5 @@
+shape=developer
+StandardProfileProbe.cls_sha256=4f913d9c277a648c085f54d7d41f8b18ff873e8bb927eca237a65e0e3757201a
+StandardProfileProbeTest.cls_sha256=753a7684aa142809f2f6ffc89ea840b3ca45ea6f79fc9f0917617c078d4a0045
+rows=12
+native_complete=true

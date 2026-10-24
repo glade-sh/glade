@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -42,7 +43,7 @@ type flowXML struct {
 	Transforms            []flowTransformXML           `xml:"transforms"`
 	CollectionProcessors  []flowCollectionProcessorXML `xml:"collectionProcessors"`
 	OrchestratedStages    []flowNamedNodeXML           `xml:"orchestratedStages"`
-	ScheduledPaths        []flowNamedNodeXML           `xml:"scheduledPaths"`
+	ScheduledPaths        []flowScheduledPathXML       `xml:"scheduledPaths"`
 	Stages                []flowNamedNodeXML           `xml:"stages"`
 	Environments          string                       `xml:"environments"`
 	ExitRules             []flowNamedNodeXML           `xml:"exitRules"`
@@ -54,16 +55,16 @@ type flowXML struct {
 }
 
 type flowStartXML struct {
-	DoesRequireRecordChangedToMeetCriteria bool               `xml:"doesRequireRecordChangedToMeetCriteria"`
-	RecordTriggerType                      string             `xml:"recordTriggerType"`
-	Object                                 string             `xml:"object"`
-	TriggerType                            string             `xml:"triggerType"`
-	Filters                                []flowFilterXML    `xml:"filters"`
-	FilterLogic                            string             `xml:"filterLogic"`
-	FilterFormula                          string             `xml:"filterFormula"`
-	Connector                              flowConnectorXML   `xml:"connector"`
-	FaultConnector                         flowConnectorXML   `xml:"faultConnector"`
-	ScheduledPaths                         []flowNamedNodeXML `xml:"scheduledPaths"`
+	DoesRequireRecordChangedToMeetCriteria bool                   `xml:"doesRequireRecordChangedToMeetCriteria"`
+	RecordTriggerType                      string                 `xml:"recordTriggerType"`
+	Object                                 string                 `xml:"object"`
+	TriggerType                            string                 `xml:"triggerType"`
+	Filters                                []flowFilterXML        `xml:"filters"`
+	FilterLogic                            string                 `xml:"filterLogic"`
+	FilterFormula                          string                 `xml:"filterFormula"`
+	Connector                              flowConnectorXML       `xml:"connector"`
+	FaultConnector                         flowConnectorXML       `xml:"faultConnector"`
+	ScheduledPaths                         []flowScheduledPathXML `xml:"scheduledPaths"`
 }
 
 type flowFilterXML struct {
@@ -301,7 +302,7 @@ type flowValueXML struct {
 	Expression       string `xml:"expression"`
 }
 
-func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
+func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (Flow, []diagnostic.Diagnostic, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return Flow{}, nil, err
@@ -323,9 +324,25 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 	if (!flowActive(raw.Status) && objectName != "") || flowProcessTypeNonDML(raw.ProcessType) {
 		return flow, diagnostics, nil
 	}
-	flowResolveStandardRelationshipUpdates(&raw)
+	var sourceDefinitions []storage.ObjectDefinition
+	if len(definitions) > 0 {
+		for name, definition := range definitions[0] {
+			if strings.EqualFold(name, objectName) {
+				sourceDefinitions = append(sourceDefinitions, definition)
+				break
+			}
+		}
+	}
+	flowResolveStandardRelationshipUpdates(&raw, sourceDefinitions...)
 	formulas := flowFormulaMap(raw.Formulas)
 	variables := flowVariableMap(raw.Variables)
+	orderedGraph := flowNormalizeTextDecisionNegation(&raw, variables)
+	orderedGraph = orderedGraph || flowRequiresOrderedGraph(raw)
+	if strings.EqualFold(strings.TrimSpace(raw.Start.TriggerType), "PlatformEvent") {
+		// Preserve the event interview's current-user resource in record inputs.
+		// This binding map is private; globals are not declared Flow variables.
+		variables["$user"] = flowVariableXML{Name: "$User", DataType: "SObject", ObjectType: "User"}
+	}
 	if invocableFlowActionInvalidNullAssignment(raw, variables) {
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
@@ -335,31 +352,36 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 		})
 		return flow, diagnostics, nil
 	}
+	if problem := flowInvalidValueReference(raw, variables); problem != "" {
+		diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADEAUTO004", File: path, Message: problem})
+		return flow, diagnostics, nil
+	}
 	constants := flowConstantMap(raw.Constants)
 	diagnostics = flowUnsupportedNodeDiagnostics(path, name, raw, formulas, variables)
 	if !flowProcessTypeSupported(raw.ProcessType) {
 		diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("processType %q is not modeled as DML-triggered automation", raw.ProcessType)))
 	}
 	triggerType := strings.TrimSpace(raw.Start.TriggerType)
+	if len(raw.Subflows) > 0 && (strings.EqualFold(triggerType, "RecordBeforeSave") || strings.EqualFold(triggerType, "PlatformEvent")) {
+		diagnostics = append(diagnostics, diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "GLADEAUTO004",
+			File:     path,
+			Message:  fmt.Sprintf("Subflow elements are not allowed when triggerType is %q", triggerType),
+		})
+		return flow, diagnostics, nil
+	}
 	if triggerType != "" && !flowTriggerTypeDML(triggerType) && !strings.EqualFold(triggerType, "PlatformEvent") {
 		diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("triggerType %q is not supported for local test execution", triggerType)))
 	}
 	if len(raw.OrchestratedStages) > 0 {
 		diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("orchestration (%d stages) is not supported for local test execution", len(raw.OrchestratedStages))))
 	}
-	if len(raw.ScheduledPaths) > 0 || len(raw.Start.ScheduledPaths) > 0 {
-		diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("scheduled paths are not supported for local test execution")))
-	}
 	if len(raw.Stages) > 0 {
 		diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("stages are not supported for local test execution")))
 	}
 	if raw.Environments != "" && !strings.EqualFold(strings.TrimSpace(raw.Environments), "Default") {
 		diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("environments %q is not supported for local test execution", raw.Environments)))
-	}
-	// Nodes reachable only through a scheduled path have no immediate DML entry.
-	// Scheduling remains outside the executable record-save projection.
-	if objectName != "" && len(raw.Start.ScheduledPaths) > 0 && strings.TrimSpace(raw.Start.Connector.TargetReference) == "" {
-		return flow, diagnostics, nil
 	}
 	rule := storage.FlowRule{
 		APIVersion:                             strings.TrimSpace(raw.APIVersion),
@@ -398,6 +420,13 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 		rule.Criteria = nil
 	} else if logic := strings.TrimSpace(raw.Start.FilterLogic); logic != "" && !strings.EqualFold(logic, "and") {
 		diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("start filter logic %q is not supported; entry conditions are combined with AND", logic)))
+	}
+	if len(raw.Start.ScheduledPaths) > 0 || len(raw.ScheduledPaths) > 0 {
+		// Each entry owns its connector graph. The legacy flat projection below
+		// would merge deferred effects and decision conditions into the save path.
+		diagnostics = append(diagnostics, populateFlowPaths(&rule, raw, formulas, variables)...)
+		flow.Rules = append(flow.Rules, rule)
+		return flow, diagnostics, nil
 	}
 	for _, decision := range raw.Decisions {
 		if len(decision.Rules) == 0 {
@@ -484,7 +513,7 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 			continue
 		}
 		if !flowUpdatesTriggeringRecord(update.InputReference) {
-			if _, ok := modeledFlowRecordUpdate(update, formulas, variables, flowConstantMap(raw.Constants), raw.RecordLookups); !ok && !flowRequiresOrderedGraph(raw) {
+			if _, ok := modeledFlowRecordUpdate(update, formulas, variables, flowConstantMap(raw.Constants), raw.RecordLookups); !ok && !orderedGraph {
 				diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("record update %q does not target the triggering record", firstNonBlank(update.Name, update.Label))))
 			}
 			continue
@@ -561,7 +590,7 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 	if raw.graph == nil {
 		raw.graph = newLegacyPathFlowTargetGraph(raw)
 	}
-	if !routedDecisions || flowRequiresOrderedGraph(raw) {
+	if !routedDecisions || orderedGraph {
 		target := strings.TrimSpace(raw.Start.Connector.TargetReference)
 		if target == "" {
 			target = flowCoreScalarAssignmentStart(raw, variables)
@@ -1221,7 +1250,8 @@ func modeledFlowRecordLookup(lookup flowRecordLookupXML, variables map[string]fl
 	if name == "" || objectName == "" {
 		return storage.FlowRecordLookup{}, false
 	}
-	if logic := strings.TrimSpace(lookup.FilterLogic); logic != "" && !strings.EqualFold(logic, "and") && !strings.EqualFold(logic, "or") {
+	filterLogic, ok := flowLookupFilterLogic(lookup.FilterLogic, len(lookup.Filters))
+	if !ok {
 		return storage.FlowRecordLookup{}, false
 	}
 	out := storage.FlowRecordLookup{
@@ -1229,7 +1259,7 @@ func modeledFlowRecordLookup(lookup flowRecordLookupXML, variables map[string]fl
 		ObjectName:                       objectName,
 		SortField:                        strings.TrimSpace(lookup.SortField),
 		SortOrder:                        strings.TrimSpace(lookup.SortOrder),
-		CriteriaLogic:                    strings.ToLower(strings.TrimSpace(lookup.FilterLogic)),
+		CriteriaLogic:                    filterLogic,
 		GetFirstRecordOnly:               lookup.GetFirstRecordOnly,
 		StoreOutputAutomatically:         lookup.StoreOutputAutomatically,
 		AssignNullValuesIfNoRecordsFound: lookup.AssignNullValuesIfNoRecordsFound,
@@ -1500,11 +1530,13 @@ func modeledFlowDecisionBranches(path, flowName string, raw flowXML, formulas ma
 						modeled = false
 						continue
 					}
-					branch.Criteria = append(branch.Criteria, storage.WorkflowCriteriaItem{
+					item := storage.WorkflowCriteriaItem{
 						Field:     field,
 						Operation: flowOperator(strings.TrimSpace(condition.Operator)),
 						Value:     flowLiteralValue(condition.RightValue),
-					})
+					}
+					flowVariableEmptyOperand(&item, condition, variables)
+					branch.Criteria = append(branch.Criteria, item)
 				}
 				if modeled && flowConditionGroupsNeedFormula([][]int{group}, decisionRule.Conditions, formulas) {
 					formula := flowConditionGroupsToFormula([][]int{group}, decisionRule.Conditions, formulas, variables)
@@ -1666,6 +1698,7 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 			modeled = true
 			fault := strings.TrimSpace(assignment.FaultConnector.TargetReference)
 			for _, item := range assignment.Items {
+				item = flowAssignmentItemConstantValue(item, variables, flowConstantMap(raw.Constants))
 				if update, ok := modeledFlowAssignmentUpdate(assignment, item, formulas, variables, raw.RecordLookups); ok {
 					branch.FieldUpdates = append(branch.FieldUpdates, update)
 					branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "fieldUpdate", FaultTarget: fault, FieldUpdates: []storage.WorkflowFieldUpdate{update}})
@@ -1694,7 +1727,7 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 			}
 			modeled = true
 			fault := strings.TrimSpace(update.FaultConnector.TargetReference)
-			if updates, ok := modeledFlowRecordUpdates(update, formulas, variables, raw.RecordLookups); ok {
+			if updates, ok := modeledFlowRecordUpdates(flowRecordUpdateConstantValues(update, variables, flowConstantMap(raw.Constants)), formulas, variables, raw.RecordLookups); ok {
 				branch.FieldUpdates = append(branch.FieldUpdates, updates...)
 				if len(updates) > 0 {
 					branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "fieldUpdate", FaultTarget: fault, FieldUpdates: updates})
@@ -1978,11 +2011,13 @@ func modeledFlowStepDecisionBranches(decision flowDecisionXML, raw flowXML, form
 						diagnostics = append(diagnostics, diagnostic.Diagnostic{Message: fmt.Sprintf("decision %q branch %q condition %q is not modeled", decision.Name, branch.Name, condition.LeftValueReference)})
 						continue
 					}
-					branch.Criteria = append(branch.Criteria, storage.WorkflowCriteriaItem{
+					item := storage.WorkflowCriteriaItem{
 						Field:     left,
 						Operation: flowOperator(strings.TrimSpace(condition.Operator)),
 						Value:     flowDecisionRightValue(condition.RightValue),
-					})
+					}
+					flowVariableEmptyOperand(&item, condition, variables)
+					branch.Criteria = append(branch.Criteria, item)
 				}
 			}
 			// A rule without a connector ends the flow when it matches. Keep it,
@@ -2095,7 +2130,7 @@ func modeledFlowRecordUpdates(update flowRecordUpdateXML, formulas map[string]st
 			Field:        field,
 			LiteralValue: flowLiteralValue(assignment.Value),
 			Formula:      formula,
-			SourceField:  flowLookupSourceFieldValueUnlessFormula(assignment.Value, formula, variables, lookups),
+			SourceField:  flowRecordUpdateAssignmentSource(assignment.Value, formula, variables, lookups),
 		})
 	}
 	return updates, true
@@ -2153,7 +2188,7 @@ func modeledFlowRecordUpdate(update flowRecordUpdateXML, formulas map[string]str
 			Field:        field,
 			LiteralValue: flowLiteralOrVariableValue(assignment.Value, variables),
 			Formula:      formula,
-			SourceField:  flowLookupSourceFieldValueUnlessFormula(assignment.Value, formula, variables, lookups),
+			SourceField:  flowRecordUpdateAssignmentSource(assignment.Value, formula, variables, lookups),
 		})
 	}
 	return out, true
@@ -2170,13 +2205,43 @@ func flowRequiresOrderedGraph(raw flowXML) bool {
 	if flowPriorDecisionNeedsGraph(raw) {
 		return true
 	}
+	variables := flowVariableMap(raw.Variables)
+	saveTrigger := strings.EqualFold(raw.Start.TriggerType, "RecordBeforeSave") || strings.EqualFold(raw.Start.TriggerType, "RecordAfterSave")
 	for _, decision := range raw.Decisions {
+		for _, branch := range decision.Rules {
+			for _, condition := range branch.Conditions {
+				variable, declared := variables[strings.ToLower(strings.TrimSpace(condition.LeftValueReference))]
+				if declared && !variable.IsCollection && !strings.EqualFold(variable.DataType, "SObject") {
+					operator := strings.ToLower(strings.TrimSpace(condition.Operator))
+					if strings.EqualFold(variable.DataType, "String") && (operator == "startswith" || operator == "endswith") {
+						return true
+					}
+					if saveTrigger && (operator == "equalto" || operator == "notequalto" || operator == "isnull") && flowVariableRecordField(condition.LeftValueReference, variables) == "" {
+						// Unbound scalar save decisions need their frame from entry.
+						// Record aliases and other trigger/operator routes retain their
+						// existing lowering.
+						return true
+					}
+				}
+			}
+		}
 		if flowCoreLookupIDReference(raw, decision) != "" {
 			return true
 		}
 	}
 	if flowRefsDecisionNeedsLookup(raw) {
 		return true
+	}
+	for _, lookup := range raw.RecordLookups {
+		if strings.TrimSpace(lookup.OutputReference) != "" || len(lookup.OutputAssignments) > 0 {
+			return true
+		}
+		for _, formula := range raw.Formulas {
+			name := firstNonBlank(lookup.Name, lookup.Label)
+			if lookup.StoreOutputAutomatically && name != "" && strings.Contains(strings.ToLower(formula.Expression), "{!"+strings.ToLower(name)+".") {
+				return true
+			}
+		}
 	}
 	if len(raw.Loops) > 0 {
 		return true
@@ -2343,13 +2408,15 @@ func flowNodeReferenceModeled(reference string, raw flowXML) bool {
 	return false
 }
 
+var flowBareRecordFormulaPrefix = regexp.MustCompile(`(^|[^[:alnum:]_$])Record\.`)
+
 func normalizeFlowFormula(expression string) string {
 	expression = strings.TrimSpace(expression)
 	expression = strings.ReplaceAll(expression, "{!$Record.", "")
 	expression = strings.ReplaceAll(expression, "{!Record.", "")
 	expression = strings.ReplaceAll(expression, "{!", "")
 	expression = strings.ReplaceAll(expression, "$Record.", "")
-	expression = strings.ReplaceAll(expression, "Record.", "")
+	expression = flowBareRecordFormulaPrefix.ReplaceAllString(expression, "${1}")
 	expression = strings.ReplaceAll(expression, "}", "")
 	return strings.TrimSpace(expression)
 }
@@ -2507,4 +2574,91 @@ func flowUnsupported(path, flowName, message string) diagnostic.Diagnostic {
 		message = flowName + ": " + message
 	}
 	return diagnostic.Diagnostic{Severity: diagnostic.Warning, Code: "GLADEAUTO002", Message: message, File: path}
+}
+
+// A constant is a named literal. Native assignment rows (API 62.0 and 67.0,
+// anonymous and test routes) give an assignment from a constant the value of
+// the same literal, whether the target is a variable or a record field.
+func flowAssignmentItemConstantValue(item flowAssignmentItemXML, variables map[string]flowVariableXML, constants map[string]flowValueXML) flowAssignmentItemXML {
+	reference := strings.ToLower(strings.TrimSpace(item.Value.ElementReference))
+	if reference == "" || flowLiteralValue(item.Value) != "" {
+		return item
+	}
+	if _, variable := variables[reference]; variable {
+		return item
+	}
+	if constant, ok := constants[reference]; ok {
+		item.Value = constant
+	}
+	return item
+}
+
+// A scalar variable compared without a right value is a null test, and an
+// explicit empty String is a distinct operand that no null variable equals
+// (native rows at API 62.0 and 67.0). Record fields keep their existing path.
+func flowVariableEmptyOperand(item *storage.WorkflowCriteriaItem, condition flowConditionXML, variables map[string]flowVariableXML) {
+	if item.Value != "" || strings.TrimSpace(condition.RightValue.ElementReference) != "" || strings.TrimSpace(condition.RightValue.Formula) != "" || strings.TrimSpace(condition.RightValue.Expression) != "" {
+		return
+	}
+	variable, declared := variables[strings.ToLower(strings.TrimSpace(condition.LeftValueReference))]
+	if !declared || strings.Contains(condition.LeftValueReference, ".") || strings.EqualFold(variable.DataType, "SObject") || variable.IsCollection {
+		return
+	}
+	switch item.Operation {
+	case "equals", "notEqual":
+	default:
+		return
+	}
+	if condition.RightValue.EmptyStringValue {
+		item.Value = "{!" + flowEmptyStringOperand + "}"
+		return
+	}
+	if item.Operation == "equals" {
+		item.Operation, item.Value = "isNull", "true"
+	} else {
+		item.Operation, item.Value = "isNull", "false"
+	}
+}
+
+const flowEmptyStringOperand = "$EmptyString"
+
+func flowRecordUpdateConstantValues(update flowRecordUpdateXML, variables map[string]flowVariableXML, constants map[string]flowValueXML) flowRecordUpdateXML {
+	update.Fields = append([]flowFieldAssignmentXML(nil), update.Fields...)
+	for i := range update.Fields {
+		item := flowAssignmentItemConstantValue(flowAssignmentItemXML{Value: update.Fields[i].Value}, variables, constants)
+		if item.Value.ElementReference == "" && update.Fields[i].Value.ElementReference != "" && flowLiteralValue(item.Value) == "" {
+			item.Value = flowValueXML{Formula: "NULL"}
+		}
+		update.Fields[i].Value = item.Value
+	}
+	return update
+}
+
+// flowLookupFilterLogic retains and/or and accepts the native numbered
+// conjunction shape (1 AND 2 AND 3). Mixed or partial logic stays unmodeled.
+func flowLookupFilterLogic(logic string, filters int) (string, bool) {
+	logic = strings.TrimSpace(logic)
+	if logic == "" || strings.EqualFold(logic, "and") || strings.EqualFold(logic, "or") {
+		return strings.ToLower(logic), true
+	}
+	fields := strings.Fields(logic)
+	if len(fields) < 3 || len(fields)%2 == 0 || filters != (len(fields)+1)/2 {
+		return "", false
+	}
+	connective := strings.ToLower(fields[1])
+	if connective != "and" {
+		return "", false
+	}
+	for i, field := range fields {
+		if i%2 == 1 {
+			if !strings.EqualFold(field, connective) {
+				return "", false
+			}
+			continue
+		}
+		if field != fmt.Sprint(i/2+1) {
+			return "", false
+		}
+	}
+	return connective, true
 }

@@ -1,0 +1,5 @@
+variant	purpose
+assignment	cross-list move then field assignment observed by retained and static holders
+put	cross-list move then put observed by retained and static holders
+rejected	invalid-field rejection after the same move
+empty	empty source and destination boundary

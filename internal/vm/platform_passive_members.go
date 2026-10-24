@@ -270,6 +270,25 @@ func (vm *VM) autolaunchedFlowRule(name string) (storage.FlowRule, bool) {
 	return storage.FlowRule{}, false
 }
 
+// Scheduled flows retain their object-bound rules, but Apex can explicitly
+// start an interview with a supplied $Record without waiting for the schedule.
+func (vm *VM) interviewFlowRule(name string) (storage.FlowRule, bool) {
+	if rule, found := vm.autolaunchedFlowRule(name); found {
+		return rule, true
+	}
+	if vm == nil || vm.Org == nil || strings.TrimSpace(name) == "" {
+		return storage.FlowRule{}, false
+	}
+	for _, object := range vm.Org.Objects {
+		for _, rule := range object.Definition.FlowRules {
+			if strings.EqualFold(rule.TriggerType, "Scheduled") && strings.EqualFold(strings.TrimSpace(rule.Name), strings.TrimSpace(name)) {
+				return rule, true
+			}
+		}
+	}
+	return storage.FlowRule{}, false
+}
+
 func (vm *VM) flowDeclaration(name string) (storage.FlowRule, bool) {
 	if vm == nil || vm.Org == nil || strings.TrimSpace(name) == "" {
 		return storage.FlowRule{}, false
@@ -313,7 +332,7 @@ func (vm *VM) flowInterviewInput(receiver Value) (dml.FlowInterviewInput, map[st
 	}
 	flowName := flowInterviewName(receiver)
 	declared := make(map[string]storage.FlowVariable)
-	if rule, found := vm.autolaunchedFlowRule(flowName); found {
+	if rule, found := vm.interviewFlowRule(flowName); found {
 		for _, variable := range rule.Variables {
 			declared[strings.ToLower(strings.TrimSpace(variable.Name))] = variable
 		}
@@ -361,7 +380,7 @@ func (vm *VM) flowInterviewInput(receiver Value) (dml.FlowInterviewInput, map[st
 			}
 			records := make([]storage.Record, 0, len(value.List))
 			for index := range value.List {
-				record, err := vm.recordFromValue(&value.List[index])
+				record, err := vm.flowInterviewRecordFromValue(&value.List[index])
 				if err != nil {
 					return input, opaque, fmt.Errorf("Flow.Interview input %s[%d]: %w", name, index, err)
 				}
@@ -375,7 +394,7 @@ func (vm *VM) flowInterviewInput(receiver Value) (dml.FlowInterviewInput, map[st
 			continue
 		}
 		if value.Kind == ValueObject && (recordShape || vm.isSObjectLikeType(value.Type)) {
-			record, err := vm.recordFromValue(&value)
+			record, err := vm.flowInterviewRecordFromValue(&value)
 			if err != nil {
 				return input, opaque, fmt.Errorf("Flow.Interview input %s: %w", name, err)
 			}
@@ -389,6 +408,34 @@ func (vm *VM) flowInterviewInput(receiver Value) (dml.FlowInterviewInput, map[st
 		input.Scalars[name] = converted
 	}
 	return input, opaque, nil
+}
+
+// Flow inputs carry read projections; DML conversion intentionally omits formulas.
+func (vm *VM) flowInterviewRecordFromValue(value *Value) (storage.Record, error) {
+	record, err := vm.recordFromValue(value)
+	if err != nil || vm.Org == nil {
+		return record, err
+	}
+	object, ok := vm.Org.Objects[record.Object]
+	if !ok {
+		return record, nil
+	}
+	for name, value := range value.Fields {
+		canonical, ok := vm.resolveFieldName(object.Definition, name)
+		if !ok {
+			continue
+		}
+		field := object.Definition.Fields[canonical]
+		if strings.TrimSpace(field.Formula) == "" {
+			continue
+		}
+		converted, err := storageValueFromVMForField(value, field)
+		if err != nil {
+			return storage.Record{}, fmt.Errorf("%s.%s: %w", record.Object, canonical, err)
+		}
+		record.Fields[canonical] = converted
+	}
+	return record, nil
 }
 
 func flowInterviewRecordVariable(variable storage.FlowVariable) bool {
@@ -944,6 +991,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		case "getTypeName":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getTypeName expects 0 arguments", receiver.Type)
+			}
+			if class, ok := vm.lookupClass(receiver.Type); ok && !class.PlatformType {
+				return String(vm.classTypeToken(class)), receiver, false, true, nil
 			}
 			return String(vm.exceptionQualifiedTypeName(receiver.Type)), receiver, false, true, nil
 		case "getLineNumber":
@@ -1554,11 +1604,12 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			// A Schema constructor with loadDefaults=false keeps checkbox fields raw
 			// null, unlike ordinary Apex construction (R125-R144).
 			if len(args) == 2 && !args[1].Bool && vm.Org != nil {
-				if object, ok := vm.Org.Objects[objectName]; ok {
-					for name, field := range object.Definition.Fields {
+				if _, definition, ok := vm.sObjectDefinitionForRead(objectName); ok {
+					for name, field := range definition.Fields {
 						if field.Type == storage.FieldBoolean {
 							record.Fields[name] = typedNull("Boolean")
-							if args[0].Kind == ValueNull && hasSuffixFold(object.Definition.APIName, "__c") && !storage.IsCustomSettingDefinition(object.Definition) && strings.EqualFold(strings.TrimSpace(field.DefaultValue), "false") {
+							if args[0].Kind == ValueNull && (storage.IsCustomMetadataDefinition(definition) ||
+								!storage.IsCustomSettingDefinition(definition) && hasSuffixFold(definition.APIName, "__c")) {
 								// The raw null is readable, but an unloaded custom
 								// Checkbox has no populated/serialized presence.
 								markDefaultedSObjectField(&record, name)
@@ -1603,19 +1654,19 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				}
 			}
 			if len(args) == 2 && args[1].Bool && vm.Org != nil {
-				if object, ok := vm.Org.Objects[objectName]; ok {
+				if _, definition, ok := vm.sObjectDefinitionForRead(objectName); ok {
 					if _, _, exists := objectFieldValue(record, "RecordTypeId"); !exists {
-						if recordTypeID := defaultRecordTypeID(object.Definition); recordTypeID != "" && !isDescribeOnlyMasterRecordTypeID(recordTypeID) {
+						if recordTypeID := defaultRecordTypeID(definition); recordTypeID != "" && !isDescribeOnlyMasterRecordTypeID(recordTypeID) {
 							record.Fields["RecordTypeId"] = platformScalar("Id", string(recordTypeID))
 						}
 					}
-					for name, field := range object.Definition.Fields {
+					for name, field := range definition.Fields {
 						if _, _, exists := objectFieldValue(record, name); exists {
 							continue
 						}
-						if defaultValue, ok := vm.defaultValueForNewSObjectField(object.Definition, record, field); ok {
+						if defaultValue, ok := vm.defaultValueForNewSObjectField(definition, record, field); ok {
 							putVMFieldPath(record, name, vmValueFromStorage(defaultValue))
-							rememberSchemaCheckboxEquality(&record, object.Definition, field, defaultValue)
+							rememberSchemaCheckboxEquality(&record, definition, field, defaultValue)
 						} else if args[0].Kind == ValueNull && field.Type == storage.FieldSummary && strings.EqualFold(strings.TrimSpace(field.SummaryOperation), "count") && strings.TrimSpace(field.DefaultValue) == "" {
 							// Native loadDefaults observations initialize COUNT before
 							// insert; ordinary constructors retain their null caller value.
@@ -1642,11 +1693,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					// Evaluate calculated defaults after their input defaults are loaded.
 					// Keep this snapshot on the caller without changing ordinary construction.
 					if stored, err := vm.recordFromValue(&record); err == nil {
-						for name, field := range object.Definition.Fields {
+						for name, field := range definition.Fields {
 							if strings.TrimSpace(field.Formula) == "" {
 								continue
 							}
-							if value, isNull, ok := dml.EvaluateRecordFormulaValueInOrg(field.Formula, field, vm.Org, object.Definition, stored); ok {
+							if value, isNull, ok := dml.EvaluateRecordFormulaValueInOrg(field.Formula, field, vm.Org, definition, stored); ok {
 								if isNull {
 									putVMFieldPath(record, name, Null)
 								} else {
@@ -1725,7 +1776,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			appendTraceLazy(result, "apex.describe.fields", "apex.describe", func() map[string]any {
 				return vm.traceDescribeArgs("fields.getMap", nil)
 			})
-			return privateDescribeCollection(receiver.Fields["map"]), receiver, false, true, nil
+			fieldsMap, _ := vm.privateDescribeFieldMap(receiver)
+			return privateDescribeCollection(fieldsMap), receiver, false, true, nil
 		}
 	case "Schema.SObjectTypeFieldSets", "Schema.FieldSetMap":
 		switch method {
@@ -2567,7 +2619,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					if !ok {
 						return Null, receiver, false, true, unsupportedCallError("Datetime.format timezone " + vm.currentUserTimeZoneID())
 					}
-					return String(fmt.Sprintf("%d/%d/%d, %d:%02d %s", int(local.Month()), local.Day(), local.Year(), toTwelveHour(local.Hour()), local.Minute(), ampm(local.Hour()))), receiver, false, true, nil
+					return String(formatApexDatetimeForLocale(local, vm.currentUserInfoField("LocaleSidKey", "en_US"))), receiver, false, true, nil
 				}
 				gmt := t.UTC()
 				return String(fmt.Sprintf("%d/%d/%d, %d:%02d %s", int(gmt.Month()), gmt.Day(), gmt.Year(), toTwelveHour(gmt.Hour()), gmt.Minute(), ampm(gmt.Hour()))), receiver, false, true, nil
@@ -2816,10 +2868,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if receiver.Type != "Blob" {
 				return Null, receiver, false, false, nil
 			}
+			if len(args) == 1 && args[0].Kind == ValueNull {
+				return Null, receiver, false, true, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+			}
 			if len(args) != 1 || args[0].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("Blob.toPdf expects String")
 			}
-			return Null, receiver, false, true, unsupportedCallError("Blob.toPdf hosted PDF rendering")
+			return platformScalar("Blob", string(vm.RenderTextPDF(args[0].Text))), receiver, false, true, nil
 		case "hour", "minute", "second", "millisecond":
 			if receiver.Type != "Time" {
 				return Null, receiver, false, false, nil
@@ -3659,6 +3714,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if !hasMock && vm.testContext != nil {
 				return Null, receiver, false, true, newExceptionError("TypeException", "Methods defined as TestMethod do not support Web service callouts")
 			}
+			if err := vm.checkCalloutAllowed(); err != nil {
+				return Null, receiver, false, true, err
+			}
 			if err := vm.incrementLimit("callouts", 1); err != nil {
 				return Null, receiver, false, true, err
 			}
@@ -3683,6 +3741,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					return Null, receiver, false, true, err
 				}
 				return value, receiver, false, true, nil
+			}
+			if vm.Org != nil && len(vm.Org.Metadata.Endpoints) == 0 {
+				return Null, receiver, false, true, newExceptionError("CalloutException", "Unauthorized endpoint, please check Setup->Security->Remote site settings. endpoint = "+request.Fields["endpoint"].Text)
 			}
 			return Null, receiver, false, true, unsupportedCallError("Http.send real network transport")
 		}
@@ -3894,7 +3955,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Flow.Interview.start expects 0 arguments")
 			}
 			flowName := flowInterviewName(receiver)
-			rule, found := vm.autolaunchedFlowRule(flowName)
+			rule, found := vm.interviewFlowRule(flowName)
 			if !found {
 				if declaration, ok := vm.flowDeclaration(flowName); ok && strings.EqualFold(declaration.ProcessType, "Flow") {
 					return Null, receiver, false, true, newExceptionError("System.FlowException", "Screen flows require an interactive runtime")
@@ -3911,7 +3972,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			engine := vm.newDMLEngine(result)
 			output, err := engine.RunAutolaunchedFlowWithOutput(rule, input)
 			if err != nil {
-				if dml.IsFlowRecordUpdateMissingID(err) {
+				if _, inputFailure := dml.FlowActionInputFailureResult(err); inputFailure || dml.IsFlowRecordUpdateMissingID(err) {
 					return Null, receiver, false, true, newExceptionError("System.FlowException", err.Error())
 				}
 				return Null, receiver, false, true, err
@@ -3956,7 +4017,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			// The Interview reference returns null for a name absent from the
 			// running Flow, even if an extra input/frame value has that name.
-			rule, _ := vm.autolaunchedFlowRule(flowInterviewName(receiver))
+			rule, _ := vm.interviewFlowRule(flowInterviewName(receiver))
 			declared := false
 			for _, variable := range rule.Variables {
 				if strings.EqualFold(variable.Name, args[0].Text) {
@@ -4072,6 +4133,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		case "getContent", "getContentAsPDF":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("PageReference.%s expects 0 arguments", method)
+			}
+			if vm.testContext != nil {
+				return Null, receiver, false, true, NewVisualforceException("Methods defined as TestMethod do not support getContent call")
 			}
 			content, err := renderPageContent(vm, pageReferenceURL(receiver).Text, method == "getContentAsPDF")
 			if err != nil {
@@ -5065,10 +5129,22 @@ func (vm *VM) callTypeObjectMember(receiver Value, method string, args []Value, 
 		if strings.EqualFold(canonicalRuntimePlatformType(typeName), "Callable") {
 			return Null, true, newExceptionError("TypeException", typeName+" cannot be constructed")
 		}
+		class, registered := vm.lookupClass(typeName)
+		// Utility classes and interfaces have distinct native reflection results.
+		// Preserve a source class that shadows an unqualified platform name.
+		if !registered || class.PlatformType {
+			switch strings.ToLower(typeName) {
+			case "userinfo", "system.userinfo":
+				return Object("System.UserInfo"), true, nil
+			case "limits", "system.limits":
+				return Null, true, newExceptionError("TypeException", "Limit cannot be constructed")
+			case "finalizer", "system.finalizer":
+				return Null, true, newExceptionError("TypeException", "System.Finalizer cannot be constructed")
+			}
+		}
 		// These hosted callback interfaces cannot be instantiated.
 		// Linking registers generated callback classes too. A source class keeps
 		// precedence; even an empty source class lacks generated methods.
-		class, registered := vm.lookupClass(typeName)
 		if !registered || (len(class.Methods) > 0 && passiveRuntimeClass(class)) {
 			for _, name := range []string{"RichMessaging.AuthRequestHandler", "RichMessaging.ProcessCatalogOrderHandler", "RichMessaging.ProcessPaymentHandler", "RichMessaging.ProcessFormHandler"} {
 				if strings.EqualFold(typeName, name) {

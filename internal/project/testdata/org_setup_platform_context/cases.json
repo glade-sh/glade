@@ -1,0 +1,317 @@
+[
+  {
+    "route": "barePersonIdentifier",
+    "source": "public class SetupUse { public static String observe() { Boolean IsPersonAccount = false; String PersonEmail = 'label'; return String.valueOf(IsPersonAccount); } }",
+    "feature": "",
+    "file": "SetupUse.cls",
+    "e2e": true
+  },
+  {
+    "route": "bareCurrencyIdentifier",
+    "source": "public class SetupUse { public static String observe() { String CurrencyIsoCode = 'USD'; return CurrencyIsoCode; } }",
+    "feature": "",
+    "file": "SetupUse.cls",
+    "e2e": true
+  },
+  {
+    "route": "personLiteral",
+    "source": "public class SetupUse { public static String observe() { return 'IsPersonAccount PersonContactId PersonEmail Preference__pc Account.PersonEmail'; } }",
+    "feature": "",
+    "file": "SetupUse.cls",
+    "e2e": true
+  },
+  {
+    "route": "currencyLiteral",
+    "source": "public class SetupUse { public static String observe() { return 'CurrencyIsoCode FROM CurrencyType convertCurrency(Amount) Opportunity.CurrencyIsoCode'; } }",
+    "feature": "",
+    "file": "SetupUse.cls",
+    "e2e": true
+  },
+  {
+    "route": "queryLiteralLabel",
+    "source": "public class SetupUse { public static String observe() { return 'SELECT IsPersonAccount FROM Account'; } }",
+    "feature": "",
+    "file": "SetupUse.cls",
+    "e2e": true
+  },
+  {
+    "route": "currencyQueryLiteralLabel",
+    "source": "public class SetupUse { public static String observe() { return 'SELECT CurrencyIsoCode FROM Opportunity'; } }",
+    "feature": "",
+    "file": "SetupUse.cls",
+    "e2e": true
+  },
+  {
+    "route": "mapKeys",
+    "source": "public class SetupUse { public static String observe() { Map<String,String> labels = new Map<String,String>{'PersonEmail'=>'label', 'CurrencyIsoCode'=>'USD'}; return labels.get('PersonEmail') + labels.get('CurrencyIsoCode'); } }",
+    "feature": "",
+    "file": "SetupUse.cls",
+    "e2e": true
+  },
+  {
+    "route": "personTypedField",
+    "source": "class SetupUse { Object f(Account a) { return a.PersonEmail; } }",
+    "feature": "PersonAccounts",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "personSchemaField",
+    "source": "class SetupUse { Object f = Schema.Account.IsPersonAccount; }",
+    "feature": "PersonAccounts",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "personConstructor",
+    "source": "class SetupUse { Object f = new Account(PersonEmail = 'test@example.invalid'); }",
+    "feature": "PersonAccounts",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "personDynamicField",
+    "source": "class SetupUse { Object f(Account a) { return a.get('Preference__pc'); } }",
+    "feature": "PersonAccounts",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "personDynamicSchema",
+    "source": "class SetupUse { Object f = Schema.getGlobalDescribe().get('Account').getDescribe().fields.getMap().get('PersonEmail'); }",
+    "feature": "PersonAccounts",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "personWrongReceiver",
+    "source": "class SetupUse { Object f(Contact c) { return c.get('PersonEmail'); } }",
+    "feature": "",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "personReceiverReuse",
+    "source": "class SetupUse { void a(Account x) {} Object b(Map<String,Object> x) { return x.get('PersonEmail'); } }",
+    "feature": "",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "personStaticQuery",
+    "source": "class SetupUse { Object f = [SELECT IsPersonAccount FROM Account]; }",
+    "feature": "PersonAccounts",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "personQueryValue",
+    "source": "class SetupUse { Object f = [SELECT Id FROM Account WHERE Name = 'PersonEmail']; }",
+    "feature": "",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "personWrongQueryObject",
+    "source": "class SetupUse { Object f = Database.query('SELECT PersonEmail FROM Contact'); }",
+    "feature": "",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "personSplitQuery",
+    "source": "class SetupUse { Object f = Database.query('SELECT PersonEmail ' + 'FROM Account'); }",
+    "feature": "PersonAccounts",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "currencyTypedField",
+    "source": "class SetupUse { Object f(Opportunity o) { return o.CurrencyIsoCode; } }",
+    "feature": "MultiCurrency",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "currencySchemaField",
+    "source": "class SetupUse { Object f = Schema.Opportunity.CurrencyIsoCode; }",
+    "feature": "MultiCurrency",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "currencyConstructor",
+    "source": "class SetupUse { Object f = new Opportunity(CurrencyIsoCode = 'USD'); }",
+    "feature": "MultiCurrency",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "currencyDynamicField",
+    "source": "class SetupUse { Object f(Opportunity o) { return o.get('CurrencyIsoCode'); } }",
+    "feature": "MultiCurrency",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "currencyDynamicSchema",
+    "source": "class SetupUse { Object f = Schema.getGlobalDescribe().get('Opportunity').getDescribe().fields.getMap().get('CurrencyIsoCode'); }",
+    "feature": "MultiCurrency",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "currencyStaticQuery",
+    "source": "class SetupUse { Object f = [SELECT CurrencyIsoCode FROM Opportunity]; }",
+    "feature": "MultiCurrency",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "currencyQueryValue",
+    "source": "class SetupUse { Object f = [SELECT Id FROM Opportunity WHERE Name = 'CurrencyIsoCode']; }",
+    "feature": "",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "currencyConvertQuery",
+    "source": "class SetupUse { Object f = [SELECT convertCurrency(Amount) FROM Opportunity]; }",
+    "feature": "MultiCurrency",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "currencyConvertMethod",
+    "source": "class SetupUse { Decimal convertCurrency(Decimal amount) { return amount; } }",
+    "feature": "",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "currencyTypeQuery",
+    "source": "class SetupUse { Object f = Database.query('SELECT IsoCode FROM CurrencyType'); }",
+    "feature": "MultiCurrency",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "currencyDatedQuery",
+    "source": "class SetupUse { Object f = Database.query('SELECT ConversionRate FROM DatedConversionRate'); }",
+    "feature": "MultiCurrency",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "currencyReceiverReuse",
+    "source": "class SetupUse { void a(Opportunity x) {} Object b(Map<String,Object> x) { return x.get('CurrencyIsoCode'); } }",
+    "feature": "",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "doubleQuotedLabel",
+    "source": "const label = \"Account.PersonEmail Opportunity.CurrencyIsoCode\";",
+    "feature": "",
+    "file": "setupUse.js",
+    "e2e": false
+  },
+  {
+    "route": "personSchemaImport",
+    "source": "import field from '@salesforce/schema/Account.PersonEmail';",
+    "feature": "PersonAccounts",
+    "file": "setupUse.js",
+    "e2e": false
+  },
+  {
+    "route": "currencySchemaImport",
+    "source": "import field from '@salesforce/schema/Opportunity.CurrencyIsoCode';",
+    "feature": "MultiCurrency",
+    "file": "setupUse.js",
+    "e2e": false
+  },
+  {
+    "route": "metadataLabel",
+    "source": "<PermissionSet><label>IsPersonAccount PersonEmail CurrencyIsoCode</label></PermissionSet>",
+    "feature": "",
+    "file": "Synthetic.permissionset-meta.xml",
+    "e2e": true
+  },
+  {
+    "route": "personPermissionField",
+    "source": "<PermissionSet><fieldPermissions><field>Account.PersonEmail</field></fieldPermissions></PermissionSet>",
+    "feature": "PersonAccounts",
+    "file": "Synthetic.permissionset-meta.xml",
+    "e2e": false
+  },
+  {
+    "route": "currencyFlowField",
+    "source": "<Flow><recordLookups><filters><field>CurrencyIsoCode</field></filters><object>Opportunity</object></recordLookups></Flow>",
+    "feature": "MultiCurrency",
+    "file": "Synthetic.flow-meta.xml",
+    "e2e": false
+  },
+  {
+    "route": "nativePersonQuery",
+    "source": "public class SetupUse {\n    public static String observe() {\n        try { Database.query('SELECT IsPersonAccount FROM Account'); return 'available'; } catch (Exception e) { return e.getTypeName(); }\n    }\n}\n",
+    "feature": "PersonAccounts",
+    "file": "SetupUse.cls",
+    "e2e": true
+  },
+  {
+    "route": "nativePersonDynamicField",
+    "source": "public class SetupUse {\n    public static String observe() {\n        try { new Account().get('Preference__pc'); return 'available'; } catch (Exception e) { return e.getTypeName(); }\n    }\n}\n",
+    "feature": "PersonAccounts",
+    "file": "SetupUse.cls",
+    "e2e": true
+  },
+  {
+    "route": "nativeCurrencyQuery",
+    "source": "public class SetupUse {\n    public static String observe() {\n        try { Database.query('SELECT CurrencyIsoCode FROM Opportunity'); return 'available'; } catch (Exception e) { return e.getTypeName(); }\n    }\n}\n",
+    "feature": "MultiCurrency",
+    "file": "SetupUse.cls",
+    "e2e": true
+  },
+  {
+    "route": "queryBindIdentifiers",
+    "source": "public class SetupUse { public static String observe() { String PersonEmail = 'label'; String CurrencyIsoCode = 'USD'; return String.valueOf([SELECT Count() FROM Account WHERE Name = :PersonEmail OR Name = :CurrencyIsoCode]); } }",
+    "feature": "",
+    "file": "SetupUse.cls",
+    "e2e": true
+  },
+  {
+    "route": "contactPersonQuery",
+    "source": "public class SetupUse { public static String observe() { try { Database.query('SELECT IsPersonAccount FROM Contact'); return 'available'; } catch (Exception e) { return e.getTypeName(); } } }",
+    "feature": "PersonAccounts",
+    "file": "SetupUse.cls",
+    "e2e": true
+  },
+  {
+    "route": "contactPersonTypedField",
+    "source": "class SetupUse { Boolean f(Contact c) { return c.IsPersonAccount; } }",
+    "feature": "PersonAccounts",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "contactPersonDynamicField",
+    "source": "class SetupUse { Object f(Contact c) { return c.get('IsPersonAccount'); } }",
+    "feature": "PersonAccounts",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "contactPersonSchemaField",
+    "source": "class SetupUse { Object f = Schema.Contact.IsPersonAccount; }",
+    "feature": "PersonAccounts",
+    "file": "SetupUse.cls",
+    "e2e": false
+  },
+  {
+    "route": "contactPersonMetadata",
+    "source": "<PermissionSet><fieldPermissions><field>Contact.IsPersonAccount</field></fieldPermissions></PermissionSet>",
+    "feature": "PersonAccounts",
+    "file": "Synthetic.permissionset-meta.xml",
+    "e2e": false
+  }
+]

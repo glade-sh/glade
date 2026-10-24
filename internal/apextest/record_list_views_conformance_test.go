@@ -43,6 +43,7 @@ func TestRecordListViewsOrgConformance(t *testing.T) {
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "RecordListViews", api)
+			base := conformanceSchemaBase(t, nativeBoundaryIndex(t, api, nil, nil), api)
 			for _, pending := range data.UnobservedShapes {
 				if strings.Join(pending.Routes, ",") != "anonymous,isTest" || pending.ID == "" || pending.Reason == "" || !strings.Contains(pending.MeasuredApex, "List<Account>.class") {
 					t.Fatal("missing Account carry measurement or reason")
@@ -76,7 +77,7 @@ func TestRecordListViewsOrgConformance(t *testing.T) {
 							t.Fatal("missing native record-list cell")
 						}
 						counts.TrackKind(t, route, "exact", 1)
-						residualObservationObserve(t, api, route, source.nativeBoundaryRoute, want)
+						residualObservationObserveCore(t, api, route, source.nativeBoundaryRoute, want, true, base)
 					})
 				}
 			}

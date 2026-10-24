@@ -1,0 +1,22 @@
+source_api	method	observation
+62.0	noRowsAssignment	{"line":5,"message":"List has no rows for assignment to SObject","type":"System.QueryException"}
+62.0	filteredMissAssignment	{"line":5,"message":"List has no rows for assignment to SObject","type":"System.QueryException"}
+62.0	matchingAssignment	{"value":"selected-value","outcome":"row"}
+62.0	emptyListControl	{"size":0,"outcome":"list"}
+62.0	wrappedNoRows	{"query":{"line":8,"message":"List has no rows for assignment to SObject","type":"System.QueryException"},"thrown":{"line":17,"message":"Missing absent custom setting, please ensure this is set up before proceeding.","type":"ProbeErrors.QueryException"}}
+62.0	wrappedFilteredMiss	{"query":{"line":8,"message":"List has no rows for assignment to SObject","type":"System.QueryException"},"thrown":{"line":17,"message":"Missing known-name custom setting, please ensure this is set up before proceeding.","type":"ProbeErrors.QueryException"}}
+62.0	wrappedMatching	{"value":"selected-value","outcome":"row"}
+64.0	noRowsAssignment	{"line":5,"message":"List has no rows for assignment to SObject","type":"System.QueryException"}
+64.0	filteredMissAssignment	{"line":5,"message":"List has no rows for assignment to SObject","type":"System.QueryException"}
+64.0	matchingAssignment	{"value":"selected-value","outcome":"row"}
+64.0	emptyListControl	{"size":0,"outcome":"list"}
+64.0	wrappedNoRows	{"query":{"line":8,"message":"List has no rows for assignment to SObject","type":"System.QueryException"},"thrown":{"line":17,"message":"Missing absent custom setting, please ensure this is set up before proceeding.","type":"ProbeErrors.QueryException"}}
+64.0	wrappedFilteredMiss	{"query":{"line":8,"message":"List has no rows for assignment to SObject","type":"System.QueryException"},"thrown":{"line":17,"message":"Missing known-name custom setting, please ensure this is set up before proceeding.","type":"ProbeErrors.QueryException"}}
+64.0	wrappedMatching	{"value":"selected-value","outcome":"row"}
+67.0	noRowsAssignment	{"line":5,"message":"List has no rows for assignment to SObject","type":"System.QueryException"}
+67.0	filteredMissAssignment	{"line":5,"message":"List has no rows for assignment to SObject","type":"System.QueryException"}
+67.0	matchingAssignment	{"value":"selected-value","outcome":"row"}
+67.0	emptyListControl	{"size":0,"outcome":"list"}
+67.0	wrappedNoRows	{"query":{"line":8,"message":"List has no rows for assignment to SObject","type":"System.QueryException"},"thrown":{"line":17,"message":"Missing absent custom setting, please ensure this is set up before proceeding.","type":"ProbeErrors.QueryException"}}
+67.0	wrappedFilteredMiss	{"query":{"line":8,"message":"List has no rows for assignment to SObject","type":"System.QueryException"},"thrown":{"line":17,"message":"Missing known-name custom setting, please ensure this is set up before proceeding.","type":"ProbeErrors.QueryException"}}
+67.0	wrappedMatching	{"value":"selected-value","outcome":"row"}

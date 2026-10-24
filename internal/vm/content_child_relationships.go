@@ -11,8 +11,8 @@ type contentChildRelationship struct {
 	relationship storage.Relationship
 }
 
-// CD06C observes these names on an ordinary custom object. Sparse local orgs
-// only expose children whose standard object definitions are actually loaded.
+// Ordinary custom objects share the platform child catalog. Sparse local orgs
+// only expose children whose object definitions are actually loaded.
 func (vm *VM) contentChildRelationships(parentObject string) []contentChildRelationship {
 	if vm == nil || vm.Org == nil {
 		return nil
@@ -26,17 +26,29 @@ func (vm *VM) contentChildRelationships(parentObject string) []contentChildRelat
 		return nil
 	}
 	var out []contentChildRelationship
-	for _, child := range []struct{ object, name string }{
-		{"AttachedContentDocument", "AttachedContentDocuments"},
-		{"ContentDocumentLink", "ContentDocumentLinks"},
-	} {
-		if _, loaded := vm.Org.Objects[child.object]; !loaded {
-			continue
+	storage.VisitPlatformChildRelationships(definition, func(child string, relationship storage.Relationship) {
+		if _, loaded := vm.Org.Objects[child]; !loaded {
+			return
 		}
-		out = append(out, contentChildRelationship{childObject: child.object, relationship: storage.Relationship{
-			Field: "LinkedEntityId", ParentObjects: []string{parentName}, ParentRelationship: "LinkedEntity", ChildRelationship: child.name, Polymorphic: true,
-		}})
-	}
+		// Captured deletion flags belong to the parent-side describe edge.
+		switch relationship.ChildRelationship {
+		case "AttachedContentDocuments", "Attachments", "CombinedAttachments", "ContentDocumentLinks",
+			"DuplicateRecordItems", "FeedSubscriptionsForEntity", "Notes", "NotesAndAttachments",
+			"ProcessExceptions", "ProcessInstances", "RecordActions", "RecordAssociatedGroups",
+			"Shares", "TopicAssignments", "UserDefinedLabelAssignments":
+			relationship.CascadeDelete = true
+		}
+		if relationship.Field == "LinkedEntityId" {
+			relationship.ParentRelationship = "LinkedEntity"
+		}
+		out = append(out, contentChildRelationship{childObject: child, relationship: relationship})
+		// Native describe exposes both fields under the same relationship name.
+		switch relationship.ChildRelationship {
+		case "FinanceBalanceSnapshots", "FinanceTransactions":
+			relationship.Field = "LegalEntityId"
+			out = append(out, contentChildRelationship{childObject: child, relationship: relationship})
+		}
+	})
 	return out
 }
 

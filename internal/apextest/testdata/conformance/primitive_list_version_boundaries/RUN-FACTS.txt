@@ -1,7 +1,7 @@
 route=istest
 rows=135
 deployment_success=true
-transport=intentional assertion
+transport=System.assert
 source_sha256:force-app/main/default/classes/ScalarListTest62.cls=5b0c3ba0af1e7ce5b133aaf46b936abca72b0c32428de0d47d2aded25d33dae0
 source_sha256:force-app/main/default/classes/ScalarListTest62.cls-meta.xml=2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa
 source_sha256:force-app/main/default/classes/ScalarListTest67.cls=4fd9408efa9ed905b13ebb827b0b9a826cb7657df3a0f6b302f5f8eddbb1635d

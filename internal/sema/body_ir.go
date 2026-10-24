@@ -662,7 +662,7 @@ func semaOpenStandardSObjectForConstructor(members typeMembers, fieldName string
 	// Custom and managed objects and custom fields have complete metadata,
 	// and a field that exists only under an org feature is a compile error
 	// when the feature is off. Neither is a catalog gap.
-	if strings.Contains(members.name, "__") || semaCustomFieldSuffix(fieldName) {
+	if strings.Contains(members.name, "__") || strings.Contains(fieldName, "__") {
 		return false
 	}
 	if storage.StandardObjectFieldRequiresFeature(members.name, fieldName) {
@@ -670,12 +670,6 @@ func semaOpenStandardSObjectForConstructor(members typeMembers, fieldName string
 	}
 	_, standard := semaStandardSObjectNameForKey(normalizeName(members.name))
 	return standard
-}
-
-func semaCustomFieldSuffix(fieldName string) bool {
-	lower := strings.ToLower(fieldName)
-	return strings.HasSuffix(lower, "__c") || strings.HasSuffix(lower, "__r") || strings.HasSuffix(lower, "__x") ||
-		strings.HasSuffix(lower, "__pc") || strings.HasSuffix(lower, "__pr")
 }
 
 func semaOpenSObjectFieldMember(typeName, fieldName string, model *semaTypeMemberView) (resolvedMember, bool) {
@@ -1470,6 +1464,10 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 	var diagnostics []diagnostic.Diagnostic
 	for instructionIndex, inst := range instructions {
 		if d, rejected := semaFinalCollectionUnaryAssignment(typ, inst, *scope, bodyOffset+inst.Pos, source); rejected {
+			diagnostics = append(diagnostics, d)
+			continue
+		}
+		if d, rejected := a.semaCapturedUnaryAssignment(typ, member, inst, *scope, bodyOffset+inst.Pos, source, model); rejected {
 			diagnostics = append(diagnostics, d)
 			continue
 		}
@@ -2433,6 +2431,13 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	if d, rejected := a.semaIRShadowReceiverMissingMethod(typ, member, expr, scope, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source, model); rejected {
 		return []diagnostic.Diagnostic{d}
 	}
+	// Resolve a constant's enum owner before permissive dotted/static-value
+	// fallbacks can accept the call without checking the method.
+	if receiver, method, ok := splitSemaMethodPath(expr.Callee); ok {
+		if diagnostics, handled := a.checkIREnumConstantCall(typ, member, receiver, method, expr.Args, scope, pos, bodyOffset, source, model); handled {
+			return diagnostics
+		}
+	}
 	// C034's named control declares the enum inside the test class. Resolve
 	// this static enum receiver before a bare-name fallback can accept it.
 	if receiver, method, ok := splitSemaMethodPath(expr.Callee); ok && !scope.hasNonFieldBinding(receiver) && (strings.EqualFold(method, "values") || strings.EqualFold(method, "valueOf")) {
@@ -2452,7 +2457,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	// Keep this pre-resolution guard for rejected qualified platform receivers.
 	// The later platform path is shared, but unknown dotted receivers can exit
 	// through permissive fallback before it is reached.
-	if receiver, method, ok := splitSemaMethodPath(expr.Callee); ok && !scope.hasNonFieldBinding(receiver) && !semaProjectTypeShadowsPlatform(model, receiver) {
+	if receiver, method, ok := splitSemaMethodPath(expr.Callee); ok && !scope.hasNonFieldBinding(receiver) && !semaProjectTypeShadowsPlatform(model, receiver) && semaLexicalShadowingInner(model, typ.Name, receiver) == "" {
 		if message := semaPlatformEventCallMessage(receiver, method, "class", irCallArgTypes(a, expr.Args, scope, model, typ.Name), model, typ.File != ""); message != "" {
 			return []diagnostic.Diagnostic{semaPlatformEventDiagnostic(typ, message, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
 		}
@@ -2514,6 +2519,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	classLiteralReceiver := false
 	platformClassReceiver := false
 	projectClassReceiver := false
+	lexicalShadowReceiver := false
 	if expr.Left != nil {
 		explicitReceiver = true
 		if inferred := a.inferIRExprType(*expr.Left, scope, model, typ.Name); inferred != "" {
@@ -2527,7 +2533,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 		method = callee
 		if receiverExpr, methodName, ok := splitSemaMethodPath(expr.Callee); ok {
 			_, receiverScoped := scope.lookup(receiverExpr)
-			if !receiverScoped && semaKnownPlatformTypeReceiver(receiverExpr) && !semaProjectTypeShadowsPlatform(model, receiverExpr) {
+			if !receiverScoped && semaKnownPlatformTypeReceiver(receiverExpr) && !semaProjectTypeShadowsPlatform(model, receiverExpr) && semaLexicalShadowingInner(model, typ.Name, receiverExpr) == "" {
 				if _, ok := semaPlatformMethodSignatureForMode(model, receiverExpr, methodName, "class"); ok {
 					receiverType = receiverExpr
 					method = methodName
@@ -2561,30 +2567,36 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 						projectClassReceiver = true
 					} else if scoped, ok := scope.lookup(receiver); ok {
 						receiverType = scoped
+					} else if nested := semaLexicalShadowingInner(model, typ.Name, receiver); nested != "" {
+						// A dotted value path (Type.B.name()) is an enum or field
+						// value, never a static call on the inner type.
+						if strings.Contains(method, ".") {
+							return nil
+						}
+						receiverType = nested
+						projectClassReceiver = true
+						lexicalShadowReceiver = true
 					} else if members, ok := model.lookup(normalizeName(receiver)); ok {
 						if !semaPlatformReceiverSpellingMatches(receiver, members) {
 							return nil
 						}
 						receiverType = receiver
+					} else if enum := semaLexicalSourceInnerEnum(model, typ.Name, receiver); enum != "" && !strings.Contains(method, ".") {
+						receiverType = enum
+						projectClassReceiver = true
 					} else if a.hasKnown(receiver) {
 						return nil
 					} else {
 						receiverExpr, _, _ := splitSemaMethodPath(expr.Callee)
-						// A qualified type can exist without a separate namespace
-						// symbol. Preserve known type segments and deeper member paths;
-						// the native rejects cover an absent namespace/type pair.
-						knownReceiver := false
+						// A namespace need not have its own symbol. Resolve both
+						// qualified types and static field values rooted in them.
 						if _, known := model.lookupName(resolveNestedTypeName(model, typ.Name, receiverExpr)); known {
-							knownReceiver = true
-						} else {
-							for _, part := range strings.Split(receiverExpr, ".") {
-								if _, known := model.lookupName(resolveNestedTypeName(model, typ.Name, part)); known {
-									knownReceiver = true
-									break
-								}
-							}
+							return nil
 						}
-						if knownReceiver || strings.Count(receiverExpr, ".") > 1 {
+						if semaIRStaticValueReceiver(model, typ.Name, receiverExpr) {
+							return nil
+						}
+						if semaIRUnresolvedDeclaredReceiver(receiverExpr, scope, model) {
 							return nil
 						}
 						d := unknownCallDiagnostic(typ, member, expr.Callee, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)
@@ -2698,6 +2710,11 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	if message := semaPlatformEventCallMessage(receiverType, method, receiverMode, irCallArgTypes(a, expr.Args, scope, model, typ.Name), model, typ.File != ""); message != "" {
 		return []diagnostic.Diagnostic{semaPlatformEventDiagnostic(typ, message, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
 	}
+	if strings.EqualFold(receiverType, "Finalizer") || strings.EqualFold(receiverType, "System.Finalizer") {
+		if message := semaFinalizerCallMessage(receiverType, method, irCallArgTypes(a, expr.Args, scope, model, typ.Name), model); message != "" {
+			return []diagnostic.Diagnostic{semaAsyncDiagnostic(typ, message, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
+		}
+	}
 	if semaAsyncCallCandidate(receiverType, method) && !semaProjectTypeShadowsPlatform(model, receiverType) {
 		if message := semaAsyncCallMessage(receiverType, method, irCallArgTypes(a, expr.Args, scope, model, typ.Name)); message != "" {
 			return []diagnostic.Diagnostic{semaAsyncDiagnostic(typ, message, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
@@ -2762,6 +2779,24 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	if len(candidates) == 0 {
 		if semaCallMayBelongToMissingSuperclass(model, typ, expr.Callee, receiverMode, receiverType) {
 			return nil
+		}
+		// A lexical inner type shadows the platform type it is named after; a
+		// missing method cannot fall back to the platform signature.
+		if !lexicalShadowReceiver && expr.Left == nil && !strings.Contains(method, ".") {
+			// A missing static method on a lexical inner enum has no platform
+			// fallback (testdata/inner_error_order/org.tsv). Methods
+			// every enum declares keep their existing resolution.
+			if receiver, _, ok := strings.Cut(expr.Callee, "."); ok {
+				if _, scoped := scope.lookup(receiver); !scoped {
+					if enum := semaLexicalSourceInnerEnum(model, typ.Name, receiver); enum != "" && !semaEnumTypeHasMethod(model, enum, method) {
+						receiverType = enum
+						lexicalShadowReceiver = true
+					}
+				}
+			}
+		}
+		if lexicalShadowReceiver {
+			return []diagnostic.Diagnostic{semaShadowMissingMethod(typ, member, expr.Callee, method, receiverType, irCallArgTypes(a, expr.Args, scope, model, typ.Name), bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
 		}
 		// C003/C004 capture only a receiver named by the callee path. A chained
 		// or indexed receiver typed from a platform return keeps canonical flow.
@@ -2862,6 +2897,9 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	argTypes := irCallArgTypes(a, expr.Args, scope, model, typ.Name)
 	if candidate, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok {
 		if staticDiagnostic, blocked := checkSemaStaticAccessWithModel(typ, member, expr.Callee, candidate, receiverMode, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source, model); blocked {
+			if lexicalShadowReceiver {
+				staticDiagnostic = semaLexicalShadowStaticAccessNative(staticDiagnostic, candidate, receiverMode)
+			}
 			return []diagnostic.Diagnostic{staticDiagnostic}
 		}
 		return nil
@@ -2943,6 +2981,105 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 		Range:         semaRange(source, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee))),
 	}
 	return []diagnostic.Diagnostic{nativeSourceOverloadDiagnostic(d, receiverType, method, argTypes, candidates, model, typ)}
+}
+
+func (a *Analyzer) checkIREnumConstantCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiver, method string, args []ir.Expr, scope irSemaScope, pos, bodyOffset int, source string, model *semaTypeMemberView) ([]diagnostic.Diagnostic, bool) {
+	root, _, _ := strings.Cut(receiver, ".")
+	if _, bound := scope.lookup(root); bound {
+		return nil, false
+	}
+	enumPath, label, ok := splitSemaMethodPath(receiver)
+	if !ok {
+		return nil, false
+	}
+	enumType := resolveNestedTypeName(model, typ.Name, enumPath)
+	valueType := semaEnumValuePathType(model, enumType+"."+label)
+	if valueType == "" {
+		return nil, false
+	}
+	// Keep the explicit System spelling in native diagnostics; source inner
+	// enums use their resolved lexical owner instead.
+	displayType := valueType
+	if semaExplicitPlatformEnumType(enumPath) {
+		displayType = enumPath
+	}
+	// Look up the bare name first, then the explicit System spelling: a project
+	// class with the bare enum name must not hide the platform enum's methods,
+	// and methods catalogued only under the bare name stay visible when the
+	// call is System.-qualified.
+	sig, known := semaEnumMethodSignature(model, valueType, method)
+	if !known && displayType != valueType {
+		sig, known = semaEnumMethodSignature(model, displayType, method)
+	}
+	if !known {
+		// Enums inherit Object's instance methods in addition to name/ordinal.
+		_, known = semaPlatformMethodSignatureForMode(model, valueType, method, "instance")
+		if !known && displayType != valueType {
+			_, known = semaPlatformMethodSignatureForMode(model, displayType, method, "instance")
+		}
+	}
+	if known && !strings.EqualFold(method, "values") && !strings.EqualFold(method, "valueOf") {
+		return nil, true
+	}
+	// Native rows cover only values() and valueOf(String). Other arities have
+	// no captured answer, so leave them to the existing call checks.
+	if known && len(sig.params) > 0 && len(args) != len(sig.params[0]) {
+		return nil, false
+	}
+	d := unknownCallDiagnostic(typ, member, receiver+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(receiver)+1+len(method)), source)
+	if known {
+		returnType := strings.ReplaceAll(sig.returnType, valueType, displayType)
+		d.NativeMessage = fmt.Sprintf("Static method cannot be referenced from a non static context: %s %s.%s(%s)", returnType, displayType, method, strings.Join(sig.params[0], ", "))
+	} else {
+		d.NativeMessage = fmt.Sprintf("Method does not exist or incorrect signature: void %s(%s) from the type %s", method, strings.Join(irCallArgTypes(a, args, scope, model, typ.Name), ", "), displayType)
+	}
+	d.Message = d.NativeMessage
+	return []diagnostic.Diagnostic{d}, true
+}
+
+// A type-qualified value path starts with a static field. Once that field
+// supplies a value, subsequent fields belong to the value and may be instance
+// fields. Checking only the final member incorrectly rejects those chains.
+func semaIRStaticValueReceiver(model *semaTypeMemberView, currentType, receiver string) bool {
+	parts := strings.Split(receiver, ".")
+	for i := 1; i < len(parts); i++ {
+		root := strings.Join(parts[:i], ".")
+		target, ok := semaStaticClassFieldPathMemberInContext(model, currentType, root, parts[i])
+		if !ok {
+			continue
+		}
+		if i == len(parts)-1 {
+			return true
+		}
+		valueType := resolveNestedTypeName(model, target.owner, target.member.Type)
+		_, ok = semaResolveFieldPath(model, valueType, strings.Join(parts[i+1:], "."))
+		return ok
+	}
+	return false
+}
+
+// A declaration can identify an unavailable package type without supplying its
+// members. Keep calls on that same owner unresolved for dependency handling;
+// a known suffix or the depth of an otherwise undeclared path is not evidence.
+func semaIRUnresolvedDeclaredReceiver(receiver string, scope irSemaScope, model *semaTypeMemberView) bool {
+	parts := strings.Split(receiver, ".")
+	if len(parts) < 2 {
+		return false
+	}
+	owner := strings.Join(parts[:2], ".")
+	if !semaLooksLikeUnconfiguredManagedPackageType(owner) || semaModelHasType(model, owner) {
+		return false
+	}
+	owner = normalizeName(owner)
+	for _, declared := range scope.flat() {
+		for _, ref := range extractTypeNames(declared) {
+			ref = normalizeName(ref)
+			if ref == owner || strings.HasPrefix(ref, owner+".") {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // Keep the local explanation while exposing the native signature for rejected
@@ -3409,12 +3546,20 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 			// Constructor initializers require a declared field. Field-path
 			// resolution can instead return an opaque compatibility fallback.
 			field, exists := semaResolveField(model, resolvedTypeName, arg.Name, make(map[string]bool))
+			// Feature compatibility fields in the shared provider are not
+			// declarations in this org's metadata or enabled feature profile.
+			if exists && storage.StandardObjectFieldRequiresFeature(resolvedTypeName, arg.Name) && !hasModifier(field.member.Modifiers, semaDeclaredFeatureFieldModifier) {
+				exists = false
+			}
 			if !exists {
 				// The standard baseline is one clean org's describe export, so it
 				// can omit real standard fields (for example Account.Tradestyle).
 				// Standard objects keep the open fallback, as field reads do.
 				// AuthSession has a complete captured surface and stays strict.
-				if members, _, known := semaLookupTypeMembers(model, resolvedTypeName); known && members.sobject && !members.partialSObject && !members.externalPackageSObject && !strings.EqualFold(members.name, "SObject") && !semaOpenStandardSObjectForConstructor(members, arg.Name) {
+				// Person custom fields come from Contact metadata even when the
+				// project omits the Account object definition.
+				personCustomField := semaHasAPISuffixFold(arg.Name, "__pc")
+				if members, _, known := semaLookupTypeMembers(model, resolvedTypeName); known && members.sobject && (!members.partialSObject || personCustomField && strings.EqualFold(members.name, "Account")) && !strings.EqualFold(members.name, "SObject") && !semaOpenStandardSObjectForConstructor(members, arg.Name) {
 					message := "Field does not exist: " + arg.Name + " on " + resolvedTypeName
 					item := semaFieldAccessDiagnostic(typ, member, arg.Name, message, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)
 					item.NativeMessage = message

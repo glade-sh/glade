@@ -626,7 +626,7 @@ func RenderPageURL(machine *vm.VM, pageURL string, asPDF bool) (vm.Value, error)
 	savedPageContext := machine.SnapshotVisualforcePageContext()
 	defer machine.RestoreVisualforcePageContext(savedPageContext)
 	if asPDF && renderEnvironmentFromVM(machine).Project.Root == "" {
-		pdfBytes, err := renderPDF(ctx, "", pageURL)
+		pdfBytes, err := renderPDFForVM(machine, ctx, "", pageURL)
 		if err != nil {
 			return vm.Null, err
 		}
@@ -662,7 +662,7 @@ func RenderPageURL(machine *vm.VM, pageURL string, asPDF bool) (vm.Value, error)
 		if err := CheckVisualforcePDFHTMLResponseSize(len(result.HTML)); err != nil {
 			return vm.Null, err
 		}
-		pdfBytes, err := renderPDF(ctx, result.HTML, pageURL)
+		pdfBytes, err := renderPDFForVM(machine, ctx, result.HTML, pageURL)
 		if err != nil {
 			return vm.Null, err
 		}
@@ -1008,7 +1008,7 @@ func visualforceVMClass(machine *vm.VM, names ...string) (vm.Class, bool) {
 		if name == "" {
 			continue
 		}
-		for key, class := range machine.Classes {
+		for key, class := range machine.ClassEntries() {
 			if strings.EqualFold(key, name) || strings.EqualFold(class.Name, name) {
 				return class, true
 			}

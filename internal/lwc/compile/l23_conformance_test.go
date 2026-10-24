@@ -23,6 +23,7 @@ import (
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/server"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/testutil/browserapi"
 )
 
 type l23Case struct {
@@ -173,6 +174,15 @@ func TestL23SalesforceConformance(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	type apiObservation struct{ dom map[string]string }
+	observeAPI := browserapi.Prepare(t, versions, func(t *testing.T, api string) apiObservation {
+		fixture, ok := fixtures[api]
+		if !ok || fixture.Page != "familyL23Runtime"+api[:2] {
+			t.Fatalf("missing captured L23 runtime fixture API %s", api)
+		}
+		dom := l23ObserveDOM(t, api, runtimeCases, fixture, dependencies)
+		return apiObservation{dom}
+	})
 	var report strings.Builder
 	fmt.Fprintln(&report, "api\tid\tkind\tstatus\tactual\texpected\treason\tactual_diagnostics\texpected_diagnostics\tdiagnostic_status")
 	matches, compileMatches, domMatches, domRows := 0, 0, 0, 0
@@ -180,11 +190,8 @@ func TestL23SalesforceConformance(t *testing.T) {
 	outcomeMatches, diagnosticMatches, diagnosticRows := 0, 0, 0
 	for _, api := range versions {
 		compiled := l23CompileCases(t, api, compilerCases)
-		fixture, ok := fixtures[api]
-		if !ok || fixture.Page != "familyL23Runtime"+api[:2] {
-			t.Fatalf("missing captured L23 runtime fixture API %s", api)
-		}
-		dom := l23ObserveDOM(t, api, runtimeCases, fixture, dependencies)
+		result := observeAPI(api)
+		dom := result.dom
 		compileIndex, apiMatches, apiDOMRows, apiControlMatches := 0, 0, 0, 0
 		for _, c := range allCases {
 			want, got, reason := c.Expected[api], "COMPILE_OK", ""

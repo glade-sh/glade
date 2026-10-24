@@ -1,0 +1,1 @@
+public class CedarHelperASUFFIX { public static void apply(Account row) { row.Description = CedarLibraryASUFFIX.value(); } }

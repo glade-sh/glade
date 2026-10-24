@@ -240,8 +240,23 @@ func xmlReadTokens(source string, dom bool) ([]Value, error) {
 	fail := func(kind string, offset int, name, expected string, startLine int) ([]Value, error) {
 		return tokens, xmlReadFailure(source, dom, kind, offset, name, expected, startLine, state)
 	}
+	// Decoder offsets advance monotonically. Count each source rune once,
+	// retaining the reader's rune-based columns (including CR and Unicode).
+	positionOffset, positionLine, positionColumn := 0, 1, 1
+	advancePosition := func(offset int) (int, int) {
+		for _, char := range source[positionOffset:offset] {
+			if char == '\n' {
+				positionLine, positionColumn = positionLine+1, 1
+			} else {
+				positionColumn++
+			}
+		}
+		positionOffset = offset
+		return positionLine, positionColumn
+	}
 	for {
 		start := int(decoder.InputOffset())
+		startLine, _ := advancePosition(start)
 		raw, err := decoder.RawToken()
 		end := int(decoder.InputOffset())
 		if err == io.EOF {
@@ -263,7 +278,11 @@ func xmlReadTokens(source string, dom bool) ([]Value, error) {
 			return tokens, fmt.Errorf("Dom.Document.load invalid XML: %w", err)
 		}
 		lexical := source[start:end]
-		location := xmlStreamReaderLocation(source, end)
+		line, column := advancePosition(end)
+		location := ""
+		if end > 0 && end <= len(source) {
+			location = fmt.Sprintf("Line: %d Column: %d", line, column)
+		}
 		switch token := raw.(type) {
 		case xml.StartElement:
 			qualified := xmlStreamWriterQualifiedName(token.Name.Space, token.Name.Local)
@@ -311,8 +330,7 @@ func xmlReadTokens(source string, dom bool) ([]Value, error) {
 			item.Fields["prefix"] = String(token.Name.Space)
 			item.Fields["qualifiedName"] = String(qualified)
 			item.Fields["namespaceScope"] = scope
-			line, _ := xmlReadPosition(source, start)
-			item.Fields["startLine"] = Int(int64(line))
+			item.Fields["startLine"] = Int(int64(startLine))
 			item.Fields["location"] = String(location)
 			tokens = append(tokens, item)
 			stack = append(stack, item)
@@ -359,7 +377,7 @@ func xmlReadTokens(source string, dom bool) ([]Value, error) {
 			if dom {
 				parts = xmlDomTextParts(lexical, decoder.Entity)
 			} else if end < len(source) && source[end] == '<' {
-				location = xmlStreamReaderLocation(source, end+1)
+				location = fmt.Sprintf("Line: %d Column: %d", line, column+1)
 			}
 			for _, part := range parts {
 				if part != "" {

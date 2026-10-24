@@ -1,0 +1,9 @@
+row	shape
+tokenArgumentReturnField	constructor argument, method argument, return and field assignment
+tokenCollection	list and map elements
+fieldToken	field describe token
+describeResult	object describe result
+classObject	class reference through Object
+classRecordCast	class rejected as explicit record
+recordObject	record through Object, SObject and explicit record
+recordClassCast	record rejected as user class

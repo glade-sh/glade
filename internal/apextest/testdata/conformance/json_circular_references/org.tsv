@@ -1,0 +1,93 @@
+api	shape	operation	observation
+62.0	map	serialize	{"message":"Cycle detected. Multiple references to {self=(already output)}","type":"System.JSONException"}
+62.0	map	pretty	{"message":"Cycle detected. Multiple references to {self=(already output)}","type":"System.JSONException"}
+62.0	map	suppress	{"message":"Cycle detected. Multiple references to {self=(already output)}","type":"System.JSONException"}
+62.0	map	generator	{"message":"Cycle detected. Multiple references to {self=(already output)} (through reference chain: java.util.LinkedHashMap[\"self\"])","type":"System.JSONException"}
+62.0	map	generatorField	{"message":"Cycle detected. Multiple references to {self=(already output)} (through reference chain: java.util.LinkedHashMap[\"self\"])","type":"System.JSONException"}
+62.0	list	serialize	{"message":"Cycle detected. Multiple references to ((already output))","type":"System.JSONException"}
+62.0	list	pretty	{"message":"Cycle detected. Multiple references to ((already output))","type":"System.JSONException"}
+62.0	list	suppress	{"message":"Cycle detected. Multiple references to ((already output))","type":"System.JSONException"}
+62.0	list	generator	{"message":"Cycle detected. Multiple references to ((already output)) (through reference chain: java.util.ArrayList[0])","type":"System.JSONException"}
+62.0	list	generatorField	{"message":"Cycle detected. Multiple references to ((already output)) (through reference chain: java.util.ArrayList[0])","type":"System.JSONException"}
+62.0	pair	serialize	{"message":"Cycle detected. Multiple references to {next={next=(already output)}}","type":"System.JSONException"}
+62.0	pair	pretty	{"message":"Cycle detected. Multiple references to {next={next=(already output)}}","type":"System.JSONException"}
+62.0	pair	suppress	{"message":"Cycle detected. Multiple references to {next={next=(already output)}}","type":"System.JSONException"}
+62.0	pair	generator	{"message":"Cycle detected. Multiple references to {next={next=(already output)}} (through reference chain: java.util.LinkedHashMap[\"next\"])","type":"System.JSONException"}
+62.0	pair	generatorField	{"message":"Cycle detected. Multiple references to {next={next=(already output)}} (through reference chain: java.util.LinkedHashMap[\"next\"])","type":"System.JSONException"}
+62.0	class	serialize	{"message":"Cycle detected. Multiple references to Node:[label=root, next=(already output)]","type":"System.JSONException"}
+62.0	class	pretty	{"message":"Cycle detected. Multiple references to Node:[label=root, next=(already output)]","type":"System.JSONException"}
+62.0	class	suppress	{"message":"Cycle detected. Multiple references to Node:[label=root, next=(already output)]","type":"System.JSONException"}
+62.0	class	generator	{"message":"Cycle detected. Multiple references to Node:[label=root, next=(already output)]","type":"System.JSONException"}
+62.0	class	generatorField	{"message":"Cycle detected. Multiple references to Node:[label=root, next=(already output)]","type":"System.JSONException"}
+62.0	nested	serialize	{"message":"Cycle detected. Multiple references to ({items=(already output)})","type":"System.JSONException"}
+62.0	nested	pretty	{"message":"Cycle detected. Multiple references to ({items=(already output)})","type":"System.JSONException"}
+62.0	nested	suppress	{"message":"Cycle detected. Multiple references to ({items=(already output)})","type":"System.JSONException"}
+62.0	nested	generator	{"message":"Cycle detected. Multiple references to ({items=(already output)}) (through reference chain: java.util.LinkedHashMap[\"items\"])","type":"System.JSONException"}
+62.0	nested	generatorField	{"message":"Cycle detected. Multiple references to ({items=(already output)}) (through reference chain: java.util.LinkedHashMap[\"items\"])","type":"System.JSONException"}
+62.0	dag	serialize	{"value":"[[1,\"ok\"],[1,\"ok\"]]"}
+62.0	dag	pretty	{"value":"[ [ 1, \"ok\" ], [ 1, \"ok\" ] ]"}
+62.0	dag	suppress	{"value":"[[1,\"ok\"],[1,\"ok\"]]"}
+62.0	dag	generator	{"value":"[[1,\"ok\"],[1,\"ok\"]]"}
+62.0	dag	generatorField	{"value":"{\"payload\":[[1,\"ok\"],[1,\"ok\"]]}"}
+62.0	deep	serialize	{"value":"[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[1]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]"}
+62.0	deep	pretty	{"value":"[ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ 1 ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ]"}
+62.0	deep	suppress	{"value":"[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[1]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]"}
+62.0	deep	generator	{"value":"[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[1]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]"}
+62.0	deep	generatorField	{"value":"{\"payload\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[1]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}"}
+62.0	map	string	{"value":"{self=(already output)}"}
+62.0	map	toString	{"value":"{self=(already output)}"}
+62.0	map	debug	{"value":"completed"}
+62.0	map	clone	{"value":"true"}
+62.0	map	equalsSelf	{"uncaughtType":null,"compileProblem":null,"exceptionStackTrace":null,"message":"Execution failed at this code:\n\nSystem.LimitException: Maximum stack depth reached: 3","name":"executeRuntimeFailure"}
+62.0	map	equalsPair	{"uncaughtType":null,"compileProblem":null,"exceptionStackTrace":null,"message":"Execution failed at this code:\n\nSystem.LimitException: Maximum stack depth reached: 3","name":"executeRuntimeFailure"}
+62.0	map	hash	{"uncaughtType":null,"compileProblem":null,"exceptionStackTrace":null,"message":"Execution failed at this code:\n\nSystem.LimitException: Maximum stack depth reached: 3","name":"executeRuntimeFailure"}
+62.0	list	string	{"value":"((already output))"}
+62.0	list	debug	{"value":"completed"}
+62.0	list	listEquals	{"uncaughtType":null,"compileProblem":null,"exceptionStackTrace":null,"message":"Execution failed at this code:\n\nSystem.LimitException: Maximum stack depth reached: 3","name":"executeRuntimeFailure"}
+62.0	list	listHash	{"uncaughtType":null,"compileProblem":null,"exceptionStackTrace":null,"message":"Execution failed at this code:\n\nSystem.LimitException: Maximum stack depth reached: 3","name":"executeRuntimeFailure"}
+67.0	map	serialize	{"message":"Cycle detected. Multiple references to {self=(already output)}","type":"System.JSONException"}
+67.0	map	pretty	{"message":"Cycle detected. Multiple references to {self=(already output)}","type":"System.JSONException"}
+67.0	map	suppress	{"message":"Cycle detected. Multiple references to {self=(already output)}","type":"System.JSONException"}
+67.0	map	generator	{"message":"Cycle detected. Multiple references to {self=(already output)} (through reference chain: java.util.LinkedHashMap[\"self\"])","type":"System.JSONException"}
+67.0	map	generatorField	{"message":"Cycle detected. Multiple references to {self=(already output)} (through reference chain: java.util.LinkedHashMap[\"self\"])","type":"System.JSONException"}
+67.0	list	serialize	{"message":"Cycle detected. Multiple references to ((already output))","type":"System.JSONException"}
+67.0	list	pretty	{"message":"Cycle detected. Multiple references to ((already output))","type":"System.JSONException"}
+67.0	list	suppress	{"message":"Cycle detected. Multiple references to ((already output))","type":"System.JSONException"}
+67.0	list	generator	{"message":"Cycle detected. Multiple references to ((already output)) (through reference chain: java.util.ArrayList[0])","type":"System.JSONException"}
+67.0	list	generatorField	{"message":"Cycle detected. Multiple references to ((already output)) (through reference chain: java.util.ArrayList[0])","type":"System.JSONException"}
+67.0	pair	serialize	{"message":"Cycle detected. Multiple references to {next={next=(already output)}}","type":"System.JSONException"}
+67.0	pair	pretty	{"message":"Cycle detected. Multiple references to {next={next=(already output)}}","type":"System.JSONException"}
+67.0	pair	suppress	{"message":"Cycle detected. Multiple references to {next={next=(already output)}}","type":"System.JSONException"}
+67.0	pair	generator	{"message":"Cycle detected. Multiple references to {next={next=(already output)}} (through reference chain: java.util.LinkedHashMap[\"next\"])","type":"System.JSONException"}
+67.0	pair	generatorField	{"message":"Cycle detected. Multiple references to {next={next=(already output)}} (through reference chain: java.util.LinkedHashMap[\"next\"])","type":"System.JSONException"}
+67.0	class	serialize	{"message":"Cycle detected. Multiple references to Node:[label=root, next=(already output)]","type":"System.JSONException"}
+67.0	class	pretty	{"message":"Cycle detected. Multiple references to Node:[label=root, next=(already output)]","type":"System.JSONException"}
+67.0	class	suppress	{"message":"Cycle detected. Multiple references to Node:[label=root, next=(already output)]","type":"System.JSONException"}
+67.0	class	generator	{"message":"Cycle detected. Multiple references to Node:[label=root, next=(already output)]","type":"System.JSONException"}
+67.0	class	generatorField	{"message":"Cycle detected. Multiple references to Node:[label=root, next=(already output)]","type":"System.JSONException"}
+67.0	nested	serialize	{"message":"Cycle detected. Multiple references to ({items=(already output)})","type":"System.JSONException"}
+67.0	nested	pretty	{"message":"Cycle detected. Multiple references to ({items=(already output)})","type":"System.JSONException"}
+67.0	nested	suppress	{"message":"Cycle detected. Multiple references to ({items=(already output)})","type":"System.JSONException"}
+67.0	nested	generator	{"message":"Cycle detected. Multiple references to ({items=(already output)}) (through reference chain: java.util.LinkedHashMap[\"items\"])","type":"System.JSONException"}
+67.0	nested	generatorField	{"message":"Cycle detected. Multiple references to ({items=(already output)}) (through reference chain: java.util.LinkedHashMap[\"items\"])","type":"System.JSONException"}
+67.0	dag	serialize	{"value":"[[1,\"ok\"],[1,\"ok\"]]"}
+67.0	dag	pretty	{"value":"[ [ 1, \"ok\" ], [ 1, \"ok\" ] ]"}
+67.0	dag	suppress	{"value":"[[1,\"ok\"],[1,\"ok\"]]"}
+67.0	dag	generator	{"value":"[[1,\"ok\"],[1,\"ok\"]]"}
+67.0	dag	generatorField	{"value":"{\"payload\":[[1,\"ok\"],[1,\"ok\"]]}"}
+67.0	deep	serialize	{"value":"[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[1]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]"}
+67.0	deep	pretty	{"value":"[ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ [ 1 ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ] ]"}
+67.0	deep	suppress	{"value":"[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[1]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]"}
+67.0	deep	generator	{"value":"[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[1]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]"}
+67.0	deep	generatorField	{"value":"{\"payload\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[1]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}"}
+67.0	map	string	{"value":"{self=(already output)}"}
+67.0	map	toString	{"value":"{self=(already output)}"}
+67.0	map	debug	{"value":"completed"}
+67.0	map	clone	{"value":"true"}
+67.0	map	equalsSelf	{"uncaughtType":null,"compileProblem":null,"exceptionStackTrace":null,"message":"Execution failed at this code:\n\nSystem.LimitException: Maximum stack depth reached: 3","name":"executeRuntimeFailure"}
+67.0	map	equalsPair	{"uncaughtType":null,"compileProblem":null,"exceptionStackTrace":null,"message":"Execution failed at this code:\n\nSystem.LimitException: Maximum stack depth reached: 3","name":"executeRuntimeFailure"}
+67.0	map	hash	{"uncaughtType":null,"compileProblem":null,"exceptionStackTrace":null,"message":"Execution failed at this code:\n\nSystem.LimitException: Maximum stack depth reached: 3","name":"executeRuntimeFailure"}
+67.0	list	string	{"value":"((already output))"}
+67.0	list	debug	{"value":"completed"}
+67.0	list	listEquals	{"uncaughtType":null,"compileProblem":null,"exceptionStackTrace":null,"message":"Execution failed at this code:\n\nSystem.LimitException: Maximum stack depth reached: 3","name":"executeRuntimeFailure"}
+67.0	list	listHash	{"uncaughtType":null,"compileProblem":null,"exceptionStackTrace":null,"message":"Execution failed at this code:\n\nSystem.LimitException: Maximum stack depth reached: 3","name":"executeRuntimeFailure"}

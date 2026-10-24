@@ -1,0 +1,52 @@
+[
+  {
+    "id": "missing_static",
+    "state": "absent",
+    "source": "System.assertEquals(7, CedarLibrary.value());",
+    "outcome": "compile-rejected"
+  },
+  {
+    "id": "missing_constructor",
+    "state": "absent",
+    "source": "System.assertEquals(7, new CedarLibrary(7).amount);",
+    "outcome": "compile-rejected"
+  },
+  {
+    "id": "missing_trigger",
+    "state": "absent",
+    "source": "insert new Account(Name='boundary');",
+    "trigger": true,
+    "outcome": "compile-rejected"
+  },
+  {
+    "id": "dynamic_boundary",
+    "state": "absent",
+    "source": "System.assertEquals(null, Type.forName('CedarLibrary'));",
+    "outcome": "accepted"
+  },
+  {
+    "id": "loaded_static",
+    "state": "loaded",
+    "source": "System.assertEquals(7, CedarLibrary.value());",
+    "outcome": "accepted"
+  },
+  {
+    "id": "loaded_constructor",
+    "state": "loaded",
+    "source": "System.assertEquals(7, new CedarLibrary(7).amount);",
+    "outcome": "accepted"
+  },
+  {
+    "id": "loaded_trigger",
+    "state": "loaded",
+    "source": "Account row = new Account(Name='boundary'); insert row; System.assertEquals('cedar', [SELECT Description FROM Account WHERE Id = :row.Id].Description);",
+    "trigger": true,
+    "outcome": "accepted"
+  },
+  {
+    "id": "member_rejection",
+    "state": "loaded",
+    "source": "CedarLibrary.absentMember();",
+    "outcome": "compile-rejected"
+  }
+]

@@ -1,0 +1,5 @@
+route	source
+anonymous	anonymous.apex
+named	StaticFieldReceiverProbe.cls
+istest	StaticFieldReceiverProbeTest.cls
+trigger	StaticFieldReceiverProbeTrigger.trigger

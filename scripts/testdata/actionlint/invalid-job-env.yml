@@ -1,0 +1,9 @@
+name: Invalid job context
+on: push
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      WORK_DIR: ${{ runner.temp }}
+    steps:
+      - run: echo ready

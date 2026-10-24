@@ -1,0 +1,2 @@
+case	observation
+nested_result_literals	platform nested Type names survive JSON deserialization

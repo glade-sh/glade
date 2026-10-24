@@ -1,0 +1,1 @@
+<AssignmentRules xmlns="http://soap.sforce.com/2006/04/metadata"><assignmentRule><fullName>OracleCaseActive</fullName><active>true</active><ruleEntry><assignedTo>OracleFirst</assignedTo><assignedToType>Queue</assignedToType><criteriaItems><field>Case.Subject</field><operation>equals</operation><value>match</value></criteriaItems></ruleEntry></assignmentRule></AssignmentRules>

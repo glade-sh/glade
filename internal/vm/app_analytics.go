@@ -14,12 +14,8 @@ func (vm *VM) appAnalyticsLogCustomInteraction(args []Value) (Value, error) {
 	}
 	label := args[0]
 	switch label.Kind {
-	case ValueNull, ValueString:
+	case ValueNull, ValueString, ValueBool, ValueInt, ValueDecimal:
 		return invalidLabel("must be an Apex enum.")
-	case ValueInt, ValueDecimal:
-		if len(args) == 1 {
-			return invalidLabel("must be an Apex enum.")
-		}
 	}
 	if label.Kind == ValueObject && label.Text != "" {
 		platformType := label.Type
@@ -43,9 +39,12 @@ func (vm *VM) appAnalyticsLogCustomInteraction(args []Value) (Value, error) {
 					return Null, nil
 				}
 			}
-		} else if len(args) == 1 && strings.EqualFold(platformType, "LoggingLevel") && label.Text == "INFO" {
+		} else if strings.EqualFold(platformType, "LoggingLevel") {
 			return invalidLabel("must have the same namespace as the Apex code that called the method.")
 		}
+	}
+	if label.Kind == ValueObject && label.Text == "" {
+		return invalidLabel("must be an Apex enum.")
 	}
 	return Null, unsupportedCallError("IsvPartners.AppAnalytics.logCustomInteraction hosted telemetry")
 }

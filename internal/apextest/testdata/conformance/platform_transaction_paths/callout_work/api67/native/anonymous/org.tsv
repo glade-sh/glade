@@ -1,0 +1,7 @@
+id	group	route	status	value
+W01	callout_work	anonymous	runtime	{"endpointRejected":true,"exception":"System.CalloutException","pending":false,"testUnsupported":false}
+W02	callout_work	anonymous	runtime	{"endpointRejected":false,"exception":"System.CalloutException","pending":true,"testUnsupported":false}
+W03	callout_work	anonymous	runtime	{"exception":"System.TypeException"}
+W04	callout_work	anonymous	runtime	{"exception":"System.TypeException"}
+W05	callout_work	anonymous	runtime	{"exception":"System.TypeException"}
+W06	callout_work	anonymous	runtime	{"exception":"System.TypeException"}

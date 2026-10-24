@@ -6,7 +6,7 @@ package storage
 import "strings"
 
 func legacyStandardFieldsOverlayNeedsRefresh(definition ObjectDefinition, featureSignature string) bool {
-	if accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) {
+	if accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || groupTypePicklistNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) {
 		return true
 	}
 	if name := standardGeneratedNumberField(definition.APIName); name != "" {
@@ -19,10 +19,26 @@ func legacyStandardFieldsOverlayNeedsRefresh(definition ObjectDefinition, featur
 			return true
 		}
 	}
+	for _, field := range standardObjectCompatibilitySupplementFields(definition.APIName) {
+		name, exists := ResolveFieldName(definition, "", field.APIName)
+		if !exists {
+			return true
+		}
+		existing := definition.Fields[name]
+		if existing.Type == "" || existing.Type == FieldAny || strings.TrimSpace(existing.DisplayType) == "" {
+			return true
+		}
+		if len(field.PicklistValues) > 0 && !existing.PicklistValuesConfigured && len(existing.PicklistValues) == 0 {
+			return true
+		}
+	}
 	if legacyStandardStubTimeFieldsNeedRepair(definition) {
 		return true
 	}
 	if legacyStandardStubReferenceFieldsNeedRepair(definition, strings.Split(featureSignature, ",")) {
+		return true
+	}
+	if legacyStandardStubCurrencyFieldsNeedRepair(definition) {
 		return true
 	}
 	entry, ok := standardObjectCatalogEntryForName(definition.APIName)
@@ -69,6 +85,26 @@ func legacyStandardFieldsOverlayNeedsRefresh(definition ObjectDefinition, featur
 	}
 	for _, feature := range strings.Split(featureSignature, ",") {
 		if feature != "" && missing(entry.FeatureFields[feature]) {
+			return true
+		}
+	}
+	return false
+}
+
+func legacyStandardStubCurrencyFieldsNeedRepair(definition ObjectDefinition) bool {
+	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
+	if err != nil || !ok {
+		return false
+	}
+	stubs, _ := standardSObjectStubFieldsFor(definition.APIName)
+	for _, captured := range describe.Fields {
+		stub, exists := stubs[captured.Name]
+		if !exists || stub.Type != FieldDecimal || !strings.EqualFold(stub.DisplayType, "DOUBLE") || !strings.EqualFold(captured.Type, "currency") {
+			continue
+		}
+		name, exists := ResolveFieldName(definition, "", captured.Name)
+		field := definition.Fields[name]
+		if exists && field.Type == stub.Type && field.DisplayType == stub.DisplayType && field.Formula == "" {
 			return true
 		}
 	}

@@ -1,0 +1,7 @@
+{
+  "nativeAPIVersions": ["62.0", "67.0"],
+  "localAPIVersions": ["67.0"],
+  "parentObjects": ["Account", "Contact", "Case"],
+  "resource": "/services/data/v{apiVersion}/sobjects/{parentObject}/describe",
+  "observedProperty": "childRelationships array order"
+}

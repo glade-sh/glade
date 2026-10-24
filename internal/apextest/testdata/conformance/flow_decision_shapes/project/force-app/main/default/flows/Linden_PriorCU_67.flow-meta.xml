@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <label>Linden_PriorCU_67</label>
+    <processType>AutoLaunchedFlow</processType>
+    <decisions>
+        <name>Dec_N</name><label>Dec N</label>
+        <locationX>50</locationX><locationY>200</locationY>
+        <defaultConnector><targetReference>Upd_N_n</targetReference></defaultConnector>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules>
+            <name>R_N</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record__Prior.Title</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue><booleanValue>true</booleanValue></rightValue>
+            </conditions>
+            <connector><targetReference>Upd_N_y</targetReference></connector>
+            <label>R N</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Dec_NE</name><label>Dec NE</label>
+        <locationX>50</locationX><locationY>200</locationY>
+        <defaultConnector><targetReference>Upd_NE_n</targetReference></defaultConnector>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules>
+            <name>R_NE</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record__Prior.Title</leftValueReference>
+                <operator>NotEqualTo</operator>
+                <rightValue><stringValue>T1</stringValue></rightValue>
+            </conditions>
+            <connector><targetReference>Upd_NE_y</targetReference></connector>
+            <label>R NE</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Dec_EQ</name><label>Dec EQ</label>
+        <locationX>50</locationX><locationY>200</locationY>
+        <defaultConnector><targetReference>Upd_EQ_n</targetReference></defaultConnector>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules>
+            <name>R_EQ</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record__Prior.Title</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue><stringValue>t1</stringValue></rightValue>
+            </conditions>
+            <connector><targetReference>Upd_EQ_y</targetReference></connector>
+            <label>R EQ</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Dec_BF</name><label>Dec BF</label>
+        <locationX>50</locationX><locationY>200</locationY>
+        <defaultConnector><targetReference>Upd_BF_n</targetReference></defaultConnector>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules>
+            <name>R_BF</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record__Prior.DoNotCall</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue><booleanValue>false</booleanValue></rightValue>
+            </conditions>
+            <connector><targetReference>Upd_BF_y</targetReference></connector>
+            <label>R BF</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Dec_NN</name><label>Dec NN</label>
+        <locationX>50</locationX><locationY>200</locationY>
+        <defaultConnector><targetReference>Upd_NN_n</targetReference></defaultConnector>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules>
+            <name>R_NN</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record__Prior.LeadSource</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue><booleanValue>false</booleanValue></rightValue>
+            </conditions>
+            <connector><targetReference>Upd_NN_y</targetReference></connector>
+            <label>R NN</label>
+        </rules>
+    </decisions>
+    <recordUpdates><name>Upd_N_y</name><label>Upd N_y</label><locationX>50</locationX><locationY>100</locationY><connector><targetReference>Dec_NE</targetReference></connector>
+        <inputAssignments><field>HomePhone</field><value><stringValue>null_yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_N_n</name><label>Upd N_n</label><locationX>50</locationX><locationY>100</locationY><connector><targetReference>Dec_NE</targetReference></connector>
+        <inputAssignments><field>HomePhone</field><value><stringValue>null_no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_NE_y</name><label>Upd NE_y</label><locationX>50</locationX><locationY>100</locationY><connector><targetReference>Dec_EQ</targetReference></connector>
+        <inputAssignments><field>MobilePhone</field><value><stringValue>ne_yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_NE_n</name><label>Upd NE_n</label><locationX>50</locationX><locationY>100</locationY><connector><targetReference>Dec_EQ</targetReference></connector>
+        <inputAssignments><field>MobilePhone</field><value><stringValue>ne_no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_EQ_y</name><label>Upd EQ_y</label><locationX>50</locationX><locationY>100</locationY><connector><targetReference>Dec_BF</targetReference></connector>
+        <inputAssignments><field>Fax</field><value><stringValue>eq_yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_EQ_n</name><label>Upd EQ_n</label><locationX>50</locationX><locationY>100</locationY><connector><targetReference>Dec_BF</targetReference></connector>
+        <inputAssignments><field>Fax</field><value><stringValue>eq_no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_BF_y</name><label>Upd BF_y</label><locationX>50</locationX><locationY>100</locationY><connector><targetReference>Dec_NN</targetReference></connector>
+        <inputAssignments><field>AssistantPhone</field><value><stringValue>bf_yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_BF_n</name><label>Upd BF_n</label><locationX>50</locationX><locationY>100</locationY><connector><targetReference>Dec_NN</targetReference></connector>
+        <inputAssignments><field>AssistantPhone</field><value><stringValue>bf_no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_NN_y</name><label>Upd NN_y</label><locationX>50</locationX><locationY>100</locationY>
+        <inputAssignments><field>OtherPhone</field><value><stringValue>nn_yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_NN_n</name><label>Upd NN_n</label><locationX>50</locationX><locationY>100</locationY>
+        <inputAssignments><field>OtherPhone</field><value><stringValue>nn_no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <start>
+        <locationX>0</locationX><locationY>0</locationY>
+        <connector><targetReference>Dec_N</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>LastName</field><operator>IsChanged</operator><value><booleanValue>true</booleanValue></value></filters>
+        <object>Contact</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

@@ -102,31 +102,26 @@ func runLegacyStandardPublishHelper(t *testing.T, api, body string) {
 	}
 }
 
-// The captured named-source contract covers a scalar and a single-element
-// List<SObject>. A concrete standard-event list keeps the DML rejection and a
-// multi-element List<SObject> keeps row failures; neither has a named capture.
-func TestNamedStandardEventPublishKeepsUncapturedListRejection(t *testing.T) {
+// Native standard_event_route_twins rows capture concrete and multi-event
+// named lists at both source APIs; these follow the same gate as a scalar.
+func TestNamedStandardEventPublishNativeListShapes(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
-		t.Run(api+"/concrete list", func(t *testing.T) {
-			runLegacyStandardPublishHelper(t, api, `List<SObject> events=new List<BatchApexErrorEvent>{new BatchApexErrorEvent()};
-try {
- EventBus.publish(events);
-} catch(TypeException e) {
- System.assertEquals('DML operation INSERT not allowed on BatchApexErrorEvent',e.getMessage());
- return true;
-}
-System.assert(false,'expected TypeException');
-return true;
-`)
-		})
-		t.Run(api+"/multi-element list", func(t *testing.T) {
-			runLegacyStandardPublishHelper(t, api, `List<SObject> events=new List<SObject>{new BatchApexErrorEvent(),new BatchApexErrorEvent()};
+		success := "false"
+		if api == "62.0" {
+			success = "true"
+		}
+		for _, shape := range []struct{ name, source string }{
+			{"concrete single", `new List<BatchApexErrorEvent>{new BatchApexErrorEvent()}`},
+			{"erased multi", `new List<SObject>{new BatchApexErrorEvent(),new BatchApexErrorEvent()}`},
+		} {
+			t.Run(api+"/"+shape.name, func(t *testing.T) {
+				runLegacyStandardPublishHelper(t, api, `List<SObject> events=`+shape.source+`;
 List<Database.SaveResult> results=EventBus.publish(events);
-System.assertEquals(2,results.size());
-System.assertEquals(false,results[0].isSuccess());
-System.assertEquals(false,results[1].isSuccess());
+System.assertEquals(events.size(),results.size());
+for(Database.SaveResult saved:results) System.assertEquals(`+success+`,saved.isSuccess());
 return true;
 `)
-		})
+			})
+		}
 	}
 }

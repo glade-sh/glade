@@ -1,0 +1,27 @@
+case	value
+declared_setup_types	ApexClass|1;ApexPage|1;CustomEntityDefinition|1
+field_group	Security Bundle Label|null|SecuritySample__c.Note__c|true|false
+field_profile	""
+field_regular	Security Reader|null|SecuritySample__c.Note__c|true|false
+field_sourceProfile	<profile>|SecurityAuditor|SecuritySample__c.Note__c|true|false
+group_components	1
+group_label	Security Bundle Label
+group_set_count	1
+group_set_label	Security Bundle Label
+metadata_entity_count	1
+object_group	Security Bundle Label|null|SecuritySample__c|true|false|false|false|false|false
+object_profile	<profile>|System Administrator|SecuritySample__c|true|true|true|true|true|true
+object_regular	Security Reader|null|SecuritySample__c|true|false|false|false|false|false
+object_sourceProfile	<profile>|SecurityAuditor|SecuritySample__c|true|false|false|false|false|false
+profile_set_count	1
+profile_set_label_opaque	true
+profile_set_name_differs	true
+profile_set_stable	true
+setup_all	ApexClass|<profile>|System Administrator|true|false;ApexClass|<profile>|System Administrator|true|false;ApexClass|Security Bundle Label|null|false|true;ApexClass|Security Reader|null|false|false;ApexPage|<profile>|System Administrator|true|false;ApexPage|<profile>|System Administrator|true|false;ApexPage|Security Bundle Label|null|false|true;ApexPage|Security Reader|null|false|false
+setup_group	ApexClass|Security Bundle Label|null|false|true;ApexPage|Security Bundle Label|null|false|true
+setup_profile	ApexClass|<profile>|System Administrator|true|false;ApexClass|<profile>|System Administrator|true|false;ApexPage|<profile>|System Administrator|true|false;ApexPage|<profile>|System Administrator|true|false
+setup_regular	ApexClass|Security Reader|null|false|false;ApexPage|Security Reader|null|false|false
+source_profile_set_count	1
+source_profile_setup_count	2
+tab_regular	SecuritySample__c|DefaultOn
+user_profile	System Administrator

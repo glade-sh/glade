@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"accountPolymorphic":false,"accountReference":true,"expandedHasName":true,"expandedName":"North","invalidParentWrite":"System.SObjectException","partialHasAccount":true,"partialHasName":false,"refreshedHasAccount":true,"refreshedHasOwner":true,"refreshedName":"North"}
+62.0	isTest	{"accountPolymorphic":false,"accountReference":true,"expandedHasName":true,"expandedName":"North","invalidParentWrite":"System.SObjectException","partialHasAccount":true,"partialHasName":false,"refreshedHasAccount":true,"refreshedHasOwner":true,"refreshedName":"North"}
+67.0	anonymous	{"accountPolymorphic":false,"accountReference":true,"expandedHasName":true,"expandedName":"North","invalidParentWrite":"System.SObjectException","partialHasAccount":true,"partialHasName":false,"refreshedHasAccount":true,"refreshedHasOwner":true,"refreshedName":"North"}
+67.0	isTest	{"accountPolymorphic":false,"accountReference":true,"expandedHasName":true,"expandedName":"North","invalidParentWrite":"System.SObjectException","partialHasAccount":true,"partialHasName":false,"refreshedHasAccount":true,"refreshedHasOwner":true,"refreshedName":"North"}

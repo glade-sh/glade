@@ -42,9 +42,10 @@ func storageValuesEqual(field storage.Field, left, right storage.Value) bool {
 }
 
 type dmlError struct {
-	code    string
-	fields  []string
-	message string
+	code      string
+	fields    []string
+	message   string
+	duplicate *DuplicateResult
 }
 
 func (e dmlError) Error() string {
@@ -62,7 +63,9 @@ func customMetadataReadOnlyError(objectName string) error {
 func resultFromError(id storage.ID, err error) Result {
 	var typed dmlError
 	if errors.As(err, &typed) {
-		return failedResult(id, typed.message, typed.code, typed.fields)
+		result := failedResult(id, typed.message, typed.code, typed.fields)
+		result.Errors[0].Duplicate = typed.duplicate
+		return result
 	}
 	msg := err.Error()
 	code := "FIELD_CUSTOM_VALIDATION_EXCEPTION"

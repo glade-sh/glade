@@ -4,9 +4,12 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+	"sync/atomic"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
+
+var summaryCandidateBuilds atomic.Uint64
 
 func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, childRecords ...storage.Record) {
 	if e == nil || e.Org == nil || len(childRecords) == 0 {
@@ -79,6 +82,7 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 // mutable and retain the full scan on each uncached child lookup.
 func (c *SummaryRelationCache) summaryCandidates(org *storage.OrgState) []summaryRelation {
 	collect := func() []summaryRelation {
+		summaryCandidateBuilds.Add(1)
 		var fields []summaryRelation
 		for parentName, parent := range org.Objects {
 			for fieldName, field := range parent.Definition.Fields {

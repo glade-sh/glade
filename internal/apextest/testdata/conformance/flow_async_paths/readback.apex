@@ -1,0 +1,1 @@
+AsyncParcel__c row=[SELECT Delayed__c,Immediate__c,Copied__c FROM AsyncParcel__c LIMIT 1];System.debug('ASYNC_COMMITTED|'+JSON.serialize(new Map<String,Object>{'delayed'=>row.Delayed__c,'immediate'=>row.Immediate__c,'copied'=>row.Copied__c,'jobs'=>[SELECT count() FROM AsyncApexJob],'interviews'=>[SELECT count() FROM FlowInterview]}));

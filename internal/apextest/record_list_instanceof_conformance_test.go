@@ -58,8 +58,9 @@ func TestRecordListInstanceOfOrgConformance(t *testing.T) {
 			}
 		}
 	}
+	bases := newConformanceSchemaCache(t)
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			for _, row := range data.Rows {
 				t.Run(row.ID, func(t *testing.T) {
 					for _, route := range data.Routes {
@@ -71,9 +72,10 @@ func TestRecordListInstanceOfOrgConformance(t *testing.T) {
 							}
 							index := stubDispatchIndex(t, api, row.Helpers, classes)
 							diagnostics := append(append([]diagnostic.Diagnostic{}, index.Diagnostics...), sema.Analyze(index).Diagnostics...)
-							org := orgFromIndex(index)
-							org.APIVersion = api
-							runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+							base := bases.get(t, api, "", nil, func(t *testing.T) *conformanceRunner {
+								return conformanceSchemaBase(t, stubDispatchIndex(t, api, nil, nil), api)
+							})
+							runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, LinkProject: true, Org: base.orgSource})
 							var execErr error
 							if route == "anonymous" {
 								diagnostics = append(diagnostics, sema.AnalyzeAnonymous(index, row.Anonymous, api).Diagnostics...)

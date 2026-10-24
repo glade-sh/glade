@@ -1,0 +1,9 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>Qq__c</fullName>
+  <deleteConstraint>SetNull</deleteConstraint>
+  <label>Qq Label</label>
+  <referenceTo>Contact</referenceTo>
+  <relationshipLabel>bAa Rows</relationshipLabel>
+  <relationshipName>bAa</relationshipName>
+  <type>Lookup</type>
+</CustomField>

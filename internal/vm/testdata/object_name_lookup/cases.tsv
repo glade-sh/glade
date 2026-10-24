@@ -1,0 +1,5 @@
+row	shape
+Account	repeated canonical object name
+account	repeated lowercase object name
+ACCOUNT	repeated uppercase object name
+missing	unknown custom object name

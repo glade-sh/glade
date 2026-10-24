@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -2721,7 +2722,7 @@ insert new Account(Name = UserInfo.getUserType());
 	}
 	program, err := CompileAnonymous(`
 Profile p = [SELECT Id FROM Profile WHERE Name = 'Partner Login User' LIMIT 1];
-System.runAs(new User(Id = '005-community-user', ProfileId = p.Id, Username = 'community@example.test')) {
+System.runAs(new User(Id = '005000000000071', ProfileId = p.Id, Username = 'community@example.test')) {
 	Test.startTest();
 	EventBus.publish(new Local_Event__e(Name__c = 'Trail'));
 	Test.stopTest();
@@ -4363,7 +4364,7 @@ func TestExecLocalAsyncDrainRunsQueuedJobsOutsideTestContext(t *testing.T) {
 	}
 	program, err := CompileAnonymous(`
 String jobId = System.enqueueJob(new MarkJob());
-System.assertEquals('707000000000001', jobId);
+System.assertEquals('707000000000001AAA', jobId);
 Integer beforeDrain = [SELECT COUNT() FROM Account WHERE Name = 'async ran'];
 System.assertEquals(0, beforeDrain);
 `)
@@ -4969,19 +4970,15 @@ System.assertEquals(null, Packaging.getCurrentPackageId());
 
 func TestExecFeatureManagementPackageValuesRoundTrip(t *testing.T) {
 	program, err := CompileAnonymous(`
-// Execution-context R093/R096: absent managed feature parameters throw.
-try {
-    System.FeatureManagement.checkPackageBooleanValue('LocalBooleanFeature');
-    System.assert(false, 'expected missing feature parameter');
-} catch (System.NoDataFoundException e) {
-    System.assert('Unable to retrieve feature parameter LocalBooleanFeature. No results found.'.equals(e.getMessage()));
-}
-System.FeatureManagement.setPackageBooleanValue('LocalBooleanFeature', true);
-System.assertEquals(true, System.FeatureManagement.checkPackageBooleanValue('LocalBooleanFeature'));
-System.FeatureManagement.setPackageIntegerValue('LocalIntegerFeature', 7);
-System.assertEquals(7, System.FeatureManagement.checkPackageIntegerValue('LocalIntegerFeature'));
-System.FeatureManagement.setPackageDateValue('LocalDateFeature', Date.newInstance(2026, 6, 3));
-System.assertEquals(Date.newInstance(2026, 6, 3), System.FeatureManagement.checkPackageDateValue('LocalDateFeature'));
+System.assertEquals(false, System.FeatureManagement.checkPackageBooleanValue('LocalBooleanFeature'));
+System.assertEquals(3, System.FeatureManagement.checkPackageIntegerValue('LocalIntegerFeature'));
+System.assertEquals(Date.newInstance(2020, 1, 2), System.FeatureManagement.checkPackageDateValue('LocalDateFeature'));
+System.FeatureManagement.setPackageBooleanValue('localbooleanfeature', true);
+System.assertEquals(true, System.FeatureManagement.checkPackageBooleanValue('LOCALBOOLEANFEATURE'));
+System.FeatureManagement.setPackageIntegerValue('localintegerfeature', 7);
+System.assertEquals(7, System.FeatureManagement.checkPackageIntegerValue('LOCALINTEGERFEATURE'));
+System.FeatureManagement.setPackageDateValue('localdatefeature', Date.newInstance(2026, 6, 3));
+System.assertEquals(Date.newInstance(2026, 6, 3), System.FeatureManagement.checkPackageDateValue('LOCALDATEFEATURE'));
 try {
     System.FeatureManagement.checkPackageDateValue('MissingLocalDateFeature');
     System.assert(false, 'expected missing feature parameter');
@@ -4993,6 +4990,15 @@ try {
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	var org storage.OrgState
+	if err := json.Unmarshal([]byte(`{"metadata":{"featureParameters":[
+ {"name":"LocalBooleanFeature","type":"Boolean","dataflowDirection":"SubscriberToLmo","value":"false"},
+ {"name":"LocalIntegerFeature","type":"Integer","dataflowDirection":"SubscriberToLmo","value":"3"},
+ {"name":"LocalDateFeature","type":"Date","dataflowDirection":"SubscriberToLmo","value":"2020-01-02"}
+ ]}}`), &org); err != nil {
+		t.Fatal(err)
+	}
+	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -5024,7 +5030,7 @@ func TestExecGeneratedPlatformDescribeConstructorsAreUnsupported(t *testing.T) {
 
 func TestExecFeatureManagementUsesAssignedPermissionSetCustomPermissions(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.runAs(new User(Id = '005-user-a')) {
+System.runAs(new User(Id = '005000000000074')) {
     System.assert(FeatureManagement.checkPermission('ManageFeature'));
     System.assert(!FeatureManagement.checkPermission('OtherPermission'));
 }
@@ -5048,7 +5054,7 @@ System.runAs(new User(Id = '005-user-a')) {
 		ID:     "0Pa000000000101",
 		Object: "PermissionSetAssignment",
 		Fields: map[string]storage.Value{
-			"AssigneeId":      storage.IDValue("005-user-a"),
+			"AssigneeId":      storage.IDValue("005000000000074"),
 			"PermissionSetId": storage.IDValue("0PS000000000101"),
 		},
 	}
@@ -12129,8 +12135,9 @@ Test.stopTest();
 		}
 	}
 	_, err = machine.Execute(program)
-	if err == nil || !strings.Contains(err.Error(), "Queueable chaining limit exceeded") {
-		t.Fatalf("err = %v, want queueable chaining limit", err)
+	var nativeFailure *RuntimeError
+	if !errors.As(err, &nativeFailure) || nativeFailure.Type != "System.AsyncException" || nativeFailure.Message != "Maximum stack depth has been reached." {
+		t.Fatalf("err = %v, want native first-child stack-depth rejection", err)
 	}
 }
 
@@ -13038,8 +13045,9 @@ Test.stopTest();
 		t.Fatal(err)
 	}
 	_, err = machine.Execute(program)
-	if err == nil || !strings.Contains(err.Error(), "MaximumQueueableStackDepth exceeded") {
-		t.Fatalf("err = %v, want maximum queueable stack depth rejection", err)
+	var nativeFailure *RuntimeError
+	if !errors.As(err, &nativeFailure) || nativeFailure.Type != "System.AsyncException" || nativeFailure.Message != "Maximum stack depth has been reached." {
+		t.Fatalf("err = %v, want native maximum queueable stack depth rejection", err)
 	}
 }
 
@@ -13695,6 +13703,20 @@ System.setPassword(UserInfo.getUserId(), 'local-secret');
 	org := storage.NewOrgState()
 	storage.EnsureDeterministicPlatformData(&org)
 	storage.ApplyOrgShape(&org, []string{"MultiCurrency", "Sites", "Communities"})
+	// This DTO test supplies its Network explicitly; enabling Communities
+	// alone leaves the native configuration empty.
+	networks := org.Objects["Network"]
+	networks.Records["0DB000000000001"] = storage.Record{
+		ID: "0DB000000000001", Object: "Network",
+		Fields: map[string]storage.Value{
+			"Name":             storage.StringValue("Local Community"),
+			"Status":           storage.StringValue("Live"),
+			"UrlPathPrefix":    storage.StringValue("local"),
+			"SelfRegProfileId": storage.IDValue("00e000000000003"),
+		},
+	}
+	org.Objects["Network"] = networks
+
 	// The ConnectApi assertions use a local UTC context, not native zone
 	// evidence. Bind that context independently of the running-user fixture.
 	users := org.Objects["User"]
@@ -13745,7 +13767,7 @@ System.assert(networkId==null);
 
 func TestExecRunAsHonorsExplicitGuestUserType(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.runAs(new User(Id = '005-guest-user', ProfileId = '00e000000000007', Username = 'guest@example.test', UserType = 'Guest')) {
+System.runAs(new User(Id = '005000000000073', ProfileId = '00e000000000007', Username = 'guest@example.test', UserType = 'Guest')) {
 	System.assertEquals('Guest', UserInfo.getUserType());
 	System.assertEquals(true, Auth.CommunitiesUtil.isGuestUser());
 }
@@ -13765,7 +13787,7 @@ System.runAs(new User(Id = '005-guest-user', ProfileId = '00e000000000007', User
 
 func TestExecRunAsHydratesStoredGuestUserType(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.runAs(new User(Id = '005-guest-user')) {
+System.runAs(new User(Id = '005000000000073')) {
 	System.assertEquals('Guest', UserInfo.getUserType());
 	System.assertEquals(true, Auth.CommunitiesUtil.isGuestUser());
 }
@@ -13776,8 +13798,8 @@ System.runAs(new User(Id = '005-guest-user')) {
 	org := storage.NewOrgState()
 	storage.EnsureDeterministicPlatformData(&org)
 	userState := org.Objects["User"]
-	userState.Records["005-guest-user"] = storage.Record{
-		ID:     "005-guest-user",
+	userState.Records["005000000000073"] = storage.Record{
+		ID:     "005000000000073",
 		Object: "User",
 		Fields: map[string]storage.Value{
 			"UserType": storage.StringValue("Guest"),
@@ -13795,7 +13817,7 @@ System.runAs(new User(Id = '005-guest-user')) {
 func TestExecRunAsDefaultsProfileOnlyUserTypeToStandard(t *testing.T) {
 	program, err := CompileAnonymous(`
 	Profile p = [SELECT Id FROM Profile WHERE Name = 'Internal Login User' LIMIT 1];
-	System.runAs(new User(Id = '005-community-user', ProfileId = p.Id, Username = 'community@example.test')) {
+	System.runAs(new User(Id = '005000000000071', ProfileId = p.Id, Username = 'community@example.test')) {
 		System.assertEquals('Standard', UserInfo.getUserType());
 	}
 	`)
@@ -13824,11 +13846,11 @@ func TestExecRunAsDefaultsProfileOnlyUserTypeToStandard(t *testing.T) {
 func TestExecRunAsInfersCustomerCommunityUserTypeFromProfile(t *testing.T) {
 	program, err := CompileAnonymous(`
 Profile p = [SELECT Id FROM Profile WHERE Name = 'Customer Community User' LIMIT 1];
-System.runAs(new User(Id = '005-community-user', ProfileId = p.Id, Username = 'community@example.test')) {
+System.runAs(new User(Id = '005000000000071', ProfileId = p.Id, Username = 'community@example.test')) {
 	System.assertEquals('CspLitePortal', UserInfo.getUserType());
 }
 Profile login = [SELECT Id FROM Profile WHERE Name = 'Customer Community Login User' LIMIT 1];
-System.runAs(new User(Id = '005-community-login-user', ProfileId = login.Id, Username = 'community-login@example.test')) {
+System.runAs(new User(Id = '005000000000072', ProfileId = login.Id, Username = 'community-login@example.test')) {
 	System.assertEquals('CspLitePortal', UserInfo.getUserType());
 }
 `)
@@ -13864,7 +13886,7 @@ System.runAs(new User(Id = '005-community-login-user', ProfileId = login.Id, Use
 func TestExecCreatedByProfileUserLicenseUsesCommunityLicenseKey(t *testing.T) {
 	program, err := CompileAnonymous(`
 Profile p = [SELECT Id FROM Profile WHERE Name = 'Chatter External User' LIMIT 1];
-System.runAs(new User(Id = '005-community-user', ProfileId = p.Id, Username = 'community@example.test')) {
+System.runAs(new User(Id = '005000000000071', ProfileId = p.Id, Username = 'community@example.test')) {
 	insert new Account(Name = 'Acme');
 }
 Account row = [SELECT CreatedBy.Profile.UserLicense.LicenseDefinitionKey FROM Account WHERE Name = 'Acme' LIMIT 1];
@@ -13887,7 +13909,7 @@ System.assertEquals('PID_Customer_Community_Login', row.CreatedBy.Profile.UserLi
 func TestExecRunAsPreservesStaticSingletonInstanceFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 Cache.Instance.DefaultAccount;
-System.runAs(new User(Id = '005-community-user', UserType = 'CspLitePortal')) {
+System.runAs(new User(Id = '005000000000071', UserType = 'CspLitePortal')) {
 	System.assertNotEquals(null, Cache.Instance.DefaultAccount);
 }
 `)
@@ -14130,13 +14152,13 @@ func TestExecRunAsScopesSupportedMixedDMLMode(t *testing.T) {
 	storage.EnsureDeterministicPlatformData(&org)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
-	if _, err := machine.Execute(fails); err == nil || !strings.Contains(err.Error(), "Mixed DML") {
+	if _, err := machine.Execute(fails); err == nil || !strings.Contains(err.Error(), "MIXED_DML_OPERATION") {
 		t.Fatalf("err = %v", err)
 	}
 
 	passes, err := CompileAnonymous(`
 	insert new PermissionSet(Name = 'LocalPermissions');
-	System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username = 'user-a@example.test')) {
+	System.runAs(new User(Id = '005000000000074', ProfileId = '00e000000000074', Username = 'user-a@example.test')) {
 	  insert new Account(Name = 'Acme');
 	}
 `)
@@ -14227,7 +14249,7 @@ func TestExecMixedDMLIsCatchableAndFailedAttemptDoesNotPoisonTransaction(t *test
 	  insert new PermissionSet(Name = 'LocalPermissions');
 	} catch (DmlException e) {
   caught = true;
-  System.assert(e.getMessage().contains('Mixed DML'));
+  System.assertEquals(StatusCode.MIXED_DML_OPERATION, e.getDmlType(0));
 }
 System.assert(caught);
 insert new Account(Name = 'After');
@@ -14297,7 +14319,7 @@ insert new Account(Name = 'Acme');
 	storage.EnsureDeterministicPlatformData(&org)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
-	if _, err := machine.Execute(mixed); err == nil || !strings.Contains(err.Error(), "Mixed DML") {
+	if _, err := machine.Execute(mixed); err == nil || !strings.Contains(err.Error(), "MIXED_DML_OPERATION") {
 		t.Fatalf("err = %v, want Mixed DML", err)
 	}
 }

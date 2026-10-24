@@ -189,6 +189,15 @@ func (vm *VM) currentSharingMode() string {
 	if vm.currentTrigger {
 		return "without sharing"
 	}
+	// Native test invocations enforce sharing in the test method itself,
+	// including a class declared without sharing. Ordinary helpers still use
+	// their own declarations and the effective caller frame below.
+	if entry := vm.testExecutionEntry; entry != nil &&
+		strings.EqualFold(vm.currentClass, entry.className) && len(vm.callStack) == entry.depth {
+		if class, ok := vm.lookupClass(vm.currentClass); ok && class.IsTest {
+			return "with sharing"
+		}
+	}
 	if vm.currentMethod.SourceContextBound {
 		switch strings.ToLower(strings.TrimSpace(vm.currentMethod.SharingMode)) {
 		case "with sharing", "without sharing":

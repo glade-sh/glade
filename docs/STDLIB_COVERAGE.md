@@ -33,6 +33,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Assert | `Assert.isNotNull` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.isNull` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.isTrue` | `supported` | Routes through local assertion failures with optional message text. |
+| Blob / PageReference | `Blob.toPdf, PageReference.getContent and getContentAsPDF` | `partial` | Blob.toPdf, PageReference.getContent and getContentAsPDF render locally with a text-only PDF writer that follows the layout of Salesforce's renderer (PDF-1.4, Letter, Times-Roman, Flate streams). It is not Salesforce's Flying Saucer/iText engine: CSS, tables, images and embedded fonts are not rendered, and output is deterministic where Salesforce's is not. Set pdf.command to an external HTML-to-PDF program for real rendering. PageReference.getContent returns HTML for pages without renderAs="pdf". The pdf.command setting applies to Visualforce page rendering; Blob.toPdf uses the local writer. |
 | Boolean | `Boolean.valueOf(Object)` | `supported` | Converts supported local field/object values into Boolean values. |
 | Boolean | `Boolean.valueOf(String)` | `supported` | Converts strings to Boolean using Apex-shaped true/false parsing. |
 | BusinessHours | `BusinessHours malformed local holiday metadata` | `unsupported` | Malformed seeded holiday metadata raises a stable UnsupportedFeature diagnostic naming the unsupported local field shape. |
@@ -150,7 +151,6 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | PageReference | `PageReference` | `supported` | Constructor, URL, redirect, mutable parameters, headers, cookies, and current-page state are modeled. |
 | PageReference | `PageReference(partialURL)` | `supported` | Builds a VM-local PageReference from a partial URL with mutable parameters and headers. |
 | PageReference | `PageReference(record)` | `supported` | Builds a Visualforce PageReference from a local ApexPage SObject record. |
-| PageReference | `PageReference.getContent and getContentAsPDF` | `unsupported` | Visualforce rendering and PDF generation require the hosted rendering service and raise stable UnsupportedFeature diagnostics locally. |
 | Pattern | `Matcher.find` | `supported` | Oracle- and fixture-pinned regexp2-backed Java regex matching covers lookaround, named groups/backrefs, atomic groups, possessive quantifiers, \G, \R, \h/\v, (?U), Java Unicode aliases, UAX #29 \X and \b{g}, nested class algebra, and Apex UTF-16 code-unit match indexes. |
 | Pattern | `Matcher.group` | `supported` | Returns fixture-pinned whole-match and capture groups, including unmatched optional groups, over the supported Java regex path with Apex UTF-16 code-unit group bounds. |
 | Pattern | `Matcher.matches` | `supported` | Whole-region matching over the supported regexp2-backed Java regex path. |

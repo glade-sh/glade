@@ -1,0 +1,9 @@
+api	context	id	outcome	value
+67.0	istest	plainrole	observation	"""System.DmlException: Insert failed. First exception on row 0; first error: MIXED_DML_OPERATION, DML operation on setup object is not permitted after you have updated a non-setup object (or vice versa): User, original object: Account: []"""
+67.0	istest	plainnorole	observation	"""success"""
+67.0	istest	startrole	observation	"""System.DmlException: Insert failed. First exception on row 0; first error: MIXED_DML_OPERATION, DML operation on setup object is not permitted after you have updated a non-setup object (or vice versa): User, original object: Account: []"""
+67.0	istest	startbothrole	observation	"""System.DmlException: Insert failed. First exception on row 0; first error: MIXED_DML_OPERATION, DML operation on setup object is not permitted after you have updated a non-setup object (or vice versa): User, original object: Account: []"""
+67.0	istest	runasrole	observation	"""success"""
+67.0	istest	setuprole	observation	"""System.DmlException: Insert failed. First exception on row 0; first error: MIXED_DML_OPERATION, DML operation on setup object is not permitted after you have updated a non-setup object (or vice versa): User, original object: Account: []"""
+67.0	anonymous	anonymous_role	observation	"""System.DmlException: Insert failed. First exception on row 0; first error: MIXED_DML_OPERATION, DML operation on setup object is not permitted after you have updated a non-setup object (or vice versa): User, original object: Account: []"""
+67.0	anonymous	anonymous_no_role	observation	"""success"""

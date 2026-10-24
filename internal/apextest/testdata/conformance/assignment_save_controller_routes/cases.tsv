@@ -1,0 +1,17 @@
+id	object	operation	route	phase
+Lead_insert_save_allow	Lead	insert	save	allow
+Lead_insert_save_before	Lead	insert	save	before
+Lead_insert_save_after	Lead	insert	save	after
+Lead_update_save_allow	Lead	update	save	allow
+Lead_update_save_before	Lead	update	save	before
+Lead_update_save_after	Lead	update	save	after
+Case_insert_save_allow	Case	insert	save	allow
+Case_insert_save_before	Case	insert	save	before
+Case_insert_save_after	Case	insert	save	after
+Case_update_save_allow	Case	update	save	allow
+Case_update_save_before	Case	update	save	before
+Case_update_save_after	Case	update	save	after
+Lead_insert_save_followup	Lead	insert	save	followup
+Lead_update_save_followup	Lead	update	save	followup
+Case_insert_save_followup	Case	insert	save	followup
+Case_update_save_followup	Case	update	save	followup

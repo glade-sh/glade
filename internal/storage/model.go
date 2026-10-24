@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/glade-sh/glade/internal/config"
@@ -70,6 +71,8 @@ func NormalizeOrgDomainURL(raw string) (string, error) {
 }
 
 type OrgState struct {
+	ChangeDataCaptureTestSetup *ChangeDataCaptureSnapshot `json:"-"`
+
 	OrgID                  string                 `json:"orgId,omitempty"`
 	APIVersion             string                 `json:"apiVersion,omitempty"`
 	Namespace              string                 `json:"namespace,omitempty"`
@@ -80,6 +83,7 @@ type OrgState struct {
 	IDSequences            map[string]uint64      `json:"idSequences,omitempty"`
 	Transactions           []TransactionFrame     `json:"transactions,omitempty"`
 	Now                    func() time.Time       `json:"-"`
+	Today                  func() time.Time       `json:"-"` // Execution user's local calendar for formula TODAY().
 	PlatformCache          *PlatformCacheState    `json:"-"`
 	PlatformCacheTestSetup *PlatformCacheState    `json:"-"`
 
@@ -91,7 +95,98 @@ type OrgState struct {
 	keyPrefixesValidated            bool
 	keyPrefixesValidatedObjectCount int
 	keyPrefixesValidatedPrefixes    []keyPrefixSnapshotEntry
+	keyPrefixesValidatedGeneration  uint64
 	schemaGeneration                uint64
+	runtimeGeneration               *orgRuntimeGeneration
+}
+
+type orgRuntimeGeneration struct {
+	id     uint64
+	mu     sync.Mutex
+	values map[string]any
+}
+
+var runtimeGenerationSequence atomic.Uint64
+
+func newOrgRuntimeGeneration() *orgRuntimeGeneration {
+	return &orgRuntimeGeneration{id: runtimeGenerationSequence.Add(1)}
+}
+
+func (o *OrgState) ensureRuntimeGeneration() *orgRuntimeGeneration {
+	if o == nil {
+		return nil
+	}
+	if o.runtimeGeneration == nil {
+		o.runtimeGeneration = newOrgRuntimeGeneration()
+	}
+	return o.runtimeGeneration
+}
+
+// RuntimeGenerationID identifies org clones that share the same schema and
+// metadata generation. ClearRuntimeSchemaStamp and explicit runtime invalidation
+// move the org to a fresh generation.
+func (o *OrgState) RuntimeGenerationID() uint64 {
+	if generation := o.ensureRuntimeGeneration(); generation != nil {
+		generation.mu.Lock()
+		defer generation.mu.Unlock()
+		return generation.id
+	}
+	return 0
+}
+
+// RuntimeGenerationCacheValue returns the cached value for a frozen runtime
+// generation, building it once across all org clones. Unstamped orgs remain
+// mutable and build their indexes locally.
+func (o *OrgState) RuntimeGenerationCacheValue(key string, build func() any) any {
+	if o == nil || strings.TrimSpace(o.RuntimeSchemaStamp) == "" {
+		return build()
+	}
+	generation := o.ensureRuntimeGeneration()
+	generation.mu.Lock()
+	defer generation.mu.Unlock()
+	if value, ok := generation.values[key]; ok {
+		return value
+	}
+	value := build()
+	if generation.values == nil {
+		generation.values = make(map[string]any)
+	}
+	generation.values[key] = value
+	return value
+}
+
+func (o *OrgState) LoadRuntimeGenerationCache(key string) (any, bool) {
+	if o == nil || strings.TrimSpace(o.RuntimeSchemaStamp) == "" {
+		return nil, false
+	}
+	generation := o.ensureRuntimeGeneration()
+	generation.mu.Lock()
+	defer generation.mu.Unlock()
+	value, ok := generation.values[key]
+	return value, ok
+}
+
+func (o *OrgState) StoreRuntimeGenerationCache(key string, value any) {
+	if o == nil || strings.TrimSpace(o.RuntimeSchemaStamp) == "" {
+		return
+	}
+	generation := o.ensureRuntimeGeneration()
+	generation.mu.Lock()
+	if generation.values == nil {
+		generation.values = make(map[string]any)
+	}
+	generation.values[key] = value
+	generation.mu.Unlock()
+}
+
+// InvalidateRuntimeGeneration detaches this org's derived indexes after an
+// external SetOrg boundary that may have installed mutable schema maps.
+// The template and sibling clones retain their shared generation and indexes.
+func (o *OrgState) InvalidateRuntimeGeneration() {
+	if o == nil {
+		return
+	}
+	o.runtimeGeneration = newOrgRuntimeGeneration()
 }
 
 // SchemaGeneration counts ClearRuntimeSchemaStamp calls on this org value.
@@ -112,10 +207,15 @@ func (o *OrgState) ClearRuntimeSchemaStamp() {
 		o.keyPrefixesValidated = false
 		o.keyPrefixesValidatedObjectCount = 0
 		o.keyPrefixesValidatedPrefixes = nil
+		o.keyPrefixesValidatedGeneration = 0
+		o.runtimeGeneration = newOrgRuntimeGeneration()
 	}
 }
 
 type MetadataRegistry struct {
+	// ChangeEventEntities are selected by deployed ChangeEvents channel members.
+	ChangeEventEntities []string `json:"changeEventEntities,omitempty"`
+
 	Flows []FlowRule `json:"flows,omitempty"`
 	// FlowDeclarations expose metadata without registering executable automation.
 	FlowDeclarations       []FlowRule                  `json:"flowDeclarations,omitempty"`
@@ -132,7 +232,15 @@ type MetadataRegistry struct {
 	Endpoints              []EndpointMetadata          `json:"endpoints,omitempty"`
 	EmailTemplates         []EmailTemplateMetadata     `json:"emailTemplates,omitempty"`
 	MessageChannels        []MessageChannelMetadata    `json:"messageChannels,omitempty"`
+	FeatureParameters      []FeatureParameterMetadata  `json:"featureParameters,omitempty"`
 	Layouts                []LayoutMetadata            `json:"layouts,omitempty"`
+}
+
+type FeatureParameterMetadata struct {
+	Name              string `json:"name"`
+	Type              string `json:"type"`
+	DataflowDirection string `json:"dataflowDirection"`
+	Value             string `json:"value"`
 }
 
 type LabelMetadata struct {
@@ -304,6 +412,8 @@ type ObjectDefinition struct {
 	Relations         []Relationship     `json:"relationships,omitempty"`
 	RecordTypes       []RecordTypeInfo   `json:"recordTypes,omitempty"`
 	ValidationRules   []ValidationRule   `json:"validationRules,omitempty"`
+	AssignmentRules   []AssignmentRule   `json:"assignmentRules,omitempty"`
+	DuplicateRules    []DuplicateRule    `json:"duplicateRules,omitempty"`
 	WorkflowRules     []WorkflowRule     `json:"workflowRules,omitempty"`
 	FlowRules         []FlowRule         `json:"flowRules,omitempty"`
 	Indexes           []IndexDefinition  `json:"indexes,omitempty"`
@@ -532,6 +642,7 @@ type FlowRule struct {
 	Criteria             []WorkflowCriteriaItem `json:"criteria,omitempty"`
 	Branches             []FlowBranch           `json:"branches,omitempty"`
 	Steps                []FlowStep             `json:"steps,omitempty"`
+	Paths                []FlowPath             `json:"paths,omitempty"`
 	FieldUpdates         []WorkflowFieldUpdate  `json:"fieldUpdates,omitempty"`
 	Actions              []FlowAction           `json:"actions,omitempty"`
 	RecordLookups        []FlowRecordLookup     `json:"recordLookups,omitempty"`
@@ -543,6 +654,20 @@ type FlowRule struct {
 	// StepTargets stores shared connector targets once. Reference steps name a
 	// target instead of recursively embedding its continuation.
 	StepTargets map[string][]FlowStep `json:"stepTargets,omitempty"`
+}
+
+// FlowPath retains a deferred record-triggered entry independently of the
+// rule's immediate graph. Kind is async or scheduled.
+type FlowPath struct {
+	Name         string                `json:"name"`
+	Kind         string                `json:"kind"`
+	Steps        []FlowStep            `json:"steps,omitempty"`
+	StepTargets  map[string][]FlowStep `json:"stepTargets,omitempty"`
+	OffsetNumber float64               `json:"offsetNumber,omitempty"`
+	OffsetUnit   string                `json:"offsetUnit,omitempty"`
+	TimeSource   string                `json:"timeSource,omitempty"`
+	RecordField  string                `json:"recordField,omitempty"`
+	MaxBatchSize int                   `json:"maxBatchSize,omitempty"`
 }
 
 // FlowVariable describes an autolaunched Flow interview variable. Keeping
@@ -725,6 +850,8 @@ const (
 )
 
 type Relationship struct {
+	parentLookup *relationshipParentLookup
+
 	// InheritedFrom retains relationship provenance for reverse describe.
 	InheritedFrom       string   `json:"inheritedFrom,omitempty"`
 	Field               string   `json:"field"`
@@ -748,6 +875,8 @@ type LookupHistoryScope struct{ identity byte }
 func NewLookupHistoryScope() *LookupHistoryScope { return &LookupHistoryScope{} }
 
 type Record struct {
+	// AssignmentRule is a transient per-record DML option, never persisted.
+	AssignmentRule *AssignmentRuleSelection `json:"-"`
 	// MetadataSourceUnit binds source-backed metadata collisions to their producing project.
 	MetadataSourceUnit string `json:"metadataSourceUnit,omitempty"`
 	// HierarchyNameUsesRecordID retains omitted Name/owner insert provenance.
@@ -1219,9 +1348,10 @@ const (
 
 func NewOrgState() OrgState {
 	return OrgState{
-		Objects:         make(map[string]ObjectState),
-		IDSequences:     make(map[string]uint64),
-		objectNameCache: &sync.Map{},
+		Objects:           make(map[string]ObjectState),
+		IDSequences:       make(map[string]uint64),
+		objectNameCache:   &sync.Map{},
+		runtimeGeneration: newOrgRuntimeGeneration(),
 	}
 }
 
@@ -1635,6 +1765,10 @@ func IsCustomSettingObject(org OrgState, name string) bool {
 
 func (r Record) Clone() Record {
 	out := r
+	if r.AssignmentRule != nil {
+		selection := *r.AssignmentRule
+		out.AssignmentRule = &selection
+	}
 	if r.clearedLookupReferences != nil {
 		out.clearedLookupReferences = make(map[string]ID, len(r.clearedLookupReferences))
 		for field, id := range r.clearedLookupReferences {
@@ -1773,6 +1907,8 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 		}
 	}
 	out.ValidationRules = append([]ValidationRule(nil), d.ValidationRules...)
+	out.DuplicateRules = CloneDuplicateRules(d.DuplicateRules)
+	out.AssignmentRules = CloneAssignmentRules(d.AssignmentRules)
 	out.WorkflowRules = append([]WorkflowRule(nil), d.WorkflowRules...)
 	for i := range out.WorkflowRules {
 		out.WorkflowRules[i].Criteria = append([]WorkflowCriteriaItem(nil), d.WorkflowRules[i].Criteria...)
@@ -1789,6 +1925,7 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 		out.FlowRules[i].Criteria = append([]WorkflowCriteriaItem(nil), d.FlowRules[i].Criteria...)
 		out.FlowRules[i].Steps = cloneFlowSteps(d.FlowRules[i].Steps)
 		out.FlowRules[i].StepTargets = cloneFlowStepTargets(d.FlowRules[i].StepTargets)
+		out.FlowRules[i].Paths = cloneFlowPaths(d.FlowRules[i].Paths)
 		out.FlowRules[i].FieldUpdates = append([]WorkflowFieldUpdate(nil), d.FlowRules[i].FieldUpdates...)
 		out.FlowRules[i].Actions = cloneFlowActions(d.FlowRules[i].Actions)
 		out.FlowRules[i].Branches = cloneFlowBranches(d.FlowRules[i].Branches)
@@ -1844,6 +1981,7 @@ func cloneFlowRules(rules []FlowRule) []FlowRule {
 		out[i].Criteria = append([]WorkflowCriteriaItem(nil), rules[i].Criteria...)
 		out[i].Steps = cloneFlowSteps(rules[i].Steps)
 		out[i].StepTargets = cloneFlowStepTargets(rules[i].StepTargets)
+		out[i].Paths = cloneFlowPaths(rules[i].Paths)
 		out[i].FieldUpdates = append([]WorkflowFieldUpdate(nil), rules[i].FieldUpdates...)
 		out[i].Actions = cloneFlowActions(rules[i].Actions)
 		out[i].Branches = cloneFlowBranches(rules[i].Branches)
@@ -1853,6 +1991,15 @@ func cloneFlowRules(rules []FlowRule) []FlowRule {
 		out[i].CustomErrors = cloneFlowCustomErrors(rules[i].CustomErrors)
 		out[i].ApexPlugins = cloneFlowApexPlugins(rules[i].ApexPlugins)
 		out[i].Variables = append([]FlowVariable(nil), rules[i].Variables...)
+	}
+	return out
+}
+
+func cloneFlowPaths(paths []FlowPath) []FlowPath {
+	out := append([]FlowPath(nil), paths...)
+	for i := range out {
+		out[i].Steps = cloneFlowSteps(paths[i].Steps)
+		out[i].StepTargets = cloneFlowStepTargets(paths[i].StepTargets)
 	}
 	return out
 }
@@ -1966,6 +2113,7 @@ func (i IndexSet) Clone() IndexSet {
 func (o OrgState) Clone() OrgState {
 	out := o
 	out.Features = append([]string(nil), o.Features...)
+	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
 	out.Metadata.FlowDeclarations = cloneFlowRules(o.Metadata.FlowDeclarations)
 	if o.Objects != nil {
@@ -1998,6 +2146,7 @@ func (o OrgState) CloneRuntime() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
 	out.Features = append([]string(nil), o.Features...)
+	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
 	out.Metadata.FlowDeclarations = cloneFlowRules(o.Metadata.FlowDeclarations)
 	if o.Objects != nil {
@@ -2032,6 +2181,7 @@ func (o OrgState) CloneRuntimeFrozenDefinition() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
 	out.Features = append([]string(nil), o.Features...)
+	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
 	out.Metadata.FlowDeclarations = cloneFlowRules(o.Metadata.FlowDeclarations)
 	if o.Objects != nil {
@@ -2092,6 +2242,7 @@ func (o OrgState) CloneRuntimeFrozenShared() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
 	out.Features = append([]string(nil), o.Features...)
+	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
 		for name, object := range o.Objects {

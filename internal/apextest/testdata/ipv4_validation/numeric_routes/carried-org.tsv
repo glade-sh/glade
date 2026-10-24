@@ -1,0 +1,5 @@
+api	context	id	value
+62.0	anonymous	grapheme-repeated-boundary	{"Pattern.split":["e\u0301","\u0301"],"String.split":["e\u0301","\u0301"]}
+62.0	isTest	grapheme-repeated-boundary	{"Pattern.split":["e\u0301","\u0301"],"String.split":["e\u0301","\u0301"]}
+67.0	anonymous	grapheme-repeated-boundary	{"Pattern.split":["e\u0301","\u0301"],"String.split":["e\u0301","\u0301"]}
+67.0	isTest	grapheme-repeated-boundary	{"Pattern.split":["e\u0301","\u0301"],"String.split":["e\u0301","\u0301"]}

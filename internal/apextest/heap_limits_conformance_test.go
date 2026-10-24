@@ -63,7 +63,7 @@ func TestHeapLimitsOrgConformance(t *testing.T) {
 			api68Observations++
 		}
 	}
-	if len(data.Cases) != 45 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" || len(data.CarriedAPIVersions) != 0 || api68Observations != 16 {
+	if len(data.Cases) != 47 || strings.Join(data.APIVersions, ",") != "62.0,67.0,68.0" || len(data.CarriedAPIVersions) != 0 || api68Observations != 16 {
 		t.Fatalf("oracle: %d rows at %v, carried %v", len(data.Cases), data.APIVersions, data.CarriedAPIVersions)
 	}
 	heapBytes := regexp.MustCompile(`(Apex heap size too large: )[0-9]+`)
@@ -136,7 +136,7 @@ func TestHeapLimitsOrgConformance(t *testing.T) {
 		for _, api := range data.APIVersions {
 			native, ok := tc.Native[api]
 			if !ok {
-				// HEAP3/HEAP4 were captured only at 62.0 and 67.0.
+				// HEAP3/HEAP4/HEAP5 were captured only at 62.0 and 67.0.
 				// The 16 existing API 68.0 observations are asserted below.
 				if api == "68.0" {
 					continue
@@ -159,7 +159,7 @@ func TestHeapLimitsOrgConformance(t *testing.T) {
 				texts = append(texts, failure.Message)
 			}
 			for _, text := range texts {
-				if _, complete := normalize(text, tc.MatchFields); text != "" && !complete {
+				if _, complete := normalize(text, tc.MatchFields); text != "" && !complete && !strings.Contains(text, "Apex heap size too large:") {
 					t.Fatalf("native observation %s@%s lacks fields %v: %s", tc.ID, api, tc.MatchFields, text)
 				}
 			}

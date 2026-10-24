@@ -47,7 +47,7 @@ func parseGitNameStatus(root string, data []byte) []Change {
 	var changes []Change
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 	for scanner.Scan() {
-		fields := strings.Fields(scanner.Text())
+		fields := strings.Split(scanner.Text(), "\t")
 		if len(fields) < 2 {
 			continue
 		}

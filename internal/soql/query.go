@@ -73,6 +73,7 @@ type Condition struct {
 	And       []Condition
 	Or        []Condition
 	Field     string
+	Formula   *FormulaExpression
 	Op        string
 	Value     storage.Value
 	Value2    storage.Value

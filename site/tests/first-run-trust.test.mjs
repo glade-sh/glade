@@ -143,3 +143,12 @@ test("public trust documentation explains plugin execution boundaries", () => {
   assert.match(siteSecurityTrust, /minimal environment/);
   assert.match(siteSecurityTrust, /not separately signed/);
 });
+
+test("v0.3.0 release notes retain daemon upgrade guidance", async () => {
+  const releaseNotes = await readFile(new URL("../../docs/RELEASE_NOTES.md", import.meta.url), "utf8");
+  const current = releaseNotes.split("## v0.3.0\n")[1]?.split(/\n## /)[0];
+  assert.ok(current, "release notes must include v0.3.0");
+  assert.match(current, /Stop old test servers with the original binary before upgrading/);
+  assert.match(current, /glade test daemon stop/);
+  assert.match(current, /preserves its socket and PID file/);
+});

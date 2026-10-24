@@ -1,0 +1,9 @@
+name: Valid step context
+on: push
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          WORK_DIR: ${{ runner.temp }}
+        run: echo ready

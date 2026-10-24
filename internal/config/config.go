@@ -17,17 +17,25 @@ import (
 var ErrNotFound = errors.New("glade config not found")
 
 type Config struct {
+	PDF     PDFConfig     `json:"pdf"`
 	Project ProjectConfig `json:"project"`
 	Org     OrgConfig     `json:"org"`
 	Test    TestConfig    `json:"test"`
 }
 
+type PDFConfig struct {
+	Command string `json:"command"`
+}
+
 type ProjectConfig struct {
 	Root                       string                     `json:"root"`
 	PackageDirs                []string                   `json:"packageDirs"`
+	ExtraMetadataDirs          []string                   `json:"extraMetadataDirs,omitempty"`
 	DefaultNamespace           string                     `json:"defaultNamespace"`
 	NamespaceRemaps            []namespaceremap.Rule      `json:"namespaceRemaps,omitempty"`
+	Dependencies               []LocalPackageDependency   `json:"dependencies,omitempty"`
 	ManagedPackageDependencies []ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
+	DependencyPaths            []string                   `json:"dependencyPaths,omitempty"`
 	PackageShims               []PackageShim              `json:"packageShims,omitempty"`
 	SchemaSnapshot             string                     `json:"schemaSnapshot,omitempty"`
 	SchemaSnapshotSHA256       string                     `json:"schemaSnapshotSHA256,omitempty"`
@@ -45,10 +53,12 @@ type PackageShim struct {
 	SourceRoot string `json:"sourceRoot"`
 }
 
-// TestConfig grants project permission metadata to the default test user.
+// TestConfig supplies the default test user's environment and permissions.
 type TestConfig struct {
-	PermissionSets      []string `json:"permissionSets,omitempty"`
-	PermissionSetGroups []string `json:"permissionSetGroups,omitempty"`
+	PermissionSets      []string        `json:"permissionSets,omitempty"`
+	PermissionSetGroups []string        `json:"permissionSetGroups,omitempty"`
+	User                TestUserConfig  `json:"user,omitzero"`
+	Clock               TestClockConfig `json:"clock,omitzero"`
 }
 
 type OrgConfig struct {
@@ -122,6 +132,8 @@ func LoadFile(path string) (Config, error) {
 func parseYAMLSubset(src string) (Config, error) {
 	var cfg Config
 	var section string
+	var testSection string
+	var testSectionIndent int
 
 	lines := strings.Split(src, "\n")
 	for lineNo := 0; lineNo < len(lines); lineNo++ {
@@ -132,6 +144,7 @@ func parseYAMLSubset(src string) (Config, error) {
 		}
 		if !strings.HasPrefix(raw, " ") && strings.HasSuffix(line, ":") {
 			section = strings.TrimSuffix(line, ":")
+			testSection = ""
 			continue
 		}
 
@@ -141,8 +154,43 @@ func parseYAMLSubset(src string) (Config, error) {
 		}
 		key = strings.TrimSpace(key)
 		value = strings.TrimSpace(value)
+		if section == "test" {
+			if testSection != "" && leadingSpaces(raw) <= testSectionIndent {
+				testSection = ""
+			}
+			if (key == "user" || key == "clock") && value == "" && testSection == "" {
+				testSection, testSectionIndent = key, leadingSpaces(raw)
+				continue
+			}
+		}
+		configKey := section + "." + key
+		if section == "test" && testSection != "" {
+			configKey = "test." + testSection + "." + key
+		}
 
-		switch section + "." + key {
+		switch configKey {
+		case "pdf.command":
+			cfg.PDF.Command = trimScalar(value)
+			if cfg.PDF.Command != "" && !filepath.IsAbs(cfg.PDF.Command) {
+				return Config{}, fmt.Errorf("glade.yml:%d: pdf.command must be an absolute executable path", lineNo+1)
+			}
+		case "test.user.timeZone", "test.user.locale", "test.user.language", "test.user.defaultCurrencyIsoCode", "test.clock.start":
+			scalar := trimScalar(value)
+			if scalar == "" {
+				return Config{}, fmt.Errorf("glade.yml:%d: %s: expected a nonempty string", lineNo+1, configKey)
+			}
+			switch configKey {
+			case "test.user.timeZone":
+				cfg.Test.User.TimeZone = scalar
+			case "test.user.locale":
+				cfg.Test.User.Locale = scalar
+			case "test.user.language":
+				cfg.Test.User.Language = scalar
+			case "test.user.defaultCurrencyIsoCode":
+				cfg.Test.User.DefaultCurrencyISOCode = scalar
+			case "test.clock.start":
+				cfg.Test.Clock.Start = scalar
+			}
 		case "project.root":
 			cfg.Project.Root = trimScalar(value)
 		case "project.defaultNamespace":
@@ -157,12 +205,45 @@ func parseYAMLSubset(src string) (Config, error) {
 				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
 			}
 			cfg.Project.NamespaceRemaps = remaps
-		case "project.packageDirs":
+		case "project.packageDirs", "project.extraMetadataDirs":
 			values, err := parseInlineList(value)
 			if err != nil {
 				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
 			}
-			cfg.Project.PackageDirs = values
+			if key == "extraMetadataDirs" {
+				for _, path := range values {
+					if strings.TrimSpace(path) == "" {
+						return Config{}, fmt.Errorf("glade.yml:%d: project.extraMetadataDirs: expected a nonempty directory", lineNo+1)
+					}
+				}
+				cfg.Project.ExtraMetadataDirs = values
+			} else {
+				cfg.Project.PackageDirs = values
+			}
+		case "project.dependencyPaths":
+			values, err := parseInlineList(value)
+			if err != nil {
+				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
+			}
+			cfg.Project.DependencyPaths = values
+		case "project.dependencies":
+			if value != "" && value != "[]" {
+				return Config{}, fmt.Errorf("glade.yml:%d: project.dependencies must be a block list", lineNo+1)
+			}
+			if value == "[]" {
+				cfg.Project.Dependencies = nil
+				continue
+			}
+			entries, nextLine, err := parseLocalPackageDependencyBlock(lines, lineNo+1, leadingSpaces(raw))
+			if err != nil {
+				return Config{}, err
+			}
+			deps, err := validateLocalPackageDependencies(entries)
+			if err != nil {
+				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
+			}
+			cfg.Project.Dependencies = deps
+			lineNo = nextLine - 1
 		case "project.managedPackageDependencies":
 			if value == "" {
 				entries, nextLine, err := parseManagedPackageDependencyBlock(lines, lineNo+1, leadingSpaces(raw))
@@ -229,6 +310,9 @@ func parseYAMLSubset(src string) (Config, error) {
 			}
 			cfg.Org.Features = values
 		default:
+			if section == "test" {
+				return Config{}, fmt.Errorf("glade.yml:%d: unsupported config key %q", lineNo+1, configKey)
+			}
 			return Config{}, fmt.Errorf("glade.yml:%d: unsupported config key %q", lineNo+1, key)
 		}
 	}
@@ -240,6 +324,9 @@ func parseYAMLSubset(src string) (Config, error) {
 		if err != nil || len(decoded) != sha256.Size {
 			return Config{}, errors.New("project.schemaSnapshotSHA256 must be a 64-character hexadecimal SHA-256 digest")
 		}
+	}
+	if err := ValidateTestEnvironment(cfg.Test); err != nil {
+		return Config{}, fmt.Errorf("glade.yml: %w", err)
 	}
 	return cfg, nil
 }
@@ -465,8 +552,19 @@ func managedPackageArtifactSpecLooksLikePath(spec string) bool {
 }
 
 func resolveProjectPaths(cfg *Config, baseDir string) {
+	for i, path := range cfg.Project.ExtraMetadataDirs {
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(baseDir, filepath.FromSlash(path))
+		}
+		cfg.Project.ExtraMetadataDirs[i] = filepath.Clean(path)
+	}
 	if path := cfg.Project.SchemaSnapshot; path != "" && !filepath.IsAbs(path) {
 		cfg.Project.SchemaSnapshot = filepath.Clean(filepath.Join(baseDir, filepath.FromSlash(path)))
+	}
+	for i, path := range cfg.Project.DependencyPaths {
+		if path != "" && !filepath.IsAbs(path) {
+			cfg.Project.DependencyPaths[i] = filepath.Clean(filepath.Join(baseDir, filepath.FromSlash(path)))
+		}
 	}
 	for i := range cfg.Project.ManagedPackageDependencies {
 		path := cfg.Project.ManagedPackageDependencies[i].SourceRoot
@@ -476,6 +574,12 @@ func resolveProjectPaths(cfg *Config, baseDir string) {
 		artifactPath := cfg.Project.ManagedPackageDependencies[i].ArtifactPath
 		if artifactPath != "" && !filepath.IsAbs(artifactPath) {
 			cfg.Project.ManagedPackageDependencies[i].ArtifactPath = filepath.Clean(filepath.Join(baseDir, filepath.FromSlash(artifactPath)))
+		}
+	}
+	for i := range cfg.Project.Dependencies {
+		path := cfg.Project.Dependencies[i].Path
+		if path != "" && !filepath.IsAbs(path) {
+			cfg.Project.Dependencies[i].Path = filepath.Clean(filepath.Join(baseDir, filepath.FromSlash(path)))
 		}
 	}
 	for i := range cfg.Project.PackageShims {

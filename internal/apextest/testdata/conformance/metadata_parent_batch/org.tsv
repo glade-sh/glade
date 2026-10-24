@@ -1,0 +1,19 @@
+api	route	case	observation
+62.0	deploy	partial_deploy	{"failures":[{"componentType":"CustomMetadata","fullName":"UnknownRow62.Stray","problem":"Custom metadata type UnknownRow62__mdt is not available in this organization."}],"successes":["ChildRow62.A","ChildRow62.B","ChildRow62.C","ParentRow62.FifteenCharsPar","ParentRow62.LongNamedParentRec","ParentRow62.ShortParent"]}
+62.0	anonymous	A	{"label":"Long parent","linked":true,"parent":"LongNamedParentRec"}
+62.0	anonymous	B	{"label":"Short parent","linked":true,"parent":"ShortParent"}
+62.0	anonymous	C	{"label":"Fifteen parent","linked":true,"parent":"FifteenCharsPar"}
+62.0	anonymous	label_count	1
+62.0	istest	A	{"label":"Long parent","linked":true,"parent":"LongNamedParentRec"}
+62.0	istest	B	{"label":"Short parent","linked":true,"parent":"ShortParent"}
+62.0	istest	C	{"label":"Fifteen parent","linked":true,"parent":"FifteenCharsPar"}
+62.0	istest	label_count	1
+67.0	deploy	partial_deploy	{"failures":[{"componentType":"CustomMetadata","fullName":"UnknownRow67.Stray","problem":"Custom metadata type UnknownRow67__mdt is not available in this organization."}],"successes":["ChildRow67.A","ChildRow67.B","ChildRow67.C","ParentRow67.FifteenCharsPar","ParentRow67.LongNamedParentRec","ParentRow67.ShortParent"]}
+67.0	anonymous	A	{"label":"Long parent","linked":true,"parent":"LongNamedParentRec"}
+67.0	anonymous	B	{"label":"Short parent","linked":true,"parent":"ShortParent"}
+67.0	anonymous	C	{"label":"Fifteen parent","linked":true,"parent":"FifteenCharsPar"}
+67.0	anonymous	label_count	1
+67.0	istest	A	{"label":"Long parent","linked":true,"parent":"LongNamedParentRec"}
+67.0	istest	B	{"label":"Short parent","linked":true,"parent":"ShortParent"}
+67.0	istest	C	{"label":"Fifteen parent","linked":true,"parent":"FifteenCharsPar"}
+67.0	istest	label_count	1

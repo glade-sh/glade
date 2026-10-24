@@ -1,0 +1,4 @@
+api	context	id	outcome	value
+62.0	anonymous	result	observation	"{""date"": ""accepted"", ""nullDate"": ""accepted""}"
+62.0	istest	result	observation	"{""date"": ""accepted"", ""nullDate"": ""accepted""}"
+62.0	anonymous	string_date	compile_reject	Method does not exist or incorrect signature: void archiveOnlineArticle(String, String) from the type KbManagement.PublishingService

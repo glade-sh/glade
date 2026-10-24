@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -89,6 +90,9 @@ func stopTestDaemon(ctx context.Context, root string, w io.Writer) error {
 	resp, err := testdaemon.Ping(ctx, socket)
 	stale := testdaemon.IsServerUnavailable(err) &&
 		(errors.Is(err, os.ErrNotExist) || errors.Is(err, syscall.ECONNREFUSED))
+	if stale && daemonPIDAlive(pidPath) {
+		return fmt.Errorf("cannot stop test daemon (pid %s): process is still running; shutdown may still be in progress", daemonPIDLabel(pidPath))
+	}
 	if err != nil && !stale {
 		return fmt.Errorf("cannot stop test daemon (pid %s); stop it with the original binary before restarting: %w", daemonPIDLabel(pidPath), err)
 	}
@@ -99,8 +103,8 @@ func stopTestDaemon(ctx context.Context, root string, w io.Writer) error {
 		if err := testdaemon.Shutdown(ctx, socket); err != nil {
 			return err
 		}
-		waitForDaemonSocketRemoval(socket, 2*time.Second)
-		if fileExists(socket) {
+		waitForDaemonRemoval(socket, pidPath, 2*time.Second)
+		if fileExists(socket) || fileExists(pidPath) {
 			return fmt.Errorf("test daemon (pid %s) did not stop within 2s", daemonPIDLabel(pidPath))
 		}
 	}
@@ -116,6 +120,7 @@ func rewriteChangedTestArgs(args []string) ([]string, error) {
 		String("project", "p").
 		String("since", "").
 		String("test-timeout", "").
+		String("impact-json", "").
 		Bool("json", "j").
 		Bool("daemon", "").
 		Bool("progress", "").
@@ -137,6 +142,9 @@ func rewriteChangedTestArgs(args []string) ([]string, error) {
 	out := []string{"--project", root, "--changed-since", ref}
 	if len(parsed.Strings("test-timeout")) > 0 {
 		out = append(out, "--test-timeout", parsed.String("test-timeout"))
+	}
+	if len(parsed.Strings("impact-json")) > 0 {
+		out = append(out, "--impact-json", parsed.String("impact-json"))
 	}
 	for _, flag := range []string{"json", "daemon", "progress", "progress-json", "no-progress", "quiet"} {
 		if parsed.Bool(flag) {
@@ -321,9 +329,25 @@ func daemonPIDLabel(pidPath string) string {
 	return pid
 }
 
-func waitForDaemonSocketRemoval(socket string, timeout time.Duration) {
+func daemonPIDAlive(pidPath string) bool {
+	pid, err := strconv.Atoi(daemonPIDLabel(pidPath))
+	if err != nil || pid <= 0 {
+		return false
+	}
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return false
+	}
+	defer process.Release()
+	err = process.Signal(syscall.Signal(0))
+	return err == nil || errors.Is(err, syscall.EPERM)
+}
+
+func waitForDaemonRemoval(socket, pidPath string, timeout time.Duration) {
 	deadline := time.Now().Add(timeout)
-	for fileExists(socket) && time.Now().Before(deadline) {
+	// Closing the listener unlinks its socket before active requests and
+	// runtime cache work drain. The server removes its PID file last.
+	for (fileExists(socket) || fileExists(pidPath)) && time.Now().Before(deadline) {
 		time.Sleep(20 * time.Millisecond)
 	}
 }

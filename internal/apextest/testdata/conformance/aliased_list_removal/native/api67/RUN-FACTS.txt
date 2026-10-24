@@ -7,7 +7,5 @@
   "sourceSHA256": {
     "AliasedRemoval67.cls": "25cf3677015814d54f079fdce5fc1f810083a5dbb42d6e2d8815688d32f95164",
     "AliasedRemoval67.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7"
-  },
-  "scratchOrgDeleted": true,
-  "scratchAliasAbsent": true
+  }
 }

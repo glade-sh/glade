@@ -109,7 +109,7 @@ func TestStandardObjectSharingOrgConformance(t *testing.T) {
 		}
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			for _, row := range data.Rows {
 				t.Run("istest/"+row.ID, func(t *testing.T) {
 					observed, ok := row.Observations[api]

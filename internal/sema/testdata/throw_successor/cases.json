@@ -1,0 +1,42 @@
+[
+  {
+    "ID": "direct_throw",
+    "Body": "throw new IllegalArgumentException('branch'); System.debug('after');",
+    "Name": "ThrowSuccessor_direct_throw"
+  },
+  {
+    "ID": "if_else_throw",
+    "Body": "Boolean flag = true; if (flag) { throw new IllegalArgumentException('branch'); } else { throw new IllegalArgumentException('other'); } System.debug('after');",
+    "Name": "ThrowSuccessor_if_else_throw"
+  },
+  {
+    "ID": "nested_if_throw",
+    "Body": "Boolean flag = true; if (flag) { if (flag) { throw new IllegalArgumentException('branch'); } else { throw new IllegalArgumentException('other'); } } else { throw new IllegalArgumentException('outer'); } System.debug('after');",
+    "Name": "ThrowSuccessor_nested_if_throw"
+  },
+  {
+    "ID": "try_catch_throw",
+    "Body": "try { throw new IllegalArgumentException('branch'); } catch (Exception error) { throw error; } System.debug('after');",
+    "Name": "ThrowSuccessor_try_catch_throw"
+  },
+  {
+    "ID": "try_finally_throw",
+    "Body": "try { throw new IllegalArgumentException('branch'); } finally { System.debug('finally'); } System.debug('after');",
+    "Name": "ThrowSuccessor_try_finally_throw"
+  },
+  {
+    "ID": "finally_only_throw",
+    "Body": "try { System.debug('try'); } finally { throw new IllegalArgumentException('branch'); } System.debug('after');",
+    "Name": "ThrowSuccessor_finally_only_throw"
+  },
+  {
+    "ID": "one_branch_falls_through",
+    "Body": "Boolean flag = false; if (flag) { throw new IllegalArgumentException('branch'); } else { System.debug('else'); } System.debug('after');",
+    "Name": "ThrowSuccessor_one_branch_falls_through"
+  },
+  {
+    "ID": "caught_throw_falls_through",
+    "Body": "try { throw new IllegalArgumentException('branch'); } catch (Exception error) { System.debug(error.getMessage()); } System.debug('after');",
+    "Name": "ThrowCase_caught_throw_falls_through"
+  }
+]

@@ -131,8 +131,9 @@ func runSOQLBindNativeConformance(t *testing.T, file, family string, shapes, cel
 	if actualCells != data.AssertedCellCount || resolvedCells != data.ResolvedCellCount {
 		t.Fatalf("assertable/resolved cells: %d/%d, want %d/%d", actualCells, resolvedCells, data.AssertedCellCount, data.ResolvedCellCount)
 	}
+	bases := newConformanceSchemaCache(t)
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, family, api)
 			for _, row := range data.Rows {
 				t.Run(row.ID, func(t *testing.T) {
@@ -149,9 +150,9 @@ func runSOQLBindNativeConformance(t *testing.T, file, family string, shapes, cel
 							}
 							counts.TrackKind(t, route, "exact", 1)
 							if route == "anonymous" {
-								soqlBindNativeAnonymous(t, api, cell.Source, *cell.Expected)
+								soqlBindNativeAnonymous(t, bases, api, cell.Source, *cell.Expected)
 							} else {
-								soqlBindNativeTest(t, api, cell.Source, *cell.Expected)
+								soqlBindNativeTest(t, bases, api, cell.Source, *cell.Expected)
 							}
 						})
 					}
@@ -185,7 +186,7 @@ func soqlBindNativeValue(t *testing.T, id string, want soqlBindNativeExpected, e
 	}
 }
 
-func soqlBindNativeAnonymous(t *testing.T, api string, source soqlBindNativeSource, want soqlBindNativeExpected) {
+func soqlBindNativeAnonymous(t *testing.T, bases *conformanceSchemaCache, api string, source soqlBindNativeSource, want soqlBindNativeExpected) {
 	t.Helper()
 	declarations := soqlBindNativeAnonymousDeclarations(t, source.Anonymous)
 	index := sema.WithAnonymousDeclarationContext(soqlBindNativeIndex(t, api, declarations, source.Objects))
@@ -217,24 +218,17 @@ func soqlBindNativeAnonymous(t *testing.T, api string, source soqlBindNativeSour
 	if soqlBindNativeHasErrors(diagnostics) || compileErr != nil {
 		t.Fatalf("native executes; anonymous diagnostics=%v compile=%v", diagnostics, compileErr)
 	}
-	runtime, err := CompileProjectRuntimeForRequestWithSourceDigests(index, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// This org becomes a frozen runtime template; row execution uses private
-	// record copies and the runtime definition mutation guards.
-	org, orgErr := orgFromIndexWithError(index)
-	if orgErr != nil {
-		t.Fatal(orgErr)
-	}
-	org.APIVersion = api
-	runner := newConformanceRunner(t, index, conformanceRunnerOptions{RequestRuntime: &runtime, Org: &org})
+	runtime := conformanceSchemaRequestRuntime(t, index)
+	base := bases.get(t, api, "", source.Objects, func(t *testing.T) *conformanceRunner {
+		return conformanceSchemaBase(t, soqlBindNativeIndex(t, api, nil, source.Objects), api)
+	})
+	runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, RequestRuntime: &runtime, Org: base.orgSource})
 	machine := runner.newMachine()
 	_, execErr := machine.Execute(program)
 	soqlBindNativeValue(t, source.ID, want, execErr)
 }
 
-func soqlBindNativeTest(t *testing.T, api string, source soqlBindNativeSource, want soqlBindNativeExpected) {
+func soqlBindNativeTest(t *testing.T, bases *conformanceSchemaCache, api string, source soqlBindNativeSource, want soqlBindNativeExpected) {
 	t.Helper()
 	index := soqlBindNativeIndex(t, api, source.Classes, source.Objects)
 	analysis := sema.Analyze(index)
@@ -261,14 +255,10 @@ func soqlBindNativeTest(t *testing.T, api string, source soqlBindNativeSource, w
 	if methodErrors[key] != nil || programErrors[key] != nil {
 		t.Fatalf("named compile: %v %v", methodErrors[key], programErrors[key])
 	}
-	// This org becomes a frozen runtime template; row execution uses private
-	// record copies and the runtime definition mutation guards.
-	org, orgErr := orgFromIndexWithError(index)
-	if orgErr != nil {
-		t.Fatal(orgErr)
-	}
-	org.APIVersion = api
-	runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+	base := bases.get(t, api, "", source.Objects, func(t *testing.T) *conformanceRunner {
+		return conformanceSchemaBase(t, soqlBindNativeIndex(t, api, nil, source.Objects), api)
+	})
+	runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, LinkProject: true, Org: base.orgSource})
 	machine := runner.newMachine()
 	if err := machine.RegisterMethod(methods[key]); err != nil {
 		t.Fatal(err)

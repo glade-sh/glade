@@ -452,36 +452,9 @@ platformStaticCall:
 	}
 	switch callee {
 	case "Datacloud.FindDuplicates.findDuplicates":
-		// An empty/null request is a hosted boundary error.
-		if len(args) == 1 && (args[0].Kind == ValueNull || args[0].Kind == ValueList && len(args[0].List) == 0) {
-			return Null, newExceptionError("System.HandledException", "Duplicate matching requires records")
-		}
-		if len(args) != 1 || args[0].Kind != ValueList {
-			return Null, fmt.Errorf("Datacloud.FindDuplicates.findDuplicates expects List<SObject>")
-		}
-		results := make([]Value, 0, len(args[0].List))
-		for _, record := range args[0].List {
-			if record.Kind == ValueNull {
-				return Null, newExceptionError("System.HandledException", "Duplicate matching requires records")
-			}
-			if record.Kind != ValueObject || !vm.isSObjectLikeType(record.Type) {
-				return Null, fmt.Errorf("Datacloud.FindDuplicates.findDuplicates expects List<SObject>")
-			}
-			results = append(results, newDatacloudFindDuplicatesResult())
-		}
-		return List(results...), nil
+		return vm.findDuplicates(args)
 	case "Datacloud.FindDuplicatesByIds.findDuplicatesByIds":
-		if len(args) != 1 || args[0].Kind != ValueList {
-			return Null, fmt.Errorf("Datacloud.FindDuplicatesByIds.findDuplicatesByIds expects List<Id>")
-		}
-		results := make([]Value, 0, len(args[0].List))
-		for _, id := range args[0].List {
-			if _, ok := idValueText(id); !ok {
-				return Null, fmt.Errorf("Datacloud.FindDuplicatesByIds.findDuplicatesByIds expects List<Id>")
-			}
-			results = append(results, newDatacloudFindDuplicatesResult())
-		}
-		return List(results...), nil
+		return vm.findDuplicatesByIDs(args)
 	case "System.assert", "System.assertEquals", "System.assertNotEquals",
 		"Assert.areEqual", "Assert.areNotEqual", "Assert.isTrue", "Assert.isFalse",
 		"Assert.isNull", "Assert.isNotNull", "Assert.isInstanceOfType", "Assert.isNotInstanceOfType", "Assert.fail":
@@ -726,7 +699,7 @@ platformStaticCall:
 			if err := vm.scopeMinePaginationBoundary(args[0].Text, false); err != nil {
 				return Null, err
 			}
-			value, err = vm.executeSOQL(args[0].Text, result)
+			value, err = vm.executePaginationSOQL(args[0].Text, Null, Null, result)
 		}
 		if err != nil {
 			return Null, err
@@ -774,11 +747,7 @@ platformStaticCall:
 			if err := vm.scopeMinePaginationBoundary(args[0].Text, capturedMode); err != nil {
 				return Null, err
 			}
-			if capturedMode {
-				value, err = vm.executeSOQLWithBindMapAccessLevel(args[0].Text, args[1], args[2], result)
-			} else {
-				value, err = vm.executeSOQLWithBindMap(args[0].Text, args[1], result)
-			}
+			value, err = vm.executePaginationSOQL(args[0].Text, args[1], args[2], result)
 		}
 		if err != nil {
 			return Null, err
@@ -846,7 +815,7 @@ platformStaticCall:
 		if vm.Org == nil {
 			return Null, fmt.Errorf("Database.setSavepoint requires org storage")
 		}
-		if err := vm.incrementLimit("dmlStatements", 1); err != nil {
+		if err := vm.incrementSavepointStatement(); err != nil {
 			return Null, err
 		}
 		if err := vm.incrementLimit("savepoints", 1); err != nil {
@@ -864,6 +833,9 @@ platformStaticCall:
 			vm.creationSavepoints = make(map[string]recordCreationCheckpoint)
 		}
 		vm.creationSavepoints[id] = vm.creationCheckpoint()
+		vm.recordFlowPathSavepoint(id)
+		vm.saveCalloutPendingWork(id)
+		vm.saveChangeDataCapture(id)
 		vm.savepointOrder[id] = vm.nextSavepoint
 		savepoint := Object("System.Savepoint")
 		savepoint.Fields["Id"] = String(id)
@@ -886,7 +858,7 @@ platformStaticCall:
 		if !ok {
 			return Null, newExceptionError("System.TypeException", "Database.rollback received invalid Savepoint")
 		}
-		if err := vm.incrementLimit("dmlStatements", 1); err != nil {
+		if err := vm.incrementSavepointStatement(); err != nil {
 			return Null, err
 		}
 		currentSequences := copyOrgIDSequences(vm.Org.IDSequences)
@@ -909,6 +881,9 @@ platformStaticCall:
 		}
 		vm.capturedEmails = append([]CapturedEmail(nil), vm.emailSavepoints[idValue.Text]...)
 		vm.creationSavepoints[idValue.Text].restore()
+		vm.rollbackFlowPathSavepoint(idValue.Text)
+		vm.calloutPendingWork.pending = vm.calloutPendingWork.savepoints[idValue.Text]
+		vm.rollbackChangeDataCapture(idValue.Text)
 		if err := vm.incrementLimit("savepointRollbacks", 1); err != nil {
 			return Null, err
 		}
@@ -919,6 +894,9 @@ platformStaticCall:
 				delete(vm.savepointMarks, id)
 				delete(vm.emailSavepoints, id)
 				delete(vm.creationSavepoints, id)
+				delete(vm.flowPathSavepoints, id)
+				delete(vm.calloutPendingWork.savepoints, id)
+				vm.releaseChangeDataCapture(id)
 				delete(vm.savepointOrder, id)
 			}
 		}
@@ -940,7 +918,7 @@ platformStaticCall:
 		}
 		// A valid release charges one statement and no rows.
 		// K005/K006: rejected handles leave the counters unchanged.
-		if err := vm.incrementLimit("dmlStatements", 1); err != nil {
+		if err := vm.incrementSavepointStatement(); err != nil {
 			return Null, err
 		}
 		for id, order := range vm.savepointOrder {
@@ -949,6 +927,9 @@ platformStaticCall:
 				delete(vm.savepointMarks, id)
 				delete(vm.emailSavepoints, id)
 				delete(vm.creationSavepoints, id)
+				delete(vm.flowPathSavepoints, id)
+				delete(vm.calloutPendingWork.savepoints, id)
+				vm.releaseChangeDataCapture(id)
 				delete(vm.savepointOrder, id)
 			}
 		}
@@ -1180,7 +1161,7 @@ platformStaticCall:
 				return Null, err
 			}
 		}
-		value := accessLevelValue("USER_MODE")
+		value := accessLevelClone(accessLevelValue("USER_MODE"))
 		value.Fields["permissionSetId"] = args[0]
 		return value, nil
 	case "RoundingMode.valueOf":
@@ -1237,7 +1218,7 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
-		return platformScalar("Date", vm.fakeNow.Format("2006-01-02")), nil
+		return platformScalar("Date", vm.currentLocalNow().Format("2006-01-02")), nil
 	case "Date.newInstance":
 		if len(args) != 3 || args[0].Kind != ValueInt || args[1].Kind != ValueInt || args[2].Kind != ValueInt {
 			return Null, fmt.Errorf("Date.newInstance expects year, month, day integers")
@@ -1687,7 +1668,7 @@ platformStaticCall:
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Blob.toPdf expects String")
 		}
-		return Null, unsupportedCallError("Blob.toPdf hosted PDF rendering")
+		return platformScalar("Blob", string(vm.RenderTextPDF(args[0].Text))), nil
 	case "EncodingUtil.base64Encode":
 		if len(args) == 1 && args[0].Kind == ValueNull {
 			return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
@@ -2343,36 +2324,15 @@ platformStaticCall:
 	case "FeatureManagement.checkPackageBooleanValue":
 		return vm.managedFeatureValue("Boolean", args)
 	case "FeatureManagement.setPackageBooleanValue":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueBool {
-			return Null, fmt.Errorf("FeatureManagement.setPackageBooleanValue expects String and Boolean")
-		}
-		if vm.managedFeatureValues == nil {
-			vm.managedFeatureValues = make(map[string]Value)
-		}
-		vm.managedFeatureValues[managedFeatureValueKey("Boolean", args[0].Text)] = args[1]
-		return Null, nil
+		return vm.setManagedFeatureValue("Boolean", args)
 	case "FeatureManagement.checkPackageIntegerValue":
 		return vm.managedFeatureValue("Integer", args)
 	case "FeatureManagement.setPackageIntegerValue":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueInt {
-			return Null, fmt.Errorf("FeatureManagement.setPackageIntegerValue expects String and Integer")
-		}
-		if vm.managedFeatureValues == nil {
-			vm.managedFeatureValues = make(map[string]Value)
-		}
-		vm.managedFeatureValues[managedFeatureValueKey("Integer", args[0].Text)] = args[1]
-		return Null, nil
+		return vm.setManagedFeatureValue("Integer", args)
 	case "FeatureManagement.checkPackageDateValue":
 		return vm.managedFeatureValue("Date", args)
 	case "FeatureManagement.setPackageDateValue":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueObject || !strings.EqualFold(args[1].Type, "Date") {
-			return Null, fmt.Errorf("FeatureManagement.setPackageDateValue expects String and Date")
-		}
-		if vm.managedFeatureValues == nil {
-			vm.managedFeatureValues = make(map[string]Value)
-		}
-		vm.managedFeatureValues[managedFeatureValueKey("Date", args[0].Text)] = cloneValue(args[1])
-		return Null, nil
+		return vm.setManagedFeatureValue("Date", args)
 	case "BusinessHours.add", "BusinessHours.addGmt":
 		return vm.businessHoursAdd(callee, args)
 	case "BusinessHours.diff":
@@ -2815,7 +2775,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("Test.getEventBus expects 0 arguments")
 		}
 		if err := vm.requireTestContext("Test.getEventBus"); err != nil {
-			return Null, err
+			return Null, newExceptionError("System.TypeException", "Test.getEventBus() can only be called from test methods")
 		}
 		return Object("eventbus.TestBroker"), nil
 	case "Test.getExternalService":
@@ -3122,7 +3082,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("Test.enableChangeDataCapture expects 0 arguments")
 		}
 		if err := vm.requireTestContext(callee); err != nil {
-			return Null, err
+			return Null, newExceptionError("System.TypeException", "Test.enableChangeDataCapture() can only be called from test methods")
 		}
 		vm.testContext.ChangeDataCaptureEnabled = true
 		return Null, nil
@@ -3617,6 +3577,9 @@ platformStaticCall:
 		if len(args) != 3 {
 			return Null, fmt.Errorf("Site.login expects 3 arguments")
 		}
+		if vm.testContext != nil {
+			return Null, nil
+		}
 		if args[0].Kind == ValueString && args[0].Text != "" &&
 			args[1].Kind == ValueString && args[1].Text != "" &&
 			(args[2].Kind == ValueNull || args[2].Kind == ValueString) &&
@@ -3723,6 +3686,9 @@ platformStaticCall:
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("Network.forwardToAuthPage expects 1 or 2 arguments")
 		}
+		if vm.testContext != nil {
+			return Null, nil
+		}
 		if len(args) == 2 && args[1].Kind == ValueNull &&
 			(args[0].Kind == ValueNull || args[0].Kind == ValueString && args[0].Text != "") &&
 			!vm.hasOrgRecords("Site") {
@@ -3760,6 +3726,12 @@ platformStaticCall:
 	case "Network.createExternalUserAsync":
 		if len(args) != 3 {
 			return Null, fmt.Errorf("Network.createExternalUserAsync expects user, contact, and account")
+		}
+		if !vm.Org.HasFeature("Communities") {
+			return Null, newExceptionError("NoAccessException", "Insufficient Privileges: You do not have the level of access necessary to perform the operation you requested. Please contact the owner of the record or your administrator if access is necessary.")
+		}
+		if vm.testContext != nil {
+			return Null, nil
 		}
 		return String("707000000000001"), nil
 	case "Network.createRecordAsync":

@@ -1,0 +1,1662 @@
+[
+  {
+    "type": "AssertException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityAssertException",
+    "source": "System.Exception issue = new System.AssertException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "AssertException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfAssertException",
+    "source": "try { throw new System.AssertException(); } catch (System.AssertException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "AssertException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentAssertException",
+    "source": "try { throw new System.AssertException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "AssertException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchAssertException",
+    "source": "public class LarchAssertException extends System.AssertException {}"
+  },
+  {
+    "type": "AsyncException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityAsyncException",
+    "source": "System.Exception issue = new System.AsyncException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "AsyncException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfAsyncException",
+    "source": "try { throw new System.AsyncException(); } catch (System.AsyncException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "AsyncException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentAsyncException",
+    "source": "try { throw new System.AsyncException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "AsyncException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchAsyncException",
+    "source": "public class LarchAsyncException extends System.AsyncException {}"
+  },
+  {
+    "type": "AuraHandledException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityAuraHandledException",
+    "source": "System.Exception issue = new System.AuraHandledException('probe'); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "AuraHandledException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfAuraHandledException",
+    "source": "try { throw new System.AuraHandledException('probe'); } catch (System.AuraHandledException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "AuraHandledException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentAuraHandledException",
+    "source": "try { throw new System.AuraHandledException('probe'); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "AuraHandledException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchAuraHandledException",
+    "source": "public class LarchAuraHandledException extends System.AuraHandledException {}"
+  },
+  {
+    "type": "BigObjectException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityBigObjectException",
+    "source": "System.Exception issue = new System.BigObjectException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "BigObjectException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfBigObjectException",
+    "source": "try { throw new System.BigObjectException(); } catch (System.BigObjectException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "BigObjectException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentBigObjectException",
+    "source": "try { throw new System.BigObjectException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "BigObjectException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchBigObjectException",
+    "source": "public class LarchBigObjectException extends System.BigObjectException {}"
+  },
+  {
+    "type": "CalloutException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityCalloutException",
+    "source": "System.Exception issue = new System.CalloutException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "CalloutException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfCalloutException",
+    "source": "try { throw new System.CalloutException(); } catch (System.CalloutException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "CalloutException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentCalloutException",
+    "source": "try { throw new System.CalloutException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "CalloutException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchCalloutException",
+    "source": "public class LarchCalloutException extends System.CalloutException {}"
+  },
+  {
+    "type": "CanvasException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityCanvasException",
+    "source": "System.Exception issue = new System.CanvasException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "CanvasException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfCanvasException",
+    "source": "try { throw new System.CanvasException(); } catch (System.CanvasException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "CanvasException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentCanvasException",
+    "source": "try { throw new System.CanvasException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "CanvasException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchCanvasException",
+    "source": "public class LarchCanvasException extends System.CanvasException {}"
+  },
+  {
+    "type": "DmlException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityDmlException",
+    "source": "System.Exception issue = new System.DmlException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "DmlException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfDmlException",
+    "source": "try { throw new System.DmlException(); } catch (System.DmlException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "DmlException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentDmlException",
+    "source": "try { throw new System.DmlException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "DmlException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchDmlException",
+    "source": "public class LarchDmlException extends System.DmlException {}"
+  },
+  {
+    "type": "DuplicateMessageException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityDuplicateMessageException",
+    "source": "System.Exception issue = new System.DuplicateMessageException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "DuplicateMessageException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfDuplicateMessageException",
+    "source": "try { throw new System.DuplicateMessageException(); } catch (System.DuplicateMessageException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "DuplicateMessageException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentDuplicateMessageException",
+    "source": "try { throw new System.DuplicateMessageException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "DuplicateMessageException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchDuplicateMessageException",
+    "source": "public class LarchDuplicateMessageException extends System.DuplicateMessageException {}"
+  },
+  {
+    "type": "EmailException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityEmailException",
+    "source": "System.Exception issue = new System.EmailException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "EmailException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfEmailException",
+    "source": "try { throw new System.EmailException(); } catch (System.EmailException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "EmailException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentEmailException",
+    "source": "try { throw new System.EmailException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "EmailException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchEmailException",
+    "source": "public class LarchEmailException extends System.EmailException {}"
+  },
+  {
+    "type": "EmailTemplateRenderException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityEmailTemplateRenderException",
+    "source": "System.Exception issue = new System.EmailTemplateRenderException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "EmailTemplateRenderException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfEmailTemplateRenderException",
+    "source": "try { throw new System.EmailTemplateRenderException(); } catch (System.EmailTemplateRenderException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "EmailTemplateRenderException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentEmailTemplateRenderException",
+    "source": "try { throw new System.EmailTemplateRenderException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "EmailTemplateRenderException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchEmailTemplateRenderException",
+    "source": "public class LarchEmailTemplateRenderException extends System.EmailTemplateRenderException {}"
+  },
+  {
+    "type": "EventObjectException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityEventObjectException",
+    "source": "System.Exception issue = new System.EventObjectException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "EventObjectException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfEventObjectException",
+    "source": "try { throw new System.EventObjectException(); } catch (System.EventObjectException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "EventObjectException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentEventObjectException",
+    "source": "try { throw new System.EventObjectException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "EventObjectException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchEventObjectException",
+    "source": "public class LarchEventObjectException extends System.EventObjectException {}"
+  },
+  {
+    "type": "Exception",
+    "parent": "Object",
+    "operation": "extend",
+    "class": "LarchException",
+    "source": "public class LarchException extends System.Exception {}"
+  },
+  {
+    "type": "ExternalObjectException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityExternalObjectException",
+    "source": "System.Exception issue = new System.ExternalObjectException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "ExternalObjectException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfExternalObjectException",
+    "source": "try { throw new System.ExternalObjectException(); } catch (System.ExternalObjectException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "ExternalObjectException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentExternalObjectException",
+    "source": "try { throw new System.ExternalObjectException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "ExternalObjectException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchExternalObjectException",
+    "source": "public class LarchExternalObjectException extends System.ExternalObjectException {}"
+  },
+  {
+    "type": "FatalCursorException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityFatalCursorException",
+    "source": "System.Exception issue = new System.FatalCursorException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "FatalCursorException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfFatalCursorException",
+    "source": "try { throw new System.FatalCursorException(); } catch (System.FatalCursorException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "FatalCursorException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentFatalCursorException",
+    "source": "try { throw new System.FatalCursorException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "FatalCursorException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchFatalCursorException",
+    "source": "public class LarchFatalCursorException extends System.FatalCursorException {}"
+  },
+  {
+    "type": "FinalException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityFinalException",
+    "source": "System.Exception issue = new System.FinalException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "FinalException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfFinalException",
+    "source": "try { throw new System.FinalException(); } catch (System.FinalException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "FinalException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentFinalException",
+    "source": "try { throw new System.FinalException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "FinalException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchFinalException",
+    "source": "public class LarchFinalException extends System.FinalException {}"
+  },
+  {
+    "type": "FlowException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityFlowException",
+    "source": "System.Exception issue = new System.FlowException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "FlowException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfFlowException",
+    "source": "try { throw new System.FlowException(); } catch (System.FlowException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "FlowException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentFlowException",
+    "source": "try { throw new System.FlowException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "FlowException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchFlowException",
+    "source": "public class LarchFlowException extends System.FlowException {}"
+  },
+  {
+    "type": "FormulaEvaluationException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityFormulaEvaluationException",
+    "source": "System.Exception issue = new System.FormulaEvaluationException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "FormulaEvaluationException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfFormulaEvaluationException",
+    "source": "try { throw new System.FormulaEvaluationException(); } catch (System.FormulaEvaluationException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "FormulaEvaluationException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentFormulaEvaluationException",
+    "source": "try { throw new System.FormulaEvaluationException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "FormulaEvaluationException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchFormulaEvaluationException",
+    "source": "public class LarchFormulaEvaluationException extends System.FormulaEvaluationException {}"
+  },
+  {
+    "type": "FormulaValidationException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityFormulaValidationException",
+    "source": "System.Exception issue = new System.FormulaValidationException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "FormulaValidationException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfFormulaValidationException",
+    "source": "try { throw new System.FormulaValidationException(); } catch (System.FormulaValidationException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "FormulaValidationException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentFormulaValidationException",
+    "source": "try { throw new System.FormulaValidationException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "FormulaValidationException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchFormulaValidationException",
+    "source": "public class LarchFormulaValidationException extends System.FormulaValidationException {}"
+  },
+  {
+    "type": "HandledException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityHandledException",
+    "source": "System.Exception issue = new System.HandledException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "HandledException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfHandledException",
+    "source": "try { throw new System.HandledException(); } catch (System.HandledException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "HandledException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentHandledException",
+    "source": "try { throw new System.HandledException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "HandledException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchHandledException",
+    "source": "public class LarchHandledException extends System.HandledException {}"
+  },
+  {
+    "type": "IllegalArgumentException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityIllegalArgumentException",
+    "source": "System.Exception issue = new System.IllegalArgumentException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "IllegalArgumentException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfIllegalArgumentException",
+    "source": "try { throw new System.IllegalArgumentException(); } catch (System.IllegalArgumentException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "IllegalArgumentException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentIllegalArgumentException",
+    "source": "try { throw new System.IllegalArgumentException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "IllegalArgumentException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchIllegalArgumentException",
+    "source": "public class LarchIllegalArgumentException extends System.IllegalArgumentException {}"
+  },
+  {
+    "type": "IllegalStateException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityIllegalStateException",
+    "source": "System.Exception issue = new System.IllegalStateException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "IllegalStateException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfIllegalStateException",
+    "source": "try { throw new System.IllegalStateException(); } catch (System.IllegalStateException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "IllegalStateException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentIllegalStateException",
+    "source": "try { throw new System.IllegalStateException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "IllegalStateException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchIllegalStateException",
+    "source": "public class LarchIllegalStateException extends System.IllegalStateException {}"
+  },
+  {
+    "type": "InvalidHeaderException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityInvalidHeaderException",
+    "source": "System.Exception issue = new System.InvalidHeaderException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "InvalidHeaderException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfInvalidHeaderException",
+    "source": "try { throw new System.InvalidHeaderException(); } catch (System.InvalidHeaderException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "InvalidHeaderException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentInvalidHeaderException",
+    "source": "try { throw new System.InvalidHeaderException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "InvalidHeaderException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchInvalidHeaderException",
+    "source": "public class LarchInvalidHeaderException extends System.InvalidHeaderException {}"
+  },
+  {
+    "type": "InvalidParameterValueException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityInvalidParameterValueException",
+    "source": "System.Exception issue = new System.InvalidParameterValueException('value', 'probe'); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "InvalidParameterValueException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfInvalidParameterValueException",
+    "source": "try { throw new System.InvalidParameterValueException('value', 'probe'); } catch (System.InvalidParameterValueException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "InvalidParameterValueException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentInvalidParameterValueException",
+    "source": "try { throw new System.InvalidParameterValueException('value', 'probe'); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "InvalidParameterValueException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchInvalidParameterValueException",
+    "source": "public class LarchInvalidParameterValueException extends System.InvalidParameterValueException {}"
+  },
+  {
+    "type": "InvalidReadOnlyUserDmlException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityInvalidReadOnlyUserDmlException",
+    "source": "System.Exception issue = new System.InvalidReadOnlyUserDmlException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "InvalidReadOnlyUserDmlException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfInvalidReadOnlyUserDmlException",
+    "source": "try { throw new System.InvalidReadOnlyUserDmlException(); } catch (System.InvalidReadOnlyUserDmlException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "InvalidReadOnlyUserDmlException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentInvalidReadOnlyUserDmlException",
+    "source": "try { throw new System.InvalidReadOnlyUserDmlException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "InvalidReadOnlyUserDmlException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchInvalidReadOnlyUserDmlException",
+    "source": "public class LarchInvalidReadOnlyUserDmlException extends System.InvalidReadOnlyUserDmlException {}"
+  },
+  {
+    "type": "JSONException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityJSONException",
+    "source": "System.Exception issue = new System.JSONException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "JSONException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfJSONException",
+    "source": "try { throw new System.JSONException(); } catch (System.JSONException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "JSONException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentJSONException",
+    "source": "try { throw new System.JSONException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "JSONException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchJSONException",
+    "source": "public class LarchJSONException extends System.JSONException {}"
+  },
+  {
+    "type": "LicenseException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityLicenseException",
+    "source": "System.Exception issue = new System.LicenseException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "LicenseException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfLicenseException",
+    "source": "try { throw new System.LicenseException(); } catch (System.LicenseException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "LicenseException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentLicenseException",
+    "source": "try { throw new System.LicenseException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "LicenseException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchLicenseException",
+    "source": "public class LarchLicenseException extends System.LicenseException {}"
+  },
+  {
+    "type": "LimitException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityLimitException",
+    "source": "System.Exception issue = new System.LimitException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "LimitException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfLimitException",
+    "source": "try { throw new System.LimitException(); } catch (System.LimitException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "LimitException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentLimitException",
+    "source": "try { throw new System.LimitException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "LimitException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchLimitException",
+    "source": "public class LarchLimitException extends System.LimitException {}"
+  },
+  {
+    "type": "ListException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityListException",
+    "source": "System.Exception issue = new System.ListException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "ListException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfListException",
+    "source": "try { throw new System.ListException(); } catch (System.ListException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "ListException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentListException",
+    "source": "try { throw new System.ListException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "ListException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchListException",
+    "source": "public class LarchListException extends System.ListException {}"
+  },
+  {
+    "type": "MathException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityMathException",
+    "source": "System.Exception issue = new System.MathException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "MathException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfMathException",
+    "source": "try { throw new System.MathException(); } catch (System.MathException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "MathException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentMathException",
+    "source": "try { throw new System.MathException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "MathException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchMathException",
+    "source": "public class LarchMathException extends System.MathException {}"
+  },
+  {
+    "type": "NoAccessException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityNoAccessException",
+    "source": "System.Exception issue = new System.NoAccessException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "NoAccessException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfNoAccessException",
+    "source": "try { throw new System.NoAccessException(); } catch (System.NoAccessException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "NoAccessException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentNoAccessException",
+    "source": "try { throw new System.NoAccessException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "NoAccessException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchNoAccessException",
+    "source": "public class LarchNoAccessException extends System.NoAccessException {}"
+  },
+  {
+    "type": "NoDataFoundException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityNoDataFoundException",
+    "source": "System.Exception issue = new System.NoDataFoundException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "NoDataFoundException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfNoDataFoundException",
+    "source": "try { throw new System.NoDataFoundException(); } catch (System.NoDataFoundException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "NoDataFoundException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentNoDataFoundException",
+    "source": "try { throw new System.NoDataFoundException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "NoDataFoundException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchNoDataFoundException",
+    "source": "public class LarchNoDataFoundException extends System.NoDataFoundException {}"
+  },
+  {
+    "type": "NoSuchElementException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityNoSuchElementException",
+    "source": "System.Exception issue = new System.NoSuchElementException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "NoSuchElementException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfNoSuchElementException",
+    "source": "try { throw new System.NoSuchElementException(); } catch (System.NoSuchElementException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "NoSuchElementException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentNoSuchElementException",
+    "source": "try { throw new System.NoSuchElementException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "NoSuchElementException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchNoSuchElementException",
+    "source": "public class LarchNoSuchElementException extends System.NoSuchElementException {}"
+  },
+  {
+    "type": "NullPointerException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityNullPointerException",
+    "source": "System.Exception issue = new System.NullPointerException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "NullPointerException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfNullPointerException",
+    "source": "try { throw new System.NullPointerException(); } catch (System.NullPointerException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "NullPointerException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentNullPointerException",
+    "source": "try { throw new System.NullPointerException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "NullPointerException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchNullPointerException",
+    "source": "public class LarchNullPointerException extends System.NullPointerException {}"
+  },
+  {
+    "type": "PatternSyntaxException",
+    "parent": "IllegalArgumentException",
+    "operation": "identity",
+    "method": "identityPatternSyntaxException",
+    "source": "System.Exception issue = new System.PatternSyntaxException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "PatternSyntaxException",
+    "parent": "IllegalArgumentException",
+    "operation": "self",
+    "method": "selfPatternSyntaxException",
+    "source": "try { throw new System.PatternSyntaxException(); } catch (System.PatternSyntaxException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "PatternSyntaxException",
+    "parent": "IllegalArgumentException",
+    "operation": "parent",
+    "method": "parentPatternSyntaxException",
+    "source": "try { throw new System.PatternSyntaxException(); } catch (System.IllegalArgumentException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "PatternSyntaxException",
+    "parent": "IllegalArgumentException",
+    "operation": "exception",
+    "method": "exceptionPatternSyntaxException",
+    "source": "try { throw new System.PatternSyntaxException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "PatternSyntaxException",
+    "parent": "IllegalArgumentException",
+    "operation": "extend",
+    "class": "LarchPatternSyntaxException",
+    "source": "public class LarchPatternSyntaxException extends System.PatternSyntaxException {}"
+  },
+  {
+    "type": "PlatformCacheException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityPlatformCacheException",
+    "source": "System.Exception issue = new System.PlatformCacheException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "PlatformCacheException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfPlatformCacheException",
+    "source": "try { throw new System.PlatformCacheException(); } catch (System.PlatformCacheException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "PlatformCacheException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentPlatformCacheException",
+    "source": "try { throw new System.PlatformCacheException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "PlatformCacheException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchPlatformCacheException",
+    "source": "public class LarchPlatformCacheException extends System.PlatformCacheException {}"
+  },
+  {
+    "type": "PolyglotException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityPolyglotException",
+    "source": "System.Exception issue = new System.PolyglotException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "PolyglotException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfPolyglotException",
+    "source": "try { throw new System.PolyglotException(); } catch (System.PolyglotException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "PolyglotException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentPolyglotException",
+    "source": "try { throw new System.PolyglotException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "PolyglotException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchPolyglotException",
+    "source": "public class LarchPolyglotException extends System.PolyglotException {}"
+  },
+  {
+    "type": "ProcedureException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityProcedureException",
+    "source": "System.Exception issue = new System.ProcedureException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "ProcedureException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfProcedureException",
+    "source": "try { throw new System.ProcedureException(); } catch (System.ProcedureException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "ProcedureException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentProcedureException",
+    "source": "try { throw new System.ProcedureException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "ProcedureException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchProcedureException",
+    "source": "public class LarchProcedureException extends System.ProcedureException {}"
+  },
+  {
+    "type": "QueryException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityQueryException",
+    "source": "System.Exception issue = new System.QueryException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "QueryException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfQueryException",
+    "source": "try { throw new System.QueryException(); } catch (System.QueryException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "QueryException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentQueryException",
+    "source": "try { throw new System.QueryException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "QueryException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchQueryException",
+    "source": "public class LarchQueryException extends System.QueryException {}"
+  },
+  {
+    "type": "RequiredFeatureMissingException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityRequiredFeatureMissingException",
+    "source": "System.Exception issue = new System.RequiredFeatureMissingException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "RequiredFeatureMissingException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfRequiredFeatureMissingException",
+    "source": "try { throw new System.RequiredFeatureMissingException(); } catch (System.RequiredFeatureMissingException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "RequiredFeatureMissingException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentRequiredFeatureMissingException",
+    "source": "try { throw new System.RequiredFeatureMissingException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "RequiredFeatureMissingException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchRequiredFeatureMissingException",
+    "source": "public class LarchRequiredFeatureMissingException extends System.RequiredFeatureMissingException {}"
+  },
+  {
+    "type": "SObjectException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identitySObjectException",
+    "source": "System.Exception issue = new System.SObjectException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "SObjectException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfSObjectException",
+    "source": "try { throw new System.SObjectException(); } catch (System.SObjectException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "SObjectException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentSObjectException",
+    "source": "try { throw new System.SObjectException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "SObjectException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchSObjectException",
+    "source": "public class LarchSObjectException extends System.SObjectException {}"
+  },
+  {
+    "type": "SearchException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identitySearchException",
+    "source": "System.Exception issue = new System.SearchException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "SearchException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfSearchException",
+    "source": "try { throw new System.SearchException(); } catch (System.SearchException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "SearchException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentSearchException",
+    "source": "try { throw new System.SearchException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "SearchException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchSearchException",
+    "source": "public class LarchSearchException extends System.SearchException {}"
+  },
+  {
+    "type": "SecurityException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identitySecurityException",
+    "source": "System.Exception issue = new System.SecurityException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "SecurityException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfSecurityException",
+    "source": "try { throw new System.SecurityException(); } catch (System.SecurityException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "SecurityException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentSecurityException",
+    "source": "try { throw new System.SecurityException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "SecurityException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchSecurityException",
+    "source": "public class LarchSecurityException extends System.SecurityException {}"
+  },
+  {
+    "type": "SerializationException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identitySerializationException",
+    "source": "System.Exception issue = new System.SerializationException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "SerializationException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfSerializationException",
+    "source": "try { throw new System.SerializationException(); } catch (System.SerializationException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "SerializationException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentSerializationException",
+    "source": "try { throw new System.SerializationException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "SerializationException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchSerializationException",
+    "source": "public class LarchSerializationException extends System.SerializationException {}"
+  },
+  {
+    "type": "StringException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityStringException",
+    "source": "System.Exception issue = new System.StringException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "StringException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfStringException",
+    "source": "try { throw new System.StringException(); } catch (System.StringException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "StringException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentStringException",
+    "source": "try { throw new System.StringException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "StringException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchStringException",
+    "source": "public class LarchStringException extends System.StringException {}"
+  },
+  {
+    "type": "TouchHandledException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityTouchHandledException",
+    "source": "System.Exception issue = new System.TouchHandledException('probe'); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "TouchHandledException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfTouchHandledException",
+    "source": "try { throw new System.TouchHandledException('probe'); } catch (System.TouchHandledException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "TouchHandledException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentTouchHandledException",
+    "source": "try { throw new System.TouchHandledException('probe'); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "TouchHandledException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchTouchHandledException",
+    "source": "public class LarchTouchHandledException extends System.TouchHandledException {}"
+  },
+  {
+    "type": "TransientCursorException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityTransientCursorException",
+    "source": "System.Exception issue = new System.TransientCursorException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "TransientCursorException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfTransientCursorException",
+    "source": "try { throw new System.TransientCursorException(); } catch (System.TransientCursorException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "TransientCursorException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentTransientCursorException",
+    "source": "try { throw new System.TransientCursorException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "TransientCursorException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchTransientCursorException",
+    "source": "public class LarchTransientCursorException extends System.TransientCursorException {}"
+  },
+  {
+    "type": "TypeException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityTypeException",
+    "source": "System.Exception issue = new System.TypeException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "TypeException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfTypeException",
+    "source": "try { throw new System.TypeException(); } catch (System.TypeException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "TypeException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentTypeException",
+    "source": "try { throw new System.TypeException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "TypeException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchTypeException",
+    "source": "public class LarchTypeException extends System.TypeException {}"
+  },
+  {
+    "type": "UnexpectedException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityUnexpectedException",
+    "source": "System.Exception issue = new System.UnexpectedException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "UnexpectedException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfUnexpectedException",
+    "source": "try { throw new System.UnexpectedException(); } catch (System.UnexpectedException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "UnexpectedException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentUnexpectedException",
+    "source": "try { throw new System.UnexpectedException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "UnexpectedException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchUnexpectedException",
+    "source": "public class LarchUnexpectedException extends System.UnexpectedException {}"
+  },
+  {
+    "type": "UnsupportedOperationException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityUnsupportedOperationException",
+    "source": "System.Exception issue = new System.UnsupportedOperationException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "UnsupportedOperationException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfUnsupportedOperationException",
+    "source": "try { throw new System.UnsupportedOperationException(); } catch (System.UnsupportedOperationException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "UnsupportedOperationException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentUnsupportedOperationException",
+    "source": "try { throw new System.UnsupportedOperationException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "UnsupportedOperationException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchUnsupportedOperationException",
+    "source": "public class LarchUnsupportedOperationException extends System.UnsupportedOperationException {}"
+  },
+  {
+    "type": "VisualforceException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityVisualforceException",
+    "source": "System.Exception issue = new System.VisualforceException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "VisualforceException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfVisualforceException",
+    "source": "try { throw new System.VisualforceException(); } catch (System.VisualforceException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "VisualforceException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentVisualforceException",
+    "source": "try { throw new System.VisualforceException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "VisualforceException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchVisualforceException",
+    "source": "public class LarchVisualforceException extends System.VisualforceException {}"
+  },
+  {
+    "type": "WaveTemplateException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityWaveTemplateException",
+    "source": "System.Exception issue = new System.WaveTemplateException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "WaveTemplateException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfWaveTemplateException",
+    "source": "try { throw new System.WaveTemplateException(); } catch (System.WaveTemplateException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "WaveTemplateException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentWaveTemplateException",
+    "source": "try { throw new System.WaveTemplateException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "WaveTemplateException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchWaveTemplateException",
+    "source": "public class LarchWaveTemplateException extends System.WaveTemplateException {}"
+  },
+  {
+    "type": "XmlException",
+    "parent": "Exception",
+    "operation": "identity",
+    "method": "identityXmlException",
+    "source": "System.Exception issue = new System.XmlException(); System.assert(false, 'OBSERVED|' + issue.getTypeName() + '|true');"
+  },
+  {
+    "type": "XmlException",
+    "parent": "Exception",
+    "operation": "self",
+    "method": "selfXmlException",
+    "source": "try { throw new System.XmlException(); } catch (System.XmlException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "XmlException",
+    "parent": "Exception",
+    "operation": "parent",
+    "method": "parentXmlException",
+    "source": "try { throw new System.XmlException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "XmlException",
+    "parent": "Exception",
+    "operation": "extend",
+    "class": "LarchXmlException",
+    "source": "public class LarchXmlException extends System.XmlException {}"
+  },
+  {
+    "type": "AssertException",
+    "parent": "Exception",
+    "operation": "shadowSelf",
+    "method": "shadowSelfAssertException",
+    "source": "try { throw new AssertException(); } catch (AssertException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "AssertException": "public class AssertException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "AssertException",
+    "parent": "Exception",
+    "operation": "shadowParent",
+    "method": "shadowParentAssertException",
+    "source": "try { throw new AssertException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "AssertException": "public class AssertException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "AssertException",
+    "parent": "Exception",
+    "operation": "shadowSystem",
+    "method": "shadowSystemAssertException",
+    "source": "try { throw new System.AssertException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "AssertException": "public class AssertException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "EventObjectException",
+    "parent": "Exception",
+    "operation": "shadowSelf",
+    "method": "shadowSelfEventObjectException",
+    "source": "try { throw new EventObjectException(); } catch (EventObjectException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "EventObjectException": "public class EventObjectException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "EventObjectException",
+    "parent": "Exception",
+    "operation": "shadowParent",
+    "method": "shadowParentEventObjectException",
+    "source": "try { throw new EventObjectException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "EventObjectException": "public class EventObjectException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "EventObjectException",
+    "parent": "Exception",
+    "operation": "shadowSystem",
+    "method": "shadowSystemEventObjectException",
+    "source": "try { throw new System.EventObjectException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "EventObjectException": "public class EventObjectException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "FinalException",
+    "parent": "Exception",
+    "operation": "shadowSelf",
+    "method": "shadowSelfFinalException",
+    "source": "try { throw new FinalException(); } catch (FinalException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "FinalException": "public class FinalException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "FinalException",
+    "parent": "Exception",
+    "operation": "shadowParent",
+    "method": "shadowParentFinalException",
+    "source": "try { throw new FinalException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "FinalException": "public class FinalException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "FinalException",
+    "parent": "Exception",
+    "operation": "shadowSystem",
+    "method": "shadowSystemFinalException",
+    "source": "try { throw new System.FinalException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "FinalException": "public class FinalException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "LimitException",
+    "parent": "Exception",
+    "operation": "shadowSelf",
+    "method": "shadowSelfLimitException",
+    "source": "try { throw new LimitException(); } catch (LimitException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "LimitException": "public class LimitException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "LimitException",
+    "parent": "Exception",
+    "operation": "shadowParent",
+    "method": "shadowParentLimitException",
+    "source": "try { throw new LimitException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "LimitException": "public class LimitException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "LimitException",
+    "parent": "Exception",
+    "operation": "shadowSystem",
+    "method": "shadowSystemLimitException",
+    "source": "try { throw new System.LimitException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "LimitException": "public class LimitException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "ProcedureException",
+    "parent": "Exception",
+    "operation": "shadowSelf",
+    "method": "shadowSelfProcedureException",
+    "source": "try { throw new ProcedureException(); } catch (ProcedureException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "ProcedureException": "public class ProcedureException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "ProcedureException",
+    "parent": "Exception",
+    "operation": "shadowParent",
+    "method": "shadowParentProcedureException",
+    "source": "try { throw new ProcedureException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "ProcedureException": "public class ProcedureException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "ProcedureException",
+    "parent": "Exception",
+    "operation": "shadowSystem",
+    "method": "shadowSystemProcedureException",
+    "source": "try { throw new System.ProcedureException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "ProcedureException": "public class ProcedureException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "UnexpectedException",
+    "parent": "Exception",
+    "operation": "shadowSelf",
+    "method": "shadowSelfUnexpectedException",
+    "source": "try { throw new UnexpectedException(); } catch (UnexpectedException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "UnexpectedException": "public class UnexpectedException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "UnexpectedException",
+    "parent": "Exception",
+    "operation": "shadowParent",
+    "method": "shadowParentUnexpectedException",
+    "source": "try { throw new UnexpectedException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "UnexpectedException": "public class UnexpectedException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "UnexpectedException",
+    "parent": "Exception",
+    "operation": "shadowSystem",
+    "method": "shadowSystemUnexpectedException",
+    "source": "try { throw new System.UnexpectedException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "UnexpectedException": "public class UnexpectedException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "LarchException",
+    "parent": "Exception",
+    "operation": "subclass",
+    "method": "subclassLarchException",
+    "source": "try { throw new LarchException(); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }",
+    "classes": {
+      "LarchException": "public class LarchException extends System.Exception {}"
+    }
+  },
+  {
+    "type": "AssertException",
+    "parent": "Exception",
+    "operation": "raisedSelf",
+    "method": "raisedSelfAssertException",
+    "source": "try { System.assert(false, 'probe'); } catch (System.AssertException issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "AssertException",
+    "parent": "Exception",
+    "operation": "raisedParent",
+    "method": "raisedParentAssertException",
+    "source": "try { System.assert(false, 'probe'); } catch (System.Exception issue) { System.assert(false, 'OBSERVED|' + issue.getTypeName()); }"
+  },
+  {
+    "type": "IllegalStateException",
+    "parent": "Exception",
+    "operation": "shortIdentity",
+    "method": "shortIdentityIllegalStateException",
+    "source": "System.Exception issue = new IllegalStateException(); System.assert(false, 'OBSERVED|' + issue.getTypeName());"
+  },
+  {
+    "type": "PatternSyntaxException",
+    "parent": "Exception",
+    "operation": "shortIdentity",
+    "method": "shortIdentityPatternSyntaxException",
+    "source": "System.Exception issue = new PatternSyntaxException(); System.assert(false, 'OBSERVED|' + issue.getTypeName());"
+  }
+]

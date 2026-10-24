@@ -15,9 +15,11 @@ import (
 )
 
 type Index struct {
-	Workflows   []Workflow              `json:"workflows,omitempty"`
-	Flows       []Flow                  `json:"flows,omitempty"`
-	Diagnostics []diagnostic.Diagnostic `json:"diagnostics,omitempty"`
+	AssignmentRules []storage.AssignmentRule `json:"assignmentRules,omitempty"`
+	DuplicateRules  []storage.DuplicateRule  `json:"duplicateRules,omitempty"`
+	Workflows       []Workflow               `json:"workflows,omitempty"`
+	Flows           []Flow                   `json:"flows,omitempty"`
+	Diagnostics     []diagnostic.Diagnostic  `json:"diagnostics,omitempty"`
 }
 
 type Workflow struct {
@@ -95,12 +97,20 @@ type workflowRecipientXML struct {
 	Recipient string `xml:"recipient"`
 }
 
-// LoadProject loads every workflow and flow file in the project. A file that
-// cannot be read or parsed is skipped with a GLADEAUTO003 warning naming it;
+// LoadProject loads workflow, flow, assignment, duplicate and matching rule metadata.
+// The optional reader supplies assignment, duplicate and matching XML from a captured generation.
+// A file that cannot be read or parsed is skipped with a GLADEAUTO003 warning naming it;
 // the remaining files still load, so one bad file never disables the rest of
 // the project's automation.
-func LoadProject(p project.Project) (Index, error) {
-	idx := Index{}
+func LoadProject(p project.Project, metadataReaders ...func(string) ([]byte, error)) (Index, error) {
+	readMetadata := os.ReadFile
+	if len(metadataReaders) > 0 && metadataReaders[0] != nil {
+		readMetadata = metadataReaders[0]
+	}
+	rules, diagnostics := loadDuplicateRules(p, readMetadata)
+	idx := Index{DuplicateRules: rules, Diagnostics: diagnostics}
+	idx.AssignmentRules, diagnostics = loadAssignmentRules(p, readMetadata)
+	idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
 	workflowUpdates := loadProjectWorkflowFieldUpdates(p.WorkflowFiles)
 	for _, path := range p.WorkflowFiles {
 		workflow, diagnostics, err := loadWorkflowWithUpdates(path, workflowUpdates[objectNameFromWorkflowPath(path)])
@@ -111,8 +121,9 @@ func LoadProject(p project.Project) (Index, error) {
 		idx.Workflows = append(idx.Workflows, workflow)
 		idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
 	}
+	flowDefinitions := flowProjectRelationshipDefinitions(p)
 	for _, path := range p.FlowFiles {
-		flow, diagnostics, err := loadFlow(path)
+		flow, diagnostics, err := loadFlow(path, flowDefinitions)
 		if err != nil {
 			idx.Diagnostics = append(idx.Diagnostics, loadFailure(path, "flow", flowFileName(path), err))
 			continue
@@ -144,6 +155,8 @@ func ApplyToOrg(org *storage.OrgState, idx Index) {
 	if org == nil {
 		return
 	}
+	applyDuplicateRules(org, idx.DuplicateRules)
+	applyAssignmentRules(org, idx.AssignmentRules)
 	for _, workflow := range idx.Workflows {
 		objectName, ok := storage.ResolveObjectName(*org, workflow.ObjectName)
 		if !ok {

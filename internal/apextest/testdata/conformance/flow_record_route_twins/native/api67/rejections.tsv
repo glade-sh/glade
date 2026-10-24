@@ -1,0 +1,3 @@
+flow	status	message
+BoundaryBeforeSubflow	metadata_rejected	CallChild (Subflow) - A flow can’t include Subflow elements when TriggerType is set to Record—Run Before Save.
+BoundaryEventNested	metadata_rejected	CallChild (Subflow) - A flow can’t include Subflow elements when TriggerType is set to Platform Event.

@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"calcQueries":1,"eastAverage":6,"eastCount":2,"eastLast":4.0,"westAverage":4,"westCount":2,"westLast":6.0}
+62.0	isTest	{"calcQueries":1,"eastAverage":6,"eastCount":2,"eastLast":4.0,"westAverage":4,"westCount":2,"westLast":6.0}
+67.0	anonymous	{"calcQueries":1,"eastAverage":6,"eastCount":2,"eastLast":4.0,"westAverage":4,"westCount":2,"westLast":6.0}
+67.0	isTest	{"calcQueries":1,"eastAverage":6,"eastCount":2,"eastLast":4.0,"westAverage":4,"westCount":2,"westLast":6.0}

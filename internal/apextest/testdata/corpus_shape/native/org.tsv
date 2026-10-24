@@ -1,0 +1,11 @@
+api	variant	component	accepted	detail
+62.0	original	ShapeOpaque	false	Invalid type: cloudkit.Envelope
+62.0	original	ShapeOuter	false	Variable does not exist: grove.ShapeOuter.Instance.Text
+62.0	original	ShapeGrove__c	false	Must specify a deployment status for the Custom Object
+62.0	original	ShapeLeaf__c	false	Must specify a deployment status for the Custom Object
+62.0	corrected	force-app	true	21 components; 0 errors; ShapeAccount, ShapeAccountChange, ShapeBatch, ShapeChange, ShapeDispatcher, ShapeDomain, ShapeGrove__c, ShapeLeaf__c, ShapeLevels, ShapeOpaque, ShapeOuter, ShapePlanner, ShapeProjectTest, ShapeQueue, ShapeRelationships, ShapeReturn, ShapeSchedule, ShapeSelector, ShapeShadow, ShapeWork
+67.0	original	ShapeOpaque	false	Invalid type: cloudkit.Envelope
+67.0	original	ShapeOuter	false	Variable does not exist: grove.ShapeOuter.Instance.Text
+67.0	original	ShapeGrove__c	false	Must specify a deployment status for the Custom Object
+67.0	original	ShapeLeaf__c	false	Must specify a deployment status for the Custom Object
+67.0	corrected	force-app	true	21 components; 0 errors; ShapeAccount, ShapeAccountChange, ShapeBatch, ShapeChange, ShapeDispatcher, ShapeDomain, ShapeGrove__c, ShapeLeaf__c, ShapeLevels, ShapeOpaque, ShapeOuter, ShapePlanner, ShapeProjectTest, ShapeQueue, ShapeRelationships, ShapeReturn, ShapeSchedule, ShapeSelector, ShapeShadow, ShapeWork

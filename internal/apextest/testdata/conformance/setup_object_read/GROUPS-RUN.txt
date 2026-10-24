@@ -1,0 +1,5 @@
+sf apex run --file ../groups.apex --target-org example-org --api-version 62.0 --json; success=true; 2026-10-21T04:37:55.144886+00:00
+sf apex run --file ../groups.apex --target-org example-org --api-version 67.0 --json; success=true; 2026-10-21T04:37:56.038457+00:00
+CommunitiesSettings.enableNetworksEnabled=true deployed successfully
+sf apex run --file ../groups.apex --target-org example-org --api-version 62.0 --json; success=true; 2026-10-21T04:38:06.307624+00:00
+sf apex run --file ../groups.apex --target-org example-org --api-version 67.0 --json; success=true; 2026-10-21T04:38:07.212919+00:00

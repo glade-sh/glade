@@ -1,0 +1,10 @@
+{
+  "orgName": "External User Access Probe",
+  "edition": "Developer",
+  "features": [],
+  "settings": {
+    "communitiesSettings": {
+      "enableNetworksEnabled": false
+    }
+  }
+}

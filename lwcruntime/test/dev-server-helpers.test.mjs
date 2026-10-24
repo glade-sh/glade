@@ -9,12 +9,16 @@ import { repoRoot, startLWCDevServer, startVisualforceDevServer } from "./helper
 
 const fixture = "lwcruntime/test/fixtures/wire-contract";
 let binaryDir;
+const configuredTestBinary = process.env.GLADE_LWCRUNTIME_TEST_BINARY;
+delete process.env.GLADE_LWCRUNTIME_TEST_BINARY;
 
 // helpers.mjs registers its process-wide cleanup before this hook.
 after(() => {
   if (binaryDir) {
     assert.equal(fs.existsSync(binaryDir), false, "shared binary cleaned after all tests");
   }
+  if (configuredTestBinary === undefined) delete process.env.GLADE_LWCRUNTIME_TEST_BINARY;
+  else process.env.GLADE_LWCRUNTIME_TEST_BINARY = configuredTestBinary;
 });
 
 test("dev server helpers share successful builds while isolating server state", async (t) => {

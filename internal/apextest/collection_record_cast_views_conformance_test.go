@@ -159,7 +159,7 @@ func TestCollectionRecordCastViewsConformance(t *testing.T) {
 		t.Fatal("native cell count differs")
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "CollectionRecordCastViews", api)
 			baseIndex := recordCastViewsIndex(t, api, recordCastViewsRoute{}, data.Helpers, data.Objects)
 			org := orgFromIndex(baseIndex)

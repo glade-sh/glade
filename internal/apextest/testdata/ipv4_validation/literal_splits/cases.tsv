@@ -1,0 +1,2 @@
+id	contexts	apis	routes
+literal-and-regex-controls	anonymous,isTest	62.0,67.0	String.split and Pattern.split; default,-1,0,1,2,5 limits; dot,multichar,quoted,class,capture,casefold,zero-width,empty

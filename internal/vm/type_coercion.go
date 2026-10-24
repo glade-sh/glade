@@ -57,10 +57,11 @@ func (vm *VM) runtimeClassConcreteOverride(receiver Value, baseType, method stri
 	if className == "" || strings.EqualFold(className, baseType) {
 		return Method{}, false
 	}
-	if _, ok := vm.Classes[className]; !ok {
+	class, ok := vm.classEntry(className)
+	if !ok {
 		return Method{}, false
 	}
-	if !vm.typeMatches(className, baseType, make(map[string]bool)) && !classExtendsType(vm.Classes[className], baseType) {
+	if !vm.typeMatches(className, baseType, make(map[string]bool)) && !classExtendsType(class, baseType) {
 		return Method{}, false
 	}
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(className, method, args)
@@ -83,7 +84,7 @@ func (vm *VM) uniqueConcreteOverride(receiver Value, baseType, method string, ar
 	fieldMatchCount := 0
 	var qualifierMatched Method
 	qualifierMatchCount := 0
-	for className, class := range vm.Classes {
+	for className, class := range vm.ClassEntries() {
 		if strings.EqualFold(className, baseType) || (!vm.typeMatches(className, baseType, make(map[string]bool)) && !classExtendsType(class, baseType)) {
 			continue
 		}
@@ -106,7 +107,7 @@ func (vm *VM) uniqueConcreteOverride(receiver Value, baseType, method string, ar
 			qualifierMatched = target
 			qualifierMatchCount++
 		}
-		if class, ok := vm.Classes[className]; ok && receiverHasClassField(receiver, class) {
+		if class, ok := vm.classEntry(className); ok && receiverHasClassField(receiver, class) {
 			fieldMatched = target
 			fieldMatchCount++
 		}
@@ -438,6 +439,10 @@ func (vm *VM) schemaRecordTypesMatch(from, to string) (bool, bool) {
 func (vm *VM) schemaRecordValueMatches(value Value, target string) (bool, bool) {
 	target = canonicalRuntimePlatformType(target)
 	_, explicitRecord := vm.explicitSchemaRecordType(target)
+	if !explicitRecord && !strings.EqualFold(target, "Object") && !strings.EqualFold(target, "SObject") {
+		// Other targets fall through regardless of the source's provenance.
+		return false, false
+	}
 	if value.classInstance {
 		if explicitRecord || strings.EqualFold(target, "SObject") {
 			return false, true
@@ -1098,11 +1103,7 @@ func (vm *VM) typeExceptionName(typeName string, userTypes bool) string {
 					return typeName
 				}
 			} else if !class.PlatformType {
-				name := strings.TrimSpace(class.Name)
-				if namespace := strings.TrimSpace(class.Namespace); namespace != "" && hasPrefixFold(name, namespace+".") {
-					name = name[len(namespace)+1:]
-				}
-				return name
+				return vm.classTypeToken(class)
 			}
 		}
 	}
@@ -1343,7 +1344,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		if text != "" {
 			switch {
 			case strings.EqualFold(canonicalTypeName, "Date") && strings.EqualFold(strings.TrimSpace(text), "Today()"):
-				return platformScalar("Date", vm.fakeNow.Format("2006-01-02")), nil
+				return platformScalar("Date", vm.currentLocalNow().Format("2006-01-02")), nil
 			case strings.EqualFold(canonicalTypeName, "Date"):
 				parsed, err := parseDateText(text)
 				if err == nil {
@@ -1365,7 +1366,8 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			text = value.Text
 		}
 		if strings.EqualFold(strings.TrimSpace(text), "Today()") {
-			today := time.Date(vm.fakeNow.Year(), vm.fakeNow.Month(), vm.fakeNow.Day(), 0, 0, 0, 0, time.UTC)
+			local := vm.currentLocalNow()
+			today := time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, time.UTC)
 			return platformScalar("Datetime", formatPlatformDatetime(today)), nil
 		}
 	}
@@ -1441,7 +1443,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			return value, nil
 		case "Date":
 			if strings.EqualFold(strings.TrimSpace(value.Text), "Today()") {
-				return platformScalar("Date", vm.fakeNow.Format("2006-01-02")), nil
+				return platformScalar("Date", vm.currentLocalNow().Format("2006-01-02")), nil
 			}
 			parsed, err := parseDateText(value.Text)
 			if err != nil {
@@ -1733,7 +1735,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			if err != nil {
 				return Null, err
 			}
-			value.List[i] = coerced
+			vm.setListElement(value, i, coerced)
 		}
 		return value, nil
 	}
@@ -1768,6 +1770,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 		value.Set = out
 		value.setInsertionHashes = hashes
+		value.primitiveSetState = &primitiveSetState{items: out, hashes: hashes}
 		return value, nil
 	}
 	if collectionBase(typeName) == "Iterable" && (value.Kind == ValueList || value.Kind == ValueSet) {
@@ -1821,7 +1824,11 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			value    Value
 		}
 		rawKeys := orderedValueMapKeys(value)
-		rollback := captureCoercionMapBranches(value, rawKeys)
+		var rollback coercionGraphRollback
+		readOnly := vm.mapCoercionBranchesReadOnly(value, rawKeys, keyType, valueType)
+		if !readOnly {
+			rollback = captureCoercionMapBranches(value, rawKeys)
+		}
 		canonicalRepresentation := value.MapKeys != nil &&
 			len(value.MapKeys) == len(value.Map) &&
 			(len(value.Map) == 0 ||
@@ -1835,7 +1842,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			}
 		}
 		var entries []coercedEntry
-		if !canonicalRepresentation {
+		if !canonicalRepresentation && !readOnly {
 			entries = make([]coercedEntry, 0, len(value.Map))
 		}
 		var objectKeys Value
@@ -1888,6 +1895,21 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 		value.Type = resultType
 		if entries == nil {
+			if !canonicalRepresentation {
+				// Read-only coercions cannot invoke key callbacks or change a
+				// payload. If every entry kept its representation, repair only
+				// the final maps, without staging two Values per entry.
+				values := make(map[string]Value, len(rawKeys))
+				keys := make(map[string]Value, len(rawKeys))
+				for _, rawKey := range rawKeys {
+					values[rawKey] = value.Map[rawKey]
+					keys[rawKey] = mapStoredKey(value, rawKey)
+				}
+				value.Ref = newValueRef()
+				value.Map = values
+				value.MapKeys = keys
+				value.MapOrder = rawKeys
+			}
 			return value, nil
 		}
 		uniqueEntryCount := 0
@@ -1922,8 +1944,41 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 	return coerceAssignable(typeName, value)
 }
 
+func (vm *VM) mapCoercionBranchesReadOnly(value Value, rawKeys []string, keyType, valueType string) bool {
+	// String keys cannot invoke Apex hashCode/equals callbacks. For other keys,
+	// retain the whole graph snapshot, including otherwise unchanged siblings.
+	if !strings.EqualFold(keyType, "String") {
+		return false
+	}
+	valueType = canonicalApexScalarType(vm.resolveAssignableTargetType(valueType))
+	for _, rawKey := range rawKeys {
+		if mapStoredKey(value, rawKey).Kind != ValueString {
+			return false
+		}
+		item := value.Map[rawKey]
+		switch item.Kind {
+		case ValueNull, ValueInt, ValueDecimal, ValueBool, ValueString:
+			// Scalar conversions replace the value header, never shared backing.
+		case ValueList, ValueSet, ValueMap, ValueObject:
+			// These are the early-return paths in coerceAssignable. Object views
+			// may change Static/Runtime, but do not traverse or write the payload.
+			if !strings.EqualFold(valueType, "Object") &&
+				(item.Type == "" || !strings.EqualFold(item.Type, valueType)) {
+				return false
+			}
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 func sameCoercionRepresentation(left, right Value) bool {
-	if left.Kind != right.Kind ||
+	if valueSameHeaderAndBacking(left, right) {
+		return true
+	}
+	if left.idOriginalDisplay != right.idOriginalDisplay ||
+		left.Kind != right.Kind ||
 		left.Int != right.Int ||
 		left.Decimal != right.Decimal ||
 		left.Bool != right.Bool ||

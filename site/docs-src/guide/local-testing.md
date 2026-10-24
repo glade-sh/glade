@@ -165,9 +165,14 @@ GLADE_TEST_TIMEOUT=15m glade test
 GLADE_TEST_TIMEOUT=0 glade test
 ```
 
-On memory-constrained hosts,
-`--gc-aggressive` trades more frequent garbage collection for lower heap
-growth.
+With a finite memory limit, `--gc-aggressive` sets `GOGC=off` so Go's soft
+memory limit drives garbage collection instead of a heap-growth percentage.
+`glade test` uses a 4 GiB default limit and honors an explicit `GOMEMLIMIT`.
+If the effective limit is unlimited (`GOMEMLIMIT=off` or Go's maximum `int64`
+limit), the flag falls back to `GOGC=50`, keeping heap-growth collection enabled.
+The memory limit is a soft target for Go runtime memory, not a hard process RSS
+cap. Use `--no-serve` to apply these settings to the process executing the tests;
+an existing test server retains its own startup GC settings.
 
 ## Limit modes
 

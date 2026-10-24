@@ -9,7 +9,7 @@ import (
 )
 
 func TestSourceHashTracksSetupMetadata(t *testing.T) {
-	for _, relative := range []string{"settings/BusinessHours.settings-meta.xml", "duplicateRules/Contact.Grove.duplicateRule-meta.xml"} {
+	for _, relative := range []string{"settings/BusinessHours.settings-meta.xml", "duplicateRules/Contact.Grove.duplicateRule-meta.xml", "matchingRules/Contact.matchingRule-meta.xml", "matchingRules/Contact.matchingRule"} {
 		t.Run(relative, func(t *testing.T) {
 			root := t.TempDir()
 			if err := os.WriteFile(filepath.Join(root, "sfdx-project.json"), []byte(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`), 0600); err != nil {

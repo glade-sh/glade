@@ -1,0 +1,166 @@
+{
+  "observation": {
+    "staticSchedule": 1,
+    "staticQueue": 1,
+    "staticBatchStart": 1,
+    "staticBatchFinish": 1,
+    "staticBatchExecute": 1,
+    "plain": [
+      [
+        18,
+        18,
+        18,
+        18,
+        18,
+        true,
+        true,
+        true,
+        true
+      ],
+      true,
+      18
+    ],
+    "options": [
+      [
+        18,
+        18,
+        18,
+        18,
+        18,
+        true,
+        true,
+        true,
+        true
+      ],
+      true,
+      18
+    ],
+    "integer": [
+      [
+        18,
+        18,
+        18,
+        18,
+        18,
+        true,
+        true,
+        true,
+        true
+      ],
+      true,
+      18
+    ],
+    "instanceSchedule": 2,
+    "instanceQueue": 2,
+    "instanceBatchStart": 2,
+    "instanceBatchFinish": 2,
+    "instanceBatchExecute": 2
+  },
+  "records": [
+    {
+      "Name": "instanceBatchExecute",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "instanceBatchExecute",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "instanceBatchFinish",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "instanceBatchFinish",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "instanceBatchStart",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "instanceBatchStart",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "instanceQueue",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "instanceQueue",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "instanceSchedule",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "instanceSchedule",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "integer",
+      "Phone": "707QL00009cL7uCYAS",
+      "Description": "[18,18,18,18,18,true,true,true,true]"
+    },
+    {
+      "Name": "integerReturn",
+      "Phone": "707QL00009cL7uCYAS",
+      "Description": null
+    },
+    {
+      "Name": "options",
+      "Phone": "707QL00009cL7uDYAS",
+      "Description": "[18,18,18,18,18,true,true,true,true]"
+    },
+    {
+      "Name": "optionsReturn",
+      "Phone": "707QL00009cL7uDYAS",
+      "Description": null
+    },
+    {
+      "Name": "plain",
+      "Phone": "707QL00009cL7uBYAS",
+      "Description": "[18,18,18,18,18,true,true,true,true]"
+    },
+    {
+      "Name": "plainReturn",
+      "Phone": "707QL00009cL7uBYAS",
+      "Description": null
+    },
+    {
+      "Name": "staticBatchExecute",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "staticBatchFinish",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "staticBatchStart",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "staticQueue",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "staticSchedule",
+      "Phone": null,
+      "Description": null
+    }
+  ]
+}

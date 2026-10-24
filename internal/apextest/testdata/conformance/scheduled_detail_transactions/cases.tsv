@@ -1,0 +1,9 @@
+source_api	route	case	shape
+62.0	anonymous	schedule	two separate transactions sharing one org
+62.0	anonymous	scheduleBatch	two separate transactions sharing one org
+62.0	istest	schedule	two submissions in one test transaction
+62.0	istest	scheduleBatch	two submissions in one test transaction
+67.0	anonymous	schedule	two separate transactions sharing one org
+67.0	anonymous	scheduleBatch	two separate transactions sharing one org
+67.0	istest	schedule	two submissions in one test transaction
+67.0	istest	scheduleBatch	two submissions in one test transaction

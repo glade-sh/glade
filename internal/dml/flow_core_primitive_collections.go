@@ -35,6 +35,9 @@ func (e *Engine) flowCoreApplyPrimitiveAssignment(assignment storage.FlowAssignm
 			return false, nil
 		}
 		item, ok := e.flowStringAssignmentValue(assignment, frame)
+		if ok && strings.EqualFold(variable.DataType, "String") && item.Kind == storage.ValueID {
+			item = storage.StringValue(string(item.ID))
+		}
 		if !ok || strings.EqualFold(variable.DataType, "String") && item.Kind != storage.ValueString && item.Kind != storage.ValueNull || strings.EqualFold(variable.DataType, "Number") && item.Kind != storage.ValueInteger && item.Kind != storage.ValueDecimal {
 			return false, nil
 		}

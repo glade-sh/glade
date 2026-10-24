@@ -1,0 +1,42 @@
+@IsTest
+private class CloneWriteProbeTest {
+    @IsTest static void direct_insert_listDefault() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','insert','listDefault'))); }
+    @IsTest static void direct_insert_listPreserve() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','insert','listPreserve'))); }
+    @IsTest static void direct_insert_listClear() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','insert','listClear'))); }
+    @IsTest static void direct_insert_map() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','insert','map'))); }
+    @IsTest static void direct_insert_single() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','insert','single'))); }
+    @IsTest static void direct_delete_listDefault() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','delete','listDefault'))); }
+    @IsTest static void direct_delete_listPreserve() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','delete','listPreserve'))); }
+    @IsTest static void direct_delete_listClear() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','delete','listClear'))); }
+    @IsTest static void direct_delete_map() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','delete','map'))); }
+    @IsTest static void direct_delete_single() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','delete','single'))); }
+    @IsTest static void trigger_insert_listDefault() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('trigger','insert','listDefault'))); }
+    @IsTest static void trigger_insert_listPreserve() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('trigger','insert','listPreserve'))); }
+    @IsTest static void trigger_insert_listClear() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('trigger','insert','listClear'))); }
+    @IsTest static void trigger_insert_map() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('trigger','insert','map'))); }
+    @IsTest static void trigger_insert_single() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('trigger','insert','single'))); }
+    @IsTest static void trigger_delete_listDefault() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('trigger','delete','listDefault'))); }
+    @IsTest static void trigger_delete_listPreserve() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('trigger','delete','listPreserve'))); }
+    @IsTest static void trigger_delete_listClear() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('trigger','delete','listClear'))); }
+    @IsTest static void trigger_delete_map() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('trigger','delete','map'))); }
+    @IsTest static void trigger_delete_single() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('trigger','delete','single'))); }
+    @IsTest static void queue_insert_listDefault() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.queueResult('insert','listDefault'))); }
+    @IsTest static void queue_insert_listPreserve() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.queueResult('insert','listPreserve'))); }
+    @IsTest static void queue_insert_listClear() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.queueResult('insert','listClear'))); }
+    @IsTest static void queue_insert_map() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.queueResult('insert','map'))); }
+    @IsTest static void queue_insert_single() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.queueResult('insert','single'))); }
+    @IsTest static void queue_delete_listDefault() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.queueResult('delete','listDefault'))); }
+    @IsTest static void queue_delete_listPreserve() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.queueResult('delete','listPreserve'))); }
+    @IsTest static void queue_delete_listClear() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.queueResult('delete','listClear'))); }
+    @IsTest static void queue_delete_map() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.queueResult('delete','map'))); }
+    @IsTest static void queue_delete_single() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.queueResult('delete','single'))); }
+    @IsTest static void direct_insert_original() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','insert','original'))); }
+    @IsTest static void direct_insert_originalRelationship() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','insert','originalRelationship'))); }
+    @IsTest static void direct_insert_shallowList() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','insert','shallowList'))); }
+    @IsTest static void direct_insert_shallowMap() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','insert','shallowMap'))); }
+    @IsTest static void direct_delete_original() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','delete','original'))); }
+    @IsTest static void direct_delete_originalRelationship() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','delete','originalRelationship'))); }
+    @IsTest static void direct_delete_shallowList() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','delete','shallowList'))); }
+    @IsTest static void direct_delete_shallowMap() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.run('direct','delete','shallowMap'))); }
+    @IsTest static void direct_errors() { System.assert(false,'CLONE_OBS|'+JSON.serialize(CloneWriteProbe.errors())); }
+}

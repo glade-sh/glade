@@ -1,0 +1,25 @@
+source_api	entry	route	observation
+62.0	anonymous	deserialize	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	anonymous	deserializeStrict	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	anonymous	deserializeList	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	anonymous	deserializeStrictList	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	anonymous	deserializeMap	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	anonymous	parser	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	anonymous	typedDeserialize	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	anonymous	newSObject	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	anonymous	newSObjectDefaults	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	anonymous	clone	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	anonymous	listDeepClone	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	anonymous	strictUnknown	{"message":"No such column 'UnknownColumn' on sobject of type Asset","error":"System.JSONException"}
+62.0	istest	clone	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	istest	deserialize	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	istest	deserializeList	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	istest	deserializeMap	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	istest	deserializeStrict	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	istest	deserializeStrictList	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	istest	listDeepClone	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	istest	newSObject	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	istest	newSObjectDefaults	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	istest	parser	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}
+62.0	istest	strictUnknown	{"message":"No such column 'UnknownColumn' on sobject of type Asset","error":"System.JSONException"}
+62.0	istest	typedDeserialize	{"purchaseDate":true,"quantityDecimal":true,"idNull":true,"absent":null,"name":"probe","type":"Asset"}

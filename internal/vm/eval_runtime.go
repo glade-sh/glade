@@ -304,7 +304,10 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 			}
 			args = append(args, plainNull(value))
 		}
-		namedArgs := make(map[string]Value, len(expr.NamedArgs))
+		var namedArgs map[string]Value
+		if len(expr.NamedArgs) != 0 {
+			namedArgs = make(map[string]Value, len(expr.NamedArgs))
+		}
 		namedArgOrder := make([]string, 0, len(expr.NamedArgs))
 		for _, arg := range expr.NamedArgs {
 			value, err := vm.eval(arg.Expr, result)
@@ -358,12 +361,35 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		if err := vm.validateSOQLCallAccess(callee, args); err != nil {
 			return Null, err
 		}
+		if len(namedArgs) == 0 && len(vm.currentMethod.triggerLocalMethods) == 0 {
+			if value, handled, err := vm.callDirectPrimitiveMember(callee, args, result); handled || err != nil {
+				return value, err
+			}
+		}
 		return vm.call(callee, args, namedArgs, result)
 	case ir.ExprSOQL:
 		return vm.executeInlineSOQL(expr.Value, result)
 	default:
 		return Null, fmt.Errorf("unsupported expression %q", expr.Kind)
 	}
+}
+
+// Direct String and List bindings share the member dispatcher without
+// allocating a slice to split the qualified call name.
+func (vm *VM) callDirectPrimitiveMember(callee string, args []Value, result *Result) (Value, bool, error) {
+	receiverName, member, qualified := strings.Cut(callee, ".")
+	if !qualified || strings.Contains(member, ".") || strings.EqualFold(receiverName, "this") || strings.EqualFold(receiverName, "super") {
+		return Null, false, nil
+	}
+	receiver, local := vm.Globals[receiverName]
+	if !local || (receiver.Kind != ValueString && receiver.Kind != ValueList) {
+		return Null, false, nil
+	}
+	if _, builtin := canonicalBuiltinStaticCall(callee); builtin || normalizeStaticCallCasing(callee) != callee {
+		return Null, false, nil
+	}
+	vm.markRootCollectionRefsEscaped(args...)
+	return vm.callValueMember(receiverName, receiver, member, args, result)
 }
 
 func (vm *VM) staticReceiverName(receiverName, member string) bool {
@@ -713,7 +739,7 @@ func (vm *VM) evalIndexedIncrementExpression(expr ir.Expr, result *Result) (Valu
 	if err != nil {
 		return Null, err
 	}
-	receiver.List[i] = next
+	vm.setListElement(receiver, i, next)
 	if err := vm.storeReceiver(receiverName, receiver); err != nil {
 		return Null, err
 	}

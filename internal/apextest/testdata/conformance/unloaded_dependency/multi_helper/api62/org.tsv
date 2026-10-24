@@ -1,0 +1,9 @@
+id	api	route	outcome	value
+2_helpers_absent	62.0	anonymous	compile-rejected	Variable does not exist: CedarLibraryA622 | Variable does not exist: CedarLibraryB622
+2_helpers_absent	62.0	istest	compile-rejected	Variable does not exist: CedarLibraryA622 | Variable does not exist: CedarLibraryB622
+2_helpers_loaded	62.0	anonymous	accepted	all helper branch assertions passed
+2_helpers_loaded	62.0	istest	accepted	all helper branch assertions passed
+3_helpers_absent	62.0	anonymous	compile-rejected	Variable does not exist: CedarLibraryA623 | Variable does not exist: CedarLibraryB623 | Variable does not exist: CedarLibraryC623
+3_helpers_absent	62.0	istest	compile-rejected	Variable does not exist: CedarLibraryA623 | Variable does not exist: CedarLibraryB623 | Variable does not exist: CedarLibraryC623
+3_helpers_loaded	62.0	anonymous	accepted	all helper branch assertions passed
+3_helpers_loaded	62.0	istest	accepted	all helper branch assertions passed

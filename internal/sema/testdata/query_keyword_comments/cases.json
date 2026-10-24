@@ -1,0 +1,21 @@
+[
+  {
+    "ID": "soql_comment_boundary",
+    "Body": "Find value = new Find();\nList<Account> rows = [ /* query comment */\n SELECT Id FROM Account\n WHERE Name = 'garden'\n];\nSystem.assertNotEquals(null, value); System.assertNotEquals(null, rows);"
+  },
+  {
+    "ID": "sosl_comment_boundary",
+    "Body": "Find value = new Find();\nList<List<SObject>> hits = [ /* search comment */\n FIND 'garden' IN ALL FIELDS RETURNING Account(Id)\n];\nSystem.assertNotEquals(null, value); System.assertNotEquals(null, hits);",
+    "AnonymousRejected": true,
+    "CarryAnonymous": "Native rejects a leading SOSL comment; the local anonymous compiler accepts it on the unchanged base. Query parser boundary, outside local-declaration repair."
+  },
+  {
+    "ID": "index_boundary",
+    "Body": "List<Integer> values = new List<Integer>{1}; Integer value = values[0]; System.assertEquals(1, value);"
+  },
+  {
+    "ID": "bind_rejection",
+    "Body": "List<Account> rows = [ /* query comment */\n SELECT Id FROM Account WHERE Name = :missingGardenName\n];",
+    "Reject": true
+  }
+]

@@ -1,0 +1,13 @@
+[
+  {"id":"constructorLookup","body":"Contact row = new Contact(AccountId=bad);","field":"AccountId"},
+  {"id":"assignedLookup","body":"Contact row = new Contact(); row.AccountId=bad;","field":"AccountId"},
+  {"id":"dynamicLookup","body":"SObject row = new Contact(); row.put('AccountId',bad);","field":"AccountId"},
+  {"id":"tokenLookup","body":"SObject row = new Contact(); row.put(Contact.AccountId,bad);","field":"AccountId"},
+  {"id":"constructorId","body":"Contact row = new Contact(Id=bad);","field":"Id"},
+  {"id":"assignedId","body":"Contact row = new Contact(); row.Id=bad;","field":"Id"},
+  {"id":"dynamicId","body":"SObject row = new Contact(); row.put('Id',bad);","field":"Id"},
+  {"id":"nullLookup","body":"Contact row = new Contact(AccountId=null);","field":"AccountId"},
+  {"id":"emptyLookup","body":"Contact row = new Contact(AccountId='');","field":"AccountId"},
+  {"id":"opaqueLookup","body":"Contact row = new Contact(AccountId='001000000000001');","field":"AccountId"},
+  {"id":"wrongTargetLookup","body":"Contact row = new Contact(AccountId=UserInfo.getUserId());","field":"AccountId"}
+]

@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "node esbuild.config.mjs",
-    "test": "npm run build && node --test --test-concurrency=1 test/*.test.mjs"
+    "test": "npm run build && (cd .. && CGO_ENABLED=1 go build -o bin/glade ./cmd/glade) && GLADE_LWCRUNTIME_TEST_BINARY=bin/glade node --test --test-concurrency=${GLADE_LWCRUNTIME_TEST_CONCURRENCY:-2} test/*.test.mjs test/support/browser-session.test.mjs"
   },
   "devDependencies": {
     "@salesforce-ux/design-system": "^2.30.4",

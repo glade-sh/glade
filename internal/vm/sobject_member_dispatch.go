@@ -46,6 +46,7 @@ func (vm *VM) callSObjectFieldValueAddError(root *Value, field string, args []Va
 	if err != nil {
 		return Null, true, err
 	}
+	vm.clearFlatObjectAliasIndexes()
 	addSObjectError(root, message, []string{field}, true)
 	vm.advanceAliasContainmentMutation()
 	return Null, true, nil
@@ -491,6 +492,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 			return Null, true, err
 		}
 		replaceExisting := len(args) == 0 || args[0].Kind != ValueObject || !isSObjectFieldTokenType(args[0].Type)
+		vm.clearFlatObjectAliasIndexes()
 		addSObjectError(&receiver, message, fields, replaceExisting)
 		vm.advanceAliasContainmentMutation()
 		return Null, true, nil
@@ -568,6 +570,10 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 			}
 		}
 		if !ok {
+			if definition, fieldDef, exists := vm.sObjectFieldDefinition(receiver.Type, field); exists &&
+				fieldDef.Type == storage.FieldBoolean && (storage.IsCustomMetadataDefinition(definition) || !storage.IsCustomSettingDefinition(definition) && hasSuffixFold(definition.APIName, "__c")) && sObjectIDFromFields(receiver.Fields) == "" {
+				return typedNull("Boolean"), true, nil
+			}
 			if value, ok := vm.missingSObjectFieldValue(receiver, field); ok {
 				return value, true, nil
 			}
@@ -662,6 +668,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 			return Null, true, newExceptionError("SObjectException", "Field "+field+" is not editable")
 		}
 		if reason, ok := sobjectReadOnlyReason(receiver); ok {
+			if reason == "trigger record" {
+				return Null, true, &RuntimeError{Type: "System.FinalException", Message: "Record is read-only"}
+			}
 			if _, definition, kind, custom := vm.customDataObject(receiver.Type); custom && kind == "custom metadata" && storage.IsCustomMetadataDefinition(definition) {
 				return Null, true, fmt.Errorf("System.FinalException: Record is read-only")
 			}
@@ -701,8 +710,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 		}
 		value := args[1]
 		if vm.Org != nil {
-			if objectName, ok := vm.resolveObjectName(receiver.Type); ok {
-				definition := vm.Org.Objects[objectName].Definition
+			if _, definition, ok := vm.sObjectDefinitionForRead(receiver.Type); ok {
 				if canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, actualField); ok {
 					actualField = canonical
 					fieldDef := definition.Fields[canonical]
@@ -772,7 +780,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 		}
 		if reason, ok := sobjectReadOnlyReason(receiver); ok {
 			if reason == "trigger record" {
-				return Null, true, fmt.Errorf("System.FinalException: Record is read-only")
+				return Null, true, &RuntimeError{Type: "System.FinalException", Message: "Record is read-only"}
 			}
 			return Null, true, fmt.Errorf("cannot modify read-only %s", reason)
 		}
@@ -786,14 +794,14 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 			}
 		}
 		if vm.Org != nil {
-			if objectName, known := vm.resolveObjectName(receiver.Type); known {
-				relation, valid := vm.parentRelationshipMetadata(objectName, relationshipName)
+			if objectName, definition, known := vm.sObjectDefinitionForRead(receiver.Type); known {
+				relation, valid := vm.sObjectParentRelationshipMetadataForRead(objectName, relationshipName)
 				if !valid || len(relation.ParentObjects) == 0 {
 					return Null, true, newExceptionError("SObjectException", fmt.Sprintf("Invalid relationship %s for %s", relationshipName, receiver.Type))
 				}
 				// Owned relationship-write rows M01-M08 cover EntityDefinition
 				// and custom-metadata targets, including null/wrong-target writes.
-				if storage.IsCustomMetadataDefinition(vm.Org.Objects[objectName].Definition) {
+				if storage.IsCustomMetadataDefinition(definition) {
 					for _, parent := range relation.ParentObjects {
 						if canonical, ok := vm.resolveObjectName(parent); ok {
 							parent = canonical
@@ -854,7 +862,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 			return Null, true, newExceptionError("SObjectException", "Invalid field: "+fieldArg)
 		}
 		if vm.Org != nil {
-			if _, known := vm.resolveObjectName(receiver.Type); known && !vm.hasSObjectField(receiver.Type, field) {
+			if _, _, known := vm.sObjectDefinitionForRead(receiver.Type); known && !vm.hasSObjectField(receiver.Type, field) {
 				return Null, true, newExceptionError("SObjectException", "Invalid field: "+fieldArg)
 			}
 		}
@@ -1117,6 +1125,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 			// Event publication identity follows preserveId.
 			delete(cloned.Fields, sobjectPublishedEventIDField)
 		}
+		vm.applySObjectCloneFieldOptions(&cloned, len(args) > 2 && args[2].Bool, len(args) > 3 && args[3].Bool)
 		deleteObjectField(cloned.Fields, sobjectErrorsField)
 		deleteObjectField(cloned.Fields, sobjectReadOnlyField)
 		vm.registerSObjectAliasRecord(cloned)
@@ -1139,8 +1148,13 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 			return Null, true, err
 		}
 		if !fieldTokenArg && vm.Org != nil {
-			if _, known := vm.resolveObjectName(receiver.Type); known {
-				if _, valid := vm.parentRelationshipObjectType(receiver.Type, field); !valid {
+			if _, _, known := vm.sObjectDefinitionForRead(receiver.Type); known {
+				_, valid := vm.parentRelationshipObjectType(receiver.Type, field)
+				if !valid {
+					relation, found := vm.sObjectParentRelationshipMetadataForRead(receiver.Type, field)
+					valid = found && len(relation.ParentObjects) > 0
+				}
+				if !valid {
 					return Null, true, newExceptionError("SObjectException", fmt.Sprintf("Invalid relationship %s for %s", fieldArg, receiver.Type))
 				}
 			}
@@ -1208,7 +1222,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 			return Null, true, newExceptionError("SObjectException", fmt.Sprintf("Invalid aggregate relationship %s for %s", fieldArg, receiver.Type))
 		}
 		if !fieldTokenArg && vm.Org != nil {
-			if objectName, known := vm.resolveObjectName(receiver.Type); known && vm.childRelationshipLookup(objectName, field).ChildType == "" && !vm.loadedContentChildRelationship(receiver, field) {
+			if objectName, _, known := vm.sObjectDefinitionForRead(receiver.Type); known && vm.childRelationshipLookup(objectName, field).ChildType == "" && !vm.loadedContentChildRelationship(receiver, field) {
 				return Null, true, newExceptionError("SObjectException", fmt.Sprintf("Invalid aggregate relationship %s for %s", fieldArg, receiver.Type))
 			}
 		}
@@ -1247,6 +1261,25 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 	default:
 		return Null, false, nil
 	}
+}
+
+// sObjectParentRelationshipMetadataForRead keeps catalog-only record validation
+// local to SObject methods. Installed schemas retain the existing relationship path.
+func (vm *VM) sObjectParentRelationshipMetadataForRead(objectName, relationshipName string) (storage.Relationship, bool) {
+	if _, installed := vm.resolveObjectName(objectName); installed {
+		return vm.parentRelationshipMetadata(objectName, relationshipName)
+	}
+	_, definition, known := vm.sObjectDefinitionForRead(objectName)
+	if !known {
+		return storage.Relationship{}, false
+	}
+	for _, relation := range definition.Relations {
+		if vmRelationshipNameMatches(vm.Org.Namespace, relation.ParentRelationship, relationshipName) ||
+			vmParentRelationshipNameMatches(vm.Org.Namespace, relation.Field, relationshipName) {
+			return relation, true
+		}
+	}
+	return vm.syntheticParentRelationship(definition, relationshipName)
 }
 
 func sObjectPutFieldConversionError(receiver Value, value Value, field storage.Field) error {
@@ -1298,4 +1331,21 @@ func cloneSObjectValue(receiver Value, deep bool) Value {
 		cloned.Fields[field] = value
 	}
 	return cloned
+}
+
+// SystemModstamp remains populated even when preserveReadonlyTimestamps is false.
+func (vm *VM) applySObjectCloneFieldOptions(cloned *Value, preserveReadonlyTimestamps, preserveAutonumber bool) {
+	if !preserveReadonlyTimestamps {
+		for _, field := range []string{"CreatedById", "CreatedDate", "LastModifiedById", "LastModifiedDate"} {
+			deleteObjectField(cloned.Fields, field)
+		}
+	}
+	if !preserveAutonumber {
+		_, definition, _ := vm.describeObjectDefinition(cloned.Type)
+		for name, field := range definition.Fields {
+			if field.AutoNumber {
+				deleteObjectField(cloned.Fields, name)
+			}
+		}
+	}
 }

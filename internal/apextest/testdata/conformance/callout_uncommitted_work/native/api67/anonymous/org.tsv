@@ -1,0 +1,18 @@
+id	value
+UW01	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+UW02	System.CalloutException|Unauthorized endpoint, please check Setup->Security->Remote site settings. endpoint = https://native.invalid
+UW03	uncaught|System.FinalException|Method only allowed during testing
+UW04	uncaught|System.FinalException|Method only allowed during testing
+UW05	System.CalloutException|All active Savepoints must be released before making callouts.
+UW06	System.CalloutException|All active Savepoints must be released before making callouts.
+UW07	System.CalloutException|Unauthorized endpoint, please check Setup->Security->Remote site settings. endpoint = https://native.invalid
+UW08	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+UW09	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+UW10	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+UW11	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+UW12	System.CalloutException|Unauthorized endpoint, please check Setup->Security->Remote site settings. endpoint = https://native.invalid
+UW13	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+UW14	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out|callouts=0
+UW15	System.TypeException|Test.setMock() can only be called from test methods
+UW16	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+UW17	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out

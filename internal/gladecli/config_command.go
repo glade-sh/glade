@@ -24,9 +24,12 @@ type configShowInfo struct {
 	Namespace                  string                            `json:"namespace,omitempty"`
 	SourceAPIVersion           string                            `json:"sourceApiVersion,omitempty"`
 	PackageDirs                []string                          `json:"packageDirs"`
+	ExtraMetadataDirs          []string                          `json:"extraMetadataDirs,omitempty"`
 	OrgFeatures                []string                          `json:"orgFeatures,omitempty"`
 	NamespaceRemaps            []namespaceremap.Rule             `json:"namespaceRemaps,omitempty"`
+	Dependencies               []config.LocalPackageDependency   `json:"dependencies,omitempty"`
 	ManagedPackageDependencies []config.ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
+	DependencyPaths            []string                          `json:"dependencyPaths,omitempty"`
 	PackageShims               []config.PackageShim              `json:"packageShims,omitempty"`
 }
 
@@ -90,14 +93,23 @@ func runConfigShow(args []string, w io.Writer) error {
 		fmt.Fprintf(w, "sourceApiVersion: %s\n", info.SourceAPIVersion)
 	}
 	fmt.Fprintf(w, "packageDirs: %s\n", strings.Join(info.PackageDirs, ", "))
+	if len(info.ExtraMetadataDirs) > 0 {
+		fmt.Fprintf(w, "extraMetadataDirs: %s\n", strings.Join(info.ExtraMetadataDirs, ", "))
+	}
 	if len(info.OrgFeatures) > 0 {
 		fmt.Fprintf(w, "org.features: %s\n", strings.Join(info.OrgFeatures, ", "))
 	}
 	if len(info.NamespaceRemaps) > 0 {
 		fmt.Fprintf(w, "namespaceRemaps: %d\n", len(info.NamespaceRemaps))
 	}
+	if len(info.Dependencies) > 0 {
+		fmt.Fprintf(w, "dependencies: %d\n", len(info.Dependencies))
+	}
 	if len(info.ManagedPackageDependencies) > 0 {
 		fmt.Fprintf(w, "managedPackageDependencies: %d\n", len(info.ManagedPackageDependencies))
+	}
+	if len(info.DependencyPaths) > 0 {
+		fmt.Fprintf(w, "dependencyPaths: %s\n", strings.Join(info.DependencyPaths, ", "))
 	}
 	if len(info.PackageShims) > 0 {
 		fmt.Fprintf(w, "packageShims: %d\n", len(info.PackageShims))
@@ -107,6 +119,10 @@ func runConfigShow(args []string, w io.Writer) error {
 	}
 	if len(info.Test.PermissionSetGroups) > 0 {
 		fmt.Fprintf(w, "test.permissionSetGroups: %s\n", strings.Join(info.Test.PermissionSetGroups, ", "))
+	}
+	if info.Test.HasEnvironment() {
+		env := info.Test.EffectiveEnvironment()
+		fmt.Fprintf(w, "test.user.timeZone: %s\ntest.user.locale: %s\ntest.user.language: %s\ntest.user.defaultCurrencyIsoCode: %s\ntest.clock.start: %s\n", env.User.TimeZone, env.User.Locale, env.User.Language, env.User.DefaultCurrencyISOCode, env.Clock.Start)
 	}
 	return nil
 }
@@ -215,11 +231,12 @@ func loadConfigShowInfo(root string) (configShowInfo, error) {
 		return configShowInfo{}, err
 	}
 	info := configShowInfo{
-		ProjectRoot:      p.Root,
-		Test:             p.Test,
-		Namespace:        p.Namespace,
-		SourceAPIVersion: p.SourceAPIVersion,
-		PackageDirs:      packageDirNames(p.PackageDirectories),
+		ProjectRoot:       p.Root,
+		Test:              p.Test,
+		Namespace:         p.Namespace,
+		SourceAPIVersion:  p.SourceAPIVersion,
+		PackageDirs:       packageDirNames(p.PackageDirectories),
+		ExtraMetadataDirs: p.ExtraMetadataDirs,
 	}
 	cfg, cfgPath, err := config.LoadNearest(p.Root)
 	if err == nil {
@@ -227,7 +244,9 @@ func loadConfigShowInfo(root string) (configShowInfo, error) {
 		info.ConfigPath = cfgPath
 		info.OrgFeatures = cfg.Org.Features
 		info.NamespaceRemaps = cfg.Project.NamespaceRemaps
+		info.Dependencies = cfg.Project.Dependencies
 		info.ManagedPackageDependencies = cfg.Project.ManagedPackageDependencies
+		info.DependencyPaths = cfg.Project.DependencyPaths
 		info.PackageShims = cfg.Project.PackageShims
 	} else if !errors.Is(err, config.ErrNotFound) {
 		return configShowInfo{}, err
@@ -323,7 +342,9 @@ func renderGladeYAML(opts configInitOptions) string {
 		b.WriteString(opts.namespace)
 		b.WriteByte('\n')
 	}
+	b.WriteString("  dependencies: []\n")
 	b.WriteString("  managedPackageDependencies: []\n")
+	b.WriteString("  dependencyPaths: []\n")
 	b.WriteString("org:\n")
 	b.WriteString("  features: ")
 	b.WriteString(renderInlineList(opts.features))

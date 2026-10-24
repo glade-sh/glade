@@ -1,0 +1,10 @@
+row	shape
+Account	repeated describe and Id token read
+Contact	repeated describe and Id token read
+Opportunity	repeated describe and Id token read
+Task	repeated describe and Id token read
+User	repeated describe and Id token read
+globalRead	typed global map preserves case-insensitive reads and lower-case keys
+globalAliasRead	aliased typed maps read the same token
+globalCloneRead	cloned typed maps preserve token reads
+globalCloneSize	cloned typed maps preserve the size

@@ -1,7 +1,6 @@
 package automation
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -62,7 +61,7 @@ func flowCoreNumberAssignment(item flowAssignmentItemXML, variables map[string]f
 		return ""
 	}
 	number := strings.TrimSpace(item.Value.NumberValue)
-	if _, err := strconv.ParseInt(number, 10, 64); err != nil {
+	if _, ok := flowCoreNumericLiteral(number); !ok {
 		return ""
 	}
 	return number
@@ -88,11 +87,21 @@ func flowCoreScalarAssignmentStart(raw flowXML, variables map[string]flowVariabl
 		return ""
 	}
 	item := assignment.Items[0]
-	if !strings.EqualFold(item.Operator, "Assign") || !flowCoreScalarVariableReference(item.AssignToReference, variables) {
+	boolean := invocableFlowActionBooleanAssignment(item, variables) != ""
+	if !strings.EqualFold(item.Operator, "Assign") || (!boolean && !flowCoreScalarVariableReference(item.AssignToReference, variables)) {
 		return ""
 	}
 	value := item.Value
-	if value.ElementReference != "" || value.Formula != "" || value.Expression != "" || value.BooleanValue != "" || value.DateValue != "" || value.DateTimeValue != "" {
+	if value.ElementReference != "" || value.Formula != "" || value.Expression != "" || value.DateValue != "" || value.DateTimeValue != "" {
+		return ""
+	}
+	if boolean {
+		if value.StringValue != "" || value.NumberValue != "" {
+			return ""
+		}
+		return target
+	}
+	if value.BooleanValue != "" {
 		return ""
 	}
 	variable := variables[strings.ToLower(strings.TrimSpace(item.AssignToReference))]

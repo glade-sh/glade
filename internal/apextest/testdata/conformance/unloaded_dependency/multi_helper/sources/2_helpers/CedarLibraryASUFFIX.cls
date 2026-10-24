@@ -1,0 +1,1 @@
+public class CedarLibraryASUFFIX { public static String value() { return 'A'; } }

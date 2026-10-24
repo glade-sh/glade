@@ -1,5 +1,5 @@
 context=istest
-transport=intentional result-bearing assertion; not native test-pass credit
+transport=System.assert
 api=62.0
 source_sha256:62.0:force-app/main/default/classes/GroveTypedOwnerObservationTest.cls=9cc45ed32b2927affd1fe4660e6f75b352c944a913d245e1921531e8913148f3
 source_sha256:62.0:force-app/main/default/classes/GroveTypedOwnerObservationTest.cls-meta.xml=3a31d117e3c855b937d340b20754b03ad66c0c156d57b7c64011aa5437437b51

@@ -1,0 +1,7 @@
+api=62.0
+context=istest
+rows=17
+native_complete=true
+deployment_success=true
+captured_utc=2026-10-22T04:03:55.227407+00:00
+transport=System.assert

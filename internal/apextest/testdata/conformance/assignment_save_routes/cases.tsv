@@ -1,0 +1,65 @@
+id	shape
+Lead_insert_options_chunk	Lead insert options chunk
+Lead_insert_options_before_partial	Lead insert options before partial
+Lead_insert_options_after_partial	Lead insert options after partial
+Lead_insert_options_before_atomic	Lead insert options before atomic
+Lead_insert_options_after_atomic	Lead insert options after atomic
+Lead_insert_setoptions_chunk	Lead insert setoptions chunk
+Lead_insert_setoptions_before_partial	Lead insert setoptions before partial
+Lead_insert_setoptions_after_partial	Lead insert setoptions after partial
+Lead_insert_setoptions_before_atomic	Lead insert setoptions before atomic
+Lead_insert_setoptions_after_atomic	Lead insert setoptions after atomic
+Lead_insert_scalar_before_atomic	Lead insert scalar before atomic
+Lead_update_options_chunk	Lead update options chunk
+Lead_update_options_before_partial	Lead update options before partial
+Lead_update_options_after_partial	Lead update options after partial
+Lead_update_options_before_atomic	Lead update options before atomic
+Lead_update_options_after_atomic	Lead update options after atomic
+Lead_update_setoptions_chunk	Lead update setoptions chunk
+Lead_update_setoptions_before_partial	Lead update setoptions before partial
+Lead_update_setoptions_after_partial	Lead update setoptions after partial
+Lead_update_setoptions_before_atomic	Lead update setoptions before atomic
+Lead_update_setoptions_after_atomic	Lead update setoptions after atomic
+Lead_update_scalar_before_atomic	Lead update scalar before atomic
+Case_insert_options_chunk	Case insert options chunk
+Case_insert_options_before_partial	Case insert options before partial
+Case_insert_options_after_partial	Case insert options after partial
+Case_insert_options_before_atomic	Case insert options before atomic
+Case_insert_options_after_atomic	Case insert options after atomic
+Case_insert_setoptions_chunk	Case insert setoptions chunk
+Case_insert_setoptions_before_partial	Case insert setoptions before partial
+Case_insert_setoptions_after_partial	Case insert setoptions after partial
+Case_insert_setoptions_before_atomic	Case insert setoptions before atomic
+Case_insert_setoptions_after_atomic	Case insert setoptions after atomic
+Case_insert_scalar_before_atomic	Case insert scalar before atomic
+Case_update_options_chunk	Case update options chunk
+Case_update_options_before_partial	Case update options before partial
+Case_update_options_after_partial	Case update options after partial
+Case_update_options_before_atomic	Case update options before atomic
+Case_update_options_after_atomic	Case update options after atomic
+Case_update_setoptions_chunk	Case update setoptions chunk
+Case_update_setoptions_before_partial	Case update setoptions before partial
+Case_update_setoptions_after_partial	Case update setoptions after partial
+Case_update_setoptions_before_atomic	Case update setoptions before atomic
+Case_update_setoptions_after_atomic	Case update setoptions after atomic
+Case_update_scalar_before_atomic	Case update scalar before atomic
+Lead_insert_options_chunkbefore_partial	Lead insert options chunkbefore partial
+Lead_insert_options_chunkafter_partial	Lead insert options chunkafter partial
+Lead_update_options_chunkbefore_partial	Lead update options chunkbefore partial
+Lead_update_options_chunkafter_partial	Lead update options chunkafter partial
+Case_insert_options_chunkbefore_partial	Case insert options chunkbefore partial
+Case_insert_options_chunkafter_partial	Case insert options chunkafter partial
+Case_update_options_chunkbefore_partial	Case update options chunkbefore partial
+Case_update_options_chunkafter_partial	Case update options chunkafter partial
+Lead_insert_statement_chunk	Lead insert statement chunk
+Lead_insert_statement_before_atomic	Lead insert statement before atomic
+Lead_insert_statement_after_atomic	Lead insert statement after atomic
+Lead_update_statement_chunk	Lead update statement chunk
+Lead_update_statement_before_atomic	Lead update statement before atomic
+Lead_update_statement_after_atomic	Lead update statement after atomic
+Case_insert_statement_chunk	Case insert statement chunk
+Case_insert_statement_before_atomic	Case insert statement before atomic
+Case_insert_statement_after_atomic	Case insert statement after atomic
+Case_update_statement_chunk	Case update statement chunk
+Case_update_statement_before_atomic	Case update statement before atomic
+Case_update_statement_after_atomic	Case update statement after atomic

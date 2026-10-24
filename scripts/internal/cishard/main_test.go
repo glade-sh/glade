@@ -41,6 +41,15 @@ func TestCIPackageManifestLoadsExactLivePackageSet(t *testing.T) {
 			t.Errorf("manifest output missing lane %q", lane)
 		}
 	}
+	t.Run("remaining-go browser helper route", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+		if rc := run([]string{"--package-manifest", manifestPath, "--packages", packagesPath, "--lane", "remaining-go"}, strings.NewReader(""), &stdout, &stderr); rc != 0 {
+			t.Fatalf("remaining-go load rc=%d stderr=%s", rc, stderr.String())
+		}
+		if strings.Count(stdout.String(), "remaining-go\t./internal/testutil/browserapi\n") != 1 {
+			t.Fatal("remaining-go must own the browser API helper exactly once")
+		}
+	})
 	if err := os.WriteFile(packagesPath, append(packages, []byte("github.com/glade-sh/glade/internal/newpackage\n")...), 0o600); err != nil {
 		t.Fatal(err)
 	}

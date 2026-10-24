@@ -1,0 +1,5 @@
+apis=62.0,67.0
+routes=anonymous,named,istest
+rows=36
+native_complete=true
+source_sha256 cases.json 2aee28ec019d44cf30f24d7f44611e19ddc602f7d9071e03e6408a89601fe1ba

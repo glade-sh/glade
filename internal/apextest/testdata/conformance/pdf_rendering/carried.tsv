@@ -1,0 +1,23 @@
+source_api	configuration	route	case_id	reason
+62.0	plain	anonymous	emptyInput	Hosted PDF boundary: Blob.toPdf(String) is explicitly unsupported locally.
+62.0	plain	anonymous	megabyte	Hosted PDF boundary: Blob.toPdf(String) is explicitly unsupported locally.
+62.0	plain	anonymous	megabytePlus	Hosted PDF boundary: Blob.toPdf(String) is explicitly unsupported locally.
+62.0	plain	anonymous	missingPage	Page reference rendering: missing-page validation and test-method rejection differ locally.
+62.0	plain	anonymous	text	Hosted PDF boundary: Blob.toPdf(String) is explicitly unsupported locally.
+62.0	plain	isTest	emptyInput	Hosted PDF boundary: Blob.toPdf(String) is explicitly unsupported locally.
+62.0	plain	isTest	megabyte	Hosted PDF boundary: Blob.toPdf(String) is explicitly unsupported locally.
+62.0	plain	isTest	megabytePlus	Hosted PDF boundary: Blob.toPdf(String) is explicitly unsupported locally.
+62.0	plain	isTest	missingPage	Page reference rendering: missing-page validation and test-method rejection differ locally.
+62.0	plain	isTest	page	Page reference rendering: native test methods reject getContent; local rendering returns a PDF header.
+62.0	plain	isTest	text	Hosted PDF boundary: Blob.toPdf(String) is explicitly unsupported locally.
+67.0	plain	anonymous	emptyInput	Hosted PDF boundary: Blob.toPdf(String) is explicitly unsupported locally.
+67.0	plain	anonymous	megabyte	Hosted PDF boundary: Blob.toPdf(String) is explicitly unsupported locally.
+67.0	plain	anonymous	megabytePlus	Hosted PDF boundary: Blob.toPdf(String) is explicitly unsupported locally.
+67.0	plain	anonymous	missingPage	Page reference rendering: missing-page validation and test-method rejection differ locally.
+67.0	plain	anonymous	text	Hosted PDF boundary: Blob.toPdf(String) is explicitly unsupported locally.
+67.0	plain	isTest	emptyInput	Hosted PDF boundary: Blob.toPdf(String) is explicitly unsupported locally.
+67.0	plain	isTest	megabyte	Hosted PDF boundary: Blob.toPdf(String) is explicitly unsupported locally.
+67.0	plain	isTest	megabytePlus	Hosted PDF boundary: Blob.toPdf(String) is explicitly unsupported locally.
+67.0	plain	isTest	missingPage	Page reference rendering: missing-page validation and test-method rejection differ locally.
+67.0	plain	isTest	page	Page reference rendering: native test methods reject getContent; local rendering returns a PDF header.
+67.0	plain	isTest	text	Hosted PDF boundary: Blob.toPdf(String) is explicitly unsupported locally.

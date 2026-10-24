@@ -1,10 +1,15 @@
 package vm_test
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -103,17 +108,27 @@ System.assertEquals(false, caught);
 	}
 }
 
-func TestPageReferenceGetContentRestoresCurrentPageContext(t *testing.T) {
+func TestPageReferenceRendererRestoresCurrentPageContext(t *testing.T) {
 	root := makePageReferenceContentProject(t, `<apex:page><h1>Invoice Total</h1></apex:page>`)
 	writePageRenderTestFile(t, filepath.Join(root, "force-app/main/default/pages/Inner.page"), `<apex:page><span>Inner Body</span></apex:page>`)
 	machine := compileContentProject(t, root)
 	machine.EnableTestContext()
 	visualforce.SetVMRenderEnvironment(machine, mustLoadProject(t, root))
-
+	setup, err := vm.CompileAnonymous(`Test.setCurrentPage(new PageReference('/apex/Outer?mode=edit'));`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(setup); err != nil {
+		t.Fatal(err)
+	}
+	body, err := visualforce.RenderPageURL(machine, "/apex/Inner", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(body.Fields["value"].Text, "Inner Body") {
+		t.Fatal("missing inner page body")
+	}
 	program, err := vm.CompileAnonymous(`
-Test.setCurrentPage(new PageReference('/apex/Outer?mode=edit'));
-Blob body = new PageReference('/apex/Inner').getContent();
-System.assert(body.toString().contains('Inner Body'));
 System.assertEquals('/apex/Outer?mode=edit', ApexPages.currentPage().getUrl());
 System.assertEquals('edit', ApexPages.currentPage().getParameters().get('mode'));
 `)
@@ -161,7 +176,10 @@ func TestPageReferenceGetContentAsPDFRendersDefaultPDFBlob(t *testing.T) {
 		t.Fatalf("body = %#v, want Blob", body)
 	}
 	pdf := body.Fields["value"].Text
-	if !strings.HasPrefix(pdf, "%PDF-1.4") || !strings.Contains(pdf, "Invoice Total") {
+	if !strings.Contains(pagePDFStreamText(t, []byte(pdf)), "(Invoice Total)Tj") {
+		t.Fatal("PDF omitted Invoice Total page text")
+	}
+	if !strings.HasPrefix(pdf, "%PDF-1.4") || !strings.Contains(pdf, "/BaseFont/Times-Roman") || !strings.Contains(pdf, "/Filter/FlateDecode") {
 		t.Fatalf("pdf blob = %q", pdf[:min(len(pdf), 80)])
 	}
 }
@@ -217,5 +235,104 @@ func writePageRenderTestFile(t *testing.T, path, content string) {
 	}
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func pagePDFStreamText(t *testing.T, data []byte) string {
+	t.Helper()
+	var text strings.Builder
+	for _, m := range regexp.MustCompile(`/Length (\d+)>>stream\n`).FindAllSubmatchIndex(data, -1) {
+		n, err := strconv.Atoi(string(data[m[2]:m[3]]))
+		if err != nil || n > len(data)-m[1] {
+			t.Fatal("invalid PDF stream length")
+		}
+		r, err := zlib.NewReader(bytes.NewReader(data[m[1] : m[1]+n]))
+		if err != nil {
+			t.Fatal(err)
+		}
+		content, err := io.ReadAll(r)
+		r.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		text.Write(content)
+	}
+	return text.String()
+}
+
+func TestPageReferenceContentTestContextRoutes(t *testing.T) {
+	for _, method := range []string{"getContent", "getContentAsPDF"} {
+		for route, receiver := range map[string]string{
+			"constructor":   "new PageReference('/apex/Invoice')",
+			"page_constant": "Page.Invoice",
+		} {
+			t.Run("test_context/"+method+"/"+route, func(t *testing.T) {
+				root := makePageReferenceContentProject(t, `<apex:page><h1>Invoice Total</h1></apex:page>`)
+				machine := compileContentProject(t, root)
+				machine.EnableTestContext()
+				visualforce.SetVMRenderEnvironment(machine, mustLoadProject(t, root))
+				t.Cleanup(func() { visualforce.ClearVMRenderEnvironment(machine) })
+				program, err := vm.CompileAnonymous(receiver + "." + method + "();")
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = machine.Execute(program)
+				var runtimeErr *vm.RuntimeError
+				if !errors.As(err, &runtimeErr) || strings.TrimPrefix(runtimeErr.Type, "System.") != "VisualforceException" || runtimeErr.ExceptionMessage() != "Methods defined as TestMethod do not support getContent call" {
+					t.Fatalf("route %s.%s: got %v, want native VisualforceException", route, method, err)
+				}
+			})
+		}
+	}
+}
+
+func TestPageReferenceContentAnonymousLocalRoutes(t *testing.T) {
+	for _, method := range []string{"getContent", "getContentAsPDF"} {
+		for route, receiver := range map[string]string{
+			"constructor":   "new PageReference('/apex/Invoice')",
+			"page_constant": "Page.Invoice",
+		} {
+			t.Run("anonymous_local/"+method+"/"+route, func(t *testing.T) {
+				root := makePageReferenceContentProject(t, `<apex:page><h1>Invoice Total</h1></apex:page>`)
+				machine := compileContentProject(t, root)
+				visualforce.SetVMRenderEnvironment(machine, mustLoadProject(t, root))
+				t.Cleanup(func() { visualforce.ClearVMRenderEnvironment(machine) })
+				program, err := vm.CompileAnonymous("Blob body = " + receiver + "." + method + "(); System.assert(body.size() > 0);")
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := machine.Execute(program); err != nil {
+					t.Fatal(err)
+				}
+			})
+		}
+	}
+}
+
+func TestPageReferenceContentTestRejectionPreservesCurrentPageContext(t *testing.T) {
+	for _, method := range []string{"getContent", "getContentAsPDF"} {
+		t.Run("test_context/"+method+"/current_page", func(t *testing.T) {
+			machine := vm.New(nil)
+			machine.EnableTestContext()
+			program, err := vm.CompileAnonymous(`
+Test.setCurrentPage(new PageReference('/apex/Outer?mode=edit'));
+Boolean caught = false;
+try {
+    new PageReference('/apex/Inner').` + method + `();
+} catch (VisualforceException e) {
+    caught = true;
+    System.assertEquals('Methods defined as TestMethod do not support getContent call', e.getMessage());
+}
+System.assertEquals(true, caught);
+System.assertEquals('/apex/Outer?mode=edit', ApexPages.currentPage().getUrl());
+System.assertEquals('edit', ApexPages.currentPage().getParameters().get('mode'));
+`)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := machine.Execute(program); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }

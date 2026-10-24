@@ -1,0 +1,4 @@
+source_api	case	outcome
+62.0	accepted	accepted
+62.0	null_boundary	accepted
+62.0	rejected	rejected

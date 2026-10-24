@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"maps"
 	"reflect"
 	"sort"
 	"strconv"
@@ -11,6 +12,18 @@ import (
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
 )
+
+// Keep target and permission identities separate so warm describe lookups do
+// not allocate concatenated keys. Permission assignments are still read anew
+// for each lookup, including updates that leave the record count unchanged.
+type describeCacheKey struct {
+	ObjectName     string
+	FieldName      string
+	ProfileID      string
+	UserID         string
+	PermissionSets string
+	TaskFieldOrder bool
+}
 
 // childRelationshipCache memoizes parent-object -> child relationship describe
 // values. The result depends only on the org schema (object definitions and
@@ -249,11 +262,12 @@ func cloneChildRelationshipValue(value Value) Value {
 
 func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinition) Value {
 	cacheKey := vm.describeSObjectCacheKey(name)
-	if cacheKey != "" {
+	if cacheKey != (describeCacheKey{}) {
 		if cached, ok := vm.describeCache[cacheKey]; ok {
 			return cached
 		}
 	}
+	share, source := vm.sharedDescribeFor(name, definition)
 	definition = vm.describePreparedDefinition(name, definition)
 	desc := Object("Schema.DescribeSObjectResult")
 	desc.Fields["name"] = String(vm.describeObjectName(name))
@@ -301,47 +315,16 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	desc.Fields["isInterface"] = Bool(false)
 	desc.Fields["isSubtype"] = Bool(false)
 	desc.Fields["sObjectDescribeOption"] = sObjectDescribeOptionsValue("DEFERRED")
-	fieldsMap := Map()
-	fieldsMap.Type = "Schema.SObjectFieldMap"
-	fieldsMap.Runtime = "sobjectfieldmap:" + name
-	fieldNames := make([]string, 0, len(definition.Fields))
-	for fieldName := range definition.Fields {
-		fieldNames = append(fieldNames, fieldName)
+	var fieldsMap Value
+	sharedFields := false
+	if share != nil && cacheKey != (describeCacheKey{}) {
+		key := describeShareFieldMapKey{object: name, callerNamespace: strings.TrimSpace(vm.currentCallerNamespace()), describeKey: cacheKey}
+		fieldsMap, sharedFields = vm.sharedFieldMap(share, key, source, func() Value {
+			return vm.describeSObjectFieldMap(name, definition)
+		})
 	}
-	vm.sortDescribeFieldNames(name, definition, fieldNames)
-	for _, fieldName := range fieldNames {
-		field := definition.Fields[fieldName]
-		apiName := field.APIName
-		if strings.TrimSpace(apiName) == "" {
-			apiName = fieldName
-		}
-		if strings.TrimSpace(apiName) == "" {
-			continue
-		}
-		field.APIName = apiName
-		field = describeFieldWithSystemOverlay(field)
-		token := vm.sObjectFieldTokenFromField(name, field)
-		vm.addSObjectFieldMapFieldEntry(&fieldsMap, name, definition, field, token)
-	}
-	defaultFieldNames := []string{"Id", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"}
-	if storage.IsGeneratedHistoryObject(definition) {
-		defaultFieldNames = nil
-	} else if storage.IsCustomMetadataDefinition(definition) {
-		// Metadata identity fields are already supplied by the schema overlay.
-		// CMT describes have no ordinary record audit, Name or OwnerId fields.
-		defaultFieldNames = []string{"Id", "SystemModstamp"}
-	} else if isCustomObjectLikeName(definition.APIName) {
-		defaultFieldNames = append(defaultFieldNames, "Name")
-		if !storage.IsMasterDetailCustomObject(definition) {
-			defaultFieldNames = append(defaultFieldNames, "OwnerId")
-		}
-	}
-	for _, fieldName := range defaultFieldNames {
-		if _, ok := fieldsMap.Map[mapKey(String(fieldName))]; ok {
-			continue
-		}
-		token := vm.sObjectFieldToken(name, fieldName)
-		vm.addSObjectFieldMapEntry(&fieldsMap, name, fieldName, token)
+	if !sharedFields {
+		fieldsMap = vm.describeSObjectFieldMap(name, definition)
 	}
 	fields := Object("Schema.SObjectFieldMap")
 	fields.Fields["map"] = fieldsMap
@@ -381,10 +364,59 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	desc.Fields["recordTypeInfosByName"] = byName
 	desc.Fields["recordTypeInfosByDeveloperName"] = byDeveloperName
 	desc.Fields["recordTypeInfosById"] = byID
-	if cacheKey != "" {
+	if cacheKey != (describeCacheKey{}) {
 		vm.describeCache[cacheKey] = desc
 	}
 	return desc
+}
+
+// describeSObjectFieldMap builds the field tokens and their aliases from a
+// prepared definition. The result stays immutable while shared across clones.
+func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefinition) Value {
+	fieldsMap := Map()
+	fieldsMap.Type = "Schema.SObjectFieldMap"
+	fieldsMap.Runtime = "sobjectfieldmap:" + name
+	fieldNames := make([]string, 0, len(definition.Fields))
+	for fieldName := range definition.Fields {
+		fieldNames = append(fieldNames, fieldName)
+	}
+	vm.sortDescribeFieldNames(name, definition, fieldNames)
+	for _, fieldName := range fieldNames {
+		field := definition.Fields[fieldName]
+		apiName := field.APIName
+		if strings.TrimSpace(apiName) == "" {
+			apiName = fieldName
+		}
+		if strings.TrimSpace(apiName) == "" {
+			continue
+		}
+		field.APIName = apiName
+		field = describeFieldWithSystemOverlay(field)
+		token := vm.sObjectFieldTokenFromField(name, field)
+		vm.addSObjectFieldMapFieldEntry(&fieldsMap, name, definition, field, token)
+	}
+	defaultFieldNames := []string{"Id", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"}
+	if storage.IsGeneratedHistoryObject(definition) || storage.IsChangeEventObject(definition) {
+		// A change event's captured fields are already in its definition.
+		defaultFieldNames = nil
+	} else if storage.IsCustomMetadataDefinition(definition) {
+		// Metadata identity fields are already supplied by the schema overlay.
+		// CMT describes have no ordinary record audit, Name or OwnerId fields.
+		defaultFieldNames = []string{"Id", "SystemModstamp"}
+	} else if isCustomObjectLikeName(definition.APIName) {
+		defaultFieldNames = append(defaultFieldNames, "Name")
+		if !storage.IsMasterDetailCustomObject(definition) {
+			defaultFieldNames = append(defaultFieldNames, "OwnerId")
+		}
+	}
+	for _, fieldName := range defaultFieldNames {
+		if _, ok := fieldsMap.Map[mapKey(String(fieldName))]; ok {
+			continue
+		}
+		token := vm.sObjectFieldToken(name, fieldName)
+		vm.addSObjectFieldMapEntry(&fieldsMap, name, fieldName, token)
+	}
+	return fieldsMap
 }
 
 func (vm *VM) describeChildRelationshipsForDescribe(receiver *Value) (Value, error) {
@@ -415,6 +447,24 @@ func (vm *VM) describePreparedDefinition(name string, definition storage.ObjectD
 			return cached
 		}
 	}
+	if share, source := vm.sharedDescribeFor(name, definition); share != nil && cacheKey != "" {
+		prepared, ok := vm.sharedPreparedDefinition(share, name, source, func() storage.ObjectDefinition {
+			return vm.prepareDescribeDefinition(name, definition)
+		})
+		if ok {
+			vm.describeDefCache[cacheKey] = prepared
+			return prepared
+		}
+	}
+	definition = vm.prepareDescribeDefinition(name, definition)
+	if vm != nil && cacheKey != "" {
+		vm.describeDefCache[cacheKey] = definition
+	}
+	return definition
+}
+
+// prepareDescribeDefinition privately completes a definition for describe.
+func (vm *VM) prepareDescribeDefinition(name string, definition storage.ObjectDefinition) storage.ObjectDefinition {
 	definition = cloneDescribeObjectDefinition(definition)
 	if definition.KeyPrefix == "" {
 		prefixName := definition.APIName
@@ -448,9 +498,6 @@ func (vm *VM) describePreparedDefinition(name string, definition storage.ObjectD
 		ensureMasterRecordType(&definition)
 	}
 	vm.applyAccountDescribeDefaults(&definition)
-	if vm != nil && cacheKey != "" {
-		vm.describeDefCache[cacheKey] = definition
-	}
 	return definition
 }
 
@@ -612,6 +659,13 @@ func (vm *VM) describeChildRelationships(name string) []Value {
 	if cached, ok := vm.childRelCache.load(target); ok {
 		return cached
 	}
+	platformChildren := vm.contentChildRelationships(name)
+	platformByField := make(map[string]storage.Relationship, len(platformChildren))
+	childFieldKey := func(child, field string) string { return strings.ToLower(child) + "\x00" + strings.ToLower(field) }
+	for _, child := range platformChildren {
+		platformByField[childFieldKey(child.childObject, child.relationship.Field)] = child.relationship
+	}
+	seenPlatformFields := make(map[string]bool, len(platformChildren))
 	childRelationships := make([]Value, 0)
 	childObjects := make([]string, 0, len(vm.Org.Objects))
 	for childName := range vm.Org.Objects {
@@ -619,14 +673,18 @@ func (vm *VM) describeChildRelationships(name string) []Value {
 	}
 	sort.Strings(childObjects)
 	for _, childName := range childObjects {
+		if eventDefinition := vm.Org.Objects[childName].Definition; storage.IsChangeEventObject(eventDefinition) {
+			childRelationships = append(childRelationships, vm.standardChangeEventChildRelationships(name, childName, eventDefinition)...)
+			continue
+		}
 		childDefinition := vm.describePreparedDefinition(childName, vm.Org.Objects[childName].Definition)
 		relationships := append([]storage.Relationship(nil), childDefinition.Relations...)
 		relationships = append(relationships, syntheticSystemParentRelationsForDefinition(childDefinition)...)
 		sort.Slice(relationships, func(i, j int) bool {
-			if relationships[i].ChildRelationship == relationships[j].ChildRelationship {
-				return relationships[i].Field < relationships[j].Field
+			if relationships[i].Field == relationships[j].Field {
+				return relationships[i].ChildRelationship < relationships[j].ChildRelationship
 			}
-			return relationships[i].ChildRelationship < relationships[j].ChildRelationship
+			return relationships[i].Field < relationships[j].Field
 		})
 		for _, relationship := range relationships {
 			// A208/A217: inherited Activity lookups are not separate Task/Event
@@ -635,6 +693,13 @@ func (vm *VM) describeChildRelationships(name string) []Value {
 				continue
 			}
 			if relationshipTargetsObject(relationship, name) {
+				if len(platformChildren) != 0 {
+					key := childFieldKey(childName, relationship.Field)
+					if platform, ok := platformByField[key]; ok {
+						relationship = platform
+					}
+					seenPlatformFields[key] = true
+				}
 				if relationship.ChildRelationship == "" && !vm.capturedTaskAccountChildRelationship(childName, relationship) && canDeriveChildRelationshipName(name, childName, relationship) {
 					relationship.ChildRelationship = derivedVMChildRelationshipName(childDefinition)
 				}
@@ -645,20 +710,39 @@ func (vm *VM) describeChildRelationships(name string) []Value {
 			}
 		}
 	}
-	for _, child := range vm.contentChildRelationships(name) {
-		present := false
-		for _, value := range childRelationships {
-			if relationshipName, ok := value.Fields["relationshipName"]; ok && strings.EqualFold(relationshipName.Text, child.relationship.ChildRelationship) {
-				present = true
-				break
-			}
-		}
-		if !present {
+	for _, child := range platformChildren {
+		if !seenPlatformFields[childFieldKey(child.childObject, child.relationship.Field)] {
 			childRelationships = append(childRelationships, vm.childRelationshipValue(child.childObject, child.relationship))
 		}
 	}
 	vm.childRelCache.store(target, childRelationships)
 	return childRelationships
+}
+
+// standardChangeEventChildRelationships lists an installed standard change
+// event under parent as the standard describe catalog does, with a null
+// relationship name (change_event_describe rows: Account lists
+// AccountChangeEvent.ParentId:null). Custom change events are never listed.
+func (vm *VM) standardChangeEventChildRelationships(parent, event string, definition storage.ObjectDefinition) []Value {
+	if isCustomObjectLikeName(definition.Metadata["parentObject"]) {
+		return nil
+	}
+	var out []Value
+	storage.VisitStandardChildRelationships(parent, func(child string, relationship storage.Relationship) {
+		if !strings.EqualFold(child, event) {
+			return
+		}
+		field, ok := storage.ResolveFieldName(definition, "", relationship.Field)
+		if !ok {
+			return
+		}
+		relationship.Field = definition.Fields[field].APIName
+		relationship.ChildRelationship = ""
+		value := vm.childRelationshipValue(event, relationship)
+		value.Fields["relationshipName"] = Null
+		out = append(out, value)
+	})
+	return out
 }
 
 // globalDescribeMapType marks the global describe map. Runtime keeps the mark
@@ -669,6 +753,24 @@ const globalDescribeMapType = "Schema.GlobalDescribeMap"
 func (vm *VM) globalDescribeMapValue() Value {
 	value := vm.schemaGlobalDescribe()
 	value.Runtime = globalDescribeMapType
+	if vm.Org == nil || vm.Org.Namespace == "" {
+		return value
+	}
+	// Global describe exposes only qualified owner-side custom entities. Keep
+	// this projection separate from the raw app/module map and its cache.
+	value.Map = maps.Clone(value.Map)
+	for key, token := range value.Map {
+		objectName := token.Fields["object"].Text
+		if vm.ownedGlobalDescribeLocalKey(mapStoredKey(value, key).Text, objectName) {
+			delete(value.Map, key)
+		}
+	}
+	for name := range vm.Org.Objects {
+		if vm.ownedNamespacedCustomGlobalDescribe(name) {
+			event := name[:len(name)-len("__c")] + "__ChangeEvent"
+			value.Map[mapKey(String(strings.ToLower(event)))] = sObjectTypeToken(event)
+		}
+	}
 	return value
 }
 
@@ -693,7 +795,7 @@ func (vm *VM) schemaDescribeMapAliases(name string) []string {
 		}
 	}
 	add(name)
-	if vm.ownedNamespacedCustomGlobalDescribe(name) {
+	if vm.ownedNamespacedCustomGlobalDescribe(name) && strings.EqualFold(vm.currentCallerNamespace(), vm.Org.Namespace) {
 		return aliases
 	}
 	if vm.Org != nil && vm.Org.Namespace != "" {
@@ -723,6 +825,9 @@ func (vm *VM) subscriberNamespacedCustomMetadataDescribe(name string) bool {
 // Native NS360A/NS361A: a key with another namespace prefix names no object,
 // so the lookup never strips a foreign prefix.
 func (vm *VM) schemaDescribeLookupAliases(key string) []string {
+	if vm.ownedGlobalDescribeLocalKey(key, key) {
+		return nil
+	}
 	return vm.schemaDescribeAliases(key)
 }
 
@@ -758,6 +863,9 @@ func (vm *VM) globalDescribeContainsKeyNamesObject(key, resolved string) bool {
 // do not: zzns3__<name> is not a key of <name>. An unprefixed key and the
 // project or caller namespace keep their existing resolution.
 func (vm *VM) globalDescribeKeyNamesObject(key, resolved string) bool {
+	if vm.ownedGlobalDescribeLocalKey(key, resolved) {
+		return false
+	}
 	keyNamespace, prefixed := namespaceTokenPrefix(strings.TrimSpace(key))
 	if !prefixed {
 		return true
@@ -788,6 +896,15 @@ func (vm *VM) describeObjectDefinition(objectName string) (string, storage.Objec
 	}
 	if event, ok := standardChangeEventName(objectName); ok {
 		return event, storage.ObjectDefinition{APIName: event}, true
+	}
+	if vm.Org != nil && hasSuffixFold(objectName, "__ChangeEvent") {
+		base := objectName[:len(objectName)-len("__ChangeEvent")] + "__c"
+		if canonical, ok := vm.resolveObjectName(base); ok && vm.ownedNamespacedCustomGlobalDescribe(canonical) {
+			event := canonical[:len(canonical)-len("__c")] + "__ChangeEvent"
+			if strings.EqualFold(event, objectName) {
+				return event, storage.ObjectDefinition{APIName: event}, true
+			}
+		}
 	}
 	switch {
 	case strings.EqualFold(objectName, "SObject"):
@@ -1223,6 +1340,9 @@ func isCustomFieldOrRelationshipType(name string) bool {
 }
 
 func relationshipTargetsObject(relationship storage.Relationship, objectName string) bool {
+	if match, prepared := relationship.PreparedParentObjectMatch(objectName); prepared {
+		return match
+	}
 	objectName = strings.TrimSpace(objectName)
 	if objectName == "" {
 		return false
@@ -1321,6 +1441,9 @@ func describeChildRelationshipName(namespace, childObject, relationshipName stri
 	name := strings.TrimSpace(relationshipName)
 	if name == "" {
 		return name
+	}
+	if strings.EqualFold(name, "Shares") && hasSuffixFold(childObject, "__Share") {
+		return "Shares"
 	}
 	if isCustomObjectLikeName(storage.StripNamespaceToken(namespace, childObject)) && !hasSuffixFold(name, "__r") {
 		name += "__r"
@@ -1485,6 +1608,7 @@ func (vm *VM) fieldSetMemberValue(objectName string, definition storage.ObjectDe
 	displayType := String("STRING")
 	if fieldName, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, member.Field); ok {
 		field := definition.Fields[fieldName]
+		value.Fields["fieldPath"] = String(vm.describeFieldName(field.APIName))
 		if field.Label != "" {
 			label = field.Label
 		} else if field.APIName != "" {
@@ -1500,7 +1624,8 @@ func (vm *VM) fieldSetMemberValue(objectName string, definition storage.ObjectDe
 			value.Fields["dbRequired"] = Bool(true)
 		}
 		value.Fields["sObjectField"] = vm.sObjectFieldTokenFromField(objectName, field)
-	} else if relatedObjectName, field, ok := vm.resolveRelationshipFieldPath(definition, member.Field); ok {
+	} else if relatedObjectName, field, path, ok := vm.resolveQualifiedRelationshipFieldPath(definition, member.Field); ok {
+		value.Fields["fieldPath"] = String(path)
 		if field.Label != "" {
 			label = field.Label
 		} else if field.APIName != "" {
@@ -1525,9 +1650,14 @@ func (vm *VM) fieldSetMemberValue(objectName string, definition storage.ObjectDe
 }
 
 func (vm *VM) resolveRelationshipFieldPath(definition storage.ObjectDefinition, fieldPath string) (string, storage.Field, bool) {
+	objectName, field, _, ok := vm.resolveQualifiedRelationshipFieldPath(definition, fieldPath)
+	return objectName, field, ok
+}
+
+func (vm *VM) resolveQualifiedRelationshipFieldPath(definition storage.ObjectDefinition, fieldPath string) (string, storage.Field, string, bool) {
 	parts := strings.Split(strings.TrimSpace(fieldPath), ".")
 	if len(parts) < 2 {
-		return "", storage.Field{}, false
+		return "", storage.Field{}, "", false
 	}
 	namespace := ""
 	if vm.Org != nil {
@@ -1538,16 +1668,20 @@ func (vm *VM) resolveRelationshipFieldPath(definition storage.ObjectDefinition, 
 	for i, part := range parts[:len(parts)-1] {
 		fieldName, ok := resolveRelationshipFieldName(currentDefinition, namespace, part)
 		if !ok {
-			return "", storage.Field{}, false
+			return "", storage.Field{}, "", false
 		}
 		field := currentDefinition.Fields[fieldName]
+		parts[i] = field.RelationshipName
+		if name := vm.describeFieldName(field.APIName); hasSuffixFold(name, "__c") {
+			parts[i] = name[:len(name)-len("__c")] + "__r"
+		}
 		if len(field.ReferenceTo) == 0 {
-			return "", storage.Field{}, false
+			return "", storage.Field{}, "", false
 		}
 		currentObjectName = field.ReferenceTo[0]
 		resolvedObjectName, resolvedDefinition, ok := vm.describeObjectDefinition(currentObjectName)
 		if !ok {
-			return "", storage.Field{}, false
+			return "", storage.Field{}, "", false
 		}
 		currentObjectName = resolvedObjectName
 		currentDefinition = resolvedDefinition
@@ -1557,9 +1691,11 @@ func (vm *VM) resolveRelationshipFieldPath(definition storage.ObjectDefinition, 
 	}
 	leafName, ok := storage.ResolveFieldName(currentDefinition, namespace, parts[len(parts)-1])
 	if !ok {
-		return "", storage.Field{}, false
+		return "", storage.Field{}, "", false
 	}
-	return currentObjectName, currentDefinition.Fields[leafName], true
+	field := currentDefinition.Fields[leafName]
+	parts[len(parts)-1] = vm.describeFieldName(field.APIName)
+	return currentObjectName, field, strings.Join(parts, "."), true
 }
 
 func resolveRelationshipFieldName(definition storage.ObjectDefinition, namespace, relationshipName string) (string, bool) {
@@ -1841,6 +1977,14 @@ func describeFieldControllerValues(definition storage.ObjectDefinition, controll
 }
 
 func (vm *VM) lookupFieldDescribeCache(objectName, fieldName string) (Value, bool) {
+	if strings.TrimSpace(fieldName) == "" {
+		return Null, false
+	}
+	// The requested spelling is the first alias. Most reads already have it;
+	// build the remaining alias keys only when that direct lookup misses.
+	if cached, ok := vm.fieldDescribeCache[vm.fieldDescribeCacheKey(objectName, fieldName)]; ok {
+		return cached, true
+	}
 	for _, key := range vm.fieldDescribeCacheKeys(objectName, fieldName) {
 		if cached, ok := vm.fieldDescribeCache[key]; ok {
 			return cached, true
@@ -1852,9 +1996,9 @@ func (vm *VM) lookupFieldDescribeCache(objectName, fieldName string) (Value, boo
 func (vm *VM) storeFieldDescribeCacheAliases(objectName, requestedFieldName, resolvedFieldName string, value Value) {
 	keys := vm.fieldDescribeCacheKeys(objectName, requestedFieldName)
 	keys = append(keys, vm.fieldDescribeCacheKeys(objectName, resolvedFieldName)...)
-	seen := make(map[string]struct{}, len(keys))
+	seen := make(map[describeCacheKey]struct{}, len(keys))
 	for _, key := range keys {
-		if key == "" {
+		if key == (describeCacheKey{}) {
 			continue
 		}
 		if _, ok := seen[key]; ok {
@@ -1865,7 +2009,7 @@ func (vm *VM) storeFieldDescribeCacheAliases(objectName, requestedFieldName, res
 	}
 }
 
-func (vm *VM) fieldDescribeCacheKeys(objectName, fieldName string) []string {
+func (vm *VM) fieldDescribeCacheKeys(objectName, fieldName string) []describeCacheKey {
 	fieldName = strings.TrimSpace(fieldName)
 	if fieldName == "" {
 		return nil
@@ -1880,15 +2024,15 @@ func (vm *VM) fieldDescribeCacheKeys(objectName, fieldName string) []string {
 			storage.StripNamespaceToken(vm.Org.Namespace, fieldName),
 		)
 	}
-	keys := make([]string, 0, len(aliases))
-	seen := map[string]struct{}{}
-	base := strings.ToLower(strings.TrimSpace(objectName)) + "."
+	keys := make([]describeCacheKey, 0, len(aliases))
+	seen := map[describeCacheKey]struct{}{}
+	base := strings.ToLower(strings.TrimSpace(objectName))
 	for _, alias := range aliases {
 		alias = strings.ToLower(strings.TrimSpace(alias))
 		if alias == "" {
 			continue
 		}
-		key := vm.describePermissionCacheKey(base + alias)
+		key := vm.describePermissionCacheKey(base, alias)
 		if _, ok := seen[key]; ok {
 			continue
 		}
@@ -1898,25 +2042,23 @@ func (vm *VM) fieldDescribeCacheKeys(objectName, fieldName string) []string {
 	return keys
 }
 
-func (vm *VM) describeSObjectCacheKey(objectName string) string {
-	key := vm.describePermissionCacheKey(strings.ToLower(strings.TrimSpace(objectName)))
-	if vm.usesCapturedTaskDescribeFieldOrder(objectName) {
-		key += "|field-order=task65"
-	}
+func (vm *VM) describeSObjectCacheKey(objectName string) describeCacheKey {
+	key := vm.describePermissionCacheKey(strings.ToLower(strings.TrimSpace(objectName)), "")
+	key.TaskFieldOrder = vm.usesCapturedTaskDescribeFieldOrder(objectName)
 	return key
 }
 
-func (vm *VM) fieldDescribeCacheKey(objectName, fieldName string) string {
-	return vm.describePermissionCacheKey(strings.ToLower(strings.TrimSpace(objectName)) + "." + strings.ToLower(strings.TrimSpace(fieldName)))
+func (vm *VM) fieldDescribeCacheKey(objectName, fieldName string) describeCacheKey {
+	return vm.describePermissionCacheKey(strings.ToLower(strings.TrimSpace(objectName)), strings.ToLower(strings.TrimSpace(fieldName)))
 }
 
-func (vm *VM) describePermissionCacheKey(base string) string {
-	base = strings.TrimSpace(base)
-	if base == "" {
-		return ""
+func (vm *VM) describePermissionCacheKey(objectName, fieldName string) describeCacheKey {
+	key := describeCacheKey{ObjectName: strings.TrimSpace(objectName), FieldName: strings.TrimSpace(fieldName)}
+	if key == (describeCacheKey{}) {
+		return key
 	}
 	if vm == nil || vm.Org == nil {
-		return base
+		return key
 	}
 	user := vm.executionUser
 	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
@@ -1929,7 +2071,10 @@ func (vm *VM) describePermissionCacheKey(base string) string {
 	for i := range permissionSetIDs {
 		permissionSetIDs[i] = strings.ToLower(strings.TrimSpace(permissionSetIDs[i]))
 	}
-	return base + "|profile=" + profileID + "|user=" + strings.ToLower(userID) + "|permissions=" + strings.Join(permissionSetIDs, ",")
+	key.ProfileID = profileID
+	key.UserID = strings.ToLower(userID)
+	key.PermissionSets = strings.Join(permissionSetIDs, ",")
+	return key
 }
 
 func describeFieldReferenceTargets(definition storage.ObjectDefinition, field storage.Field) []string {
@@ -2282,6 +2427,7 @@ func completeDescribeFieldResultDefaults(desc *Value) {
 
 type approxVisitKey struct {
 	kind ValueKind
+	ref  uint64
 	ptr  uintptr
 }
 
@@ -2291,6 +2437,36 @@ func approxValueSize(value Value) int {
 
 func approxValueSizeSeen(value Value, seen map[approxVisitKey]bool) int {
 	switch value.Kind {
+	case ValueList, ValueSet, ValueMap, ValueObject:
+		key := approxVisitKey{kind: value.Kind, ref: value.Ref}
+		if key.ref == 0 {
+			switch value.Kind {
+			case ValueList:
+				if len(value.List) > 0 {
+					key.ptr = reflect.ValueOf(value.List).Pointer()
+				}
+			case ValueSet:
+				if len(value.Set) > 0 {
+					key.ptr = reflect.ValueOf(value.Set).Pointer()
+				}
+			case ValueMap:
+				if value.Map != nil {
+					key.ptr = reflect.ValueOf(value.Map).Pointer()
+				}
+			case ValueObject:
+				if value.Fields != nil {
+					key.ptr = reflect.ValueOf(value.Fields).Pointer()
+				}
+			}
+		}
+		if key.ref != 0 || key.ptr != 0 {
+			if seen[key] {
+				return 0
+			}
+			seen[key] = true
+		}
+	}
+	switch value.Kind {
 	case ValueNull:
 		return 4
 	case ValueInt, ValueDecimal, ValueBool:
@@ -2298,51 +2474,27 @@ func approxValueSizeSeen(value Value, seen map[approxVisitKey]bool) int {
 	case ValueString:
 		return len(value.Text)
 	case ValueList:
-		if len(value.List) > 0 {
-			key := approxVisitKey{kind: value.Kind, ptr: reflect.ValueOf(value.List).Pointer()}
-			if seen[key] {
-				return 0
-			}
-			seen[key] = true
-		}
 		total := 24
 		for _, item := range value.List {
 			total += approxValueSizeSeen(item, seen)
 		}
 		return total
 	case ValueSet:
-		if len(value.Set) > 0 {
-			key := approxVisitKey{kind: value.Kind, ptr: reflect.ValueOf(value.Set).Pointer()}
-			if seen[key] {
-				return 0
-			}
-			seen[key] = true
-		}
 		total := 24
 		for _, item := range value.Set {
 			total += approxValueSizeSeen(item, seen)
 		}
 		return total
 	case ValueMap:
-		if value.Map != nil {
-			key := approxVisitKey{kind: value.Kind, ptr: reflect.ValueOf(value.Map).Pointer()}
-			if seen[key] {
-				return 0
-			}
-			seen[key] = true
-		}
 		total := 24
 		for key, item := range value.Map {
 			total += len(key) + approxValueSizeSeen(item, seen)
 		}
 		return total
 	case ValueObject:
-		if value.Fields != nil {
-			key := approxVisitKey{kind: value.Kind, ptr: reflect.ValueOf(value.Fields).Pointer()}
-			if seen[key] {
-				return 0
-			}
-			seen[key] = true
+		// Native List<Blob> probes retain payloads with small heap handles.
+		if !value.classInstance && strings.EqualFold(value.Type, "Blob") {
+			return 8
 		}
 		total := 32 + len(value.Type)
 		for key, item := range value.Fields {
@@ -2357,7 +2509,10 @@ func approxValueSizeSeen(value Value, seen map[approxVisitKey]bool) int {
 // Native owner-side custom-object rows expose qualified global-describe keys;
 // local names still resolve through schema tokens, outside this map.
 func (vm *VM) ownedNamespacedCustomGlobalDescribe(name string) bool {
-	if vm.Org == nil || vm.Org.Namespace == "" || !strings.EqualFold(vm.currentCallerNamespace(), vm.Org.Namespace) || !strings.HasSuffix(strings.ToLower(name), "__c") {
+	if vm.Org == nil || vm.Org.Namespace == "" || !hasSuffixFold(name, "__c") {
+		return false
+	}
+	if caller := vm.currentCallerNamespace(); caller != "" && !strings.EqualFold(caller, vm.Org.Namespace) {
 		return false
 	}
 	prefix, qualified := namespaceTokenPrefix(name)
@@ -2369,6 +2524,20 @@ func (vm *VM) ownedNamespacedCustomGlobalDescribe(name string) bool {
 }
 
 func (vm *VM) ownedGlobalDescribeLocalKey(key, resolved string) bool {
+	if vm.Org == nil || vm.Org.Namespace == "" {
+		return false
+	}
 	_, qualified := namespaceTokenPrefix(strings.TrimSpace(key))
-	return !qualified && vm.ownedNamespacedCustomGlobalDescribe(resolved)
+	if qualified {
+		return false
+	}
+	if hasSuffixFold(resolved, "__Share") {
+		resolved = resolved[:len(resolved)-len("__Share")] + "__c"
+	} else if hasSuffixFold(resolved, "__ChangeEvent") {
+		resolved = resolved[:len(resolved)-len("__ChangeEvent")] + "__c"
+	}
+	if canonical, ok := vm.resolveObjectName(resolved); ok {
+		resolved = canonical
+	}
+	return vm.ownedNamespacedCustomGlobalDescribe(resolved)
 }

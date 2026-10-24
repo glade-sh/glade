@@ -8,15 +8,17 @@ import (
 
 // standardOverlayCheckPlan memoizes the catalog side of the standard overlay
 // write check for one object API name. Every input it holds comes from the
-// embedded standard catalogs, so the plan never goes stale while those caches
-// stay installed. The definition side is still read on every call: field maps
-// are written in place across the runtime, so a verdict memo could not see
-// those writes.
+// embedded standard catalogs and compatibility fields. The plan stays valid
+// while those caches stay installed. The definition side is read on every
+// call: field maps are written in place across the runtime, so a verdict memo
+// could not see those writes.
 type standardOverlayCheckPlan struct {
 	objectName           string
 	catalogOK            bool
 	isAccount            bool
+	isGroup              bool
 	generatedNumberField string
+	compatibilityFields  []string
 	// hasStubFields marks objects with a generated stub overlay. Their
 	// catalog time fields, which a stale stub overlay may still model as
 	// references to Time, decode lazily on the first definition that holds
@@ -25,6 +27,7 @@ type standardOverlayCheckPlan struct {
 	stubTimeOnce        sync.Once
 	stubTimeFields      []string
 	stubReferenceFields []Field
+	stubCurrencyFields  []Field
 	// shallowFields are catalog fields with a concrete type. A definition
 	// field that lacks a type, or lacks display metadata the catalog has,
 	// needs a refresh.
@@ -80,12 +83,14 @@ func buildStandardOverlayCheckPlan(objectName string) *standardOverlayCheckPlan 
 	plan := &standardOverlayCheckPlan{
 		objectName:           objectName,
 		isAccount:            stringsEqualFold(objectName, "Account"),
+		isGroup:              stringsEqualFold(objectName, "Group"),
 		generatedNumberField: standardGeneratedNumberField(objectName),
 	}
 	_, plan.hasStubFields = standardSObjectStubFieldsFor(objectName)
 	plan.readOnlyFields, plan.readOnlyFieldsOK = standardSObjectStubReadOnlyFieldsFor(objectName)
 	if plan.hasStubFields {
 		plan.stubReferenceFields = standardStubReferenceFieldsFromV2Describe(objectName)
+		plan.stubCurrencyFields = standardStubCurrencyCatalogFields(objectName)
 	}
 	entry, ok := standardObjectCatalogEntryForName(objectName)
 	if !ok {
@@ -112,7 +117,11 @@ func buildStandardOverlayCheckPlan(objectName string) *standardOverlayCheckPlan 
 		}
 		return out
 	}
-	extra := standardFieldsByName(standardFieldsForObject(objectName))
+	supplements := standardObjectCompatibilitySupplementFields(objectName)
+	for _, field := range supplements {
+		plan.compatibilityFields = append(plan.compatibilityFields, field.APIName)
+	}
+	extra := standardFieldsByName(append(standardFieldsForObject(objectName), supplements...))
 	addShallow(entry.Definition.Fields)
 	addShallow(extra)
 	plan.picklistFields = append(picklists(entry.Definition.Fields), picklists(extra)...)
@@ -158,6 +167,22 @@ func standardStubTimeCatalogFields(objectName string) []string {
 	return out
 }
 
+func standardStubCurrencyCatalogFields(objectName string) []Field {
+	describe, ok, err := lookupStandardDescribeCatalogV2(objectName)
+	if err != nil || !ok {
+		return nil
+	}
+	stubs, _ := standardSObjectStubFieldsFor(objectName)
+	var fields []Field
+	for _, captured := range describe.Fields {
+		stub, exists := stubs[captured.Name]
+		if exists && stub.Type == FieldDecimal && strings.EqualFold(stub.DisplayType, "DOUBLE") && strings.EqualFold(captured.Type, "currency") {
+			fields = append(fields, stub)
+		}
+	}
+	return fields
+}
+
 func (plan *standardOverlayCheckPlan) needsRefresh(definition ObjectDefinition, featureSignature string) bool {
 	// Source-inferred or persisted fields still need compatibility overlays.
 	// Event describe has no Name field, even when an overlay marker is current.
@@ -166,8 +191,16 @@ func (plan *standardOverlayCheckPlan) needsRefresh(definition ObjectDefinition, 
 			return true
 		}
 	}
+	if plan.isGroup && groupTypePicklistNeedsRepair(definition) {
+		return true
+	}
 	if name := plan.generatedNumberField; name != "" {
 		if field, exists := definition.Fields[name]; exists && !field.AutoNumber {
+			return true
+		}
+	}
+	for _, name := range plan.compatibilityFields {
+		if _, exists := ResolveFieldName(definition, "", name); !exists {
 			return true
 		}
 	}
@@ -181,6 +214,15 @@ func (plan *standardOverlayCheckPlan) needsRefresh(definition ObjectDefinition, 
 	}
 	if plan.stubReferenceFieldsNeedRepair(definition, featureSignature) {
 		return true
+	}
+	for _, stub := range plan.stubCurrencyFields {
+		name, exists := ResolveFieldName(definition, "", stub.APIName)
+		if exists {
+			field := definition.Fields[name]
+			if field.Type == stub.Type && field.DisplayType == stub.DisplayType && field.Formula == "" {
+				return true
+			}
+		}
 	}
 	if !plan.catalogOK {
 		return false

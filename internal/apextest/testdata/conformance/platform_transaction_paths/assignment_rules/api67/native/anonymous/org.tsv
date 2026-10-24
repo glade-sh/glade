@@ -1,0 +1,6 @@
+id	group	route	status	value
+A01	assignment_rules	anonymous	runtime	{"exception":null,"queue":false,"success":true}
+A02	assignment_rules	anonymous	runtime	{"exception":null,"queue":true,"success":true}
+A03	assignment_rules	anonymous	runtime	{"exception":null,"queue":false,"success":true}
+A04	assignment_rules	anonymous	runtime	{"exception":null,"queue":true,"success":true}
+A05	assignment_rules	anonymous	runtime	{"exception":null,"queue":false,"success":true}

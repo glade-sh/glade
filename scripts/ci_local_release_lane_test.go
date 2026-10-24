@@ -63,7 +63,7 @@ func runLocalReleaseLaneFixture(t *testing.T, args []string, fixture localReleas
 	goScript := `#!/usr/bin/env bash
 if [[ "$1" == "list" ]]; then cat "$FIXTURE_DIR/metadata"; exit 0; fi
 if [[ "$1" == "run" ]]; then cat "$FIXTURE_DIR/rows"; exit 0; fi
-if [[ "$*" == "test -list ^Test ./internal/apextest" ]]; then
+if [[ "$*" == "test -vet=off -trimpath -list ^Test ./internal/apextest" ]]; then
   cat "$FIXTURE_DIR/discovery"
   exit 0
 fi
@@ -135,7 +135,10 @@ func TestCILocalReleaseLaneRunsOnlyItsOwnedPackages(t *testing.T) {
 			if err != nil {
 				t.Fatalf("lane failed: %v\n%s", err, out)
 			}
-			if strings.Count(strings.TrimSpace(calls), "\n") != 0 || !strings.HasPrefix(calls, "test -json -vet=off -count=1 -timeout="+tc.timeout) {
+			if tc.lane == "remaining" && !strings.Contains(" "+calls+" ", " ./internal/testutil/browserapi ") {
+				t.Fatal("local-release remaining route omitted browser API helper")
+			}
+			if strings.Count(strings.TrimSpace(calls), "\n") != 0 || !strings.HasPrefix(calls, "test -json -vet=off -trimpath -count=1 -timeout="+tc.timeout) {
 				t.Fatalf("lane must execute one uncached JSON command: %s", calls)
 			}
 			var got, want []string
@@ -197,7 +200,7 @@ func TestCILocalReleaseLaneInheritsConcurrencyEnvironment(t *testing.T) {
 
 func TestCILocalReleaseLaneVetAndUsage(t *testing.T) {
 	out, err, calls, _ := runLocalReleaseLaneFixture(t, []string{"local-release-lane", "vet"}, localReleaseLaneFixture{})
-	if err != nil || calls != "vet ./...\n" {
+	if err != nil || calls != "vet -trimpath ./...\n" {
 		t.Fatalf("vet lane = %q / %v\n%s", calls, err, out)
 	}
 	for _, args := range [][]string{{"local-release-lane"}, {"local-release-lane", "unknown"}, {"local-release-lane", "apex-2"}, {"local-release-lane", "guard", "extra"}} {

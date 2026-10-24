@@ -124,8 +124,12 @@ func checkExceptionDeclarationsWithView(index typesys.Index, model *semaTypeMemb
 			}
 			add("Exception class must extend another Exception class: "+base, typ.Range)
 		}
-		if _, shadowed := sources[normalizeName(parent)]; !shadowed && strings.EqualFold(semaCanonicalPlatformAlias(parent), "LimitException") {
-			add("Non-virtual and non-abstract type cannot be extended: System.LimitException", typ.Range)
+		if _, shadowed := sources[normalizeName(parent)]; !shadowed {
+			_, standard := typesys.StandardExceptionParent(parent)
+			members, known := exceptionTypeMembers(parent, model)
+			if standard && known && members.platform && !hasModifier(members.modifiers, "virtual") && !hasModifier(members.modifiers, "abstract") {
+				add("Non-virtual and non-abstract type cannot be extended: System."+semaCanonicalPlatformAlias(members.name), typ.Range)
+			}
 		}
 		if !isException {
 			continue

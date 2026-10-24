@@ -6,9 +6,10 @@ import (
 )
 
 // formatApexDateForLocale covers the explicit API 67.0 en_US/de_DE profiles,
-// the en_GB/fr_FR day-first slash group, and the ja_JP/zh_CN/sv_SE year-first
-// group exercised by Date.format(). The retained Apex Date member says
-// format() uses the context user's locale; Salesforce's supported ICU
+// the no/no_NO day-first dotted format, the en_GB/fr_FR day-first slash group,
+// and the ja_JP/zh_CN/sv_SE year-first group exercised by Date.format().
+// The retained Apex Date member says format() uses the context user's locale;
+// Salesforce's supported ICU
 // date/time table supplies the examples whose date portions this function
 // renders. For 2008-01-28, the table shows en_GB 28/01/2008, 16:30 and fr_FR
 // 28/01/2008 16:30; ja_JP 2008/01/28 16:30; zh_CN 2008/1/28 16:30; and sv_SE
@@ -22,7 +23,7 @@ import (
 // Supported date/time table: https://help.salesforce.com/s/articleView?id=xcloud.admin_supported_date_time_format.htm&language=en_US&type=5.
 func formatApexDateForLocale(date time.Time, locale string) string {
 	switch locale {
-	case "de_DE":
+	case "de_DE", "no", "no_NO":
 		return date.Format("02.01.2006")
 	case "en_GB", "fr_FR":
 		return date.Format("02/01/2006")
@@ -35,5 +36,15 @@ func formatApexDateForLocale(date time.Time, locale string) string {
 	default:
 		// Preserve the historical output for all profiles not qualified here.
 		return fmt.Sprintf("%d/%d/%d", int(date.Month()), date.Day(), date.Year())
+	}
+}
+
+// The British and German default datetime forms are pinned by native calendar rows.
+func formatApexDatetimeForLocale(value time.Time, locale string) string {
+	switch locale {
+	case "en_GB", "de_DE", "no", "no_NO":
+		return formatApexDateForLocale(value, locale) + value.Format(", 15:04")
+	default:
+		return fmt.Sprintf("%d/%d/%d, %d:%02d %s", int(value.Month()), value.Day(), value.Year(), toTwelveHour(value.Hour()), value.Minute(), ampm(value.Hour()))
 	}
 }

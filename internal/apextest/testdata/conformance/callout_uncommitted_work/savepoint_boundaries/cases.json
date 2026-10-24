@@ -1,0 +1,202 @@
+[
+  {
+    "id": "dml_before_before_http",
+    "setup": "insert new Account(Name='Window probe');",
+    "callout": "http"
+  },
+  {
+    "id": "dml_before_before_soap",
+    "setup": "insert new Account(Name='Window probe');",
+    "callout": "soap"
+  },
+  {
+    "id": "dml_before_inside_http",
+    "setup": "insert new Account(Name='Window probe');Test.startTest();",
+    "callout": "http"
+  },
+  {
+    "id": "dml_before_inside_soap",
+    "setup": "insert new Account(Name='Window probe');Test.startTest();",
+    "callout": "soap"
+  },
+  {
+    "id": "dml_before_after_http",
+    "setup": "insert new Account(Name='Window probe');Test.startTest();Test.stopTest();",
+    "callout": "http"
+  },
+  {
+    "id": "dml_before_after_soap",
+    "setup": "insert new Account(Name='Window probe');Test.startTest();Test.stopTest();",
+    "callout": "soap"
+  },
+  {
+    "id": "dml_inside_inside_http",
+    "setup": "Test.startTest();insert new Account(Name='Window probe');",
+    "callout": "http"
+  },
+  {
+    "id": "dml_inside_inside_soap",
+    "setup": "Test.startTest();insert new Account(Name='Window probe');",
+    "callout": "soap"
+  },
+  {
+    "id": "dml_inside_after_http",
+    "setup": "Test.startTest();insert new Account(Name='Window probe');Test.stopTest();",
+    "callout": "http"
+  },
+  {
+    "id": "dml_inside_after_soap",
+    "setup": "Test.startTest();insert new Account(Name='Window probe');Test.stopTest();",
+    "callout": "soap"
+  },
+  {
+    "id": "dml_after_after_http",
+    "setup": "Test.startTest();Test.stopTest();insert new Account(Name='Window probe');",
+    "callout": "http"
+  },
+  {
+    "id": "dml_after_after_soap",
+    "setup": "Test.startTest();Test.stopTest();insert new Account(Name='Window probe');",
+    "callout": "soap"
+  },
+  {
+    "id": "clean_before_http",
+    "setup": "",
+    "callout": "http"
+  },
+  {
+    "id": "clean_before_soap",
+    "setup": "",
+    "callout": "soap"
+  },
+  {
+    "id": "clean_inside_http",
+    "setup": "Test.startTest();",
+    "callout": "http"
+  },
+  {
+    "id": "clean_inside_soap",
+    "setup": "Test.startTest();",
+    "callout": "soap"
+  },
+  {
+    "id": "clean_after_http",
+    "setup": "Test.startTest();Test.stopTest();",
+    "callout": "http"
+  },
+  {
+    "id": "clean_after_soap",
+    "setup": "Test.startTest();Test.stopTest();",
+    "callout": "soap"
+  },
+  {
+    "id": "dml_both_after_http",
+    "setup": "insert new Account(Name='Window probe');Test.startTest();insert new Account(Name='Window probe');Test.stopTest();",
+    "callout": "http"
+  },
+  {
+    "id": "dml_both_after_soap",
+    "setup": "insert new Account(Name='Window probe');Test.startTest();insert new Account(Name='Window probe');Test.stopTest();",
+    "callout": "soap"
+  },
+  {
+    "id": "pre_release_inside_after_http",
+    "setup": "Savepoint point=Database.setSavepoint();Test.startTest();try{Database.releaseSavepoint(point);}catch(TypeException ignored){}Test.stopTest();",
+    "callout": "http"
+  },
+  {
+    "id": "pre_release_inside_after_soap",
+    "setup": "Savepoint point=Database.setSavepoint();Test.startTest();try{Database.releaseSavepoint(point);}catch(TypeException ignored){}Test.stopTest();",
+    "callout": "soap"
+  },
+  {
+    "id": "pre_rollback_inside_release_after_http",
+    "setup": "Savepoint point=Database.setSavepoint();Database.setSavepoint();Test.startTest();try{Database.rollback(point);}catch(TypeException ignored){}Test.stopTest();try{Database.releaseSavepoint(point);}catch(TypeException ignored){}",
+    "callout": "http"
+  },
+  {
+    "id": "pre_rollback_inside_release_after_soap",
+    "setup": "Savepoint point=Database.setSavepoint();Database.setSavepoint();Test.startTest();try{Database.rollback(point);}catch(TypeException ignored){}Test.stopTest();try{Database.releaseSavepoint(point);}catch(TypeException ignored){}",
+    "callout": "soap"
+  },
+  {
+    "id": "pre_active_inside_http",
+    "setup": "Savepoint point=Database.setSavepoint();Test.startTest();",
+    "callout": "http"
+  },
+  {
+    "id": "pre_active_inside_soap",
+    "setup": "Savepoint point=Database.setSavepoint();Test.startTest();",
+    "callout": "soap"
+  },
+  {
+    "id": "pre_active_after_http",
+    "setup": "Savepoint point=Database.setSavepoint();Test.startTest();Test.stopTest();",
+    "callout": "http"
+  },
+  {
+    "id": "pre_active_after_soap",
+    "setup": "Savepoint point=Database.setSavepoint();Test.startTest();Test.stopTest();",
+    "callout": "soap"
+  },
+  {
+    "id": "pre_release_after_http",
+    "setup": "Savepoint point=Database.setSavepoint();Test.startTest();Test.stopTest();try{Database.releaseSavepoint(point);}catch(TypeException ignored){}",
+    "callout": "http"
+  },
+  {
+    "id": "pre_release_after_soap",
+    "setup": "Savepoint point=Database.setSavepoint();Test.startTest();Test.stopTest();try{Database.releaseSavepoint(point);}catch(TypeException ignored){}",
+    "callout": "soap"
+  },
+  {
+    "id": "inside_active_after_http",
+    "setup": "Test.startTest();Savepoint point=Database.setSavepoint();Test.stopTest();",
+    "callout": "http"
+  },
+  {
+    "id": "inside_active_after_soap",
+    "setup": "Test.startTest();Savepoint point=Database.setSavepoint();Test.stopTest();",
+    "callout": "soap"
+  },
+  {
+    "id": "inside_release_inside_after_http",
+    "setup": "Test.startTest();Savepoint point=Database.setSavepoint();try{Database.releaseSavepoint(point);}catch(TypeException ignored){}Test.stopTest();",
+    "callout": "http"
+  },
+  {
+    "id": "inside_release_inside_after_soap",
+    "setup": "Test.startTest();Savepoint point=Database.setSavepoint();try{Database.releaseSavepoint(point);}catch(TypeException ignored){}Test.stopTest();",
+    "callout": "soap"
+  },
+  {
+    "id": "pre_rollback_release_inside_after_http",
+    "setup": "Savepoint point=Database.setSavepoint();Test.startTest();insert new Account(Name='Window probe');try{Database.rollback(point);}catch(TypeException ignored){}try{Database.releaseSavepoint(point);}catch(TypeException ignored){}Test.stopTest();",
+    "callout": "http"
+  },
+  {
+    "id": "pre_rollback_release_inside_after_soap",
+    "setup": "Savepoint point=Database.setSavepoint();Test.startTest();insert new Account(Name='Window probe');try{Database.rollback(point);}catch(TypeException ignored){}try{Database.releaseSavepoint(point);}catch(TypeException ignored){}Test.stopTest();",
+    "callout": "soap"
+  },
+  {
+    "id": "pre_rollback_inside_active_after_http",
+    "setup": "Savepoint point=Database.setSavepoint();Test.startTest();insert new Account(Name='Window probe');try{Database.rollback(point);}catch(TypeException ignored){}Test.stopTest();",
+    "callout": "http"
+  },
+  {
+    "id": "pre_rollback_inside_active_after_soap",
+    "setup": "Savepoint point=Database.setSavepoint();Test.startTest();insert new Account(Name='Window probe');try{Database.rollback(point);}catch(TypeException ignored){}Test.stopTest();",
+    "callout": "soap"
+  },
+  {
+    "id": "pre_release_inside_new_active_after_http",
+    "setup": "Savepoint point=Database.setSavepoint();Test.startTest();try{Database.releaseSavepoint(point);}catch(TypeException ignored){}Database.setSavepoint();Test.stopTest();",
+    "callout": "http"
+  },
+  {
+    "id": "pre_release_inside_new_active_after_soap",
+    "setup": "Savepoint point=Database.setSavepoint();Test.startTest();try{Database.releaseSavepoint(point);}catch(TypeException ignored){}Database.setSavepoint();Test.stopTest();",
+    "callout": "soap"
+  }
+]

@@ -231,7 +231,7 @@ func (vm *VM) customFieldHasIntrinsicAccess(objectName, fieldName string) bool {
 	}
 	field := definition.Fields[canonical]
 	// A universally required custom field is always accessible, on standard
-	// objects too (scratch-org row: User.ReqU__c under a profile that lists
+	// objects too (scratch org row: User.ReqU__c under a profile that lists
 	// another User field).
 	if field.Required && isCustomSchemaName(canonical) {
 		return true

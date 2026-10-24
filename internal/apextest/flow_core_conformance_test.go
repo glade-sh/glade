@@ -122,11 +122,10 @@ func runFlowCoreConformance(t *testing.T, cluster string, shapes, cells, carried
 	if observations != cells || carries != carried {
 		t.Fatalf("native cells/carries=%d/%d, want %d/%d", observations, carries, cells, carried)
 	}
+	bases := newConformanceSchemaCache(t)
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "FlowCore-"+cluster, api)
-			baseIndex := flowCoreIndex(t, api, nil, nil)
-			base := newConformanceRunner(t, baseIndex, conformanceRunnerOptions{})
 			for _, row := range data.Rows {
 				t.Run(row.ID, func(t *testing.T) {
 					fixture := row.ByAPI[api]
@@ -169,9 +168,16 @@ func runFlowCoreConformance(t *testing.T, cluster string, shapes, cells, carried
 							if index.HasErrors() || analysis.HasErrors() {
 								t.Fatalf("native Apex accepted; Glade diagnostics=%v %v", index.Diagnostics, analysis.Diagnostics)
 							}
-							org := orgFromIndex(index)
-							org.APIVersion = api
-							runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, LinkProject: true, Org: &org})
+							schemaFiles := conformanceFlowSchemaFiles(fixture.Files)
+							base := bases.get(t, api, "", schemaFiles, func(t *testing.T) *conformanceRunner {
+								return conformanceSchemaBase(t, flowCoreIndex(t, api, nil, schemaFiles), api)
+							})
+							runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, LinkProject: true, Org: base.orgSource})
+							machine := runner.newMachine()
+							automation.ApplyToOrg(machine.Org, automations)
+							// Flow rules differ per row. Detach metadata caches after applying them
+							// to the row's private org; the linked passive runtime stays shared.
+							machine.SetOrg(machine.Org)
 							var execErr error
 							if route == "anonymous" {
 								analysis := sema.AnalyzeAnonymous(index, source.Anonymous, api)
@@ -179,7 +185,7 @@ func runFlowCoreConformance(t *testing.T, cluster string, shapes, cells, carried
 								if err != nil || analysis.HasErrors() {
 									t.Fatalf("anonymous compile: %v %v", err, analysis.Diagnostics)
 								}
-								_, execErr = runner.execute(program)
+								_, execErr = machine.Execute(program)
 							} else {
 								cases := Discover(index, Options{SelectedClasses: source.Tests, SelectedMethod: "observe"})
 								if len(source.Tests) != 1 || len(cases) != 1 {
@@ -191,7 +197,6 @@ func runFlowCoreConformance(t *testing.T, cluster string, shapes, cells, carried
 								if methodErrors[key] != nil || programErrors[key] != nil {
 									t.Fatalf("named compile: %v %v", methodErrors[key], programErrors[key])
 								}
-								machine := runner.newMachine()
 								machine.EnableTestContext()
 								if err := machine.RegisterMethod(methods[key]); err != nil {
 									t.Fatal(err)

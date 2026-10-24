@@ -1,0 +1,30 @@
+case	observation
+isTest	Test.isRunningTest() at capture
+determinism	two renders of the same input compared
+one_mb_paras	about 1 MB of paragraphs (length in one_mb_paras_len)
+one_mb_text_run	1 MB unbroken x run inside body
+null	null input
+malformed_html	unclosed tags
+script_tag	script element in body
+helvetica_font	font-family Helvetica
+unicode_font	font-family "Arial Unicode MS" with CJK/Cyrillic
+a4_css	@page size:A4
+landscape_css	@page size:landscape
+two_pages	CSS page-break-before
+not_html	non-HTML text with angle brackets and ampersand
+whitespace	whitespace-only input
+empty	empty string input
+non_ascii	Latin-1, euro, CJK, Cyrillic text, default font
+img_relative	img with org-relative /img/logo190.png
+img_external	img with https external SVG URL
+img_data_uri	img with data: URI (1x1 PNG)
+table	HTML table with th/td
+css	inline CSS with font-family Arial and margins
+simple_html	simple HTML with h1/b
+toString_on_pdf	Blob.toString() on toPdf output
+plain_text	Blob.toPdf plain text
+page_page_determinism	two getContentAsPDF renders compared
+page_getContentAsPDF_htmlpage	getContentAsPDF_htmlpage
+page_getContent_htmlpage	getContent_htmlpage
+page_getContent_pdfpage	getContent_pdfpage
+page_getContentAsPDF	getContentAsPDF

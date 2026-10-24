@@ -1,0 +1,22 @@
+[
+  {
+    "id": "standard_member_rejection",
+    "source": "Schema.Account.absentMember();",
+    "outcome": "compile-rejected"
+  },
+  {
+    "id": "custom_member_rejection",
+    "source": "Schema.CedarAlias__c.absentMember();",
+    "outcome": "compile-rejected"
+  },
+  {
+    "id": "standard_describe_boundary",
+    "source": "System.assertEquals('Account', Schema.Account.SObjectType.getDescribe().getName());",
+    "outcome": "accepted"
+  },
+  {
+    "id": "custom_describe_boundary",
+    "source": "System.assertEquals('CedarAlias__c', Schema.CedarAlias__c.SObjectType.getDescribe().getName());",
+    "outcome": "accepted"
+  }
+]

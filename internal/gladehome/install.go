@@ -19,6 +19,11 @@ import (
 func InstallFrom(src string) error {
 	installMu.Lock()
 	defer installMu.Unlock()
+	lock, err := lockInstall()
+	if err != nil {
+		return err
+	}
+	defer lock.Close()
 	return installFrom(src)
 }
 

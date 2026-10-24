@@ -1,0 +1,110 @@
+[
+  {
+    "id": "account_tradestyle",
+    "source": "Account row = new Account(Tradestyle = 'fern');",
+    "field": "Tradestyle",
+    "object": "Account"
+  },
+  {
+    "id": "account_naicscode",
+    "source": "Account row = new Account(NaicsCode = '123456');",
+    "field": "NaicsCode",
+    "object": "Account"
+  },
+  {
+    "id": "account_yearstarted",
+    "source": "Account row = new Account(YearStarted = '2001');",
+    "field": "YearStarted",
+    "object": "Account"
+  },
+  {
+    "id": "account_dandbcompanyid",
+    "source": "Account row = new Account(DandbCompanyId = null);",
+    "field": "DandbCompanyId",
+    "object": "Account"
+  },
+  {
+    "id": "lead_mobilephone",
+    "source": "Lead row = new Lead(MobilePhone = '5550100');",
+    "field": "MobilePhone",
+    "object": "Lead"
+  },
+  {
+    "id": "lead_fax",
+    "source": "Lead row = new Lead(Fax = '5550101');",
+    "field": "Fax",
+    "object": "Lead"
+  },
+  {
+    "id": "order_ponumber",
+    "source": "Order row = new Order(PoNumber = 'PO-1');",
+    "field": "PoNumber",
+    "object": "Order"
+  },
+  {
+    "id": "account_missing__other",
+    "source": "Account row = new Account(Missing__other = 'x');",
+    "field": "Missing__other",
+    "object": "Account"
+  },
+  {
+    "id": "account_pkg__missing__other",
+    "source": "Account row = new Account(pkg__Missing__other = 'x');",
+    "field": "pkg__Missing__other",
+    "object": "Account"
+  },
+  {
+    "id": "account_missing__c",
+    "source": "Account row = new Account(Missing__c = 'x');",
+    "field": "Missing__c",
+    "object": "Account"
+  },
+  {
+    "id": "meadow__c_missing__other",
+    "source": "Meadow__c row = new Meadow__c(Missing__other = 'x');",
+    "field": "Missing__other",
+    "object": "Meadow__c"
+  },
+  {
+    "id": "account_bloom__c",
+    "source": "Account row = new Account(Bloom__c = 'x');",
+    "field": "Bloom__c",
+    "object": "Account"
+  },
+  {
+    "id": "meadow_missing_lookup",
+    "source": "Account parent = new Account(Name = 'x'); Meadow__c row = new Meadow__c(Missing__c = parent.Id);",
+    "field": "Missing__c",
+    "object": "Meadow__c"
+  },
+  {
+    "id": "meadow_declared_lookup",
+    "source": "Account parent = new Account(Name = 'x'); Meadow__c row = new Meadow__c(Parent__c = parent.Id);",
+    "field": "Parent__c",
+    "object": "Meadow__c"
+  },
+  {
+    "id": "managed_missing_scalar",
+    "source": "gladens004__ConstructorCatalogMeadow__c row = new gladens004__ConstructorCatalogMeadow__c(Missing__other = 'x');",
+    "field": "Missing__other",
+    "object": "gladens004__ConstructorCatalogMeadow__c"
+  },
+  {
+    "id": "managed_missing_lookup",
+    "source": "Account parent = new Account(Name = 'x'); gladens004__ConstructorCatalogMeadow__c row = new gladens004__ConstructorCatalogMeadow__c(Missing__c = parent.Id);",
+    "field": "Missing__c",
+    "object": "gladens004__ConstructorCatalogMeadow__c"
+  },
+  {
+    "id": "managed_declared_scalar",
+    "source": "gladens004__ConstructorCatalogMeadow__c row = new gladens004__ConstructorCatalogMeadow__c(gladens004__Bloom__c = 'x');",
+    "field": "gladens004__Bloom__c",
+    "object": "gladens004__ConstructorCatalogMeadow__c"
+  },
+  {
+    "id": "managed_declared_lookup",
+    "source": "Account parent = new Account(Name = 'x'); gladens004__ConstructorCatalogMeadow__c row = new gladens004__ConstructorCatalogMeadow__c(gladens004__Parent__c = parent.Id);",
+    "field": "gladens004__Parent__c",
+    "object": "gladens004__ConstructorCatalogMeadow__c"
+  }
+]

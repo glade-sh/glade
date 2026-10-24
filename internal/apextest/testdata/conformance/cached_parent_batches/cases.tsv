@@ -1,0 +1,3 @@
+case	question
+cached_summary	Two parent groups retain cached child values for average, count and last without a child requery
+cached_last	Last child selection retains ordered cached values for both parents

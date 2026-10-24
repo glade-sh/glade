@@ -1,0 +1,2 @@
+api	context	source	outcome	message
+62.0	istest	RejectedPublishingDate.cls	compile_reject	Method does not exist or incorrect signature: void archiveOnlineArticle(String, String) from the type KbManagement.PublishingService

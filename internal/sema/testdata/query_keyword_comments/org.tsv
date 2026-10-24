@@ -1,0 +1,25 @@
+api	route	case	outcome	diagnostic
+62.0	istest	soql_comment_boundary	accepted	-
+62.0	istest	sosl_comment_boundary	accepted	-
+62.0	istest	index_boundary	accepted	-
+62.0	anonymous	soql_comment_boundary	accepted	-
+62.0	named	soql_comment_boundary	accepted	-
+62.0	anonymous	sosl_comment_boundary	rejected	unexpected token: /
+62.0	named	sosl_comment_boundary	accepted	-
+62.0	anonymous	index_boundary	accepted	-
+62.0	named	index_boundary	accepted	-
+62.0	anonymous	bind_rejection	rejected	Variable does not exist: missingGardenName
+62.0	named	bind_rejection	rejected	Variable does not exist: missingGardenName
+62.0	istest	bind_rejection	rejected	Variable does not exist: missingGardenName
+67.0	istest	soql_comment_boundary	accepted	-
+67.0	istest	sosl_comment_boundary	accepted	-
+67.0	istest	index_boundary	accepted	-
+67.0	anonymous	soql_comment_boundary	accepted	-
+67.0	named	soql_comment_boundary	accepted	-
+67.0	anonymous	sosl_comment_boundary	rejected	unexpected token: /
+67.0	named	sosl_comment_boundary	accepted	-
+67.0	anonymous	index_boundary	accepted	-
+67.0	named	index_boundary	accepted	-
+67.0	anonymous	bind_rejection	rejected	Variable does not exist: missingGardenName
+67.0	named	bind_rejection	rejected	Variable does not exist: missingGardenName
+67.0	istest	bind_rejection	rejected	Variable does not exist: missingGardenName

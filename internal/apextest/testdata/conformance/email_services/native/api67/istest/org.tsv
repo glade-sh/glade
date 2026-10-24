@@ -1,0 +1,12 @@
+id	route	value
+Boundary	istest	"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm|true|null|MailReceiver|true|true"
+Disabled	istest	"mail_disabled|false|null|MailReceiver|true|true"
+Dormant	istest	"mail_dormant|true|null|MailDormant|true|true"
+E001	istest	"2"
+E002	istest	"4"
+E003	istest	"4"
+E004	istest	"0"
+E005	istest	"System.SObjectException:Field EmailDomainName is not editable"
+Enabled	istest	"mail_receiver|true|sender@example.invalid|MailReceiver|true|true"
+MailDormant	istest	"MailDormant|false|EmailServiceHandler|All|Discard|Bounce|Discard|Bounce|Requeue|example.invalid|errors@example.invalid|false|true|true|true"
+MailReceiver	istest	"MailReceiver|true|EmailServiceHandler|All|Discard|Bounce|Discard|Bounce|Requeue|example.invalid|errors@example.invalid|false|true|true|true"

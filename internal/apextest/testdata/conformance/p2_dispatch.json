@@ -1,6 +1,6 @@
 {
  "family": "p2-dispatch",
- "provenance": "Captured on scratch org glade-v031-p2 (Dev Hub scratch-org), API 62.0, 67.0 and 68.0, anonymous Apex calling deployed classes. Identical at all three versions. Synthetic classes only.",
+ "provenance": "Captured on scratch org glade-v031-p2 (Dev Hub example-org), API 62.0, 67.0 and 68.0, anonymous Apex calling deployed classes. Identical at all three versions. Synthetic classes only.",
  "rows": [
   {
    "id": "S1-interface-object-overload",

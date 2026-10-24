@@ -13,8 +13,8 @@
   "provenance": {
     "caseTableSHA256": "ab7eb4defb76791cd56d526adbe3e1fba953587cf40854e0f6ed8b66a7ca1f2e",
     "captures": {
-      "primary": "Initial owned scratch-org capture; all API62 anonymous cells and API62 named S00-S09.",
-      "recovery": "Replacement owned scratch-org capture; remaining API62 named cells and all API67/68 cells. Merged successful retries retain their native marker hashes."
+      "primary": "Initial owned example-org capture; all API62 anonymous cells and API62 named S00-S09.",
+      "recovery": "Replacement owned example-org capture; remaining API62 named cells and all API67/68 cells. Merged successful retries retain their native marker hashes."
     },
     "clock": "Each cell runs at its captured now in its captured running-user time zone; before and after values are asserted literally. Anonymous after is not-applicable.",
     "anonymousCleanup": "The native anonymous wrapper calls System.abortJob after its snapshot. Replay omits this cleanup in a disposable VM. Successful anonymous complete=true is retained as a partial carry, not asserted; all cron snapshot fields are asserted.",

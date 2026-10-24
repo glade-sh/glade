@@ -5,9 +5,12 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/config"
 )
 
 type DoctorInfo struct {
+	PDFRenderer string `json:"pdfRenderer"`
 	SchemaVersion            string           `json:"schemaVersion,omitempty"`
 	Command                  string           `json:"command,omitempty"`
 	Status                   string           `json:"status,omitempty"`
@@ -39,6 +42,19 @@ type DoctorInfo struct {
 	Suggestions              []string         `json:"suggestions,omitempty"`
 	Recovery                 []string         `json:"recovery,omitempty"`
 	Advisories               []string         `json:"advisories,omitempty"`
+	OrgSetup []DoctorOrgSetup `json:"orgSetup,omitempty"`
+
+	TestEnvironment *config.TestEnvironment `json:"testEnvironment,omitempty"`
+}
+
+// DoctorOrgSetup is one source-backed org setup suggestion or configuration mapping.
+type DoctorOrgSetup struct {
+	Kind    string   `json:"kind"`
+	Feature string   `json:"feature,omitempty"`
+	Names   []string `json:"names,omitempty"`
+	Reason  string   `json:"reason"`
+	Files   []string `json:"files,omitempty"`
+	YAML    string   `json:"yaml,omitempty"`
 }
 
 type DoctorLocalData struct {
@@ -72,6 +88,7 @@ func WriteDoctor(w io.Writer, info DoctorInfo) error {
 		{ok: info.ProjectOK, label: "Project", value: doctorProjectValue(info)},
 		{ok: info.ParserOK, label: "Parser", value: info.ParserStatus},
 		{ok: info.ToolchainOK, advisory: true, label: "LWC tools", value: toolchainDoctorValue(info)},
+		{ok: true, label: "PDF", value: info.PDFRenderer},
 	}
 	if info.SourceAPIVersion != "" || info.SourceAPIStatus != "" {
 		rows = append(rows, struct {
@@ -116,6 +133,21 @@ func WriteDoctor(w io.Writer, info DoctorInfo) error {
 			label    string
 			value    string
 		}{ok: info.LocalData.OK, advisory: true, label: "Local data", value: doctorLocalDataValue(info)})
+	}
+	if env := info.TestEnvironment; env != nil {
+		for _, setting := range []struct{ label, value string }{
+			{"Test time zone", env.User.TimeZone}, {"Test locale", env.User.Locale},
+			{"Test language", env.User.Language}, {"Test currency", env.User.DefaultCurrencyISOCode},
+			{"Test clock start", env.Clock.Start},
+		} {
+			rows = append(rows, struct {
+				ok       bool
+				advisory bool
+				neutral  bool
+				label    string
+				value    string
+			}{ok: true, label: setting.label, value: setting.value})
+		}
 	}
 	rows = append(rows, struct {
 		ok       bool
@@ -162,6 +194,9 @@ func WriteDoctor(w io.Writer, info DoctorInfo) error {
 	}
 
 	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+	if err := writeDoctorOrgSetup(w, info.OrgSetup); err != nil {
 		return err
 	}
 	if allOK {
@@ -275,4 +310,94 @@ func doctorLocalDataValue(info DoctorInfo) string {
 		}
 		return data.Env + " " + filepath.ToSlash(path)
 	}
+}
+
+// writeDoctorOrgSetup prints org setup evidence and the matching config lines.
+func writeDoctorOrgSetup(w io.Writer, items []DoctorOrgSetup) error {
+	if len(items) == 0 {
+		return nil
+	}
+	if _, err := fmt.Fprintln(w, "Org setup the project uses but glade.yml does not declare:"); err != nil {
+		return err
+	}
+	seen := map[string]bool{}
+	var configItems []DoctorOrgSetup
+	for _, item := range items {
+		label := item.Feature
+		switch item.Kind {
+		case "permissionSet":
+			label = "permission sets " + strings.Join(item.Names, ", ")
+		case "recordType":
+			label = "record types " + strings.Join(item.Names, ", ")
+		case "role":
+			label = "roles " + strings.Join(item.Names, ", ")
+		case "scratchFeature":
+			label = "scratch feature " + item.Feature
+		case "dependency":
+			label = "SFDX dependencies " + strings.Join(item.Names, ", ")
+		}
+		if _, err := fmt.Fprintf(w, "  %s: %s\n", label, item.Reason); err != nil {
+			return err
+		}
+		if len(item.Files) > 0 {
+			if _, err := fmt.Fprintf(w, "    e.g. %s\n", strings.Join(item.Files, ", ")); err != nil {
+				return err
+			}
+		}
+		switch item.Kind {
+		case "recordType":
+			if _, err := fmt.Fprintln(w, "    add matching metadata under objects/<object>/recordTypes/"); err != nil {
+				return err
+			}
+		case "role":
+			if _, err := fmt.Fprintln(w, "    add matching Role metadata under roles/"); err != nil {
+				return err
+			}
+		case "scratchFeature":
+			if strings.EqualFold(item.YAML, "not modelled") {
+				if _, err := fmt.Fprintln(w, "    glade.yml line: not modelled"); err != nil {
+					return err
+				}
+			} else if line := orgFeaturesSuggestionLine(item.YAML); line != "" {
+				if _, err := fmt.Fprintf(w, "    glade.yml line: %s\n", line); err != nil {
+					return err
+				}
+			} else if _, err := fmt.Fprintf(w, "    glade.yml line: org.features: [%s]\n", item.Feature); err != nil {
+				return err
+			}
+		case "feature", "permissionSet", "dependency":
+			if item.YAML != "" {
+				configItems = append(configItems, item)
+			}
+		}
+	}
+	if len(configItems) == 0 {
+		_, err := fmt.Fprintln(w)
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "Add to glade.yml:"); err != nil {
+		return err
+	}
+	for _, item := range configItems {
+		if seen[item.YAML] {
+			continue
+		}
+		seen[item.YAML] = true
+		for _, line := range strings.Split(item.YAML, "\n") {
+			if _, err := fmt.Fprintln(w, "  "+line); err != nil {
+				return err
+			}
+		}
+	}
+	_, err := fmt.Fprintln(w)
+	return err
+}
+
+func orgFeaturesSuggestionLine(yaml string) string {
+	for _, line := range strings.Split(yaml, "\n") {
+		if value, ok := strings.CutPrefix(strings.TrimSpace(line), "features:"); ok {
+			return "org.features: " + strings.TrimSpace(value)
+		}
+	}
+	return ""
 }

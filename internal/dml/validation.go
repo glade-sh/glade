@@ -726,7 +726,7 @@ func validateRequiredInsert(definition storage.ObjectDefinition, record storage.
 func validateRequiredWithInsertDefaults(definition storage.ObjectDefinition, record storage.Record, inserting bool) error {
 	var missing []string
 	for name, field := range definition.Fields {
-		if !isDMLRequiredField(definition, name, field) {
+		if !isDMLRequiredFieldForRecord(definition, name, field, record) {
 			continue
 		}
 		if inserting && strings.EqualFold(name, "Name") && !storage.IsCustomSettingDefinition(definition) && customTextNameUsesRecordID(definition, record) {
@@ -785,10 +785,12 @@ func customTextNameUsesRecordID(definition storage.ObjectDefinition, record stor
 	return !present || record.HasExplicitNull("Name") || value.Kind == storage.ValueNull || value.Kind == storage.ValueString && value.String == ""
 }
 
-func validateRequiredUpdate(definition storage.ObjectDefinition, record storage.Record) error {
+// final is the merged record; it classifies a Person Account update whose
+// input omits IsPersonAccount.
+func validateRequiredUpdate(definition storage.ObjectDefinition, record, final storage.Record) error {
 	var missing []string
 	for name, field := range definition.Fields {
-		if !isDMLRequiredField(definition, name, field) {
+		if !isDMLRequiredFieldForRecord(definition, name, field, final) {
 			continue
 		}
 		if value, ok := record.GetField(name); ok {
@@ -916,6 +918,19 @@ func requiredFieldOrder(field string) int {
 	default:
 		return 10
 	}
+}
+
+// A required Contact custom field mirrored onto Account (__pc) is required on
+// Person Account records only. Native rows: person_account_pc_required_formula
+// biz_insert, pa_no_pc_insert and pa_pc_insert.
+func isDMLRequiredFieldForRecord(definition storage.ObjectDefinition, name string, field storage.Field, record storage.Record) bool {
+	if !isDMLRequiredField(definition, name, field) {
+		return false
+	}
+	if strings.EqualFold(definition.APIName, "Account") && (hasSuffixFold(name, "__pc") || hasSuffixFold(field.APIName, "__pc")) {
+		return isPersonAccountRecord(record)
+	}
+	return true
 }
 
 func isDMLRequiredField(definition storage.ObjectDefinition, name string, field storage.Field) bool {
@@ -1115,6 +1130,9 @@ func (e *Engine) validateReferencesWithLoadedView(definition storage.ObjectDefin
 		if id == "" {
 			return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{name}, "dml: invalid reference %s.%s", record.Object, name)
 		}
+		if strings.EqualFold(definition.APIName, "Task") && strings.EqualFold(name, "WhatId") && storage.ValidateID(id) == nil && !e.validTaskWhatReferenceType(field, id) {
+			return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{name}, "id value of incorrect type: %s", id)
+		}
 		found := false
 		deleted := false
 		loadedID := record.LoadedReferences[name]
@@ -1149,7 +1167,7 @@ func (e *Engine) validateReferencesWithLoadedView(definition storage.ObjectDefin
 		}
 		// Loaded provenance never authorizes an absent or hard-deleted target.
 		if !found && loaded {
-			return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{name}, "dml: reference %s.%s points to missing record %s", record.Object, name, id)
+			return missingReferenceError(record, name, id)
 		}
 		if !found && isPolymorphicReference(definition, name) {
 			found = e.referenceExistsInAnyObject(id)
@@ -1164,10 +1182,36 @@ func (e *Engine) validateReferencesWithLoadedView(definition storage.ObjectDefin
 			continue
 		}
 		if !found {
-			return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{name}, "dml: reference %s.%s points to missing record %s", record.Object, name, id)
+			return missingReferenceError(record, name, id)
 		}
 	}
 	return nil
+}
+
+func (e *Engine) validTaskWhatReferenceType(field storage.Field, id storage.ID) bool {
+	for _, target := range field.ReferenceTo {
+		prefix := storage.StandardKeyPrefix(target)
+		if canonical, ok := storage.ResolveObjectName(*e.Org, target); ok {
+			prefix = e.Org.Objects[canonical].Definition.KeyPrefix
+		}
+		if prefix != "" && strings.HasPrefix(string(id), prefix) {
+			return true
+		}
+	}
+	// Custom objects can extend the captured standard targets.
+	for name, object := range e.Org.Objects {
+		if hasSuffixFold(name, "__c") && object.Definition.KeyPrefix != "" && strings.HasPrefix(string(id), object.Definition.KeyPrefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func missingReferenceError(record storage.Record, field string, id storage.ID) error {
+	if strings.EqualFold(record.Object, "Task") && strings.EqualFold(field, "WhatId") {
+		return dmlErrorf("INVALID_CROSS_REFERENCE_KEY", nil, "invalid cross reference id")
+	}
+	return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{field}, "dml: reference %s.%s points to missing record %s", record.Object, field, id)
 }
 
 // Optional self lookups still require an existing target on insert. Keep the

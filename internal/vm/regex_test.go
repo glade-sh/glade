@@ -1273,4 +1273,11 @@ func TestRegexUnclosedFormattingRequiresTypedCompilerError(t *testing.T) {
 	if thrown.value.Type != "PatternSyntaxException" || thrown.value.Fields["message"].Text != detail || thrown.value.Fields["description"].Text != detail || thrown.value.Fields["pattern"].Text != "[" || thrown.value.Fields["index"].Int != -1 {
 		t.Fatalf("unrelated error or original exception fields changed: %#v", thrown.value)
 	}
+	// Local preservation controls for the interpreter's legacy error values.
+	if builtinExceptionParent(thrown.value.Type) != "IllegalArgumentException" || exceptionQualifiedTypeName(thrown.value.Type) != "System.PatternSyntaxException" {
+		t.Fatal("legacy regex exception ancestry or identity changed")
+	}
+	if got := exceptionToString(thrown.value); got != "System.PatternSyntaxException: "+detail {
+		t.Fatalf("legacy regex error display changed: %s", got)
+	}
 }

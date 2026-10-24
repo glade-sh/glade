@@ -1,0 +1,13 @@
+route
+deserialize
+deserializeStrict
+deserializeList
+deserializeStrictList
+deserializeMap
+parser
+typedDeserialize
+newSObject
+newSObjectDefaults
+clone
+listDeepClone
+strictUnknown

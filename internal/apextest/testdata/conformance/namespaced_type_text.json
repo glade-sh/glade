@@ -1,0 +1,142 @@
+{
+  "namespace": "nsx",
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "route": "isTest",
+  "sources": {
+    "TypeTextAnchor": "public class TypeTextAnchor {}",
+    "TypeTextStubApi": "public interface TypeTextStubApi { String apply(String value, List<String> values, TypeTextAnchor anchor, TypeTextFlag__mdt flag); }",
+    "TypeTextStubProvider": "public class TypeTextStubProvider implements System.StubProvider {\n    public Boolean providerFlag = true;\n    public String providerName = 'synthetic';\n    public static List<String> observedTypes = new List<String>();\n    public Object handleMethodCall(Object receiver, String methodName,\n            Type returnType, List<Type> parameterTypes,\n            List<String> parameterNames, List<Object> arguments) {\n        observedTypes.clear();\n        observedTypes.add(returnType == null ? 'null' : returnType.getName());\n        for (Type item : parameterTypes) observedTypes.add(item == null ? 'null' : item.getName());\n        return null;\n    }\n}",
+    "TypeTextSupport": "public class TypeTextSupport {\n    public static String typeName(Type value) {\n        return value == null ? 'null' : value.getName();\n    }\n}"
+  },
+  "metadata": {
+    "objects/TypeTextItem__c/TypeTextItem__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>TypeText Item</label><nameField><label>TypeText Item Name</label><type>Text</type></nameField><pluralLabel>TypeText Items</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>",
+    "objects/TypeTextItem__c/fields/Route__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Route__c</fullName><label>Route</label><type>Text</type><length>80</length></CustomField>",
+    "objects/TypeTextItem__c/fieldSets/RouteSet.fieldSet-meta.xml": "<FieldSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>RouteSet</fullName><displayedFields><field>Route__c</field><isFieldManaged>false</isFieldManaged></displayedFields><description>Type text synthetic field set</description><label>Route Set</label></FieldSet>",
+    "objects/TypeTextFlag__mdt/TypeTextFlag__mdt.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><label>TypeText Flag</label><pluralLabel>TypeText Flags</pluralLabel><visibility>Public</visibility></CustomObject>"
+  },
+  "cases": [
+    {
+      "id": "R001",
+      "question": "Stub rendering and generated stub type name",
+      "testClass": "TypeTextR001",
+      "source": "@IsTest private class TypeTextR001 { @IsTest static void observed() { TypeTextStubProvider provider = new TypeTextStubProvider(); TypeTextStubApi stub = (TypeTextStubApi)Test.createStub(TypeTextStubApi.class, provider); String value = String.valueOf(stub); System.assert(false, 'P|R001|' + String.valueOf(value)); } }",
+      "expectedRuntime": {
+        "62.0": "TypeTextStubApi__sfdc_ApexStub:[stubProvider=TypeTextStubProvider:[observedTypes=(), providerFlag=true, providerName=synthetic]]",
+        "67.0": "TypeTextStubApi__sfdc_ApexStub:[stubProvider=TypeTextStubProvider:[observedTypes=(), providerFlag=true, providerName=synthetic]]"
+      }
+    },
+    {
+      "id": "R002",
+      "question": "Stub provider type and provider fields",
+      "testClass": "TypeTextR002",
+      "source": "@IsTest private class TypeTextR002 { @IsTest static void observed() { TypeTextStubProvider provider = new TypeTextStubProvider(); TypeTextStubApi stub = (TypeTextStubApi)Test.createStub(TypeTextStubApi.class, provider); String value = String.valueOf(provider) + '|providerFlag=' + String.valueOf(provider.providerFlag) + '|providerName=' + provider.providerName; System.assert(false, 'P|R002|' + String.valueOf(value)); } }",
+      "expectedRuntime": {
+        "62.0": "TypeTextStubProvider:[observedTypes=(), providerFlag=true, providerName=synthetic]|providerFlag=true|providerName=synthetic",
+        "67.0": "TypeTextStubProvider:[observedTypes=(), providerFlag=true, providerName=synthetic]|providerFlag=true|providerName=synthetic"
+      }
+    },
+    {
+      "id": "R003",
+      "question": "Generic method parameter Type tokens seen by StubProvider",
+      "testClass": "TypeTextR003",
+      "source": "@IsTest private class TypeTextR003 { @IsTest static void observed() { TypeTextStubProvider provider = new TypeTextStubProvider(); TypeTextStubApi stub = (TypeTextStubApi)Test.createStub(TypeTextStubApi.class, provider); stub.apply('x', new List<String>{'y'}, new TypeTextAnchor(), null); String value = String.join(TypeTextStubProvider.observedTypes, '|'); System.assert(false, 'P|R003|' + String.valueOf(value)); } }",
+      "expectedRuntime": {
+        "62.0": "String|String|List<String>|nsx.TypeTextAnchor|nsx__TypeTextFlag__mdt",
+        "67.0": "String|String|List<String>|nsx.TypeTextAnchor|nsx__TypeTextFlag__mdt"
+      }
+    },
+    {
+      "id": "R004",
+      "question": "Generic Type tokens from class literals and Type.forName",
+      "testClass": "TypeTextR004",
+      "source": "@IsTest private class TypeTextR004 { @IsTest static void observed() { String value = TypeTextSupport.typeName(String.class) + '|' + TypeTextSupport.typeName(Type.forName('String')) + '|' + TypeTextSupport.typeName(List<String>.class) + '|' + TypeTextSupport.typeName(Type.forName('List<String>')) + '|' + TypeTextSupport.typeName(TypeTextAnchor.class) + '|' + TypeTextSupport.typeName(Type.forName('TypeTextAnchor')); System.assert(false, 'P|R004|' + String.valueOf(value)); } }",
+      "expectedRuntime": {
+        "62.0": "String|String|List<String>|List<String>|nsx.TypeTextAnchor|nsx.TypeTextAnchor",
+        "67.0": "String|String|List<String>|List<String>|nsx.TypeTextAnchor|nsx.TypeTextAnchor"
+      }
+    },
+    {
+      "id": "R005",
+      "question": "Failed cast to an owned class",
+      "testClass": "TypeTextR005",
+      "source": "@IsTest private class TypeTextR005 { @IsTest static void observed() { Object source = 'x'; String value; try { TypeTextAnchor result = (TypeTextAnchor)source; value = 'NO_ERROR'; } catch (Exception e) { value = e.getTypeName() + '|' + e.getMessage(); } System.assert(false, 'P|R005|' + String.valueOf(value)); } }",
+      "expectedRuntime": {
+        "62.0": "System.TypeException|Invalid conversion from runtime type String to nsx.TypeTextAnchor",
+        "67.0": "System.TypeException|Invalid conversion from runtime type String to nsx.TypeTextAnchor"
+      }
+    },
+    {
+      "id": "R006",
+      "question": "Failed cast to List of an owned class",
+      "testClass": "TypeTextR006",
+      "source": "@IsTest private class TypeTextR006 { @IsTest static void observed() { Object source = new List<String>{'x'}; String value; try { List<TypeTextAnchor> result = (List<TypeTextAnchor>)source; value = 'NO_ERROR'; } catch (Exception e) { value = e.getTypeName() + '|' + e.getMessage(); } System.assert(false, 'P|R006|' + String.valueOf(value)); } }",
+      "expectedRuntime": {
+        "62.0": "System.TypeException|Invalid conversion from runtime type List<String> to List<nsx.TypeTextAnchor>",
+        "67.0": "System.TypeException|Invalid conversion from runtime type List<String> to List<nsx.TypeTextAnchor>"
+      }
+    },
+    {
+      "id": "R007",
+      "question": "Namespaced custom metadata type text",
+      "testClass": "TypeTextR007",
+      "source": "@IsTest private class TypeTextR007 { @IsTest static void observed() { String value = TypeTextFlag__mdt.SObjectType.getDescribe().getName() + '|' + TypeTextSupport.typeName(Type.forName('TypeTextFlag__mdt')); System.assert(false, 'P|R007|' + String.valueOf(value)); } }",
+      "expectedRuntime": {
+        "62.0": "nsx__TypeTextFlag__mdt|nsx__TypeTextFlag__mdt",
+        "67.0": "nsx__TypeTextFlag__mdt|nsx__TypeTextFlag__mdt"
+      }
+    },
+    {
+      "id": "R008",
+      "question": "Global describe keys matching an owned unprefixed name",
+      "testClass": "TypeTextR008",
+      "source": "@IsTest private class TypeTextR008 { @IsTest static void observed() { Map<String, Schema.SObjectType> allTypes = Schema.getGlobalDescribe(); List<String> keys = new List<String>(); for (String key : allTypes.keySet()) if (key.toLowerCase().contains('typetextitem')) keys.add(key); keys.sort(); String value = String.join(keys, '|'); System.assert(false, 'P|R008|' + String.valueOf(value)); } }",
+      "expectedRuntime": {
+        "62.0": "nsx__typetextitem__c|nsx__typetextitem__changeevent|nsx__typetextitem__share",
+        "67.0": "nsx__typetextitem__c|nsx__typetextitem__changeevent|nsx__typetextitem__share"
+      }
+    },
+    {
+      "id": "R009",
+      "question": "Global describe containsKey with an unprefixed name",
+      "testClass": "TypeTextR009",
+      "source": "@IsTest private class TypeTextR009 { @IsTest static void observed() { String value = String.valueOf(Schema.getGlobalDescribe().containsKey('TypeTextItem__c')); System.assert(false, 'P|R009|' + String.valueOf(value)); } }",
+      "expectedRuntime": {
+        "62.0": "false",
+        "67.0": "false"
+      }
+    },
+    {
+      "id": "R010",
+      "question": "Global describe get with an unprefixed name",
+      "testClass": "TypeTextR010",
+      "source": "@IsTest private class TypeTextR010 { @IsTest static void observed() { Schema.SObjectType found = Schema.getGlobalDescribe().get('TypeTextItem__c'); String value = found == null ? 'null' : found.getDescribe().getName(); System.assert(false, 'P|R010|' + String.valueOf(value)); } }",
+      "expectedRuntime": {
+        "62.0": "null",
+        "67.0": "null"
+      }
+    },
+    {
+      "id": "R011",
+      "question": "Global describe containsKey with a lower-case unprefixed name",
+      "testClass": "TypeTextR011",
+      "source": "@IsTest private class TypeTextR011 { @IsTest static void observed() { String value = String.valueOf(Schema.getGlobalDescribe().containsKey('typetextitem__c')); System.assert(false, 'P|R011|' + String.valueOf(value)); } }",
+      "expectedRuntime": {
+        "62.0": "false",
+        "67.0": "false"
+      }
+    },
+    {
+      "id": "R012",
+      "question": "Field set member paths for an owned custom field",
+      "testClass": "TypeTextR012",
+      "source": "@IsTest private class TypeTextR012 { @IsTest static void observed() { List<String> paths = new List<String>(); for (Schema.FieldSetMember member : Schema.SObjectType.TypeTextItem__c.FieldSets.RouteSet.getFields()) paths.add(member.getFieldPath()); paths.sort(); String value = String.join(paths, '|'); System.assert(false, 'P|R012|' + String.valueOf(value)); } }",
+      "expectedRuntime": {
+        "62.0": "nsx__Route__c",
+        "67.0": "nsx__Route__c"
+      }
+    }
+  ]
+}

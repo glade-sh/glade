@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"crypto/sha256"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -63,7 +64,13 @@ func TestProjectMetadataGenerationCaptureAndFallbackRoutesRetainValidBytes(t *te
 	for _, route := range projectMetadataGenerationRoutes() {
 		t.Run(route.name, func(t *testing.T) {
 			root := t.TempDir()
-			path := filepath.Join(root, "metadata.xml")
+			files := map[string]string{
+				"list-view": "Owned.listView-meta.xml", "layout": "Owned.layout-meta.xml",
+				"flow": "Owned.flow-meta.xml", "permission-set-group": "Owned.permissionsetgroup-meta.xml",
+				"business-hours": "BusinessHours.settings-meta.xml", "duplicate-rule": "Owned.duplicateRule-meta.xml",
+			}
+			path := filepath.Join(root, files[route.name])
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{}`)
 			const body = "<metadata>owned</metadata>\n"
 			writeFile(t, path, body)
 			p := project.Project{Root: root}
@@ -83,29 +90,6 @@ func TestProjectMetadataGenerationCaptureAndFallbackRoutesRetainValidBytes(t *te
 			}
 			if input := generation.inputs[path]; !input.Present || input.Digest != sha256.Sum256([]byte(body)) {
 				t.Fatalf("snapshot digest = %#v", input)
-			}
-		})
-	}
-}
-
-func TestProjectMetadataGenerationRunRoutesRejectTraversal(t *testing.T) {
-	for _, route := range projectMetadataGenerationRoutes() {
-		t.Run(route.name, func(t *testing.T) {
-			root := filepath.Join(t.TempDir(), "project")
-			writeFile(t, filepath.Join(root, ".keep"), "")
-			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"67.0","packageDirectories":[{"path":"force-app","default":true}]}`)
-			writeFile(t, filepath.Join(root, "force-app", "classes", "OwnedBoundaryTest.cls"), `@IsTest private class OwnedBoundaryTest { @IsTest static void check() { System.assertEquals(1,1); } }`)
-			index := loadTestIndex(t, root)
-			p, err := project.Load(root)
-			if err != nil {
-				t.Fatal(err)
-			}
-			path := root + string(filepath.Separator) + "../outside.xml"
-			writeFile(t, filepath.Clean(path), "<metadata/>")
-			route.set(&p, path)
-			run := Run(index, Options{ProjectSnapshot: &p, NoDiskCache: true, Parallelism: 1})
-			if problem := firstRunProblem(run); !strings.Contains(problem, "outside source root") {
-				t.Fatalf("Run must reject escaped metadata before execution: summary=%#v problem=%q", run.Summary(), problem)
 			}
 		})
 	}
@@ -150,6 +134,29 @@ func TestSourceUnitGenerationMarkerRouteStopsAtIndexedRoot(t *testing.T) {
 	}
 	if units[file] != "file:"+file || len(generation.inputs) != 1 {
 		t.Fatalf("marker discovery crossed indexed root: units=%v inputs=%v", units, generation.inputs)
+	}
+}
+
+func TestProjectMetadataGenerationRunRoutesRejectTraversal(t *testing.T) {
+	for _, route := range projectMetadataGenerationRoutes() {
+		t.Run(route.name, func(t *testing.T) {
+			root := filepath.Join(t.TempDir(), "project")
+			writeFile(t, filepath.Join(root, ".keep"), "")
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"67.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeFile(t, filepath.Join(root, "force-app", "classes", "OwnedBoundaryTest.cls"), `@IsTest private class OwnedBoundaryTest { @IsTest static void check() { System.assertEquals(1,1); } }`)
+			index := loadTestIndex(t, root)
+			p, err := project.Load(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			path := root + string(filepath.Separator) + "../outside.xml"
+			writeFile(t, filepath.Clean(path), "<metadata/>")
+			route.set(&p, path)
+			run := Run(index, Options{ProjectSnapshot: &p, NoDiskCache: true, Parallelism: 1})
+			if problem := firstRunProblem(run); !strings.Contains(problem, "outside source root") {
+				t.Fatalf("Run must reject escaped metadata before execution: summary=%#v problem=%q", run.Summary(), problem)
+			}
+		})
 	}
 }
 
@@ -226,6 +233,54 @@ func TestSourceUnitGenerationRunClassAndCustomMetadataRoutesRejectTraversal(t *t
 				t.Fatalf("Run must reject escaped source-unit marker: summary=%#v problem=%q", run.Summary(), problem)
 			}
 		})
+	}
+}
+
+func TestProjectMetadataGenerationRunExternalPackageRoutesRejectTraversal(t *testing.T) {
+	for _, version := range []string{"62.0", "67.0"} {
+		for _, route := range projectMetadataGenerationRoutes() {
+			t.Run(version+"/"+route.name, func(t *testing.T) {
+				root := filepath.Join(t.TempDir(), "project")
+				writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true},{"path":"../shared"}]}`, version))
+				writeFile(t, filepath.Join(root, "force-app", "classes", "OwnedBoundaryTest.cls"), `@IsTest private class OwnedBoundaryTest { @IsTest static void check() { System.assertEquals(1,1); } }`)
+				writeFile(t, filepath.Join(root, "..", "shared", ".keep"), "")
+				index := loadTestIndex(t, root)
+				p, err := project.Load(root)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Retain the traversal out of the declared sibling package root
+				// in the indexed metadata path supplied to the runner.
+				path := root + "/../shared/../outside/" + route.name + ".xml"
+				writeFile(t, filepath.Clean(path), "<metadata/>")
+				route.set(&p, path)
+				run := Run(index, Options{ProjectSnapshot: &p, NoDiskCache: true, Parallelism: 1})
+				if problem := firstRunProblem(run); !strings.Contains(problem, "outside source root") {
+					t.Fatalf("Run must reject escaped metadata before execution: summary=%#v problem=%q", run.Summary(), problem)
+				}
+			})
+		}
+	}
+}
+
+func TestProjectMetadataGenerationFallbackWithoutIndexedRootRejectsRead(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "Owned.xml")
+	writeFile(t, path, "owned")
+	if _, err := newSourceCache().readCapturedProjectMetadata(path); err == nil {
+		t.Fatal("uncaptured metadata reader accepted a path without an indexed root")
+	}
+}
+
+func TestProjectMetadataGenerationLegacyProjectReaderRouteLoadsRoot(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Owned.layout-meta.xml")
+	writeFile(t, path, "owned")
+	sources := newSourceCache()
+	if _, err := sources.capturedProjectSnapshot(root); err != nil {
+		t.Fatal(err)
+	}
+	if data, err := sources.readCapturedProjectMetadata(path); err != nil || string(data) != "owned" {
+		t.Fatalf("legacy reader bytes=%q err=%v", data, err)
 	}
 }
 

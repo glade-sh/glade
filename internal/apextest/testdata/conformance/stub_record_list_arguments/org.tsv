@@ -1,0 +1,13 @@
+source_api	route	case_id	observation
+62.0	anonymous	0	System.TypeException|Test.createStub() can only be called from test methods
+62.0	anonymous	1	System.TypeException|Test.createStub() can only be called from test methods
+62.0	anonymous	2	System.TypeException|Test.createStub() can only be called from test methods
+62.0	istest	0	System.TypeException|Invalid conversion from runtime type List<Account> to Date
+62.0	istest	1	System.TypeException|Invalid conversion from runtime type List<Account> to Date
+62.0	istest	2	System.TypeException|Invalid conversion from runtime type List<SObject> to Date
+67.0	anonymous	0	System.TypeException|Test.createStub() can only be called from test methods
+67.0	anonymous	1	System.TypeException|Test.createStub() can only be called from test methods
+67.0	anonymous	2	System.TypeException|Test.createStub() can only be called from test methods
+67.0	istest	0	System.TypeException|Invalid conversion from runtime type List<Account> to Date
+67.0	istest	1	System.TypeException|Invalid conversion from runtime type List<Account> to Date
+67.0	istest	2	System.TypeException|Invalid conversion from runtime type List<SObject> to Date

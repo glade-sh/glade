@@ -1,0 +1,5 @@
+api	method	observation
+62.0	innerArtifact	OBS effects=0 cron=1
+62.0	topArtifact	OBS effects=1 cron=1
+67.0	innerArtifact	OBS effects=0 cron=1
+67.0	topArtifact	OBS effects=1 cron=1

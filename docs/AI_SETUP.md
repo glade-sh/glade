@@ -104,6 +104,24 @@ GLADE_LWC_BROWSER=1 CGO_ENABLED=1 go test -p=1 -count=1 -timeout=25m \
   ./internal/lwcruntime ./internal/lwcbrowser
 ```
 
+LWC family conformance runs one API at a time by default. Set
+`GLADE_LWC_BROWSER_API_PARALLEL=2` and pass `-parallel=2` to opt in to two
+isolated API observations. The mode requires at least 16 GiB of physical host
+memory; smaller hosts or an unknown memory size stay sequential even with an
+explicit request. Higher requested counts are capped at two. API 68 and
+intermediate version checks retain their existing coverage. Observation windows,
+within-API page histories, comparison rules and TSV row order are unchanged. Each family remains sequential with other families.
+
+For a small native-backed project check, run
+`go test ./internal/lwc/compile -run '^TestBrowserAPIProjectMode$' -count=1 -parallel=2`
+with the API-pass variable set to `1` and then `2`. Set
+`GLADE_LWC_BROWSER_API_REPORT` to separate TSV paths and compare them byte for
+byte. Measure aggregate RSS across the Go, Node and Chromium process tree;
+a single process's maximum RSS does not measure the concurrent host cost.
+A small-project result does not establish equivalence or a performance gain
+for all families: repeat each family's conformance test and compare its report
+before enabling concurrency in a lane planner.
+
 Use [the CI workflows](../.github/workflows) and package scripts as the current
 command authority. `scripts/ci-go-test.sh local-release` runs the broad Go lanes;
 avoid running it concurrently with another broad suite on the same host.

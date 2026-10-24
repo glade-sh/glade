@@ -35,8 +35,14 @@ func NewRestoredRuntimeTemplate(org storage.OrgState, machine *VM) RestoredRunti
 	if machine == nil {
 		return RestoredRuntimeTemplate{}
 	}
+	// Install registered change-event objects before the stamp is taken, so
+	// SetRuntimeTemplateOrg does not add them (and clear the stamp) per clone.
+	machine.ensureChangeEventObjects(&org)
+	machine.installManagedFeatureParameters(&org, false)
 	template := storage.NewRuntimeTemplate(org)
 	PrimeRuntimeTemplateSchema(&template)
+	machine.PrimeMetadataSchema(&template.Org)
+	machine.FreezeClassLookup()
 	return RestoredRuntimeTemplate{
 		org:     template,
 		machine: machine,
@@ -67,8 +73,9 @@ func (t RestoredRuntimeTemplate) BeforeFirstCloneOrg(fn func()) bool {
 	return true
 }
 
-// CloneOrg returns a fresh isolated runtime org. Invalid templates return the
-// zero OrgState.
+// CloneOrg returns a fresh runtime org. Immutable setup records are shared
+// with copy-on-write isolation; mutable business records remain private. Invalid
+// templates return the zero OrgState.
 func (t RestoredRuntimeTemplate) CloneOrg() storage.OrgState {
 	if !t.Valid() {
 		return storage.OrgState{}
@@ -84,13 +91,16 @@ func (t RestoredRuntimeTemplate) CloneOrg() storage.OrgState {
 		}
 		t.clones.mu.Unlock()
 	}
-	return t.org.CloneRuntimeOrg()
+	org := t.org.Org.CloneRuntimeFrozenShared()
+	org.RuntimeSchemaStamp = t.org.RuntimeSchemaStamp
+	return org
 }
 
-// CloneMachine returns a fresh isolated VM. Invalid templates return nil.
+// CloneMachine returns a fresh VM that shares frozen compiled artifacts and
+// static templates with copy-on-write isolation. Invalid templates return nil.
 func (t RestoredRuntimeTemplate) CloneMachine(stdout io.Writer) *VM {
 	if !t.Valid() {
 		return nil
 	}
-	return t.machine.CloneRuntime(stdout)
+	return t.machine.CloneRuntimeFrozenShared(stdout)
 }

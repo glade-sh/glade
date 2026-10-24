@@ -1,0 +1,7 @@
+phase	operand	event
+before	true	create
+before	true	update
+before	false	create
+after	true	create
+after	true	update
+after	false	create

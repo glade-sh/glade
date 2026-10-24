@@ -123,7 +123,7 @@ func TestTriggersOrgConformance(t *testing.T) {
 		return "ACCEPTED"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			expected := func(tc familyCase) string {
 				if api == "68.0" {
 					return *tc.CeilingExpected

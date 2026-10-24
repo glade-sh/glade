@@ -1,0 +1,33 @@
+case	api	route	status	value
+siteLiteral	62.0	anonymous	OBSERVED	Site.getSiteId()
+siteLiteral	62.0	isTest	OBSERVED	Site.getSiteId()
+siteComment	62.0	anonymous	OBSERVED	comment
+siteComment	62.0	isTest	OBSERVED	comment
+communityQueryLiteral	62.0	anonymous	OBSERVED	SELECT IsPortalEnabled FROM User
+communityQueryLiteral	62.0	isTest	OBSERVED	SELECT IsPortalEnabled FROM User
+territoryQueryLiteral	62.0	anonymous	OBSERVED	SELECT Id FROM Territory2
+territoryQueryLiteral	62.0	isTest	OBSERVED	SELECT Id FROM Territory2
+queryComment	62.0	anonymous	OBSERVED	comment
+queryComment	62.0	isTest	OBSERVED	comment
+staticAggregateAliases	62.0	anonymous	OBSERVED	0/0
+staticAggregateAliases	62.0	isTest	OBSERVED	0/0
+dynamicAggregateAliases	62.0	anonymous	OBSERVED	0/0
+dynamicAggregateAliases	62.0	isTest	OBSERVED	0/0
+fieldMetadata	62.0	anonymous	OBSERVED	false/false
+fieldMetadata	62.0	isTest	OBSERVED	false/false
+siteLiteral	67.0	anonymous	OBSERVED	Site.getSiteId()
+siteLiteral	67.0	isTest	OBSERVED	Site.getSiteId()
+siteComment	67.0	anonymous	OBSERVED	comment
+siteComment	67.0	isTest	OBSERVED	comment
+communityQueryLiteral	67.0	anonymous	OBSERVED	SELECT IsPortalEnabled FROM User
+communityQueryLiteral	67.0	isTest	OBSERVED	SELECT IsPortalEnabled FROM User
+territoryQueryLiteral	67.0	anonymous	OBSERVED	SELECT Id FROM Territory2
+territoryQueryLiteral	67.0	isTest	OBSERVED	SELECT Id FROM Territory2
+queryComment	67.0	anonymous	OBSERVED	comment
+queryComment	67.0	isTest	OBSERVED	comment
+staticAggregateAliases	67.0	anonymous	OBSERVED	0/0
+staticAggregateAliases	67.0	isTest	OBSERVED	0/0
+dynamicAggregateAliases	67.0	anonymous	OBSERVED	0/0
+dynamicAggregateAliases	67.0	isTest	OBSERVED	0/0
+fieldMetadata	67.0	anonymous	OBSERVED	false/false
+fieldMetadata	67.0	isTest	OBSERVED	false/false

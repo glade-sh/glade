@@ -1,0 +1,7 @@
+case_id	receiver	statement	compiled
+static_string	ReceiverValues.Text	System.assertEquals('parcel', ReceiverValues.Text.toLowerCase());	true
+static_instance	ReceiverValues.Instance.Text	System.assertEquals('parcel', ReceiverValues.Instance.Text.toLowerCase());	true
+platform_class_instance	RestContext.request.requestURI	RestContext.request = new RestRequest(); RestContext.request.requestURI = 'PARCEL'; System.assertEquals('parcel', RestContext.request.requestURI.toLowerCase());	true
+platform_namespace_instance	System.RestContext.request.requestURI	System.RestContext.request = new System.RestRequest(); System.RestContext.request.requestURI = 'PARCEL'; System.assertEquals('parcel', System.RestContext.request.requestURI.toLowerCase());	true
+missing_namespace	missingns.ReceiverValues.Instance.Text	missingns.ReceiverValues.Instance.Text.toLowerCase();	false
+missing_instance_field	ReceiverValues.Instance.Missing	ReceiverValues.Instance.Missing.toLowerCase();	false

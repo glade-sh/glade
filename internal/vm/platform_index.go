@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/apexlang"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 )
@@ -40,7 +41,7 @@ func systemNamespaceClassName(name string) (string, bool) {
 		// Native NS352B/NS385D: the URL class reads System.Url in cast text.
 		systemNamespaceClassNames["url"] = "Url"
 	})
-	canonical, ok := systemNamespaceClassNames[strings.ToLower(strings.TrimSpace(name))]
+	canonical, ok := systemNamespaceClassNames[apexlang.LowerName(strings.TrimSpace(name))]
 	return canonical, ok
 }
 
@@ -62,7 +63,7 @@ func IsCommonSObjectTypeName(name string) bool {
 			commonSObjectTypeNameFoldSet[strings.ToLower(objectName)] = struct{}{}
 		}
 	})
-	_, ok := commonSObjectTypeNameFoldSet[strings.ToLower(name)]
+	_, ok := commonSObjectTypeNameFoldSet[apexlang.LowerName(name)]
 	return ok
 }
 

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <label>Linden_Vars_67</label>
+    <processType>AutoLaunchedFlow</processType>
+    <assignments><name>Set_Vars</name><label>Set Vars</label><locationX>0</locationX><locationY>0</locationY>
+        <assignmentItems><assignToReference>vDate</assignToReference><operator>Assign</operator><value><dateValue>2000-01-02</dateValue></value></assignmentItems>
+        <assignmentItems><assignToReference>vText</assignToReference><operator>Assign</operator><value><stringValue>x</stringValue></value></assignmentItems>
+        <connector><targetReference>Dec_D1</targetReference></connector>
+    </assignments>
+    <decisions><name>Dec_Pick</name><label>Dec Pick</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Set_Vars</targetReference></defaultConnector><defaultConnectorLabel>Has title</defaultConnectorLabel>
+        <rules><name>No_Title</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>$Record.Title</leftValueReference><operator>IsNull</operator><rightValue><booleanValue>true</booleanValue></rightValue></conditions><connector><targetReference>Dec_D1</targetReference></connector><label>No title</label></rules>
+    </decisions>
+    <decisions><name>Dec_D1</name><label>Dec D1</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Upd_D1_no</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>R_D1</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>vDate</leftValueReference><operator>EqualTo</operator></conditions><connector><targetReference>Upd_D1_yes</targetReference></connector><label>R D1</label></rules>
+    </decisions>
+    <decisions><name>Dec_D2</name><label>Dec D2</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Upd_D2_no</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>R_D2</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>vText</leftValueReference><operator>EqualTo</operator></conditions><connector><targetReference>Upd_D2_yes</targetReference></connector><label>R D2</label></rules>
+    </decisions>
+    <decisions><name>Dec_D3</name><label>Dec D3</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Upd_D3_no</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>R_D3</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>vFlag</leftValueReference><operator>NotEqualTo</operator><rightValue><elementReference>vTrue</elementReference></rightValue></conditions><connector><targetReference>Upd_D3_yes</targetReference></connector><label>R D3</label></rules>
+    </decisions>
+    <decisions><name>Dec_D4</name><label>Dec D4</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Upd_D4_no</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>R_D4</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>vFalse</leftValueReference><operator>NotEqualTo</operator><rightValue><elementReference>vTrue</elementReference></rightValue></conditions><connector><targetReference>Upd_D4_yes</targetReference></connector><label>R D4</label></rules>
+    </decisions>
+    <decisions><name>Dec_D5</name><label>Dec D5</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Upd_D5_no</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>R_D5</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>vText</leftValueReference><operator>EqualTo</operator><rightValue><stringValue></stringValue></rightValue></conditions><connector><targetReference>Upd_D5_yes</targetReference></connector><label>R D5</label></rules>
+    </decisions>
+    <decisions><name>Dec_D6</name><label>Dec D6</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Upd_D6_no</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>R_D6</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>vTrue</leftValueReference><operator>EqualTo</operator><rightValue><elementReference>vFlag</elementReference></rightValue></conditions><connector><targetReference>Upd_D6_yes</targetReference></connector><label>R D6</label></rules>
+    </decisions>
+    <decisions><name>Dec_D7</name><label>Dec D7</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Upd_D7_no</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>R_D7</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>vFlag</leftValueReference><operator>EqualTo</operator><rightValue><elementReference>vFlag</elementReference></rightValue></conditions><connector><targetReference>Upd_D7_yes</targetReference></connector><label>R D7</label></rules>
+    </decisions>
+    <decisions><name>Dec_D8</name><label>Dec D8</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Upd_D8_no</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>R_D8</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>vFlag</leftValueReference><operator>NotEqualTo</operator><rightValue><elementReference>vFlag</elementReference></rightValue></conditions><connector><targetReference>Upd_D8_yes</targetReference></connector><label>R D8</label></rules>
+    </decisions>
+    <decisions><name>Dec_D9</name><label>Dec D9</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Upd_D9_no</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>R_D9</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>vText</leftValueReference><operator>NotEqualTo</operator></conditions><connector><targetReference>Upd_D9_yes</targetReference></connector><label>R D9</label></rules>
+    </decisions>
+    <recordUpdates><name>Upd_D1_yes</name><label>Upd D1_yes</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_D2</targetReference></connector>
+        <inputAssignments><field>Linden_A__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D1_no</name><label>Upd D1_no</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_D2</targetReference></connector>
+        <inputAssignments><field>Linden_A__c</field><value><stringValue>no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D2_yes</name><label>Upd D2_yes</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_D3</targetReference></connector>
+        <inputAssignments><field>Linden_B__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D2_no</name><label>Upd D2_no</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_D3</targetReference></connector>
+        <inputAssignments><field>Linden_B__c</field><value><stringValue>no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D3_yes</name><label>Upd D3_yes</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_D4</targetReference></connector>
+        <inputAssignments><field>Linden_C__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D3_no</name><label>Upd D3_no</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_D4</targetReference></connector>
+        <inputAssignments><field>Linden_C__c</field><value><stringValue>no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D4_yes</name><label>Upd D4_yes</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_D5</targetReference></connector>
+        <inputAssignments><field>Linden_D__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D4_no</name><label>Upd D4_no</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_D5</targetReference></connector>
+        <inputAssignments><field>Linden_D__c</field><value><stringValue>no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D5_yes</name><label>Upd D5_yes</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_D6</targetReference></connector>
+        <inputAssignments><field>Linden_E__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D5_no</name><label>Upd D5_no</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_D6</targetReference></connector>
+        <inputAssignments><field>Linden_E__c</field><value><stringValue>no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D6_yes</name><label>Upd D6_yes</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_D7</targetReference></connector>
+        <inputAssignments><field>Linden_F__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D6_no</name><label>Upd D6_no</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_D7</targetReference></connector>
+        <inputAssignments><field>Linden_F__c</field><value><stringValue>no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D7_yes</name><label>Upd D7_yes</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_D8</targetReference></connector>
+        <inputAssignments><field>Linden_G__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D7_no</name><label>Upd D7_no</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_D8</targetReference></connector>
+        <inputAssignments><field>Linden_G__c</field><value><stringValue>_no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D8_yes</name><label>Upd D8_yes</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_D9</targetReference></connector>
+        <inputAssignments><field>Linden_H__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D8_no</name><label>Upd D8_no</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_D9</targetReference></connector>
+        <inputAssignments><field>Linden_H__c</field><value><stringValue>_no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D9_yes</name><label>Upd D9 yes</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Linden_I__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_D9_no</name><label>Upd D9 no</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Linden_I__c</field><value><stringValue>no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <start>
+        <locationX>0</locationX><locationY>0</locationY>
+        <connector><targetReference>Dec_Pick</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>Department</field><operator>IsChanged</operator><value><booleanValue>true</booleanValue></value></filters>
+        <object>Contact</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <variables><name>vDate</name><dataType>Date</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput></variables>
+    <variables><name>vFalse</name><dataType>Boolean</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput><value><booleanValue>false</booleanValue></value></variables>
+    <variables><name>vFlag</name><dataType>Boolean</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput></variables>
+    <variables><name>vText</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput></variables>
+    <variables><name>vTrue</name><dataType>Boolean</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput><value><booleanValue>true</booleanValue></value></variables>
+</Flow>

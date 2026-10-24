@@ -76,7 +76,7 @@ func workflowExecutableReferenceProblem(file, line string) (string, bool) {
 	if match := workflowUsesPattern.FindStringSubmatch(line); match != nil {
 		ref := match[1]
 		if ref == "security-extended" {
-			if file != "security.yml" {
+			if file != "codeql.yml" {
 				return "security-extended is only valid in the CodeQL query-suite config", false
 			}
 			return "", true

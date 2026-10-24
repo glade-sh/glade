@@ -171,9 +171,9 @@ func NewWithStoreAndSource(org *storage.OrgState, store interface{ Save(storage.
 
 func (s *Server) SetProjectIndex(index typesys.Index) {
 	s.Index = &index
-	machine := vm.New(nil)
-	s.runtimeErr = apextest.RegisterProjectRuntimeForRequest(machine, index)
-	if s.runtimeErr != nil {
+	machine, err := apextest.NewProjectRuntimeForRequest(index)
+	s.runtimeErr = err
+	if err != nil {
 		s.runtime = nil
 		return
 	}

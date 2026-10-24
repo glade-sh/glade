@@ -1,0 +1,121 @@
+configuration	source_api	route	case	observation
+disabled	62.0	anonymous	available	false
+disabled	62.0	istest	available	false
+disabled	67.0	anonymous	available	false
+disabled	67.0	istest	available	false
+enabled	62.0	anonymous	available	true
+enabled	62.0	anonymous	count	0
+enabled	62.0	anonymous	missingCount	0
+enabled	62.0	anonymous	missingDynamic	System.QueryException|List has no rows for assignment to SObject
+enabled	62.0	anonymous	missingList	0
+enabled	62.0	istest	available	true
+enabled	62.0	istest	count	0
+enabled	62.0	istest	missingCount	0
+enabled	62.0	istest	missingDynamic	System.QueryException|List has no rows for assignment to SObject
+enabled	62.0	istest	missingList	0
+enabled	62.0	anonymous	limitZero	0
+enabled	62.0	anonymous	literalCount	0
+enabled	62.0	anonymous	missingField	System.QueryException|List has no rows for assignment to SObject
+enabled	62.0	anonymous	missingIndexed	System.QueryException|List has no rows for assignment to SObject
+enabled	62.0	anonymous	missingLiteral	System.QueryException|List has no rows for assignment to SObject
+enabled	62.0	anonymous	safeMissing	null
+enabled	62.0	istest	limitZero	0
+enabled	62.0	istest	literalCount	0
+enabled	62.0	istest	missingField	System.QueryException|List has no rows for assignment to SObject
+enabled	62.0	istest	missingIndexed	System.QueryException|List has no rows for assignment to SObject
+enabled	62.0	istest	missingLiteral	System.QueryException|List has no rows for assignment to SObject
+enabled	62.0	istest	safeMissing	null
+enabled	67.0	anonymous	available	true
+enabled	67.0	anonymous	count	0
+enabled	67.0	anonymous	missingCount	0
+enabled	67.0	anonymous	missingDynamic	System.QueryException|List has no rows for assignment to SObject
+enabled	67.0	anonymous	missingList	0
+enabled	67.0	istest	available	true
+enabled	67.0	istest	count	0
+enabled	67.0	istest	missingCount	0
+enabled	67.0	istest	missingDynamic	System.QueryException|List has no rows for assignment to SObject
+enabled	67.0	istest	missingList	0
+enabled	67.0	anonymous	limitZero	0
+enabled	67.0	anonymous	literalCount	0
+enabled	67.0	anonymous	missingField	System.QueryException|List has no rows for assignment to SObject
+enabled	67.0	anonymous	missingIndexed	System.QueryException|List has no rows for assignment to SObject
+enabled	67.0	anonymous	missingLiteral	System.QueryException|List has no rows for assignment to SObject
+enabled	67.0	anonymous	safeMissing	null
+enabled	67.0	istest	limitZero	0
+enabled	67.0	istest	literalCount	0
+enabled	67.0	istest	missingField	System.QueryException|List has no rows for assignment to SObject
+enabled	67.0	istest	missingIndexed	System.QueryException|List has no rows for assignment to SObject
+enabled	67.0	istest	missingLiteral	System.QueryException|List has no rows for assignment to SObject
+enabled	67.0	istest	safeMissing	null
+metadata	62.0	anonymous	available	true
+metadata	62.0	anonymous	count	1
+metadata	62.0	anonymous	guestChatter	false
+metadata	62.0	anonymous	idPrefix	0DB
+metadata	62.0	anonymous	missingCount	0
+metadata	62.0	anonymous	missingDynamic	System.QueryException|List has no rows for assignment to SObject
+metadata	62.0	anonymous	missingList	0
+metadata	62.0	anonymous	name	Synthetic Portal
+metadata	62.0	anonymous	prefix	synthetic
+metadata	62.0	anonymous	selfRegNull	true
+metadata	62.0	anonymous	status	UnderConstruction
+metadata	62.0	istest	available	true
+metadata	62.0	istest	count	1
+metadata	62.0	istest	guestChatter	false
+metadata	62.0	istest	idPrefix	0DB
+metadata	62.0	istest	missingCount	0
+metadata	62.0	istest	missingDynamic	System.QueryException|List has no rows for assignment to SObject
+metadata	62.0	istest	missingList	0
+metadata	62.0	istest	name	Synthetic Portal
+metadata	62.0	istest	prefix	synthetic
+metadata	62.0	istest	selfRegNull	true
+metadata	62.0	istest	status	UnderConstruction
+metadata	62.0	anonymous	limitZero	0
+metadata	62.0	anonymous	literalCount	1
+metadata	62.0	anonymous	literalName	Synthetic Portal
+metadata	62.0	anonymous	missingField	System.QueryException|List has no rows for assignment to SObject
+metadata	62.0	anonymous	missingIndexed	System.QueryException|List has no rows for assignment to SObject
+metadata	62.0	anonymous	missingLiteral	System.QueryException|List has no rows for assignment to SObject
+metadata	62.0	anonymous	safeMissing	null
+metadata	62.0	istest	limitZero	0
+metadata	62.0	istest	literalCount	1
+metadata	62.0	istest	literalName	Synthetic Portal
+metadata	62.0	istest	missingField	System.QueryException|List has no rows for assignment to SObject
+metadata	62.0	istest	missingIndexed	System.QueryException|List has no rows for assignment to SObject
+metadata	62.0	istest	missingLiteral	System.QueryException|List has no rows for assignment to SObject
+metadata	62.0	istest	safeMissing	null
+metadata	67.0	anonymous	available	true
+metadata	67.0	anonymous	count	1
+metadata	67.0	anonymous	guestChatter	false
+metadata	67.0	anonymous	idPrefix	0DB
+metadata	67.0	anonymous	missingCount	0
+metadata	67.0	anonymous	missingDynamic	System.QueryException|List has no rows for assignment to SObject
+metadata	67.0	anonymous	missingList	0
+metadata	67.0	anonymous	name	Synthetic Portal
+metadata	67.0	anonymous	prefix	synthetic
+metadata	67.0	anonymous	selfRegNull	true
+metadata	67.0	anonymous	status	UnderConstruction
+metadata	67.0	istest	available	true
+metadata	67.0	istest	count	1
+metadata	67.0	istest	guestChatter	false
+metadata	67.0	istest	idPrefix	0DB
+metadata	67.0	istest	missingCount	0
+metadata	67.0	istest	missingDynamic	System.QueryException|List has no rows for assignment to SObject
+metadata	67.0	istest	missingList	0
+metadata	67.0	istest	name	Synthetic Portal
+metadata	67.0	istest	prefix	synthetic
+metadata	67.0	istest	selfRegNull	true
+metadata	67.0	istest	status	UnderConstruction
+metadata	67.0	anonymous	limitZero	0
+metadata	67.0	anonymous	literalCount	1
+metadata	67.0	anonymous	literalName	Synthetic Portal
+metadata	67.0	anonymous	missingField	System.QueryException|List has no rows for assignment to SObject
+metadata	67.0	anonymous	missingIndexed	System.QueryException|List has no rows for assignment to SObject
+metadata	67.0	anonymous	missingLiteral	System.QueryException|List has no rows for assignment to SObject
+metadata	67.0	anonymous	safeMissing	null
+metadata	67.0	istest	limitZero	0
+metadata	67.0	istest	literalCount	1
+metadata	67.0	istest	literalName	Synthetic Portal
+metadata	67.0	istest	missingField	System.QueryException|List has no rows for assignment to SObject
+metadata	67.0	istest	missingIndexed	System.QueryException|List has no rows for assignment to SObject
+metadata	67.0	istest	missingLiteral	System.QueryException|List has no rows for assignment to SObject
+metadata	67.0	istest	safeMissing	null

@@ -1,0 +1,187 @@
+source_api	case	compiled	execution_success	diagnostic
+62.0	lexical/unknown/named	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type EnumMethod1.Level
+62.0	lexical/unknown/isTest	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type EnumMethod2.Level
+62.0	lexical/name/named	true	not_run	-
+62.0	lexical/name/isTest	true	not_run	-
+62.0	lexical/ordinal/named	true	not_run	-
+62.0	lexical/ordinal/isTest	true	not_run	-
+62.0	lexical/values_on_value/named	false	not_run	Static method cannot be referenced from a non static context: List<EnumMethod7.Level> EnumMethod7.Level.values()
+62.0	lexical/values_on_value/isTest	false	not_run	Static method cannot be referenced from a non static context: List<EnumMethod8.Level> EnumMethod8.Level.values()
+62.0	lexical/valueOf_on_value/named	false	not_run	Static method cannot be referenced from a non static context: EnumMethod9.Level EnumMethod9.Level.valueOf(String)
+62.0	lexical/valueOf_on_value/isTest	false	not_run	Static method cannot be referenced from a non static context: EnumMethod10.Level EnumMethod10.Level.valueOf(String)
+62.0	lexical/equals/named	true	not_run	-
+62.0	lexical/equals/isTest	true	not_run	-
+62.0	lexical/hashCode/named	true	not_run	-
+62.0	lexical/hashCode/isTest	true	not_run	-
+62.0	lexical/toString/named	true	not_run	-
+62.0	lexical/toString/isTest	true	not_run	-
+62.0	lexical/values_on_type/named	true	not_run	-
+62.0	lexical/values_on_type/isTest	true	not_run	-
+62.0	lexical/valueOf_on_type/named	true	not_run	-
+62.0	lexical/valueOf_on_type/isTest	true	not_run	-
+62.0	qualified/unknown/named	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type EnumMethodOuter.Level
+62.0	qualified/unknown/isTest	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type EnumMethodOuter.Level
+62.0	qualified/name/named	true	not_run	-
+62.0	qualified/name/isTest	true	not_run	-
+62.0	qualified/ordinal/named	true	not_run	-
+62.0	qualified/ordinal/isTest	true	not_run	-
+62.0	qualified/values_on_value/named	false	not_run	Static method cannot be referenced from a non static context: List<EnumMethodOuter.Level> EnumMethodOuter.Level.values()
+62.0	qualified/values_on_value/isTest	false	not_run	Static method cannot be referenced from a non static context: List<EnumMethodOuter.Level> EnumMethodOuter.Level.values()
+62.0	qualified/valueOf_on_value/named	false	not_run	Static method cannot be referenced from a non static context: EnumMethodOuter.Level EnumMethodOuter.Level.valueOf(String)
+62.0	qualified/valueOf_on_value/isTest	false	not_run	Static method cannot be referenced from a non static context: EnumMethodOuter.Level EnumMethodOuter.Level.valueOf(String)
+62.0	qualified/equals/named	true	not_run	-
+62.0	qualified/equals/isTest	true	not_run	-
+62.0	qualified/hashCode/named	true	not_run	-
+62.0	qualified/hashCode/isTest	true	not_run	-
+62.0	qualified/toString/named	true	not_run	-
+62.0	qualified/toString/isTest	true	not_run	-
+62.0	qualified/values_on_type/named	true	not_run	-
+62.0	qualified/values_on_type/isTest	true	not_run	-
+62.0	qualified/valueOf_on_type/named	true	not_run	-
+62.0	qualified/valueOf_on_type/isTest	true	not_run	-
+62.0	top_level/unknown/named	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type EnumMethodLevel
+62.0	top_level/unknown/isTest	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type EnumMethodLevel
+62.0	top_level/name/named	true	not_run	-
+62.0	top_level/name/isTest	true	not_run	-
+62.0	top_level/ordinal/named	true	not_run	-
+62.0	top_level/ordinal/isTest	true	not_run	-
+62.0	top_level/values_on_value/named	false	not_run	Static method cannot be referenced from a non static context: List<EnumMethodLevel> EnumMethodLevel.values()
+62.0	top_level/values_on_value/isTest	false	not_run	Static method cannot be referenced from a non static context: List<EnumMethodLevel> EnumMethodLevel.values()
+62.0	top_level/valueOf_on_value/named	false	not_run	Static method cannot be referenced from a non static context: EnumMethodLevel EnumMethodLevel.valueOf(String)
+62.0	top_level/valueOf_on_value/isTest	false	not_run	Static method cannot be referenced from a non static context: EnumMethodLevel EnumMethodLevel.valueOf(String)
+62.0	top_level/equals/named	true	not_run	-
+62.0	top_level/equals/isTest	true	not_run	-
+62.0	top_level/hashCode/named	true	not_run	-
+62.0	top_level/hashCode/isTest	true	not_run	-
+62.0	top_level/toString/named	true	not_run	-
+62.0	top_level/toString/isTest	true	not_run	-
+62.0	top_level/values_on_type/named	true	not_run	-
+62.0	top_level/values_on_type/isTest	true	not_run	-
+62.0	top_level/valueOf_on_type/named	true	not_run	-
+62.0	top_level/valueOf_on_type/isTest	true	not_run	-
+62.0	system_namespace/unknown/named	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type System.LoggingLevel
+62.0	system_namespace/unknown/isTest	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type System.LoggingLevel
+62.0	system_namespace/name/named	true	not_run	-
+62.0	system_namespace/name/isTest	true	not_run	-
+62.0	system_namespace/ordinal/named	true	not_run	-
+62.0	system_namespace/ordinal/isTest	true	not_run	-
+62.0	system_namespace/values_on_value/named	false	not_run	Static method cannot be referenced from a non static context: List<System.LoggingLevel> System.LoggingLevel.values()
+62.0	system_namespace/values_on_value/isTest	false	not_run	Static method cannot be referenced from a non static context: List<System.LoggingLevel> System.LoggingLevel.values()
+62.0	system_namespace/valueOf_on_value/named	false	not_run	Static method cannot be referenced from a non static context: System.LoggingLevel System.LoggingLevel.valueOf(String)
+62.0	system_namespace/valueOf_on_value/isTest	false	not_run	Static method cannot be referenced from a non static context: System.LoggingLevel System.LoggingLevel.valueOf(String)
+62.0	system_namespace/equals/named	true	not_run	-
+62.0	system_namespace/equals/isTest	true	not_run	-
+62.0	system_namespace/hashCode/named	true	not_run	-
+62.0	system_namespace/hashCode/isTest	true	not_run	-
+62.0	system_namespace/toString/named	true	not_run	-
+62.0	system_namespace/toString/isTest	true	not_run	-
+62.0	system_namespace/values_on_type/named	true	not_run	-
+62.0	system_namespace/values_on_type/isTest	true	not_run	-
+62.0	system_namespace/valueOf_on_type/named	true	not_run	-
+62.0	system_namespace/valueOf_on_type/isTest	true	not_run	-
+67.0	lexical/unknown/named	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type EnumMethod1.Level
+67.0	lexical/unknown/isTest	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type EnumMethod2.Level
+67.0	lexical/name/named	true	not_run	-
+67.0	lexical/name/isTest	true	not_run	-
+67.0	lexical/ordinal/named	true	not_run	-
+67.0	lexical/ordinal/isTest	true	not_run	-
+67.0	lexical/values_on_value/named	false	not_run	Static method cannot be referenced from a non static context: List<EnumMethod7.Level> EnumMethod7.Level.values()
+67.0	lexical/values_on_value/isTest	false	not_run	Static method cannot be referenced from a non static context: List<EnumMethod8.Level> EnumMethod8.Level.values()
+67.0	lexical/valueOf_on_value/named	false	not_run	Static method cannot be referenced from a non static context: EnumMethod9.Level EnumMethod9.Level.valueOf(String)
+67.0	lexical/valueOf_on_value/isTest	false	not_run	Static method cannot be referenced from a non static context: EnumMethod10.Level EnumMethod10.Level.valueOf(String)
+67.0	lexical/equals/named	true	not_run	-
+67.0	lexical/equals/isTest	true	not_run	-
+67.0	lexical/hashCode/named	true	not_run	-
+67.0	lexical/hashCode/isTest	true	not_run	-
+67.0	lexical/toString/named	true	not_run	-
+67.0	lexical/toString/isTest	true	not_run	-
+67.0	lexical/values_on_type/named	true	not_run	-
+67.0	lexical/values_on_type/isTest	true	not_run	-
+67.0	lexical/valueOf_on_type/named	true	not_run	-
+67.0	lexical/valueOf_on_type/isTest	true	not_run	-
+67.0	qualified/unknown/named	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type EnumMethodOuter.Level
+67.0	qualified/unknown/isTest	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type EnumMethodOuter.Level
+67.0	qualified/name/named	true	not_run	-
+67.0	qualified/name/isTest	true	not_run	-
+67.0	qualified/ordinal/named	true	not_run	-
+67.0	qualified/ordinal/isTest	true	not_run	-
+67.0	qualified/values_on_value/named	false	not_run	Static method cannot be referenced from a non static context: List<EnumMethodOuter.Level> EnumMethodOuter.Level.values()
+67.0	qualified/values_on_value/isTest	false	not_run	Static method cannot be referenced from a non static context: List<EnumMethodOuter.Level> EnumMethodOuter.Level.values()
+67.0	qualified/valueOf_on_value/named	false	not_run	Static method cannot be referenced from a non static context: EnumMethodOuter.Level EnumMethodOuter.Level.valueOf(String)
+67.0	qualified/valueOf_on_value/isTest	false	not_run	Static method cannot be referenced from a non static context: EnumMethodOuter.Level EnumMethodOuter.Level.valueOf(String)
+67.0	qualified/equals/named	true	not_run	-
+67.0	qualified/equals/isTest	true	not_run	-
+67.0	qualified/hashCode/named	true	not_run	-
+67.0	qualified/hashCode/isTest	true	not_run	-
+67.0	qualified/toString/named	true	not_run	-
+67.0	qualified/toString/isTest	true	not_run	-
+67.0	qualified/values_on_type/named	true	not_run	-
+67.0	qualified/values_on_type/isTest	true	not_run	-
+67.0	qualified/valueOf_on_type/named	true	not_run	-
+67.0	qualified/valueOf_on_type/isTest	true	not_run	-
+67.0	top_level/unknown/named	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type EnumMethodLevel
+67.0	top_level/unknown/isTest	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type EnumMethodLevel
+67.0	top_level/name/named	true	not_run	-
+67.0	top_level/name/isTest	true	not_run	-
+67.0	top_level/ordinal/named	true	not_run	-
+67.0	top_level/ordinal/isTest	true	not_run	-
+67.0	top_level/values_on_value/named	false	not_run	Static method cannot be referenced from a non static context: List<EnumMethodLevel> EnumMethodLevel.values()
+67.0	top_level/values_on_value/isTest	false	not_run	Static method cannot be referenced from a non static context: List<EnumMethodLevel> EnumMethodLevel.values()
+67.0	top_level/valueOf_on_value/named	false	not_run	Static method cannot be referenced from a non static context: EnumMethodLevel EnumMethodLevel.valueOf(String)
+67.0	top_level/valueOf_on_value/isTest	false	not_run	Static method cannot be referenced from a non static context: EnumMethodLevel EnumMethodLevel.valueOf(String)
+67.0	top_level/equals/named	true	not_run	-
+67.0	top_level/equals/isTest	true	not_run	-
+67.0	top_level/hashCode/named	true	not_run	-
+67.0	top_level/hashCode/isTest	true	not_run	-
+67.0	top_level/toString/named	true	not_run	-
+67.0	top_level/toString/isTest	true	not_run	-
+67.0	top_level/values_on_type/named	true	not_run	-
+67.0	top_level/values_on_type/isTest	true	not_run	-
+67.0	top_level/valueOf_on_type/named	true	not_run	-
+67.0	top_level/valueOf_on_type/isTest	true	not_run	-
+67.0	system_namespace/unknown/named	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type System.LoggingLevel
+67.0	system_namespace/unknown/isTest	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type System.LoggingLevel
+67.0	system_namespace/name/named	true	not_run	-
+67.0	system_namespace/name/isTest	true	not_run	-
+67.0	system_namespace/ordinal/named	true	not_run	-
+67.0	system_namespace/ordinal/isTest	true	not_run	-
+67.0	system_namespace/values_on_value/named	false	not_run	Static method cannot be referenced from a non static context: List<System.LoggingLevel> System.LoggingLevel.values()
+67.0	system_namespace/values_on_value/isTest	false	not_run	Static method cannot be referenced from a non static context: List<System.LoggingLevel> System.LoggingLevel.values()
+67.0	system_namespace/valueOf_on_value/named	false	not_run	Static method cannot be referenced from a non static context: System.LoggingLevel System.LoggingLevel.valueOf(String)
+67.0	system_namespace/valueOf_on_value/isTest	false	not_run	Static method cannot be referenced from a non static context: System.LoggingLevel System.LoggingLevel.valueOf(String)
+67.0	system_namespace/equals/named	true	not_run	-
+67.0	system_namespace/equals/isTest	true	not_run	-
+67.0	system_namespace/hashCode/named	true	not_run	-
+67.0	system_namespace/hashCode/isTest	true	not_run	-
+67.0	system_namespace/toString/named	true	not_run	-
+67.0	system_namespace/toString/isTest	true	not_run	-
+67.0	system_namespace/values_on_type/named	true	not_run	-
+67.0	system_namespace/values_on_type/isTest	true	not_run	-
+67.0	system_namespace/valueOf_on_type/named	true	not_run	-
+67.0	system_namespace/valueOf_on_type/isTest	true	not_run	-
+62.0	lexical/local_enum_declaration/anonymous	false	not_run	Inner types are not allowed to have inner types
+62.0	qualified/valid_methods/anonymous	true	true	-
+62.0	qualified/unknown/anonymous	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type EnumMethodOuter.Level
+62.0	qualified/values_on_value/anonymous	false	not_run	Static method cannot be referenced from a non static context: List<EnumMethodOuter.Level> EnumMethodOuter.Level.values()
+62.0	qualified/valueOf_on_value/anonymous	false	not_run	Static method cannot be referenced from a non static context: EnumMethodOuter.Level EnumMethodOuter.Level.valueOf(String)
+62.0	top_level/valid_methods/anonymous	true	true	-
+62.0	top_level/unknown/anonymous	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type EnumMethodLevel
+62.0	top_level/values_on_value/anonymous	false	not_run	Static method cannot be referenced from a non static context: List<EnumMethodLevel> EnumMethodLevel.values()
+62.0	top_level/valueOf_on_value/anonymous	false	not_run	Static method cannot be referenced from a non static context: EnumMethodLevel EnumMethodLevel.valueOf(String)
+62.0	system_namespace/valid_methods/anonymous	true	true	-
+62.0	system_namespace/unknown/anonymous	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type System.LoggingLevel
+62.0	system_namespace/values_on_value/anonymous	false	not_run	Static method cannot be referenced from a non static context: List<System.LoggingLevel> System.LoggingLevel.values()
+62.0	system_namespace/valueOf_on_value/anonymous	false	not_run	Static method cannot be referenced from a non static context: System.LoggingLevel System.LoggingLevel.valueOf(String)
+67.0	lexical/local_enum_declaration/anonymous	false	not_run	Inner types are not allowed to have inner types
+67.0	qualified/valid_methods/anonymous	true	true	-
+67.0	qualified/unknown/anonymous	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type EnumMethodOuter.Level
+67.0	qualified/values_on_value/anonymous	false	not_run	Static method cannot be referenced from a non static context: List<EnumMethodOuter.Level> EnumMethodOuter.Level.values()
+67.0	qualified/valueOf_on_value/anonymous	false	not_run	Static method cannot be referenced from a non static context: EnumMethodOuter.Level EnumMethodOuter.Level.valueOf(String)
+67.0	top_level/valid_methods/anonymous	true	true	-
+67.0	top_level/unknown/anonymous	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type EnumMethodLevel
+67.0	top_level/values_on_value/anonymous	false	not_run	Static method cannot be referenced from a non static context: List<EnumMethodLevel> EnumMethodLevel.values()
+67.0	top_level/valueOf_on_value/anonymous	false	not_run	Static method cannot be referenced from a non static context: EnumMethodLevel EnumMethodLevel.valueOf(String)
+67.0	system_namespace/valid_methods/anonymous	true	true	-
+67.0	system_namespace/unknown/anonymous	false	not_run	Method does not exist or incorrect signature: void bogusMethod() from the type System.LoggingLevel
+67.0	system_namespace/values_on_value/anonymous	false	not_run	Static method cannot be referenced from a non static context: List<System.LoggingLevel> System.LoggingLevel.values()
+67.0	system_namespace/valueOf_on_value/anonymous	false	not_run	Static method cannot be referenced from a non static context: System.LoggingLevel System.LoggingLevel.valueOf(String)

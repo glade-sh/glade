@@ -1,0 +1,18 @@
+route	boundary
+interview_direct	direct control
+interview_subflow	record input and output
+invocable_direct	direct control
+invocable_subflow	record input and output
+before_create	direct control
+before_update	direct control
+after_direct_create	direct control
+after_direct_update	direct control
+after_subflow_create	record input and output
+after_subflow_update	record input and output
+delete_direct	direct control
+delete_subflow	record input and output
+event_direct_explicit	direct control
+event_direct_stop	direct control
+scheduled_dml	hosted schedule excluded from DML
+before_subflow	native deployment rejection
+event_subflow	native deployment rejection

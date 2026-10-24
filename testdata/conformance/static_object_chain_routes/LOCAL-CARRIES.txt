@@ -1,0 +1,4 @@
+The missing_instance_field rows at API 62.0 and 67.0 expose pre-existing gaps outside the namespace-rooted receiver fallback:
+- Unqualified anonymous ReceiverValues.Instance.Missing.toLowerCase() produces no semantic error locally; native rejects it. This outcome is logged as carried, never asserted as correct.
+- Named/test/trigger rejection status matches, but local diagnostics do not use the native text "Variable does not exist: Missing". The namespace-indexed twins likewise reject with a full receiver path instead of the final field. These tests assert rejection, not wording parity.
+The missing_namespace rejection twin still requires the exact native diagnostic on every route. All earlier receiver rejection tests are unchanged.

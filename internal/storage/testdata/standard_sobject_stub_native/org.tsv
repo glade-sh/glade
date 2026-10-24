@@ -1,0 +1,25 @@
+apiVersion	kind	object	field	type	label	pluralLabel	referenceTo	relationshipName	parentObject
+67.0	object	Account			Account	Accounts
+67.0	field	Account	Id	ID	Account ID
+67.0	field	Account	Name	STRING	Account Name
+67.0	field	Account	CreatedDate	DATETIME	Created Date
+67.0	field	Account	ParentId	REFERENCE	Parent Account ID		Account	Parent
+67.0	object	Contact			Contact	Contacts
+67.0	field	Contact	Id	ID	Contact ID
+67.0	field	Contact	FirstName	STRING	First Name
+67.0	field	Contact	LastName	STRING	Last Name
+67.0	field	Contact	CreatedDate	DATETIME	Created Date
+67.0	field	Contact	AccountId	REFERENCE	Account ID		Account	Account
+67.0	childRelationship	Account	ParentId					ChildAccounts	Account
+62.0	object	Account			Account	Accounts
+62.0	field	Account	Id	ID	Account ID
+62.0	field	Account	Name	STRING	Account Name
+62.0	field	Account	CreatedDate	DATETIME	Created Date
+62.0	field	Account	ParentId	REFERENCE	Parent Account ID		Account	Parent
+62.0	object	Contact			Contact	Contacts
+62.0	field	Contact	Id	ID	Contact ID
+62.0	field	Contact	FirstName	STRING	First Name
+62.0	field	Contact	LastName	STRING	Last Name
+62.0	field	Contact	CreatedDate	DATETIME	Created Date
+62.0	field	Contact	AccountId	REFERENCE	Account ID		Account	Account
+62.0	childRelationship	Account	ParentId					ChildAccounts	Account

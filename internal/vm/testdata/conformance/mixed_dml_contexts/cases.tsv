@@ -1,0 +1,9 @@
+id	context	class	method	source
+plainrole	istest	CaptureMixedPlainRoleTest	observe	-
+plainnorole	istest	CaptureMixedPlainNoRoleTest	observe	-
+startrole	istest	CaptureMixedStartRoleTest	observe	-
+startbothrole	istest	CaptureMixedStartBothRoleTest	observe	-
+runasrole	istest	CaptureMixedRunAsRoleTest	observe	-
+setuprole	istest	CaptureMixedSetupRoleTest	observe	-
+anonymous_role	anonymous	-	-	anonymous_role.apex
+anonymous_no_role	anonymous	-	-	anonymous_no_role.apex

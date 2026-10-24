@@ -152,21 +152,24 @@ func l10SalesforceConformance(t *testing.T) {
 	}
 	// Each pass owns its temp project/dist, org, server/port and Node/browser.
 	// Toolchain files and case inputs are read-only; reports stay on this goroutine.
-	observe := func(pass int) browserPass {
+	observe := func(t *testing.T, pass int) browserPass {
 		dom, domErrors, runtimeCompileErr, browserErr := l10ObserveDOM(t, versions[pass], runtimeCases, dependencyRoot, toolchain)
 		return browserPass{dom, domErrors, runtimeCompileErr, browserErr}
 	}
 	parallel := browserAPIParallelism(len(versions))
 	var passes []browserPass
 	if parallel > 1 {
-		passes = runBrowserPasses(len(versions), parallel, observe)
+		if _, err := gladehome.EnsureRoot(); err != nil {
+			t.Fatal(err)
+		}
+		passes = runBrowserPasses(t, versions, parallel, observe)
 	}
 	for pass, api := range versions {
 		compiled := l10CompileCases(t, api, compileCases)
 		var result browserPass
 		if parallel == 1 {
 			// Keep compile/observe/report interleaved in the legacy capped mode.
-			result = observe(pass)
+			result = observe(t, pass)
 		} else {
 			result = passes[pass]
 		}

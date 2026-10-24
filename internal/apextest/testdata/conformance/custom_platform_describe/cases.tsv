@@ -1,0 +1,3 @@
+kind	parent	observation
+describe	LinkProbe__c	named platform child relationship, child object, lookup field, deletion flags
+query	LinkProbe__c	describe-driven Id subquery and getSObjects traversal on an empty child list

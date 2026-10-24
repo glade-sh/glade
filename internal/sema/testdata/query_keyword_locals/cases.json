@@ -1,0 +1,34 @@
+[
+  {
+    "ID": "find_local",
+    "Body": "Find value = new Find(); value.marker = 7; List<Find> rows = new List<Find>(); rows.add(value); System.assertEquals(7, rows[0].marker);"
+  },
+  {
+    "ID": "select_local",
+    "Body": "Select value = new Select(); value.marker = 7; List<Select> rows = new List<Select>(); rows.add(value); System.assertEquals(7, rows[0].marker);",
+    "Reject": true
+  },
+  {
+    "ID": "where_local",
+    "Body": "Where value = new Where(); value.marker = 7; List<Where> rows = new List<Where>(); rows.add(value); System.assertEquals(7, rows[0].marker);",
+    "Reject": true
+  },
+  {
+    "ID": "from_local",
+    "Body": "From value = new From(); value.marker = 7; List<From> rows = new List<From>(); rows.add(value); System.assertEquals(7, rows[0].marker);",
+    "Reject": true
+  },
+  {
+    "ID": "multiple_locals",
+    "Body": "Find first = new Find(), second = new Find(); first.marker = 3; second.marker = 4; System.assertEquals(7, first.marker + second.marker);"
+  },
+  {
+    "ID": "query_boundary",
+    "Body": "Find value = new Find(); List<List<SObject>> hits = [FIND 'garden' IN ALL FIELDS RETURNING Account(Id)]; List<Account> rows = [SELECT Id FROM Account WHERE Name = 'garden' LIMIT 1]; System.assertNotEquals(null, value); System.assertNotEquals(null, hits); System.assertNotEquals(null, rows);"
+  },
+  {
+    "ID": "wrong_type_rejection",
+    "Body": "Find value = 'garden';",
+    "Reject": true
+  }
+]

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+<apiVersion>62.0</apiVersion>
+<assignments><name>Modify</name><label>Modify</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>candidate.Phone</assignToReference><operator>Assign</operator><value><stringValue>222</stringValue></value></assignmentItems></assignments><interviewLabel>Boundary leaf</interviewLabel><label>Boundary leaf</label><processType>AutoLaunchedFlow</processType><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Modify</targetReference></connector></start><status>Active</status><variables><name>candidate</name><dataType>SObject</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>true</isOutput><objectType>Account</objectType></variables>
+</Flow>

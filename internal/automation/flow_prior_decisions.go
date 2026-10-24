@@ -12,17 +12,24 @@ func flowPriorDecisionReference(reference string) bool {
 
 func flowPriorDecisionConditionSupported(condition flowConditionXML) bool {
 	reference := strings.TrimSpace(condition.LeftValueReference)
-	if !flowPriorDecisionReference(reference) || !strings.EqualFold(strings.TrimSpace(condition.RightValue.BooleanValue), "true") {
+	if !flowPriorDecisionReference(reference) {
 		return false
 	}
 	field := strings.TrimPrefix(reference, "$Record__Prior.")
+	operand := strings.TrimSpace(condition.RightValue.BooleanValue)
+	simple := field != "" && !strings.Contains(field, ".")
 	switch strings.ToLower(strings.TrimSpace(condition.Operator)) {
-	case "equalto":
-		return field != "" && !strings.Contains(field, ".")
+	case "equalto", "notequalto":
+		// Native rows at API 62.0 and 67.0 cover text, lookup and Boolean
+		// fields under EqualTo and NotEqualTo against an existing prior.
+		return simple
 	case "isnull":
 		// Keep the invalid traversal through identity visible to schema
 		// validation; other prior relationship paths are not admitted.
-		return field == "Id" || strings.HasPrefix(field, "Id.")
+		if field == "Id" || strings.HasPrefix(field, "Id.") {
+			return strings.EqualFold(operand, "true")
+		}
+		return simple && (strings.EqualFold(operand, "true") || strings.EqualFold(operand, "false"))
 	default:
 		return false
 	}

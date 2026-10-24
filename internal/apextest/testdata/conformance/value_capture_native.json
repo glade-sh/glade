@@ -1517,10 +1517,10 @@
     "transport": "Anonymous debug and named intentional observation assertions; two expected named observation failures per API, no other failures",
     "authPathNormalization": "Scratch authentication HOME and org/dev-hub aliases normalized; owned source and observation payloads unchanged",
     "commands": [
-      "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf org create scratch --target-dev-hub <dev-hub> --alias <scratch-org> --duration-days 3 --edition developer --wait 15 --json",
-      "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf project deploy start --target-org <scratch-org> --source-dir <owned-project>/force-app --wait 15 --json",
-      "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version <API> --file api<API>.apex --json",
-      "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names CaptureOrderNative<API> --synchronous --result-format json --wait 15"
+      "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf org create scratch --target-dev-hub <dev-hub> --alias <example-org> --duration-days 3 --edition developer --wait 15 --json",
+      "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf project deploy start --target-org <example-org> --source-dir <owned-project>/force-app --wait 15 --json",
+      "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <example-org> --api-version <API> --file api<API>.apex --json",
+      "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <example-org> --class-names CaptureOrderNative<API> --synchronous --result-format json --wait 15"
     ],
     "ownedRows": "value_capture_native.tsv"
   }

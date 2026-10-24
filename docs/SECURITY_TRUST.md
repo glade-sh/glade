@@ -14,8 +14,11 @@ not public issues. If GitHub reporting is unavailable, use
   standard library.
 - CodeQL runs the Go security-extended query suite with event-specific query
   filters. Both initialization profiles declare `**/*_generated.go` in
-  `paths-ignore`. Analysis keeps a 90-minute step budget and a 100-minute job
-  budget. Go uses a manual build;
+  `paths-ignore`. Pull requests use only the fast profile. Full scans run weekly,
+  on release tags, and on manual Security dispatch. Analysis has a 300-second
+  deadline, with query evaluation capped at 240 seconds. Timeouts warn; analysis
+  errors and unsuppressed alerts fail. `Required CI` aggregates the fast job.
+  The emergency job limit is 15 minutes. Go uses a manual build;
   [GitHub documents](https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors/alerts-in-generated-code)
   that compiled Go analysis follows the build, so this path setting alone does
   not prove generated Go is excluded from the database or that analysis will
@@ -25,7 +28,8 @@ not public issues. If GitHub reporting is unavailable, use
   cookie sink is the Visualforce Apex Cookie emulation in
   `internal/server/visualforce.go`, which writes the flags the Apex program
   set. A server test pins those flags, and a source scan fails if another
-  non-test file sets a cookie.
+  non-test file sets a cookie. The [release budget and cookie assessment](CODEQL_BUDGET.md)
+  record measured full-profile times, waiver limits, and the release check command.
 - `gosec` uploads SARIF for source-pattern review.
 - `npm audit --omit=dev --audit-level=high` checks packaged JavaScript
   production dependencies in the LWC toolchain and VS Code extension.

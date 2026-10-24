@@ -1,0 +1,9 @@
+case	api	route	outcome	observation
+standard_member_rejection	67.0	anonymous	compile-rejected	Compilation failed at Line 1 column 16 with the error: Method does not exist or incorrect signature: void absentMember() from the type Account
+standard_member_rejection	67.0	istest	compile-rejected	Method does not exist or incorrect signature: void absentMember() from the type Account
+custom_member_rejection	67.0	anonymous	compile-rejected	Compilation failed at Line 1 column 22 with the error: Method does not exist or incorrect signature: void absentMember() from the type CedarAlias__c
+custom_member_rejection	67.0	istest	compile-rejected	Method does not exist or incorrect signature: void absentMember() from the type CedarAlias__c
+standard_describe_boundary	67.0	anonymous	accepted	assertions passed
+standard_describe_boundary	67.0	istest	accepted	assertions passed
+custom_describe_boundary	67.0	anonymous	accepted	assertions passed
+custom_describe_boundary	67.0	istest	accepted	assertions passed

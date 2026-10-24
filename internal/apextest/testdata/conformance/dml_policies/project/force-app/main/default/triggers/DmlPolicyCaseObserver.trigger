@@ -1,0 +1,1 @@
+trigger DmlPolicyCaseObserver on Case(before insert,before update,after insert,after update){DmlPolicyRouteProbe.observeCases(Trigger.new,Trigger.isBefore,Trigger.isInsert);}

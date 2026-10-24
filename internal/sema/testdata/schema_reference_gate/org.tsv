@@ -1,0 +1,23 @@
+api	case	route	success	observation
+62.0	missing_lookup	metadata_deploy	false	"Parcel62Ref__c.Destination__c: referenceTo value of 'UnavailableDestination' does not resolve to a valid sObject type; ParcelDependent62Ref: Dependent class is invalid and needs recompilation:
+ Class ParcelUse62Ref : Variable does not exist: Destination__c; ParcelDependent62RefTest: Dependent class is invalid and needs recompilation:
+ Class ParcelDependent62Ref : Dependent class is invalid and needs recompilation:
+ Class ParcelUse62Ref : Variable does not exist: Destination__c; ParcelUse62Ref: Variable does not exist: Destination__c"
+62.0	missing_lookup	anonymous	true	unrelated assertion passed
+62.0	missing_lookup	named	true	unrelated assertion passed
+62.0	missing_lookup	istest	true	Passed: 1 passed, 0 failed, 0 skipped
+62.0	loaded_lookup	metadata_deploy	true	lookup and dependent classes deployed
+62.0	loaded_lookup	anonymous	true	lookup assertion passed
+62.0	loaded_lookup	named	true	lookup assertion passed
+62.0	loaded_lookup	istest	true	Passed: 1 passed, 0 failed, 0 skipped
+67.0	missing_lookup	metadata_deploy	false	"Parcel67Ref__c.Destination__c: referenceTo value of 'UnavailableDestination' does not resolve to a valid sObject type; ParcelDependent67Ref: Dependent class is invalid and needs recompilation:
+ Class ParcelUse67Ref : Variable does not exist: Destination__c; ParcelDependent67RefTest: Dependent class is invalid and needs recompilation:
+ Class ParcelDependent67Ref : Dependent class is invalid and needs recompilation:
+ Class ParcelUse67Ref : Variable does not exist: Destination__c; ParcelUse67Ref: Variable does not exist: Destination__c"
+67.0	missing_lookup	anonymous	true	unrelated assertion passed
+67.0	missing_lookup	named	true	unrelated assertion passed
+67.0	missing_lookup	istest	true	Passed: 1 passed, 0 failed, 0 skipped
+67.0	loaded_lookup	metadata_deploy	true	lookup and dependent classes deployed
+67.0	loaded_lookup	anonymous	true	lookup assertion passed
+67.0	loaded_lookup	named	true	lookup assertion passed
+67.0	loaded_lookup	istest	true	Passed: 1 passed, 0 failed, 0 skipped

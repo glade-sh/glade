@@ -74,6 +74,14 @@ func semaAsyncCallMessage(receiverType, method string, argTypes []string) string
 	return fmt.Sprintf("Method does not exist or incorrect signature: void %s(%s) from the type %s", method, strings.Join(args, ", "), receiver)
 }
 
+func semaFinalizerCallMessage(receiver, method string, argTypes []string, model *semaTypeMemberView) string {
+	if !strings.EqualFold(semaCanonicalPlatformAlias(receiver), "Finalizer") ||
+		!semaAsyncPlatformType(model, receiver) || len(resolveMemberMethods(model, receiver, method)) != 0 {
+		return ""
+	}
+	return fmt.Sprintf("Method does not exist or incorrect signature: void %s(%s) from the type System.Finalizer", method, strings.Join(argTypes, ", "))
+}
+
 // Q001: generic Batchable signature de-duplication must leave real callback
 // overload ambiguity rejected, with the captured native diagnostic text.
 func semaAsyncBatchableAmbiguityMessage(receiverType, method string, argTypes []string, model *semaTypeMemberView) string {
@@ -139,4 +147,84 @@ func semaAsyncRequirementMessage(typ typesys.TypeSymbol, requirement methodRequi
 		name = typ.Name
 	}
 	return fmt.Sprintf("Class %s must implement the method: void System.%s.execute(System.%s)", name, owner, context)
+}
+
+// Native async interface contracts accept a static callback declared by the
+// implementing class, but an inherited static callback does not implement it.
+func semaAsyncInheritedStaticOnly(model *semaTypeMemberView, typ typesys.TypeSymbol, requirement methodRequirement) bool {
+	owner := semaCanonicalPlatformAlias(requirement.owner)
+	if requirement.sourceKind != "interface" || (!strings.EqualFold(owner, "Queueable") && !strings.EqualFold(owner, "Schedulable")) || !semaAsyncPlatformType(model, requirement.owner) {
+		return false
+	}
+	required := semaNormalizeMemberTypes(model, typ.Name, semaCloneMemberSymbol(requirement.member))
+	found := false
+	for current := typ.Name; current != ""; {
+		members, ok := model.lookup(normalizeName(current))
+		if !ok {
+			break
+		}
+		for _, candidate := range members.methods[normalizeName(required.Name)] {
+			candidate = semaNormalizeMemberTypes(model, members.name, semaCloneMemberSymbol(candidate))
+			if semaQualifiedSignatureConflict(model, candidate, required) || (!sameSemaSignature(candidate, required) && !semaOverrideCompatibleSignature(candidate, required, model)) || !semaInterfaceReturnCompatible(candidate, required, model) || hasModifier(candidate.Modifiers, "abstract") {
+				continue
+			}
+			if strings.EqualFold(current, typ.Name) || !hasModifier(candidate.Modifiers, "static") {
+				return false
+			}
+			found = true
+		}
+		current = members.superClass
+	}
+	return found
+}
+
+// semaBatchableFromPlatformSuperclass reports whether a platform superclass of
+// typeName declares a Database.Batchable interface.
+func semaBatchableFromPlatformSuperclass(model *semaTypeMemberView, typeName string) bool {
+	members, ok := model.lookup(normalizeName(typeName))
+	if !ok {
+		return false
+	}
+	seen := map[string]bool{normalizeName(typeName): true}
+	for current := members.superClass; current != "" && !seen[normalizeName(current)]; {
+		seen[normalizeName(current)] = true
+		ancestor, ok := model.lookup(normalizeName(current))
+		if !ok {
+			return false
+		}
+		if ancestor.platform {
+			for _, iface := range ancestor.interfaces {
+				if semaDatabaseBatchableInterface(iface) {
+					return true
+				}
+			}
+		}
+		current = ancestor.superClass
+	}
+	return false
+}
+
+func semaBatchableContractInterfaces(model *semaTypeMemberView, typeName string) []string {
+	var interfaces []string
+	seenTypes, seenInterfaces := map[string]bool{}, map[string]bool{}
+	for current := typeName; current != "" && !seenTypes[normalizeName(current)]; {
+		seenTypes[normalizeName(current)] = true
+		members, ok := model.lookup(normalizeName(current))
+		if !ok {
+			break
+		}
+		// Concrete platform classes supply their callbacks. An abstract
+		// platform superclass can leave callbacks for its subclass to supply.
+		if members.platform && !hasModifier(members.modifiers, "abstract") && !strings.EqualFold(current, typeName) {
+			break
+		}
+		for _, iface := range members.interfaces {
+			if !seenInterfaces[normalizeName(iface)] && semaDatabaseBatchableInterface(iface) {
+				seenInterfaces[normalizeName(iface)] = true
+				interfaces = append(interfaces, iface)
+			}
+		}
+		current = members.superClass
+	}
+	return interfaces
 }

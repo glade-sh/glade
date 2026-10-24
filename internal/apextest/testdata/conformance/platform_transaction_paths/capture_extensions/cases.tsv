@@ -1,0 +1,51 @@
+id	family	shape
+SP03	flow_paths	insert before startTest, then stopTest
+SP04	flow_paths	same-transaction update after insert
+SP05	flow_paths	update changes record to meet async criteria
+SP06	flow_paths	async DML fault at stopTest
+SP07	flow_paths	rollback triggering insert
+SP08	flow_paths	past-due record-field schedule
+SP09	flow_paths	record-trigger schedule plus one hour
+SP10	flow_paths	queueable inserts async-path record
+SP11	flow_paths	async job and interview counts
+CDC01	cdc	CREATE header and body supplement
+CDC03	cdc	selected Contact without enable
+CDC04	cdc	UPDATE after baseline delivery: changed fields and sparse body
+CDC05	cdc	UPDATE to null after baseline delivery
+CDC06	cdc	DELETE after baseline delivery: header and body
+CDC07	cdc	UNDELETE after delete delivery: header and body
+CDC08	cdc	two identical records in one insert
+CDC09	cdc	insert then update event order and transaction keys
+CDC10	cdc	DML before and inside startTest
+CDC11	cdc	savepoint rollback boundary
+CDC12	cdc	enable after earlier DML
+CDC13	cdc	subscriber user and commit user
+CDC14	cdc	custom change-event fields
+CDC15	cdc	after-save flow updates original record
+CDC17	cdc	test setup DML before enable
+DR01	duplicate_rules	block error type, rule, matches and confidence supplement
+DR02	duplicate_rules	all-or-none exception and DML status
+DR03	duplicate_rules	allow-alert without allowSave
+DR04	duplicate_rules	allow-alert with allowSave
+DR06	duplicate_rules	allow-report duplicate record sets and items
+DR07	duplicate_rules	duplicates inside one insert list
+DR09	duplicate_rules	MatchBlanks null-key twin
+DR10	duplicate_rules	exact match letter case
+DR11	duplicate_rules	inactive rule control
+DR12	duplicate_rules	default standard Contact rules
+DR13	duplicate_rules	before-trigger duplicate and validation precedence
+DR14	duplicate_rules	FindDuplicates active rule result graph
+DR15	duplicate_rules	duplicate rule filter rejection twin
+DR16	duplicate_rules	two matching rules and sort order
+AR03	assignment_rules	per-record setOptions route
+AR04	assignment_rules	explicit inactive rule
+AR05	assignment_rules	other-object rule identifier twin
+AR07	assignment_rules	two matching entries select first
+AR08	assignment_rules	formula and booleanFilter entries
+AR09	assignment_rules	update with assignment header
+AR10	assignment_rules	after-trigger owner and trigger counts
+AR11	assignment_rules	after-save flow sees assigned owner
+AR12	assignment_rules	Case match and no-match routes
+AR13	assignment_rules	default and explicit rule headers together
+AR14	assignment_rules	explicit useDefaultRule=false
+AR15	assignment_rules	query active Lead assignment rules

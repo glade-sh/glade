@@ -18,6 +18,7 @@ const (
 	soqlOrdinaryAccounting soqlHandleAccounting = iota
 	soqlCursorAccounting
 	soqlLocatorAccounting
+	soqlPaginationAccounting
 )
 
 // R181/R183/N029/N030: reject locators at the value's serialization point so

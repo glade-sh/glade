@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Depot__c</fullName><label>Depot</label><type>Lookup</type><referenceTo>CloneDepot__c</referenceTo><relationshipLabel>Parcels</relationshipLabel><relationshipName>Parcels</relationshipName><deleteConstraint>SetNull</deleteConstraint></CustomField>

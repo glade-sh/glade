@@ -84,18 +84,19 @@ func runStandardExtensionNative(t *testing.T, family string, rowCount int) {
 
 func runStandardExtensionNativeCaptures(t *testing.T, family string, captures []standardExtensionNativeCapture, rowCount int) {
 	t.Helper()
+	bases := newConformanceSchemaCache(t)
 	seenCapture := map[string]bool{}
 	for _, capture := range captures {
 		name := capture.Context + "/" + capture.Route
 		if capture.API != "62.0" {
 			name = capture.API + "/" + name
 		}
-		t.Run(name, func(t *testing.T) {
-			key := capture.API + "/" + capture.Context + "/" + capture.Route
-			if key != "62.0/plain/anonymous" && key != "62.0/plain/istest" && key != "62.0/namespace/istest" && key != "67.0/plain/anonymous" && key != "67.0/plain/istest" && key != "67.0/namespace/istest" && key != "68.0/plain/anonymous" && key != "68.0/plain/istest" && key != "68.0/namespace/istest" || seenCapture[key] {
-				t.Fatal("duplicate or unobserved context route")
-			}
-			seenCapture[key] = true
+		key := capture.API + "/" + capture.Context + "/" + capture.Route
+		if key != "62.0/plain/anonymous" && key != "62.0/plain/istest" && key != "62.0/namespace/istest" && key != "67.0/plain/anonymous" && key != "67.0/plain/istest" && key != "67.0/namespace/istest" && key != "68.0/plain/anonymous" && key != "68.0/plain/istest" && key != "68.0/namespace/istest" || seenCapture[key] {
+			t.Fatal("duplicate or unobserved context route")
+		}
+		seenCapture[key] = true
+		runConformanceSubtestParallel(t, name, func(t *testing.T) {
 			if (capture.Context == "namespace" && (capture.Route != "istest" || capture.Namespace != "gladens003")) || (capture.Context == "plain" && capture.Namespace != "") || len(capture.Rows) != rowCount {
 				t.Fatal("invalid independent native capture")
 			}
@@ -173,9 +174,11 @@ func runStandardExtensionNativeCaptures(t *testing.T, family string, captures []
 					if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
 						t.Fatalf("native accepted; local diagnostics=%v %v", index.Diagnostics, analysis.Diagnostics)
 					}
-					org := orgFromIndex(index)
-					org.APIVersion = capture.API
-					runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+					objects := standardExtensionNativeObjects(t, capture, row)
+					base := bases.get(t, capture.API, capture.Namespace, objects, func(t *testing.T) *conformanceRunner {
+						return conformanceSchemaBase(t, standardExtensionNativeProjectIndex(t, capture, row, false), capture.API)
+					})
+					runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, LinkProject: true, Org: base.orgSource})
 					source := standardExtensionNativeBody(t, row)
 					var runErr error
 					if capture.Route == "anonymous" {
@@ -258,10 +261,9 @@ func standardExtensionNativeBody(t *testing.T, row standardExtensionNativeRow) s
 	return prefix + "Map<String,Object> result=new Map<String,Object>();String step='start';try{" + row.Expression + "}catch(Exception failure){result.put('exceptionType',failure.getTypeName());result.put('exceptionMessage',failure.getMessage());result.put('exceptionStep',step);}" + native.MarkerNormalisation + "System.assert(false,'EXTENSION_RESULT|" + row.ID + "|'+" + payload + ");"
 }
 
-func standardExtensionNativeIndex(t *testing.T, capture standardExtensionNativeCapture, row standardExtensionNativeRow) typesys.Index {
+func standardExtensionNativeObjects(t *testing.T, capture standardExtensionNativeCapture, row standardExtensionNativeRow) map[string]string {
 	t.Helper()
-	root := t.TempDir()
-	p := project.Project{Root: root, Namespace: capture.Namespace, SourceAPIVersion: capture.API}
+	objects := make(map[string]string)
 	// A supplemental row has fresh metadata names; other captured rows retain
 	// their original metadata and source unchanged.
 	if len(row.Metadata) > 0 {
@@ -297,17 +299,32 @@ func standardExtensionNativeIndex(t *testing.T, capture standardExtensionNativeC
 				start = end + next
 			}
 		}
+		objects[name] = body
+	}
+	return objects
+}
+
+func standardExtensionNativeIndex(t *testing.T, capture standardExtensionNativeCapture, row standardExtensionNativeRow) typesys.Index {
+	t.Helper()
+	return standardExtensionNativeProjectIndex(t, capture, row, true)
+}
+
+func standardExtensionNativeProjectIndex(t *testing.T, capture standardExtensionNativeCapture, row standardExtensionNativeRow, source bool) typesys.Index {
+	t.Helper()
+	root := t.TempDir()
+	p := project.Project{Root: root, Namespace: capture.Namespace, SourceAPIVersion: capture.API}
+	for name, body := range standardExtensionNativeObjects(t, capture, row) {
 		path := filepath.Join(root, name)
 		writeFile(t, path, body)
-		if strings.HasPrefix(name, "objects/") && strings.HasSuffix(name, ".object") {
-			p.ObjectFiles = append(p.ObjectFiles, path)
-		}
+		p.ObjectFiles = append(p.ObjectFiles, path)
 	}
-	source := "@IsTest private class ExtensionObservation {@IsTest static void observe(){" + standardExtensionNativeBody(t, row) + "}}"
-	path := filepath.Join(root, "classes", "ExtensionObservation.cls")
-	writeFile(t, path, source)
-	writeFile(t, path+"-meta.xml", "<ApexClass><apiVersion>"+capture.API+"</apiVersion></ApexClass>")
-	p.ApexFiles = []string{path}
+	if source {
+		source := "@IsTest private class ExtensionObservation {@IsTest static void observe(){" + standardExtensionNativeBody(t, row) + "}}"
+		path := filepath.Join(root, "classes", "ExtensionObservation.cls")
+		writeFile(t, path, source)
+		writeFile(t, path+"-meta.xml", "<ApexClass><apiVersion>"+capture.API+"</apiVersion></ApexClass>")
+		p.ApexFiles = []string{path}
+	}
 	schema, err := gladeschema.LoadProject(p)
 	if err != nil {
 		t.Fatal(err)

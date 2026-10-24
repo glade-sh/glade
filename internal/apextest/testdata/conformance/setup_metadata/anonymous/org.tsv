@@ -1,0 +1,5 @@
+source_api	method	observation
+62.0	duplicateRule	{"active":true,"count":1,"label":"Grove Email Check","name":"Grove_Email_Check","object":"Contact"}
+62.0	personDuplicateRule	{"active":true,"count":1,"label":"Grove Person Email Check","name":"Grove_PersonEmail_Check","object":"Account","subtype":"PersonAccount"}
+67.0	duplicateRule	{"active":true,"count":1,"label":"Grove Email Check","name":"Grove_Email_Check","object":"Contact"}
+67.0	personDuplicateRule	{"active":true,"count":1,"label":"Grove Person Email Check","name":"Grove_PersonEmail_Check","object":"Account","subtype":"PersonAccount"}

@@ -1,0 +1,78 @@
+[
+  {
+    "id": "analytics_enum",
+    "code": "IsvPartners.AppAnalytics.logCustomInteraction(HostedBoundaryProbe.Gesture.Opened);"
+  },
+  {
+    "id": "analytics_id",
+    "code": "IsvPartners.AppAnalytics.logCustomInteraction(HostedBoundaryProbe.Gesture.Opened, UserInfo.getUserId());"
+  },
+  {
+    "id": "analytics_uuid",
+    "code": "IsvPartners.AppAnalytics.logCustomInteraction(HostedBoundaryProbe.Gesture.Opened, UUID.randomUUID());"
+  },
+  {
+    "id": "analytics_null",
+    "code": "IsvPartners.AppAnalytics.logCustomInteraction(null);"
+  },
+  {
+    "id": "analytics_string",
+    "code": "IsvPartners.AppAnalytics.logCustomInteraction('Opened');"
+  },
+  {
+    "id": "analytics_boolean",
+    "code": "IsvPartners.AppAnalytics.logCustomInteraction(true);"
+  },
+  {
+    "id": "analytics_object",
+    "code": "IsvPartners.AppAnalytics.logCustomInteraction(new Account());"
+  },
+  {
+    "id": "analytics_warn",
+    "code": "IsvPartners.AppAnalytics.logCustomInteraction(System.LoggingLevel.WARN);"
+  },
+  {
+    "id": "analytics_warn_id",
+    "code": "IsvPartners.AppAnalytics.logCustomInteraction(System.LoggingLevel.WARN, (Id)null);"
+  },
+  {
+    "id": "analytics_info_id",
+    "code": "IsvPartners.AppAnalytics.logCustomInteraction(System.LoggingLevel.INFO, (Id)null);"
+  },
+  {
+    "id": "analytics_number_id",
+    "code": "IsvPartners.AppAnalytics.logCustomInteraction(1, (Id)null);"
+  },
+  {
+    "id": "notice_missing_type",
+    "code": "Messaging.CustomNotification n=new Messaging.CustomNotification();  n.send(new Set<String>{UserInfo.getUserId()});"
+  },
+  {
+    "id": "notice_missing_target",
+    "code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setNotificationTypeId(typeId); n.setTitle('Synthetic title'); n.setBody('Synthetic body'); n.send(new Set<String>{UserInfo.getUserId()});"
+  },
+  {
+    "id": "notice_missing_title",
+    "code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setNotificationTypeId(typeId); n.setBody('Synthetic body'); n.setTargetId(UserInfo.getUserId()); n.send(new Set<String>{UserInfo.getUserId()});"
+  },
+  {
+    "id": "notice_empty_title",
+    "code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setNotificationTypeId(typeId); n.setTitle(''); n.setBody('Synthetic body'); n.setTargetId(UserInfo.getUserId()); n.send(new Set<String>{UserInfo.getUserId()});"
+  },
+  {
+    "id": "notice_bad_type",
+    "code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setNotificationTypeId('invalid-type'); n.setTitle('Synthetic title'); n.setBody('Synthetic body'); n.setTargetId(UserInfo.getUserId()); n.send(new Set<String>{UserInfo.getUserId()});"
+  },
+  {
+    "id": "notice_configured",
+    "code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setNotificationTypeId(typeId); n.setSenderId(UserInfo.getUserId()); n.setTitle('Synthetic title'); n.setBody('Synthetic body'); n.setTargetId(UserInfo.getUserId()); n.send(new Set<String>{UserInfo.getUserId()});"
+  },
+  {
+    "id": "notice_page",
+    "code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n.setNotificationTypeId(typeId); n.setTitle('Synthetic title'); n.setBody('Synthetic body'); n.setTargetPageRef('{\"type\":\"standard__namedPage\",\"attributes\":{\"pageName\":\"home\"}}'); n.send(new Set<String>{UserInfo.getUserId()});"
+  },
+  {
+    "id": "notice_constructor",
+    "code": "Messaging.CustomNotification n=new Messaging.CustomNotification(); n=new Messaging.CustomNotification(typeId, UserInfo.getUserId(), 'Synthetic title', 'Synthetic body', UserInfo.getUserId(), null); n.send(new Set<String>{UserInfo.getUserId()});"
+  }
+]

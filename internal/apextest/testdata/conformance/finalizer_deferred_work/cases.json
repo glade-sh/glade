@@ -1,0 +1,12 @@
+{
+  "finalizerChild": "Test.startTest(); Id root=System.enqueueJob(new DeferredWorkProbe.Root(true)); Test.stopTest(); return DeferredWorkProbe.observe(root);",
+  "bodyChild": "Test.startTest(); Id root=System.enqueueJob(new DeferredWorkProbe.Root(false)); Test.stopTest(); return DeferredWorkProbe.observe(root);",
+  "noChild": "Test.startTest(); Id root=System.enqueueJob(new DeferredWorkProbe.Leaf()); Test.stopTest(); return DeferredWorkProbe.observe(root);",
+  "bodyChildCapped": "AsyncOptions options=new AsyncOptions(); options.MaximumQueueableStackDepth=2; Test.startTest(); Id root=System.enqueueJob(new DeferredWorkProbe.Root(false),options); Test.stopTest(); return DeferredWorkProbe.observe(root);",
+  "bodyChildDepthOne": "AsyncOptions options=new AsyncOptions(); options.MaximumQueueableStackDepth=1; Test.startTest(); Id root=System.enqueueJob(new DeferredWorkProbe.Root(false),options); Test.stopTest(); return DeferredWorkProbe.observe(root);",
+  "bodyTwoChildren": "Test.startTest(); Id root=System.enqueueJob(new DeferredWorkProbe.DoubleRoot()); Test.stopTest(); return DeferredWorkProbe.observe(root);",
+  "bodyChildDelay": "Test.startTest(); Id root=System.enqueueJob(new DeferredWorkProbe.OverloadRoot(false,0)); Test.stopTest(); return DeferredWorkProbe.observe(root);",
+  "bodyChildOptions": "Test.startTest(); Id root=System.enqueueJob(new DeferredWorkProbe.OverloadRoot(false,1)); Test.stopTest(); return DeferredWorkProbe.observe(root);",
+  "finalizerChildDelay": "Test.startTest(); Id root=System.enqueueJob(new DeferredWorkProbe.OverloadRoot(true,0)); Test.stopTest(); return DeferredWorkProbe.observe(root);",
+  "finalizerChildOptions": "Test.startTest(); Id root=System.enqueueJob(new DeferredWorkProbe.OverloadRoot(true,1)); Test.stopTest(); return DeferredWorkProbe.observe(root);"
+}

@@ -1358,18 +1358,19 @@ func TestUserProvisioningBatchableLifecycleFixtureShapes(t *testing.T) {
 		}
 	}
 
+	// Native: ../sema/testdata/platform_batch_superclass/org.tsv:2-15.
 	plugin = requireStandardSymbol(t, symbols, "UserProvisioning.PluginBatchable")
 	if !containsStringFold(plugin.Modifiers, "abstract") {
 		t.Fatalf("PluginBatchable modifiers = %v, want abstract", plugin.Modifiers)
 	}
-	if !containsStringFold(plugin.Interfaces, "Database.Batchable<UserProvisioningRequest>") {
-		t.Fatalf("PluginBatchable interfaces = %v, want Database.Batchable<UserProvisioningRequest>", plugin.Interfaces)
+	if !containsStringFold(plugin.Interfaces, "Database.Batchable<SObject>") {
+		t.Fatalf("PluginBatchable interfaces = %v, want Database.Batchable<SObject>", plugin.Interfaces)
 	}
 	for _, method := range []string{"flowInputPreprocessing", "flowPostProcessing", "getEventPrefix", "postBatchProcessing"} {
 		for _, member := range plugin.Members {
 			if member.Kind == apexast.DeclarationMethod && strings.EqualFold(member.Name, method) {
-				if !containsStringFold(member.Modifiers, "virtual") {
-					t.Fatalf("PluginBatchable.%s modifiers = %v, want virtual", method, member.Modifiers)
+				if !containsStringFold(member.Modifiers, "abstract") {
+					t.Fatalf("PluginBatchable.%s modifiers = %v, want abstract", method, member.Modifiers)
 				}
 				goto foundPluginMethod
 			}

@@ -1,0 +1,2 @@
+api	context	id	outcome	value
+67.0	anonymous	knowledge_disabled	compile_reject	Type is not visible: KbManagement.PublishingService

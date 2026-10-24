@@ -265,13 +265,52 @@ func TestDaemonClassShardFilesEquivalent(t *testing.T) {
 	modes := []daemonEquivalenceMode{
 		{name: "local", args: []string{"--no-serve"}},
 		{name: "in_process_daemon", args: []string{"--daemon"}},
+		{name: "auto_connect", realServer: true},
 		{name: "explicit_connect", args: []string{"--connect"}, realServer: true},
 	}
-	oracle := runDaemonEquivalenceShardPlan(t, modes[0])
-	for _, mode := range modes[1:] {
-		got := runDaemonEquivalenceShardPlan(t, mode)
-		if !reflect.DeepEqual(got, oracle) {
-			t.Fatalf("%s class shards differ from local:\nwant %#v\n got %#v", mode.name, oracle, got)
+	for _, selection := range []struct {
+		name string
+		args []string
+	}{
+		{name: "all_tests"},
+		{name: "filter", args: []string{"--filter", "AlphaTest"}},
+	} {
+		t.Run(selection.name, func(t *testing.T) {
+			var oracle []daemonEquivalenceShardFile
+			for index, mode := range modes {
+				mode.args = append(append([]string(nil), mode.args...), selection.args...)
+				got := runDaemonEquivalenceShardPlan(t, mode, "")
+				if index == 0 {
+					oracle = got
+				} else if !reflect.DeepEqual(got, oracle) {
+					t.Fatalf("%s class shards differ from local:\nwant %#v\n got %#v", mode.name, oracle, got)
+				}
+			}
+		})
+	}
+}
+
+func TestDaemonClassShardFilesSelectedRoutesRejectLocalFallback(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		for _, route := range []daemonEquivalenceMode{
+			{name: "auto_connect", realServer: true},
+			{name: "explicit_connect", args: []string{"--connect"}, realServer: true},
+		} {
+			t.Run(api+"/filter/"+route.name, func(t *testing.T) {
+				local := daemonEquivalenceMode{name: "local", args: []string{"--no-serve", "--filter", "AlphaTest"}}
+				oracle := runDaemonEquivalenceShardPlan(t, local, api)
+				route.args = append(append([]string(nil), route.args...), "--filter", "AlphaTest")
+				got := runDaemonEquivalenceShardPlan(t, route, api)
+				if !reflect.DeepEqual(got, oracle) {
+					t.Fatalf("connected shard plan differs from local oracle:\nwant %#v\n got %#v", oracle, got)
+				}
+				// Mutate the connected matrix row to load the local project.
+				route.args = append([]string(nil), local.args...)
+				fallback := runDaemonEquivalenceShardPlan(t, route, api)
+				if reflect.DeepEqual(fallback, oracle) {
+					t.Fatal("filtered shard-plan matrix accepted local fallback despite routing poison")
+				}
+			})
 		}
 	}
 }
@@ -387,7 +426,7 @@ func TestConnectedRunUsesPublishedTestSelection(t *testing.T) {
 	})
 	stopServer := startDaemonEquivalenceServer(t, fixture.projectRoot)
 	defer stopServer()
-	addDaemonEquivalenceLocalTest(t, fixture.projectRoot)
+	addDaemonEquivalenceUnpublishedTest(t, fixture.projectRoot)
 	connected := runNoCacheRoutingInvocation(t, fixture.projectRoot, "--connect", "--no-cache")
 	assertNoCacheRoutingResult(t, connected, 1, "PublishedTest.passes")
 	var stdout, stderr bytes.Buffer
@@ -449,6 +488,7 @@ func assertNoCacheRoutingResult(t *testing.T, run testreport.Run, wantTotal int,
 }
 
 type daemonEquivalenceScenario struct {
+	sourceAPIVersion   string
 	name               string
 	classes            map[string]string
 	args               []string
@@ -494,7 +534,7 @@ func runDaemonEquivalenceInvocation(t *testing.T, scenario daemonEquivalenceScen
 	if mode.realServer {
 		stopServer = startDaemonEquivalenceServer(t, fixture.projectRoot)
 		defer stopServer()
-		addDaemonEquivalenceLocalTest(t, fixture.projectRoot)
+		poisonDaemonRoutingLocalLoad(t, fixture.projectRoot)
 	}
 	args := []string{"test", "--project", fixture.projectRoot, "--json", "--no-progress"}
 	args = append(args, scenario.args...)
@@ -594,6 +634,12 @@ func newDaemonEquivalenceFixture(t *testing.T, scenario daemonEquivalenceScenari
 	for className, source := range scenario.classes {
 		writeDaemonEquivalenceFile(t, filepath.Join(projectRoot, "force-app/main/default/classes", className+".cls"), source+"\n")
 	}
+	if scenario.sourceAPIVersion != "" {
+		writeDaemonEquivalenceFile(t, filepath.Join(projectRoot, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, scenario.sourceAPIVersion))
+		for className := range scenario.classes {
+			writeDaemonEquivalenceFile(t, filepath.Join(projectRoot, "force-app/main/default/classes", className+".cls-meta.xml"), fmt.Sprintf(`<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>%s</apiVersion><status>Active</status></ApexClass>`, scenario.sourceAPIVersion))
+		}
+	}
 	fixture := daemonEquivalenceFixture{baseRoot: baseRoot, projectRoot: projectRoot}
 	if scenario.clientInputs {
 		fixture.classFile = filepath.Join(baseRoot, "client", "classes.txt")
@@ -614,8 +660,13 @@ func newDaemonEquivalenceFixture(t *testing.T, scenario daemonEquivalenceScenari
 
 func startDaemonEquivalenceServer(t *testing.T, root string) func() {
 	t.Helper()
+	return startDaemonEquivalenceServerWithProgress(t, root, nil)
+}
+
+func startDaemonEquivalenceServerWithProgress(t *testing.T, root string, progress func(apextest.TestProgress)) func() {
+	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
-	server, err := testdaemon.NewServer(testdaemon.ServerConfig{Root: root, Warm: false, Watch: false})
+	server, err := testdaemon.NewServer(testdaemon.ServerConfig{Root: root, Warm: false, Watch: false, RunProgress: progress})
 	if err != nil {
 		cancel()
 		t.Fatal(err)
@@ -647,8 +698,12 @@ func startDaemonEquivalenceServer(t *testing.T, root string) func() {
 
 func addDaemonEquivalenceLocalTest(t *testing.T, root string) {
 	t.Helper()
-	// Runtime metadata still needs a readable project. An additional test
-	// changes local discovery without corrupting metadata or indexed sources.
+	poisonDaemonRoutingLocalLoad(t, root)
+}
+
+func addDaemonEquivalenceUnpublishedTest(t *testing.T, root string) {
+	t.Helper()
+	// Selection tests need two runtime results locally, without a compile error.
 	writeDaemonEquivalenceFile(t, filepath.Join(root, "force-app/main/default/classes/UnpublishedTest.cls"),
 		`@IsTest private class UnpublishedTest { @IsTest static void fails() { System.assert(false); } }`)
 }
@@ -740,9 +795,10 @@ type daemonEquivalenceShardFile struct {
 	SHA256 string
 }
 
-func runDaemonEquivalenceShardPlan(t *testing.T, mode daemonEquivalenceMode) []daemonEquivalenceShardFile {
+func runDaemonEquivalenceShardPlan(t *testing.T, mode daemonEquivalenceMode, sourceAPIVersion string) []daemonEquivalenceShardFile {
 	t.Helper()
 	scenario := daemonEquivalenceScenario{
+		sourceAPIVersion: sourceAPIVersion,
 		classes: map[string]string{
 			"AlphaTest": `@isTest private class AlphaTest { @isTest static void passes() { System.assert(true); } }`,
 			"BetaTest":  `@isTest private class BetaTest { @isTest static void passes() { System.assert(true); } }`,
@@ -762,7 +818,14 @@ func runDaemonEquivalenceShardPlan(t *testing.T, mode daemonEquivalenceMode) []d
 	if mode.realServer {
 		stopServer = startDaemonEquivalenceServer(t, fixture.projectRoot)
 		defer stopServer()
-		addDaemonEquivalenceLocalTest(t, fixture.projectRoot)
+		poisonDaemonRoutingLocalLoad(t, fixture.projectRoot)
+		// Planning discovers classes without compiling the malformed trigger.
+		// Remove the published classes locally so filtered discovery also differs.
+		for className := range scenario.classes {
+			if err := os.Remove(filepath.Join(fixture.projectRoot, "force-app/main/default/classes", className+".cls")); err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
 	args = append(args, mode.args...)
 	var stdout, stderr bytes.Buffer

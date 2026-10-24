@@ -115,6 +115,11 @@ func (vm *VM) setEqualsOnlyIdentity(value Value) bool {
 }
 
 func (vm *VM) setIndexOfValueWithHash(set Value, needle Value, hash setInsertionHash, result *Result) (int, error) {
+	if !hash.tracked {
+		if index, ok := primitiveSetIndex(set, needle); ok {
+			return index, nil
+		}
+	}
 	for index, value := range set.Set {
 		stored := set.setInsertionHashAt(index)
 		if stored.tracked && (!hash.tracked || stored.key != hash.key) {
@@ -138,6 +143,9 @@ func (vm *VM) setIndexOfValueWithHash(set Value, needle Value, hash setInsertion
 }
 
 func (vm *VM) setIndexOfValue(set Value, needle Value, result *Result) (int, error) {
+	if index, ok := primitiveSetIndex(set, needle); ok {
+		return index, nil
+	}
 	for index := range set.Set {
 		if set.setInsertionHashAt(index).tracked {
 			hash, err := vm.captureTypedSetInsertionHash(set.Type, needle)
@@ -179,12 +187,18 @@ func (vm *VM) setContainsValue(set Value, needle Value, result *Result) (bool, e
 }
 
 // Insertion callers capture once after coercion and reuse that hash for the
-// duplicate decision. Copy the slices before mutation so errors cannot leave
-// aliases with a changed element slice and stale history.
+// duplicate decision. Primitive append ownership protects surviving prefixes;
+// other sets copy both slices before mutation.
 func appendSetEntry(set Value, value Value, hash setInsertionHash) Value {
+	if updated, ok := appendPrimitiveSetEntry(set, value, hash); ok {
+		return updated
+	}
 	hashes := make([]setInsertionHash, len(set.Set), len(set.Set)+1)
 	copy(hashes, set.setInsertionHashes)
-	set.Set = append(append([]Value(nil), set.Set...), value)
+	values := make([]Value, len(set.Set)+1)
+	copy(values, set.Set)
+	values[len(set.Set)] = value
+	set.Set = values
 	set.setInsertionHashes = append(hashes, hash)
 	return set
 }
@@ -200,6 +214,7 @@ func removeSetEntry(set Value, index int) Value {
 	}
 	set.Set = values
 	set.setInsertionHashes = hashes
+	set.primitiveSetState = &primitiveSetState{items: set.Set, hashes: hashes}
 	return set
 }
 

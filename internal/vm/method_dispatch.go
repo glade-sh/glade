@@ -67,8 +67,17 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	if len(args) != len(method.Params) {
 		return Null, fmt.Errorf("%s expects %d arguments", method.Name, len(method.Params))
 	}
-	if vm.rejectAsyncActions && methodHasModifier(method.Modifiers, "future") {
-		return Null, vm.rejectSynchronousAsyncAction(fmt.Sprintf("%s cannot cross the synchronous LWC action boundary", method.Name))
+	if methodHasModifier(method.Modifiers, "future") {
+		if vm.rejectAsyncActions {
+			return Null, vm.rejectSynchronousAsyncAction(fmt.Sprintf("%s cannot cross the synchronous LWC action boundary", method.Name))
+		}
+		// async_stack_depth future_2/future_3 (API 62 and 67): a future called
+		// from a future body throws a catchable AsyncException.
+		if vm.futureBodyDepth > 0 {
+			return Null, newExceptionError("System.AsyncException", "Future method cannot be called from a future or batch method: "+futureMethodSignature(method))
+		}
+		vm.futureBodyDepth++
+		defer func() { vm.futureBodyDepth-- }()
 	}
 	if isStubProxy(receiver) && stubProxyCanInterceptMethod(method) {
 		if value, handled, err := vm.callStubProxyMember(receiver, apexMethodMemberName(method.Name), args, result); handled || err != nil {
@@ -832,7 +841,7 @@ func (vm *VM) lookupNamespaceStaticField(namespace, fieldName string) (Field, st
 	var best Field
 	var owner string
 	bestScore := -1
-	for _, class := range vm.Classes {
+	for _, class := range vm.ClassEntries() {
 		if !strings.EqualFold(class.Namespace, namespace) {
 			continue
 		}
@@ -1063,7 +1072,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		if declared := vm.declaredReceiverType(receiverName); isMapType(declared) {
 			coerced := typedMap(declared)
 			if receiver.Kind == ValueObject && receiver.Fields != nil {
-				if mapField, ok := receiver.Fields["map"]; ok && mapField.Kind == ValueMap {
+				if mapField, ok := vm.privateDescribeFieldMap(receiver); ok && mapField.Kind == ValueMap {
 					coerced = mapField
 				}
 			}
@@ -1389,7 +1398,7 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 				}
 			}
 			accessMethod := target
-			if receiverType := vm.VarTypes[receiverName]; receiverType != "" {
+			if receiverType := vm.declaredReceiverType(receiverName); receiverType != "" {
 				accessMethod = vm.dispatchAccessMethod(receiverType, target, method, args)
 			} else if receiver.Static != "" {
 				accessMethod = vm.dispatchAccessMethod(receiver.Static, target, method, args)
@@ -1471,7 +1480,7 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 			return value, true, err
 		}
 		if receiver.Fields != nil {
-			if mapField, ok := receiver.Fields["map"]; ok && mapField.Kind == ValueMap {
+			if mapField, ok := vm.privateDescribeFieldMap(receiver); ok && mapField.Kind == ValueMap {
 				proxyName := receiverName
 				if proxyName != "" {
 					proxyName += ".map"
@@ -1506,7 +1515,7 @@ func (vm *VM) callObjectValueMember(receiverName string, receiver Value, method 
 		}
 	}
 	accessMethod := target
-	if receiverType := vm.VarTypes[receiverName]; receiverType != "" {
+	if receiverType := vm.declaredReceiverType(receiverName); receiverType != "" {
 		accessMethod = vm.dispatchAccessMethod(receiverType, target, method, args)
 	} else if receiver.Static != "" {
 		accessMethod = vm.dispatchAccessMethod(receiver.Static, target, method, args)
@@ -1563,7 +1572,7 @@ func (vm *VM) callNonObjectValueMember(receiverName string, receiver Value, meth
 		return value, true, nil
 	}
 	if receiver.Kind == ValueObject && receiver.Fields != nil {
-		if mapField, ok := receiver.Fields["map"]; ok && mapField.Kind == ValueMap {
+		if mapField, ok := vm.privateDescribeFieldMap(receiver); ok && mapField.Kind == ValueMap {
 			proxyName := receiverName
 			if proxyName != "" {
 				proxyName += ".map"
@@ -2810,6 +2819,10 @@ func namespaceTokenInSchemaName(name string) string {
 func (vm *VM) callListValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
 	switch method {
 	case "add", "addAll", "set", "remove", "clear", "sort", "addToRelationship", "markForDelete":
+		vm.invalidateFlatObjectAliasIndexes(receiver.Ref)
+	}
+	switch method {
+	case "add", "addAll", "set", "remove", "clear", "sort", "addToRelationship", "markForDelete":
 		vm.mapPutParentContainment = nil
 	}
 	// Captured StandardSetController add/set/clear controls expose a fatal
@@ -2833,7 +2846,7 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		switch method {
 		case "add", "addAll", "clear", "remove", "set", "sort":
 			// Readonly trigger collections reject mutations.
-			return Null, true, fmt.Errorf("System.FinalException: Collection is read-only")
+			return Null, true, &RuntimeError{Type: "System.FinalException", Message: "Collection is read-only"}
 		}
 	}
 	switch method {
@@ -2933,7 +2946,7 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		if insertAt >= 0 {
 			receiver.List = append(receiver.List, Null)
 			copy(receiver.List[insertAt+1:], receiver.List[insertAt:])
-			receiver.List[insertAt] = item
+			vm.setListElement(receiver, insertAt, item)
 		} else {
 			// Appending a native backing String or Id stores its ordinary value.
 			// The source element and existing backing slots retain their identity.
@@ -3096,22 +3109,12 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 			if cloned.List[i].Kind != ValueObject {
 				continue
 			}
+			deleteObjectField(cloned.List[i].Fields, sobjectErrorsField)
+			deleteObjectField(cloned.List[i].Fields, sobjectReadOnlyField)
 			if !preserveID {
 				deleteObjectField(cloned.List[i].Fields, "Id")
 			}
-			if !preserveReadonlyTimestamps {
-				for _, field := range []string{"CreatedById", "CreatedDate", "LastModifiedById", "LastModifiedDate"} {
-					deleteObjectField(cloned.List[i].Fields, field)
-				}
-			}
-			if !preserveAutonumber {
-				_, definition, _ := vm.describeObjectDefinition(cloned.List[i].Type)
-				for fieldName, field := range definition.Fields {
-					if field.AutoNumber {
-						deleteObjectField(cloned.List[i].Fields, fieldName)
-					}
-				}
-			}
+			vm.applySObjectCloneFieldOptions(&cloned.List[i], preserveReadonlyTimestamps, preserveAutonumber)
 		}
 		return cloned, true, nil
 	case "iterator":
@@ -3196,7 +3199,7 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 			return Null, true, fmt.Errorf("List.set: %w", err)
 		}
 		vm.markCollectionRefsEscaped(item)
-		receiver.List[i] = item
+		vm.setListElement(receiver, i, item)
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
 			return Null, true, err
 		}
@@ -3383,6 +3386,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		previous := snapshotAlias(receiver)
 		receiver.Set = nil
 		receiver.setInsertionHashes = nil
+		receiver.primitiveSetState = &primitiveSetState{}
 		if err := vm.storeReceiver(receiverName, receiver); err != nil {
 			return Null, true, err
 		}
@@ -3414,6 +3418,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		}
 		receiver.Set = out
 		receiver.setInsertionHashes = hashes
+		receiver.primitiveSetState = &primitiveSetState{items: out, hashes: hashes}
 		if changed {
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
@@ -3447,6 +3452,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		}
 		receiver.Set = out
 		receiver.setInsertionHashes = hashes
+		receiver.primitiveSetState = &primitiveSetState{items: out, hashes: hashes}
 		if changed {
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
@@ -3459,11 +3465,13 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 			return Null, true, fmt.Errorf("Set.clone expects 0 arguments")
 		}
 		cloned := receiver
+		cloned.primitiveSetState = clonePrimitiveSetState(receiver.primitiveSetState)
 		cloned.Ref = newValueRef()
 		cloned.Set = append([]Value(nil), receiver.Set...)
 		cloned.setInsertionHashes = cloneSetInsertionHashes(receiver)
 		cloned.mapKeySetSource = nil
 		cloned.mapKeySetHashes = nil
+		bindPrimitiveSetCloneState(receiver, &cloned)
 		return cloned, true, nil
 	case "deepClone":
 		if len(args) > 3 {
@@ -3906,7 +3914,22 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if len(args) != 0 {
 			return Null, true, unsupportedCallError("Map.deepClone with preserve options")
 		}
-		return cloneValue(receiver), true, nil
+		cloned := cloneValue(receiver)
+		for _, value := range cloned.Map {
+			if value.Kind == ValueObject && vm.isSObjectLikeType(runtimeObjectType(value)) {
+				deleteObjectField(value.Fields, sobjectErrorsField)
+				deleteObjectField(value.Fields, sobjectReadOnlyField)
+			}
+		}
+		return cloned, true, nil
 	}
 	return Null, false, nil
+}
+
+func futureMethodSignature(method Method) string {
+	types := make([]string, len(method.Params))
+	for i, param := range method.Params {
+		types[i] = param.Type
+	}
+	return method.ClassName + "." + apexMethodMemberName(method.Name) + "(" + strings.Join(types, ", ") + ")"
 }

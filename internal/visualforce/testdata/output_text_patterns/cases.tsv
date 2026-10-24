@@ -1,0 +1,31 @@
+case	kind	pattern	parameter
+percent	number	0.0%	ratio
+permille	number	0.0‰	ratio
+currency-symbol	number	¤#,##0.00	amount
+currency-code	number	¤¤ #,##0.00	amount
+negative-subpattern	number	#,##0.00;(#,##0.00)	negative
+positive-subpattern	number	#,##0.00;(#,##0.00)	amount
+zero-subpattern	number	0.00;(0.00)	zero
+quoted-affix	number	'USD '#,##0.00 'net'	amount
+quoted-percent	number	0.00'%'	ratio
+apostrophe-affix	number	0.00 'o''clock'	ratio
+number-integer	number	integer	amount
+number-currency	number	currency	amount
+number-percent	number	percent	ratio
+scientific	number	0.00E0	amount
+scientific-zero	number	0.00E0	zero
+date-default	date		stamp
+date-short	date	short	stamp
+date-medium	date	medium	stamp
+date-long	date	long	stamp
+date-full	date	full	stamp
+date-month-short	date	MMM d, yyyy	stamp
+date-month-long	date	MMMM d, yyyy	stamp
+date-weekday	date	EEE EEEE	stamp
+date-clock	date	h:mm:ss a z Z	stamp
+time-default	time		stamp
+time-short	time	short	stamp
+time-medium	time	medium	stamp
+time-long	time	long	stamp
+time-full	time	full	stamp
+date-only-month-long	date	MMMM d, yyyy	day

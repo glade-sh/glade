@@ -16,7 +16,7 @@ import (
 
 func (vm *VM) testStart() (Value, error) {
 	if vm.testContext == nil {
-		return Null, fmt.Errorf("Test.startTest is only available in test context")
+		return Null, &RuntimeError{Type: "System.FinalException", Message: "Method only allowed during testing", Stack: vm.stackFrames()}
 	}
 	if vm.testContext.Started {
 		return Null, &RuntimeError{Type: "System.FinalException", Message: "Testing already started", Stack: vm.stackFrames()}
@@ -27,6 +27,7 @@ func (vm *VM) testStart() (Value, error) {
 	vm.testContext.AsyncStartIndex = len(vm.testContext.AsyncJobs)
 	vm.testContext.PlatformEventStartIndex = len(vm.testContext.PlatformEvents)
 	vm.testContext.ChainEnqueued = false
+	vm.calloutPendingWork = calloutPendingWork{}
 	vm.testContext.ParentLimits = vm.limits
 	vm.testContext.ParentViolations = append([]LimitViolation(nil), vm.limitViolations...)
 	vm.ResetLimits()
@@ -45,6 +46,8 @@ func (vm *VM) testStop(result *Result) (Value, error) {
 	vm.testContext.Stopped = true
 	vm.prepareTestStopAsyncJobs()
 	err := vm.drainTestWork(result)
+	// The test boundary clears pending DML and active-savepoint callout guards.
+	vm.calloutPendingWork = calloutPendingWork{}
 	vm.limits = vm.testContext.ParentLimits
 	vm.limitViolations = append([]LimitViolation(nil), vm.testContext.ParentViolations...)
 	return Null, err
@@ -101,6 +104,9 @@ func (vm *VM) drainTestWork(result *Result) error {
 		beforeEvents := len(vm.testContext.PlatformEvents)
 		beforePublishes := len(vm.testContext.EventPublishes)
 		if err := vm.drainTestAsync(result); err != nil {
+			return err
+		}
+		if err := vm.drainChangeDataCapture(result); err != nil {
 			return err
 		}
 		if err := vm.drainTestPlatformEventsFrom(result, vm.testContext.PlatformEventStartIndex, true); err != nil {
@@ -220,9 +226,15 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 	if err := vm.incrementLimit("queueableJobs", 1); err != nil {
 		return Null, err
 	}
+	if len(args) == 1 {
+		vm.markCalloutPendingWork()
+	}
 	draining, chainEnqueued := vm.asyncDrainState()
 	if draining && vm.currentAsyncKind == "Queueable" && chainEnqueued {
 		return Null, fmt.Errorf("Queueable chaining limit exceeded")
+	}
+	if vm.testContext != nil && vm.testContext.Stopped && draining && vm.currentAsyncKind == "Queueable" && vm.currentQueueableDepth > 0 && vm.currentQueueableMaxDepth <= 0 && !hasMaxDepth {
+		return Null, newExceptionError("System.AsyncException", "Maximum stack depth has been reached.")
 	}
 	vm.markAsyncChainEnqueued()
 	// Detach the queued object from the caller while preserving aliases inside
@@ -243,6 +255,12 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 		job.QueueableMaxDepth = maxDepth
 	}
 	if job.QueueableMaxDepth > 0 && job.QueueableDepth > job.QueueableMaxDepth {
+		// async_stack_depth capped_*_3, inherited_one, overflow_flush
+		// (anonymous, API 62/67): the rejection is a catchable AsyncException.
+		// A test context that has not stopped has no row and keeps the local error.
+		if vm.testContext == nil || vm.testContext.Stopped {
+			return Null, newExceptionError("System.AsyncException", "Maximum stack depth has been reached.")
+		}
 		return Null, fmt.Errorf("MaximumQueueableStackDepth exceeded")
 	}
 	if duplicateSignature != "" {
@@ -255,11 +273,18 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 		"jobId": job.ID,
 		"class": args[0].Type,
 	})
-	return String(job.ID), nil
+	id := platformScalar("Id", apexIDTo18(job.ID))
+	id.idOriginalDisplay = true
+	return id, nil
 }
 func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return Null, fmt.Errorf("Database.executeBatch expects batch instance[, scopeSize]")
+	}
+	// async_stack_depth mixed_four (anonymous, API 62/67): observed from a
+	// future body; batch start/execute contexts have no captured row.
+	if vm.futureBodyDepth > 0 {
+		return Null, newExceptionError("System.AsyncException", "Database.executeBatch cannot be called from a batch start, batch execute, or future method.")
 	}
 	if args[0].Kind == ValueNull {
 		return Null, newExceptionError("System.NullPointerException", "Argument 'batchable' cannot be null")
@@ -624,8 +649,10 @@ func (vm *VM) releaseScheduledCron(cronID string) {
 	if vm == nil || vm.Org == nil {
 		return
 	}
+	var detailID storage.ID
 	if object, ok := vm.Org.Objects["CronTrigger"]; ok {
 		if storedID, record, found := storage.LookupRecordByID(object.Records, storage.ID(cronID)); found {
+			detailID = record.Fields["CronJobDetailId"].ID
 			vm.recordIsolationJournalMutation("CronTrigger", storedID, record, true)
 			if record.Fields == nil {
 				record.Fields = make(map[string]storage.Value)
@@ -635,6 +662,22 @@ func (vm *VM) releaseScheduledCron(cronID string) {
 			delete(record.Fields, "NextFireTime")
 			object.Records[record.ID] = record
 			vm.Org.Objects["CronTrigger"] = object
+		}
+	}
+	if detailID == "" {
+		return
+	}
+	for _, trigger := range vm.Org.Objects["CronTrigger"].Records {
+		if !trigger.System.IsDeleted && storage.IDsEqual(trigger.Fields["CronJobDetailId"].ID, detailID) {
+			return
+		}
+	}
+	if object, ok := vm.Org.Objects["CronJobDetail"]; ok {
+		if storedID, record, found := storage.LookupRecordByID(object.Records, detailID); found && !record.System.IsDeleted {
+			vm.recordIsolationJournalMutation("CronJobDetail", storedID, record, true)
+			record.System.IsDeleted = true
+			object.Records[storedID] = record
+			vm.Org.Objects["CronJobDetail"] = object
 		}
 	}
 }
@@ -752,6 +795,9 @@ func (vm *VM) drainTestPlatformEvents(result *Result) error {
 	if vm.testContext == nil {
 		return nil
 	}
+	if err := vm.drainChangeDataCapture(result); err != nil {
+		return err
+	}
 	return vm.drainTestPlatformEventsFrom(result, 0, false)
 }
 func (vm *VM) drainTestPlatformEventsFrom(result *Result, startIndex int, stopTimeDelivery bool) error {
@@ -783,11 +829,7 @@ func (vm *VM) drainTestPlatformEventsFrom(result *Result, startIndex int, stopTi
 			}
 			if stopTimeDelivery {
 				wasDraining := vm.testContext.Draining
-				previousUser := vm.testContext.CurrentUser
 				vm.testContext.Draining = true
-				if user := vm.automatedProcessUser(); user.Kind != "" {
-					vm.testContext.CurrentUser = user
-				}
 				// Native named tests at APIs 62/67/68 retain test statics in
 				// subscribers, including writes visible after stopTest returns.
 				err := func() error {
@@ -796,7 +838,6 @@ func (vm *VM) drainTestPlatformEventsFrom(result *Result, startIndex int, stopTi
 					return vm.deliverPlatformEventSubscribers(grouped[objectName], result)
 				}()
 				vm.testContext.Draining = wasDraining
-				vm.testContext.CurrentUser = previousUser
 				if err != nil {
 					var subscriber *eventBusTriggerRetryError
 					var thrown *apexThrowError
@@ -1013,7 +1054,7 @@ func (vm *VM) asyncJobDue(job AsyncJob) bool {
 		return false
 	}
 	if vm.testContext != nil && vm.testContext.Stopped && job.Kind == "ScheduledApex" && job.RunAtTestStop {
-		return true
+		return !vm.scheduledClassNested(job)
 	}
 	if vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining &&
 		job.Kind == "ScheduledApex" && vm.activeTestScheduledReuse(job) {
@@ -1035,7 +1076,7 @@ func (vm *VM) asyncJobDue(job AsyncJob) bool {
 }
 func (vm *VM) staticFieldSnapshot() map[string]map[string]Value {
 	out := make(map[string]map[string]Value, len(vm.Classes))
-	for className, class := range vm.Classes {
+	for className, class := range vm.ClassEntries() {
 		fields := make(map[string]Value, len(class.StaticFields))
 		for fieldName, field := range class.StaticFields {
 			fields[fieldName] = field.Value
@@ -1046,7 +1087,7 @@ func (vm *VM) staticFieldSnapshot() map[string]map[string]Value {
 }
 func (vm *VM) testAsyncStaticFieldSnapshot() map[string]map[string]Value {
 	out := make(map[string]map[string]Value, len(vm.Classes))
-	for className, class := range vm.Classes {
+	for className, class := range vm.ClassEntries() {
 		if !classHasStaticCollectionField(class) {
 			continue
 		}
@@ -1103,14 +1144,15 @@ func (vm *VM) enqueueAsyncJob(job AsyncJob) {
 		if vm.testContext.Draining && job.Kind == "ScheduledBatch" {
 			job.Deferred = true
 		}
-		// The owned batch_finish_lifecycle observations run schedules created
-		// by finish at stopTest, while other nested schedule origins retain
-		// their existing admission boundary.
-		finishSchedule := vm.testContext.Stopped && job.Kind == "ScheduledApex" && vm.currentAsyncKind == "BatchApex" && vm.inBatchFinish
-		if vm.testContext.Draining && finishSchedule {
+		// stopTest admits schedules from batch finish and first-level queueable
+		// bodies. Keep finalizer, deeper-chain and scheduled-callback boundaries.
+		stopSchedule := vm.testContext.Stopped && job.Kind == "ScheduledApex" &&
+			((vm.currentAsyncKind == "BatchApex" && vm.inBatchFinish) ||
+				(vm.currentAsyncKind == "Queueable" && vm.currentQueueableDepth == 1))
+		if vm.testContext.Draining && stopSchedule {
 			job.RunAtTestStop = true
 		}
-		if vm.testContext.Draining && job.Kind != "Queueable" && job.Kind != "BatchApex" && job.Kind != "ScheduledBatch" && !finishSchedule {
+		if vm.testContext.Draining && job.Kind != "Queueable" && job.Kind != "BatchApex" && job.Kind != "ScheduledBatch" && !stopSchedule {
 			return
 		}
 		if vm.testContext.Draining && job.Kind == "Queueable" && !vm.canDrainQueueableJob(job) {
@@ -1192,6 +1234,8 @@ func (vm *VM) canDrainQueueableJob(job AsyncJob) bool {
 	return job.QueueableDepth > 0 && job.QueueableDepth <= job.QueueableMaxDepth
 }
 func (vm *VM) runAsyncJob(job AsyncJob, result *Result, batchProjection ...*bool) error {
+	restoreMixedDML := vm.beginMixedDMLTransaction()
+	defer restoreMixedDML()
 	_, err := vm.withQueueableDuplicateSignatureTransaction(func() (Value, error) {
 		return Null, vm.runAsyncJobInTransaction(job, result, batchProjection...)
 	})
@@ -1200,6 +1244,10 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result, batchProjection ...*bool
 
 func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjection ...*bool) error {
 	switch job.Kind {
+	case "FlowAsyncPath":
+		return vm.runFlowAsyncPath(job, result)
+	case platformEventFlowJobKind:
+		return vm.runPlatformEventFlowJob(job.Args, result)
 	case "Future":
 		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
 			return vm.withAsyncKind("Future", func() (Value, error) {
@@ -1278,12 +1326,12 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 			contextJobID = job.ScheduledReusedBy
 		}
 		args := []Value{schedulableContext(contextJobID)}
-		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(job.Object.Type, "execute", args)
+		target, ok, ambiguous := vm.resolveAsyncCallbackForArgs(job.Object.Type, "execute", args)
 		if ambiguous {
 			return vm.ambiguousOverloadError(job.Object.Type+".execute", args)
 		}
 		if !ok {
-			target, ok, ambiguous = vm.resolveInstanceMethodForArgs(job.Object.Type, "execute", nil)
+			target, ok, ambiguous = vm.resolveAsyncCallbackForArgs(job.Object.Type, "execute", nil)
 			if ambiguous {
 				return vm.ambiguousOverloadError(job.Object.Type+".execute", nil)
 			}
@@ -1310,8 +1358,20 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 	}
 }
 
+// Async interfaces accept static callbacks as well as instance callbacks.
+func (vm *VM) resolveAsyncCallbackForArgs(typeName, method string, args []Value) (Method, bool, bool) {
+	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(typeName, method, args)
+	if ok || ambiguous {
+		return target, ok, ambiguous
+	}
+	return vm.resolveStaticMethodForArgs(typeName, method, args)
+}
+
 // Override only the callback's caller frame; helpers retain normal dispatch.
 func (vm *VM) callAsyncEntry(method Method, receiver Value, args []Value, result *Result, queueable bool) (Value, error) {
+	if method.IsStatic {
+		receiver = Null
+	}
 	sharing := ""
 	mode := strings.ToLower(strings.TrimSpace(method.SharingMode))
 	if !method.SourceContextBound {
@@ -1339,6 +1399,12 @@ func (vm *VM) withQueueableDuplicateSignatureTransaction(run func() (Value, erro
 	return run()
 }
 func (vm *VM) runQueueableFinalizer(finalizer Value, job AsyncJob, result *Result, parentErr error) error {
+	// Native stopTest retains the Queueable's mixed-DML state in its finalizer;
+	// standalone asynchronous execution gives the finalizer a new transaction.
+	if vm.testContext == nil {
+		restoreMixedDML := vm.beginMixedDMLTransaction()
+		defer restoreMixedDML()
+	}
 	restoreCreations := vm.beginRecordCreationTransaction()
 	defer restoreCreations()
 	args := []Value{finalizerContext(job.ID, parentErr)}
@@ -1446,6 +1512,8 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 	if start, ok := vm.resolveInstanceMethod(job.Object.Type, "start"); ok {
 		receiver := batchTransactionReceiver(baseObject, stateful, &statefulObject)
 		value, err := vm.withAsyncLimitWindow(func() (Value, error) {
+			restoreMixedDML := vm.beginMixedDMLTransaction()
+			defer restoreMixedDML()
 			return vm.callAsyncEntry(start, receiver, batchArgs(start, "Database.BatchableContext", job.ID), result, false)
 		})
 		if err != nil {
@@ -1485,19 +1553,19 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 	projectedErrors := 0
 	chunks := batchChunks(scope, job.BatchSize)
 	executeArgs := []Value{asyncContext("Database.BatchableContext", job.ID), List()}
-	execute, ok, ambiguous := vm.resolveInstanceMethodForArgs(job.Object.Type, "execute", executeArgs)
+	execute, ok, ambiguous := vm.resolveAsyncCallbackForArgs(job.Object.Type, "execute", executeArgs)
 	if ambiguous {
 		return vm.ambiguousOverloadError(job.Object.Type+".execute", executeArgs)
 	}
 	if !ok {
 		executeArgs = []Value{List()}
-		execute, ok, ambiguous = vm.resolveInstanceMethodForArgs(job.Object.Type, "execute", executeArgs)
+		execute, ok, ambiguous = vm.resolveAsyncCallbackForArgs(job.Object.Type, "execute", executeArgs)
 		if ambiguous {
 			return vm.ambiguousOverloadError(job.Object.Type+".execute", executeArgs)
 		}
 	}
 	if !ok {
-		execute, ok, ambiguous = vm.resolveInstanceMethodForArgs(job.Object.Type, "execute", nil)
+		execute, ok, ambiguous = vm.resolveAsyncCallbackForArgs(job.Object.Type, "execute", nil)
 		if ambiguous {
 			return vm.ambiguousOverloadError(job.Object.Type+".execute", nil)
 		}
@@ -1510,6 +1578,8 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 			rollbackMark, rollbackEnabled := vm.beginBatchChunkTransaction()
 			receiver := batchTransactionReceiver(baseObject, stateful, &statefulObject)
 			_, err := vm.withAsyncLimitWindow(func() (Value, error) {
+				restoreMixedDML := vm.beginMixedDMLTransaction()
+				defer restoreMixedDML()
 				return vm.callAsyncEntry(execute, receiver, batchExecuteArgs(execute, chunk, job.ID, batchChunkType(itemType, locatorStart, execute)), result, false)
 			})
 			if err != nil {
@@ -1563,6 +1633,8 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 		receiver := batchTransactionReceiver(baseObject, stateful, &statefulObject)
 		rollbackMark, rollbackEnabled := vm.beginBatchChunkTransaction()
 		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
+			restoreMixedDML := vm.beginMixedDMLTransaction()
+			defer restoreMixedDML()
 			previous := vm.inBatchFinish
 			vm.inBatchFinish = true
 			defer func() { vm.inBatchFinish = previous }()
@@ -1816,7 +1888,7 @@ func (vm *VM) batchableConcreteMethodsByName(typeName, methodName string) []Meth
 			break
 		}
 		for _, method := range vm.registeredMethodCandidates(current + "." + methodName) {
-			if method.IsStatic || !strings.EqualFold(apexMethodMemberName(method.Name), methodName) {
+			if !strings.EqualFold(apexMethodMemberName(method.Name), methodName) {
 				continue
 			}
 			if methodHasModifier(method.Modifiers, "abstract") {
@@ -2367,7 +2439,7 @@ func batchExecuteArgs(method Method, scope []Value, jobID, chunkType string) []V
 func asyncContext(typeName, jobID string) Value {
 	ctx := Object(typeName)
 	if jobID != "" {
-		ctx.Fields["JobId"] = String(jobID)
+		ctx.Fields["JobId"] = platformScalar("Id", apexIDTo18(jobID))
 	}
 	return ctx
 }
@@ -2400,7 +2472,7 @@ func parentJobResultValue(name string) Value {
 func schedulableContext(jobID string) Value {
 	ctx := Object("SchedulableContext")
 	if jobID != "" {
-		ctx.Fields["TriggerId"] = platformScalar("Id", cronTriggerID(jobID))
+		ctx.Fields["TriggerId"] = platformScalar("Id", apexIDTo18(cronTriggerID(jobID)))
 	}
 	return ctx
 }
@@ -2408,15 +2480,50 @@ func cronTriggerID(jobID string) string {
 	return strings.Replace(jobID, "707", "08e", 1)
 }
 func (vm *VM) nextAsyncJobID() string {
+	sequence := &vm.localAsyncSeq
 	if vm.testContext != nil {
-		vm.testContext.JobSeq++
-		return fmt.Sprintf("707%012d", vm.testContext.JobSeq)
+		sequence = &vm.testContext.JobSeq
 	}
-	vm.localAsyncSeq++
-	return fmt.Sprintf("707%012d", vm.localAsyncSeq)
+	if vm.Org != nil && vm.Org.IDSequences["AsyncApexJob"] > uint64(*sequence) {
+		*sequence = int(vm.Org.IDSequences["AsyncApexJob"])
+	}
+	for {
+		*sequence++
+		id := fmt.Sprintf("707%012d", *sequence)
+		// Older org snapshots have job rows without an allocation sequence.
+		// Deleted rows still reserve their identity, as do retained details.
+		if vm.asyncRecordIDExists("AsyncApexJob", id) ||
+			vm.asyncRecordIDExists("CronTrigger", cronTriggerID(id)) ||
+			vm.asyncRecordIDExists("CronJobDetail", cronJobDetailID(id)) {
+			continue
+		}
+		if vm.Org != nil {
+			vm.recordIsolationJournalSequence("AsyncApexJob")
+			if vm.Org.IDSequences == nil {
+				vm.Org.IDSequences = make(map[string]uint64)
+			}
+			vm.Org.IDSequences["AsyncApexJob"] = uint64(*sequence)
+		}
+		return id
+	}
+}
+
+func (vm *VM) asyncRecordIDExists(objectName, id string) bool {
+	if vm.Org == nil {
+		return false
+	}
+	records := vm.Org.Objects[objectName].Records
+	if len(records) == 0 {
+		return false
+	}
+	if _, exists := records[storage.ID(id)]; exists {
+		return true
+	}
+	_, exists := records[storage.ID(apexIDTo18(id))]
+	return exists
 }
 func (vm *VM) recordAsyncJob(job AsyncJob, status, detail string) {
-	if vm.Org == nil {
+	if vm.Org == nil || job.Kind == "FlowAsyncPath" || job.Kind == platformEventFlowJobKind {
 		return
 	}
 	vm.ensureAsyncObjects()
@@ -2582,7 +2689,7 @@ func (vm *VM) recordCronTrigger(job AsyncJob, state string) {
 	vm.recordIsolationJournalMutation("CronTrigger", id, record, exists)
 	record.Fields["State"] = storage.StringValue(state)
 	record.Fields["CronExpression"] = storage.StringValue(job.Cron)
-	record.Fields["CronJobDetailId"] = storage.IDValue(storage.ID(cronJobDetailID(job.Name)))
+	record.Fields["CronJobDetailId"] = storage.IDValue(storage.ID(cronJobDetailID(job.ID)))
 	record.Fields["TimesTriggered"] = storage.IntegerValue(0)
 	if !exists {
 		if ownerID := vm.currentUserID(); ownerID != "" {
@@ -2882,7 +2989,7 @@ func (vm *VM) recordCronJobDetail(job AsyncJob) {
 		return
 	}
 	object := vm.Org.Objects["CronJobDetail"]
-	id := storage.ID(cronJobDetailID(job.Name))
+	id := storage.ID(cronJobDetailID(job.ID))
 	if _, ok := object.Records[id]; ok {
 		return
 	}
@@ -2941,8 +3048,8 @@ func asyncApexClassID(className string) string {
 	sum := sha1.Sum([]byte(className))
 	return "01p" + hex.EncodeToString(sum[:])[:12]
 }
-func cronJobDetailID(name string) string {
-	sum := sha1.Sum([]byte(name))
+func cronJobDetailID(jobID string) string {
+	sum := sha1.Sum([]byte(jobID))
 	return "08a" + hex.EncodeToString(sum[:])[:12]
 }
 func cronJobType(job AsyncJob) string {

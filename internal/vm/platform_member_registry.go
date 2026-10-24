@@ -32,6 +32,7 @@ func platformObjectMemberSurfaces() []platformObjectMemberSurface {
 				return callContextIndustriesContextMember(receiver, method, args)
 			}},
 			{name: "org-instrumentation", phase: "early", call: callOrgInstrumentationMember},
+			{name: "datacloud-duplicates", phase: "early", call: callDatacloudDuplicateMember},
 			{name: "commerce-inventory", phase: "commerce", call: func(vm *VM, receiver Value, method string, args []Value, _ *Result) (Value, Value, bool, bool, error) {
 				return vm.callCommerceInventoryServiceMember(receiver, method, args)
 			}},

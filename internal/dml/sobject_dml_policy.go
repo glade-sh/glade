@@ -30,5 +30,5 @@ func (e *Engine) afterInsertSObject(objectName string, record storage.Record) er
 }
 
 func syncPersonContactAfterUpdate(objectName string) bool {
-	return objectName == "Account"
+	return objectName == "Account" || objectName == "Contact"
 }

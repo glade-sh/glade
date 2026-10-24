@@ -35,6 +35,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if existing.System.IsDeleted && !e.Options.AllowUpdateDeleted {
 		return fmt.Errorf("dml: record %s is deleted", record.ID)
 	}
+	if err := e.validatePersonAccountCustomFieldWrites(record, existing); err != nil {
+		return err
+	}
 	stripUnchangedNonUpdateableFields(object.Definition, e.Org.Namespace, &record, existing, nullsFromFields)
 	if err := validateFieldWriteability(object.Definition, e.Org.Namespace, record, false); err != nil {
 		return err
@@ -89,7 +92,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 			finalRecord.ParentRelationships[name] = parent.Clone()
 		}
 	}
-	if err := validateRequiredUpdate(object.Definition, record); err != nil {
+	if err := validateRequiredUpdate(object.Definition, record, finalRecord); err != nil {
 		return err
 	}
 	if err := validatePersonAccountRequiredFields(objectName, finalRecord); err != nil {
@@ -103,6 +106,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 		return err
 	}
 	if err := e.validateLookupFilters(object.Definition, finalRecord); err != nil {
+		return err
+	}
+	if err := e.enforceDuplicateRulesOnUpdate(finalRecord); err != nil {
 		return err
 	}
 	_, hasPrivateShares := privateOwnerShareObject(e.Org, object.Definition)
@@ -171,7 +177,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	}
 	if !e.DeferAutomation {
 		if err := e.withPriorRecordForAutomation(storedID, oldRecord, func() error {
-			_, err := e.ApplyAutomation(objectName, storedID)
+			_, err := e.ApplyAutomation(objectName, storedID, record)
 			return err
 		}); err != nil {
 			if rollbackErr := e.restoreRollbackPoint(rollback); rollbackErr != nil {
@@ -179,6 +185,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 			}
 			return err
 		}
+	}
+	if e.ChangeObserver != nil {
+		e.ChangeObserver("UPDATE", oldRecord, e.Org.Objects[objectName].Records[storedID])
 	}
 	return nil
 }
@@ -313,7 +322,13 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	e.removeUniqueIndexRecord(objectName, object.Definition, stored)
 	e.recalculateSummaryFieldsForChildren(objectName, stored)
 	e.clearDeletedParentReferences(objectName, storedID, ctx)
-	return e.cascadeDeleteChildren(objectName, storedID, seen, ctx)
+	if err := e.cascadeDeleteChildren(objectName, storedID, seen, ctx); err != nil {
+		return err
+	}
+	if e.ChangeObserver != nil {
+		e.ChangeObserver("DELETE", stored, storage.Record{})
+	}
+	return nil
 }
 
 func (e *Engine) upsertByExternalID(record storage.Record, externalIDField string) (storage.ID, bool, error) {

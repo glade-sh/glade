@@ -1,0 +1,9 @@
+{
+  "orgName": "Callback Projection Probe",
+  "edition": "Developer",
+  "settings": {
+    "currencySettings": {
+      "enableMultiCurrency": true
+    }
+  }
+}

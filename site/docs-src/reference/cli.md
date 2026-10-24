@@ -120,6 +120,12 @@ local-data issues remain named advisories for their own workflows. This does not
 mean a test was selected or that Salesforce deployment, permissions, hosted
 services, or parity were validated.
 
+Doctor also suggests `glade.yml` entries for undeclared org features and project
+permission-set assignments detected in source. JSON exposes this optional advice
+as [`orgSetup`](/reference/json-schema#doctor-json). Suggestions do not change
+runtime setup or the command's exit code; review and apply them explicitly.
+See [setup suggestions](/reference/config#setup-suggestions).
+
 ## `glade toolchain`
 
 Install or inspect the global LWC toolchain used by local Lightning Out routes.
@@ -468,8 +474,13 @@ files. JSON `status=partial` identifies a run with skipped selected tests and
 no failures.
 Unfiltered, unsharded runs maintain the default duration history. Test
 `--no-cache` bypasses startup and semantic cache disk operations plus semantic
-memory reuse. On memory-constrained hosts, `--gc-aggressive` reduces heap
-growth at the cost of more frequent garbage collection.
+memory reuse. With a finite memory limit, `--gc-aggressive` sets `GOGC=off`
+so Go's soft memory limit drives collection instead of a heap-growth percentage.
+`glade test` defaults to a 4 GiB soft limit and honors an explicit `GOMEMLIMIT`.
+If the effective limit is unlimited (`GOMEMLIMIT=off` or Go's maximum `int64`
+limit), the flag falls back to `GOGC=50`. This soft limit is not a hard process
+RSS cap. Use `--no-serve` to apply the settings to the process executing the
+tests; an existing test server retains its own startup GC settings.
 
 Run `glade help test` for the full flag list.
 

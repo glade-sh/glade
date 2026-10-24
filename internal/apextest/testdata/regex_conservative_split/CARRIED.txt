@@ -1,0 +1,1 @@
+octal_class_400 and octal_class_777: Salesforce rejects these patterns (StringException for String.split and Pattern.compile). The existing regexp2 engine accepts them with byte-sized octal semantics. This change only removes Go literal parsing from their split routes. Their eight native API/context cells are retained as syntax gaps, and tested for local matcher equivalence.

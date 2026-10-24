@@ -9,6 +9,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 func (vm *VM) allowsReflectionClassConstruction(typeName string, class Class) bool {
@@ -1237,6 +1238,9 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 			}
 		}
 		if explicitField {
+			if err := sObjectTypedIDAssignmentError(value, definition.Fields[field]); err != nil {
+				return Null, err
+			}
 			value = coerceSObjectFieldRuntimeValue(value, definition.Fields[field])
 			vm.setExplicitSObjectFieldValue(&object, field, value)
 		} else {
@@ -1788,21 +1792,27 @@ func (vm *VM) initializeSObjectSchemaDefaults(object *Value, typeName string) {
 	if vm.Org == nil || object == nil {
 		return
 	}
-	objectName, ok := vm.resolveObjectName(typeName)
-	if !ok {
-		objectName = typeName
-	}
-	state, ok := vm.Org.Objects[objectName]
+	_, definition, ok := vm.sObjectDefinitionForRead(typeName)
 	if !ok {
 		return
 	}
-	for name, field := range state.Definition.Fields {
+	// Fresh metadata records retain unset fields until persistence.
+	if storage.IsCustomMetadataDefinition(definition) {
+		return
+	}
+	for name, field := range definition.Fields {
 		// IsDeleted defaults on persisted records, not on a fresh Apex receiver.
 		if field.Type != storage.FieldBoolean || strings.EqualFold(name, "IsDeleted") {
 			continue
 		}
 		defaultValue, ok := storage.DefaultValueForField(field)
 		if !ok {
+			continue
+		}
+		// Ordinary custom objects retain false-default provenance for security
+		// stripping. A true schema default still belongs to persistence, as the
+		// constructed-object native rows show (dot=false, get=null).
+		if hasSuffixFold(definition.APIName, "__c") && !storage.IsCustomSettingDefinition(definition) && defaultValue.Boolean {
 			continue
 		}
 		if current, exists := object.Fields[name]; exists && current.Kind != ValueNull {
@@ -2133,6 +2143,9 @@ func (vm *VM) callChainedConstructor(callee string, args []Value, result *Result
 				return Null, nil
 			}
 			return Null, fmt.Errorf("unknown superclass %q", superName)
+		}
+		if err := pluginBatchableSuperConstructorError(superName, args); err != nil {
+			return Null, err
 		}
 	}
 	matchArgs := preferStaticArgumentTypes(args)
@@ -2747,7 +2760,7 @@ func receiverHasClassField(receiver Value, class Class) bool {
 func (vm *VM) concreteOverrideByReceiverFields(receiver Value, baseType, method string, args []Value) (Method, bool) {
 	var found Method
 	count := 0
-	for className, class := range vm.Classes {
+	for className, class := range vm.ClassEntries() {
 		if strings.EqualFold(className, baseType) || vm.classIsTestScoped(className) || !receiverHasClassField(receiver, class) {
 			continue
 		}
@@ -2765,14 +2778,14 @@ func (vm *VM) concreteOverrideByReceiverFields(receiver Value, baseType, method 
 }
 
 func (vm *VM) classIsTestScoped(className string) bool {
-	if class, ok := vm.Classes[className]; ok && class.IsTest {
+	if class, ok := vm.classEntry(className); ok && class.IsTest {
 		return true
 	}
 	top, nested := lexicalTopLevel(className)
 	if !nested {
 		return strings.Contains(top, "Test")
 	}
-	class, ok := vm.Classes[top]
+	class, ok := vm.classEntry(top)
 	return (ok && class.IsTest) || strings.Contains(top, "Test")
 }
 
@@ -2809,7 +2822,7 @@ func (vm *VM) resolveInterfaceMethodSeen(typeName, method string, seen map[strin
 	if target, ok := vm.registeredMethod(typeName + "." + method); ok && !target.IsStatic {
 		return target, true
 	}
-	class, ok := vm.Classes[typeName]
+	class, ok := vm.classEntry(typeName)
 	if !ok {
 		return Method{}, false
 	}
@@ -2950,7 +2963,7 @@ func (vm *VM) currentExecutionNamespace() string {
 	if strings.TrimSpace(vm.currentClass) == "" {
 		return ""
 	}
-	if class, ok := vm.Classes[vm.currentClass]; ok {
+	if class, ok := vm.classEntry(vm.currentClass); ok {
 		return strings.TrimSpace(class.Namespace)
 	}
 	for _, triggers := range vm.Triggers {
@@ -3513,7 +3526,7 @@ func (vm *VM) resolveExactNestedTypeInClassHierarchy(className, typeName string)
 		for oi := 0; oi < ownerN; oi++ {
 			ownerCandidate := ownerBuf[oi]
 			candidate := ownerCandidate + "." + typeName
-			if class, ok := vm.Classes[candidate]; ok && strings.Contains(class.Name, ".") {
+			if class, ok := vm.classEntry(candidate); ok && strings.Contains(class.Name, ".") {
 				return runtimeClassName(class), true
 			}
 		}
@@ -3529,7 +3542,7 @@ func (vm *VM) resolveExactNestedTypeInClassHierarchy(className, typeName string)
 			for oi := 0; oi < ownerN; oi++ {
 				ownerCandidate := ownerBuf[oi]
 				candidate := ownerCandidate + "." + typeName
-				if class, ok := vm.Classes[candidate]; ok && strings.Contains(class.Name, ".") {
+				if class, ok := vm.classEntry(candidate); ok && strings.Contains(class.Name, ".") {
 					return runtimeClassName(class), true
 				}
 			}
@@ -3979,8 +3992,11 @@ func (vm *VM) exceptionMatchesAny(catchTypes []string, thrown Value) bool {
 }
 
 func (vm *VM) exceptionMatches(catchType string, thrown Value) bool {
-	if strings.EqualFold(exceptionTypeName(thrown.Type), "UnexpectedException") {
-		if _, source := vm.lookupClass(thrown.Type); !source {
+	typeName := exceptionTypeName(thrown.Type)
+	if strings.EqualFold(typeName, "AssertException") || strings.EqualFold(typeName, "EventObjectException") ||
+		strings.EqualFold(typeName, "FinalException") || strings.EqualFold(typeName, "LimitException") ||
+		strings.EqualFold(typeName, "ProcedureException") || strings.EqualFold(typeName, "UnexpectedException") {
+		if class, source := vm.lookupClass(thrown.Type); !source || class.PlatformType {
 			return false
 		}
 	}
@@ -4349,57 +4365,14 @@ func isBuiltinExceptionType(typeName string) bool {
 	return false
 }
 
-var builtinExceptionParents = map[string]string{
-	"Exception": "Object",
-
-	"AssertException":                 "Exception",
-	"AuraHandledException":            "Exception",
-	"AsyncException":                  "Exception",
-	"BigObjectException":              "Exception",
-	"CanvasException":                 "Exception",
-	"CalloutException":                "Exception",
-	"DataWeaveScriptException":        "Exception",
-	"DmlException":                    "Exception",
-	"DuplicateMessageException":       "Exception",
-	"EmailException":                  "Exception",
-	"EmailTemplateRenderException":    "Exception",
-	"EventObjectException":            "Exception",
-	"ExternalObjectException":         "Exception",
-	"FatalCursorException":            "Exception",
-	"FinalException":                  "Exception",
-	"FlowException":                   "Exception",
-	"FormulaEvaluationException":      "Exception",
-	"FormulaValidationException":      "Exception",
-	"HandledException":                "Exception",
-	"IllegalArgumentException":        "Exception",
-	"IllegalStateException":           "Exception",
-	"InvalidHeaderException":          "Exception",
-	"InvalidParameterValueException":  "Exception",
-	"InvalidReadOnlyUserDmlException": "Exception",
-	"JSONException":                   "Exception",
-	"LimitException":                  "Exception",
-	"ListException":                   "Exception",
-	"MathException":                   "Exception",
-	"NoAccessException":               "Exception",
-	"NoDataFoundException":            "Exception",
-	"NoSuchElementException":          "Exception",
-	"NullPointerException":            "Exception",
-	"PatternSyntaxException":          "IllegalArgumentException",
-	"ProcedureException":              "Exception",
-	"QueryException":                  "Exception",
-	"RequiredFeatureMissingException": "Exception",
-	"SearchException":                 "Exception",
-	"SecurityException":               "Exception",
-	"SerializationException":          "Exception",
-	"SObjectException":                "Exception",
-	"StringException":                 "Exception",
-	"TouchHandledException":           "Exception",
-	"TypeException":                   "Exception",
-	"UnexpectedException":             "Exception",
-	"UnsupportedOperationException":   "Exception",
-	"VisualforceException":            "Exception",
-	"XmlException":                    "Exception",
-}
+var builtinExceptionParents = func() map[string]string {
+	parents := typesys.StandardExceptionParents()
+	// Preserve legacy runtime error identities independently of the System
+	// declarations accepted by source analysis.
+	parents["IllegalStateException"] = "Exception"
+	parents["PatternSyntaxException"] = "IllegalArgumentException"
+	return parents
+}()
 
 func exceptionQualifiedTypeName(typeName string) string {
 	typeName = strings.TrimSpace(typeName)

@@ -1,0 +1,12 @@
+id	context	class	method	source
+omitted_read	istest	CaptureSharingOmittedTest	observeRead	-
+omitted_viewall	istest	CaptureSharingOmittedTest	observeViewAll	-
+omitted_none	istest	CaptureSharingOmittedTest	observeNone	-
+without_read	istest	CaptureSharingWithoutTest	observeRead	-
+without_viewall	istest	CaptureSharingWithoutTest	observeViewAll	-
+without_none	istest	CaptureSharingWithoutTest	observeNone	-
+with_read	istest	CaptureSharingWithTest	observeRead	-
+with_viewall	istest	CaptureSharingWithTest	observeViewAll	-
+with_none	istest	CaptureSharingWithTest	observeNone	-
+anonymous_owner	anonymous	-	-	anonymous.apex
+anonymous_runas_rejection	anonymous	-	-	runas_rejection.apex

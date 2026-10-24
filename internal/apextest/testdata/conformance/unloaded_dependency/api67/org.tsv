@@ -1,0 +1,23 @@
+id	api	route	outcome	value
+missing_static	67.0	anonymous	compile-rejected	"Compilation failed at Line 1 column 24 with the error:
+
+Variable does not exist: CedarLibrary67"
+missing_static	67.0	istest	compile-rejected	Variable does not exist: CedarLibrary67
+missing_constructor	67.0	anonymous	compile-rejected	"Compilation failed at Line 1 column 24 with the error:
+
+Invalid type: CedarLibrary67"
+missing_constructor	67.0	istest	compile-rejected	Invalid type: CedarLibrary67
+missing_trigger	67.0	anonymous	compile-rejected	Variable does not exist: CedarLibrary67
+missing_trigger	67.0	istest	compile-rejected	Variable does not exist: CedarLibrary67
+dynamic_boundary	67.0	anonymous	accepted	assertions passed
+dynamic_boundary	67.0	istest	accepted	assertions passed
+loaded_static	67.0	anonymous	accepted	assertions passed
+loaded_static	67.0	istest	accepted	assertions passed
+loaded_constructor	67.0	anonymous	accepted	assertions passed
+loaded_constructor	67.0	istest	accepted	assertions passed
+loaded_trigger	67.0	anonymous	accepted	assertions passed
+loaded_trigger	67.0	istest	accepted	assertions passed
+member_rejection	67.0	anonymous	compile-rejected	"Compilation failed at Line 1 column 16 with the error:
+
+Method does not exist or incorrect signature: void absentMember() from the type CedarLibrary67"
+member_rejection	67.0	istest	compile-rejected	Method does not exist or incorrect signature: void absentMember() from the type CedarLibrary67

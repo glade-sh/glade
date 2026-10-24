@@ -1,0 +1,3 @@
+api	context	id	outcome	value
+62.0	anonymous	identity	observation	"{""accountPrefix"":""001"",""customCounterCount"":0,""customPrefixWidth"":3,""customType"":""CaptureIdentity__c"",""invalid"":""System.StringException: Invalid id: bad"",""profileCollision"":false,""profilePrefix"":""00e"",""unique"":true,""userCollision"":false,""userPrefix"":""005""}"
+62.0	istest	identity	observation	"{""accountPrefix"":""001"",""customCounterCount"":0,""customPrefixWidth"":3,""customType"":""CaptureIdentity__c"",""invalid"":""System.StringException: Invalid id: bad"",""profileCollision"":false,""profilePrefix"":""00e"",""unique"":true,""userCollision"":false,""userPrefix"":""005""}"

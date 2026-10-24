@@ -44,6 +44,10 @@ func TestRecentAccessFieldsNativeConformance(t *testing.T) {
 				}
 				writeFile(t, filepath.Join(root, "force-app/main/default/classes", name+".cls-meta.xml"), strings.ReplaceAll(string(body), "62.0", api))
 			}
+			// Exercise native observations with unrelated tab shapes in the project.
+			if err := os.CopyFS(root, os.DirFS("../schema/testdata/mixed_custom_tabs")); err != nil {
+				t.Fatal(err)
+			}
 			index := loadTestIndex(t, root)
 			for _, route := range []string{"anonymous", "istest"} {
 				t.Run(route, func(t *testing.T) {

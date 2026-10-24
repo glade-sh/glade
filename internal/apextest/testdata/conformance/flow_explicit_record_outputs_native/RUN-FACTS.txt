@@ -1,5 +1,5 @@
 context=istest
-transport=intentional result-bearing assertion; not native test-pass credit
+transport=System.assert
 api=62.0
 source_sha256:62.0:force-app/main/default/classes/SpruceRecordObservationTest.cls=daee5ded3ba14cba0daa5708dd6caab51fae42f2e7a91cc7558344db3960740e
 source_sha256:62.0:force-app/main/default/classes/SpruceRecordObservationTest.cls-meta.xml=51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d

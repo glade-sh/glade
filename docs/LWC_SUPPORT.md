@@ -83,6 +83,7 @@ the builder's record-page object and record pickers.
 | --- | --- | --- |
 | LWC module compilation | Local support | LWC shell and shared Lightning Out runtime. |
 | Import maps | Local support | LWC shell and shared Lightning Out runtime. |
+| `lightning/logger` | Local caller contract | `log()` accepts values and returns `undefined`. Hosted Event Monitoring delivery is not performed locally. |
 | Context presets in `glade.lwc.json` | Local support | LWC shell startup, ready file, and local context JSON. |
 | Local context JSON | Local support | LWC shell at `/lightning/local/context.json`. |
 | Apex wire and imperative Apex imports | Local support with VM limits | LWC shell and Visualforce Lightning Out. Request user context is passed to the VM. Cacheable wire calls use deterministic local cache keys and `refreshApex` forces a fresh invocation. Raw imperative calls can also use `/lightning/apex/<Class>/<method>`. Overloaded `@AuraEnabled` controller methods return `GLADELWC013` instead of picking an arbitrary overload. |

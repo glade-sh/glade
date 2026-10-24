@@ -1,0 +1,49 @@
+{
+  "rows": 198,
+  "apis": [
+    "62.0",
+    "67.0",
+    "68.0"
+  ],
+  "cases": [
+    "shape.FirstName",
+    "shape.LastName",
+    "shape.Salutation",
+    "features.Account",
+    "features.AccountChangeEvent",
+    "fls.Parcel__c",
+    "fls.Parcel__ChangeEvent",
+    "children.User"
+  ],
+  "routes": [
+    "administrator.anonymous",
+    "administrator.istest",
+    "no-field-access.anonymous",
+    "no-field-access.istest"
+  ],
+  "native_istest_transport": "Intentional OBSERVED assertion; all payloads must parse completely. User children filtered to installed Account/Contact/Case/Parcel events to fit the native assertion limit.",
+  "no_field_access_user": "Fresh Standard User, no CapAll assignment; ProbeRunner grants Apex execution and metadata permissions, no Parcel object or field access.",
+  "feature_controls": "features-off reuses the earlier complete DescCap native field maps; division-on provisions Division while Communities is disabled and no Account record type exists. features-on additionally deploys the Business Account record type and enables Communities; these do not grant the second user Parcel access.",
+  "sources": {
+    "anonymous/describe.apex": "aca5dcbb1a89806d0588ced19ce44774bd6dc608795d0777b61c224e156016e0",
+    "config/scratch-def.json": "c8f18f1a431b9b2d0873a898c3a976e6bf13c6107c5fb8b9659631349bb84989",
+    "config/no-field-access-user.json": "5461f4f105f3cbaeb90c1877cfbdd6e5ce4ff5048c10f3ec6b1ab5cfa4b5f0e8",
+    "project/sfdx-project.json": "47fd4e3d65afc00ac1a86262c1cc0cc4b2796cf9040d28190754d2be65006729",
+    "config/feature-enabled/main/default/settings/Communities.settings-meta.xml": "fe269ff73c3fb85f319b433225f3144d4f8aaadf82b33bb043e20e34a89357af",
+    "config/feature-enabled/main/default/objects/Account/recordTypes/Business.recordType-meta.xml": "cbe70aaff1418e2ac5ff0f2a1bb371899354e2108db27f122a3900ce6b08fd74",
+    "project/force-app/main/default/permissionsets/ProbeRunner.permissionset-meta.xml": "a2fe4be9b84821d544a5e47abe39b6f5d30fb2bc50ea3a35bc089644133bc8d2",
+    "project/force-app/main/default/classes/ChangeEventFollowup.cls": "1db8e7c7ea111ec025d4d8bb0f46974b7ece0981e12ac349e79d164c531145a8",
+    "project/force-app/main/default/classes/ChangeEventFollowup.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+    "project/force-app/main/default/classes/ChangeEventFollowupTest.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+    "project/force-app/main/default/classes/ChangeEventFollowupTest.cls": "c203f62d8663af1520d028a8b275cbff66911b830914e2cb3485c73af7a45765",
+    "project/force-app/main/default/triggers/CaseDescribeObserver.trigger": "37935c52a887131a8afc38b601433546fc88cb328dd8a821c046d9b8e4a9c1a2",
+    "project/force-app/main/default/triggers/ParcelDescribeObserver.trigger-meta.xml": "1b8cf49920815aa83084b93834c39cc2c56e0cee742c4d7e67fedefddfa32b96",
+    "project/force-app/main/default/triggers/CaseDescribeObserver.trigger-meta.xml": "1b8cf49920815aa83084b93834c39cc2c56e0cee742c4d7e67fedefddfa32b96",
+    "project/force-app/main/default/triggers/ContactDescribeObserver.trigger": "238d831d25c128a5b19e14f915540841bf25c5c32b5cfc68aed72a8c24fc7581",
+    "project/force-app/main/default/triggers/AccountDescribeObserver.trigger-meta.xml": "1b8cf49920815aa83084b93834c39cc2c56e0cee742c4d7e67fedefddfa32b96",
+    "project/force-app/main/default/triggers/ContactDescribeObserver.trigger-meta.xml": "1b8cf49920815aa83084b93834c39cc2c56e0cee742c4d7e67fedefddfa32b96",
+    "project/force-app/main/default/triggers/ParcelDescribeObserver.trigger": "6d2273331c4d2ad670da75eaf0109e0a7b4a054cc3b2e5273704cfaa8597a7d6",
+    "project/force-app/main/default/triggers/AccountDescribeObserver.trigger": "25a3fa20344185cc3e33927546dd0deb185d394fa49c07a283620d6e1c84f501"
+  },
+  "native_api_pairing": "Class and trigger metadata use each row API; public source metadata is normalized to 62.0."
+}

@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Source__c</fullName><label>Source__c</label><type>MetadataRelationship</type><referenceTo>SliceSource__mdt</referenceTo><relationshipName>SliceGroups</relationshipName></CustomField>

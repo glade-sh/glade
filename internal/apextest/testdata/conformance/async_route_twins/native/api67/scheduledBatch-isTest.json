@@ -1,0 +1,10 @@
+{
+  "observation": {},
+  "tests": [
+    {
+      "FullName": "RouteTwinProbeTest.observeScheduledBatch",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBS|{}"
+    }
+  ]
+}

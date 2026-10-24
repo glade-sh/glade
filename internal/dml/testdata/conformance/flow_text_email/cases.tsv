@@ -1,0 +1,33 @@
+id	family	route	operator	input	comparison	logEmailOnSend	resource
+direct_A	text	direct	Contains	Hello World	World	n/a	scalar
+direct_B	text	direct	Contains	Hello World	world	n/a	scalar
+direct_C	text	direct	Contains	<null>	x	n/a	scalar
+direct_D	text	direct	Contains	<empty>	x	n/a	scalar
+direct_EB	text	direct	NOT(Contains)	Hello World	world	n/a	scalar
+direct_EC	text	direct	NOT(Contains)	<null>	x	n/a	scalar
+direct_FE	text	direct	EqualTo	Hello World	hello world	n/a	scalar
+direct_FS	text	direct	StartsWith	Hello World	hello	n/a	scalar
+direct_FF	text	direct	EndsWith	Hello World	world	n/a	scalar
+subflow_A	text	subflow	Contains	Hello World	World	n/a	scalar
+subflow_B	text	subflow	Contains	Hello World	world	n/a	scalar
+subflow_C	text	subflow	Contains	<null>	x	n/a	scalar
+subflow_D	text	subflow	Contains	<empty>	x	n/a	scalar
+subflow_EB	text	subflow	NOT(Contains)	Hello World	world	n/a	scalar
+subflow_EC	text	subflow	NOT(Contains)	<null>	x	n/a	scalar
+subflow_FE	text	subflow	EqualTo	Hello World	hello world	n/a	scalar
+subflow_FS	text	subflow	StartsWith	Hello World	hello	n/a	scalar
+subflow_FF	text	subflow	EndsWith	Hello World	world	n/a	scalar
+direct_email_true	email	direct	n/a	n/a	n/a	true	variable
+direct_email_false	email	direct	n/a	n/a	n/a	false	variable
+direct_email_omitted	email	direct	n/a	n/a	n/a	omitted	variable
+subflow_email_true	email	subflow	n/a	n/a	n/a	true	variable
+subflow_email_false	email	subflow	n/a	n/a	n/a	false	variable
+subflow_email_omitted	email	subflow	n/a	n/a	n/a	omitted	variable
+trigger_email_true	email	trigger	n/a	n/a	n/a	true	variable
+trigger_email_false	email	trigger	n/a	n/a	n/a	false	variable
+trigger_email_omitted	email	trigger	n/a	n/a	n/a	omitted	variable
+trigger_subflow_email_true	email	trigger_subflow	n/a	n/a	n/a	true	variable
+trigger_subflow_email_false	email	trigger_subflow	n/a	n/a	n/a	false	variable
+trigger_subflow_email_omitted	email	trigger_subflow	n/a	n/a	n/a	omitted	variable
+direct_email_formula	email	direct	n/a	n/a	n/a	true	formula
+subflow_email_formula	email	subflow	n/a	n/a	n/a	true	formula

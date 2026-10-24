@@ -1,0 +1,41 @@
+id	query
+subtract	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue - NumberOfEmployees') > 5 ORDER BY Name
+add	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue + NumberOfEmployees') >= 8 ORDER BY Name
+equal	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue - NumberOfEmployees') = -2 ORDER BY Name
+not_equal	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue - NumberOfEmployees') != -2 ORDER BY Name
+less	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue - NumberOfEmployees') < 0 ORDER BY Name
+less_equal	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue - NumberOfEmployees') <= -2 ORDER BY Name
+same_field	SELECT Name FROM Account WHERE FORMULA('NumberOfEmployees + NumberOfEmployees') = 8 ORDER BY Name
+null_result	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue - NumberOfEmployees') = null ORDER BY Name
+null_sum	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue + NumberOfEmployees') = 4 ORDER BY Name
+lower_case	SELECT Name FROM Account WHERE formula('annualrevenue-numberofemployees') > 5 ORDER BY Name
+multiple	SELECT Name FROM Account WHERE (FORMULA('AnnualRevenue - NumberOfEmployees') > 5 OR FORMULA('AnnualRevenue + NumberOfEmployees') = 8) ORDER BY Name
+multiply	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue * NumberOfEmployees') > 0 ORDER BY Name
+divide	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue / NumberOfEmployees') > 0 ORDER BY Name
+literal_operand	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue + 2') > 0 ORDER BY Name
+function_operand	SELECT Name FROM Account WHERE FORMULA('ABS(AnnualRevenue) + NumberOfEmployees') > 0 ORDER BY Name
+extra_operand	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue + NumberOfEmployees + AnnualRevenue') > 0 ORDER BY Name
+unknown_field	SELECT Name FROM Account WHERE FORMULA('Missing__c + NumberOfEmployees') > 0 ORDER BY Name
+string_field	SELECT Name FROM Account WHERE FORMULA('Name + NumberOfEmployees') > 0 ORDER BY Name
+boolean_field	SELECT Name FROM Account WHERE FORMULA('IsDeleted + NumberOfEmployees') > 0 ORDER BY Name
+like	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue - NumberOfEmployees') LIKE '1%' ORDER BY Name
+in	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue - NumberOfEmployees') IN (1,2) ORDER BY Name
+unquoted	SELECT Name FROM Account WHERE FORMULA(AnnualRevenue - NumberOfEmployees) > 0 ORDER BY Name
+empty	SELECT Name FROM Account WHERE FORMULA('') > 0 ORDER BY Name
+extra_argument	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue - NumberOfEmployees', 1) > 0 ORDER BY Name
+bare_field	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue') > 0 ORDER BY Name
+date_difference	SELECT Name FROM Account WHERE FORMULA('Finish__c - Start__c') = 3 ORDER BY Name
+date_add_date	SELECT Name FROM Account WHERE FORMULA('Finish__c + Start__c') > 0 ORDER BY Name
+date_add_number	SELECT Name FROM Account WHERE FORMULA('Start__c + NumberOfEmployees') = 2026-01-03 ORDER BY Name
+date_subtract_number	SELECT Name FROM Account WHERE FORMULA('Finish__c - NumberOfEmployees') = 2026-01-02 ORDER BY Name
+number_minus_date	SELECT Name FROM Account WHERE FORMULA('NumberOfEmployees - Start__c') > 0 ORDER BY Name
+mixed_date_datetime	SELECT Name FROM Account WHERE FORMULA('Start__c - StartTime__c') > 0 ORDER BY Name
+datetime_difference	SELECT Name FROM Account WHERE FORMULA('FinishTime__c - StartTime__c') = 1.5 ORDER BY Name
+datetime_difference_seconds	SELECT Name FROM Account WHERE FORMULA('FinishTime__c - StartTime__c') = 129600 ORDER BY Name
+datetime_add_number	SELECT Name FROM Account WHERE FORMULA('StartTime__c + NumberOfEmployees') = 2026-01-03T00:00:00Z ORDER BY Name
+datetime_subtract_number	SELECT Name FROM Account WHERE FORMULA('FinishTime__c - NumberOfEmployees') = 2026-01-02T12:00:00Z ORDER BY Name
+string_comparison	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue - NumberOfEmployees') = '10.5' ORDER BY Name
+field_comparison	SELECT Name FROM Account WHERE FORMULA('AnnualRevenue - NumberOfEmployees') > NumberOfEmployees ORDER BY Name
+relationship	SELECT Name FROM Account WHERE FORMULA('Parent.AnnualRevenue - NumberOfEmployees') > 0 ORDER BY Name
+select	SELECT FORMULA('AnnualRevenue - NumberOfEmployees') FROM Account
+having	SELECT COUNT(Id) FROM Account HAVING FORMULA('AnnualRevenue - NumberOfEmployees') > 0

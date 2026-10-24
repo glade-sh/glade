@@ -1135,7 +1135,7 @@ func TestCIRacePackageRunnerApextestBuildsOnceAndUsesSixteenDirectShards(t *test
 		t.Fatal(err)
 	}
 	log := string(data)
-	if strings.Count(log, "go test ") != 1 || strings.Count(log, "go test -race -c -o") != 1 || strings.Count(log, "go tool test2json -t -p github.com/glade-sh/glade/internal/apextest") != 16 {
+	if strings.Count(log, "go test ") != 1 || strings.Count(log, "go test -trimpath -race -c -o") != 1 || strings.Count(log, "go tool test2json -t -p github.com/glade-sh/glade/internal/apextest") != 16 {
 		t.Fatalf("apextest build/test2json calls:\n%s", log)
 	}
 	if strings.Count(log, "binary -test.list .") != 1 || strings.Count(log, "binary -test.v=test2json -test.count=1 -test.timeout=60m -test.run=") != 16 || strings.Contains(log, "go test -json -race") || strings.Contains(log, "go test -race -list") {

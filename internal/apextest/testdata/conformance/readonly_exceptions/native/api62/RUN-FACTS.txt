@@ -1,0 +1,17 @@
+{
+  "sourceAPI": "62.0",
+  "route": "istest",
+  "deploymentSuccess": true,
+  "transport": "System.assert",
+  "sourceSHA256": {
+    "sfdx-project.json": "f80e01fee8c27f9cd628f6825784156f98f6e6313473d649da4553ee48132aa3",
+    "force-app/main/default/classes/CedarReadOnlyProbe.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+    "force-app/main/default/classes/CedarReadOnlyTest.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+    "force-app/main/default/classes/CedarReadOnlyTest.cls": "efe0adc7496873f8414a3a3a8e9608334bac5895c99b62cfaae52a4155714777",
+    "force-app/main/default/classes/CedarReadOnlyProbe.cls": "bfc6434f365a40b1a6c137a9e8e43dbde7b16b6b3966bb30aab5616536ea2369",
+    "force-app/main/default/triggers/CedarReadOnlyTrigger.trigger-meta.xml": "1b8cf49920815aa83084b93834c39cc2c56e0cee742c4d7e67fedefddfa32b96",
+    "force-app/main/default/triggers/CedarReadOnlyTrigger.trigger": "84542ec3d2acbc563205a8ecc1a1ed8df58a206be0f7fdf343fd91bc0ec1ffc7"
+  },
+  "methods": 15,
+  "readOnlyCells": 40
+}

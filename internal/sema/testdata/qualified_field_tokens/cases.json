@@ -1,0 +1,27 @@
+[
+  {
+    "ID": "id_assignment",
+    "Body": "Schema.SObjectField token = Schema.Account.fields.Id; System.assertEquals('Id', token.getDescribe().getName());"
+  },
+  {
+    "ID": "overload_selection",
+    "Body": "System.assertEquals('field', GardenTokenOverloads.choose(new List<SObject>(), Schema.Account.fields.Id));"
+  },
+  {
+    "ID": "name_value",
+    "Body": "System.assertEquals('Name', String.valueOf(Schema.Account.fields.Name));"
+  },
+  {
+    "ID": "custom_assignment",
+    "Body": "Schema.SObjectField token = Schema.TokenEntry__c.fields.Value__c; System.assertEquals('Value__c', token.getDescribe().getName());"
+  },
+  {
+    "ID": "unqualified_boundary",
+    "Body": "Schema.SObjectField token = Account.fields.Id; System.assertEquals('Id', token.getDescribe().getName());"
+  },
+  {
+    "ID": "id_rejection",
+    "Body": "Id token = Schema.Account.fields.Id;",
+    "Reject": true
+  }
+]

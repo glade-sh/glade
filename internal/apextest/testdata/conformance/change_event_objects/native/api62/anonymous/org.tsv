@@ -1,0 +1,3 @@
+id	route	observation
+accountFields	anonymous	{"ChangeEventHeader":true,"CreatedDate":true,"Id":true,"Marker__c":false,"Missing__c":false,"Name":true,"OwnerId":true,"Phone":true,"ReplayId":true,"name":"AccountChangeEvent"}
+customFields	anonymous	{"ChangeEventHeader":true,"CreatedDate":true,"Id":true,"Marker__c":true,"Missing__c":false,"Name":true,"OwnerId":true,"Phone":false,"ReplayId":true,"name":"Parcel__ChangeEvent"}

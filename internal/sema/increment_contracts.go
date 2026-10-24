@@ -48,6 +48,18 @@ const (
 )
 
 var semaIncrementRules = []semaIncrementRule{
+	// increment_value_routes/org.tsv: scalar results, collection statements
+	// and Map.get rejection twins, independently captured on both routes.
+	{shape: "L.f", types: "Integer Long Double Decimal"},
+	{anonymous: true, shape: "L.f", types: "Integer Long Double Decimal"},
+	{shape: "L.p", types: "Integer Long Double Decimal"},
+	{anonymous: true, shape: "L.p", types: "Integer Long Double Decimal"},
+	{statement: true, shape: "L[lit]", types: "Integer Long Double Decimal"},
+	{anonymous: true, statement: true, shape: "L[lit]", types: "Integer Long Double Decimal"},
+	{statement: true, shape: "L.mget(lit):f", types: "Integer Long Double Decimal"},
+	{anonymous: true, statement: true, shape: "L.mget(lit):f", types: "Integer Long Double Decimal"},
+	{statement: true, shape: "L.mget(lit)", types: "Integer", operators: semaPostIncrementOnly},
+	{anonymous: true, statement: true, shape: "L.mget(lit)", types: "Integer", operators: semaPostIncrementOnly},
 	// Named result: T observed = <increment>;
 	{shape: "L[lit]", types: "Integer Long Decimal Double String"},                        // C001-C032
 	{shape: "L[var]", types: "Decimal String"},                                            // C033-C040
@@ -361,7 +373,25 @@ func semaIncrementArgument(arg ir.Expr, scope irSemaScope, model *semaTypeMember
 // be writable.
 func semaIncrementFieldStep(separator, receiverType, field string, static bool, typ typesys.TypeSymbol, member typesys.MemberSymbol, model *semaTypeMemberView, start int, source string, target *semaIncrementTarget) (string, bool) {
 	resolved, ok := semaResolveFieldPath(model, receiverType, field)
-	if !ok || resolved.member.Kind != apexast.DeclarationField {
+	if !ok {
+		return "", false
+	}
+	if resolved.member.Kind == apexast.DeclarationProperty {
+		// Only the captured public instance auto-property is admitted here.
+		if static || hasModifier(resolved.member.Modifiers, "static") ||
+			normalizeName(resolved.owner) != normalizeName(receiverType) ||
+			accessModifier(resolved.member.Modifiers) != "public" ||
+			!typeContractPropertyHasAccessor(resolved.member, "get") || !typeContractPropertyHasAccessor(resolved.member, "set") {
+			return "", false
+		}
+		for _, accessor := range resolved.member.Accessors {
+			if accessor.HasBody || len(accessor.Modifiers) != 0 {
+				return "", false
+			}
+		}
+		return separator + "p", true
+	}
+	if resolved.member.Kind != apexast.DeclarationField {
 		return "", false
 	}
 	// Standard SObject field members carry a static marker; SObject fields
@@ -404,6 +434,37 @@ func semaIncrementFieldStep(separator, receiverType, field string, static bool, 
 		return separator + marker + "S", true
 	}
 	return separator + marker + "f", true
+}
+
+// Statement lowering represents a dotted-name postfix operator as assignment
+// of a binary expression. Recover only the captured spelling before ordinary
+// assignment checks permit String concatenation or an Object numeric value.
+func (a *Analyzer) semaCapturedUnaryAssignment(typ typesys.TypeSymbol, member typesys.MemberSymbol, inst ir.Instruction, scope irSemaScope, start int, source string, model *semaTypeMemberView) (diagnostic.Diagnostic, bool) {
+	if typ.Kind != apexast.DeclarationClass || member.Kind != apexast.DeclarationMethod || hasModifier(typ.Modifiers, vm.AnonymousClassModifier) ||
+		inst.Op != ir.OpAssign || inst.Expr.Kind != ir.ExprBinary || inst.Expr.Operator != "+" || start < 0 || start >= len(source) {
+		return diagnostic.Diagnostic{}, false
+	}
+	end := start
+	for end < len(source) && source[end] != ';' {
+		if next, comment := skipSemaComment(source, end); comment {
+			end = next + 1
+		} else {
+			end++
+		}
+	}
+	if end == len(source) || !strings.EqualFold(strings.Join(strings.Fields(sourceSyntaxCodeText(source[start:end])), ""), inst.Name+"++") {
+		return diagnostic.Diagnostic{}, false
+	}
+	var target semaIncrementTarget
+	shape, ok := a.semaIncrementPathShape(inst.Name, typ, member, scope, model, start, source, &target)
+	if !ok {
+		return diagnostic.Diagnostic{}, false
+	}
+	operand := a.inferIRExprType(ir.Expr{Kind: ir.ExprVariable, Name: inst.Name}, scope, model, typ.Name)
+	if !(shape == "L" && semaWordListContains("String Object", operand) || shape == "L.s" && strings.EqualFold(operand, "String")) {
+		return diagnostic.Diagnostic{}, false
+	}
+	return typeContractNativeDiagnostic(typ, "Unary postfix increment/decrement can only be applied to numeric expressions: "+operand, start, end, source), true
 }
 
 func semaIncrementSObjectFieldWritable(model *semaTypeMemberView, receiverType, field string, resolved resolvedMember) bool {

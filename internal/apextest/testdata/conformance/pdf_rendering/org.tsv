@@ -1,0 +1,29 @@
+source_api	configuration	route	case_id	observation
+62.0	plain	anonymous	emptyInput	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+62.0	plain	anonymous	megabyte	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+62.0	plain	anonymous	megabytePlus	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+62.0	plain	anonymous	missingPage	{"message":"Page CaptureAbsentPage does not exist","outcome":"uncaught-runtime"}
+62.0	plain	anonymous	nullInput	{"exceptionMessage":"Argument cannot be null.","exceptionType":"System.NullPointerException"}
+62.0	plain	anonymous	page	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+62.0	plain	anonymous	text	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+62.0	plain	isTest	emptyInput	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+62.0	plain	isTest	megabyte	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+62.0	plain	isTest	megabytePlus	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+62.0	plain	isTest	missingPage	{"exceptionMessage":"Methods defined as TestMethod do not support getContent call","exceptionType":"System.VisualforceException"}
+62.0	plain	isTest	nullInput	{"exceptionMessage":"Argument cannot be null.","exceptionType":"System.NullPointerException"}
+62.0	plain	isTest	page	{"exceptionMessage":"Methods defined as TestMethod do not support getContent call","exceptionType":"System.VisualforceException"}
+62.0	plain	isTest	text	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+67.0	plain	anonymous	emptyInput	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+67.0	plain	anonymous	megabyte	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+67.0	plain	anonymous	megabytePlus	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+67.0	plain	anonymous	missingPage	{"message":"Page CaptureAbsentPage does not exist","outcome":"uncaught-runtime"}
+67.0	plain	anonymous	nullInput	{"exceptionMessage":"Argument cannot be null.","exceptionType":"System.NullPointerException"}
+67.0	plain	anonymous	page	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+67.0	plain	anonymous	text	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+67.0	plain	isTest	emptyInput	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+67.0	plain	isTest	megabyte	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+67.0	plain	isTest	megabytePlus	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}
+67.0	plain	isTest	missingPage	{"exceptionMessage":"Methods defined as TestMethod do not support getContent call","exceptionType":"System.VisualforceException"}
+67.0	plain	isTest	nullInput	{"exceptionMessage":"Argument cannot be null.","exceptionType":"System.NullPointerException"}
+67.0	plain	isTest	page	{"exceptionMessage":"Methods defined as TestMethod do not support getContent call","exceptionType":"System.VisualforceException"}
+67.0	plain	isTest	text	{"base64_8":"JVBERi0x","first5":"%PDF-","positive":true}

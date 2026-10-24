@@ -1,0 +1,4 @@
+id	context	class	method	source
+result	anonymous	-	-	anonymous.apex
+result	istest	ConcreteFinalizerFieldTest	observe	-
+interface_method	anonymous	-	-	interface_reject.apex

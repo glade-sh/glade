@@ -137,6 +137,9 @@ async function createFixture() {
     }
   });
   await cp(join(repoRoot, "docs", "STDLIB_COVERAGE.md"), join(fixtureDocs, "STDLIB_COVERAGE.md"));
+  await cp(join(repoRoot, "docs", "COMPATIBILITY.md"), join(fixtureDocs, "COMPATIBILITY.md"));
+  await cp(join(repoRoot, "docs", "LWC_SUPPORT.md"), join(fixtureDocs, "LWC_SUPPORT.md"));
+  await cp(join(repoRoot, "docs", "LOCAL_TESTING.md"), join(fixtureDocs, "LOCAL_TESTING.md"));
   await symlink(join(siteRoot, "node_modules"), join(fixtureSite, "node_modules"));
   await replaceFixturePackage(fixtureSite);
   return { root, siteRoot: fixtureSite, summaryPath: join(root, "release-check-summary.json"), cleanup: () => rm(root, { recursive: true, force: true }) };

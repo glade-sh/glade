@@ -1,0 +1,5 @@
+source_api	entry	route	behavior
+62.0	anonymous	observe	Child envelope serialize/deserialize roundtrip
+62.0	istest	observe	Child envelope serialize/deserialize roundtrip
+67.0	anonymous	observe	Child envelope serialize/deserialize roundtrip
+67.0	istest	observe	Child envelope serialize/deserialize roundtrip

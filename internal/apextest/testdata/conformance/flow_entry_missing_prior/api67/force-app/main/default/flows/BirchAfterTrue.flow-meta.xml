@@ -1,0 +1,8 @@
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+<apiVersion>67.0</apiVersion><recordCreates><name>Mark</name><label>Mark</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>LastName</field><value><stringValue>BirchAfterTrue</stringValue></value></inputAssignments><inputAssignments><field>AccountId</field><value><elementReference>$Record.Id</elementReference></value></inputAssignments><object>Contact</object><storeOutputAutomatically>true</storeOutputAutomatically></recordCreates>
+<interviewLabel>BirchAfterTrue</interviewLabel><label>BirchAfterTrue</label><processType>AutoLaunchedFlow</processType>
+<start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Mark</targetReference></connector><filterLogic>and</filterLogic>
+<filters><field>Name</field><operator>EqualTo</operator><value><stringValue>BirchAfterTrue</stringValue></value></filters>
+<filters><field>Phone</field><operator>IsChanged</operator><value><booleanValue>true</booleanValue></value></filters>
+<object>Account</object><recordTriggerType>CreateAndUpdate</recordTriggerType><triggerType>RecordAfterSave</triggerType></start><status>Active</status>
+</Flow>

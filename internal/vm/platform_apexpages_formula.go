@@ -85,7 +85,17 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 			}
 		}
 		appendStandardControllerActionTrace(result, "start", method, record, map[string]any{"dmlOperation": op})
+		// Native StandardController saves ignore DMLOptions set on the record,
+		// including the assignment rule header. Later DML on the same SObject
+		// still uses them, so hide them only for this save.
+		retained, hasOptions := record.Fields[sobjectDMLOptionsField]
+		if hasOptions {
+			delete(record.Fields, sobjectDMLOptionsField)
+		}
 		results, err := vm.applyDML(op, record, true, "", dml.Options{}, result)
+		if hasOptions {
+			record.Fields[sobjectDMLOptionsField] = retained
+		}
 		if err != nil {
 			appendStandardControllerErrorTrace(result, method, record, op, err)
 			return Null, receiver, false, true, err

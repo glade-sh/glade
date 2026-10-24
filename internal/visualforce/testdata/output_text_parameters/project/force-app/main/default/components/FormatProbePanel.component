@@ -1,0 +1,14 @@
+<apex:component controller="FormatProbeController">
+<div data-case="plain"><apex:outputText value="{1}|{0}|{1}" escape="true"><apex:param value="{!caption}"/><apex:param value="{!amount}"/></apex:outputText></div>
+<div data-case="integer"><apex:outputText value="{0, number, ###,###,###,##0}" escape="true"><apex:param value="{!amount}"/></apex:outputText></div>
+<div data-case="decimal"><apex:outputText value="{0, number, ###,###,###,##0.00}" escape="true"><apex:param value="{!amount}"/></apex:outputText></div>
+<div data-case="negative"><apex:outputText value="{0, number, ###,###,###,##0.00}" escape="true"><apex:param value="{!negative}"/></apex:outputText></div>
+<div data-case="zero"><apex:outputText value="{0, number, 000,000.00}" escape="true"><apex:param value="{!zero}"/></apex:outputText></div>
+<div data-case="tie"><apex:outputText value="{0,number,0}" escape="true"><apex:param value="{!tie}"/></apex:outputText></div>
+<div data-case="null"><apex:outputText value="a{0}b{0,number,0.00}c" escape="true"><apex:param value="{!missing}"/></apex:outputText></div>
+<div data-case="missing"><apex:outputText value="{0}|{2}" escape="true"><apex:param value="{!caption}"/></apex:outputText></div>
+<div data-case="quoted"><apex:outputText value="'{0}' ''{0}''" escape="true"><apex:param value="{!caption}"/></apex:outputText></div>
+<div data-case="date"><apex:outputText value="{0,date,dd'.'MM'.'yyyy}" escape="true"><apex:param value="{!day}"/></apex:outputText></div>
+<div data-case="datetime"><apex:outputText value="{0,date,yyyy-MM-dd HH:mm:ss}" escape="true"><apex:param value="{!stamp}"/></apex:outputText></div>
+<div data-case="raw"><apex:outputText value="&lt;b&gt;{0}&lt;/b&gt;" escape="false"><apex:param value="{!caption}"/></apex:outputText></div>
+</apex:component>

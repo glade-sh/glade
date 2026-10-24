@@ -1,0 +1,13 @@
+api	route	observation
+62.0	anonymous	Lead|ParentRecords|ABSENT
+62.0	anonymous	Product2|ParentRecords|ABSENT
+62.0	named	Lead|ParentRecords|ABSENT
+62.0	named	Product2|ParentRecords|ABSENT
+62.0	istest	Lead|ParentRecords|ABSENT
+62.0	istest	Product2|ParentRecords|ABSENT
+67.0	anonymous	Lead|ParentRecords|ExtlRecShrStagedRecord|ParentRecordId|REFERENCE|Account,Case,Contact,Lead,Opportunity,Product2|false|true|true|false|ParentRecord|true
+67.0	anonymous	Product2|ParentRecords|ExtlRecShrStagedRecord|ParentRecordId|REFERENCE|Account,Case,Contact,Lead,Opportunity,Product2|false|true|true|false|ParentRecord|true
+67.0	named	Lead|ParentRecords|ExtlRecShrStagedRecord|ParentRecordId|REFERENCE|Account,Case,Contact,Lead,Opportunity,Product2|false|true|true|false|ParentRecord|true
+67.0	named	Product2|ParentRecords|ExtlRecShrStagedRecord|ParentRecordId|REFERENCE|Account,Case,Contact,Lead,Opportunity,Product2|false|true|true|false|ParentRecord|true
+67.0	istest	Lead|ParentRecords|ExtlRecShrStagedRecord|ParentRecordId|REFERENCE|Account,Case,Contact,Lead,Opportunity,Product2|false|true|true|false|ParentRecord|true
+67.0	istest	Product2|ParentRecords|ExtlRecShrStagedRecord|ParentRecordId|REFERENCE|Account,Case,Contact,Lead,Opportunity,Product2|false|true|true|false|ParentRecord|true

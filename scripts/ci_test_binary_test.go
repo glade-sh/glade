@@ -70,8 +70,8 @@ func TestFailure(t *testing.T) { if os.Getenv("FIXTURE_FAIL")=="1" {t.Fatal("own
 	}
 	for _, failure := range []string{"0", "1"} {
 		env := []string{"FIXTURE_FAIL=" + failure}
-		before, beforeErr, beforeTime := run(env, realGoCommand(t), "test", "-json", "-vet=off", "-count=1", "-timeout=30s", ".")
-		after, afterErr, afterTime := run(append(env, "CI_TEST_BIN_DIR="+binaries), python, helper, "test", "-json", "-vet=off", "-count=1", "-timeout=30s", ".")
+		before, beforeErr, beforeTime := run(env, realGoCommand(t), "test", "-json", "-vet=off", "-trimpath", "-count=1", "-timeout=30s", ".")
+		after, afterErr, afterTime := run(append(env, "CI_TEST_BIN_DIR="+binaries), python, helper, "test", "-json", "-vet=off", "-trimpath", "-count=1", "-timeout=30s", ".")
 		if (beforeErr == nil) != (afterErr == nil) || !reflect.DeepEqual(terminal(before), terminal(after)) {
 			t.Fatalf("execution changed: before=%v after=%v\n%s\n%s", beforeErr, afterErr, before, after)
 		}
@@ -183,6 +183,13 @@ func TestCISharedBinaryWorkflowWiring(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	if !strings.Contains(jobs["test-binaries"], "ci-test-binary.py build") {
 		t.Fatal("CI must build shared test binaries once")
+	}
+	helper, err := os.ReadFile("ci-test-binary.py")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(helper), `command = [GO, "test", "-trimpath", "-vet=off", "-c"`) {
+		t.Fatal("shared test binaries must be built with -trimpath")
 	}
 	for _, name := range []string{"test", "sema", "apextest"} {
 		if !strings.Contains(jobs[name], "test-binaries") || !strings.Contains(jobs[name], "CI_TEST_BIN_DIR") {

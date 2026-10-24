@@ -1,0 +1,11 @@
+id	operation	shape	routes	apis
+PE01	create	Create Records	anonymous,deliver,stop	62.0,67.0
+PE02	reject	Decision reject	anonymous,deliver,stop	62.0,67.0
+PE03	update	Get and Update Records	anonymous,deliver,stop	62.0,67.0
+PE04	delete	Delete Records	anonymous,deliver,stop	62.0,67.0
+PE05	loop	Loop lookup collection	anonymous,deliver,stop	62.0,67.0
+PE07	order	Apex trigger and flow	anonymous,deliver,stop	62.0,67.0
+PE10	batch	Three interviews	anonymous,deliver,stop	62.0,67.0
+PE11	user	Running user	anonymous,deliver,stop	62.0,67.0
+PE12	chatter	Non-Apex Chatter action	anonymous,deliver,stop	62.0,67.0
+PE13	apex	Apex invocable action	anonymous,deliver,stop	62.0,67.0

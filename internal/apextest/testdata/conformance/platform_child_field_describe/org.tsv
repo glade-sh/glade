@@ -1,0 +1,15 @@
+api	route	object	field	status	type	referenceTo	nillable	createable	updateable	defaultedOnCreate	relationshipName	accessible
+62.0	anonymous	FinanceTransaction	DestinationEntityId	ok	REFERENCE	CreditMemo,CreditMemoInvApplication,CreditMemoLine,Invoice,InvoiceLine,Payment,PaymentLineInvoice,Refund,RefundLinePayment	true	true	false	false	DestinationEntity	true
+62.0	anonymous	FinanceTransaction	LegalEntityId	ok	REFERENCE	LegalEntity	true	true	false	false	LegalEntity	true
+62.0	anonymous	FinanceTransaction	ParentReferenceEntityId	ok	REFERENCE	CreditMemo,CreditMemoInvApplication,CreditMemoLine,Invoice,InvoiceLine,Payment,PaymentLineInvoice,Refund,RefundLinePayment	true	true	false	false	ParentReferenceEntity	true
+62.0	anonymous	FinanceTransaction	ReferenceEntityId	ok	REFERENCE	CreditMemo,CreditMemoInvApplication,CreditMemoLine,Invoice,InvoiceLine,Payment,PaymentLineInvoice,Refund,RefundLinePayment	true	true	false	false	ReferenceEntity	true
+62.0	anonymous	FinanceTransaction	SourceEntityId	ok	REFERENCE	CreditMemo,CreditMemoInvApplication,CreditMemoLine,Invoice,InvoiceLine,Payment,PaymentLineInvoice,Refund,RefundLinePayment	true	true	false	false	SourceEntity	true
+62.0	anonymous	FinanceBalanceSnapshot	LegalEntityId	ok	REFERENCE	LegalEntity	true	false	false	false	LegalEntity	true
+62.0	anonymous	FinanceBalanceSnapshot	ReferenceEntityId	ok	REFERENCE	CreditMemo,CreditMemoInvApplication,CreditMemoLine,Invoice,InvoiceLine,Payment,PaymentLineInvoice,Refund,RefundLinePayment	true	false	false	false	ReferenceEntity	true
+67.0	anonymous	FinanceTransaction	DestinationEntityId	ok	REFERENCE	CreditMemo,CreditMemoInvApplication,CreditMemoLine,Invoice,InvoiceLine,Payment,PaymentLineInvoice,Refund,RefundLinePayment	true	true	false	false	DestinationEntity	true
+67.0	anonymous	FinanceTransaction	LegalEntityId	ok	REFERENCE	LegalEntity	true	true	false	false	LegalEntity	true
+67.0	anonymous	FinanceTransaction	ParentReferenceEntityId	ok	REFERENCE	CreditMemo,CreditMemoInvApplication,CreditMemoLine,Invoice,InvoiceLine,Payment,PaymentLineInvoice,Refund,RefundLinePayment	true	true	false	false	ParentReferenceEntity	true
+67.0	anonymous	FinanceTransaction	ReferenceEntityId	ok	REFERENCE	CreditMemo,CreditMemoInvApplication,CreditMemoLine,Invoice,InvoiceLine,Payment,PaymentLineInvoice,Refund,RefundLinePayment	true	true	false	false	ReferenceEntity	true
+67.0	anonymous	FinanceTransaction	SourceEntityId	ok	REFERENCE	CreditMemo,CreditMemoInvApplication,CreditMemoLine,Invoice,InvoiceLine,Payment,PaymentLineInvoice,Refund,RefundLinePayment	true	true	false	false	SourceEntity	true
+67.0	anonymous	FinanceBalanceSnapshot	LegalEntityId	ok	REFERENCE	LegalEntity	true	false	false	false	LegalEntity	true
+67.0	anonymous	FinanceBalanceSnapshot	ReferenceEntityId	ok	REFERENCE	CreditMemo,CreditMemoInvApplication,CreditMemoLine,Invoice,InvoiceLine,Payment,PaymentLineInvoice,Refund,RefundLinePayment	true	false	false	false	ReferenceEntity	true

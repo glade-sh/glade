@@ -1,0 +1,19 @@
+{
+  "apiVersions": ["62.0", "67.0"],
+  "cases": [
+    {
+      "id": "API62",
+      "apiVersion": "62.0",
+      "className": "SharedSetupProbe62",
+      "anonymous": "System.debug('NATIVE|' + SharedSetupProbe62.value());",
+      "expected": "ready"
+    },
+    {
+      "id": "API67",
+      "apiVersion": "67.0",
+      "className": "SharedSetupProbe67",
+      "anonymous": "System.debug('NATIVE|' + SharedSetupProbe67.value());",
+      "expected": "ready"
+    }
+  ]
+}

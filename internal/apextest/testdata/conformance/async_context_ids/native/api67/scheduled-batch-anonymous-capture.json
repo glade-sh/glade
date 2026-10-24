@@ -1,0 +1,40 @@
+{
+  "api": "67.0",
+  "route": "scheduledBatch-anonymous",
+  "observation": {
+    "batchExecute": [
+      18,
+      18,
+      18,
+      18,
+      18,
+      true,
+      true,
+      true,
+      true
+    ],
+    "batchFinish": [
+      18,
+      18,
+      18,
+      18,
+      18,
+      true,
+      true,
+      true,
+      true
+    ],
+    "batchStart": [
+      18,
+      18,
+      18,
+      18,
+      18,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "deploy_id": "0Afhv000000a01VCAQ"
+}

@@ -38,6 +38,7 @@ func TestTestClearCache(t *testing.T) {
 		ProjectContentSHA256: strings.Repeat("1", 64),
 		SchemaContentSHA256:  strings.Repeat("2", 64),
 		DependencySHA256:     strings.Repeat("3", 64),
+		BuildFingerprint:     strings.Repeat("5", 64),
 		SemanticABI:          sema.SemanticABI,
 		PlatformABI:          sema.PlatformABI,
 		OptionsFingerprint:   strings.Repeat("4", 64),

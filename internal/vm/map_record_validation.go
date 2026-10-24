@@ -9,6 +9,10 @@ func (vm *VM) mapRecordValueMismatch(mapType string, value Value) (string, bool)
 	if !ok || !strings.EqualFold(keyType, "Id") || value.Kind == ValueNull {
 		return "", false
 	}
+	return vm.mapRecordValueTypeMismatch(valueType, value)
+}
+
+func (vm *VM) mapRecordValueTypeMismatch(valueType string, value Value) (string, bool) {
 	resolved := vm.resolveTypeNameInCurrentExecutionContext(valueType)
 	if _, class := vm.lookupClass(resolved); class {
 		return "", false

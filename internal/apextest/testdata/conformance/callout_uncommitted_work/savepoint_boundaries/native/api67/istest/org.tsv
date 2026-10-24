@@ -1,0 +1,41 @@
+id	value
+clean_after_http	ok
+clean_after_soap	ok
+clean_before_http	ok
+clean_before_soap	ok
+clean_inside_http	ok
+clean_inside_soap	ok
+dml_after_after_http	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+dml_after_after_soap	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+dml_before_after_http	ok
+dml_before_after_soap	ok
+dml_before_before_http	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+dml_before_before_soap	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+dml_before_inside_http	ok
+dml_before_inside_soap	ok
+dml_both_after_http	ok
+dml_both_after_soap	ok
+dml_inside_after_http	ok
+dml_inside_after_soap	ok
+dml_inside_inside_http	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+dml_inside_inside_soap	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+inside_active_after_http	ok
+inside_active_after_soap	ok
+inside_release_inside_after_http	ok
+inside_release_inside_after_soap	ok
+pre_active_after_http	ok
+pre_active_after_soap	ok
+pre_active_inside_http	ok
+pre_active_inside_soap	ok
+pre_release_after_http	ok
+pre_release_after_soap	ok
+pre_release_inside_after_http	ok
+pre_release_inside_after_soap	ok
+pre_release_inside_new_active_after_http	ok
+pre_release_inside_new_active_after_soap	ok
+pre_rollback_inside_active_after_http	ok
+pre_rollback_inside_active_after_soap	ok
+pre_rollback_inside_release_after_http	ok
+pre_rollback_inside_release_after_soap	ok
+pre_rollback_release_inside_after_http	ok
+pre_rollback_release_inside_after_soap	ok

@@ -1,0 +1,337 @@
+api	route	kind	relationship	child	field	cascadeDelete	restrictedDelete	outcome	count
+62.0	anonymous	describe	ApprovalSubmissions	ApprovalSubmission	RelatedRecordId	false	false	ok	
+62.0	anonymous	describe	ApprovalWorkItems	ApprovalWorkItem	RelatedRecordId	false	false	ok	
+62.0	anonymous	describe	AttachedContentDocuments	AttachedContentDocument	LinkedEntityId	true	false	ok	
+62.0	anonymous	describe	Attachments	Attachment	ParentId	true	false	ok	
+62.0	anonymous	describe	CombinedAttachments	CombinedAttachment	ParentId	true	false	ok	
+62.0	anonymous	describe	ContactRequests	ContactRequest	WhatId	false	false	ok	
+62.0	anonymous	describe	ContentDocumentLinks	ContentDocumentLink	LinkedEntityId	true	false	ok	
+62.0	anonymous	describe	DestinationFinanceTransactions	FinanceTransaction	DestinationEntityId	false	false	ok	
+62.0	anonymous	describe	DuplicateRecordItems	DuplicateRecordItem	RecordId	true	false	ok	
+62.0	anonymous	describe	FeedSubscriptionsForEntity	EntitySubscription	ParentId	true	false	ok	
+62.0	anonymous	describe	FinanceBalanceSnapshots	FinanceBalanceSnapshot	LegalEntityId	false	false	ok	
+62.0	anonymous	describe	FinanceBalanceSnapshots	FinanceBalanceSnapshot	ReferenceEntityId	false	false	ok	
+62.0	anonymous	describe	FinanceTransactions	FinanceTransaction	LegalEntityId	false	false	ok	
+62.0	anonymous	describe	FinanceTransactions	FinanceTransaction	ReferenceEntityId	false	false	ok	
+62.0	anonymous	describe	FlowOrchestrationWorkItems	FlowOrchestrationWorkItem	RelatedRecordId	false	false	ok	
+62.0	anonymous	describe	NotesAndAttachments	NoteAndAttachment	ParentId	true	false	ok	
+62.0	anonymous	describe	Notes	Note	ParentId	true	false	ok	
+62.0	anonymous	describe	ParentFinanceTransactions	FinanceTransaction	ParentReferenceEntityId	false	false	ok	
+62.0	anonymous	describe	ProcessExceptions	ProcessException	AttachedToId	true	false	ok	
+62.0	anonymous	describe	ProcessInstances	ProcessInstance	TargetObjectId	true	false	ok	
+62.0	anonymous	describe	ProcessSteps	ProcessInstanceHistory	TargetObjectId	false	false	ok	
+62.0	anonymous	describe	RecordActionHistories	RecordActionHistory	ParentRecordId	false	false	ok	
+62.0	anonymous	describe	RecordActions	RecordAction	RecordId	true	false	ok	
+62.0	anonymous	describe	RecordAssociatedGroups	CollaborationGroupRecord	RecordId	true	false	ok	
+62.0	anonymous	describe	Shares	LinkProbe__Share	ParentId	true	false	ok	
+62.0	anonymous	describe	SourceFinanceTransactions	FinanceTransaction	SourceEntityId	false	false	ok	
+62.0	anonymous	describe	TopicAssignments	TopicAssignment	EntityId	true	false	ok	
+62.0	anonymous	describe	UserDefinedLabelAssignments	UserDefinedLabelAssignment	ItemId	true	false	ok	
+62.0	anonymous	query	ApprovalSubmissions					reject	System.NullPointerException
+62.0	anonymous	query	ApprovalWorkItems					reject	System.NullPointerException
+62.0	anonymous	query	AttachedContentDocuments					reject	System.NullPointerException
+62.0	anonymous	query	Attachments					reject	System.NullPointerException
+62.0	anonymous	query	CombinedAttachments					reject	System.NullPointerException
+62.0	anonymous	query	ContactRequests					reject	System.NullPointerException
+62.0	anonymous	query	ContentDocumentLinks					reject	System.NullPointerException
+62.0	anonymous	query	DestinationFinanceTransactions					reject	System.NullPointerException
+62.0	anonymous	query	DuplicateRecordItems					reject	System.NullPointerException
+62.0	anonymous	query	FeedSubscriptionsForEntity					reject	System.NullPointerException
+62.0	anonymous	query	FinanceBalanceSnapshots					reject	System.NullPointerException
+62.0	anonymous	query	FinanceBalanceSnapshots					reject	System.NullPointerException
+62.0	anonymous	query	FinanceTransactions					reject	System.NullPointerException
+62.0	anonymous	query	FinanceTransactions					reject	System.NullPointerException
+62.0	anonymous	query	FlowOrchestrationWorkItems					reject	System.NullPointerException
+62.0	anonymous	query	NotesAndAttachments					reject	System.NullPointerException
+62.0	anonymous	query	Notes					reject	System.NullPointerException
+62.0	anonymous	query	ParentFinanceTransactions					reject	System.NullPointerException
+62.0	anonymous	query	ProcessExceptions					reject	System.NullPointerException
+62.0	anonymous	query	ProcessInstances					reject	System.NullPointerException
+62.0	anonymous	query	ProcessSteps					reject	System.NullPointerException
+62.0	anonymous	query	RecordActionHistories					reject	System.NullPointerException
+62.0	anonymous	query	RecordActions					reject	System.NullPointerException
+62.0	anonymous	query	RecordAssociatedGroups					reject	System.NullPointerException
+62.0	anonymous	query	Shares					reject	System.NullPointerException
+62.0	anonymous	query	SourceFinanceTransactions					reject	System.NullPointerException
+62.0	anonymous	query	TopicAssignments					reject	System.NullPointerException
+62.0	anonymous	query	UserDefinedLabelAssignments					reject	System.NullPointerException
+62.0	named	describe	ApprovalSubmissions	ApprovalSubmission	RelatedRecordId	false	false	ok	
+62.0	named	describe	ApprovalWorkItems	ApprovalWorkItem	RelatedRecordId	false	false	ok	
+62.0	named	describe	AttachedContentDocuments	AttachedContentDocument	LinkedEntityId	true	false	ok	
+62.0	named	describe	Attachments	Attachment	ParentId	true	false	ok	
+62.0	named	describe	CombinedAttachments	CombinedAttachment	ParentId	true	false	ok	
+62.0	named	describe	ContactRequests	ContactRequest	WhatId	false	false	ok	
+62.0	named	describe	ContentDocumentLinks	ContentDocumentLink	LinkedEntityId	true	false	ok	
+62.0	named	describe	DestinationFinanceTransactions	FinanceTransaction	DestinationEntityId	false	false	ok	
+62.0	named	describe	DuplicateRecordItems	DuplicateRecordItem	RecordId	true	false	ok	
+62.0	named	describe	FeedSubscriptionsForEntity	EntitySubscription	ParentId	true	false	ok	
+62.0	named	describe	FinanceBalanceSnapshots	FinanceBalanceSnapshot	LegalEntityId	false	false	ok	
+62.0	named	describe	FinanceBalanceSnapshots	FinanceBalanceSnapshot	ReferenceEntityId	false	false	ok	
+62.0	named	describe	FinanceTransactions	FinanceTransaction	LegalEntityId	false	false	ok	
+62.0	named	describe	FinanceTransactions	FinanceTransaction	ReferenceEntityId	false	false	ok	
+62.0	named	describe	FlowOrchestrationWorkItems	FlowOrchestrationWorkItem	RelatedRecordId	false	false	ok	
+62.0	named	describe	NotesAndAttachments	NoteAndAttachment	ParentId	true	false	ok	
+62.0	named	describe	Notes	Note	ParentId	true	false	ok	
+62.0	named	describe	ParentFinanceTransactions	FinanceTransaction	ParentReferenceEntityId	false	false	ok	
+62.0	named	describe	ProcessExceptions	ProcessException	AttachedToId	true	false	ok	
+62.0	named	describe	ProcessInstances	ProcessInstance	TargetObjectId	true	false	ok	
+62.0	named	describe	ProcessSteps	ProcessInstanceHistory	TargetObjectId	false	false	ok	
+62.0	named	describe	RecordActionHistories	RecordActionHistory	ParentRecordId	false	false	ok	
+62.0	named	describe	RecordActions	RecordAction	RecordId	true	false	ok	
+62.0	named	describe	RecordAssociatedGroups	CollaborationGroupRecord	RecordId	true	false	ok	
+62.0	named	describe	Shares	LinkProbe__Share	ParentId	true	false	ok	
+62.0	named	describe	SourceFinanceTransactions	FinanceTransaction	SourceEntityId	false	false	ok	
+62.0	named	describe	TopicAssignments	TopicAssignment	EntityId	true	false	ok	
+62.0	named	describe	UserDefinedLabelAssignments	UserDefinedLabelAssignment	ItemId	true	false	ok	
+62.0	named	query	ApprovalSubmissions					reject	System.NullPointerException
+62.0	named	query	ApprovalWorkItems					reject	System.NullPointerException
+62.0	named	query	AttachedContentDocuments					reject	System.NullPointerException
+62.0	named	query	Attachments					reject	System.NullPointerException
+62.0	named	query	CombinedAttachments					reject	System.NullPointerException
+62.0	named	query	ContactRequests					reject	System.NullPointerException
+62.0	named	query	ContentDocumentLinks					reject	System.NullPointerException
+62.0	named	query	DestinationFinanceTransactions					reject	System.NullPointerException
+62.0	named	query	DuplicateRecordItems					reject	System.NullPointerException
+62.0	named	query	FeedSubscriptionsForEntity					reject	System.NullPointerException
+62.0	named	query	FinanceBalanceSnapshots					reject	System.NullPointerException
+62.0	named	query	FinanceBalanceSnapshots					reject	System.NullPointerException
+62.0	named	query	FinanceTransactions					reject	System.NullPointerException
+62.0	named	query	FinanceTransactions					reject	System.NullPointerException
+62.0	named	query	FlowOrchestrationWorkItems					reject	System.NullPointerException
+62.0	named	query	NotesAndAttachments					reject	System.NullPointerException
+62.0	named	query	Notes					reject	System.NullPointerException
+62.0	named	query	ParentFinanceTransactions					reject	System.NullPointerException
+62.0	named	query	ProcessExceptions					reject	System.NullPointerException
+62.0	named	query	ProcessInstances					reject	System.NullPointerException
+62.0	named	query	ProcessSteps					reject	System.NullPointerException
+62.0	named	query	RecordActionHistories					reject	System.NullPointerException
+62.0	named	query	RecordActions					reject	System.NullPointerException
+62.0	named	query	RecordAssociatedGroups					reject	System.NullPointerException
+62.0	named	query	Shares					reject	System.NullPointerException
+62.0	named	query	SourceFinanceTransactions					reject	System.NullPointerException
+62.0	named	query	TopicAssignments					reject	System.NullPointerException
+62.0	named	query	UserDefinedLabelAssignments					reject	System.NullPointerException
+62.0	istest	describe	ApprovalSubmissions	ApprovalSubmission	RelatedRecordId	false	false	ok	
+62.0	istest	describe	ApprovalWorkItems	ApprovalWorkItem	RelatedRecordId	false	false	ok	
+62.0	istest	describe	AttachedContentDocuments	AttachedContentDocument	LinkedEntityId	true	false	ok	
+62.0	istest	describe	Attachments	Attachment	ParentId	true	false	ok	
+62.0	istest	describe	CombinedAttachments	CombinedAttachment	ParentId	true	false	ok	
+62.0	istest	describe	ContactRequests	ContactRequest	WhatId	false	false	ok	
+62.0	istest	describe	ContentDocumentLinks	ContentDocumentLink	LinkedEntityId	true	false	ok	
+62.0	istest	describe	DestinationFinanceTransactions	FinanceTransaction	DestinationEntityId	false	false	ok	
+62.0	istest	describe	DuplicateRecordItems	DuplicateRecordItem	RecordId	true	false	ok	
+62.0	istest	describe	FeedSubscriptionsForEntity	EntitySubscription	ParentId	true	false	ok	
+62.0	istest	describe	FinanceBalanceSnapshots	FinanceBalanceSnapshot	LegalEntityId	false	false	ok	
+62.0	istest	describe	FinanceBalanceSnapshots	FinanceBalanceSnapshot	ReferenceEntityId	false	false	ok	
+62.0	istest	describe	FinanceTransactions	FinanceTransaction	LegalEntityId	false	false	ok	
+62.0	istest	describe	FinanceTransactions	FinanceTransaction	ReferenceEntityId	false	false	ok	
+62.0	istest	describe	FlowOrchestrationWorkItems	FlowOrchestrationWorkItem	RelatedRecordId	false	false	ok	
+62.0	istest	describe	NotesAndAttachments	NoteAndAttachment	ParentId	true	false	ok	
+62.0	istest	describe	Notes	Note	ParentId	true	false	ok	
+62.0	istest	describe	ParentFinanceTransactions	FinanceTransaction	ParentReferenceEntityId	false	false	ok	
+62.0	istest	describe	ProcessExceptions	ProcessException	AttachedToId	true	false	ok	
+62.0	istest	describe	ProcessInstances	ProcessInstance	TargetObjectId	true	false	ok	
+62.0	istest	describe	ProcessSteps	ProcessInstanceHistory	TargetObjectId	false	false	ok	
+62.0	istest	describe	RecordActionHistories	RecordActionHistory	ParentRecordId	false	false	ok	
+62.0	istest	describe	RecordActions	RecordAction	RecordId	true	false	ok	
+62.0	istest	describe	RecordAssociatedGroups	CollaborationGroupRecord	RecordId	true	false	ok	
+62.0	istest	describe	Shares	LinkProbe__Share	ParentId	true	false	ok	
+62.0	istest	describe	SourceFinanceTransactions	FinanceTransaction	SourceEntityId	false	false	ok	
+62.0	istest	describe	TopicAssignments	TopicAssignment	EntityId	true	false	ok	
+62.0	istest	describe	UserDefinedLabelAssignments	UserDefinedLabelAssignment	ItemId	true	false	ok	
+62.0	istest	query	ApprovalSubmissions					reject	System.NullPointerException
+62.0	istest	query	ApprovalWorkItems					reject	System.NullPointerException
+62.0	istest	query	AttachedContentDocuments					reject	System.NullPointerException
+62.0	istest	query	Attachments					reject	System.NullPointerException
+62.0	istest	query	CombinedAttachments					reject	System.NullPointerException
+62.0	istest	query	ContactRequests					reject	System.NullPointerException
+62.0	istest	query	ContentDocumentLinks					reject	System.NullPointerException
+62.0	istest	query	DestinationFinanceTransactions					reject	System.NullPointerException
+62.0	istest	query	DuplicateRecordItems					reject	System.NullPointerException
+62.0	istest	query	FeedSubscriptionsForEntity					reject	System.NullPointerException
+62.0	istest	query	FinanceBalanceSnapshots					reject	System.NullPointerException
+62.0	istest	query	FinanceBalanceSnapshots					reject	System.NullPointerException
+62.0	istest	query	FinanceTransactions					reject	System.NullPointerException
+62.0	istest	query	FinanceTransactions					reject	System.NullPointerException
+62.0	istest	query	FlowOrchestrationWorkItems					reject	System.NullPointerException
+62.0	istest	query	NotesAndAttachments					reject	System.NullPointerException
+62.0	istest	query	Notes					reject	System.NullPointerException
+62.0	istest	query	ParentFinanceTransactions					reject	System.NullPointerException
+62.0	istest	query	ProcessExceptions					reject	System.NullPointerException
+62.0	istest	query	ProcessInstances					reject	System.NullPointerException
+62.0	istest	query	ProcessSteps					reject	System.NullPointerException
+62.0	istest	query	RecordActionHistories					reject	System.NullPointerException
+62.0	istest	query	RecordActions					reject	System.NullPointerException
+62.0	istest	query	RecordAssociatedGroups					reject	System.NullPointerException
+62.0	istest	query	Shares					reject	System.NullPointerException
+62.0	istest	query	SourceFinanceTransactions					reject	System.NullPointerException
+62.0	istest	query	TopicAssignments					reject	System.NullPointerException
+62.0	istest	query	UserDefinedLabelAssignments					reject	System.NullPointerException
+67.0	anonymous	describe	ApprovalSubmissions	ApprovalSubmission	RelatedRecordId	false	false	ok	
+67.0	anonymous	describe	ApprovalWorkItems	ApprovalWorkItem	RelatedRecordId	false	false	ok	
+67.0	anonymous	describe	AttachedContentDocuments	AttachedContentDocument	LinkedEntityId	true	false	ok	
+67.0	anonymous	describe	Attachments	Attachment	ParentId	true	false	ok	
+67.0	anonymous	describe	CombinedAttachments	CombinedAttachment	ParentId	true	false	ok	
+67.0	anonymous	describe	ContactRequests	ContactRequest	WhatId	false	false	ok	
+67.0	anonymous	describe	ContentDocumentLinks	ContentDocumentLink	LinkedEntityId	true	false	ok	
+67.0	anonymous	describe	DestinationFinanceTransactions	FinanceTransaction	DestinationEntityId	false	false	ok	
+67.0	anonymous	describe	DuplicateRecordItems	DuplicateRecordItem	RecordId	true	false	ok	
+67.0	anonymous	describe	FeedSubscriptionsForEntity	EntitySubscription	ParentId	true	false	ok	
+67.0	anonymous	describe	FinanceBalanceSnapshots	FinanceBalanceSnapshot	LegalEntityId	false	false	ok	
+67.0	anonymous	describe	FinanceBalanceSnapshots	FinanceBalanceSnapshot	ReferenceEntityId	false	false	ok	
+67.0	anonymous	describe	FinanceTransactions	FinanceTransaction	LegalEntityId	false	false	ok	
+67.0	anonymous	describe	FinanceTransactions	FinanceTransaction	ReferenceEntityId	false	false	ok	
+67.0	anonymous	describe	FlowOrchestrationWorkItems	FlowOrchestrationWorkItem	RelatedRecordId	false	false	ok	
+67.0	anonymous	describe	NotesAndAttachments	NoteAndAttachment	ParentId	true	false	ok	
+67.0	anonymous	describe	Notes	Note	ParentId	true	false	ok	
+67.0	anonymous	describe	ParentFinanceTransactions	FinanceTransaction	ParentReferenceEntityId	false	false	ok	
+67.0	anonymous	describe	ProcessExceptions	ProcessException	AttachedToId	true	false	ok	
+67.0	anonymous	describe	ProcessInstances	ProcessInstance	TargetObjectId	true	false	ok	
+67.0	anonymous	describe	ProcessSteps	ProcessInstanceHistory	TargetObjectId	false	false	ok	
+67.0	anonymous	describe	RecordActionHistories	RecordActionHistory	ParentRecordId	false	false	ok	
+67.0	anonymous	describe	RecordActions	RecordAction	RecordId	true	false	ok	
+67.0	anonymous	describe	RecordAssociatedGroups	CollaborationGroupRecord	RecordId	true	false	ok	
+67.0	anonymous	describe	Shares	LinkProbe__Share	ParentId	true	false	ok	
+67.0	anonymous	describe	SourceFinanceTransactions	FinanceTransaction	SourceEntityId	false	false	ok	
+67.0	anonymous	describe	TopicAssignments	TopicAssignment	EntityId	true	false	ok	
+67.0	anonymous	describe	UserDefinedLabelAssignments	UserDefinedLabelAssignment	ItemId	true	false	ok	
+67.0	anonymous	query	ApprovalSubmissions					reject	System.NullPointerException
+67.0	anonymous	query	ApprovalWorkItems					reject	System.NullPointerException
+67.0	anonymous	query	AttachedContentDocuments					reject	System.NullPointerException
+67.0	anonymous	query	Attachments					reject	System.NullPointerException
+67.0	anonymous	query	CombinedAttachments					reject	System.NullPointerException
+67.0	anonymous	query	ContactRequests					reject	System.NullPointerException
+67.0	anonymous	query	ContentDocumentLinks					reject	System.NullPointerException
+67.0	anonymous	query	DestinationFinanceTransactions					reject	System.NullPointerException
+67.0	anonymous	query	DuplicateRecordItems					reject	System.NullPointerException
+67.0	anonymous	query	FeedSubscriptionsForEntity					reject	System.NullPointerException
+67.0	anonymous	query	FinanceBalanceSnapshots					reject	System.NullPointerException
+67.0	anonymous	query	FinanceBalanceSnapshots					reject	System.NullPointerException
+67.0	anonymous	query	FinanceTransactions					reject	System.NullPointerException
+67.0	anonymous	query	FinanceTransactions					reject	System.NullPointerException
+67.0	anonymous	query	FlowOrchestrationWorkItems					reject	System.NullPointerException
+67.0	anonymous	query	NotesAndAttachments					reject	System.NullPointerException
+67.0	anonymous	query	Notes					reject	System.NullPointerException
+67.0	anonymous	query	ParentFinanceTransactions					reject	System.NullPointerException
+67.0	anonymous	query	ProcessExceptions					reject	System.NullPointerException
+67.0	anonymous	query	ProcessInstances					reject	System.NullPointerException
+67.0	anonymous	query	ProcessSteps					reject	System.NullPointerException
+67.0	anonymous	query	RecordActionHistories					reject	System.NullPointerException
+67.0	anonymous	query	RecordActions					reject	System.NullPointerException
+67.0	anonymous	query	RecordAssociatedGroups					reject	System.NullPointerException
+67.0	anonymous	query	Shares					reject	System.NullPointerException
+67.0	anonymous	query	SourceFinanceTransactions					reject	System.NullPointerException
+67.0	anonymous	query	TopicAssignments					reject	System.NullPointerException
+67.0	anonymous	query	UserDefinedLabelAssignments					reject	System.NullPointerException
+67.0	named	describe	ApprovalSubmissions	ApprovalSubmission	RelatedRecordId	false	false	ok	
+67.0	named	describe	ApprovalWorkItems	ApprovalWorkItem	RelatedRecordId	false	false	ok	
+67.0	named	describe	AttachedContentDocuments	AttachedContentDocument	LinkedEntityId	true	false	ok	
+67.0	named	describe	Attachments	Attachment	ParentId	true	false	ok	
+67.0	named	describe	CombinedAttachments	CombinedAttachment	ParentId	true	false	ok	
+67.0	named	describe	ContactRequests	ContactRequest	WhatId	false	false	ok	
+67.0	named	describe	ContentDocumentLinks	ContentDocumentLink	LinkedEntityId	true	false	ok	
+67.0	named	describe	DestinationFinanceTransactions	FinanceTransaction	DestinationEntityId	false	false	ok	
+67.0	named	describe	DuplicateRecordItems	DuplicateRecordItem	RecordId	true	false	ok	
+67.0	named	describe	FeedSubscriptionsForEntity	EntitySubscription	ParentId	true	false	ok	
+67.0	named	describe	FinanceBalanceSnapshots	FinanceBalanceSnapshot	LegalEntityId	false	false	ok	
+67.0	named	describe	FinanceBalanceSnapshots	FinanceBalanceSnapshot	ReferenceEntityId	false	false	ok	
+67.0	named	describe	FinanceTransactions	FinanceTransaction	LegalEntityId	false	false	ok	
+67.0	named	describe	FinanceTransactions	FinanceTransaction	ReferenceEntityId	false	false	ok	
+67.0	named	describe	FlowOrchestrationWorkItems	FlowOrchestrationWorkItem	RelatedRecordId	false	false	ok	
+67.0	named	describe	NotesAndAttachments	NoteAndAttachment	ParentId	true	false	ok	
+67.0	named	describe	Notes	Note	ParentId	true	false	ok	
+67.0	named	describe	ParentFinanceTransactions	FinanceTransaction	ParentReferenceEntityId	false	false	ok	
+67.0	named	describe	ProcessExceptions	ProcessException	AttachedToId	true	false	ok	
+67.0	named	describe	ProcessInstances	ProcessInstance	TargetObjectId	true	false	ok	
+67.0	named	describe	ProcessSteps	ProcessInstanceHistory	TargetObjectId	false	false	ok	
+67.0	named	describe	RecordActionHistories	RecordActionHistory	ParentRecordId	false	false	ok	
+67.0	named	describe	RecordActions	RecordAction	RecordId	true	false	ok	
+67.0	named	describe	RecordAssociatedGroups	CollaborationGroupRecord	RecordId	true	false	ok	
+67.0	named	describe	Shares	LinkProbe__Share	ParentId	true	false	ok	
+67.0	named	describe	SourceFinanceTransactions	FinanceTransaction	SourceEntityId	false	false	ok	
+67.0	named	describe	TopicAssignments	TopicAssignment	EntityId	true	false	ok	
+67.0	named	describe	UserDefinedLabelAssignments	UserDefinedLabelAssignment	ItemId	true	false	ok	
+67.0	named	query	ApprovalSubmissions					reject	System.NullPointerException
+67.0	named	query	ApprovalWorkItems					reject	System.NullPointerException
+67.0	named	query	AttachedContentDocuments					reject	System.NullPointerException
+67.0	named	query	Attachments					reject	System.NullPointerException
+67.0	named	query	CombinedAttachments					reject	System.NullPointerException
+67.0	named	query	ContactRequests					reject	System.NullPointerException
+67.0	named	query	ContentDocumentLinks					reject	System.NullPointerException
+67.0	named	query	DestinationFinanceTransactions					reject	System.NullPointerException
+67.0	named	query	DuplicateRecordItems					reject	System.NullPointerException
+67.0	named	query	FeedSubscriptionsForEntity					reject	System.NullPointerException
+67.0	named	query	FinanceBalanceSnapshots					reject	System.NullPointerException
+67.0	named	query	FinanceBalanceSnapshots					reject	System.NullPointerException
+67.0	named	query	FinanceTransactions					reject	System.NullPointerException
+67.0	named	query	FinanceTransactions					reject	System.NullPointerException
+67.0	named	query	FlowOrchestrationWorkItems					reject	System.NullPointerException
+67.0	named	query	NotesAndAttachments					reject	System.NullPointerException
+67.0	named	query	Notes					reject	System.NullPointerException
+67.0	named	query	ParentFinanceTransactions					reject	System.NullPointerException
+67.0	named	query	ProcessExceptions					reject	System.NullPointerException
+67.0	named	query	ProcessInstances					reject	System.NullPointerException
+67.0	named	query	ProcessSteps					reject	System.NullPointerException
+67.0	named	query	RecordActionHistories					reject	System.NullPointerException
+67.0	named	query	RecordActions					reject	System.NullPointerException
+67.0	named	query	RecordAssociatedGroups					reject	System.NullPointerException
+67.0	named	query	Shares					reject	System.NullPointerException
+67.0	named	query	SourceFinanceTransactions					reject	System.NullPointerException
+67.0	named	query	TopicAssignments					reject	System.NullPointerException
+67.0	named	query	UserDefinedLabelAssignments					reject	System.NullPointerException
+67.0	istest	describe	ApprovalSubmissions	ApprovalSubmission	RelatedRecordId	false	false	ok	
+67.0	istest	describe	ApprovalWorkItems	ApprovalWorkItem	RelatedRecordId	false	false	ok	
+67.0	istest	describe	AttachedContentDocuments	AttachedContentDocument	LinkedEntityId	true	false	ok	
+67.0	istest	describe	Attachments	Attachment	ParentId	true	false	ok	
+67.0	istest	describe	CombinedAttachments	CombinedAttachment	ParentId	true	false	ok	
+67.0	istest	describe	ContactRequests	ContactRequest	WhatId	false	false	ok	
+67.0	istest	describe	ContentDocumentLinks	ContentDocumentLink	LinkedEntityId	true	false	ok	
+67.0	istest	describe	DestinationFinanceTransactions	FinanceTransaction	DestinationEntityId	false	false	ok	
+67.0	istest	describe	DuplicateRecordItems	DuplicateRecordItem	RecordId	true	false	ok	
+67.0	istest	describe	FeedSubscriptionsForEntity	EntitySubscription	ParentId	true	false	ok	
+67.0	istest	describe	FinanceBalanceSnapshots	FinanceBalanceSnapshot	LegalEntityId	false	false	ok	
+67.0	istest	describe	FinanceBalanceSnapshots	FinanceBalanceSnapshot	ReferenceEntityId	false	false	ok	
+67.0	istest	describe	FinanceTransactions	FinanceTransaction	LegalEntityId	false	false	ok	
+67.0	istest	describe	FinanceTransactions	FinanceTransaction	ReferenceEntityId	false	false	ok	
+67.0	istest	describe	FlowOrchestrationWorkItems	FlowOrchestrationWorkItem	RelatedRecordId	false	false	ok	
+67.0	istest	describe	NotesAndAttachments	NoteAndAttachment	ParentId	true	false	ok	
+67.0	istest	describe	Notes	Note	ParentId	true	false	ok	
+67.0	istest	describe	ParentFinanceTransactions	FinanceTransaction	ParentReferenceEntityId	false	false	ok	
+67.0	istest	describe	ProcessExceptions	ProcessException	AttachedToId	true	false	ok	
+67.0	istest	describe	ProcessInstances	ProcessInstance	TargetObjectId	true	false	ok	
+67.0	istest	describe	ProcessSteps	ProcessInstanceHistory	TargetObjectId	false	false	ok	
+67.0	istest	describe	RecordActionHistories	RecordActionHistory	ParentRecordId	false	false	ok	
+67.0	istest	describe	RecordActions	RecordAction	RecordId	true	false	ok	
+67.0	istest	describe	RecordAssociatedGroups	CollaborationGroupRecord	RecordId	true	false	ok	
+67.0	istest	describe	Shares	LinkProbe__Share	ParentId	true	false	ok	
+67.0	istest	describe	SourceFinanceTransactions	FinanceTransaction	SourceEntityId	false	false	ok	
+67.0	istest	describe	TopicAssignments	TopicAssignment	EntityId	true	false	ok	
+67.0	istest	describe	UserDefinedLabelAssignments	UserDefinedLabelAssignment	ItemId	true	false	ok	
+67.0	istest	query	ApprovalSubmissions					reject	System.NullPointerException
+67.0	istest	query	ApprovalWorkItems					reject	System.NullPointerException
+67.0	istest	query	AttachedContentDocuments					reject	System.NullPointerException
+67.0	istest	query	Attachments					reject	System.NullPointerException
+67.0	istest	query	CombinedAttachments					reject	System.NullPointerException
+67.0	istest	query	ContactRequests					reject	System.NullPointerException
+67.0	istest	query	ContentDocumentLinks					reject	System.NullPointerException
+67.0	istest	query	DestinationFinanceTransactions					reject	System.NullPointerException
+67.0	istest	query	DuplicateRecordItems					reject	System.NullPointerException
+67.0	istest	query	FeedSubscriptionsForEntity					reject	System.NullPointerException
+67.0	istest	query	FinanceBalanceSnapshots					reject	System.NullPointerException
+67.0	istest	query	FinanceBalanceSnapshots					reject	System.NullPointerException
+67.0	istest	query	FinanceTransactions					reject	System.NullPointerException
+67.0	istest	query	FinanceTransactions					reject	System.NullPointerException
+67.0	istest	query	FlowOrchestrationWorkItems					reject	System.NullPointerException
+67.0	istest	query	NotesAndAttachments					reject	System.NullPointerException
+67.0	istest	query	Notes					reject	System.NullPointerException
+67.0	istest	query	ParentFinanceTransactions					reject	System.NullPointerException
+67.0	istest	query	ProcessExceptions					reject	System.NullPointerException
+67.0	istest	query	ProcessInstances					reject	System.NullPointerException
+67.0	istest	query	ProcessSteps					reject	System.NullPointerException
+67.0	istest	query	RecordActionHistories					reject	System.NullPointerException
+67.0	istest	query	RecordActions					reject	System.NullPointerException
+67.0	istest	query	RecordAssociatedGroups					reject	System.NullPointerException
+67.0	istest	query	Shares					reject	System.NullPointerException
+67.0	istest	query	SourceFinanceTransactions					reject	System.NullPointerException
+67.0	istest	query	TopicAssignments					reject	System.NullPointerException
+67.0	istest	query	UserDefinedLabelAssignments					reject	System.NullPointerException

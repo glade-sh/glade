@@ -1,0 +1,1 @@
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>Capture Read</label><objectPermissions><allowCreate>false</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>CapturePrivate__c</object><viewAllRecords>false</viewAllRecords></objectPermissions></PermissionSet>

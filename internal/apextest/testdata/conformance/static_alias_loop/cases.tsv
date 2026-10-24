@@ -1,0 +1,7 @@
+variant	purpose
+assignment	duplicate static-list field assignments
+put	duplicate static-list put writes
+empty	empty-list boundary
+rejected	invalid-field rejection twin
+nested	nested-alias fallback
+move	same-length list move

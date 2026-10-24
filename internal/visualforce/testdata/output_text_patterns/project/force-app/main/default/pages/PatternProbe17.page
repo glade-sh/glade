@@ -1,0 +1,3 @@
+<apex:page controller="PatternProbeController" showHeader="false" sidebar="false" standardStylesheets="false" language="en_US">
+<div data-case="date-medium"><apex:outputText value="{0,date,medium}"><apex:param value="{!stamp}"/></apex:outputText></div>
+</apex:page>

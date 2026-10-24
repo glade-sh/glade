@@ -1,0 +1,37 @@
+api	route	allocation	phase	outcome	message
+62.0	future	blob	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=future|stage=checkpoint|count=500|start=1211|heap10=202074|heap20=202883|heap30=203691|heap40=204499|heap50=205307|last=205307|payload=100001|complete=true
+62.0	queueable	blob	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=queueable|stage=checkpoint|count=500|start=1249|heap10=202112|heap20=202921|heap30=203729|heap40=204537|heap50=205345|last=205345|payload=100001|complete=true
+62.0	sync	blob	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=sync|stage=checkpoint|count=500|start=1092|heap10=201955|heap20=202764|heap30=203572|heap40=204380|heap50=205188|last=205188|payload=100001|complete=true
+62.0	future	list	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=list|route=future|stage=checkpoint|count=499|start=1211|heap10=10001856|heap20=20002563|heap30=30003271|heap40=40003979|heap50=50004687|last=50004687|payload=100001|complete=true
+62.0	queueable	list	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=list|route=queueable|stage=checkpoint|count=499|start=1249|heap10=10001894|heap20=20002601|heap30=30003309|heap40=40004017|heap50=50004725|last=50004725|payload=100001|complete=true
+62.0	sync	list	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=list|route=sync|stage=checkpoint|count=499|start=1092|heap10=10001737|heap20=20002444|heap30=30003152|heap40=40003860|heap50=50004568|last=50004568|payload=100001|complete=true
+62.0	future	map	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=map|route=future|stage=checkpoint|count=499|start=1210|heap10=10002439|heap20=20003845|heap30=30005253|heap40=40006661|heap50=50008069|last=50008069|payload=100001|complete=true
+62.0	queueable	map	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=map|route=queueable|stage=checkpoint|count=499|start=1248|heap10=10002477|heap20=20003883|heap30=30005291|heap40=40006699|heap50=50008107|last=50008107|payload=100001|complete=true
+62.0	sync	map	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=map|route=sync|stage=checkpoint|count=499|start=1091|heap10=10002320|heap20=20003726|heap30=30005134|heap40=40006542|heap50=50007950|last=50007950|payload=100001|complete=true
+62.0	future	blob	continue60m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=future|stage=completed|count=600|start=1211|heap10=202074|heap20=202883|heap30=203691|heap40=204499|heap50=205307|last=206115|payload=100001|complete=true
+62.0	queueable	blob	continue60m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=queueable|stage=completed|count=600|start=1249|heap10=202112|heap20=202921|heap30=203729|heap40=204537|heap50=205345|last=206153|payload=100001|complete=true
+62.0	sync	blob	continue60m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=sync|stage=completed|count=600|start=1092|heap10=201955|heap20=202764|heap30=203572|heap40=204380|heap50=205188|last=205996|payload=100001|complete=true
+62.0	future	list	continue60m	Fail	System.LimitException: Apex heap size too large: 52504866
+62.0	queueable	list	continue60m	Fail	System.LimitException: Apex heap size too large: 52504904
+62.0	sync	list	continue60m	Fail	System.LimitException: Apex heap size too large: 52504747
+62.0	future	map	continue60m	Fail	System.LimitException: Apex heap size too large: 52508416
+62.0	queueable	map	continue60m	Fail	System.LimitException: Apex heap size too large: 52508454
+62.0	sync	map	continue60m	Fail	System.LimitException: Apex heap size too large: 52508297
+67.0	future	blob	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=future|stage=checkpoint|count=500|start=1221|heap10=202084|heap20=202893|heap30=203701|heap40=204509|heap50=205317|last=205317|payload=100001|complete=true
+67.0	queueable	blob	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=queueable|stage=checkpoint|count=500|start=1259|heap10=202122|heap20=202931|heap30=203739|heap40=204547|heap50=205355|last=205355|payload=100001|complete=true
+67.0	sync	blob	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=sync|stage=checkpoint|count=500|start=1102|heap10=201965|heap20=202774|heap30=203582|heap40=204390|heap50=205198|last=205198|payload=100001|complete=true
+67.0	future	list	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=list|route=future|stage=checkpoint|count=499|start=1221|heap10=10001866|heap20=20002573|heap30=30003281|heap40=40003989|heap50=50004697|last=50004697|payload=100001|complete=true
+67.0	queueable	list	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=list|route=queueable|stage=checkpoint|count=499|start=1259|heap10=10001904|heap20=20002611|heap30=30003319|heap40=40004027|heap50=50004735|last=50004735|payload=100001|complete=true
+67.0	sync	list	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=list|route=sync|stage=checkpoint|count=499|start=1102|heap10=10001747|heap20=20002454|heap30=30003162|heap40=40003870|heap50=50004578|last=50004578|payload=100001|complete=true
+67.0	future	map	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=map|route=future|stage=checkpoint|count=499|start=1220|heap10=10002449|heap20=20003855|heap30=30005263|heap40=40006671|heap50=50008079|last=50008079|payload=100001|complete=true
+67.0	queueable	map	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=map|route=queueable|stage=checkpoint|count=499|start=1258|heap10=10002487|heap20=20003893|heap30=30005301|heap40=40006709|heap50=50008117|last=50008117|payload=100001|complete=true
+67.0	sync	map	checkpoint50m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=map|route=sync|stage=checkpoint|count=499|start=1101|heap10=10002330|heap20=20003736|heap30=30005144|heap40=40006552|heap50=50007960|last=50007960|payload=100001|complete=true
+67.0	future	blob	continue60m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=future|stage=completed|count=600|start=1221|heap10=202084|heap20=202893|heap30=203701|heap40=204509|heap50=205317|last=206125|payload=100001|complete=true
+67.0	queueable	blob	continue60m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=queueable|stage=completed|count=600|start=1259|heap10=202122|heap20=202931|heap30=203739|heap40=204547|heap50=205355|last=206163|payload=100001|complete=true
+67.0	sync	blob	continue60m	Fail	System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=sync|stage=completed|count=600|start=1102|heap10=201965|heap20=202774|heap30=203582|heap40=204390|heap50=205198|last=206006|payload=100001|complete=true
+67.0	future	list	continue60m	Fail	System.LimitException: Apex heap size too large: 52504876
+67.0	queueable	list	continue60m	Fail	System.LimitException: Apex heap size too large: 52504914
+67.0	sync	list	continue60m	Fail	System.LimitException: Apex heap size too large: 52504757
+67.0	future	map	continue60m	Fail	System.LimitException: Apex heap size too large: 52508426
+67.0	queueable	map	continue60m	Fail	System.LimitException: Apex heap size too large: 52508464
+67.0	sync	map	continue60m	Fail	System.LimitException: Apex heap size too large: 52508307

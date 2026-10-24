@@ -46,7 +46,7 @@ for reporting details.
 | --- | --- |
 | [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/glade-sh/glade) | Published repository-posture results. |
 | govulncheck | Reachable Go vulnerabilities in modules and the Go standard library. |
-| CodeQL | GitHub code scanning for Go with the security-extended query suite. Pull-request and full-branch runs apply checked, context-specific exclusions for queries that do not complete within the job limit. |
+| CodeQL | Go security-extended scans with reviewed query exclusions. Pull requests run only the fast profile, aggregated by Required CI. Full scans run weekly and on release tags. Analysis is capped at 300 seconds (240 seconds for queries): a timeout warns; errors and unsuppressed alerts fail. |
 | gosec | Go source-pattern findings uploaded as SARIF. |
 | npm audit | High-severity production dependency findings in packaged JavaScript. |
 | Dependency Review | Pull requests that add vulnerable dependencies. |

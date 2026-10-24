@@ -251,6 +251,9 @@ func (vm *VM) sendEmailWithRecipientValidation(args []Value, result *Result, req
 	if err := vm.incrementLimit("emailInvocations", 1); err != nil {
 		return Null, err
 	}
+	if len(args) == 1 && singleEmailMessageList(args[0]) {
+		vm.markCalloutPendingWork()
+	}
 	appendTrace(result, "apex.email.send", "apex.email", map[string]any{"messages": len(args[0].List)})
 	results := make([]Value, 0, len(args[0].List))
 	for i, message := range args[0].List {
@@ -266,9 +269,12 @@ func (vm *VM) sendEmailWithRecipientValidation(args []Value, result *Result, req
 			message.Fields["subject"] = String(captured.Subject)
 			message.Fields["plainTextBody"] = String(captured.PlainTextBody)
 			message.Fields["htmlBody"] = String(captured.HTMLBody)
-			args[0].List[i] = message
+			vm.setListElement(args[0], i, message)
 		}
 		if err := vm.persistSentEmailMessage(captured, result); err != nil {
+			return Null, err
+		}
+		if err := vm.persistSentEmailActivity(captured, result); err != nil {
 			return Null, err
 		}
 		vm.capturedEmails = append(vm.capturedEmails, captured)
@@ -726,6 +732,9 @@ func (vm *VM) localSendEmailRecipientValidationError(message Value) Value {
 				return newSendEmailValidationError("WhatId is not available for sending emails to UserIds.", "INVALID_ID_FIELD", targetID)
 			}
 		}
+		if validation := vm.emailActivityWhatValidation(message); validation.Kind != ValueNull {
+			return validation
+		}
 	}
 	if message.Type != "Messaging.SingleEmailMessage" || !emailFieldBool(message, "treatTargetObjectAsRecipient") {
 		return Null
@@ -759,6 +768,109 @@ func (vm *VM) localSendEmailRecipientValidationError(message Value) Value {
 	validation.Fields["statusCode"] = Value{Kind: ValueObject, Type: "StatusCode", Text: "INVALID_EMAIL_ADDRESS"}
 	validation.Fields["targetObjectId"] = platformScalar("Id", targetID)
 	return validation
+}
+
+func (vm *VM) emailActivityTarget(targetID string) (storage.Record, bool) {
+	if vm == nil || vm.Org == nil || targetID == "" {
+		return storage.Record{}, false
+	}
+	// Contact and Lead targets have native rows (email_activity, email_lead_activity).
+	targetName, known := vm.sObjectNameForID(targetID)
+	if known && (strings.EqualFold(targetName, "Contact") || strings.EqualFold(targetName, "Lead")) {
+		_, record, exists := storage.LookupRecordByID(vm.Org.Objects[targetName].Records, storage.ID(targetID))
+		return record, exists && !record.System.IsDeleted
+	}
+	return storage.Record{}, false
+}
+
+func (vm *VM) emailActivityWhatValidation(message Value) Value {
+	whatID := emailFieldString(message, "whatId")
+	if !emailFieldBool(message, "saveAsActivity") || whatID == "" {
+		return Null
+	}
+	target, eligible := vm.emailActivityTarget(emailFieldString(message, "targetObjectId"))
+	if !eligible {
+		return Null
+	}
+	// Native: email_lead_activity/org.tsv rows A and C, regardless of recipient.
+	if targetName, _ := vm.sObjectNameForID(string(target.ID)); strings.EqualFold(targetName, "Lead") {
+		return newSendEmailValidationError("WhatId is not available with saveAsActivity for sending emails to Leads.", "INVALID_ID_FIELD", "")
+	}
+	storage.EnsureStandardObject(vm.Org, "Task")
+	whatName, known := vm.sObjectNameForID(whatID)
+	allowed := known && strings.HasSuffix(strings.ToLower(whatName), "__c") &&
+		strings.EqualFold(vm.Org.Objects[whatName].Definition.Metadata["enableActivities"], "true")
+	for _, name := range vm.Org.Objects["Task"].Definition.Fields["WhatId"].ReferenceTo {
+		if known && strings.EqualFold(whatName, name) {
+			allowed = true
+			break
+		}
+	}
+	if !allowed {
+		validation := newSendEmailValidationError("SaveAsActivity is not allowed with whatId that is not supported as a task whatId.", "INVALID_ID_FIELD", "")
+		validation.Fields["fields"] = List(String("whatId"), String(displayIDText(whatID)))
+		return validation
+	}
+	_, record, exists := storage.LookupRecordByID(vm.Org.Objects[whatName].Records, storage.ID(whatID))
+	if !exists {
+		return newSendEmailValidationError("invalid cross reference id", "INVALID_CROSS_REFERENCE_KEY", "")
+	}
+	if record.System.IsDeleted {
+		return newSendEmailValidationError("entity is deleted", "ENTITY_IS_DELETED", "")
+	}
+	return Null
+}
+
+// Activity logging consumes the rendered send, and uses the same transactional
+// DML engine as EmailMessage persistence so savepoint rollback restores both.
+func (vm *VM) persistSentEmailActivity(captured CapturedEmail, result *Result) error {
+	if captured.Kind != "Messaging.SingleEmailMessage" || !captured.SaveAsActivity {
+		return nil
+	}
+	target, eligible := vm.emailActivityTarget(captured.TargetObjectID)
+	if !eligible {
+		return nil
+	}
+	storage.EnsureStandardObject(vm.Org, "Task")
+	to := append([]string(nil), captured.ToAddresses...)
+	if captured.TreatTargetObjectAsRecipient {
+		if email := storageStringField(target, "Email"); email != "" {
+			to = append(to, email)
+		}
+	}
+	attachments := strings.Join(captured.FileAttachments, ", ")
+	if attachments == "" {
+		attachments = "--none--"
+	}
+	fields := map[string]storage.Value{
+		"WhoId":        storage.IDValue(target.ID),
+		"Subject":      storage.StringValue("Email: " + captured.Subject),
+		"Description":  storage.StringValue(fmt.Sprintf("To: %s\nCC: %s\nBCC: %s\nAttachment: %s\n\nSubject: %s\nBody:\n%s", strings.Join(to, "; "), strings.Join(captured.CcAddresses, "; "), strings.Join(captured.BccAddresses, "; "), attachments, captured.Subject, captured.PlainTextBody)),
+		"Status":       storage.StringValue("Completed"),
+		"Priority":     storage.StringValue("Normal"),
+		"TaskSubtype":  storage.StringValue("Email"),
+		"ActivityDate": storage.DateValue(vm.fakeNow.Format("2006-01-02")),
+	}
+	if captured.WhatID != "" {
+		fields["WhatId"] = storage.IDValue(storage.ID(captured.WhatID))
+	}
+	engine := vm.newDMLEngine(result)
+	inserted := engine.Insert([]storage.Record{{Object: "Task", Fields: fields}})
+	if len(inserted) != 1 || !inserted[0].Success {
+		if len(inserted) == 1 && inserted[0].Error != "" {
+			return fmt.Errorf("Messaging.sendEmail could not persist Task: %s", inserted[0].Error)
+		}
+		return fmt.Errorf("Messaging.sendEmail could not persist Task")
+	}
+	object := vm.Org.Objects["Task"]
+	if storedID, record, ok := storage.LookupRecordByID(object.Records, inserted[0].ID); ok {
+		// The sent activity is closed by the platform, rather than by a caller
+		// writing the read-only IsClosed field through ordinary Task DML.
+		record.Fields["IsClosed"] = storage.BooleanValue(true)
+		object.Records[storedID] = record
+		vm.Org.Objects["Task"] = object
+	}
+	return nil
 }
 
 func (vm *VM) persistSentEmailMessage(captured CapturedEmail, result *Result) error {
@@ -1789,7 +1901,7 @@ func (vm *VM) visualforceEmailContentValue(key string) string {
 	if key == "" {
 		return ""
 	}
-	for className, class := range vm.Classes {
+	for className, class := range vm.ClassEntries() {
 		if !strings.EqualFold(className, "EmailContent") && !strings.EqualFold(class.Name, "EmailContent") && !hasSuffixFold(class.Name, ".emailcontent") {
 			continue
 		}

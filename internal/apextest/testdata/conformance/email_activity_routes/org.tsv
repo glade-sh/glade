@@ -1,0 +1,73 @@
+source_api	route	method	observation
+62.0	anonymous	deletedDefault	{"exception":"System.EmailException","tasks":0}
+62.0	anonymous	deletedPartial	{"codes":["ENTITY_IS_DELETED"],"errors":1,"sent":false,"tasks":0}
+62.0	anonymous	disabledDefault	{"codes":[],"errors":0,"sent":true,"tasks":0}
+62.0	anonymous	disabledPartial	{"codes":[],"errors":0,"sent":true,"tasks":0}
+62.0	anonymous	enabledDefault	{"codes":[],"errors":0,"sent":true,"subject":"Email: Custom activity","tasks":1,"whatMatches":true,"whoMatches":true}
+62.0	anonymous	enabledPartial	{"codes":[],"errors":0,"sent":true,"subject":"Email: Custom activity","tasks":1,"whatMatches":true,"whoMatches":true}
+62.0	anonymous	flowDirectFalse	{"messages":0,"tasks":0}
+62.0	anonymous	flowDirectOmitted	{"messages":0,"tasks":0}
+62.0	anonymous	flowDirectTrue	{"messages":1,"tasks":1}
+62.0	anonymous	flowTriggerSubflowFalse	{"messages":0,"tasks":0}
+62.0	anonymous	flowTriggerSubflowOmitted	{"messages":0,"tasks":0}
+62.0	anonymous	flowTriggerSubflowTrue	{"messages":1,"tasks":1}
+62.0	anonymous	missingDefault	{"exception":"System.EmailException","tasks":0}
+62.0	anonymous	missingPartial	{"codes":["INVALID_CROSS_REFERENCE_KEY"],"errors":1,"sent":false,"tasks":0}
+62.0	anonymous	noActivitiesDefault	{"exception":"System.EmailException","tasks":0}
+62.0	anonymous	noActivitiesPartial	{"codes":["INVALID_ID_FIELD"],"errors":1,"sent":false,"tasks":0}
+62.0	anonymous	rollbackDefault	{"afterRollback":0,"codes":[],"errors":0,"sent":true,"subject":"Email: Custom activity","tasks":1,"whatMatches":true,"whoMatches":true}
+62.0	anonymous	rollbackPartial	{"afterRollback":0,"codes":[],"errors":0,"sent":true,"subject":"Email: Custom activity","tasks":1,"whatMatches":true,"whoMatches":true}
+62.0	isTest	deletedDefault	{"exception":"System.EmailException","tasks":0}
+62.0	isTest	deletedPartial	{"codes":["ENTITY_IS_DELETED"],"errors":1,"sent":false,"tasks":0}
+62.0	isTest	disabledDefault	{"codes":[],"errors":0,"sent":true,"tasks":0}
+62.0	isTest	disabledPartial	{"codes":[],"errors":0,"sent":true,"tasks":0}
+62.0	isTest	enabledDefault	{"codes":[],"errors":0,"sent":true,"subject":"Email: Custom activity","tasks":1,"whatMatches":true,"whoMatches":true}
+62.0	isTest	enabledPartial	{"codes":[],"errors":0,"sent":true,"subject":"Email: Custom activity","tasks":1,"whatMatches":true,"whoMatches":true}
+62.0	isTest	flowDirectFalse	{"messages":0,"tasks":0}
+62.0	isTest	flowDirectOmitted	{"messages":0,"tasks":0}
+62.0	isTest	flowDirectTrue	{"messages":1,"tasks":1}
+62.0	isTest	flowTriggerSubflowFalse	{"messages":0,"tasks":0}
+62.0	isTest	flowTriggerSubflowOmitted	{"messages":0,"tasks":0}
+62.0	isTest	flowTriggerSubflowTrue	{"messages":1,"tasks":1}
+62.0	isTest	missingDefault	{"exception":"System.EmailException","tasks":0}
+62.0	isTest	missingPartial	{"codes":["INVALID_CROSS_REFERENCE_KEY"],"errors":1,"sent":false,"tasks":0}
+62.0	isTest	noActivitiesDefault	{"exception":"System.EmailException","tasks":0}
+62.0	isTest	noActivitiesPartial	{"codes":["INVALID_ID_FIELD"],"errors":1,"sent":false,"tasks":0}
+62.0	isTest	rollbackDefault	{"afterRollback":0,"codes":[],"errors":0,"sent":true,"subject":"Email: Custom activity","tasks":1,"whatMatches":true,"whoMatches":true}
+62.0	isTest	rollbackPartial	{"afterRollback":0,"codes":[],"errors":0,"sent":true,"subject":"Email: Custom activity","tasks":1,"whatMatches":true,"whoMatches":true}
+67.0	anonymous	deletedDefault	{"exception":"System.EmailException","tasks":0}
+67.0	anonymous	deletedPartial	{"codes":["ENTITY_IS_DELETED"],"errors":1,"sent":false,"tasks":0}
+67.0	anonymous	disabledDefault	{"codes":[],"errors":0,"sent":true,"tasks":0}
+67.0	anonymous	disabledPartial	{"codes":[],"errors":0,"sent":true,"tasks":0}
+67.0	anonymous	enabledDefault	{"codes":[],"errors":0,"sent":true,"subject":"Email: Custom activity","tasks":1,"whatMatches":true,"whoMatches":true}
+67.0	anonymous	enabledPartial	{"codes":[],"errors":0,"sent":true,"subject":"Email: Custom activity","tasks":1,"whatMatches":true,"whoMatches":true}
+67.0	anonymous	flowDirectFalse	{"messages":0,"tasks":0}
+67.0	anonymous	flowDirectOmitted	{"messages":0,"tasks":0}
+67.0	anonymous	flowDirectTrue	{"messages":1,"tasks":1}
+67.0	anonymous	flowTriggerSubflowFalse	{"messages":0,"tasks":0}
+67.0	anonymous	flowTriggerSubflowOmitted	{"messages":0,"tasks":0}
+67.0	anonymous	flowTriggerSubflowTrue	{"messages":1,"tasks":1}
+67.0	anonymous	missingDefault	{"exception":"System.EmailException","tasks":0}
+67.0	anonymous	missingPartial	{"codes":["INVALID_CROSS_REFERENCE_KEY"],"errors":1,"sent":false,"tasks":0}
+67.0	anonymous	noActivitiesDefault	{"exception":"System.EmailException","tasks":0}
+67.0	anonymous	noActivitiesPartial	{"codes":["INVALID_ID_FIELD"],"errors":1,"sent":false,"tasks":0}
+67.0	anonymous	rollbackDefault	{"afterRollback":0,"codes":[],"errors":0,"sent":true,"subject":"Email: Custom activity","tasks":1,"whatMatches":true,"whoMatches":true}
+67.0	anonymous	rollbackPartial	{"afterRollback":0,"codes":[],"errors":0,"sent":true,"subject":"Email: Custom activity","tasks":1,"whatMatches":true,"whoMatches":true}
+67.0	isTest	deletedDefault	{"exception":"System.EmailException","tasks":0}
+67.0	isTest	deletedPartial	{"codes":["ENTITY_IS_DELETED"],"errors":1,"sent":false,"tasks":0}
+67.0	isTest	disabledDefault	{"codes":[],"errors":0,"sent":true,"tasks":0}
+67.0	isTest	disabledPartial	{"codes":[],"errors":0,"sent":true,"tasks":0}
+67.0	isTest	enabledDefault	{"codes":[],"errors":0,"sent":true,"subject":"Email: Custom activity","tasks":1,"whatMatches":true,"whoMatches":true}
+67.0	isTest	enabledPartial	{"codes":[],"errors":0,"sent":true,"subject":"Email: Custom activity","tasks":1,"whatMatches":true,"whoMatches":true}
+67.0	isTest	flowDirectFalse	{"messages":0,"tasks":0}
+67.0	isTest	flowDirectOmitted	{"messages":0,"tasks":0}
+67.0	isTest	flowDirectTrue	{"messages":1,"tasks":1}
+67.0	isTest	flowTriggerSubflowFalse	{"messages":0,"tasks":0}
+67.0	isTest	flowTriggerSubflowOmitted	{"messages":0,"tasks":0}
+67.0	isTest	flowTriggerSubflowTrue	{"messages":1,"tasks":1}
+67.0	isTest	missingDefault	{"exception":"System.EmailException","tasks":0}
+67.0	isTest	missingPartial	{"codes":["INVALID_CROSS_REFERENCE_KEY"],"errors":1,"sent":false,"tasks":0}
+67.0	isTest	noActivitiesDefault	{"exception":"System.EmailException","tasks":0}
+67.0	isTest	noActivitiesPartial	{"codes":["INVALID_ID_FIELD"],"errors":1,"sent":false,"tasks":0}
+67.0	isTest	rollbackDefault	{"afterRollback":0,"codes":[],"errors":0,"sent":true,"subject":"Email: Custom activity","tasks":1,"whatMatches":true,"whoMatches":true}
+67.0	isTest	rollbackPartial	{"afterRollback":0,"codes":[],"errors":0,"sent":true,"subject":"Email: Custom activity","tasks":1,"whatMatches":true,"whoMatches":true}

@@ -1,0 +1,23 @@
+api	route	case	outcome	diagnostic
+62.0	deploy	sales_item_enum	accepted	""
+67.0	deploy	sales_item_enum	accepted	""
+62.0	deploy	cart_item_constructor	accepted	""
+67.0	deploy	cart_item_constructor	accepted	""
+62.0	anonymous	cart_item_list_constructor	rejected	Constructor not defined: [CartExtension.CartItemList].<Constructor>()
+67.0	anonymous	cart_item_list_constructor	rejected	Constructor not defined: [CartExtension.CartItemList].<Constructor>()
+62.0	deploy	cart_item_list_constructor	rejected	Constructor not defined: [CartExtension.CartItemList].<Constructor>()
+67.0	deploy	cart_item_list_constructor	rejected	Constructor not defined: [CartExtension.CartItemList].<Constructor>()
+62.0	deploy	cart_item_list_calls	accepted	""
+67.0	deploy	cart_item_list_calls	accepted	""
+62.0	deploy	cart_item_list_commerce_argument	accepted	""
+67.0	deploy	cart_item_list_commerce_argument	accepted	""
+62.0	deploy	commerce_object_assignability	accepted	""
+67.0	deploy	commerce_object_assignability	accepted	""
+62.0	deploy	cart_item_list_wrong_argument	rejected	Method does not exist or incorrect signature: void add(String) from the type CartExtension.CartItemList
+67.0	deploy	cart_item_list_wrong_argument	rejected	Method does not exist or incorrect signature: void add(String) from the type CartExtension.CartItemList
+62.0	deploy	cart_item_list_iteration	rejected	Loop must iterate over collection: CartExtension.CartItemList
+67.0	deploy	cart_item_list_iteration	rejected	Loop must iterate over collection: CartExtension.CartItemList
+62.0	istest	cart_item_runtime	observed	itemType=PRODUCT;itemName=Garden item
+67.0	istest	cart_item_runtime	observed	itemType=PRODUCT;itemName=Garden item
+62.0	istest	cart_item_list_runtime	observed	enumValues=[PRODUCT,CHARGE];productOrdinal=0;chargeOrdinal=1;emptyBefore=false;sizeBefore=1;sizeAfterAdd=2;sameItem=false;indexOfItem=1;iteratorHasNext=true;iteratorItemNames=[My Cart Item,Garden item];iteratorHasNextAfterLast=false;sizeAfterRemove=1;emptyAfterRemove=false;sizeAfterClear=0;emptyAfterClear=true
+67.0	istest	cart_item_list_runtime	observed	enumValues=[PRODUCT,CHARGE];productOrdinal=0;chargeOrdinal=1;emptyBefore=false;sizeBefore=1;sizeAfterAdd=2;sameItem=false;indexOfItem=1;iteratorHasNext=true;iteratorItemNames=[My Cart Item,Garden item];iteratorHasNextAfterLast=false;sizeAfterRemove=1;emptyAfterRemove=false;sizeAfterClear=0;emptyAfterClear=true

@@ -175,7 +175,7 @@ run_json_with_heartbeat() {
 	testlog_status_files+=("${status_file}")
 	echo "::group::${label}"
 	printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS:-default}"
-	printf '+ go test -json -vet=off'
+	printf '+ go test -json -vet=off -trimpath'
 	printf ' %q' "$@"
 	printf ' | testlog -output %q\n' "${artifact}"
 
@@ -186,9 +186,9 @@ run_json_with_heartbeat() {
 			test_command=(/usr/bin/time -l -o "${artifact%.json}.time.txt" go)
 		fi
 		if [[ -n "${CI_TEST_BIN_DIR:-}" ]]; then
-			python3 "${script_dir}/ci-test-binary.py" test -json -vet=off "$@"
+			python3 "${script_dir}/ci-test-binary.py" test -json -vet=off -trimpath "$@"
 		else
-			"${test_command[@]}" test -json -vet=off "$@"
+			"${test_command[@]}" test -json -vet=off -trimpath "$@"
 		fi | tee "${artifact}" | run_testlog_renderer
 		pipeline_status=("${PIPESTATUS[@]}")
 		printf '%s %s %s\n' "${pipeline_status[0]}" "${pipeline_status[1]}" "${pipeline_status[2]}" >"${status_file}"
@@ -450,10 +450,10 @@ run_node_integration() {
 	printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS:-default}"
 	# These packages can install into the same user toolchain directory. Run
 	# their test binaries serially so installation cannot reset another's files.
-	printf '+ go test -json -vet=off -p=1 -count=1 -timeout=30m -run %q ./internal/gladecli ./internal/gladehome ./internal/lwc/compile ./internal/lwcbrowser ./internal/server | testlog -output %q\n' "${node_integration_run_regex}" "${events_path}"
+	printf '+ go test -json -vet=off -p=1 -count=1 -timeout=30m -trimpath -run %q ./internal/gladecli ./internal/gladehome ./internal/lwc/compile ./internal/lwcbrowser ./internal/server | testlog -output %q\n' "${node_integration_run_regex}" "${events_path}"
 	(
 		set +e
-		go test -json -vet=off -p=1 -count=1 -timeout=30m -run "${node_integration_run_regex}" ./internal/gladecli ./internal/gladehome ./internal/lwc/compile ./internal/lwcbrowser ./internal/server | tee "${events_path}" | run_testlog_renderer
+		go test -json -vet=off -p=1 -count=1 -timeout=30m -trimpath -run "${node_integration_run_regex}" ./internal/gladecli ./internal/gladehome ./internal/lwc/compile ./internal/lwcbrowser ./internal/server | tee "${events_path}" | run_testlog_renderer
 		pipeline_status=("${PIPESTATUS[@]}")
 		printf '%s %s %s\n' "${pipeline_status[0]}" "${pipeline_status[1]}" "${pipeline_status[2]}" >"${status_file}"
 	) &
@@ -541,6 +541,9 @@ run_named_package_lane() {
 run_ci_package_lane() {
 	local lane="$1"
 	case "${lane}" in
+		workflow-lint)
+			run_json_with_heartbeat "go test workflow-lint" "$(testlog_artifact test workflow-lint)" -count=1 -timeout=3m -run '^TestCIActionlint' ./scripts/ci_actionlint_test.go
+			;;
 		gladecli)
 			run_package_lane "${lane}" test 30m '^(?:TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$'
 			;;
@@ -646,6 +649,17 @@ deferred_dataweave = {
     (module + "/internal/vm", "TestExecDataWeaveRecipeConversionsReturnStructuredValues"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
     (module + "/internal/apextest", "TestRunDataWeaveScriptResourceExecutesRuntimeStub"): (("GLADE_DATAWEAVE_APEX_TEST_HOME",), "requires explicitly installed DataWeave toolchain"),
 }
+# These exact subtests validate captured native rows but deliberately do not
+# replay an unsupported bind boundary. See the left_member rows and local_replay
+# flag in internal/soql/testdata/soql_safe_navigation_bind/case-table.tsv and
+# native/api62/anonymous/org.tsv and native/api67/anonymous/org.tsv.
+# Keep the package, complete subtest identity and emitted reason exact; the
+# parent test and every other skipped row must still fail validation.
+native_boundaries = {
+    (module + "/internal/vm", "TestSOQLSafeNavigationBindNativeConformance/" + api + "/left_member"):
+        "native boundary is captured but outside this bind replay"
+    for api in ("62.0", "67.0")
+}
 summary = {"version": 1, "lane": lane, "label": label, "valid": False,
            "expected": sorted(expected), "passed": [], "errors": [], "deferred": []}
 try:
@@ -684,6 +698,15 @@ try:
                 if action == "fail":
                     failed_tests.append(f"{package}/{test}")
                 if action == "skip":
+                    boundary_cause = native_boundaries.get(identity)
+                    boundary_pattern = (r"\s+\S+_test.go:\d+: " + re.escape(boundary_cause) + r"\s*$"
+                                        if boundary_cause else "")
+                    if boundary_cause and any(re.fullmatch(boundary_pattern, line)
+                            for output in test_output.get(identity, ()) for line in output.splitlines()):
+                        summary["deferred"].append({"package": package, "test": test,
+                            "skipReason": boundary_cause,
+                            "reason": "captured native boundary; local replay is explicitly excluded by the case table"})
+                        continue
                     inputs, cause = deferred_dataweave.get(identity, ((), ""))
                     missing = [name for name in inputs if not os.environ.get(name)]
                     reason_pattern = r"\s+\S+_test.go:\d+: " + re.escape(cause) + r"\s*$"
@@ -802,7 +825,7 @@ run_local_release() {
 	local artifact_root="${CI_LOCAL_RELEASE_ARTIFACT_DIR:-ci-artifacts/local-release}"
 	mkdir -p "${artifact_root}"
 	printf '[ci] local release lanes: jobs=1 artifact_dir=%s\n' "${artifact_root}"
-	run_with_heartbeat "go vet ./..." go vet ./...
+	run_with_heartbeat "go vet ./..." go vet -trimpath ./...
 	run_local_release_lane "repoguard" "guard" 30m "${artifact_root}"
 	run_local_release_lane "gladecli" "cli-ui" 30m "${artifact_root}"
 	run_local_release_lane "sema" "sema" 30m "${artifact_root}"
@@ -817,7 +840,7 @@ run_selected_local_release_lane() {
 	local_release_jobs >/dev/null
 	case "${lane}" in
 		vet)
-			run_with_heartbeat "go vet ./..." go vet ./...
+			run_with_heartbeat "go vet ./..." go vet -trimpath ./...
 			;;
 		guard)
 			run_local_release_lane "repoguard" "guard" 30m "${artifact_root}"
@@ -1147,9 +1170,9 @@ run_test_matrix_shard() {
 
 	set +e
 	if [[ -n "${CI_TEST_BIN_DIR:-}" ]]; then
-		python3 "${script_dir}/ci-test-binary.py" test -list '^Test' "${package_arg}"
+		python3 "${script_dir}/ci-test-binary.py" test -trimpath -list '^Test' "${package_arg}"
 	else
-		GOFLAGS="${GOFLAGS:+${GOFLAGS} }-vet=off" go test -list '^Test' "${package_arg}"
+		go test -vet=off -trimpath -list '^Test' "${package_arg}"
 	fi >"${discovery_raw}" 2>"${discovery_stderr}"
 	discovery_rc="$?"
 	set -e
@@ -1221,12 +1244,13 @@ run_apextest_matrix_shard() {
 		history_path="${CI_APEXTEST_HISTORY_PATH}"
 	fi
 	# The generic runner executes the legacy Apex operations exactly once:
-	# GOFLAGS="${GOFLAGS:+${GOFLAGS} }-vet=off" go test -list '^Test' "${apex_package}"
+	# go test -vet=off -trimpath -list '^Test' "${apex_package}"
 	# planner+=(--history "${CI_APEXTEST_HISTORY_PATH}")
-	# run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=90m -run "${regex}" "${apex_package}"
+	# run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=90m -trimpath -run "${regex}" "${apex_package}"
 	# CI opts into six shards with CI_APEXTEST_SHARDS=6; local helpers default to
-	# two shards. Six CI shards budget about 65 minutes at twice the observed aggregate
-	# work per shard. Allow 90 minutes for cold history and runner variance.
+	# two shards. About 280 measured-plan Apex minutes plus 25% test growth
+	# estimates 58 minutes per CI shard, or 87 with a 1.5x margin.
+	# Allow 90 minutes for cold history and runner variance.
 	# Local release trains retain their established two-shard partition.
 	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/apextest" "./internal/apextest" "apextest" "${label}" "${CI_APEXTEST_ARTIFACT_DIR:-ci-artifacts/apextest-${artifact_suffix}}" "${history_path}" "0" "${mode}" "${shard_count}"
 }
@@ -1486,17 +1510,19 @@ try:
         reject("passing and deferred terminal union does not exactly match all discovered tests")
     import statistics
     median = statistics.median(shard_elapsed)
-    # Preserve the two-shard Apex/sema balance gate. A validated PR sema
-    # imbalance is advisory so first-run timings can seed the next plan.
-    # Push and scheduled runs keep the strict balance gate. LWC's indivisible long
-    # tests can exceed 1.5x its eight-shard median even with an optimal plan;
+    # PR runner timing is advisory after all evidence checks pass; retain
+    # observed durations for scheduling without failing a PR on runner noise.
+    # The advisory is a ::warning:: annotation. Apex and sema enforce balance
+    # at every shard count outside PRs.
+    # LWC's indivisible long tests can exceed 1.5x its eight-shard median
+    # even with an optimal plan;
     # rejecting that evidence would prevent the next run from balancing it.
-    if SHARD_COUNT == 2:
+    if PACKAGE in ("github.com/glade-sh/glade/internal/apextest", "github.com/glade-sh/glade/internal/sema"):
         for index, elapsed in enumerate(shard_elapsed):
             if elapsed > 1.5 * median:
-                message = f"shard {index} elapsed {elapsed:.6f}s exceeds 1.5x two-shard median {median:.6f}s"
-                if PACKAGE == "github.com/glade-sh/glade/internal/sema" and os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
-                    print(f"::warning::{LABEL} duration history balance: {message}; retaining validated PR timings")
+                message = f"shard {index} elapsed {elapsed:.6f}s exceeds 1.5x {SHARD_COUNT}-shard median {median:.6f}s"
+                if os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
+                    print(f"::warning::[ci] {LABEL} duration history timing advisory: {message}", file=sys.stderr)
                 else:
                     reject(message)
 
@@ -1630,7 +1656,7 @@ run_sema_full() {
 		package_arg="${packages[0]}"
 	fi
 	set +e
-	GOFLAGS="${GOFLAGS:+${GOFLAGS} }-vet=off" go test -list '^Test' "${package_arg}" >"${discovery_raw}" 2>"${discovery_stderr}"
+	go test -vet=off -trimpath -list '^Test' "${package_arg}" >"${discovery_raw}" 2>"${discovery_stderr}"
 	discovery_rc="$?"
 	set -e
 	[[ ! -s "${discovery_stderr}" ]] || cat "${discovery_stderr}" >&2
@@ -1753,7 +1779,7 @@ main() {
 			;;
 		lane)
 			if [[ "$#" -ne 2 ]]; then
-				echo "usage: scripts/ci-go-test.sh lane {gladecli|sema|server-and-playground|repoguard|remaining-go}" >&2
+				echo "usage: scripts/ci-go-test.sh lane {workflow-lint|gladecli|sema|server-and-playground|repoguard|remaining-go}" >&2
 				return 2
 			fi
 			run_ci_package_lane "$2"

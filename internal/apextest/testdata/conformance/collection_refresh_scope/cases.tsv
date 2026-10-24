@@ -1,0 +1,3 @@
+case	observation
+owned_graph	32 lists retained only by owner; first and last mutations visible
+escaped_graph	list retained by a second receiver sees append

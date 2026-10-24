@@ -87,12 +87,18 @@ func compileGateIdentifierByte(ch byte) bool {
 type compileGateRefWalker struct {
 	source string
 	units  compileGateUnits
+	// schema enables object references in queries and the Schema namespace;
+	// the ordinary class-dependency walk keeps its existing binding rules.
+	schema bool
 	refs   []string
 	seen   map[string]bool
 	// classes holds the enclosing type declarations, innermost last.
 	classes []compileGateClassScope
 	// scopes holds variable names in scope, innermost last.
 	scopes []map[string]bool
+	// Schema relationship receivers also need the types of lexical bindings.
+	bindings        []map[string]string
+	declarationType string
 }
 
 type compileGateClassScope struct {
@@ -126,10 +132,12 @@ func (w *compileGateRefWalker) push(vars map[string]bool) {
 		vars = make(map[string]bool)
 	}
 	w.scopes = append(w.scopes, vars)
+	w.bindings = append(w.bindings, make(map[string]string))
 }
 
 func (w *compileGateRefWalker) pop() {
 	w.scopes = w.scopes[:len(w.scopes)-1]
+	w.bindings = w.bindings[:len(w.bindings)-1]
 }
 
 func (w *compileGateRefWalker) declare(node apexast.ASTNode) {
@@ -137,6 +145,9 @@ func (w *compileGateRefWalker) declare(node apexast.ASTNode) {
 		w.push(nil)
 	}
 	w.scopes[len(w.scopes)-1][w.lowerText(node)] = true
+	if w.schema {
+		w.bindings[len(w.bindings)-1][w.lowerText(node)] = w.declarationType
+	}
 }
 
 func (w *compileGateRefWalker) isVariable(name string) bool {
@@ -161,6 +172,11 @@ func (w *compileGateRefWalker) innerType(name string) bool {
 
 // typeName records name when it binds to a project top-level class.
 func (w *compileGateRefWalker) typeName(name string) {
+	if w.schema {
+		if _, isClass := w.units.types[name]; isClass {
+			return
+		}
+	}
 	if w.innerType(name) {
 		return
 	}
@@ -171,6 +187,10 @@ func (w *compileGateRefWalker) typeName(name string) {
 
 // namespace reports whether name can only be the project namespace prefix.
 func (w *compileGateRefWalker) namespace(name string) bool {
+	if w.schema && strings.EqualFold(name, "Schema") && !w.isVariable(name) && !w.innerType(name) {
+		_, isClass := w.units.types[name]
+		return !isClass
+	}
 	if w.units.namespace == "" || !strings.EqualFold(name, w.units.namespace) || w.isVariable(name) || w.innerType(name) {
 		return false
 	}
@@ -200,7 +220,15 @@ func (w *compileGateRefWalker) walk(node apexast.ASTNode) {
 	case "method_invocation":
 		w.walkInvocation(node)
 	case "query_expression":
+		if w.schema {
+			w.walkSchemaQuery(node)
+		}
 		w.walkQueryBinds(node)
+	case "local_variable_declaration", "field_declaration", "constant_declaration", "property_declaration":
+		previous := w.declarationType
+		w.declarationType = w.schemaDeclarationType(node)
+		w.walkChildren(node)
+		w.declarationType = previous
 	case "variable_declarator":
 		for i, child := range node.Children {
 			if i == 0 && child.Kind == "identifier" {
@@ -210,6 +238,8 @@ func (w *compileGateRefWalker) walk(node apexast.ASTNode) {
 			w.walk(child)
 		}
 	case "formal_parameter", "when_sobject_type":
+		previous := w.declarationType
+		w.declarationType = w.schemaDeclarationType(node)
 		for _, child := range node.Children {
 			if child.Kind == "identifier" {
 				w.declare(child)
@@ -217,8 +247,11 @@ func (w *compileGateRefWalker) walk(node apexast.ASTNode) {
 			}
 			w.walk(child)
 		}
+		w.declarationType = previous
 	case "enhanced_for_statement":
 		w.push(nil)
+		previous := w.declarationType
+		w.declarationType = w.schemaDeclarationType(node)
 		declared := false
 		for _, child := range node.Children {
 			if child.Kind == "identifier" && !declared {
@@ -229,12 +262,16 @@ func (w *compileGateRefWalker) walk(node apexast.ASTNode) {
 			w.walk(child)
 		}
 		w.pop()
+		w.declarationType = previous
 	case "accessor_declaration":
 		// A setter has the implicit parameter value, which binds before a
 		// class named Value.
 		w.push(nil)
 		if w.setter(node) {
 			w.scopes[len(w.scopes)-1]["value"] = true
+			if w.schema {
+				w.bindings[len(w.bindings)-1]["value"] = w.declarationType
+			}
 		}
 		w.walkChildren(node)
 		w.pop()
@@ -355,7 +392,11 @@ func (w *compileGateRefWalker) walkScopedType(node apexast.ASTNode) {
 	first := w.lowerText(parts[0])
 	if len(parts) > 1 && w.namespace(first) {
 		if _, ok := w.units.fileOf[w.lowerText(parts[1])]; ok {
-			w.add(w.lowerText(parts[1]))
+			if w.schema && first != "schema" {
+				w.typeName(w.lowerText(parts[1]))
+			} else {
+				w.add(w.lowerText(parts[1]))
+			}
 		}
 		return
 	}
@@ -383,12 +424,20 @@ func (w *compileGateRefWalker) walkQualified(node apexast.ASTNode) {
 	if len(node.Children) == 0 {
 		return
 	}
+	if w.schema {
+		w.schemaObjectToken(node)
+		w.schemaRelationshipAccess(node)
+	}
 	object := node.Children[0]
 	if object.Kind == "identifier" && w.namespace(w.lowerText(object)) {
 		for _, child := range node.Children[1:] {
 			if child.Kind == "identifier" {
 				if name := w.lowerText(child); w.units.fileOf[name] != "" {
-					w.add(name)
+					if w.schema && w.lowerText(object) != "schema" {
+						w.typeName(name)
+					} else {
+						w.add(name)
+					}
 				}
 				break
 			}

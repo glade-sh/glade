@@ -1,0 +1,1 @@
+@IsTest private class HeapIdentity67Test { @IsTest static void observe() { System.assert(false,'P|HEAP|'+HeapIdentity67.observe()); } }

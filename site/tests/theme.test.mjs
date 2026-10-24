@@ -27,6 +27,7 @@ const siteReadme = await readFile(new URL("../README.md", import.meta.url), "utf
 const pagesWorkflow = await readFile(new URL("../../.github/workflows/pages.yml", import.meta.url), "utf8").catch(() => "");
 const ciWorkflow = await readFile(new URL("../../.github/workflows/ci.yml", import.meta.url), "utf8");
 const releaseWorkflow = await readFile(new URL("../../.github/workflows/release.yml", import.meta.url), "utf8");
+const codeqlWorkflow = await readFile(new URL("../../.github/workflows/codeql.yml", import.meta.url), "utf8").catch(() => "");
 const securityWorkflow = await readFile(new URL("../../.github/workflows/security.yml", import.meta.url), "utf8").catch(() => "");
 const agentGuide = await readFile(new URL("../../AGENTS.md", import.meta.url), "utf8");
 const repoGitignore = await readFile(new URL("../../.gitignore", import.meta.url), "utf8");
@@ -203,6 +204,10 @@ test("launch docs identify v0.3.0 and retain historical release notes", () => {
   assert.match(currentText, /JSON schema advances to `1\.1`/);
   assert.match(currentText, /readinessScope: "apex"/);
   assert.match(currentText, /Salesforce was not contacted/);
+  const unreleased = releaseNotes.match(/^## Unreleased\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+(?:[ \t].*)?$)/m);
+  assert.ok(unreleased, "release notes should contain an Unreleased section");
+  assert.doesNotMatch(unreleased[1], /^## /m);
+  assert.match(releaseNotes, /^## v0\.3\.0(?: - \d{4}-\d{2}-\d{2})?$/m);
 
   const candidate = releaseNotes.match(/^## v0\.2\.15 - 2026-09-04\s+([\s\S]*?)(?=^## v\d+\.\d+\.\d+ - )/m);
   assert.ok(candidate, "release notes should contain a v0.2.15 section");
@@ -745,13 +750,16 @@ test("security and release trust claims stay linked to repository proof", () => 
 
   assert.match(securityWorkflow, /name: Security/);
   assert.match(securityWorkflow, /golang\.org\/x\/vuln\/cmd\/govulncheck@v1\.6\.0/);
-  assert.match(securityWorkflow, /github\/codeql-action\/init@[0-9a-f]{40}/);
-  assert.match(securityWorkflow, /- uses: security-extended/);
-  assert.match(securityWorkflow, /codeql:\n    name: CodeQL\n    runs-on: ubuntu-latest\n(?:    #[^\n]*\n)*    timeout-minutes: 100\n/);
-  assert.match(securityWorkflow, /- name: Analyze CodeQL\n        timeout-minutes: 90\n/);
-  assert.match(securityWorkflow, /- go\/allocation-size-overflow/);
-  assert.match(securityWorkflow, /- go\/incorrect-integer-conversion/);
-  assert.match(securityWorkflow, /github\/codeql-action\/analyze@[0-9a-f]{40}/);
+  assert.match(codeqlWorkflow, /github\/codeql-action\/init@[0-9a-f]{40}/);
+  assert.match(codeqlWorkflow, /- uses: security-extended/);
+  assert.match(codeqlWorkflow, /timeout-minutes: 15/);
+  assert.match(codeqlWorkflow, /- name: Analyze CodeQL\n        id: analyze\n        timeout-minutes: 6\n/);
+  assert.match(codeqlWorkflow, /python3 scripts\/ci-codeql.py analyze/);
+  assert.match(codeqlWorkflow, /- go\/allocation-size-overflow/);
+  assert.match(codeqlWorkflow, /- go\/incorrect-integer-conversion/);
+  assert.match(codeqlWorkflow, /github\/codeql-action\/upload-sarif@[0-9a-f]{40}/);
+  assert.match(ciWorkflow, /uses: \.\/\.github\/workflows\/codeql.yml/);
+  assert.match(securityWorkflow, /profile: full/);
   assert.match(securityWorkflow, /securego\/gosec@/);
   assert.match(securityWorkflow, /upload-sarif/);
   assert.match(securityWorkflow, /npm audit --omit=dev --audit-level=high/);

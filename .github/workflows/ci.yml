@@ -23,6 +23,49 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  codeql:
+    name: CodeQL
+    uses: ./.github/workflows/codeql.yml
+    with:
+      profile: fast
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+  workflow-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    env:
+      GOMAXPROCS: "2"
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.10"
+          cache: false
+      - name: Install checksum-pinned actionlint
+        run: |
+          scripts/install-actionlint.sh "$RUNNER_TEMP/actionlint"
+          echo "$RUNNER_TEMP/actionlint" >> "$GITHUB_PATH"
+      - name: Test workflow validation routes offline
+        run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-workflow-lint.json workflow-lint -- scripts/ci-go-test.sh lane workflow-lint
+      - name: Validate repository workflows
+        run: scripts/ci-actionlint.sh
+      - name: Upload raw workflow validation test events
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: go-test-workflow-lint
+          path: |
+            ci-artifacts/go-test/test-workflow-lint.json
+            ci-artifacts/go-test/resource-workflow-lint.json
+          if-no-files-found: error
+
   site:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     runs-on: ubuntu-latest
@@ -117,7 +160,7 @@ jobs:
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
       - name: Check cache workflow invariants
         run: scripts/ci-cache-check.sh
-      - run: go vet ./...
+      - run: go vet -trimpath ./...
       - name: Save Go module cache
         if: success()
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -295,9 +338,9 @@ jobs:
         with:
           node-version: "22"
       - name: Test vendored parser
-        run: (cd third_party/glade-apex-parser && go test ./...)
+        run: (cd third_party/glade-apex-parser && go test -trimpath ./...)
       - name: Test vendored parser without CGO
-        run: (cd third_party/glade-apex-parser && CGO_ENABLED=0 go test ./...)
+        run: (cd third_party/glade-apex-parser && CGO_ENABLED=0 go test -trimpath ./...)
       - name: Install playground
         run: npm ci --prefix internal/playground/web
       - name: Test playground
@@ -1291,6 +1334,8 @@ jobs:
   required-ci:
     name: Required CI
     needs:
+      - codeql
+      - workflow-lint
       - site
       - test-binaries
       - vet

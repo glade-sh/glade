@@ -2384,9 +2384,16 @@ func (p *parser) parsePrimaryCondition(allowNot bool) (Condition, error) {
 	if err != nil {
 		return Condition{}, err
 	}
+	formula, err := parseWhereFormula(field)
+	if err != nil {
+		return Condition{}, err
+	}
 	op, err := p.parseOperator(field)
 	if err != nil {
 		return Condition{}, err
+	}
+	if formula != nil && op != "=" && op != "!=" && op != ">" && op != ">=" && op != "<" && op != "<=" {
+		return Condition{}, unexpectedToken(op, "FORMULA requires a comparison operator")
 	}
 	if p.bindColumns != nil {
 		operandStart := p.pos
@@ -2472,7 +2479,7 @@ func (p *parser) parsePrimaryCondition(allowNot bool) (Condition, error) {
 			return Condition{Or: conditions}, nil
 		}
 	}
-	return Condition{Field: field, Op: op, Value: value, Value2: value2, Range: isRange, DateLiteralTimeZoneID: p.dateLiteralTimeZoneID}, nil
+	return Condition{Field: field, Formula: formula, Op: op, Value: value, Value2: value2, Range: isRange, DateLiteralTimeZoneID: p.dateLiteralTimeZoneID}, nil
 }
 
 func anyRange(ranges []bool) bool {
@@ -2488,6 +2495,16 @@ func (p *parser) parseConditionField() (string, error) {
 	field, err := p.parseName()
 	if err != nil {
 		return "", err
+	}
+	if strings.EqualFold(field, "FORMULA") && p.match("(") {
+		arg := p.advance().text
+		if len(arg) < 2 || arg[0] != '\'' || arg[len(arg)-1] != '\'' {
+			return "", unexpectedToken(arg, "FORMULA requires a quoted expression")
+		}
+		if !p.match(")") {
+			return "", unexpectedToken(p.peek().text, "FORMULA requires one expression")
+		}
+		return "FORMULA(" + arg + ")", nil
 	}
 	if isSelectFieldFunction(field) && p.match("(") {
 		args, err := p.parseFunctionArgs()
@@ -3132,6 +3149,8 @@ func validateISODateTimeToken(query string, start int, text string) error {
 		message = "unexpected token: ':'"
 		lexerMessage = fmt.Sprintf("required (...)+ loop did not match anything at character '%c'", text[20])
 		lexerOffset = 20
+	} else if !strings.HasSuffix(text, "Z") && !hasDateTimeZoneOffset(text) {
+		message = "unexpected token: ':'"
 	} else if _, valid := parseISODateTime(text); valid {
 		return nil
 	} else if offset := strings.LastIndexAny(text[19:], "+-"); offset >= 0 {

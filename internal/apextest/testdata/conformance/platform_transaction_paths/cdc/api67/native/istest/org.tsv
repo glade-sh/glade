@@ -1,0 +1,5 @@
+id	group	route	status	value
+C01	cdc	istest	runtime	{"after":0,"before":0,"exception":null,"static":0}
+C02	cdc	istest	runtime	{"after":1,"before":0,"exception":null,"static":1}
+C03	cdc	istest	runtime	{"after":1,"before":0,"exception":null,"static":1}
+C04	cdc	istest	runtime	{"after":0,"before":0,"exception":null,"static":0}

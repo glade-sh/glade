@@ -286,6 +286,9 @@ func nativeLifecycleMissingMethodMessage(model *semaTypeMemberView, owner typesy
 		}
 	}
 	signature := nativeLifecycleSignature(methodOwner, required)
+	if declaringType, ok := model.lookupName(requirement.owner); ok && declaringType.platform && requirement.sourceKind == "abstract" {
+		signature = nativeLifecycleSignatureWithSeparator(methodOwner, required, ", ")
+	}
 	if requirement.sourceKind == "interface" {
 		for _, implementation := range owner.Members {
 			if implementation.Kind != apexast.DeclarationMethod {
@@ -307,11 +310,15 @@ func nativeLifecycleMissingMethodMessage(model *semaTypeMemberView, owner typesy
 }
 
 func nativeLifecycleSignature(owner string, member typesys.MemberSymbol) string {
+	return nativeLifecycleSignatureWithSeparator(owner, member, ",")
+}
+
+func nativeLifecycleSignatureWithSeparator(owner string, member typesys.MemberSymbol, separator string) string {
 	args := make([]string, len(member.Parameters))
 	for i, p := range member.Parameters {
 		args[i] = p.Type
 	}
-	return fmt.Sprintf("%s %s.%s(%s)", member.Type, owner, member.Name, strings.Join(args, ","))
+	return fmt.Sprintf("%s %s.%s(%s)", member.Type, owner, member.Name, strings.Join(args, separator))
 }
 
 func nativeIRConstructorDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, display, target string, argTypes []string, namedCount int, ambiguous, platform bool, start, end int, source string) diagnostic.Diagnostic {

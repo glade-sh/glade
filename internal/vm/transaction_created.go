@@ -34,11 +34,14 @@ func (checkpoint recordCreationCheckpoint) restore() {
 }
 
 func (vm *VM) beginRecordCreationTransaction() func() {
+	previousCallouts := vm.calloutPendingWork
+	vm.calloutPendingWork = calloutPendingWork{}
 	previous := vm.recordCreations
 	previousLookupScope := vm.lookupHistoryScope
 	vm.recordCreations = &dml.RecordCreations{}
 	vm.lookupHistoryScope = storage.NewLookupHistoryScope()
 	return func() {
+		vm.calloutPendingWork = previousCallouts
 		vm.recordCreations = previous
 		vm.lookupHistoryScope = previousLookupScope
 	}
