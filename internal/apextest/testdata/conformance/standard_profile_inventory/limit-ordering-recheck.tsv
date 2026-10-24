@@ -1,0 +1,13 @@
+source_api	configuration	route	case_id	observation
+62.0	communities_feature	anonymous	limited	[{"license":"Salesforce","name":"System Administrator"}]
+62.0	communities_feature	isTest	limited	[{"license":"Salesforce","name":"System Administrator"}]
+63.0	communities_feature	anonymous	limited	[{"license":"Salesforce","name":"System Administrator"}]
+63.0	communities_feature	isTest	limited	[{"license":"Salesforce","name":"System Administrator"}]
+64.0	communities_feature	anonymous	limited	[{"license":"Salesforce","name":"System Administrator"}]
+64.0	communities_feature	isTest	limited	[{"license":"Salesforce","name":"System Administrator"}]
+65.0	communities_feature	anonymous	limited	[{"license":"Salesforce","name":"System Administrator"}]
+65.0	communities_feature	isTest	limited	[{"license":"Salesforce","name":"System Administrator"}]
+66.0	communities_feature	anonymous	limited	[{"license":"Salesforce","name":"System Administrator"}]
+66.0	communities_feature	isTest	limited	[{"license":"Salesforce","name":"System Administrator"}]
+67.0	communities_feature	anonymous	limited	[{"license":"Salesforce","name":"System Administrator"}]
+67.0	communities_feature	isTest	limited	[{"license":"Salesforce","name":"System Administrator"}]

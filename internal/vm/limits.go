@@ -196,6 +196,9 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 		vm.limits.QueryRows += delta
 		return vm.checkLimit(name, vm.limits.QueryRows, vm.limitCaps.QueryRows)
 	case "dmlStatements":
+		if delta > 0 {
+			vm.calloutPendingWork.pending = true
+		}
 		vm.limits.DMLStatements += delta
 		return vm.checkLimit(name, vm.limits.DMLStatements, vm.limitCaps.DMLStatements)
 	case "dmlRows":

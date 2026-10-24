@@ -1,5 +1,5 @@
 context=istest
-transport=intentional result-bearing assertion; not native test-pass credit
+transport=System.assert
 api=62.0
 source_sha256:62.0:force-app/main/default/classes/HazelRoutingObservationTest.cls=0606ca321c34691725951dfe509353f41b6942c13fdf2df841d4cad9514d0544
 source_sha256:62.0:force-app/main/default/classes/HazelRoutingObservationTest.cls-meta.xml=51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d

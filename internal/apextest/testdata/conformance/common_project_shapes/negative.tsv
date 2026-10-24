@@ -1,0 +1,5 @@
+source_api	route	accepted	diagnostic
+62.0	project	false	Invalid type: AbsentGardenType
+62.0	anonymous	false	Invalid type: AbsentGardenType
+67.0	project	false	Invalid type: AbsentGardenType
+67.0	anonymous	false	Invalid type: AbsentGardenType

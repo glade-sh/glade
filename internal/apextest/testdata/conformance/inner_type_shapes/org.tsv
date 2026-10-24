@@ -1,0 +1,85 @@
+id	api	route	compiled	success	outcome
+inherited_static	62.0	anonymous	true	true	10
+inherited_static	62.0	isTest	true	true	10
+inherited_static	67.0	anonymous	true	true	10
+inherited_static	67.0	isTest	true	true	10
+enum_receivers	62.0	anonymous	true	true	"""NONE1ERRORNONE2ERROR"""
+enum_receivers	62.0	isTest	true	true	"""NONE1ERRORNONE2ERROR"""
+enum_receivers	67.0	anonymous	true	true	"""NONE1ERRORNONE2ERROR"""
+enum_receivers	67.0	isTest	true	true	"""NONE1ERRORNONE2ERROR"""
+enum_sibling	62.0	anonymous	true	true	"""ERROR"""
+enum_sibling	62.0	isTest	true	true	"""ERROR"""
+enum_sibling	67.0	anonymous	true	true	"""ERROR"""
+enum_sibling	67.0	isTest	true	true	"""ERROR"""
+enum_comparison_switch	62.0	anonymous	true	true	"""trueE"""
+enum_comparison_switch	62.0	isTest	true	true	"""trueE"""
+enum_comparison_switch	67.0	anonymous	true	true	"""trueE"""
+enum_comparison_switch	67.0	isTest	true	true	"""trueE"""
+system_named_types	62.0	anonymous	true	true	"""B2CapSys.Request1"""
+system_named_types	62.0	isTest	true	true	"""B2CapSys.Request1"""
+system_named_types	67.0	anonymous	true	true	"""B2CapSys.Request1"""
+system_named_types	67.0	isTest	true	true	"""B2CapSys.Request1"""
+system_enum_constant	62.0	anonymous	true	true	"""publish"""
+system_enum_constant	62.0	isTest	true	true	"""publish"""
+system_enum_constant	67.0	anonymous	true	true	"""publish"""
+system_enum_constant	67.0	isTest	true	true	"""publish"""
+qualified_enum_factories	62.0	anonymous	true	true	"""2ERROR"""
+qualified_enum_factories	62.0	isTest	true	true	"""2ERROR"""
+qualified_enum_factories	67.0	anonymous	true	true	"""2ERROR"""
+qualified_enum_factories	67.0	isTest	true	true	"""2ERROR"""
+static_field_chain	62.0	anonymous	true	true	"""A"""
+static_field_chain	62.0	isTest	true	true	"""A"""
+static_field_chain	67.0	anonymous	true	true	"""A"""
+static_field_chain	67.0	isTest	true	true	"""A"""
+simple_instanceof	62.0	anonymous	true	true	true
+simple_instanceof	62.0	isTest	true	true	true
+simple_instanceof	67.0	anonymous	true	true	true
+simple_instanceof	67.0	isTest	true	true	true
+simple_cast	62.0	anonymous	true	true	true
+simple_cast	62.0	isTest	true	true	true
+simple_cast	67.0	anonymous	true	true	true
+simple_cast	67.0	isTest	true	true	true
+qualified_instanceof_cast	62.0	anonymous	true	true	true
+qualified_instanceof_cast	62.0	isTest	true	true	true
+qualified_instanceof_cast	67.0	anonymous	true	true	true
+qualified_instanceof_cast	67.0	isTest	true	true	true
+inherited_inner	62.0	anonymous	true	true	"""trueONE"""
+inherited_inner	62.0	isTest	true	true	"""trueONE"""
+inherited_inner	67.0	anonymous	true	true	"""trueONE"""
+inherited_inner	67.0	isTest	true	true	"""trueONE"""
+unrelated_system_receiver	62.0	anonymous	true	true	"""0:0"""
+unrelated_system_receiver	62.0	isTest	true	true	"""0:0"""
+unrelated_system_receiver	67.0	anonymous	true	true	"""0:0"""
+unrelated_system_receiver	67.0	isTest	true	true	"""0:0"""
+schema_short_type	62.0	anonymous	true	true	32
+schema_short_type	62.0	isTest	true	true	32
+schema_short_type	67.0	anonymous	true	true	32
+schema_short_type	67.0	isTest	true	true	32
+field_enum_collision	62.0	named	false	false	Illegal forward reference: level
+field_enum_collision	62.0	anonymous	false	false	Inner types are not allowed to have inner types
+field_enum_collision	62.0	isTest	false	false	Illegal forward reference: level
+field_enum_collision	67.0	named	false	false	Illegal forward reference: level
+field_enum_collision	67.0	anonymous	false	false	Inner types are not allowed to have inner types
+field_enum_collision	67.0	isTest	false	false	Illegal forward reference: level
+duplicate_inner_names	62.0	anonymous	true	true	"""true:true"""
+duplicate_inner_names	62.0	isTest	true	true	"""true:true"""
+duplicate_inner_names	67.0	anonymous	true	true	"""true:true"""
+duplicate_inner_names	67.0	isTest	true	true	"""true:true"""
+inner_interface	62.0	anonymous	true	true	true
+inner_interface	62.0	isTest	true	true	true
+inner_interface	67.0	anonymous	true	true	true
+inner_interface	67.0	isTest	true	true	true
+test_inner_subclass	62.0	isTest	true	true	Pass
+test_inner_subclass	67.0	isTest	true	true	Pass
+lexical_type_reject	62.0	named	false	false	Method does not exist or incorrect signature: void forName(String) from the type CapRej.Type
+lexical_type_reject	62.0	anonymous	false	false	Inner types are not allowed to have inner types
+lexical_type_reject	62.0	isTest	false	false	Method does not exist or incorrect signature: void forName(String) from the type CapRejTest.Type
+lexical_type_reject	67.0	named	false	false	Method does not exist or incorrect signature: void forName(String) from the type CapRej.Type
+lexical_type_reject	67.0	anonymous	false	false	Inner types are not allowed to have inner types
+lexical_type_reject	67.0	isTest	false	false	Method does not exist or incorrect signature: void forName(String) from the type CapRejTest.Type
+lexical_enum_publish_reject	62.0	named	false	false	Method does not exist or incorrect signature: void publish(List<SObject>) from the type CapEnumRej.EventBus
+lexical_enum_publish_reject	62.0	anonymous	false	false	Inner types are not allowed to have inner types
+lexical_enum_publish_reject	62.0	isTest	false	false	Method does not exist or incorrect signature: void publish(List<SObject>) from the type CapEnumRejTest.EventBus
+lexical_enum_publish_reject	67.0	named	false	false	Method does not exist or incorrect signature: void publish(List<SObject>) from the type CapEnumRej.EventBus
+lexical_enum_publish_reject	67.0	anonymous	false	false	Inner types are not allowed to have inner types
+lexical_enum_publish_reject	67.0	isTest	false	false	Method does not exist or incorrect signature: void publish(List<SObject>) from the type CapEnumRejTest.EventBus

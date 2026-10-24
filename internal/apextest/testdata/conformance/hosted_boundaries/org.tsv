@@ -1,0 +1,153 @@
+source_api	route	method	observation
+62.0	anonymous	analytics_boolean	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	anonymous	analytics_enum	{"result":"returned"}
+62.0	anonymous	analytics_id	{"result":"returned"}
+62.0	anonymous	analytics_info_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+62.0	anonymous	analytics_null	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	anonymous	analytics_number_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	anonymous	analytics_object	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	anonymous	analytics_string	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	anonymous	analytics_uuid	{"result":"returned"}
+62.0	anonymous	analytics_warn	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+62.0	anonymous	analytics_warn_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+62.0	anonymous	notice_bad_type	{"result":"System.HandledException|Invalid parameter value for: customNotifTypeId"}
+62.0	anonymous	notice_configured	{"result":"returned"}
+62.0	anonymous	notice_constructor	{"result":"returned"}
+62.0	anonymous	notice_empty_title	{"result":"System.HandledException|Missing required input parameter: title"}
+62.0	anonymous	notice_missing_target	{"result":"System.HandledException|You can't send a custom notification without a navigation target. Specify either a Target ID or Target Page Reference on the Send Custom Notification action."}
+62.0	anonymous	notice_missing_title	{"result":"System.HandledException|Missing required input parameter: title"}
+62.0	anonymous	notice_missing_type	{"result":"System.HandledException|Missing required input parameter: customNotifTypeId"}
+62.0	anonymous	notice_page	{"result":"returned"}
+62.0	named	analytics_boolean	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	named	analytics_enum	{"result":"returned"}
+62.0	named	analytics_id	{"result":"returned"}
+62.0	named	analytics_info_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+62.0	named	analytics_null	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	named	analytics_number_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	named	analytics_object	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	named	analytics_string	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	named	analytics_uuid	{"result":"returned"}
+62.0	named	analytics_warn	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+62.0	named	analytics_warn_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+62.0	named	notice_bad_type	{"result":"System.HandledException|Invalid parameter value for: customNotifTypeId"}
+62.0	named	notice_configured	{"result":"returned"}
+62.0	named	notice_constructor	{"result":"returned"}
+62.0	named	notice_empty_title	{"result":"System.HandledException|Missing required input parameter: title"}
+62.0	named	notice_missing_target	{"result":"System.HandledException|You can't send a custom notification without a navigation target. Specify either a Target ID or Target Page Reference on the Send Custom Notification action."}
+62.0	named	notice_missing_title	{"result":"System.HandledException|Missing required input parameter: title"}
+62.0	named	notice_missing_type	{"result":"System.HandledException|Missing required input parameter: customNotifTypeId"}
+62.0	named	notice_page	{"result":"returned"}
+62.0	istest	analytics_boolean	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	istest	analytics_enum	{"result":"returned"}
+62.0	istest	analytics_id	{"result":"returned"}
+62.0	istest	analytics_info_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+62.0	istest	analytics_null	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	istest	analytics_number_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	istest	analytics_object	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	istest	analytics_string	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	istest	analytics_uuid	{"result":"returned"}
+62.0	istest	analytics_warn	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+62.0	istest	analytics_warn_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+62.0	istest	notice_bad_type	{"result":"returned"}
+62.0	istest	notice_configured	{"result":"returned"}
+62.0	istest	notice_constructor	{"result":"returned"}
+62.0	istest	notice_empty_title	{"result":"returned"}
+62.0	istest	notice_missing_target	{"result":"returned"}
+62.0	istest	notice_missing_title	{"result":"returned"}
+62.0	istest	notice_missing_type	{"result":"returned"}
+62.0	istest	notice_page	{"result":"returned"}
+62.0	no_permission	analytics_boolean	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	no_permission	analytics_enum	{"result":"returned"}
+62.0	no_permission	analytics_id	{"result":"returned"}
+62.0	no_permission	analytics_info_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+62.0	no_permission	analytics_null	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	no_permission	analytics_number_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	no_permission	analytics_object	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	no_permission	analytics_string	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+62.0	no_permission	analytics_uuid	{"result":"returned"}
+62.0	no_permission	analytics_warn	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+62.0	no_permission	analytics_warn_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+62.0	no_permission	notice_bad_type	{"result":"System.HandledException|Invalid parameter value for: customNotifTypeId"}
+62.0	no_permission	notice_configured	{"result":"returned"}
+62.0	no_permission	notice_constructor	{"result":"returned"}
+62.0	no_permission	notice_empty_title	{"result":"System.HandledException|Missing required input parameter: title"}
+62.0	no_permission	notice_missing_target	{"result":"System.HandledException|You can't send a custom notification without a navigation target. Specify either a Target ID or Target Page Reference on the Send Custom Notification action."}
+62.0	no_permission	notice_missing_title	{"result":"System.HandledException|Missing required input parameter: title"}
+62.0	no_permission	notice_missing_type	{"result":"System.HandledException|Missing required input parameter: customNotifTypeId"}
+62.0	no_permission	notice_page	{"result":"returned"}
+67.0	anonymous	analytics_boolean	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	anonymous	analytics_enum	{"result":"returned"}
+67.0	anonymous	analytics_id	{"result":"returned"}
+67.0	anonymous	analytics_info_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+67.0	anonymous	analytics_null	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	anonymous	analytics_number_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	anonymous	analytics_object	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	anonymous	analytics_string	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	anonymous	analytics_uuid	{"result":"returned"}
+67.0	anonymous	analytics_warn	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+67.0	anonymous	analytics_warn_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+67.0	anonymous	notice_bad_type	{"result":"System.HandledException|Invalid parameter value for: customNotifTypeId"}
+67.0	anonymous	notice_configured	{"result":"returned"}
+67.0	anonymous	notice_constructor	{"result":"returned"}
+67.0	anonymous	notice_empty_title	{"result":"System.HandledException|Missing required input parameter: title"}
+67.0	anonymous	notice_missing_target	{"result":"System.HandledException|You can't send a custom notification without a navigation target. Specify either a Target ID or Target Page Reference on the Send Custom Notification action."}
+67.0	anonymous	notice_missing_title	{"result":"System.HandledException|Missing required input parameter: title"}
+67.0	anonymous	notice_missing_type	{"result":"System.HandledException|Missing required input parameter: customNotifTypeId"}
+67.0	anonymous	notice_page	{"result":"returned"}
+67.0	named	analytics_boolean	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	named	analytics_enum	{"result":"returned"}
+67.0	named	analytics_id	{"result":"returned"}
+67.0	named	analytics_info_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+67.0	named	analytics_null	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	named	analytics_number_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	named	analytics_object	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	named	analytics_string	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	named	analytics_uuid	{"result":"returned"}
+67.0	named	analytics_warn	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+67.0	named	analytics_warn_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+67.0	named	notice_bad_type	{"result":"System.HandledException|Invalid parameter value for: customNotifTypeId"}
+67.0	named	notice_configured	{"result":"returned"}
+67.0	named	notice_constructor	{"result":"returned"}
+67.0	named	notice_empty_title	{"result":"System.HandledException|Missing required input parameter: title"}
+67.0	named	notice_missing_target	{"result":"System.HandledException|You can't send a custom notification without a navigation target. Specify either a Target ID or Target Page Reference on the Send Custom Notification action."}
+67.0	named	notice_missing_title	{"result":"System.HandledException|Missing required input parameter: title"}
+67.0	named	notice_missing_type	{"result":"System.HandledException|Missing required input parameter: customNotifTypeId"}
+67.0	named	notice_page	{"result":"returned"}
+67.0	istest	analytics_boolean	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	istest	analytics_enum	{"result":"returned"}
+67.0	istest	analytics_id	{"result":"returned"}
+67.0	istest	analytics_info_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+67.0	istest	analytics_null	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	istest	analytics_number_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	istest	analytics_object	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	istest	analytics_string	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	istest	analytics_uuid	{"result":"returned"}
+67.0	istest	analytics_warn	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+67.0	istest	analytics_warn_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+67.0	istest	notice_bad_type	{"result":"returned"}
+67.0	istest	notice_configured	{"result":"returned"}
+67.0	istest	notice_constructor	{"result":"returned"}
+67.0	istest	notice_empty_title	{"result":"returned"}
+67.0	istest	notice_missing_target	{"result":"returned"}
+67.0	istest	notice_missing_title	{"result":"returned"}
+67.0	istest	notice_missing_type	{"result":"returned"}
+67.0	istest	notice_page	{"result":"returned"}
+67.0	no_permission	analytics_boolean	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	no_permission	analytics_enum	{"result":"returned"}
+67.0	no_permission	analytics_id	{"result":"returned"}
+67.0	no_permission	analytics_info_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+67.0	no_permission	analytics_null	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	no_permission	analytics_number_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	no_permission	analytics_object	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	no_permission	analytics_string	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must be an Apex enum."}
+67.0	no_permission	analytics_uuid	{"result":"returned"}
+67.0	no_permission	analytics_warn	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+67.0	no_permission	analytics_warn_id	{"result":"System.InvalidParameterValueException|We couldn’t log the custom interaction with App Analytics. The interaction label provided to IsvPartners.AppAnalytics.logCustomInteraction must have the same namespace as the Apex code that called the method."}
+67.0	no_permission	notice_bad_type	{"result":"System.HandledException|Invalid parameter value for: customNotifTypeId"}
+67.0	no_permission	notice_configured	{"result":"returned"}
+67.0	no_permission	notice_constructor	{"result":"returned"}
+67.0	no_permission	notice_empty_title	{"result":"System.HandledException|Missing required input parameter: title"}
+67.0	no_permission	notice_missing_target	{"result":"System.HandledException|You can't send a custom notification without a navigation target. Specify either a Target ID or Target Page Reference on the Send Custom Notification action."}
+67.0	no_permission	notice_missing_title	{"result":"System.HandledException|Missing required input parameter: title"}
+67.0	no_permission	notice_missing_type	{"result":"System.HandledException|Missing required input parameter: customNotifTypeId"}
+67.0	no_permission	notice_page	{"result":"returned"}

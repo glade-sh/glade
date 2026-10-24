@@ -1,0 +1,21 @@
+source_api	route	method	observation
+62.0	anonymous	A	EC A n=1 ok=false err=INVALID_ID_FIELD:WhatId is not available with saveAsActivity for sending emails to Leads. tasks=0 emailmsgs=0
+62.0	anonymous	B	EC B n=1 ok=true tasks=1 emailmsgs=1
+62.0	anonymous	C	EC C n=1 ok=false err=INVALID_ID_FIELD:WhatId is not available with saveAsActivity for sending emails to Leads. tasks=0 emailmsgs=0
+62.0	anonymous	D	EC D n=1 ok=true tasks=1 emailmsgs=1
+62.0	anonymous	E	EC E n=1 ok=true tasks=1 emailmsgs=1
+62.0	isTest	A	EC A n=1 ok=false err=INVALID_ID_FIELD:WhatId is not available with saveAsActivity for sending emails to Leads. tasks=0 emailmsgs=0
+62.0	isTest	B	EC B n=1 ok=true tasks=1 emailmsgs=1
+62.0	isTest	C	EC C n=1 ok=false err=INVALID_ID_FIELD:WhatId is not available with saveAsActivity for sending emails to Leads. tasks=0 emailmsgs=0
+62.0	isTest	D	EC D n=1 ok=true tasks=1 emailmsgs=1
+62.0	isTest	E	EC E n=1 ok=true tasks=1 emailmsgs=1
+67.0	anonymous	A	EC A n=1 ok=false err=INVALID_ID_FIELD:WhatId is not available with saveAsActivity for sending emails to Leads. tasks=0 emailmsgs=0
+67.0	anonymous	B	EC B n=1 ok=true tasks=1 emailmsgs=1
+67.0	anonymous	C	EC C n=1 ok=false err=INVALID_ID_FIELD:WhatId is not available with saveAsActivity for sending emails to Leads. tasks=0 emailmsgs=0
+67.0	anonymous	D	EC D n=1 ok=true tasks=1 emailmsgs=1
+67.0	anonymous	E	EC E n=1 ok=true tasks=1 emailmsgs=1
+67.0	isTest	A	EC A n=1 ok=false err=INVALID_ID_FIELD:WhatId is not available with saveAsActivity for sending emails to Leads. tasks=0 emailmsgs=0
+67.0	isTest	B	EC B n=1 ok=true tasks=1 emailmsgs=1
+67.0	isTest	C	EC C n=1 ok=false err=INVALID_ID_FIELD:WhatId is not available with saveAsActivity for sending emails to Leads. tasks=0 emailmsgs=0
+67.0	isTest	D	EC D n=1 ok=true tasks=1 emailmsgs=1
+67.0	isTest	E	EC E n=1 ok=true tasks=1 emailmsgs=1

@@ -131,10 +131,7 @@ func semaSOQLLiteralSpans(body string) []semaTextSpan {
 		case '\'':
 			i = skipSemaString(body, i)
 		case '[':
-			queryStart := i + 1
-			for queryStart < len(body) && isWhitespace(body[queryStart]) {
-				queryStart++
-			}
+			queryStart := semaQueryStart(body, i+1)
 			if !semaHasLowerPrefix(body[queryStart:], "select") && !semaHasLowerPrefix(body[queryStart:], "find") {
 				continue
 			}

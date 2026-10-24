@@ -1,0 +1,5 @@
+case	entry	observations
+queuedSchedule	System.schedule	schedule, abort, reschedule, unrelated job survives, final cleanup
+queuedBatch	System.scheduleBatch	schedule, abort, reschedule, unrelated job survives, final cleanup
+recordedSchedule	System.schedule after Test.stopTest	schedule, abort, reschedule, unrelated job survives, final cleanup
+recordedBatch	System.scheduleBatch after Test.stopTest	schedule, abort, reschedule, unrelated job survives, final cleanup

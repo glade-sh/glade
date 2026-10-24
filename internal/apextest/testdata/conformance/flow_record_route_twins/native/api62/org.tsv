@@ -1,0 +1,29 @@
+context	route	observation
+istest	after_direct_create	{"description":null,"storedCity":"Origin","storedPhone":"222"}
+istest	after_direct_update	{"description":null,"storedCity":"Origin","storedPhone":"222"}
+istest	after_subflow_create	{"description":null,"storedCity":"Origin","storedPhone":"222"}
+istest	after_subflow_update	{"description":null,"storedCity":"Origin","storedPhone":"222"}
+istest	before_create	{"description":"111","storedCity":"Origin","storedPhone":"111"}
+istest	before_update	{"description":"111","storedCity":"Origin","storedPhone":"111"}
+istest	delete_direct	{"deleted":true,"storedCity":"Origin","storedPhone":"222"}
+istest	delete_subflow	{"deleted":true,"storedCity":"Origin","storedPhone":"222"}
+istest	event_direct_explicit	{"before":"111","published":true,"storedCity":"Origin","storedPhone":"222"}
+istest	event_direct_stop	{"before":"111","published":true,"storedCity":"Origin","storedPhone":"222"}
+istest	interview_direct	{"callerPhone":"111","city":"Origin","hasRecord":true,"name":"Boundary seed","phone":"222","sameId":true,"storedCity":"Origin","storedPhone":"111"}
+istest	interview_subflow	{"callerPhone":"111","city":"Origin","hasRecord":true,"name":"Boundary seed","phone":"222","sameId":true,"storedCity":"Origin","storedPhone":"111"}
+istest	invocable_direct	{"callerPhone":"111","city":"Origin","hasRecord":true,"name":"Boundary seed","phone":"222","sameId":true,"storedCity":"Origin","storedPhone":"111","success":true}
+istest	invocable_subflow	{"callerPhone":"111","city":"Origin","hasRecord":true,"name":"Boundary seed","phone":"222","sameId":true,"storedCity":"Origin","storedPhone":"111","success":true}
+istest	scheduled_dml	{"storedCity":"Origin","storedPhone":"111","updated":"updated"}
+anonymous	after_direct_create	{"description":null,"storedCity":"Origin","storedPhone":"222"}
+anonymous	after_direct_update	{"description":null,"storedCity":"Origin","storedPhone":"222"}
+anonymous	after_subflow_create	{"description":null,"storedCity":"Origin","storedPhone":"222"}
+anonymous	after_subflow_update	{"description":null,"storedCity":"Origin","storedPhone":"222"}
+anonymous	before_create	{"description":"111","storedCity":"Origin","storedPhone":"111"}
+anonymous	before_update	{"description":"111","storedCity":"Origin","storedPhone":"111"}
+anonymous	delete_direct	{"deleted":true,"storedCity":"Origin","storedPhone":"222"}
+anonymous	delete_subflow	{"deleted":true,"storedCity":"Origin","storedPhone":"222"}
+anonymous	interview_direct	{"callerPhone":"111","city":"Origin","hasRecord":true,"name":"Boundary seed","phone":"222","sameId":true,"storedCity":"Origin","storedPhone":"111"}
+anonymous	interview_subflow	{"callerPhone":"111","city":"Origin","hasRecord":true,"name":"Boundary seed","phone":"222","sameId":true,"storedCity":"Origin","storedPhone":"111"}
+anonymous	invocable_direct	{"callerPhone":"111","city":"Origin","hasRecord":true,"name":"Boundary seed","phone":"222","sameId":true,"storedCity":"Origin","storedPhone":"111","success":true}
+anonymous	invocable_subflow	{"callerPhone":"111","city":"Origin","hasRecord":true,"name":"Boundary seed","phone":"222","sameId":true,"storedCity":"Origin","storedPhone":"111","success":true}
+anonymous	scheduled_dml	{"storedCity":"Origin","storedPhone":"111","updated":"updated"}

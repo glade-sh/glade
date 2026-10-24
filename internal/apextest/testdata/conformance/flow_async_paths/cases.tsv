@@ -1,0 +1,10 @@
+id	shape	routes	apis
+SP01	insert without test boundary	anonymous,istest	62.0,67.0
+SP02	insert inside start/stop	anonymous,istest	62.0,67.0
+SP03	insert before start/stop	anonymous,istest	62.0,67.0
+SP04	modify triggering record before drain	anonymous,istest	62.0,67.0
+SP05	update newly meets entry criteria	anonymous,istest	62.0,67.0
+SP06	deferred DML fault	anonymous,istest	62.0,67.0
+SP07	savepoint rollback	anonymous,istest	62.0,67.0
+SP10	enqueue from queueable	anonymous,istest	62.0,67.0
+SP11	async job and interview counts	anonymous,istest	62.0,67.0

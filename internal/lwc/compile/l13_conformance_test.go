@@ -26,6 +26,7 @@ import (
 	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/server"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/testutil/browserapi"
 )
 
 type l13Case struct {
@@ -125,10 +126,40 @@ func TestL13SalesforceConformance(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	observer := filepath.Join(t.TempDir(), "l13_diagnostics.cjs")
-	l13Write(t, observer, []byte(l13DiagnosticObserverJS))
-	t.Setenv("NODE_OPTIONS", os.Getenv("NODE_OPTIONS")+" --require "+l13JSON(t, observer))
-	t.Run("namespace-compatibility", l13AssertNamespaceCompatibility)
+	compiledAPIs := make(map[string][]l13CompiledRow)
+	installDiagnostics := func(t *testing.T) {
+		observer := filepath.Join(t.TempDir(), "l13_diagnostics.cjs")
+		l13Write(t, observer, []byte(l13DiagnosticObserverJS))
+		t.Setenv("NODE_OPTIONS", os.Getenv("NODE_OPTIONS")+" --require "+l13JSON(t, observer))
+		t.Run("namespace-compatibility", l13AssertNamespaceCompatibility)
+	}
+	if browserAPIParallelism(len(versions)) > 1 {
+		// Keep the environment hook out of the parallel subtests' ancestry, and
+		// retain compiled files until the parent finishes observing both APIs.
+		workspace := t.TempDir()
+		if !t.Run("CompileAPIs", func(t *testing.T) {
+			installDiagnostics(t)
+			for _, api := range versions {
+				compiledAPIs[api] = l13CompileRows(t, cases, api, workspace)
+			}
+		}) {
+			t.FailNow()
+		}
+	} else {
+		installDiagnostics(t)
+	}
+	type apiObservation struct {
+		rows        []l13CompiledRow
+		dom, errors map[string]string
+	}
+	observeAPI := browserapi.Prepare(t, versions, func(t *testing.T, api string) apiObservation {
+		rows := compiledAPIs[api]
+		if rows == nil {
+			rows = l13CompileRows(t, cases, api)
+		}
+		dom, errors := l13ObserveDOM(t, rows, dependencyRoot)
+		return apiObservation{rows, dom, errors}
+	})
 	var report strings.Builder
 	report.WriteString("API\tID\tKIND\tBASIS\tSTATUS\tACTUAL\tEXPECTED\tREASON\n")
 	matches, total, nativeMatches, nativeTotal, boundaryMatches, boundaryTotal := 0, 0, 0, 0, 0, 0
@@ -136,8 +167,8 @@ func TestL13SalesforceConformance(t *testing.T) {
 	for _, api := range versions {
 		apiMatches, apiNativeMatches, apiBoundaryMatches := matches, nativeMatches, boundaryMatches
 		apiTotal, apiNativeTotal, apiBoundaryTotal := total, nativeTotal, boundaryTotal
-		rows := l13CompileRows(t, cases, api)
-		dom, errors := l13ObserveDOM(t, rows, dependencyRoot)
+		result := observeAPI(api)
+		rows, dom, errors := result.rows, result.dom, result.errors
 		for _, row := range rows {
 			c := row.Case
 			got, reason := "COMPILE_OK", "L13: local compiler accepted native-rejected source"
@@ -295,7 +326,7 @@ func l13AssertNamespaceCompatibility(t *testing.T) {
 // Each case keeps its own familyImports bundle in its own directory and output
 // directory; a failing bundle does not stop the others. Each row's project is
 // the loaded project restricted to that row's bundle, as a single-case load.
-func l13CompileRows(t *testing.T, cases []l13Case, api string) []l13CompiledRow {
+func l13CompileRows(t *testing.T, cases []l13Case, api string, workspace ...string) []l13CompiledRow {
 	t.Helper()
 	rows := make([]l13CompiledRow, len(cases))
 	controls := l13BatchControls(cases, api)
@@ -309,7 +340,7 @@ func l13CompileRows(t *testing.T, cases []l13Case, api string) []l13CompiledRow 
 		if len(indices) == 0 {
 			continue
 		}
-		root, base := l13WriteProject(t, api, dependency)
+		root, base := l13WriteProject(t, api, dependency, workspace...)
 		bundles := make(map[int]string, len(indices))
 		for _, i := range indices {
 			bundles[i] = l13WriteBundle(t, filepath.Join(base, "cases", fmt.Sprintf("%04d", i)), cases[i], api)
@@ -364,9 +395,18 @@ func l13CompileRows(t *testing.T, cases []l13Case, api string) []l13CompiledRow 
 // field-free local declaration of the existing FamilyBaseline__c control
 // object. These supply metadata only. It returns the project root and the
 // package directory that holds the case bundles.
-func l13WriteProject(t *testing.T, api string, dependency bool) (string, string) {
+func l13WriteProject(t *testing.T, api string, dependency bool, parentDirs ...string) (string, string) {
 	t.Helper()
-	root := t.TempDir()
+	var root string
+	if len(parentDirs) == 0 {
+		root = t.TempDir()
+	} else {
+		var err error
+		root, err = os.MkdirTemp(parentDirs[0], "project-")
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 	l13CopyFixtures(t, "testdata/l13_fixtures", filepath.Join(root, "force-app", "main", "default"))
 	if !dependency {
 		l13Write(t, filepath.Join(root, "sfdx-project.json"), []byte(`{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"","sourceApiVersion":"`+api+`"}`))

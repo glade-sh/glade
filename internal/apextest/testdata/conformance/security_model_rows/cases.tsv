@@ -1,0 +1,9 @@
+cases	observation
+user_profile,profile_set_*	Current admin profile; stable profile-owned set; opaque name and label
+setup_all,setup_profile,setup_regular,setup_group	Parent relationships; type and group/null filters; enabled class/page access
+object_*	Custom-object CRUD for admin, declared profile/set and aggregate group
+field_*	No implicit admin FLS; explicit optional field grants; no required-field rows
+group_*	Source label, aggregate set and component junction
+source_profile_*	Profile-owned set and explicit class/page grants
+declared_setup_types,metadata_entity_count	Explicit metadata-type access uses CustomEntityDefinition
+tab_regular	Visible tab is exposed as DefaultOn

@@ -344,6 +344,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		if !result.Summary().OK() {
+			writeTestOrgSetupHint(stderr, args[1:], result)
 			return 1
 		}
 		return 0
@@ -990,6 +991,7 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 	}
 	info := cliui.DoctorInfo{
 		SchemaVersion:      "1.1",
+		PDFRenderer:        "local text-only PDF writer",
 		Command:            "doctor",
 		ReadinessScope:     "apex",
 		Version:            Version,
@@ -1007,6 +1009,9 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 		ConfigPath:         cfgPath,
 		SalesforceBoundary: "not contacted; hosted services and final validation stay in Salesforce",
 	}
+	if cfg.PDF.Command != "" {
+		info.PDFRenderer = cfg.PDF.Command
+	}
 	if configErr != nil && !configMissing {
 		info.ConfigStatus = configErr.Error()
 	}
@@ -1023,7 +1028,12 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 			info.SourceAPIStatus = loadedProject.SourceAPIVersion + " (preserved historical source; checked window: " + strings.Join(apexversion.SupportedSourceAPIVersions, ", ") + ")"
 			info.Advisories = append(info.Advisories, "Historical Apex source is preserved, but it is outside Glade's checked source-version window.")
 		}
+		if cfg.Test.HasEnvironment() {
+			env := cfg.Test.EffectiveEnvironment()
+			info.TestEnvironment = &env
+		}
 	}
+	info.OrgSetup = doctorOrgSetup(effectiveRoot)
 	if configOK {
 		if info.DefaultNamespace == "" {
 			info.DefaultNamespace = cfg.Project.DefaultNamespace
@@ -1106,6 +1116,14 @@ func doctorProjectCommandArg(root string) string {
 		return strconv.Quote(root)
 	}
 	return "'" + strings.ReplaceAll(root, "'", "'\"'\"'") + "'"
+}
+
+func doctorOrgSetup(root string) []cliui.DoctorOrgSetup {
+	var out []cliui.DoctorOrgSetup
+	for _, s := range project.SuggestOrgSetup(root) {
+		out = append(out, cliui.DoctorOrgSetup{Kind: s.Kind, Feature: s.Feature, Names: s.Names, Reason: s.Reason, Files: s.Files, YAML: s.YAML})
+	}
+	return out
 }
 
 func doctorLocalData(root string) cliui.DoctorLocalData {
@@ -2369,6 +2387,7 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		}
 	}
 	result = withAutomationDiagnostics(result, p)
+	result = withProjectSourceWarnings(result, p)
 	if err := ctx.Err(); err != nil {
 		return sema.Result{}, err
 	}
@@ -2893,7 +2912,7 @@ func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, l
 	analysis := sema.AnalyzeAnonymous(analysisIndex, preparedAnonymous.body, preparedAnonymous.apiVersion)
 	if len(analysis.Diagnostics) > 0 {
 		first := analysis.Diagnostics[0]
-		return fmt.Errorf("%s: %s", first.Code, first.Message)
+		return apextest.ExplainDependencyError(analysisIndex, preparedAnonymous.body, fmt.Errorf("%s: %s", first.Code, first.Message))
 	}
 	if hasProjectRuntime {
 		if err := apextest.RegisterProjectRuntimeForRequest(machine, projectIndex); err != nil {
@@ -2911,6 +2930,7 @@ func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, l
 		return err
 	}
 	result, execErr := machine.Execute(program)
+	execErr = apextest.ExplainDependencyError(analysisIndex, preparedAnonymous.body, execErr)
 	logPathForSummary := debugLogPath
 	if debugLogMode == "raw" && logPathForSummary == "" {
 		logPathForSummary = "-"

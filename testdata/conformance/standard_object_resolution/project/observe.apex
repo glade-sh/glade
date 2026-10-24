@@ -1,0 +1,12 @@
+System.debug('RESOLUTION|deserialize|'+StandardResolutionProbe.observe('deserialize'));
+System.debug('RESOLUTION|deserializeStrict|'+StandardResolutionProbe.observe('deserializeStrict'));
+System.debug('RESOLUTION|deserializeList|'+StandardResolutionProbe.observe('deserializeList'));
+System.debug('RESOLUTION|deserializeStrictList|'+StandardResolutionProbe.observe('deserializeStrictList'));
+System.debug('RESOLUTION|deserializeMap|'+StandardResolutionProbe.observe('deserializeMap'));
+System.debug('RESOLUTION|parser|'+StandardResolutionProbe.observe('parser'));
+System.debug('RESOLUTION|typedDeserialize|'+StandardResolutionProbe.observe('typedDeserialize'));
+System.debug('RESOLUTION|newSObject|'+StandardResolutionProbe.observe('newSObject'));
+System.debug('RESOLUTION|newSObjectDefaults|'+StandardResolutionProbe.observe('newSObjectDefaults'));
+System.debug('RESOLUTION|clone|'+StandardResolutionProbe.observe('clone'));
+System.debug('RESOLUTION|listDeepClone|'+StandardResolutionProbe.observe('listDeepClone'));
+System.debug('RESOLUTION|strictUnknown|'+StandardResolutionProbe.observe('strictUnknown'));

@@ -108,13 +108,15 @@ func AnalyzeAnonymousDeclarationsInContext(index, transient typesys.Index) Resul
 		// W5 anonymous C001-C003/C007-C012 report illegal nesting before
 		// redundant virtual modifiers. Move only that competing prefix;
 		// retain every diagnostic and other errors' existing precedence.
+		// The illegal nesting also precedes an error that starts later in the
+		// same file, such as a static field after the nested enum.
 		for i, d := range diagnostics {
 			if d.Message == "Inner types are not allowed to have inner types" {
 				copy(diagnostics[1:i+1], diagnostics[:i])
 				diagnostics[0] = d
 				break
 			}
-			if d.Message != "classes are by default virtual" {
+			if d.Message != "classes are by default virtual" && !anonymousDiagnosticFollowsNesting(d, diagnostics[i+1:]) {
 				break
 			}
 		}
@@ -130,4 +132,18 @@ func AnalyzeAnonymousDeclarationsInContext(index, transient typesys.Index) Resul
 	result.Diagnostics = NativeLifecycleDiagnostics(context, diagnostics)
 	result.Summary.Diagnostics = len(diagnostics)
 	return result
+}
+
+// anonymousDiagnosticFollowsNesting reports whether a later illegal-nesting
+// diagnostic starts before d in the same file.
+func anonymousDiagnosticFollowsNesting(d diagnostic.Diagnostic, rest []diagnostic.Diagnostic) bool {
+	if d.Range == nil {
+		return false
+	}
+	for _, nesting := range rest {
+		if nesting.Message == "Inner types are not allowed to have inner types" {
+			return nesting.File == d.File && nesting.Range != nil && nesting.Range.Start.Offset < d.Range.Start.Offset
+		}
+	}
+	return false
 }

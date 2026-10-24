@@ -161,6 +161,13 @@ type visualforcePageXML struct {
 }
 
 func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
+	return loadProject(p, os.ReadFile)
+}
+
+func loadProject(p project.Project, readMetadata func(string) ([]byte, error)) (storage.MetadataRegistry, error) {
+	if readMetadata == nil {
+		readMetadata = os.ReadFile
+	}
 	var registry storage.MetadataRegistry
 	scripts, err := loadDataWeaveResources(p.DataWeaveFiles, p.DataWeaveMetas, p.Namespace, p.SourceAPIVersion)
 	if err != nil {
@@ -260,23 +267,43 @@ func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 		}
 		registry.Endpoints = append(registry.Endpoints, endpoint)
 	}
+	featureParameters, diagnostics := loadFeatureParameterMetadata(p.FeatureParameterFiles, readMetadata)
+	registry.FeatureParameters = featureParameters
+	logFeatureParameterDiagnostics(diagnostics)
 	remapProjectRegistry(&registry, p)
 	sortRegistry(&registry)
 	return registry, nil
 }
 
 func ApplyProject(org *storage.OrgState, p project.Project, metadataReaders ...func(string) ([]byte, error)) error {
-	registry, err := LoadProjectWithDependencies(p)
+	_, err := applyProject(org, p, false, metadataReaders)
+	return err
+}
+
+// ApplyProjectTolerant applies project metadata like ApplyProject, but skips an
+// invalid email-service file instead of failing. A metadata deploy rejects such
+// a file; a local run must keep every unrelated test runnable. Each skipped
+// file is returned with the native rejection text.
+func ApplyProjectTolerant(org *storage.OrgState, p project.Project, metadataReaders ...func(string) ([]byte, error)) ([]project.EmailServiceRejection, error) {
+	return applyProject(org, p, true, metadataReaders)
+}
+
+func applyProject(org *storage.OrgState, p project.Project, tolerant bool, metadataReaders []func(string) ([]byte, error)) ([]project.EmailServiceRejection, error) {
+	readMetadata := os.ReadFile
+	if len(metadataReaders) > 0 && metadataReaders[0] != nil {
+		readMetadata = metadataReaders[0]
+	}
+	registry, err := loadProjectWithDependencies(p, readMetadata)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	org.Metadata = registry
 	ensureMetadataObjects(org, p)
 	if err := applyPlatformCachePartitions(org, p); err != nil {
-		return err
+		return nil, err
 	}
 	if err := ensureFolderObject(org, projectFolderFilesWithDependencies(p), p.Namespace); err != nil {
-		return err
+		return nil, err
 	}
 	// Email template FolderId must reference the loaded folder record so
 	// Folder.DeveloperName predicates work.
@@ -284,19 +311,38 @@ func ApplyProject(org *storage.OrgState, p project.Project, metadataReaders ...f
 		ensureEmailTemplateObject(org)
 	}
 	if err := ensureDocumentAndReportObjects(org, projectFolderFilesWithDependencies(p), p.Namespace); err != nil {
-		return err
+		return nil, err
 	}
 	if err := ensureApexPageObject(org, p.VisualforcePageFiles, p.Namespace, p.SourceAPIVersion); err != nil {
-		return err
-	}
-	readMetadata := os.ReadFile
-	if len(metadataReaders) > 0 && metadataReaders[0] != nil {
-		readMetadata = metadataReaders[0]
+		return nil, err
 	}
 	if err := LoadLayoutMetadata(org, LayoutMetadataFiles(p), readMetadata); err != nil {
-		return err
+		return nil, err
 	}
-	return applySetupRecordMetadata(org, p, readMetadata)
+	if err := applySetupRecordMetadata(org, p, readMetadata); err != nil {
+		return nil, err
+	}
+	var rejections []project.EmailServiceRejection
+	var services []project.EmailService
+	if tolerant {
+		services, rejections = project.LoadEmailServicesTolerant(p, readMetadata)
+	} else if services, err = project.LoadEmailServices(p, readMetadata); err != nil {
+		return nil, err
+	}
+	if len(services) > 0 && len(org.Objects["User"].Records) == 0 {
+		storage.EnsureDeterministicPlatformData(org)
+	}
+	if !tolerant {
+		return nil, storage.ApplyEmailServices(org, services)
+	}
+	// ApplyEmailServices is atomic per call, so a rejected service leaves no
+	// rows and the valid ones still seed.
+	for _, service := range services {
+		if err := storage.ApplyEmailServices(org, []project.EmailService{service}); err != nil {
+			rejections = append(rejections, project.EmailServiceRejection{File: service.SourceFile, Message: err.Error()})
+		}
+	}
+	return rejections, nil
 }
 
 // LayoutMetadataFiles includes declarations from loaded project dependencies.
@@ -323,7 +369,11 @@ func projectFolderFilesWithDependencies(p project.Project) []string {
 }
 
 func LoadProjectWithDependencies(p project.Project) (storage.MetadataRegistry, error) {
-	registry, err := LoadProject(p)
+	return loadProjectWithDependencies(p, os.ReadFile)
+}
+
+func loadProjectWithDependencies(p project.Project, readMetadata func(string) ([]byte, error)) (storage.MetadataRegistry, error) {
+	registry, err := loadProject(p, readMetadata)
 	if err != nil {
 		return storage.MetadataRegistry{}, err
 	}
@@ -331,7 +381,7 @@ func LoadProjectWithDependencies(p project.Project) (storage.MetadataRegistry, e
 		if dep.Status != "loaded" || dep.Project == nil {
 			continue
 		}
-		depRegistry, err := LoadProjectWithDependencies(*dep.Project)
+		depRegistry, err := loadProjectWithDependencies(*dep.Project, readMetadata)
 		if err != nil {
 			return storage.MetadataRegistry{}, err
 		}
@@ -358,6 +408,7 @@ func mergeRegistry(dst *storage.MetadataRegistry, src storage.MetadataRegistry) 
 	dst.QuickActions = append(dst.QuickActions, src.QuickActions...)
 	dst.FieldSets = append(dst.FieldSets, src.FieldSets...)
 	dst.Endpoints = append(dst.Endpoints, src.Endpoints...)
+	dst.FeatureParameters = append(dst.FeatureParameters, src.FeatureParameters...)
 }
 
 func remapProjectRegistry(registry *storage.MetadataRegistry, p project.Project) {
@@ -1773,6 +1824,13 @@ func visualforcePageAPIVersion(raw string) storage.Value {
 }
 
 func sortRegistry(registry *storage.MetadataRegistry) {
+	sort.Slice(registry.FeatureParameters, func(i, j int) bool {
+		left, right := registry.FeatureParameters[i], registry.FeatureParameters[j]
+		if !strings.EqualFold(left.Name, right.Name) {
+			return strings.ToLower(left.Name) < strings.ToLower(right.Name)
+		}
+		return strings.ToLower(left.Type) < strings.ToLower(right.Type)
+	})
 	sort.Slice(registry.DataWeaveResources, func(i, j int) bool {
 		a, b := registry.DataWeaveResources[i], registry.DataWeaveResources[j]
 		if a.Namespace != b.Namespace {

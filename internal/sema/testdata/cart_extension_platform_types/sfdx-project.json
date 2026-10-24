@@ -1,0 +1,12 @@
+{
+  "packageDirectories": [
+    {
+      "path": "project",
+      "default": true
+    }
+  ],
+  "name": "cart-extension-platform-types-native-capture",
+  "namespace": "",
+  "sfdcLoginUrl": "https://login.salesforce.com",
+  "sourceApiVersion": "67.0"
+}

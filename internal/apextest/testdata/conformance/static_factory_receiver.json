@@ -11,7 +11,7 @@
   "knownRows": 4,
   "marker": "RECEIVER_PRECEDENCE_OBSERVATION|",
   "orgIdSha256": "cc33a6f2d3f7b65d6008134feb8e69df2f410263ae78a21a436e134da8678f54",
-  "devHubAlias": "scratch-org",
+  "devHubAlias": "example-org",
   "receiptPathPolicy": "Only personal command, environment and ORG-RUN paths are replaced with explicit placeholders. Original raw receipt SHA256 hashes, source manifests, source bytes and complete native payloads are unchanged. No CLI SDK bookkeeping is exported.",
   "pendingCoverage": [
     "Namespace and dependency contexts are unobserved.",
@@ -45,7 +45,7 @@
         "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "source-digests.json": "b50e96d9cd3f8ce6eb16143d560b3f56cfef2a8e5bce873a7c52d28be3f68069"
       },
-      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=cc33a6f2d3f7b65d6008134feb8e69df2f410263ae78a21a436e134da8678f54\ncontext=synthetic-helper-setup\nhelperApi=62.0\nprojectApi=62.0\ntransportApi=62.0\ncleanupOwner=k6\nstart=2026-10-15T21:50:09.912113+00:00\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--source-dir\", \"force-app\", \"--test-level\", \"NoTestRun\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\ndeploymentId=0Af000000000b34CAA\nexitCode=0\nend=2026-10-15T21:50:14.228475+00:00\n",
+      "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=cc33a6f2d3f7b65d6008134feb8e69df2f410263ae78a21a436e134da8678f54\ncontext=synthetic-helper-setup\nhelperApi=62.0\nprojectApi=62.0\ntransportApi=62.0\ncleanupOwner=k6\nstart=2026-10-15T21:50:09.912113+00:00\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--source-dir\", \"force-app\", \"--test-level\", \"NoTestRun\", \"--target-org\", \"example-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\ndeploymentId=0Af000000000b34CAA\nexitCode=0\nend=2026-10-15T21:50:14.228475+00:00\n",
       "command": {
         "command": [
           "sf",
@@ -58,7 +58,7 @@
           "--test-level",
           "NoTestRun",
           "--target-org",
-          "scratch-org",
+          "example-org",
           "--api-version",
           "62.0",
           "--wait",
@@ -97,7 +97,7 @@
         "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "source-digests.json": "8e19fd92145702304f8694c37f465c91ebd42d0bc8c95423314a9362e99f8f28"
       },
-      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=cc33a6f2d3f7b65d6008134feb8e69df2f410263ae78a21a436e134da8678f54\ncontext=synthetic-helper-setup\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=62.0\ncleanupOwner=k6\nstart=2026-10-15T21:47:09.245620+00:00\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--source-dir\", \"force-app\", \"--test-level\", \"NoTestRun\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\ndeploymentId=0Af000000000xDUCAY\nexitCode=0\nend=2026-10-15T21:47:13.972953+00:00\n",
+      "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=cc33a6f2d3f7b65d6008134feb8e69df2f410263ae78a21a436e134da8678f54\ncontext=synthetic-helper-setup\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=62.0\ncleanupOwner=k6\nstart=2026-10-15T21:47:09.245620+00:00\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--source-dir\", \"force-app\", \"--test-level\", \"NoTestRun\", \"--target-org\", \"example-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\ndeploymentId=0Af000000000xDUCAY\nexitCode=0\nend=2026-10-15T21:47:13.972953+00:00\n",
       "command": {
         "command": [
           "sf",
@@ -109,7 +109,7 @@
           "--test-level",
           "NoTestRun",
           "--target-org",
-          "scratch-org",
+          "example-org",
           "--api-version",
           "62.0",
           "--wait",
@@ -150,7 +150,7 @@
           "--test-level",
           "NoTestRun",
           "--target-org",
-          "scratch-org",
+          "example-org",
           "--api-version",
           "62.0",
           "--wait",
@@ -162,7 +162,7 @@
           "SF_USE_GENERIC_UNIX_KEYCHAIN": "true"
         }
       },
-      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=cc33a6f2d3f7b65d6008134feb8e69df2f410263ae78a21a436e134da8678f54\ncontext=synthetic-helper-setup\nhelperApi=62.0\nprojectApi=62.0\ntransportApi=62.0\ncleanupOwner=k6\nstart=2026-10-15T21:48:24.292846+00:00\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--source-dir\", \"force-app\", \"--test-level\", \"NoTestRun\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\ndeploymentId=None\nexitCode=1\nend=2026-10-15T21:48:25.539825+00:00\n",
+      "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=cc33a6f2d3f7b65d6008134feb8e69df2f410263ae78a21a436e134da8678f54\ncontext=synthetic-helper-setup\nhelperApi=62.0\nprojectApi=62.0\ntransportApi=62.0\ncleanupOwner=k6\nstart=2026-10-15T21:48:24.292846+00:00\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--source-dir\", \"force-app\", \"--test-level\", \"NoTestRun\", \"--target-org\", \"example-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\ndeploymentId=None\nexitCode=1\nend=2026-10-15T21:48:25.539825+00:00\n",
       "sourceManifestSHA256": "b50e96d9cd3f8ce6eb16143d560b3f56cfef2a8e5bce873a7c52d28be3f68069"
     }
   ],
@@ -240,7 +240,7 @@
         "org.tsv": "33f450daf1911d0d113f5651d8b161776b55dcedf2ef31b75f8b221cbc1cfd93",
         "source-digests.json": "cffd7872d192a260c1ee13bde8ed418902229638f660465703169ba07e737863"
       },
-      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=cc33a6f2d3f7b65d6008134feb8e69df2f410263ae78a21a436e134da8678f54\nsourceApi=62.0\ncallerApi=62.0\ntransportApi=62.0\ncontext=@IsTest\nhelperApi=62.0\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--ignore-conflicts\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"OwnedReceiverObservation\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T21:51:09Z\nexitCode=1\ndeploymentId=0Af000000000jZHCAY\nobservedRows=1\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T21:51:44Z\n",
+      "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=cc33a6f2d3f7b65d6008134feb8e69df2f410263ae78a21a436e134da8678f54\nsourceApi=62.0\ncallerApi=62.0\ntransportApi=62.0\ncontext=@IsTest\nhelperApi=62.0\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--ignore-conflicts\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"OwnedReceiverObservation\", \"--target-org\", \"example-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T21:51:09Z\nexitCode=1\ndeploymentId=0Af000000000jZHCAY\nobservedRows=1\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T21:51:44Z\n",
       "command": {
         "environment": {
           "HOME": "<capture-home>",
@@ -260,7 +260,7 @@
           "--tests",
           "OwnedReceiverObservation",
           "--target-org",
-          "scratch-org",
+          "example-org",
           "--api-version",
           "62.0",
           "--wait",
@@ -390,7 +390,7 @@
         "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "source-digests.json": "aacb55b3fe2159d5029f0c36a54b8e805c5c5533f247405838978fb0a71501b7"
       },
-      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=cc33a6f2d3f7b65d6008134feb8e69df2f410263ae78a21a436e134da8678f54\ncontext=anonymous\nsourceApi=62.0\nhelperApi=62.0\nprojectApi=62.0\ntransportApi=62.0\nnamespace=none\nmutation=none; pure synthetic receiver dispatch\nhelperSetupDeploymentId=0Af000000000b34CAA\ncleanupOwner=k6\nstart=2026-10-15T21:50:14.230900+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/static_factory_receiver/api62/anonymous/source.apex\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nrows=1\nend=2026-10-15T21:50:15.474185+00:00\n",
+      "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=cc33a6f2d3f7b65d6008134feb8e69df2f410263ae78a21a436e134da8678f54\ncontext=anonymous\nsourceApi=62.0\nhelperApi=62.0\nprojectApi=62.0\ntransportApi=62.0\nnamespace=none\nmutation=none; pure synthetic receiver dispatch\nhelperSetupDeploymentId=0Af000000000b34CAA\ncleanupOwner=k6\nstart=2026-10-15T21:50:14.230900+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/static_factory_receiver/api62/anonymous/source.apex\", \"--target-org\", \"example-org\", \"--api-version\", \"62.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nrows=1\nend=2026-10-15T21:50:15.474185+00:00\n",
       "command": {
         "command": [
           "sf",
@@ -399,7 +399,7 @@
           "--file",
           "<worktree>/probe/static_factory_receiver/api62/anonymous/source.apex",
           "--target-org",
-          "scratch-org",
+          "example-org",
           "--api-version",
           "62.0",
           "--json"
@@ -532,7 +532,7 @@
         "org.tsv": "8b82b73f6d380d0a8a14f3be878f8dee0b7d959bb1fec14866b8c03f36227eda",
         "source-digests.json": "8f3d9c65b16c5190bf85728319ca56c8a2b5e10097cd5e3b412fb3ccc05f78bd"
       },
-      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=cc33a6f2d3f7b65d6008134feb8e69df2f410263ae78a21a436e134da8678f54\nsourceApi=67.0\ncallerApi=67.0\ntransportApi=62.0\ncontext=@IsTest\nhelperApi=67.0\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"OwnedReceiverObservation\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T21:45:52Z\nexitCode=1\ndeploymentId=0Af000000000t5ACAQ\nobservedRows=1\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T21:46:01Z\n",
+      "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=cc33a6f2d3f7b65d6008134feb8e69df2f410263ae78a21a436e134da8678f54\nsourceApi=67.0\ncallerApi=67.0\ntransportApi=62.0\ncontext=@IsTest\nhelperApi=67.0\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"OwnedReceiverObservation\", \"--target-org\", \"example-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T21:45:52Z\nexitCode=1\ndeploymentId=0Af000000000t5ACAQ\nobservedRows=1\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T21:46:01Z\n",
       "command": {
         "environment": {
           "HOME": "<capture-home>",
@@ -551,7 +551,7 @@
           "--tests",
           "OwnedReceiverObservation",
           "--target-org",
-          "scratch-org",
+          "example-org",
           "--api-version",
           "62.0",
           "--wait",
@@ -681,7 +681,7 @@
         "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "source-digests.json": "8402f9009f221e4676743af72f496818047436f997016afe848378e0fac9689c"
       },
-      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=cc33a6f2d3f7b65d6008134feb8e69df2f410263ae78a21a436e134da8678f54\ncontext=anonymous\nsourceApi=67.0\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=67.0\nnamespace=none\nmutation=none; pure synthetic receiver dispatch\nhelperSetupDeploymentId=0Af000000000xDUCAY\ncleanupOwner=k6\nstart=2026-10-15T21:47:13.976021+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/static_factory_receiver/api67/anonymous/source.apex\", \"--target-org\", \"scratch-org\", \"--api-version\", \"67.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nrows=1\nend=2026-10-15T21:47:15.244051+00:00\n",
+      "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=cc33a6f2d3f7b65d6008134feb8e69df2f410263ae78a21a436e134da8678f54\ncontext=anonymous\nsourceApi=67.0\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=67.0\nnamespace=none\nmutation=none; pure synthetic receiver dispatch\nhelperSetupDeploymentId=0Af000000000xDUCAY\ncleanupOwner=k6\nstart=2026-10-15T21:47:13.976021+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/static_factory_receiver/api67/anonymous/source.apex\", \"--target-org\", \"example-org\", \"--api-version\", \"67.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nrows=1\nend=2026-10-15T21:47:15.244051+00:00\n",
       "command": {
         "command": [
           "sf",
@@ -690,7 +690,7 @@
           "--file",
           "<worktree>/probe/static_factory_receiver/api67/anonymous/source.apex",
           "--target-org",
-          "scratch-org",
+          "example-org",
           "--api-version",
           "67.0",
           "--json"

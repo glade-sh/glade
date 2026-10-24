@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"strconv"
 	"sync"
 	"testing"
 
@@ -63,19 +64,21 @@ func TestRestoredRuntimeTemplateClonesOwnedRuntime(t *testing.T) {
 	}
 
 	firstMachine := template.CloneMachine(nil)
-	class := firstMachine.Classes["BoundaryCounter"]
-	field := class.StaticFields["value"]
-	field.Value = Int(41)
-	class.StaticFields["value"] = field
-	values := class.StaticFields["values"]
-	values.Value.List[0] = String("changed")
-	class.StaticFields["values"] = values
-	firstMachine.Classes["BoundaryCounter"] = class
+	class, ok := firstMachine.lookupClass("BoundaryCounter")
+	if !ok {
+		t.Fatal("first machine lost BoundaryCounter")
+	}
+	firstMachine.writeStaticFieldValue("BoundaryCounter", "value", class, class.StaticFields["value"], Int(41))
+	firstMachine.writeStaticFieldValue("BoundaryCounter", "values", class, class.StaticFields["values"], List(String("changed")))
 	secondMachine := template.CloneMachine(nil)
-	if got := secondMachine.Classes["BoundaryCounter"].StaticFields["value"].Value; got.Kind != ValueNull {
+	secondClass, ok := secondMachine.classEntry("BoundaryCounter")
+	if !ok {
+		t.Fatal("second machine lost BoundaryCounter")
+	}
+	if got := secondClass.StaticFields["value"].Value; got.Kind != ValueNull {
 		t.Fatalf("second CloneMachine() static value = %#v, want null", got)
 	}
-	if got := secondMachine.Classes["BoundaryCounter"].StaticFields["values"].Value.List[0].Text; got != "base" {
+	if got := secondClass.StaticFields["values"].Value.List[0].Text; got != "base" {
 		t.Fatalf("second CloneMachine() nested static value = %q, want base", got)
 	}
 }
@@ -102,11 +105,12 @@ func TestRestoredRuntimeTemplateConcurrentClonesAreIndependent(t *testing.T) {
 			orgs[i] = org
 
 			machine := template.CloneMachine(nil)
-			class := machine.Classes["BoundaryCounter"]
-			field := class.StaticFields["value"]
-			field.Value = Int(int64(i))
-			class.StaticFields["value"] = field
-			machine.Classes["BoundaryCounter"] = class
+			class, ok := machine.lookupClass("BoundaryCounter")
+			if !ok {
+				t.Errorf("machine %d lost BoundaryCounter", i)
+				return
+			}
+			machine.writeStaticFieldValue("BoundaryCounter", "value", class, class.StaticFields["value"], Int(int64(i)))
 			machines[i] = machine
 		}(i)
 	}
@@ -117,7 +121,11 @@ func TestRestoredRuntimeTemplateConcurrentClonesAreIndependent(t *testing.T) {
 		if got := orgs[i].Objects["CacheBoundary__c"].Records["a00000000000001"].Fields["Name"].String; got != wantName {
 			t.Fatalf("org clone %d Name = %q, want %q", i, got, wantName)
 		}
-		if got := machines[i].Classes["BoundaryCounter"].StaticFields["value"].Value; got.Kind != ValueInt || got.Int != int64(i) {
+		class, ok := machines[i].classEntry("BoundaryCounter")
+		if !ok {
+			t.Fatalf("machine clone %d lost BoundaryCounter", i)
+		}
+		if got := class.StaticFields["value"].Value; got.Kind != ValueInt || got.Int != int64(i) {
 			t.Fatalf("machine clone %d static value = %#v, want %d", i, got, i)
 		}
 	}
@@ -126,7 +134,11 @@ func TestRestoredRuntimeTemplateConcurrentClonesAreIndependent(t *testing.T) {
 		t.Fatalf("fresh org after concurrent clones Name = %q, want base", got)
 	}
 	freshMachine := template.CloneMachine(nil)
-	if got := freshMachine.Classes["BoundaryCounter"].StaticFields["value"].Value; got.Kind != ValueNull {
+	freshClass, ok := freshMachine.classEntry("BoundaryCounter")
+	if !ok {
+		t.Fatal("fresh machine lost BoundaryCounter")
+	}
+	if got := freshClass.StaticFields["value"].Value; got.Kind != ValueNull {
 		t.Fatalf("fresh machine after concurrent clones static value = %#v, want null", got)
 	}
 }
@@ -171,6 +183,68 @@ func restoredRuntimeTestMachine(t *testing.T) *VM {
 		},
 	}); err != nil {
 		t.Fatal(err)
+	}
+	return machine
+}
+
+func TestRestoredRuntimeTemplateSharesFrozenMachineWithCopyOnWrite(t *testing.T) {
+	base := restoredRuntimeTemplatePerfMachine(t)
+	template := NewRestoredRuntimeTemplate(storage.NewOrgState(), base)
+	_ = template.CloneMachine(nil)
+	deepClones := testing.AllocsPerRun(3, func() { _ = base.CloneRuntime(nil) })
+	rowClones := testing.AllocsPerRun(3, func() { _ = template.CloneMachine(nil) })
+	t.Logf("restored VM clone allocations %.0f; deep runtime clone allocations %.0f", rowClones, deepClones)
+	if rowClones >= deepClones {
+		t.Fatalf("restored VM clone allocates %.0f, want fewer than deep runtime clone %.0f", rowClones, deepClones)
+	}
+
+	first, second := template.CloneMachine(nil), template.CloneMachine(nil)
+	if err := first.RegisterClass(Class{Name: "RequestOnly"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := base.Classes["RequestOnly"]; ok {
+		t.Fatal("request class registration changed the frozen template")
+	}
+	if _, ok := second.Classes["RequestOnly"]; ok {
+		t.Fatal("request class registration leaked into a sibling VM")
+	}
+}
+
+func BenchmarkRestoredRuntimeTemplateCloneMachine(b *testing.B) {
+	base := restoredRuntimeTemplatePerfMachine(b)
+	template := NewRestoredRuntimeTemplate(storage.NewOrgState(), base)
+	_ = template.CloneMachine(nil)
+	b.Run("deep", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_ = base.CloneRuntime(nil)
+		}
+	})
+	b.Run("restored-shared", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_ = template.CloneMachine(nil)
+		}
+	})
+}
+
+func restoredRuntimeTemplatePerfMachine(tb testing.TB) *VM {
+	tb.Helper()
+	machine := New(nil)
+	for i := 0; i < 64; i++ {
+		name := "FrozenRuntime" + strconv.Itoa(i)
+		fields := make(map[string]Field, 8)
+		staticFields := make(map[string]Field, 8)
+		for j := 0; j < 8; j++ {
+			fieldName := "field" + strconv.Itoa(j)
+			fields[fieldName] = Field{Name: fieldName, Type: "Integer", Value: Int(int64(j))}
+			staticFields[fieldName] = Field{Name: fieldName, Type: "Integer", Static: true, Value: Int(int64(j))}
+		}
+		if err := machine.RegisterClass(Class{Name: name, Fields: fields, StaticFields: staticFields}); err != nil {
+			tb.Fatal(err)
+		}
 	}
 	return machine
 }

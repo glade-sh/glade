@@ -59,9 +59,11 @@ func SalesforceImportMap() map[string]string {
 		"lightning/i18nService":                 "/lightning/shims/lightning/i18nService.js",
 		"lightning/iconUtils":                   "/lightning/shims/lightning/iconUtils.js",
 		"lightning/internalLocalizationService": "/lightning/shims/lightning/internalLocalizationService.js",
+		"lightning/logger":                      "/lightning/shims/lightning/logger.js",
 		"lightning/mediaUtils":                  "/lightning/shims/lightning/mediaUtils.js",
 		"lightning/messageDispatcher":           "/lightning/shims/lightning/messageDispatcher.js",
 		"lightning/messageService":              "/lightning/shims/lightning/messageService.js",
+		"lightning/mobileCapabilities":          "/lightning/shims/lightning/mobileCapabilities.js",
 		"lightning/navigation":                  "/lightning/shims/lightning/navigation.js",
 		"lightning/overlayManager":              "/lightning/shims/lightning/overlayManager.js",
 		"lightning/pageReferenceUtils":          "/lightning/shims/lightning/pageReferenceUtils.js",
@@ -515,6 +517,10 @@ func ToastModuleJS() string {
 
 func LightningUtilityModuleJS(name string) (string, bool) {
 	switch normalizeLightningBaseComponentName(name) {
+	case "logger":
+		return `// Event Monitoring delivery is a hosted boundary.
+export function log(_message) {}
+`, true
 	case "ariaobserver":
 		return `export default class AriaObserver {
   constructor(_target = null, _options = {}) {}
@@ -830,6 +836,9 @@ func SimulatedNativeAPIModuleJS(name string) (string, bool) {
 	token := strings.TrimSuffix(strings.TrimSpace(name), ".js")
 	if _, ok := simulatedNativeAPIModules[token]; !ok {
 		return "", false
+	}
+	if token == "mobileCapabilities" {
+		return mobileCapabilitiesModuleJS(), true
 	}
 	return fmt.Sprintf(`export const moduleName = %q;
 export const supportTier = "partial-local-simulated";

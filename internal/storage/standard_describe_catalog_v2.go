@@ -12,6 +12,8 @@ import (
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/glade-sh/glade/internal/apexlang"
 )
 
 const standardDescribeCatalogV2HeaderSize = 16
@@ -138,7 +140,10 @@ func (cache *standardDescribeCatalogV2RawCache) entryForName(objectName string) 
 	if err := validateResolvedStandardDescribeCatalogV2IndexEntry(indexEntry); err != nil {
 		return standardDescribeObject{}, true, err
 	}
-	loaded, _ := cache.entries.LoadOrStore(indexEntry.Name, &standardDescribeCatalogV2RawCacheEntry{indexEntry: indexEntry})
+	loaded, ok := cache.entries.Load(indexEntry.Name)
+	if !ok {
+		loaded, _ = cache.entries.LoadOrStore(indexEntry.Name, &standardDescribeCatalogV2RawCacheEntry{indexEntry: indexEntry})
+	}
 	cached := loaded.(*standardDescribeCatalogV2RawCacheEntry)
 	cached.once.Do(func() {
 		cached.value, cached.err = cache.decode(cached.indexEntry)
@@ -178,7 +183,7 @@ func lookupStandardDescribeChildRelationshipsV2(objectName string) (standardDesc
 }
 
 func lookupStandardDescribeCatalogV2Index(index []standardDescribeCatalogV2IndexEntry, objectName string) (standardDescribeCatalogV2IndexEntry, bool) {
-	key := strings.ToLower(strings.TrimSpace(objectName))
+	key := apexlang.LowerName(strings.TrimSpace(objectName))
 	if key == "" {
 		return standardDescribeCatalogV2IndexEntry{}, false
 	}

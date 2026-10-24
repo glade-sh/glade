@@ -889,7 +889,7 @@
       "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "compile": false,
-      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured example-org shape but present in the local standard schema."
     },
     {
       "id": "R067",
@@ -897,7 +897,7 @@
       "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "compile": false,
-      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured example-org shape but present in the local standard schema."
     },
     {
       "id": "R068",
@@ -905,7 +905,7 @@
       "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "compile": false,
-      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured example-org shape but present in the local standard schema."
     },
     {
       "id": "R069",
@@ -913,7 +913,7 @@
       "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "compile": false,
-      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured example-org shape but present in the local standard schema."
     },
     {
       "id": "R070",
@@ -921,7 +921,7 @@
       "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "compile": false,
-      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured example-org shape but present in the local standard schema."
     },
     {
       "id": "R071",
@@ -929,7 +929,7 @@
       "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "compile": false,
-      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured example-org shape but present in the local standard schema."
     },
     {
       "id": "R072",
@@ -937,7 +937,7 @@
       "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "compile": false,
-      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured example-org shape but present in the local standard schema."
     },
     {
       "id": "R073",
@@ -945,7 +945,7 @@
       "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "compile": false,
-      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured example-org shape but present in the local standard schema."
     },
     {
       "id": "R074",
@@ -953,7 +953,7 @@
       "expected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "floorExpected": "COMPILE_ERROR\tline 24: Variable does not exist: HasOptedOutOfEmail",
       "compile": false,
-      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured scratch-org shape but present in the local standard schema."
+      "carry": "A23 schema: HasOptedOutOfEmail is absent in the captured example-org shape but present in the local standard schema."
     },
     {
       "id": "R075",

@@ -143,7 +143,7 @@ func runInnerTypeNativeRoutes(t *testing.T, family, class string, routes []strin
 				}
 				result := run.Suites[0].Cases[0]
 				if result.Problem == nil || !strings.HasSuffix(result.Problem.Type, "AssertException") {
-					t.Fatalf("missing assertion transport: %+v", result)
+					t.Fatalf("missing assertion transport: %+v; problem: %+v", result, result.Problem)
 				}
 				_, observed, _ = strings.Cut(result.Problem.Message, "OBS|")
 			}

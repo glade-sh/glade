@@ -179,8 +179,14 @@ func EnsureUniqueKeyPrefixes(org *OrgState) {
 	if org == nil {
 		return
 	}
-	if org.keyPrefixesValidated && org.keyPrefixesValidatedObjectCount == len(org.Objects) && keyPrefixValidationSnapshotMatches(org) {
-		return
+	if org.keyPrefixesValidated && org.keyPrefixesValidatedObjectCount == len(org.Objects) {
+		if strings.TrimSpace(org.RuntimeSchemaStamp) != "" && org.keyPrefixesValidatedGeneration == org.RuntimeGenerationID() {
+			return
+		}
+		if keyPrefixValidationSnapshotMatches(org) {
+			org.keyPrefixesValidatedGeneration = org.RuntimeGenerationID()
+			return
+		}
 	}
 	if uniqueKeyPrefixesAlreadyValid(org) {
 		markKeyPrefixesValidated(org)
@@ -207,6 +213,7 @@ func EnsureUniqueKeyPrefixes(org *OrgState) {
 			}
 		}
 	}
+	changed := false
 	for _, name := range names {
 		state := org.Objects[name]
 		prefix := strings.TrimSpace(state.Definition.KeyPrefix)
@@ -233,9 +240,15 @@ func EnsureUniqueKeyPrefixes(org *OrgState) {
 				}
 			}
 		}
+		if state.Definition.KeyPrefix != prefix {
+			changed = true
+		}
 		state.Definition.KeyPrefix = prefix
 		org.Objects[name] = state
 		used[prefix] = name
+	}
+	if changed {
+		org.ClearRuntimeSchemaStamp()
 	}
 	markKeyPrefixesValidated(org)
 }
@@ -282,6 +295,7 @@ type keyPrefixSnapshotEntry struct {
 func markKeyPrefixesValidated(org *OrgState) {
 	org.keyPrefixesValidated = true
 	org.keyPrefixesValidatedObjectCount = len(org.Objects)
+	org.keyPrefixesValidatedGeneration = org.RuntimeGenerationID()
 	snapshot := make([]keyPrefixSnapshotEntry, 0, len(org.Objects))
 	for name, state := range org.Objects {
 		snapshot = append(snapshot, keyPrefixSnapshotEntry{name: name, prefix: state.Definition.KeyPrefix})
@@ -296,6 +310,7 @@ func markKeyPrefixesValidated(org *OrgState) {
 // re-decided by the full Objects walk, so the answer is unchanged when a
 // same-count swap adds an object without a prefix.
 func keyPrefixValidationSnapshotMatches(org *OrgState) bool {
+	keyPrefixSnapshotValidationCalls.Add(1)
 	if org.keyPrefixesValidatedPrefixes == nil || len(org.keyPrefixesValidatedPrefixes) != len(org.Objects) {
 		return false
 	}
@@ -310,6 +325,10 @@ func keyPrefixValidationSnapshotMatches(org *OrgState) bool {
 // keyPrefixSnapshotObjectWalks counts full Objects walks; tests use it to keep
 // the unchanged-org check on the snapshot fast path.
 var keyPrefixSnapshotObjectWalks atomic.Uint64
+
+// keyPrefixSnapshotValidationCalls counts snapshot checks for focused clone
+// reuse tests.
+var keyPrefixSnapshotValidationCalls atomic.Uint64
 
 func keyPrefixValidationSnapshotMatchesByObject(org *OrgState) bool {
 	keyPrefixSnapshotObjectWalks.Add(1)

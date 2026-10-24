@@ -113,7 +113,7 @@ func TestNullStringObservationsConformance(t *testing.T) {
 		t.Fatalf("native accounting changed: cells=%d unanswered=%d dispositions=%v", cells, unanswered, counts)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "NullStringObservations", api)
 			for _, row := range data.Rows {
 				for _, cell := range row.Cells {

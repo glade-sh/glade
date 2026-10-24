@@ -1,0 +1,13 @@
+[
+  {
+    "id": "inner_before_outer",
+    "classes": {
+      "OrdA": "public class OrdA {\n    void a() { X.m1(); }\n    class R { void b() { X.m2(); } }\n    void c() { X.m3(); }\n    enum X { A }\n}\n"
+    },
+    "testClasses": {
+      "OrdA": "public class OrdA {\n    void a() { X.m1(); }\n    class R { void b() { X.m2(); } }\n    void c() { X.m3(); }\n    enum X { A }\n}\n",
+      "OrdATest": "@IsTest private class OrdATest { @IsTest static void t() { new OrdA(); } }\n"
+    },
+    "testClass": "OrdATest"
+  }
+]

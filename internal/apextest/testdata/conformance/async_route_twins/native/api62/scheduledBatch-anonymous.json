@@ -1,0 +1,57 @@
+{
+  "observation": {
+    "staticBatchStart": 1,
+    "staticBatchFinish": 1,
+    "staticBatchExecute": 1,
+    "instanceBatchStart": 2,
+    "instanceBatchFinish": 2,
+    "instanceBatchExecute": 2
+  },
+  "records": [
+    {
+      "Name": "instanceBatchExecute",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "instanceBatchExecute",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "instanceBatchFinish",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "instanceBatchFinish",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "instanceBatchStart",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "instanceBatchStart",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "staticBatchExecute",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "staticBatchFinish",
+      "Phone": null,
+      "Description": null
+    },
+    {
+      "Name": "staticBatchStart",
+      "Phone": null,
+      "Description": null
+    }
+  ]
+}

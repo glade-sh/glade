@@ -1,0 +1,37 @@
+api	route	case	outcome	diagnostic
+62.0	anonymous	id_assignment	accepted	-
+62.0	named	id_assignment	accepted	-
+62.0	istest	id_assignment	accepted	-
+62.0	anonymous	overload_selection	accepted	-
+62.0	named	overload_selection	accepted	-
+62.0	istest	overload_selection	accepted	-
+62.0	anonymous	name_value	accepted	-
+62.0	named	name_value	accepted	-
+62.0	istest	name_value	accepted	-
+62.0	anonymous	custom_assignment	accepted	-
+62.0	named	custom_assignment	accepted	-
+62.0	istest	custom_assignment	accepted	-
+62.0	anonymous	unqualified_boundary	accepted	-
+62.0	named	unqualified_boundary	accepted	-
+62.0	istest	unqualified_boundary	accepted	-
+62.0	anonymous	id_rejection	rejected	Illegal assignment from Schema.SObjectField to Id
+62.0	named	id_rejection	rejected	Illegal assignment from Schema.SObjectField to Id
+62.0	istest	id_rejection	rejected	Illegal assignment from Schema.SObjectField to Id
+67.0	istest	id_assignment	accepted	-
+67.0	istest	overload_selection	accepted	-
+67.0	istest	name_value	accepted	-
+67.0	istest	custom_assignment	accepted	-
+67.0	istest	unqualified_boundary	accepted	-
+67.0	anonymous	id_assignment	accepted	-
+67.0	named	id_assignment	accepted	-
+67.0	anonymous	overload_selection	accepted	-
+67.0	named	overload_selection	accepted	-
+67.0	anonymous	name_value	accepted	-
+67.0	named	name_value	accepted	-
+67.0	anonymous	custom_assignment	accepted	-
+67.0	named	custom_assignment	accepted	-
+67.0	anonymous	unqualified_boundary	accepted	-
+67.0	named	unqualified_boundary	accepted	-
+67.0	anonymous	id_rejection	rejected	Illegal assignment from Schema.SObjectField to Id
+67.0	named	id_rejection	rejected	Illegal assignment from Schema.SObjectField to Id
+67.0	istest	id_rejection	rejected	Illegal assignment from Schema.SObjectField to Id

@@ -544,6 +544,9 @@ func databaseDMLOptionsAllOrNone(value Value, fallback bool) bool {
 
 // Explicit Database.insert/update Task overloads support assignment email capture.
 func (vm *VM) databaseDMLOptionsForRecords(op string, records, value Value) (dml.Options, error) {
+	if err := vm.validateAssignmentRuleOptionRoute(op, records, value); err != nil {
+		return dml.Options{}, err
+	}
 	if !databaseDMLOptionConfigured(value, "EmailHeader", true) {
 		return databaseDMLOptions(value)
 	}
@@ -611,12 +614,11 @@ func (vm *VM) taskEmailDMLOptions(records, value Value, allowEnabled bool) (dml.
 }
 
 func databaseDMLOptions(value Value) (dml.Options, error) {
-	// DuplicateRuleHeader has no effect because local orgs have no duplicate rules.
+	// DuplicateRuleHeader.allowSave applies to explicit options (native DR04).
 	for _, field := range []struct {
 		name       string
 		inspectMap bool
 	}{
-		{name: "AssignmentRuleHeader", inspectMap: true},
 		{name: "EmailHeader", inspectMap: true},
 		{name: "LocaleOptions"},
 		{name: "LocalizeErrors"},
@@ -625,7 +627,11 @@ func databaseDMLOptions(value Value) (dml.Options, error) {
 			return dml.Options{}, unsupportedCallError("Database.DMLOptions." + field.name + " local DML option behavior")
 		}
 	}
-	options := dml.Options{}
+	assignment, err := databaseAssignmentRuleOptions(value)
+	if err != nil {
+		return dml.Options{}, err
+	}
+	options := dml.Options{AssignmentRule: assignment, AllowDuplicateSave: databaseDuplicateRuleHeaderAllowSave(value)}
 	for _, field := range []string{"allowFieldTruncation", "AllowFieldTruncation"} {
 		if option, ok := value.Fields[field]; ok && option.Kind == ValueBool && option.Bool {
 			options.AllowFieldTruncation = true
@@ -667,6 +673,9 @@ func (vm *VM) applyPerRecordDMLTargetOptions(op string, records []storage.Record
 		if !ok || !isDatabaseDMLOptionsValue(value) {
 			continue
 		}
+		if err := vm.validateAssignmentRuleOptionRoute(op, *targets[i], value); err != nil {
+			return err
+		}
 		var options dml.Options
 		var err error
 		if (op == "insert" || op == "upsert") && databaseDMLOptionConfigured(value, "EmailHeader", true) {
@@ -677,6 +686,7 @@ func (vm *VM) applyPerRecordDMLTargetOptions(op string, records []storage.Record
 		if err != nil {
 			return err
 		}
+		records[i].AssignmentRule = options.AssignmentRule
 		if !options.AllowFieldTruncation {
 			continue
 		}
@@ -1656,6 +1666,10 @@ func (vm *VM) executeDatabaseMergeWithMode(args []Value, mode ir.DMLMode, result
 		return Null, err
 	}
 	if err := vm.checkMixedDML("merge", recordsForChecks); err != nil {
+		if !allOrNone {
+			failure := mixedDMLRowFailure(master[0], err)
+			return vm.mergeResultValue(master[0].ID, args[1].Kind == ValueList, []dml.Result{failure}), nil
+		}
 		return Null, err
 	}
 	appendTraceLazy(result, "apex.dml.merge", "apex.dml", func() map[string]any {
@@ -2278,7 +2292,28 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 		return failures, nil
 	}
 	if err := vm.checkMixedDML(op, records); err != nil {
-		return nil, err
+		if allOrNone {
+			return nil, err
+		}
+		// Partial Database DML rejects conflicting rows while retaining
+		// compatible setup/non-setup rows and their original result positions.
+		failures := make([]dml.Result, len(records))
+		for i, record := range records {
+			if err := vm.checkMixedDML(op, []storage.Record{record}); err != nil {
+				failures[i] = mixedDMLRowFailure(record, err)
+			}
+		}
+		if hasDMLFailures(failures) {
+			records, _, targets = filterDMLInputs(records, nil, targets, failures)
+			if len(records) == 0 {
+				return failures, nil
+			}
+			defer func() {
+				if outErr == nil {
+					out = mergeDMLResults(failures, out)
+				}
+			}()
+		}
 	}
 	if checkRecordAccess && (op == "update" || op == "delete" || op == "undelete" || op == "upsert") {
 		failures := make([]dml.Result, len(records))
@@ -2319,12 +2354,13 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	if op == "upsert" {
 		return vm.applyUpsertDML(records, targets, allOrNone, externalIDField, options, result)
 	}
+	assignmentUpdateTriggers := (op == "insert" || op == "update") && vm.hasAssignmentRuleUpdateTriggers(records, targets, options)
 	if len(records) > 200 && (op == "insert" || op == "update") && recordsShareSingleObject(records) && !hasSuffixFold(records[0].Object, "__e") &&
-		(vm.hasTriggerForDML(triggerTimingBefore, op, records) || vm.hasAfterTriggerForDML(op, records)) {
+		(vm.hasTriggerForDML(triggerTimingBefore, op, records) || vm.hasAfterTriggerForDML(op, records) || assignmentUpdateTriggers) {
 		return vm.applyTriggerDMLChunks(op, value, targets, allOrNone, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode)
 	}
 	triggerInput := Null
-	if !allOrNone && (vm.hasTriggerForDML(triggerTimingBefore, op, records) || vm.hasAfterTriggerForDML(op, records)) {
+	if !allOrNone && (vm.hasTriggerForDML(triggerTimingBefore, op, records) || vm.hasAfterTriggerForDML(op, records) || assignmentUpdateTriggers) {
 		// Access-denied rows have already been removed; identity and trigger
 		// failures below retain positions within this private input snapshot.
 		triggerInput = vm.snapshotTriggerDMLInput(value, targets)
@@ -2333,11 +2369,13 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 		return vm.traceDMLArgs(op, records, len(records))
 	})
 	if op == "insert" {
+		vm.filterSObjectAuditDMLFields(records, targets)
 		vm.filterJSONInsertCreationTimestamp(records, targets, resolvedMode)
 		vm.filterJSONInsertLastActivityDate(records, targets)
 		vm.applySObjectFieldDefaults(records, options.ApexRecordTypeInsertMode)
 		vm.applyBeforeDMLDerivedFields(records)
 	} else if op == "update" {
+		vm.filterSObjectAuditDMLFields(records, targets)
 		vm.filterJSONUpdateCreationTimestamp(records, targets, resolvedMode)
 	}
 	before, err := vm.oldRecords(op, records)
@@ -2409,7 +2447,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 		partialAfterTriggerBackup = snapshotRuntimeOrgState(vm.Org)
 		partialAfterTriggerBackupReady = true
 	}
-	if vm.needsEarlyDMLRollbackSnapshot(op, records, allOrNone) || vm.hasTriggerForDML(triggerTimingBefore, op, records) || vm.hasAfterTriggerForDML(op, records) || (op == "insert" && hasStoredInsertDerivedFields(records)) {
+	if vm.hasAutomationForDML(records) || vm.needsEarlyDMLRollbackSnapshot(op, records, allOrNone) || vm.hasTriggerForDML(triggerTimingBefore, op, records) || vm.hasAfterTriggerForDML(op, records) || assignmentUpdateTriggers || (op == "insert" && hasStoredInsertDerivedFields(records)) {
 		// An unhandled trigger failure
 		// rolls back its DML even when Database allOrNone is false.
 		ensureRollback(false)
@@ -2523,6 +2561,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	engine := vm.newDeferredAutomationDMLEngine(result)
 	engine.Options = options
 	engine.Options.AllowBatchUniqueValueSwap = allOrNone
+	engine.Options.EnforceDuplicateRules = op == "insert" || op == "update" || op == "upsert"
 	engine.PriorRecords = dmlPriorRecordsByID(before)
 	if op == "update" && vm.inAfterUndeleteTrigger() {
 		engine.Options.AllowUpdateDeleted = true
@@ -2618,6 +2657,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 			return vm.triggerDMLFailure(op, allOrNone, afterInputRecords, results, value, err)
 		}
 		if hasDMLFailures(afterFailures) {
+			engineResults = mergeAfterTriggerDMLResults(engineResults, afterFailures)
 			results = mergeAfterTriggerDMLResults(results, afterFailures)
 			if allOrNone {
 				ensureRollback(false)
@@ -2632,6 +2672,30 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 			afterRecords = filterAfterTriggerRecords(afterRecords, afterFailures)
 		}
 	}
+	if op == "insert" || op == "update" {
+		assignmentFailures, err := vm.applyAssignmentRuleUpdates(&engine, records, engineResults, result)
+		if err != nil {
+			if rollbackErr := restoreRollback(); rollbackErr != nil {
+				return nil, rollbackErr
+			}
+			return nil, err
+		}
+		if hasDMLFailures(assignmentFailures) {
+			triggerRowFailure = true
+			mergeDMLFailuresInPlace(engineResults, assignmentFailures)
+			results = engineResults
+			if hasDMLFailures(beforeFailures) {
+				results = mergeDMLResults(beforeFailures, results)
+			}
+			if allOrNone {
+				if rollbackErr := restoreRollback(); rollbackErr != nil {
+					return nil, rollbackErr
+				}
+				vm.clearDMLResultFieldsForFailures(targets, engineResults, []string{op})
+				return results, nil
+			}
+		}
+	}
 	if !allOrNone && triggerRowFailure {
 		attempt := 0
 		if len(triggerRetries) > 0 {
@@ -2644,10 +2708,20 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	}
 	if op == "insert" || op == "update" || op == "upsert" {
 		if err := vm.applyDeferredAutomation(&engine, afterRecords, afterInputBefore, allOrNone, rollback, result); err != nil {
+			if failures, ok := flowActionInputDMLResults(op, results, err); ok {
+				if !allOrNone {
+					if rollbackErr := restoreRollback(); rollbackErr != nil {
+						return nil, rollbackErr
+					}
+				}
+				vm.clearDMLResultFieldsForFailures(targets, failures, []string{op})
+				return failures, nil
+			}
 			return nil, err
 		}
 	}
 	if hasDMLSuccess(results) {
+		vm.queueDuplicateReports(engine.TakeDuplicateReports())
 		vm.rebuildDMLObjectIndexes(records, results)
 		vm.clearCustomDataCache()
 		if options.CaptureTaskAssignmentEmail {
@@ -2914,6 +2988,9 @@ func (vm *VM) applyTestSObjectNameDefaults(records []storage.Record, defaultMiss
 }
 
 func (vm *VM) defaultValueForRecordField(definition storage.ObjectDefinition, record storage.Record, field storage.Field) (storage.Value, bool) {
+	if !dml.PersonAccountCustomFieldDefaultAllowed(vm.Org, definition, record, field) {
+		return storage.Value{}, false
+	}
 	if value, ok := storage.CurrencyDefaultForField(vm.Org, storage.ID(vm.currentUserID()), field); ok {
 		return value, true
 	}
@@ -3083,7 +3160,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		partialAfterTriggerBackup = snapshotRuntimeOrgState(vm.Org)
 		partialAfterTriggerBackupReady = true
 	}
-	if allOrNone || hasStoredInsertDerivedFields(records) {
+	if allOrNone || vm.hasAutomationForDML(records) || hasStoredInsertDerivedFields(records) {
 		ensureRollback(false)
 	}
 	kinds := make([]string, len(records))
@@ -3271,6 +3348,15 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			return results, err
 		}
 		if err := vm.applyDeferredAutomation(&engine, afterRecords, groupBefore, allOrNone, rollback, result); err != nil {
+			if failures, ok := flowActionInputDMLResults("upsert", results, err); ok {
+				if !allOrNone {
+					if rollbackErr := restoreRollback(); rollbackErr != nil {
+						return nil, rollbackErr
+					}
+				}
+				vm.clearDMLResultFieldsForFailures(targets, failures, kinds)
+				return failures, nil
+			}
 			return results, err
 		}
 	}
@@ -3317,7 +3403,7 @@ func (vm *VM) hasAutomationForDML(records []storage.Record) bool {
 		if !ok {
 			continue
 		}
-		if len(object.Definition.WorkflowRules) > 0 || len(object.Definition.FlowRules) > 0 {
+		if len(object.Definition.AssignmentRules) > 0 || len(object.Definition.WorkflowRules) > 0 || len(object.Definition.FlowRules) > 0 {
 			return true
 		}
 	}
@@ -3555,13 +3641,55 @@ func filterUpsertInputs(records, before []storage.Record, targets []*Value, kind
 	return filteredRecords, filteredBefore, filteredTargets, filteredKinds
 }
 
+type mixedDMLState struct {
+	setup, nonSetup             bool
+	setupObject, nonSetupObject string
+}
+
+func mixedDMLRowFailure(record storage.Record, err error) dml.Result {
+	message := err.Error()
+	if thrown, ok := err.(*apexThrowError); ok {
+		message = exceptionMessage(thrown.value)
+	}
+	return dml.Result{ID: record.ID, Error: message, StatusCode: "MIXED_DML_OPERATION"}
+}
+
+func (vm *VM) beginMixedDMLTransaction() func() {
+	parent := vm.mixedDML
+	context := vm.testContext
+	var setup, nonSetup bool
+	if context != nil {
+		setup, nonSetup = context.SetupDML, context.NonSetupDML
+		context.SetupDML, context.NonSetupDML = false, false
+	}
+	vm.mixedDML = mixedDMLState{}
+	return func() {
+		vm.mixedDML = parent
+		if context != nil {
+			context.SetupDML, context.NonSetupDML = setup, nonSetup
+		}
+	}
+}
+
 func (vm *VM) checkMixedDML(operation string, records []storage.Record) error {
-	if vm.testContext == nil || vm.testContext.RunAsDepth > 0 {
+	if vm.testContext == nil {
+		// Limit anonymous checking to the captured DML operations. Record
+		// actions retain their pre-existing test-context boundary only.
+		switch operation {
+		case "insert", "update", "upsert", "delete", "undelete", "merge":
+		default:
+			return nil
+		}
+	}
+	if vm.testContext != nil && vm.testContext.RunAsDepth > 0 {
 		return nil
 	}
-	hasSetup := false
-	hasNonSetup := false
-	for _, record := range records {
+	next := vm.mixedDML
+	if vm.testContext != nil {
+		next.setup = next.setup || vm.testContext.SetupDML
+		next.nonSetup = next.nonSetup || vm.testContext.NonSetupDML
+	}
+	for index, record := range records {
 		// The Apex Developer Guide permits Group insert/update alongside
 		// other sObjects (apex_dml_non_mix_sobjects.htm). These operations
 		// neither introduce nor clear the transaction's mixed-DML state.
@@ -3585,15 +3713,27 @@ func (vm *VM) checkMixedDML(operation string, records []storage.Record) error {
 		}
 		switch kind {
 		case "setup":
-			hasSetup = true
+			next.setup = true
+			if next.setupObject == "" {
+				next.setupObject = record.Object
+			}
 		case "nonsetup":
-			hasNonSetup = true
+			next.nonSetup = true
+			if next.nonSetupObject == "" {
+				next.nonSetupObject = record.Object
+			}
 		}
-	}
-	nextSetup := vm.testContext.SetupDML || hasSetup
-	nextNonSetup := vm.testContext.NonSetupDML || hasNonSetup
-	if nextSetup && nextNonSetup {
+		if !next.setup || !next.nonSetup {
+			continue
+		}
 		message := "Mixed DML operation detected; wrap supported setup/non-setup test work in System.runAs"
+		if operation == "insert" {
+			original := next.setupObject
+			if kind == "setup" {
+				original = next.nonSetupObject
+			}
+			message = fmt.Sprintf("Insert failed. First exception on row %d; first error: MIXED_DML_OPERATION, DML operation on setup object is not permitted after you have updated a non-setup object (or vice versa): %s, original object: %s: []", index, record.Object, original)
+		}
 		exception := Object("DmlException")
 		exception.Fields["message"] = String(message)
 		// GM03/GM04 expose this status for scalar inserts through getDmlType(0).
@@ -3603,8 +3743,11 @@ func (vm *VM) checkMixedDML(operation string, records []storage.Record) error {
 		}
 		return &apexThrowError{value: exception}
 	}
-	vm.testContext.SetupDML = nextSetup
-	vm.testContext.NonSetupDML = nextNonSetup
+	vm.mixedDML = next
+	if vm.testContext != nil {
+		vm.testContext.SetupDML = next.setup
+		vm.testContext.NonSetupDML = next.nonSetup
+	}
 	return nil
 }
 
@@ -4209,6 +4352,9 @@ func (vm *VM) isChildRelationshipField(definition storage.ObjectDefinition, fiel
 		return false
 	}
 	for _, childObject := range vm.Org.Objects {
+		if storage.IsChangeEventObject(childObject.Definition) {
+			continue
+		}
 		for _, relation := range childObject.Definition.Relations {
 			if !relationshipTargetsObject(relation, definition.APIName) {
 				continue
@@ -4330,7 +4476,7 @@ func (vm *VM) hydrateParentLookupFields(value Value) {
 	if vm == nil || vm.Org == nil || value.Kind != ValueObject {
 		return
 	}
-	object, ok := vm.Org.Objects[value.Type]
+	_, definition, ok := vm.sObjectDefinitionForRead(value.Type)
 	if !ok {
 		return
 	}
@@ -4340,7 +4486,7 @@ func (vm *VM) hydrateParentLookupFields(value Value) {
 			storedFields = record.Fields
 		}
 	}
-	for _, relation := range object.Definition.Relations {
+	for _, relation := range definition.Relations {
 		if strings.TrimSpace(relation.Field) == "" || strings.TrimSpace(relation.ParentRelationship) == "" {
 			continue
 		}
@@ -4590,6 +4736,9 @@ func (vm *VM) childRelationshipLookup(parentObject, relationship string) childRe
 	lookup := childRelationshipLookup{}
 	matches := make([]string, 0, 1)
 	for childName, childState := range vm.Org.Objects {
+		if storage.IsChangeEventObject(childState.Definition) {
+			continue
+		}
 		for _, relation := range childState.Definition.Relations {
 			if !relationshipTargetsObject(relation, canonicalParent) {
 				continue
@@ -4723,6 +4872,11 @@ func (vm *VM) putVMRecordFieldPath(root Value, objectName, field string, fieldVa
 	current := root
 	currentObject := objectName
 	for _, part := range parts[:len(parts)-1] {
+		// Populated relationship keys use schema spelling, regardless of which
+		// projected field reaches this parent first during record-map iteration.
+		if relation, known := vm.parentRelationshipMetadata(currentObject, part); known && relation.ParentRelationship != "" {
+			part = relation.ParentRelationship
+		}
 		next, ok := current.Fields[part]
 		if !ok {
 			// SELECT paths may spell the same relationship with different casing.
@@ -5862,6 +6016,9 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 		externalIDField = vm.upsertStatementSelectorField(value, externalIDField)
 	}
 	if op == "insert" && (value.Kind == ValueObject || value.Kind == ValueList) {
+		if err := vm.standardEventStatementInsertBoundary(value); err != nil {
+			return err
+		}
 		// Statement insert rejects scalar
 		// events and concrete event lists, including erased or empty lists.
 		// A list constructed as List<SObject> keeps its ordinary DML path
@@ -6040,7 +6197,7 @@ func (vm *VM) recordsFromValueUnchecked(value Value) ([]storage.Record, []*Value
 			} else {
 				merged = vm.mergeSObjectAliasFields(merged)
 			}
-			value.List[i] = merged
+			vm.setListElement(value, i, merged)
 			record, err := vm.recordFromValue(&value.List[i])
 			if err != nil {
 				return nil, nil, err

@@ -140,6 +140,9 @@ func ensureCustomMetadataPrefixes(org *OrgState, records []schema.CustomMetadata
 	}
 	for _, record := range records {
 		objectName := record.ObjectName
+		if canonical, ok := ResolveObjectName(*org, objectName); ok {
+			objectName = canonical
+		}
 		if objectName == "" || seen[objectName] {
 			continue
 		}
@@ -228,6 +231,9 @@ func customMetadataFields(org OrgState, definition ObjectDefinition, source sche
 	}
 	for fieldName, field := range definition.Fields {
 		if field.Type != FieldBoolean {
+			if value, ok := DefaultValueForField(field); ok {
+				fields[fieldName] = value
+			}
 			continue
 		}
 		defaultValue := strings.TrimSpace(field.DefaultValue)

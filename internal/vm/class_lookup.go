@@ -5,6 +5,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/glade-sh/glade/internal/apexlang"
 	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -229,10 +230,10 @@ func (vm *VM) classForAccess(className string) (Class, bool) {
 			return store(class, true)
 		}
 	}
-	class, ok := vm.Classes[className]
+	class, ok := vm.classEntry(className)
 	if !ok {
 		if resolved, found := vm.resolveClassName(className); found {
-			class, ok = vm.Classes[resolved]
+			class, ok = vm.classEntry(resolved)
 		}
 	}
 	return store(class, ok)
@@ -326,7 +327,7 @@ func (vm *VM) frozenNamespaceClassLookup(nsKey string) (map[string]namespaceClas
 			classesByShort[key] = namespaceClassLookup{}
 			continue
 		}
-		class, exists := vm.Classes[entry.Alias]
+		class, exists := vm.classEntry(entry.Alias)
 		if !exists {
 			return nil, false
 		}
@@ -349,7 +350,7 @@ func (vm *VM) buildFrozenNamespaceClassAliases(frozen *frozenClassLookup, nsKey 
 		if !ok {
 			continue
 		}
-		class, ok := vm.Classes[alias]
+		class, ok := vm.classEntry(alias)
 		if !ok {
 			continue
 		}
@@ -487,6 +488,10 @@ func (vm *VM) reflectionTypeToken(name string) Value {
 }
 
 func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value {
+	// The platform Network class remains available when its schema object is off.
+	if namespace == "" && strings.EqualFold(name, "Schema.Network") && (vm.Org == nil || !vm.Org.HasFeature("Communities")) {
+		return Null
+	}
 	// R195: forName does not trim a type-name argument.
 	if name == "" || name != strings.TrimSpace(name) {
 		return Null
@@ -519,6 +524,9 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 		}
 	}
 	if namespace != "" {
+		if strings.EqualFold(namespace, "System") && strings.EqualFold(name, "UserInfo") {
+			return vm.reflectionTypeToken("System.UserInfo")
+		}
 		if resolved, ok := generatedPlatformTypeForName(namespace, name); ok {
 			return vm.reflectionTypeToken(resolved)
 		}
@@ -814,7 +822,7 @@ func isCommonSObjectTypeName(name string) bool {
 	if name == "" {
 		return false
 	}
-	if commonSObjectTypeNameLookup()[strings.ToLower(name)] {
+	if commonSObjectTypeNameLookup()[apexlang.LowerName(name)] {
 		return true
 	}
 	return storage.IsKnownStandardObject(name)
@@ -896,6 +904,13 @@ func (vm *VM) lookupClass(typeName string) (Class, bool) {
 			if !cached.OK {
 				return Class{}, false
 			}
+			// The Classes reads below are classEntry written out: on this
+			// hot path the inlined call costs extra copies of the Class.
+			if written := vm.classValueOverlay; written != nil {
+				if class, ok := written[cached.Alias]; ok {
+					return class, true
+				}
+			}
 			class, ok := vm.Classes[cached.Alias]
 			if ok {
 				return class, true
@@ -906,6 +921,12 @@ func (vm *VM) lookupClass(typeName string) (Class, bool) {
 	vm.recordClassLookupMiss()
 	if frozen := vm.frozenClassLookup; frozen != nil {
 		if alias, ok := frozen.resolve(typeName); ok {
+			if written := vm.classValueOverlay; written != nil {
+				if class, ok := written[alias]; ok {
+					vm.storeClassLookupNameCache(typeName, alias, true)
+					return class, true
+				}
+			}
 			if class, ok := vm.Classes[alias]; ok {
 				vm.storeClassLookupNameCache(typeName, alias, true)
 				return class, true
@@ -914,12 +935,18 @@ func (vm *VM) lookupClass(typeName string) (Class, bool) {
 		vm.storeClassLookupNameCache(typeName, "", false)
 		return Class{}, false
 	}
+	if written := vm.classValueOverlay; written != nil {
+		if class, ok := written[typeName]; ok {
+			vm.storeClassLookupNameCache(typeName, typeName, true)
+			return class, true
+		}
+	}
 	if class, ok := vm.Classes[typeName]; ok {
 		vm.storeClassLookupNameCache(typeName, typeName, true)
 		return class, true
 	}
 	if overlay := vm.classOverlay; overlay != nil {
-		if class, ok := overlay.lookup(vm.Classes, typeName); ok {
+		if class, ok := overlay.lookup(vm, typeName); ok {
 			if alias := vm.liveClassAlias(class); alias != "" {
 				vm.storeClassLookupNameCache(typeName, alias, true)
 			}
@@ -943,7 +970,7 @@ func (vm *VM) lookupClass(typeName string) (Class, bool) {
 
 func (vm *VM) liveClassAlias(class Class) string {
 	for _, alias := range []string{runtimeClassName(class), class.Name} {
-		candidate, ok := vm.Classes[alias]
+		candidate, ok := vm.classEntry(alias)
 		if !ok {
 			continue
 		}
@@ -1057,6 +1084,9 @@ func (vm *VM) FreezeClassLookup() {
 	if vm == nil {
 		return
 	}
+	// The generation, copy plan and later pointer-shared clones describe
+	// vm.Classes itself, so it must hold this VM's values.
+	vm.foldClassValueOverlay()
 	if overlay := vm.classOverlay; overlay != nil {
 		vm.classOverlay = nil
 		if vm.freezeClassLookupOverlay(overlay) {
@@ -1214,13 +1244,15 @@ func (vm *VM) storeClassValue(class Class) {
 	// clone's existing alias entries in place is immediately visible without
 	// rebuilding the entire (~2x len(Classes)) lookup index or thrashing the
 	// access caches. Class structure (name/namespace/access) is unchanged, so
-	// those caches remain valid. Only fall back to the rebuild path when a name
-	// would be newly introduced.
-	vm.prepareClassMapWrite()
+	// those caches remain valid. A Classes map shared with other VMs is not
+	// copied: the values go to this VM's overlay. Only fall back to the
+	// rebuild path when a name would be newly introduced.
 	vm.classValuesWritten = true
 	if vm.frozenClassLookup != nil && vm.updateExistingClassValue(class) {
+		vm.classMapWritten = true
 		return
 	}
+	vm.prepareClassMapWrite()
 	vm.unshareClassLookup()
 	if vm.Classes == nil {
 		vm.Classes = make(map[string]Class)
@@ -1246,33 +1278,34 @@ func (vm *VM) writeClassValue(alias string, class Class) {
 // updateExistingClassValue updates a class value in place on the frozen lookup
 // fast path. It returns false (so the caller unshares and rebuilds) if any
 // target alias is not already present in the clone's Classes map, since adding
-// a new entry would require updating the shared frozen lookup index.
+// a new entry would require updating the shared frozen lookup index. It writes
+// nothing before every target alias is known to exist.
 func (vm *VM) updateExistingClassValue(class Class) bool {
 	if vm.Classes == nil {
 		return false
 	}
-	existing, exists := vm.Classes[class.Name]
+	existing, exists := vm.classEntry(class.Name)
 	if !exists {
 		return false
 	}
 	runtimeName := runtimeClassName(class)
-	if _, ok := vm.Classes[runtimeName]; !ok {
+	if _, ok := vm.classEntry(runtimeName); !ok {
 		return false
 	}
 	hasNamespaceAlias := class.Namespace != "" && !strings.Contains(class.Name, ".")
 	namespaceAlias := ""
 	if hasNamespaceAlias {
 		namespaceAlias = class.Namespace + "." + class.Name
-		if _, ok := vm.Classes[namespaceAlias]; !ok {
+		if _, ok := vm.classEntry(namespaceAlias); !ok {
 			return false
 		}
 	}
 	if shouldReplaceShortClassAlias(existing, class) {
-		vm.Classes[class.Name] = class
+		vm.writeExistingClassEntry(class.Name, class)
 	}
-	vm.Classes[runtimeName] = class
+	vm.writeExistingClassEntry(runtimeName, class)
 	if hasNamespaceAlias {
-		vm.Classes[namespaceAlias] = class
+		vm.writeExistingClassEntry(namespaceAlias, class)
 	}
 	return true
 }
@@ -1312,7 +1345,7 @@ func (vm *VM) topLevelClassLookupIndex() map[string]topLevelClassLookup {
 
 func (vm *VM) rebuildTopLevelClassLookup() map[string]topLevelClassLookup {
 	index := make(map[string]topLevelClassLookup)
-	for _, class := range vm.Classes {
+	for _, class := range vm.ClassEntries() {
 		name := strings.TrimSpace(class.Name)
 		if name == "" || strings.Contains(name, ".") {
 			continue
@@ -1361,7 +1394,7 @@ func (vm *VM) rebuildClassLookup() {
 		ranks[key] = rank
 		nss[key] = class.Namespace
 	}
-	for alias, class := range vm.Classes {
+	for alias, class := range vm.ClassEntries() {
 		put(alias, class, true)
 		put(class.Name, class, false)
 		if class.Namespace != "" {

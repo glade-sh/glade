@@ -28,12 +28,34 @@ func compileGateLoadDependencyProject(root string, diagnostics []diagnostic.Diag
 	return nil
 }
 
-// The file-less resolver attribution is a local product policy, not
-// a Salesforce diagnostic contract. Namespace identity comes from the
-// structured dependency record, never from parsing diagnostic prose.
+// Resolver and schema attribution are local gate policy. Namespace identity
+// comes from structured dependency records, and schema identity comes from the
+// diagnostic's owning object, never from parsing diagnostic prose.
 func (g *compileGate) attributeDependencyDiagnostics(units compileGateUnits, diagnostics []diagnostic.Diagnostic, sources *sourceCache) (map[string][]diagnostic.Diagnostic, bool) {
-	var attributed, handled []diagnostic.Diagnostic
+	var attributed, handled, unmatched []diagnostic.Diagnostic
 	for _, diag := range diagnostics {
+		if diag.Severity == diagnostic.Error && diag.Code == "GLADESEMA003" && diag.SchemaObject != "" {
+			start := len(attributed)
+			for _, file := range units.order {
+				source, err := sources.read(file)
+				if err != nil {
+					return nil, false
+				}
+				if compileGateReferencesSchemaObject(file, source, units, diag.SchemaObject) {
+					local := diag
+					local.File = file
+					attributed = append(attributed, local)
+				}
+			}
+			if len(attributed) == start {
+				unmatched = append(unmatched, diag)
+			}
+			// Schema metadata remains in the subset index after its static users
+			// are excluded, or its unmatched error is retained for the project
+			// report. Retain the original identity for that rerun's filter.
+			handled = append(handled, diag)
+			continue
+		}
 		if diag.Severity != diagnostic.Error || diag.File != "" || diag.Code != "dependency_missing" {
 			attributed = append(attributed, diag)
 			continue
@@ -70,6 +92,7 @@ func (g *compileGate) attributeDependencyDiagnostics(units compileGateUnits, dia
 	byFile, ok := units.attribute(attributed)
 	if ok {
 		g.dependencyErrors = append(g.dependencyErrors, handled...)
+		g.projectErrors = append(g.projectErrors, unmatched...)
 	}
 	return byFile, ok
 }
@@ -81,9 +104,9 @@ func (g *compileGate) withoutScopedDependencyErrors(diagnostics []diagnostic.Dia
 	out := make([]diagnostic.Diagnostic, 0, len(diagnostics))
 	for _, diag := range diagnostics {
 		handled := false
-		if diag.File == "" {
+		if diag.File == "" || diag.Code == "GLADESEMA003" && diag.SchemaObject != "" {
 			for _, prior := range g.dependencyErrors {
-				if diag.Code == prior.Code && diag.Message == prior.Message && diag.Severity == prior.Severity {
+				if diag.Code == prior.Code && diag.Message == prior.Message && diag.Severity == prior.Severity && diag.File == prior.File && diag.SchemaObject == prior.SchemaObject {
 					handled = true
 					break
 				}

@@ -18,6 +18,7 @@ import (
 	"github.com/glade-sh/glade/internal/packageartifact"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 // Index is an immutable snapshot. Nested payloads may be structurally shared
@@ -260,6 +261,14 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 	for _, shim := range p.PackageShims {
 		appendPackageShimSymbols(&idx, parser, shim, seenTypes, sources)
 	}
+	for _, rejection := range storage.EmailServiceRejections(p) {
+		idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
+			Severity: diagnostic.Warning,
+			Code:     "GLADEEMAILSERVICE001",
+			File:     rejection.File,
+			Message:  rejection.Message,
+		})
+	}
 	appendFlowInterviewSymbols(&idx, p, "", false)
 	if p.Namespace != "" {
 		appendFlowInterviewSymbols(&idx, p, p.Namespace, false)
@@ -404,9 +413,16 @@ func typeSymbolFromArtifact(namespace, version, sourceAPIVersion string, typ pac
 		typ.SourceRoot = namespace
 	}
 	typ.Dependency = true
+	localName, ownerName := typ.Name, ""
+	if dot := strings.LastIndexByte(typ.Name, '.'); dot >= 0 {
+		localName, ownerName = typ.Name[dot+1:], typ.Name[:dot]
+	}
 	return TypeSymbol{
 		Kind:                typ.Kind,
 		Name:                typ.Name,
+		LocalName:           localName,
+		OwnerName:           ownerName,
+		NestingDepth:        strings.Count(typ.Name, "."),
 		File:                typ.File,
 		Namespace:           typ.Namespace,
 		SourceRoot:          typ.SourceRoot,
@@ -668,6 +684,7 @@ func metadataStillMatches(path string, expected ApexMetadataInput) bool {
 }
 
 func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule, sources *WorkspaceSources) []projectSymbolFile {
+	p.ApexFiles = p.SelectedApexFiles()
 	if len(p.ApexFiles) == 0 {
 		return nil
 	}
@@ -1063,11 +1080,12 @@ type incrementalResolvedSource struct {
 }
 
 type incrementalProjectConfigIdentity struct {
-	Root               string
-	Namespace          string
-	SourceAPIVersion   string
-	PackageDirectories []project.PackageDirectory
-	NamespaceRemaps    []namespaceremap.Rule
+	Root                string
+	Namespace           string
+	SourceAPIVersion    string
+	PackageDirectories  []project.PackageDirectory
+	NamespaceRemaps     []namespaceremap.Rule
+	ApexSourceSelection []string
 }
 
 type incrementalManagedDependencyIdentity struct {
@@ -1096,15 +1114,47 @@ type incrementalProjectIdentityLedger struct {
 	ManagedDependencies   []incrementalManagedDependencyIdentity
 	PackageShims          []incrementalPackageShimIdentity
 	DependencyDiagnostics []project.DependencyDiagnostic
+	// EmailServiceDigests binds the index warnings to the setup file contents.
+	EmailServiceDigests map[string]string
+}
+
+func emailServiceDigests(p project.Project) map[string]string {
+	files := project.EmailServiceMetadataFiles(p)
+	if len(files) == 0 {
+		return nil
+	}
+	// Handler resolution depends on which Apex files exist, so key each
+	// digest on the referenced handler name and whether it is declared.
+	handlers := map[string]string{}
+	services, _ := project.LoadEmailServicesTolerant(p, nil)
+	for _, service := range services {
+		handlers[service.SourceFile] = fmt.Sprintf("|handler=%s:%t", service.ApexClass, service.HandlerDeclared)
+	}
+	digests := make(map[string]string, len(files))
+	for _, path := range files {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			digests[path] = "unreadable"
+			continue
+		}
+		sum := sha256.Sum256(data)
+		digests[path] = fmt.Sprintf("%x%s", sum, handlers[path])
+	}
+	return digests
 }
 
 func incrementalProjectConfigForIdentity(p project.Project) incrementalProjectConfigIdentity {
+	var selection []string
+	if selected := p.SelectedApexFiles(); len(selected) != len(p.ApexFiles) {
+		selection = selected
+	}
 	return incrementalProjectConfigIdentity{
-		Root:               p.Root,
-		Namespace:          p.Namespace,
-		SourceAPIVersion:   p.SourceAPIVersion,
-		PackageDirectories: p.PackageDirectories,
-		NamespaceRemaps:    p.NamespaceRemaps,
+		Root:                p.Root,
+		Namespace:           p.Namespace,
+		SourceAPIVersion:    p.SourceAPIVersion,
+		PackageDirectories:  p.PackageDirectories,
+		NamespaceRemaps:     p.NamespaceRemaps,
+		ApexSourceSelection: selection,
 	}
 }
 
@@ -1131,6 +1181,7 @@ func incrementalProjectIdentityWithFeatures(p project.Project, features, labelNa
 		CustomLabelsKnown:     labelsKnown,
 		Project:               incrementalProjectConfigForIdentity(p),
 		DependencyDiagnostics: p.DependencyDiagnostics,
+		EmailServiceDigests:   emailServiceDigests(p),
 	}
 	for _, dep := range p.ManagedPackageDependencies {
 		identity := incrementalManagedDependencyIdentity{
@@ -1252,7 +1303,7 @@ func resolveIncrementalSource(owners []incrementalSourceOwner, path string, requ
 	var matches []incrementalResolvedSource
 	for _, owner := range owners {
 		listedPath := ""
-		for _, apexPath := range owner.project.ApexFiles {
+		for _, apexPath := range owner.project.SelectedApexFiles() {
 			if cleanFilePath(apexPath) == key {
 				if listedPath != "" && listedPath != apexPath {
 					return incrementalResolvedSource{}, false

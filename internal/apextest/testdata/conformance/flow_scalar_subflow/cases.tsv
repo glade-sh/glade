@@ -1,0 +1,5 @@
+case	api_versions	routes	stimulus
+boolean	62.0,67.0	anonymous_factory,anonymous_typed,anonymous_action,anonymous_trigger,istest_factory,istest_typed,istest_action,istest_trigger,test_runner	legacy scalar Assign Boolean true; child output and record-triggered subflow
+fraction	62.0,67.0	anonymous_factory,anonymous_typed,anonymous_action,anonymous_trigger,istest_factory,istest_typed,istest_action,istest_trigger,test_runner	legacy scalar Assign Number -2.5; child output and record-triggered subflow
+zero	62.0,67.0	anonymous_factory,anonymous_typed,anonymous_action,anonymous_trigger,istest_factory,istest_typed,istest_action,istest_trigger,test_runner	legacy scalar Assign Number 0; child output and record-triggered subflow
+unknown_target	62.0,67.0	deploy	identical Boolean assignment with undeclared target

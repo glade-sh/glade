@@ -1,0 +1,9 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>Ee__c</fullName>
+  <deleteConstraint>SetNull</deleteConstraint>
+  <label>Ee Label</label>
+  <referenceTo>Contact</referenceTo>
+  <relationshipLabel>Bbb Rows</relationshipLabel>
+  <relationshipName>Bbb</relationshipName>
+  <type>Lookup</type>
+</CustomField>

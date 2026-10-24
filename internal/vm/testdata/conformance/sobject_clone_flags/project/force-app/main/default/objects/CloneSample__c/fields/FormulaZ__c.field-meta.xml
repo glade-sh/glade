@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>FormulaZ__c</fullName><label>FormulaZ__c</label><type>Number</type><precision>18</precision><scale>0</scale><formula>2</formula></CustomField>

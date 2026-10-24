@@ -1,0 +1,116 @@
+{
+  "MultiCurrency": {
+    "Account": [
+      "CurrencyIsoCode"
+    ],
+    "Asset": [
+      "CurrencyIsoCode"
+    ],
+    "Campaign": [
+      "CurrencyIsoCode"
+    ],
+    "CampaignMember": [
+      "CurrencyIsoCode"
+    ],
+    "Case": [
+      "CurrencyIsoCode"
+    ],
+    "Contact": [
+      "CurrencyIsoCode"
+    ],
+    "ContentVersion": [
+      "CurrencyIsoCode"
+    ],
+    "Contract": [
+      "CurrencyIsoCode"
+    ],
+    "Event": [
+      "CurrencyIsoCode"
+    ],
+    "Lead": [
+      "CurrencyIsoCode"
+    ],
+    "Opportunity": [
+      "CurrencyIsoCode"
+    ],
+    "OpportunityContactRole": [
+      "CurrencyIsoCode"
+    ],
+    "Order": [
+      "CurrencyIsoCode"
+    ],
+    "OrderItem": [
+      "CurrencyIsoCode"
+    ],
+    "Pricebook2": [
+      "CurrencyIsoCode"
+    ],
+    "Product2": [
+      "CurrencyIsoCode"
+    ],
+    "Quote": [
+      "CurrencyIsoCode"
+    ],
+    "Task": [
+      "CurrencyIsoCode"
+    ],
+    "User": [
+      "CurrencyIsoCode",
+      "DefaultCurrencyIsoCode"
+    ]
+  },
+  "PersonAccounts": {
+    "Account": [
+      "FirstName",
+      "IsPersonAccount",
+      "LastName",
+      "MiddleName",
+      "PersonAssistantName",
+      "PersonAssistantPhone",
+      "PersonBirthdate",
+      "PersonContactId",
+      "PersonDepartment",
+      "PersonDoNotCall",
+      "PersonEmail",
+      "PersonEmailBouncedDate",
+      "PersonEmailBouncedReason",
+      "PersonHasOptedOutOfEmail",
+      "PersonHasOptedOutOfFax",
+      "PersonHomePhone",
+      "PersonIndividualId",
+      "PersonLastCURequestDate",
+      "PersonLastCUUpdateDate",
+      "PersonLeadSource",
+      "PersonMailingAddress",
+      "PersonMailingCity",
+      "PersonMailingCountry",
+      "PersonMailingCountryCode",
+      "PersonMailingGeocodeAccuracy",
+      "PersonMailingLatitude",
+      "PersonMailingLongitude",
+      "PersonMailingPostalCode",
+      "PersonMailingState",
+      "PersonMailingStateCode",
+      "PersonMailingStreet",
+      "PersonMobilePhone",
+      "PersonOtherAddress",
+      "PersonOtherCity",
+      "PersonOtherCountry",
+      "PersonOtherCountryCode",
+      "PersonOtherGeocodeAccuracy",
+      "PersonOtherLatitude",
+      "PersonOtherLongitude",
+      "PersonOtherPhone",
+      "PersonOtherPostalCode",
+      "PersonOtherState",
+      "PersonOtherStateCode",
+      "PersonOtherStreet",
+      "PersonTitle",
+      "Salutation",
+      "Suffix"
+    ],
+    "Contact": [
+      "IsPersonAccount"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "AssertException": "public class AssertException extends System.Exception {}\n",
+  "EventObjectException": "public class EventObjectException extends System.Exception {}\n",
+  "FinalException": "public class FinalException extends System.Exception {}\n",
+  "LarchException": "public class LarchException extends System.Exception {}\n",
+  "LarchListException": "public class LarchListException extends System.ListException {}\n",
+  "LimitException": "public class LimitException extends System.Exception {}\n",
+  "ProcedureException": "public class ProcedureException extends System.Exception {}\n",
+  "UnexpectedException": "public class UnexpectedException extends System.Exception {}\n"
+}

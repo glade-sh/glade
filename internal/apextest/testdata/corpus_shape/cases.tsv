@@ -1,0 +1,25 @@
+shape	route	expectation	basis
+inner enum, including Status and Message values() and valueOf() in the class and a subclass	project check and enumReceivers	zero diagnostics; runner smoke	compile-only
+lexical System shadows	project check and lexicalSystemNames	zero diagnostics; runner smoke	compile-only
+static to instance, System namespace	project check and staticInstanceReceivers	zero diagnostics; runner smoke	native/org.tsv:6,11; ORG-RUN.txt
+opaque provider	project check	zero diagnostics; dynamic lookup and Object local; provider absent	native/org.tsv:6,11; ORG-RUN.txt
+post-return	anonymousPostReturn	zero diagnostics	compile-only
+standard and custom child relationships	project check	zero diagnostics	compile-only
+selector, domain, unit of work	project check and selectorDomainWorkDispatcher	zero diagnostics; runner smoke	compile-only
+trigger dispatcher	Account before insert via all DML test methods	zero diagnostics; runner smoke	compile-only
+ChangeEvent Industry	AccountChangeEvent trigger, ShapeChange, changeEventIndustrySurface	zero diagnostics; Industry field exists	conformance/change_event_describe/native/api62/anonymous/org.tsv:2 and api67/anonymous/org.tsv:2; ORG-RUN.txt
+top-level scheduler	topLevelSchedulableAtStopTest	one callback	conformance/scheduled_nesting_stop/org.tsv:8,27; ORG-RUN.txt
+inner scheduler	innerSchedulableAtStopTest	no callback	conformance/scheduled_nesting_stop/org.tsv:19,38; ORG-RUN.txt
+batch to queueable	batchToQueueable	one batch callback; child enqueue shape	conformance/scheduled_nesting_stop/org.tsv:4,23; ORG-RUN.txt
+queueable to queueable	queueableToQueueable	submitted callback runs; child enqueue shape	conformance/scheduled_nesting_stop/org.tsv:10,29; ORG-RUN.txt
+Person Account __pc	personAccountFields	skipped	Person Account __pc field synthesis is not implemented yet
+explicit System.LoggingLevel values beside a project LoggingLevel class	project check and anonymousSchemaSObjectTypes	zero diagnostics	sema/testdata/enum_value_methods/org.tsv:64-67,72-77,144-147
+platform enum name() and ordinal() (Quiddity, JSONToken, DisplayType, LoggingLevel), unqualified and qualified, top-level and inner	project check and anonymousSchemaSObjectTypes	zero diagnostics	sema/testdata/enum_value_methods/org.tsv:64-67,144-147
+platform class constant instance methods, bare and System qualified	project check and enumReceivers	zero diagnostics; runner smoke	conformance/dispatch_followups/org.tsv:12-13; native/org.tsv:6,11
+inner subclass instanceof and casts, duplicate short names, @IsTest inner subclass	project check and enumReceivers/lexicalSystemNames	zero diagnostics; runner smoke	conformance/inner_type_shapes/org.tsv:34-41,64-67,72-73
+simple-name inner instanceof and cast	innerSubclassTargets; anonymous	both true	conformance/dated_dispatch_cache/org.tsv:2-5; conformance/inner_type_shapes/org.tsv:34-41
+unrelated platform EventBus beside foreign inner class	unrelatedEventBus; anonymous	empty publish result has size zero	sema/testdata/inner_type_scope/org.tsv:2-3; conformance/inner_type_shapes/org.tsv:50-53
+duplicate inner Leaf names in two outers	duplicateInnerNames; anonymous	both lexical targets match	conformance/inner_type_shapes/org.tsv:64-67
+System-named Type enum constant path	systemNamedEnumConstant; anonymous	Type.B.name() yields B	conformance/inner_type_shapes/org.tsv:18-21
+field level collides with enum Level	TestCorpusShape/API/fieldEnumCollision	native Illegal forward reference: level; renamed-field mutation accepted	conformance/inner_type_shapes/org.tsv:58-63
+private test inner subclass Fake extends base	testInnerSubclass	Fake instanceof target matches	conformance/inner_type_shapes/org.tsv:72-73

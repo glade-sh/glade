@@ -1,0 +1,14 @@
+context=istest
+transport=System.assert
+api=62.0
+source_sha256:62.0:force-app/main/default/classes/CatalogProductTest.cls=d8f95e0b2a851a5c05baed7014d5407d7fc7c1a3a027ee85402fe38e15a1fa06
+source_sha256:62.0:force-app/main/default/classes/CatalogProductTest.cls-meta.xml=5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86
+source_sha256:62.0:force-app/main/default/permissionsets/CatalogProductRead.permissionset-meta.xml=04fb4e46db9168bb9c1841000ac8d4473830a19d385e8d336098f979d484e7e5
+source_sha256:62.0:sfdx-project.json=47fd4e3d65afc00ac1a86262c1cc0cc4b2796cf9040d28190754d2be65006729
+api=67.0
+source_sha256:67.0:force-app/main/default/classes/CatalogProductTest.cls=d8f95e0b2a851a5c05baed7014d5407d7fc7c1a3a027ee85402fe38e15a1fa06
+source_sha256:67.0:force-app/main/default/classes/CatalogProductTest.cls-meta.xml=eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7
+source_sha256:67.0:force-app/main/default/permissionsets/CatalogProductRead.permissionset-meta.xml=04fb4e46db9168bb9c1841000ac8d4473830a19d385e8d336098f979d484e7e5
+source_sha256:67.0:sfdx-project.json=d42d03f4d5cdb8e5caaa935ecd0dd62b213a091ac8069d112cf154d9dde9eaf5
+native_complete=true
+observations=6

@@ -1,0 +1,42 @@
+[
+  {
+    "route": "siteLiteral",
+    "class": "InertSiteLiteral",
+    "want": "Site.getSiteId()"
+  },
+  {
+    "route": "siteComment",
+    "class": "InertSiteComment",
+    "want": "comment"
+  },
+  {
+    "route": "communityQueryLiteral",
+    "class": "InertCommunityQuery",
+    "want": "SELECT IsPortalEnabled FROM User"
+  },
+  {
+    "route": "territoryQueryLiteral",
+    "class": "InertTerritoryQuery",
+    "want": "SELECT Id FROM Territory2"
+  },
+  {
+    "route": "queryComment",
+    "class": "InertQueryComment",
+    "want": "comment"
+  },
+  {
+    "route": "staticAggregateAliases",
+    "class": "StaticAggregateAliases",
+    "want": "0/0"
+  },
+  {
+    "route": "dynamicAggregateAliases",
+    "class": "DynamicAggregateAliases",
+    "want": "0/0"
+  },
+  {
+    "route": "fieldMetadata",
+    "class": "SetupFieldMetadata",
+    "want": "false/false"
+  }
+]

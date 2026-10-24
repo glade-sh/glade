@@ -21,6 +21,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/automation"
+	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/namespaceremap"
@@ -119,11 +120,24 @@ type permissionSetMetadata struct {
 	Label                  string                           `xml:"label"`
 	UserLicense            string                           `xml:"userLicense"`
 	ClassAccesses          []permissionSetClassAccess       `xml:"classAccesses"`
+	PageAccesses           []permissionSetPageAccess        `xml:"pageAccesses"`
+	MetadataTypeAccesses   []permissionSetCustomPermission  `xml:"customMetadataTypeAccesses"`
+	TabSettings            []permissionSetTabSetting        `xml:"tabSettings"`
 	CustomPermission       []permissionSetCustomPermission  `xml:"customPermissions"`
 	FieldPermissions       []permissionSetFieldPermission   `xml:"fieldPermissions"`
 	ObjectPermission       []permissionSetObjectPermission  `xml:"objectPermissions"`
 	RecordTypeVisibilities []profileRecordTypeVisibilityXML `xml:"recordTypeVisibilities"`
 	UserPermissions        []permissionSetCustomPermission  `xml:"userPermissions"`
+}
+
+type permissionSetPageAccess struct {
+	ApexPage string `xml:"apexPage"`
+	Enabled  bool   `xml:"enabled"`
+}
+
+type permissionSetTabSetting struct {
+	Tab        string `xml:"tab"`
+	Visibility string `xml:"visibility"`
 }
 
 type permissionSetClassAccess struct {
@@ -275,9 +289,10 @@ func RunContext(ctx context.Context, index typesys.Index, opts Options) testrepo
 }
 
 type runExecution struct {
-	diskCacheEnabled bool
-	counters         *runPerfCounters
-	vmPerf           *vm.PerfRecorder
+	dependencyTriggers []typesys.TriggerSymbol
+	diskCacheEnabled   bool
+	counters           *runPerfCounters
+	vmPerf             *vm.PerfRecorder
 }
 
 func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cases []TestCase) testreport.Run {
@@ -313,7 +328,11 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 		runState.counters.phases.indexBuildNS.Store(opts.PreRunPhaseDurations.IndexBuild.Nanoseconds())
 		runState.counters.phases.discoverNS.Store(opts.PreRunPhaseDurations.Discover.Nanoseconds())
 	}
-	return runCasesGated(ctx, index, opts, cases, hooks, &runState, nil)
+	report = runCasesGated(ctx, index, opts, cases, hooks, &runState, nil)
+	explanationIndex := index
+	explanationIndex.Triggers = runState.dependencyTriggers
+	explainDependencyRun(explanationIndex, &report)
+	return report
 }
 
 // runCasesGated runs one generation of the project. gate is nil for the
@@ -343,9 +362,17 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	}
 	defer func() { report.RuntimeRESTAPIVersion = runtimeRESTAPIVersion }()
 	sources := newSourceCache()
-	if opts.ProjectSnapshot != nil {
-		sources.seedProjectSnapshot(opts.ProjectSnapshot)
-	}
+	// A matching snapshot selects the already-loaded project graph for runtime
+	// metadata generation and org setup; nil retains disk discovery. This keeps
+	// dependency roots from changing between indexing and generation. Native
+	// generated-metadata results are pinned at source API 62.0/67.0 by
+	// internal/apextest/testdata/conformance/metadata_field_names/org.tsv:
+	// custom-column, standard-column, entity, filtered-groups (anonymous/istest),
+	// and internal/apextest/testdata/conformance/setup_metadata/org.tsv:
+	// businessHours, duplicateRule, personDuplicateRule (named @IsTest).
+	// Each directory's ORG-RUN.txt records the capture; workspace graph routing
+	// itself is covered by TestMetadataGenerationReadsSiblingProjectCustomMetadata.
+	sources.seedProjectSnapshot(opts.ProjectSnapshot)
 	if err := sources.seedBuildArtifacts(index, opts.BuildArtifacts); err != nil {
 		return compileErrorRun(cases, err, started, opts)
 	}
@@ -411,11 +438,13 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	// @TestSetup, or methods execute. Never mutate the cached org or source key.
 	org.APIVersion = runtimeRESTAPIVersion
 	initializeTestOrg(&org)
+	var testSettings config.TestConfig
 	if index.Project.Root != "" {
 		p, err := sources.capturedProjectSnapshot(index.Project.Root)
 		if err != nil {
 			return compileErrorRun(cases, err, started, opts)
 		}
+		testSettings = p.Test
 		if err := applyConfiguredTestPermissions(&org, p); err != nil {
 			return compileErrorRun(cases, err, started, opts)
 		}
@@ -431,6 +460,12 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	baseMachine.SetTestDocumentBaseline(&org)
 	baseMachine.SetPerfRecorder(runState.vmPerf)
 	baseMachine.SetTraceEnabled(false)
+	if testSettings.HasEnvironment() {
+		baseMachine.SetOrg(&org)
+		if err := baseMachine.ConfigureTestEnvironment(testSettings); err != nil {
+			return compileErrorRun(cases, err, started, opts)
+		}
+	}
 	baseMachine.EnableTestContext()
 	// Prime the schema stamp so per-test clones inherit it and reuse the shared
 	// schema-describe caches instead of rebuilding them on every clone.
@@ -442,6 +477,13 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 		runState.counters.phases.orgBuildNS.Add(time.Since(orgSetupStarted).Nanoseconds())
 	}
 	baseRuntimeErr := runtime.BaseErr
+	if baseRuntimeErr == nil {
+		var restored []typesys.TriggerSymbol
+		restored, baseRuntimeErr = gate.restoreDependencyTriggers(baseMachine)
+		if len(missingDependencyNames(index)) > 0 {
+			runState.dependencyTriggers = append(append([]typesys.TriggerSymbol(nil), index.Triggers...), restored...)
+		}
+	}
 	if baseRuntimeErr == nil {
 		if runState.counters.enabled {
 			testCompileStarted = time.Now()
@@ -1764,7 +1806,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	classes := compileProjectClasses(index, methods, sources)
 	triggers, triggerErrors := compileProjectTriggers(index, sources)
 	org, orgErr := orgFromIndexWithError(index, sources)
-	if orgErr != nil {
+	if orgErr != nil && !isEmailServiceRejection(orgErr) {
 		return key, zero, orgErr
 	}
 	pageNames := visualforcePageNames(index)
@@ -1919,7 +1961,7 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 
 	orgStarted := time.Now()
 	org, orgErr := orgFromIndexWithError(index, sources)
-	if orgErr != nil {
+	if orgErr != nil && !isEmailServiceRejection(orgErr) {
 		return key, zero, orgErr
 	}
 	counters.phases.orgBuildNS.Add(time.Since(orgStarted).Nanoseconds())
@@ -2997,6 +3039,7 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 			*limits[0] = result.Limits
 		}
 	}
+	machine.CaptureChangeDataCaptureTestSetup()
 	return setupOrg, machine.DeterministicRandomState(), nil, false
 }
 
@@ -3112,6 +3155,8 @@ func terminalReason(err error) testreport.Reason {
 	var runtimeErr *vm.RuntimeError
 	if errors.As(err, &runtimeErr) {
 		switch runtimeErr.Type {
+		case "dependency_missing":
+			return dependencyMissingReason
 		case "UnsupportedFeature":
 			return testreport.ReasonUnsupportedFeature
 		case "System.AssertException", "AssertException", "AssertionException":
@@ -3136,6 +3181,7 @@ func preInvocationErrorCase(testCase TestCase, err error) testreport.Case {
 	switch reason {
 	case testreport.ReasonUnsupportedFeature, testreport.ReasonTimeout, testreport.ReasonCancelled:
 		status = testreport.StatusUnsupported
+	case dependencyMissingReason:
 	default:
 		reason = testreport.ReasonRuntimeError
 	}
@@ -3284,6 +3330,24 @@ func RegisterProjectRuntimeWithSourceDigests(machine *vm.VM, index typesys.Index
 // avoiding eager setup in unrelated project code.
 func RegisterProjectRuntimeForRequest(machine *vm.VM, index typesys.Index) error {
 	return RegisterProjectRuntimeForRequestWithSourceDigests(machine, index, nil)
+}
+
+// NewProjectRuntimeForRequest returns an isolated request VM cloned from the
+// cached compiled runtime. The restored template owns the registered base VM,
+// so a fresh server does not need to clone and register the compiled payload a
+// second time.
+func NewProjectRuntimeForRequest(index typesys.Index) (*vm.VM, error) {
+	sources := newSourceCache()
+	_, runtime, err := runtimeFromIndexForExecutionWithSourceDigests(index, nil, sources)
+	if err != nil {
+		return nil, err
+	}
+	if runtime.BaseErr != nil {
+		return nil, runtime.BaseErr
+	}
+	machine := runtime.restored.CloneMachine(nil)
+	machine.SetExpressionTypeResolver(sema.RuntimeExpressionTypeResolver(index))
+	return machine, nil
 }
 
 // RegisterUncachedProjectRuntimeForRequest prepares a fresh request template for
@@ -4619,6 +4683,9 @@ func standardApexTestOrg() storage.OrgState {
 		org := storage.NewOrgState()
 		org.OrgID = storage.DefaultOrgID
 		for _, objectName := range storage.KnownStandardObjectNames() {
+			if objectName == "Network" || objectName == "NetworkMember" {
+				continue
+			}
 			storage.EnsureStandardObject(&org, objectName)
 		}
 		standardApexTestOrgCache.org = org
@@ -4717,6 +4784,7 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	}
 	applyCustomMetadataRecordsBestEffort(&org, metadataRecords)
 	var loadedProject *project.Project
+	var emailErr error
 	if index.Project.Root != "" {
 		if p, err := sources.capturedProjectSnapshot(index.Project.Root); err == nil {
 			loadedProject = &p
@@ -4729,8 +4797,22 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 			}
 			applyCustomApplicationRecords(&org, p.ApplicationFiles)
 			applyCustomNotificationTypeRecords(&org, p.Root)
-			_ = resource.ApplyProject(&org, p, sources.readCapturedProjectMetadata)
-			if automationIndex, err := automation.LoadProject(p); err == nil {
+			rejections, err := resource.ApplyProjectTolerant(&org, p, sources.readCapturedProjectMetadata)
+			if err != nil {
+				if len(project.EmailServiceMetadataFiles(p)) > 0 {
+					return org, err
+				}
+				if err := resource.LoadFeatureParameterMetadata(&org, resource.FeatureParameterMetadataFiles(p), sources.readCapturedProjectMetadata); err != nil {
+					return org, err
+				}
+			}
+			if len(rejections) > 0 {
+				// The rows are seeded without the rejected services. Callers that
+				// build a runtime keep going; callers that model a metadata deploy
+				// see the native rejection.
+				emailErr = &emailServiceRejectionError{Rejections: rejections}
+			}
+			if automationIndex, err := automation.LoadProject(p, sources.readCapturedProjectMetadata); err == nil {
 				automation.ApplyToOrg(&org, automationIndex)
 			}
 			// Bind discovery to the captured metadata generation, including when
@@ -4756,27 +4838,73 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 		permissionSetMetadataCache := make(map[string]permissionSetMetadataCacheEntry)
 		applyProjectProfileRecordTypeDefaults(&org, *loadedProject)
 		applyProjectProfileRecords(&org, *loadedProject, permissionSetMetadataCache)
+		if err := resource.ApplyProjectNetworks(&org, *loadedProject, sources.readCapturedProjectMetadata); err != nil {
+			return org, err
+		}
 		applyProjectPermissionSetRecords(&org, *loadedProject, permissionSetMetadataCache)
 		storage.EnsureDeterministicPlatformData(&org)
-		applyProjectPermissionSetGroupRecords(&org, *loadedProject)
+		applyProjectAdminSecurityDefaults(&org, index.Objects)
+		applyProjectPermissionSetGroupRecords(&org, *loadedProject, sources.readCapturedProjectMetadata)
 		if err := applyProjectPermissionSetGroupComponents(&org, *loadedProject, sources.readCapturedProjectMetadata); err != nil {
 			return org, err
 		}
+		applyProjectPermissionSetGroupGrants(&org)
 	}
 	applyReferencedSyntheticFieldSets(&org, index, caches...)
 	normalizeOrgKeyPrefixes(&org)
 	applyApexTypeImplementorRecords(&org, index)
-	return org, nil
+	return org, emailErr
+}
+
+// emailServiceRejectionError reports email-service files a metadata deploy
+// rejects. The returned org is complete except for those services, so runtime
+// construction continues and deploy-modelling callers still see the rejection.
+type emailServiceRejectionError struct {
+	Rejections []project.EmailServiceRejection
+}
+
+func (e *emailServiceRejectionError) Error() string {
+	messages := make([]string, 0, len(e.Rejections))
+	for _, rejection := range e.Rejections {
+		messages = append(messages, rejection.Message)
+	}
+	return strings.Join(messages, "; ")
+}
+
+func isEmailServiceRejection(err error) bool {
+	var rejection *emailServiceRejectionError
+	return errors.As(err, &rejection)
 }
 
 func applyCustomMetadataRecordsBestEffort(org *storage.OrgState, records []schema.CustomMetadataRecord) {
 	if org == nil || len(records) == 0 {
 		return
 	}
-	if err := storage.ApplyCustomMetadataRecords(org, records); err == nil {
-		return
-	}
 	pending := append([]schema.CustomMetadataRecord(nil), records...)
+	// One record that cannot load (an unknown field or a templated type with no
+	// object) must not change how the other records resolve relationships.
+	// Drop only the record the loader names and load the rest together, so
+	// relationship values resolve against complete parent sets.
+	for len(pending) > 0 {
+		err := storage.ApplyCustomMetadataRecords(org, pending)
+		if err == nil {
+			return
+		}
+		var unsupported storage.UnsupportedMetadataError
+		if !errors.As(err, &unsupported) || unsupported.File == "" || unsupported.Feature == "custom metadata relationship" {
+			break
+		}
+		kept := pending[:0:0]
+		for _, record := range pending {
+			if record.File != unsupported.File {
+				kept = append(kept, record)
+			}
+		}
+		if len(kept) == len(pending) {
+			break
+		}
+		pending = kept
+	}
 	for len(pending) > 0 {
 		next := make([]schema.CustomMetadataRecord, 0, len(pending))
 		progressed := false

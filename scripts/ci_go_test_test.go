@@ -107,7 +107,7 @@ func runSemaShardFixture(t *testing.T, index, discovery, plan, events string, na
 		}
 	}
 	goScript := `#!/usr/bin/env bash
-if [[ "$*" == "test -list ^Test ./internal/sema" ]]; then cat "$FIXTURE_DISCOVERY"; exit 0; fi
+if [[ "$*" == "test -vet=off -trimpath -list ^Test ./internal/sema" ]]; then cat "$FIXTURE_DISCOVERY"; exit 0; fi
 if [[ "$1" == "test" && "$2" == "-json" ]]; then printf '%s\n' "$*" >>"$FIXTURE_CALLS"; cat "$FIXTURE_EVENTS"; exit "$FIXTURE_NATIVE_RC"; fi
 exit 97
 `
@@ -173,7 +173,7 @@ func runLWCCompileShardFixture(t *testing.T, index, discovery, plan, events stri
 		}
 	}
 	writeApexFixtureExecutable(t, filepath.Join(dir, "go"), `#!/usr/bin/env bash
-if [[ "$*" == "test -list ^Test ./internal/lwc/compile" ]]; then cat "$FIXTURE_ROOT/discovery"; exit 0; fi
+if [[ "$*" == "test -vet=off -trimpath -list ^Test ./internal/lwc/compile" ]]; then cat "$FIXTURE_ROOT/discovery"; exit 0; fi
 if [[ "$1" == "test" && "$2" == "-json" ]]; then
   printf '%s\n' "$*" >>"$FIXTURE_ROOT/calls"
   cat "$FIXTURE_ROOT/events"
@@ -211,7 +211,7 @@ func TestLWCCompileShardsPartitionDiscoveryAndNodeAuthority(t *testing.T) {
 			return string(data)
 		}
 		calls := read("../calls")
-		wantCall := "test -json -vet=off -count=1 -timeout=90m -run ^(?:" + name + ")$ ./internal/lwc/compile\n"
+		wantCall := "test -json -vet=off -trimpath -count=1 -timeout=90m -run ^(?:" + name + ")$ ./internal/lwc/compile\n"
 		if calls != wantCall {
 			t.Errorf("shard %d native call = %q, want %q", index, calls, wantCall)
 		}
@@ -717,6 +717,7 @@ func TestCIApexDurationHistoryAcceptsExactAggregateLimit(t *testing.T) {
 }
 
 func TestCIApexDurationHistoryImbalanceGuard(t *testing.T) {
+	t.Setenv("GITHUB_EVENT_NAME", "push")
 	for _, tc := range []struct {
 		name    string
 		elapsed [2]float64
@@ -733,6 +734,149 @@ func TestCIApexDurationHistoryImbalanceGuard(t *testing.T) {
 				t.Fatalf("refresh error = %v, wantErr %v\n%s", err, tc.wantErr, out)
 			}
 		})
+	}
+}
+
+func durationHistoryRouteFixture(t *testing.T, packageName string, elapsed [2]float64) apexHistoryFixture {
+	t.Helper()
+	fixture := newApexHistoryFixtureWithCount(t, 2, elapsed)
+	if packageName != fixturePackage {
+		for _, dir := range fixture.shards {
+			for _, name := range []string{"plan.json", "events.json"} {
+				path := filepath.Join(dir, name)
+				data, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(path, bytes.ReplaceAll(data, []byte(fixturePackage), []byte(packageName)), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+	}
+	return fixture
+}
+
+func runDurationHistoryRoute(t *testing.T, route, entry string, fixture apexHistoryFixture) (string, error) {
+	t.Helper()
+	args := []string{"ci-go-test.sh", route + "-history-refresh", fixture.shards[0], fixture.shards[1], fixture.output}
+	if entry == "sourced" {
+		function := "refresh_sema_history"
+		if route == "apex" {
+			function = "refresh_apextest_history"
+		}
+		args = []string{"-c", `source "$1"; "$2" "$3" "$4" "$5"`, "history", "ci-go-test.sh", function, fixture.shards[0], fixture.shards[1], fixture.output}
+	}
+	out, err := exec.Command("bash", args...).CombinedOutput()
+	return string(out), err
+}
+
+func TestCIDurationHistoryTimingEventRoutes(t *testing.T) {
+	for _, route := range []string{"sema", "apex"} {
+		for _, entry := range []string{"cli", "sourced"} {
+			for _, tc := range []struct {
+				name, event string
+				elapsed     [2]float64
+				wantErr     bool
+				advisory    bool
+			}{
+				{name: "balanced PR", event: "pull_request", elapsed: [2]float64{1, 1}},
+				{name: "exact boundary PR", event: "pull_request", elapsed: [2]float64{3, 1}},
+				{name: "balanced push", event: "push", elapsed: [2]float64{1, 1}},
+				{name: "exact boundary push", event: "push", elapsed: [2]float64{3, 1}},
+				{name: "noisy PR", event: "pull_request", elapsed: [2]float64{100.69, 33.31}, advisory: true},
+				{name: "extreme noise PR", event: "pull_request", elapsed: [2]float64{1000, 0}, advisory: true},
+				{name: "noisy push", event: "push", elapsed: [2]float64{100.69, 33.31}, wantErr: true},
+				{name: "noisy schedule", event: "schedule", elapsed: [2]float64{100.69, 33.31}, wantErr: true},
+				{name: "noisy dispatch", event: "workflow_dispatch", elapsed: [2]float64{100.69, 33.31}, wantErr: true},
+				{name: "noisy local", elapsed: [2]float64{100.69, 33.31}, wantErr: true},
+				{name: "noisy PR target", event: "pull_request_target", elapsed: [2]float64{100.69, 33.31}, wantErr: true},
+			} {
+				t.Run(route+"/"+entry+"/"+tc.name, func(t *testing.T) {
+					t.Setenv("GITHUB_EVENT_NAME", tc.event)
+					packageName := fixturePackage
+					if route == "sema" {
+						packageName = semaFixturePackage
+					}
+					fixture := durationHistoryRouteFixture(t, packageName, tc.elapsed)
+					out, err := runDurationHistoryRoute(t, route, entry, fixture)
+					if (err != nil) != tc.wantErr {
+						t.Fatalf("refresh error = %v, wantErr %v\n%s", err, tc.wantErr, out)
+					}
+					if strings.Contains(out, "duration history timing advisory:") != tc.advisory {
+						t.Fatalf("timing advisory = %v\n%s", tc.advisory, out)
+					}
+					if tc.wantErr {
+						if _, err := os.Stat(fixture.output); !os.IsNotExist(err) {
+							t.Fatalf("rejected refresh left history: %v", err)
+						}
+						return
+					}
+					var history struct {
+						Package  string `json:"package"`
+						Complete bool   `json:"complete"`
+						Tests    []struct {
+							DurationMillis int64 `json:"durationMillis"`
+						} `json:"tests"`
+					}
+					data, err := os.ReadFile(fixture.output)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if err := json.Unmarshal(data, &history); err != nil || history.Package != packageName || !history.Complete || len(history.Tests) != 2 {
+						t.Fatalf("invalid refreshed history: %s err=%v", data, err)
+					}
+					for index, test := range history.Tests {
+						if test.DurationMillis != int64(math.Round(tc.elapsed[index]*1000)) {
+							t.Fatalf("history lost observed duration: %s", data)
+						}
+					}
+				})
+			}
+		}
+	}
+}
+
+func TestCIDurationHistoryPullRequestRejectsInvalidEvidenceRoutes(t *testing.T) {
+	t.Setenv("GITHUB_EVENT_NAME", "pull_request")
+	for _, route := range []string{"sema", "apex"} {
+		for _, entry := range []string{"cli", "sourced"} {
+			for _, invalid := range []string{"missing shard", "malformed JSON", "missing terminal", "failed terminal", "invalid duration"} {
+				t.Run(route+"/"+entry+"/"+invalid, func(t *testing.T) {
+					packageName := fixturePackage
+					if route == "sema" {
+						packageName = semaFixturePackage
+					}
+					fixture := durationHistoryRouteFixture(t, packageName, [2]float64{100.69, 33.31})
+					path := filepath.Join(fixture.shards[1], "events.json")
+					data := []byte("{\n")
+					switch invalid {
+					case "missing shard":
+						fixture.shards[1] = filepath.Join(fixture.root, "absent")
+					case "missing terminal":
+						data = nil
+					case "failed terminal":
+						data = []byte(fmt.Sprintf(`{"Action":"fail","Package":%q,"Test":"TestHistory001","Elapsed":33.31}`, packageName))
+					case "invalid duration":
+						data = []byte(fmt.Sprintf(`{"Action":"pass","Package":%q,"Test":"TestHistory001","Elapsed":-1}`, packageName))
+					}
+					if err := os.WriteFile(path, data, 0o600); err != nil {
+						t.Fatal(err)
+					}
+					if err := os.MkdirAll(filepath.Dir(fixture.output), 0o700); err != nil {
+						t.Fatal(err)
+					}
+					writeJSONFixture(t, fixture.output, map[string]any{"stale": true})
+					out, err := runDurationHistoryRoute(t, route, entry, fixture)
+					if err == nil || !strings.Contains(out, "duration history refresh rejected:") {
+						t.Fatalf("invalid evidence must remain fatal: %v\n%s", err, out)
+					}
+					if _, err := os.Stat(fixture.output); !os.IsNotExist(err) {
+						t.Fatalf("rejected refresh left stale history: %v", err)
+					}
+				})
+			}
+		}
 	}
 }
 
@@ -878,7 +1022,8 @@ func TestCIGoCacheReportsMissingDirectoriesAsZero(t *testing.T) {
 		want int
 	}{
 		{name: "ci.yml", text: readWorkflow("ci.yml"), want: 2},
-		{name: "security.yml", text: readWorkflow("security.yml"), want: 6},
+		{name: "security.yml", text: readWorkflow("security.yml"), want: 4},
+		{name: "codeql.yml", text: readWorkflow("codeql.yml"), want: 2},
 	} {
 		scripts := extractReportScripts(workflow.text)
 		if len(scripts) != workflow.want {
@@ -915,7 +1060,7 @@ func TestCIGoCacheOwnership(t *testing.T) {
 
 	ciWorkflow := readWorkflow("ci.yml")
 	ci := workflowJobBlocks(t, ciWorkflow)["test"]
-	security := readWorkflow("security.yml")
+	security := readWorkflow("security.yml") + readWorkflow("codeql.yml")
 
 	if got := strings.Count(ci, "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0"); got != 1 {
 		t.Fatalf("ci.yml setup-go uses = %d, want 1", got)
@@ -1075,6 +1220,9 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		t.Fatalf("security.yml jobs = %v, want %v", gotJobs, wantJobs)
 	}
 	for _, jobName := range wantJobs {
+		if jobName == "codeql" {
+			continue
+		}
 		for _, marker := range []string{"runs-on: ubuntu-latest", "uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3"} {
 			if !strings.Contains(jobs[jobName], marker) {
 				t.Errorf("%s job missing preserved marker %q", jobName, marker)
@@ -1098,10 +1246,10 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		t.Fatal("security.yml must not use the moving ossf/scorecard-action@v2 tag")
 	}
 
-	codeql := jobs["codeql"]
+	codeql := workflowJobBlocks(t, readWorkflowFile(t, "codeql.yml"))["codeql"]
 	for _, want := range []string{
-		"name: CodeQL",
-		"timeout-minutes: 100",
+		"name: CodeQL (${{ inputs.profile }})",
+		"timeout-minutes: 15",
 		"languages: go",
 		"config: |",
 		"- uses: security-extended",
@@ -1109,7 +1257,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		"build-mode: manual",
 		`run: go build -o "${RUNNER_TEMP}/glade-codeql" ./cmd/glade`,
 		"github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1",
-		"github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1",
+		"github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1",
 	} {
 		if !strings.Contains(codeql, want) {
 			t.Errorf("codeql job missing %q", want)
@@ -1144,7 +1292,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 	prInit := workflowStepBlockText(codeql, "      - name: Initialize pull request CodeQL")
 	for _, want := range []string{
-		"if: github.event_name == 'pull_request' && github.event.pull_request.changed_files < 300",
+		"if: inputs.profile == 'fast'",
 		initPin,
 		"- go/allocation-size-overflow",
 		"- go/incorrect-integer-conversion",
@@ -1165,7 +1313,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 	fullInit := workflowStepBlockText(codeql, "      - name: Initialize full-branch CodeQL")
 	for _, want := range []string{
-		"if: github.event_name != 'pull_request' || github.event.pull_request.changed_files >= 300",
+		"if: inputs.profile == 'full'",
 		initPin,
 		"id:",
 		"- go/allocation-size-overflow",
@@ -1188,28 +1336,24 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	if strings.Contains(fullInit, "go/request-forgery") {
 		t.Error("full-branch CodeQL init step must retain the proven request-forgery query")
 	}
-	const analyzePin = "uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1"
-	if count := strings.Count(codeql, analyzePin); count != 1 {
-		t.Fatalf("codeql analyze step count = %d, want 1", count)
-	}
-	analyze := workflowStepBlock(t, codeql, "name: Analyze CodeQL")
 	for _, unwanted := range []string{"threads:", "CODEQL_ACTION_EXTRA_OPTIONS", "--tuple-counting", "codeql-evaluator", "codeql-resources"} {
 		if strings.Contains(codeql, unwanted) {
-			t.Errorf("CodeQL scan retains unsupported tuning or temporary diagnostics %q", unwanted)
+			t.Errorf("unsupported workflow tuning %q", unwanted)
+		}
+	}
+	analyze := workflowStepBlock(t, codeql, "name: Analyze CodeQL")
+	for _, want := range []string{"timeout-minutes: 6", "python3 scripts/ci-codeql.py analyze"} {
+		if !strings.Contains(analyze, want) {
+			t.Errorf("bounded analysis omits %q", want)
 		}
 	}
 	if strings.Contains(codeql, "\n    continue-on-error:") || strings.Contains(analyze, "continue-on-error:") {
-		t.Error("CodeQL scan and analysis must fail on query errors")
-	}
-	for _, want := range []string{"timeout-minutes: 90", "category: codeql-go"} {
-		if !strings.Contains(analyze, want) {
-			t.Errorf("CodeQL analyze step missing %q", want)
-		}
+		t.Error("analysis errors must fail; only actual process timeouts may warn")
 	}
 	upload := workflowStepBlock(t, codeql, "name: Upload failed CodeQL logs")
-	for _, want := range []string{"if: failure()", "name: codeql-logs", "${{ runner.temp }}/codeql_databases/go/log/", "retention-days: 7"} {
+	for _, want := range []string{"if: failure() || steps.analyze.outputs.completed == 'false'", "name: codeql-logs-${{ inputs.profile }}", "${{ runner.temp }}/codeql_databases/go/log/", "retention-days: 7"} {
 		if !strings.Contains(upload, want) {
-			t.Errorf("CodeQL failed log upload step missing %q", want)
+			t.Errorf("CodeQL logs omit %q", want)
 		}
 	}
 	assertCodeQLProfileWaivers(t, prInit, prWaivers)
@@ -1259,7 +1403,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 	for _, query := range []string{"go/unsafe-quoting", "go/unvalidated-url-redirection"} {
 		if strings.Contains(prInit, query) {
-			t.Errorf("small-PR CodeQL profile must retain %s", query)
+			t.Errorf("fast CodeQL profile must retain %s", query)
 		}
 	}
 	for _, unwanted := range []string{"strategy:", "matrix:", "needs:", "if: always()"} {
@@ -1275,7 +1419,11 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 
 	for _, jobName := range []string{"govulncheck", "codeql", "gosec"} {
-		setupGo := workflowStepBlock(t, jobs[jobName], "uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0")
+		job := jobs[jobName]
+		if jobName == "codeql" {
+			job = codeql
+		}
+		setupGo := workflowStepBlock(t, job, "uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0")
 		if !strings.Contains(setupGo, "cache: false") {
 			t.Errorf("%s setup-go step missing cache: false", jobName)
 		}
@@ -1283,7 +1431,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 			t.Errorf("%s setup-go step retains cache-dependency-path", jobName)
 		}
 	}
-	if count := strings.Count(workflowText, "uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0"); count != 3 {
+	if count := strings.Count(workflowText+codeql, "uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0"); count != 3 {
 		t.Errorf("security.yml setup-go step count = %d, want 3", count)
 	}
 	if strings.Contains(workflowText, "cache-dependency-path:") {
@@ -1291,7 +1439,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 	coverageMarkers := map[string][]string{
 		"govulncheck":       {"go run golang.org/x/vuln/cmd/govulncheck@v1.6.0 ./... # v1.6.0"},
-		"codeql":            {"actions: read", "contents: read", "security-events: write"},
+		"codeql":            {"uses: ./.github/workflows/codeql.yml", "profile: full", "actions: read", "contents: read", "security-events: write"},
 		"gosec":             {"actions: read", "contents: read", "security-events: write", gosecPin, "args: -no-fail -fmt sarif -out gosec.sarif ./...", "github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1", "sarif_file: gosec.sarif"},
 		"npm-audit":         {"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", `node-version: "22"`, "npm audit --omit=dev --audit-level=high", "working-directory: third_party/lwc", "working-directory: contrib/vscode-glade"},
 		"dependency-review": {"if: github.event_name == 'pull_request'", "contents: read", "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0", "fail-on-severity: high"},
@@ -1372,6 +1520,8 @@ func securityWorkflowHeaderProblem(workflow string) string {
   push:
     branches:
       - main
+    tags:
+      - "v*"
   schedule:
     - cron: "17 9 * * 1"
   workflow_dispatch:`,
@@ -1850,6 +2000,8 @@ func ciRequiredAggregateProblem(workflow string) string {
 		return "missing single required-ci job"
 	}
 	wantNeeds := `    needs:
+      - codeql
+      - workflow-lint
       - site
       - test-binaries
       - vet
@@ -2134,7 +2286,7 @@ func browserWorkflowProblem(workflow string) string {
 		`exit "$npm_tee_rc"`,
 		`export PATH="$RUNNER_TEMP/browser-bin:$PATH"`,
 		`/usr/bin/time -v -o "$GITHUB_WORKSPACE/ci-artifacts/browser/resource-usage.txt"`,
-		"go test -json -vet=off -p=1 -count=1 -timeout=25m",
+		"go test -json -vet=off -p=1 -count=1 -timeout=25m -trimpath",
 		"-run '^(TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser|TestLWCAPI67RegistrationRunsInBrowser)$'",
 		"./internal/lwcruntime ./internal/lwcbrowser",
 		`tee "$GITHUB_WORKSPACE/ci-artifacts/browser/go-test.json"`,
@@ -2263,7 +2415,7 @@ func browserWorkflowProblem(workflow string) string {
 		`npm_rc=${npm_pipeline_status[0]}`:                                                    1,
 		`npm_tee_rc=${npm_pipeline_status[1]}`:                                                1,
 		`export PATH="$RUNNER_TEMP/browser-bin:$PATH"`:                                        1,
-		"go test -json -vet=off -p=1 -count=1 -timeout=25m":                                   1,
+		"go test -json -vet=off -p=1 -count=1 -timeout=25m -trimpath":                         1,
 	} {
 		if got := strings.Count(workflow, marker); got != want {
 			return fmt.Sprintf("browser wrapper/authority marker %q count = %d, want %d", marker, got, want)
@@ -2442,7 +2594,7 @@ func TestCIBrowserWorkflowContract(t *testing.T) {
 			return strings.Replace(s, line, line+"\n"+line, 1)
 		},
 		"duplicate Go authority": func(s string) string {
-			line := "            go test -json -vet=off -p=1 -count=1 -timeout=25m"
+			line := "            go test -json -vet=off -p=1 -count=1 -timeout=25m -trimpath"
 			return strings.Replace(s, line, line+"\n"+line, 1)
 		},
 		"wrapper tee target weakened": func(s string) string {
@@ -2976,7 +3128,7 @@ func TestCINodeIntegrationCommandExactSelectionAndEvidence(t *testing.T) {
 }
 
 func nodeIntegrationCommandProblem(script string) string {
-	if !strings.Contains(script, `go test -json -vet=off -p=1 -count=1 -timeout=30m -run "${node_integration_run_regex}"`) {
+	if !strings.Contains(script, `go test -json -vet=off -p=1 -count=1 -timeout=30m -trimpath -run "${node_integration_run_regex}"`) {
 		return "authoritative node integration command requires -p=1 and -count=1"
 	}
 	return ""
@@ -2991,7 +3143,7 @@ func TestCINodeIntegrationCommandRequiresFreshSerialExecution(t *testing.T) {
 	if problem := nodeIntegrationCommandProblem(script); problem != "" {
 		t.Fatal(problem)
 	}
-	command := `go test -json -vet=off -p=1 -count=1 -timeout=30m -run "${node_integration_run_regex}"`
+	command := `go test -json -vet=off -p=1 -count=1 -timeout=30m -trimpath -run "${node_integration_run_regex}"`
 	for _, flag := range []string{"-count=1", "-p=1"} {
 		t.Run(flag, func(t *testing.T) {
 			mutated := strings.Replace(script, command, strings.Replace(command, flag+" ", "", 1), 1)
@@ -3242,8 +3394,8 @@ func TestCINestedSourcesWorkflowContract(t *testing.T) {
 		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
 		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.10\"", "cache: false",
 		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", "node-version: \"22\"",
-		"- name: Test vendored parser", "(cd third_party/glade-apex-parser && go test ./...)",
-		"- name: Test vendored parser without CGO", "(cd third_party/glade-apex-parser && CGO_ENABLED=0 go test ./...)",
+		"- name: Test vendored parser", "(cd third_party/glade-apex-parser && go test -trimpath ./...)",
+		"- name: Test vendored parser without CGO", "(cd third_party/glade-apex-parser && CGO_ENABLED=0 go test -trimpath ./...)",
 		"- name: Install playground", "npm ci --prefix internal/playground/web",
 		"- name: Test playground", "npm test --prefix internal/playground/web",
 		"- name: Build playground", "npm run build --prefix internal/playground/web",
@@ -3316,6 +3468,8 @@ func TestCINodeIntegrationPureLaneSkipSelectors(t *testing.T) {
 func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 	workflow, _ := readCIWorkflow(t)
 	mutations := map[string]string{
+		"remove workflow lint":    strings.Replace(workflow, "      - workflow-lint\n", "", 1),
+		"remove CodeQL":           strings.Replace(workflow, "      - codeql\n", "", 1),
 		"remove history":          strings.Replace(workflow, "      - apextest-history\n", "", 1),
 		"remove node integration": strings.Replace(workflow, "      - node-integration\n", "", 1),
 		"remove nested sources":   strings.Replace(workflow, "      - nested-sources\n", "", 1),
@@ -3343,8 +3497,8 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 func TestCIParallelDAGTopology(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	wantJobs := []string{
-		"apextest", "apextest-history", "gladecli", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
-		"server-and-playground", "site", "smoke-distribution", "smoke-runtime", "test", "test-binaries", "vet",
+		"codeql", "apextest", "apextest-history", "gladecli", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
+		"server-and-playground", "site", "smoke-distribution", "smoke-runtime", "test", "test-binaries", "vet", "workflow-lint",
 	}
 	wantJobs = append(wantJobs, "apextest-history-input", "lwc-compile-history-input", "lwc-compile-history", "visualforce-history-input", "visualforce-history")
 	sort.Strings(wantJobs)
@@ -3358,7 +3512,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 	}
 	for _, name := range wantJobs {
 		job := jobs[name]
-		if !strings.Contains(job, "runs-on: ubuntu-latest") {
+		if name != "codeql" && !strings.Contains(job, "runs-on: ubuntu-latest") {
 			t.Errorf("%s is not an ubuntu-latest job", name)
 		}
 		if input, serialized := map[string]string{"apextest": "[apextest-history-input, test-binaries]", "sema": "test-binaries", "test": "[lwc-compile-history-input, visualforce-history-input, test-binaries]"}[name]; serialized {
@@ -3388,6 +3542,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 	workflow, jobs := readCIWorkflow(t)
 	wantLaneCommands := map[string][]string{
+		"workflow-lint":         {"scripts/ci-go-test.sh lane workflow-lint"},
 		"gladecli":              {"scripts/ci-go-test.sh lane gladecli"},
 		"node-integration":      {"scripts/ci-go-test.sh node-integration"},
 		"server-and-playground": {"scripts/ci-go-test.sh lane server-and-playground"},
@@ -3405,6 +3560,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 	}
 
 	wantArtifacts := map[string]string{
+		"workflow-lint":         "go-test-workflow-lint",
 		"gladecli":              "go-test-gladecli",
 		"node-integration":      "go-test-node-integration",
 		"server-and-playground": "go-test-server-and-playground",
@@ -3419,6 +3575,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 		}
 	}
 	for _, path := range []string{
+		"ci-artifacts/go-test/test-workflow-lint.json",
 		"ci-artifacts/go-test/test-gladecli.json",
 		"ci-artifacts/go-test-node-integration/test-node-integration.json",
 		"ci-artifacts/go-test/test-server-and-playground.json",
@@ -3552,6 +3709,8 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 	scriptText := string(script)
 	for _, want := range []string{
 		`printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS:-default}"`,
+		"go test -json -vet=off -trimpath",
+		"go vet -trimpath ./...",
 		"run_with_heartbeat",
 		"run_core_tests",
 		"run_full_tests",
@@ -3559,8 +3718,8 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 		"heartbeat_pid",
 		`kill -0 "${pid}"`,
 		"./internal/apextest",
-		`go test -list '^Test' "${apex_package}"`,
-		`run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=90m -run "${regex}" "${apex_package}"`,
+		`go test -vet=off -trimpath -list '^Test' "${apex_package}"`,
+		`run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=90m -trimpath -run "${regex}" "${apex_package}"`,
 		"CI_SHARD_PLANNER",
 		"validation-summary.json",
 		`run_package_lane "gladecli"`,
@@ -3671,12 +3830,21 @@ func TestCIPackageLanesRouteThroughCheckedManifest(t *testing.T) {
 	if document.Version != 1 || len(document.Lanes) != 6 {
 		t.Fatalf("manifest version/lane count = %d/%d", document.Version, len(document.Lanes))
 	}
-	totalPackages := 0
-	for _, packages := range document.Lanes {
-		totalPackages += len(packages)
+	cmd := exec.Command(realGoCommand(t), "list", "./...")
+	cmd.Dir = ".."
+	livePackages, err := cmd.Output()
+	if err != nil {
+		t.Fatal(err)
 	}
-	if totalPackages != 67 {
-		t.Fatalf("manifest package union = %d, want 67", totalPackages)
+	var ownedPackages []string
+	for _, packages := range document.Lanes {
+		ownedPackages = append(ownedPackages, packages...)
+	}
+	sort.Strings(ownedPackages)
+	wantPackages := strings.Fields(string(livePackages))
+	sort.Strings(wantPackages)
+	if !reflect.DeepEqual(ownedPackages, wantPackages) {
+		t.Fatalf("manifest package union = %v, want exact live package set %v", ownedPackages, wantPackages)
 	}
 	remaining := document.Lanes["remaining-go"]
 	if len(remaining) == 0 {
@@ -3781,6 +3949,9 @@ exit 23
 				t.Fatalf("native executions = %d, want %d; calls:\n%s", len(lines), wantCalls, callData)
 			}
 			fields := strings.Fields(string(callData))
+			if tc.lane == "remaining-go" && !strings.Contains(" "+string(callData)+" ", " ./internal/testutil/browserapi ") {
+				t.Fatal("remaining-go route omitted browser API helper")
+			}
 			var gotPackages []string
 			for _, field := range fields {
 				if strings.HasPrefix(field, "./") {
@@ -3844,7 +4015,7 @@ func TestCIVetHasOneAuthoritativeGateAndNoImplicitLaneWork(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.Count(string(workflow), "go vet ./..."); got != 1 {
+	if got := strings.Count(string(workflow), "go vet -trimpath ./..."); got != 1 {
 		t.Fatalf("standalone full vet gates = %d, want 1", got)
 	}
 	script, err := os.ReadFile("ci-go-test.sh")
@@ -3852,8 +4023,8 @@ func TestCIVetHasOneAuthoritativeGateAndNoImplicitLaneWork(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, want := range []string{
-		`"${test_command[@]}" test -json -vet=off "$@"`,
-		`GOFLAGS="${GOFLAGS:+${GOFLAGS} }-vet=off" go test -list '^Test' "${apex_package}"`,
+		`"${test_command[@]}" test -json -vet=off -trimpath "$@"`,
+		`go test -vet=off -trimpath -list '^Test' "${apex_package}"`,
 	} {
 		if !strings.Contains(string(script), want) {
 			t.Errorf("wrapper missing implicit-vet suppression %q", want)
@@ -3936,7 +4107,7 @@ tee "$output"
 				if strings.Contains(call, " -skip ") || strings.Contains(call, " -skip=") {
 					t.Errorf("aggregate mode filtered package coverage: %s", call)
 				}
-				if !tc.wantRace && strings.Contains(call, "./internal/visualforce") && call != "test -json -vet=off -timeout=70m ./internal/visualforce" {
+				if !tc.wantRace && strings.Contains(call, "./internal/visualforce") && call != "test -json -vet=off -trimpath -timeout=70m ./internal/visualforce" {
 					t.Errorf("Visualforce must run separately with its own timeout: %s", call)
 				}
 			}
@@ -3969,7 +4140,7 @@ func TestCILocalReleaseModeIsExactOnceAndFailClosed(t *testing.T) {
 		"scripts/internal/cishard",
 		"LOCAL_GO_TEST_JOBS",
 		"local_release_jobs",
-		"go vet ./...",
+		"go vet -trimpath ./...",
 		"-count=1",
 		"validate_local_release_package_summary",
 		"package-summary.json",
@@ -4171,7 +4342,7 @@ func TestCILocalReleaseExecutesExactAuthoritativeInventory(t *testing.T) {
 	if !reflect.DeepEqual(seen, want) {
 		t.Fatalf("local-release package executions = %#v, want %#v", seen, want)
 	}
-	if got := strings.Count(calls, "vet ./..."); got != 1 {
+	if got := strings.Count(calls, "vet -trimpath ./..."); got != 1 {
 		t.Fatalf("go vet gates = %d, want 1; calls:\n%s", got, calls)
 	}
 	for _, tc := range []struct {
@@ -4967,7 +5138,7 @@ exit "$FIXTURE_REMAINING_RC"
 				}
 			}
 			calls, err := os.ReadFile(filepath.Join(dir, "calls"))
-			want := "test -json -vet=off -timeout=20m ./internal/soql\ntest -json -vet=off -timeout=70m ./internal/visualforce\n"
+			want := "test -json -vet=off -trimpath -timeout=20m ./internal/soql\ntest -json -vet=off -trimpath -timeout=70m ./internal/visualforce\n"
 			if err != nil || string(calls) != want {
 				t.Fatalf("package ownership/timeouts changed: %v\n%s", err, calls)
 			}

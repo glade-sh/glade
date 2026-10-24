@@ -67,6 +67,7 @@ func TestFormulaSummaryObservationsConformance(t *testing.T) {
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "FormulaSummaryObservations", api)
+			base := conformanceSchemaBase(t, nativeBoundaryIndex(t, api, nil, data.Objects), api)
 			for _, row := range data.Rows {
 				for _, cell := range row.Cells {
 					if cell.API != api {
@@ -77,7 +78,7 @@ func TestFormulaSummaryObservationsConformance(t *testing.T) {
 						route = "isTest"
 					}
 					counts.Run(t, route, row.Label, row.Label+"/"+cell.Route, func(t *testing.T) {
-						execErr := executeFormulaSummaryObservation(t, api, cell.Route, row, data.Objects)
+						execErr := executeFormulaSummaryObservation(t, base, api, cell.Route, row, data.Objects)
 						var runtimeErr *vm.RuntimeError
 						if !errors.As(execErr, &runtimeErr) || listSObjectCastExceptionType(runtimeErr.Type) != "System.AssertException" {
 							t.Fatalf("missing terminal native observation: %v", execErr)
@@ -107,7 +108,7 @@ func TestFormulaSummaryObservationsConformance(t *testing.T) {
 	}
 }
 
-func executeFormulaSummaryObservation(t *testing.T, api, route string, row formulaSummaryNativeRow, objects map[string]string) error {
+func executeFormulaSummaryObservation(t *testing.T, base *conformanceRunner, api, route string, row formulaSummaryNativeRow, objects map[string]string) error {
 	t.Helper()
 	classes := map[string]string{}
 	if route == "istest" {
@@ -118,9 +119,7 @@ func executeFormulaSummaryObservation(t *testing.T, api, route string, row formu
 	if index.HasErrors() || analysis.HasErrors() {
 		t.Fatalf("native metadata/source accepted; local diagnostics=%v %v", index.Diagnostics, analysis.Diagnostics)
 	}
-	org := orgFromIndex(index)
-	org.APIVersion = api
-	runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+	runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, LinkProject: true, Org: base.orgSource})
 	if route == "anonymous" {
 		anonymous := sema.AnalyzeAnonymous(index, row.Anonymous, api)
 		program, compileErr := vm.CompileAnonymousWithOptions(row.Anonymous, vm.CompileOptions{APIVersion: api})

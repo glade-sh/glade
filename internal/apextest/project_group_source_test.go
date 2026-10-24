@@ -38,24 +38,36 @@ func TestProjectGroupSourceHydration(t *testing.T) {
 			if !roleFound {
 				t.Fatal("existing role prerequisite was lost")
 			}
+			// Native plain Developer orgs (API 62.0 and 67.0) already hold exactly one
+			// Group, AllInternalUsers with Type Organization:
+			// testdata/conformance/setup_object_read/groups.tsv:2-3
+			// (provenance: GROUPS-RUN.txt, ORG-RUN.txt). Source metadata adds only
+			// the declared groups to that set.
 			groups := org.Objects["Group"].Records
+			want := map[string]bool{"AllInternalUsers": true}
 			if present {
-				if len(groups) != 2 {
-					t.Fatalf("source group count=%d, want 2", len(groups))
+				want["OwnedOrigin"] = true
+				want["OwnedTarget"] = true
+			}
+			seen := map[string]bool{}
+			for _, r := range groups {
+				n := r.Fields["DeveloperName"].String
+				if seen[n] {
+					t.Fatalf("duplicate group %s", n)
 				}
-				seen := map[string]bool{}
-				for _, r := range groups {
-					n := r.Fields["DeveloperName"].String
-					seen[n] = true
-					if r.Fields["Type"].String != "Regular" || r.Fields["Name"].String != "Owned "+map[string]string{"OwnedOrigin": "Origin", "OwnedTarget": "Target"}[n] || r.Fields["DoesIncludeBosses"].Boolean != (n == "OwnedOrigin") {
-						t.Fatalf("source group shape: %+v", r)
+				seen[n] = true
+				if n == "AllInternalUsers" {
+					if r.Fields["Type"].String != "Organization" {
+						t.Fatalf("native group shape: %+v", r)
 					}
+					continue
 				}
-				if !seen["OwnedOrigin"] || !seen["OwnedTarget"] {
-					t.Fatal("source group identities missing")
+				if r.Fields["Type"].String != "Regular" || r.Fields["Name"].String != "Owned "+map[string]string{"OwnedOrigin": "Origin", "OwnedTarget": "Target"}[n] || r.Fields["DoesIncludeBosses"].Boolean != (n == "OwnedOrigin") {
+					t.Fatalf("source group shape: %+v", r)
 				}
-			} else if len(groups) != 0 {
-				t.Fatalf("absent metadata fabricated groups: %d", len(groups))
+			}
+			if !reflect.DeepEqual(seen, want) {
+				t.Fatalf("group developer names=%v, want %v", seen, want)
 			}
 			if len(org.Objects["GroupMember"].Records) != 0 {
 				t.Fatal("metadata fabricated membership")

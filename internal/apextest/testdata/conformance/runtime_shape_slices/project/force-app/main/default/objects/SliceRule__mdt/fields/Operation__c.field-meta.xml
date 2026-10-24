@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Operation__c</fullName><label>Operation__c</label><type>Text</type><length>80</length></CustomField>

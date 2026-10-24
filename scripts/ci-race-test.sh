@@ -281,7 +281,7 @@ PY
 		bash -c 'if [[ -n "${CI_TEST_BIN_DIR:-}" ]]; then
 			python3 "$1/ci-test-binary.py" copy-race "$2" "$3"
 		else
-			"$4" test -race -c -o "$3" "$2"
+			"$4" test -trimpath -race -c -o "$3" "$2"
 		fi' bash "${script_dir}" "${package}" "${binary_path}" "${go_command}"
 	build_native_rc="$?"
 	set -e

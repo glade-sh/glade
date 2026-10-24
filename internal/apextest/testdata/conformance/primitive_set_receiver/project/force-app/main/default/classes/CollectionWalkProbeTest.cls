@@ -1,0 +1,1 @@
+@IsTest public class CollectionWalkProbeTest { @IsTest static void observe() { System.assert(false, 'OBS|' + JSON.serialize(CollectionWalkProbe.observe())); } @IsTest static void iteration() { Set<String> values = new Set<String>{'seed'}; for (String value : values) { values.add('other'); } } }

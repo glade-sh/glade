@@ -1,0 +1,7 @@
+id	context	class	method	source
+queueable	istest	TransactionBoundaryTest	queueable	TransactionBoundaryTest.cls
+future	istest	TransactionBoundaryTest	future	TransactionBoundaryTest.cls
+scheduled	istest	TransactionBoundaryTest	scheduled	TransactionBoundaryTest.cls
+batch	istest	TransactionBoundaryTest	batch	TransactionBoundaryTest.cls
+scheduled_batch	istest	TransactionBoundaryTest	scheduled_batch	TransactionBoundaryTest.cls
+finalizer	istest	TransactionBoundaryTest	finalizer	TransactionBoundaryTest.cls

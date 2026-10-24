@@ -760,6 +760,9 @@ func TestRunConfigShowJSON(t *testing.T) {
   packageDirs: [force-app, packages/core]
   defaultNamespace: glns
   namespaceRemaps: ["BasePkg:stagepkg"]
+  dependencies:
+    - name: LocalAlias
+      path: vendor/library
   managedPackageDependencies: ["pkg:artifact:.glade/packages/pkg.glade-package.json:1.0"]
   packageShims: ["pkg:test-support/package-shims/pkg"]
 org:
@@ -776,13 +779,17 @@ org:
 		Status        string `json:"status"`
 		ExitCode      int    `json:"exitCode"`
 		Data          struct {
-			ConfigPath                 string   `json:"configPath"`
-			ConfigFound                bool     `json:"configFound"`
-			ProjectRoot                string   `json:"projectRoot"`
-			Namespace                  string   `json:"namespace"`
-			SourceAPIVersion           string   `json:"sourceApiVersion"`
-			PackageDirs                []string `json:"packageDirs"`
-			OrgFeatures                []string `json:"orgFeatures"`
+			ConfigPath       string   `json:"configPath"`
+			ConfigFound      bool     `json:"configFound"`
+			ProjectRoot      string   `json:"projectRoot"`
+			Namespace        string   `json:"namespace"`
+			SourceAPIVersion string   `json:"sourceApiVersion"`
+			PackageDirs      []string `json:"packageDirs"`
+			OrgFeatures      []string `json:"orgFeatures"`
+			Dependencies     []struct {
+				Name string `json:"name"`
+				Path string `json:"path"`
+			} `json:"dependencies"`
 			ManagedPackageDependencies []struct {
 				Namespace string `json:"namespace"`
 			} `json:"managedPackageDependencies"`
@@ -812,6 +819,9 @@ org:
 	}
 	if strings.Join(got.Data.OrgFeatures, ",") != "PersonAccounts" {
 		t.Fatalf("orgFeatures = %#v", got.Data.OrgFeatures)
+	}
+	if len(got.Data.Dependencies) != 1 || got.Data.Dependencies[0].Name != "LocalAlias" || got.Data.Dependencies[0].Path != filepath.Join(root, "vendor", "library") {
+		t.Fatalf("dependencies = %#v", got.Data.Dependencies)
 	}
 	if len(got.Data.ManagedPackageDependencies) != 1 || got.Data.ManagedPackageDependencies[0].Namespace != "pkg" {
 		t.Fatalf("managed package dependencies = %#v", got.Data.ManagedPackageDependencies)
@@ -858,6 +868,7 @@ func TestRunConfigInitWritesGladeYML(t *testing.T) {
 		"project:",
 		"  packageDirs: [force-app, packages/core]",
 		"  defaultNamespace: glns",
+		"  dependencies: []",
 		"org:",
 		"  features: [PersonAccounts]",
 	} {
@@ -4726,13 +4737,15 @@ func TestRunExecWithProjectRejectsAnonymousSemanticDiagnosticsBeforeExecution(t 
 	}
 }
 
+// Native duplicate enforcement ST02 (nameOnly): the active default Account
+// rule reports one DuplicateResult with no matched records.
 func TestRunExecWithProjectUsesLocalPlatformHarnesses(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{
 		"exec", "--project", root,
-		"Apex.Stack stack = new Apex.Stack(); System.assert(stack.empty()); System.assertEquals('001000000000001', new chatteranswers.AccountCreator().createAccount('Ada', 'Lovelace', UserInfo.getUserId())); List<Datacloud.FindDuplicatesResult> duplicateRows = Datacloud.FindDuplicates.findDuplicates(new List<SObject>{new Account(Name = 'Acme')}); System.assertEquals(1, duplicateRows.size()); System.assert(duplicateRows[0].isSuccess()); System.assertEquals(0, duplicateRows[0].getDuplicateResults().size()); System.assertEquals(0, duplicateRows[0].getErrors().size()); commerce_inventory.InventoryLevelsResponse levels = new commerce_inventory.CommerceInventoryService().getInventoryLevel(new commerce_inventory.InventoryLevelsRequest('LOCATION', new Set<commerce_inventory.InventoryLevelsItemRequest>())); System.assertEquals(0, levels.getItemsInventoryLevels().size()); commerce_ordermanagement.ProductExpandResponse expand = new commerce_ordermanagement.ProductExpandService().returnReasons(new commerce_ordermanagement.ProductExpandRequest()); System.assertEquals(null, expand.getSucceed()); Exception value = new InvalidParameterValueException('parameter', 'value'); System.assertEquals('System.InvalidParameterValueException', value.getTypeName()); TouchHandledException touch = new TouchHandledException('ignored'); System.assertEquals('Script-thrown exception', touch.getMessage()); touch.setMessage('changed'); System.assertEquals('changed', touch.getMessage());",
+		"Apex.Stack stack = new Apex.Stack(); System.assert(stack.empty()); System.assertEquals('001000000000001', new chatteranswers.AccountCreator().createAccount('Ada', 'Lovelace', UserInfo.getUserId())); List<Datacloud.FindDuplicatesResult> duplicateRows = Datacloud.FindDuplicates.findDuplicates(new List<SObject>{new Account(Name = 'Acme')}); System.assertEquals(1, duplicateRows.size()); System.assert(duplicateRows[0].isSuccess()); System.assertEquals(1, duplicateRows[0].getDuplicateResults().size()); System.assertEquals(0, duplicateRows[0].getDuplicateResults()[0].getMatchResults()[0].getSize()); System.assertEquals(0, duplicateRows[0].getErrors().size()); commerce_inventory.InventoryLevelsResponse levels = new commerce_inventory.CommerceInventoryService().getInventoryLevel(new commerce_inventory.InventoryLevelsRequest('LOCATION', new Set<commerce_inventory.InventoryLevelsItemRequest>())); System.assertEquals(0, levels.getItemsInventoryLevels().size()); commerce_ordermanagement.ProductExpandResponse expand = new commerce_ordermanagement.ProductExpandService().returnReasons(new commerce_ordermanagement.ProductExpandRequest()); System.assertEquals(null, expand.getSucceed()); Exception value = new InvalidParameterValueException('parameter', 'value'); System.assertEquals('System.InvalidParameterValueException', value.getTypeName()); TouchHandledException touch = new TouchHandledException('ignored'); System.assertEquals('Script-thrown exception', touch.getMessage()); touch.setMessage('changed'); System.assertEquals('changed', touch.getMessage());",
 	}, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("project-backed local platform harnesses failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())

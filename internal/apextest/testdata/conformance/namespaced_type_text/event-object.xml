@@ -1,0 +1,1 @@
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><deploymentStatus>Deployed</deploymentStatus><label>TypeText Event Item</label><nameField><label>TypeText Event Item Name</label><type>Text</type></nameField><pluralLabel>TypeText Event Items</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>

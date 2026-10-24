@@ -44,7 +44,8 @@ func semaAutomationCallTypeMessage(typeName, method string, model *semaTypeMembe
 	// visibility remains separate from declaring a variable of this type, and
 	// ordinary member resolution still checks the method's argument types.
 	if model != nil && model.state != nil && model.state.base != nil && model.state.base.knowledgeEnabled &&
-		strings.EqualFold(typeName, "KbManagement.PublishingService") && strings.EqualFold(method, "publishArticle") {
+		strings.EqualFold(typeName, "KbManagement.PublishingService") &&
+		(strings.EqualFold(method, "publishArticle") || strings.EqualFold(method, "archiveOnlineArticle")) {
 		return ""
 	}
 	return semaAutomationTypeMessage(typeName, model)
@@ -132,6 +133,11 @@ func (a *Analyzer) semaAutomationCallMessage(receiverType, method string, args [
 	var params [][]string
 	canonicalType := receiverType
 	switch normalizeName(receiverType) {
+	case "kbmanagement.publishingservice":
+		if strings.EqualFold(method, "archiveOnlineArticle") {
+			canonicalType = "KbManagement.PublishingService"
+			params = [][]string{{"String", "Datetime"}}
+		}
 	case "approval":
 		canonicalType = "Approval"
 		switch normalizeName(method) {

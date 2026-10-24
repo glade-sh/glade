@@ -91,7 +91,7 @@ func (vm *VM) shadowCheckOccurrences(updated Value) bool {
 		}
 	}
 	classIndex := 0
-	for _, class := range vm.Classes {
+	for _, class := range vm.ClassEntries() {
 		fieldIndex := 0
 		for _, field := range class.StaticFields {
 			if !walk(field.Value, fmt.Sprintf("static[%d].field[%d]", classIndex, fieldIndex)) {

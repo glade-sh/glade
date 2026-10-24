@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>62.0</apiVersion>
+    <interviewLabel>ActivityEmailTriggerOmitted</interviewLabel>
+    <label>ActivityEmailTriggerOmitted</label>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>CallChild</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Name</field>
+            <operator>EqualTo</operator>
+            <value>
+                <stringValue>Activity flowTriggerSubflowOmitted</stringValue>
+            </value>
+        </filters>
+        <object>Account</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <subflows>
+        <name>CallChild</name>
+        <label>CallChild</label>
+        <locationX>0</locationX>
+        <locationY>0</locationY>
+        <flowName>ActivityEmailOmitted</flowName>
+        <inputAssignments>
+            <name>Address</name>
+            <value>
+                <elementReference>$Record.Description</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Body</name>
+            <value>
+                <stringValue>Flow body</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>RelatedId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <name>Subject</name>
+            <value>
+                <stringValue>Activity flowTriggerSubflowOmitted</stringValue>
+            </value>
+        </inputAssignments>
+    </subflows>
+</Flow>

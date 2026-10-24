@@ -1,0 +1,12 @@
+{
+  "packageDirectories": [
+    {
+      "path": "force-app",
+      "default": true,
+      "package": "LocalBridgeConsumer",
+      "dependencies": [{ "package": "LocalBridgeSupport" }]
+    }
+  ],
+  "namespace": "",
+  "sourceApiVersion": "67.0"
+}

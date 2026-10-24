@@ -193,14 +193,14 @@
   ],
   "carries": [],
   "provenance": {
-    "kind": "direct native scratch-org observations",
+    "kind": "direct native example-org observations",
     "orgIdSha256": "fb33956e2835632b70ca589f4dda85a92483f425f1cfe6e2f19a14ab779370ea",
     "payloadMarker": "NUMERIC_MAP|",
     "transport": {
       "anonymous": "debug",
       "istest": "intentional assertion failure"
     },
-    "deployCommand": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf project deploy start --target-org <scratch-org> --source-dir <synthetic-project>/force-app --wait 15 --json",
+    "deployCommand": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf project deploy start --target-org <example-org> --source-dir <synthetic-project>/force-app --wait 15 --json",
     "sourceSha256ByAPI": {
       "62.0": {
         "helperSource": "2179022b24e60767027ea8e89f4cf9b17c32df0f12c07c92d6b97aa22edc6b01",
@@ -228,40 +228,40 @@
       {
         "api": "62.0",
         "context": "anonymous",
-        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version 62.0 --file <synthetic-probe>/api62.apex --json",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <example-org> --api-version 62.0 --file <synthetic-probe>/api62.apex --json",
         "rawResponseSha256": "0a21f11ee0a31ed54982822187572f34f1bd1566359f437c6308e1681ceab233"
       },
       {
         "api": "62.0",
         "context": "istest",
-        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names NumericMapObserved62 --synchronous --result-format json --wait 15 --json",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <example-org> --class-names NumericMapObserved62 --synchronous --result-format json --wait 15 --json",
         "rawResponseSha256": "91edbbc7da6d407eefa248d43a8e1dbd840c4d1eb2d65e46304e77c2f6ab4b90"
       },
       {
         "api": "67.0",
         "context": "anonymous",
-        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version 67.0 --file <synthetic-probe>/api67.apex --json",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <example-org> --api-version 67.0 --file <synthetic-probe>/api67.apex --json",
         "rawResponseSha256": "33accd12659f6a9647e699f52a56f863450cde0505bbf9008a7cd802974a47ac"
       },
       {
         "api": "67.0",
         "context": "istest",
-        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names NumericMapObserved67 --synchronous --result-format json --wait 15 --json",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <example-org> --class-names NumericMapObserved67 --synchronous --result-format json --wait 15 --json",
         "rawResponseSha256": "42166f514edcc3cd5012ea3a5d2fc4d210967902279bbf73a43e035b50baeaf0"
       },
       {
         "api": "68.0",
         "context": "anonymous",
-        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version 68.0 --file <synthetic-probe>/api68.apex --json",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <example-org> --api-version 68.0 --file <synthetic-probe>/api68.apex --json",
         "rawResponseSha256": "388860da1723f0c4e9124ec9a7005f829afb47beb1f1863a2ab16c6e2bc7ba78"
       },
       {
         "api": "68.0",
         "context": "istest",
-        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names NumericMapObserved68 --synchronous --result-format json --wait 15 --json",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <example-org> --class-names NumericMapObserved68 --synchronous --result-format json --wait 15 --json",
         "rawResponseSha256": "6c73ee6b32e05834a569de677619465082572681a37e636d824bf1ac9ea5dafe"
       }
     ],
-    "commandPathNormalization": "Authentication home, scratch-org target alias, and synthetic project paths are replaced with placeholders; command options are unchanged."
+    "commandPathNormalization": "Authentication home, example-org target alias, and synthetic project paths are replaced with placeholders; command options are unchanged."
   }
 }

@@ -1,0 +1,820 @@
+{
+  "support": {
+    "EnumMethodOuter": "public class EnumMethodOuter { public enum Level { NONE, HIGH } }",
+    "EnumMethodLevel": "public enum EnumMethodLevel { NONE, HIGH }"
+  },
+  "cases": [
+    {
+      "id": "lexical/unknown/named",
+      "shape": "lexical",
+      "method": "unknown",
+      "route": "named",
+      "name": "EnumMethod1",
+      "source": "public class EnumMethod1 {\n public enum Level { NONE, HIGH }\n public static void probe() {\n  Object actual = Level.NONE.bogusMethod();\n }\n}\n",
+      "expression": "Level.NONE.bogusMethod()"
+    },
+    {
+      "id": "lexical/unknown/isTest",
+      "shape": "lexical",
+      "method": "unknown",
+      "route": "isTest",
+      "name": "EnumMethod2",
+      "source": "@IsTest private class EnumMethod2 {\n public enum Level { NONE, HIGH }\n @IsTest static void probe() {\n  Object actual = Level.NONE.bogusMethod();\n }\n}\n",
+      "expression": "Level.NONE.bogusMethod()"
+    },
+    {
+      "id": "lexical/name/named",
+      "shape": "lexical",
+      "method": "name",
+      "route": "named",
+      "name": "EnumMethod3",
+      "source": "public class EnumMethod3 {\n public enum Level { NONE, HIGH }\n public static void probe() {\n  Object actual = Level.NONE.name();\n }\n}\n",
+      "expression": "Level.NONE.name()"
+    },
+    {
+      "id": "lexical/name/isTest",
+      "shape": "lexical",
+      "method": "name",
+      "route": "isTest",
+      "name": "EnumMethod4",
+      "source": "@IsTest private class EnumMethod4 {\n public enum Level { NONE, HIGH }\n @IsTest static void probe() {\n  Object actual = Level.NONE.name();\n }\n}\n",
+      "expression": "Level.NONE.name()"
+    },
+    {
+      "id": "lexical/ordinal/named",
+      "shape": "lexical",
+      "method": "ordinal",
+      "route": "named",
+      "name": "EnumMethod5",
+      "source": "public class EnumMethod5 {\n public enum Level { NONE, HIGH }\n public static void probe() {\n  Object actual = Level.NONE.ordinal();\n }\n}\n",
+      "expression": "Level.NONE.ordinal()"
+    },
+    {
+      "id": "lexical/ordinal/isTest",
+      "shape": "lexical",
+      "method": "ordinal",
+      "route": "isTest",
+      "name": "EnumMethod6",
+      "source": "@IsTest private class EnumMethod6 {\n public enum Level { NONE, HIGH }\n @IsTest static void probe() {\n  Object actual = Level.NONE.ordinal();\n }\n}\n",
+      "expression": "Level.NONE.ordinal()"
+    },
+    {
+      "id": "lexical/values_on_value/named",
+      "shape": "lexical",
+      "method": "values_on_value",
+      "route": "named",
+      "name": "EnumMethod7",
+      "source": "public class EnumMethod7 {\n public enum Level { NONE, HIGH }\n public static void probe() {\n  Object actual = Level.NONE.values();\n }\n}\n",
+      "expression": "Level.NONE.values()"
+    },
+    {
+      "id": "lexical/values_on_value/isTest",
+      "shape": "lexical",
+      "method": "values_on_value",
+      "route": "isTest",
+      "name": "EnumMethod8",
+      "source": "@IsTest private class EnumMethod8 {\n public enum Level { NONE, HIGH }\n @IsTest static void probe() {\n  Object actual = Level.NONE.values();\n }\n}\n",
+      "expression": "Level.NONE.values()"
+    },
+    {
+      "id": "lexical/valueOf_on_value/named",
+      "shape": "lexical",
+      "method": "valueOf_on_value",
+      "route": "named",
+      "name": "EnumMethod9",
+      "source": "public class EnumMethod9 {\n public enum Level { NONE, HIGH }\n public static void probe() {\n  Object actual = Level.NONE.valueOf('NONE');\n }\n}\n",
+      "expression": "Level.NONE.valueOf('NONE')"
+    },
+    {
+      "id": "lexical/valueOf_on_value/isTest",
+      "shape": "lexical",
+      "method": "valueOf_on_value",
+      "route": "isTest",
+      "name": "EnumMethod10",
+      "source": "@IsTest private class EnumMethod10 {\n public enum Level { NONE, HIGH }\n @IsTest static void probe() {\n  Object actual = Level.NONE.valueOf('NONE');\n }\n}\n",
+      "expression": "Level.NONE.valueOf('NONE')"
+    },
+    {
+      "id": "lexical/equals/named",
+      "shape": "lexical",
+      "method": "equals",
+      "route": "named",
+      "name": "EnumMethod11",
+      "source": "public class EnumMethod11 {\n public enum Level { NONE, HIGH }\n public static void probe() {\n  Object actual = Level.NONE.equals(Level.NONE);\n }\n}\n",
+      "expression": "Level.NONE.equals(Level.NONE)"
+    },
+    {
+      "id": "lexical/equals/isTest",
+      "shape": "lexical",
+      "method": "equals",
+      "route": "isTest",
+      "name": "EnumMethod12",
+      "source": "@IsTest private class EnumMethod12 {\n public enum Level { NONE, HIGH }\n @IsTest static void probe() {\n  Object actual = Level.NONE.equals(Level.NONE);\n }\n}\n",
+      "expression": "Level.NONE.equals(Level.NONE)"
+    },
+    {
+      "id": "lexical/hashCode/named",
+      "shape": "lexical",
+      "method": "hashCode",
+      "route": "named",
+      "name": "EnumMethod13",
+      "source": "public class EnumMethod13 {\n public enum Level { NONE, HIGH }\n public static void probe() {\n  Object actual = Level.NONE.hashCode();\n }\n}\n",
+      "expression": "Level.NONE.hashCode()"
+    },
+    {
+      "id": "lexical/hashCode/isTest",
+      "shape": "lexical",
+      "method": "hashCode",
+      "route": "isTest",
+      "name": "EnumMethod14",
+      "source": "@IsTest private class EnumMethod14 {\n public enum Level { NONE, HIGH }\n @IsTest static void probe() {\n  Object actual = Level.NONE.hashCode();\n }\n}\n",
+      "expression": "Level.NONE.hashCode()"
+    },
+    {
+      "id": "lexical/toString/named",
+      "shape": "lexical",
+      "method": "toString",
+      "route": "named",
+      "name": "EnumMethod15",
+      "source": "public class EnumMethod15 {\n public enum Level { NONE, HIGH }\n public static void probe() {\n  Object actual = Level.NONE.toString();\n }\n}\n",
+      "expression": "Level.NONE.toString()"
+    },
+    {
+      "id": "lexical/toString/isTest",
+      "shape": "lexical",
+      "method": "toString",
+      "route": "isTest",
+      "name": "EnumMethod16",
+      "source": "@IsTest private class EnumMethod16 {\n public enum Level { NONE, HIGH }\n @IsTest static void probe() {\n  Object actual = Level.NONE.toString();\n }\n}\n",
+      "expression": "Level.NONE.toString()"
+    },
+    {
+      "id": "lexical/values_on_type/named",
+      "shape": "lexical",
+      "method": "values_on_type",
+      "route": "named",
+      "name": "EnumMethod17",
+      "source": "public class EnumMethod17 {\n public enum Level { NONE, HIGH }\n public static void probe() {\n  Object actual = Level.values();\n }\n}\n",
+      "expression": "Level.values()"
+    },
+    {
+      "id": "lexical/values_on_type/isTest",
+      "shape": "lexical",
+      "method": "values_on_type",
+      "route": "isTest",
+      "name": "EnumMethod18",
+      "source": "@IsTest private class EnumMethod18 {\n public enum Level { NONE, HIGH }\n @IsTest static void probe() {\n  Object actual = Level.values();\n }\n}\n",
+      "expression": "Level.values()"
+    },
+    {
+      "id": "lexical/valueOf_on_type/named",
+      "shape": "lexical",
+      "method": "valueOf_on_type",
+      "route": "named",
+      "name": "EnumMethod19",
+      "source": "public class EnumMethod19 {\n public enum Level { NONE, HIGH }\n public static void probe() {\n  Object actual = Level.valueOf('NONE');\n }\n}\n",
+      "expression": "Level.valueOf('NONE')"
+    },
+    {
+      "id": "lexical/valueOf_on_type/isTest",
+      "shape": "lexical",
+      "method": "valueOf_on_type",
+      "route": "isTest",
+      "name": "EnumMethod20",
+      "source": "@IsTest private class EnumMethod20 {\n public enum Level { NONE, HIGH }\n @IsTest static void probe() {\n  Object actual = Level.valueOf('NONE');\n }\n}\n",
+      "expression": "Level.valueOf('NONE')"
+    },
+    {
+      "id": "qualified/unknown/named",
+      "shape": "qualified",
+      "method": "unknown",
+      "route": "named",
+      "name": "EnumMethod21",
+      "source": "public class EnumMethod21 {\n public static void probe() {\n  Object actual = EnumMethodOuter.Level.NONE.bogusMethod();\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.NONE.bogusMethod()"
+    },
+    {
+      "id": "qualified/unknown/isTest",
+      "shape": "qualified",
+      "method": "unknown",
+      "route": "isTest",
+      "name": "EnumMethod22",
+      "source": "@IsTest private class EnumMethod22 {\n @IsTest static void probe() {\n  Object actual = EnumMethodOuter.Level.NONE.bogusMethod();\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.NONE.bogusMethod()"
+    },
+    {
+      "id": "qualified/name/named",
+      "shape": "qualified",
+      "method": "name",
+      "route": "named",
+      "name": "EnumMethod23",
+      "source": "public class EnumMethod23 {\n public static void probe() {\n  Object actual = EnumMethodOuter.Level.NONE.name();\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.NONE.name()"
+    },
+    {
+      "id": "qualified/name/isTest",
+      "shape": "qualified",
+      "method": "name",
+      "route": "isTest",
+      "name": "EnumMethod24",
+      "source": "@IsTest private class EnumMethod24 {\n @IsTest static void probe() {\n  Object actual = EnumMethodOuter.Level.NONE.name();\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.NONE.name()"
+    },
+    {
+      "id": "qualified/ordinal/named",
+      "shape": "qualified",
+      "method": "ordinal",
+      "route": "named",
+      "name": "EnumMethod25",
+      "source": "public class EnumMethod25 {\n public static void probe() {\n  Object actual = EnumMethodOuter.Level.NONE.ordinal();\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.NONE.ordinal()"
+    },
+    {
+      "id": "qualified/ordinal/isTest",
+      "shape": "qualified",
+      "method": "ordinal",
+      "route": "isTest",
+      "name": "EnumMethod26",
+      "source": "@IsTest private class EnumMethod26 {\n @IsTest static void probe() {\n  Object actual = EnumMethodOuter.Level.NONE.ordinal();\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.NONE.ordinal()"
+    },
+    {
+      "id": "qualified/values_on_value/named",
+      "shape": "qualified",
+      "method": "values_on_value",
+      "route": "named",
+      "name": "EnumMethod27",
+      "source": "public class EnumMethod27 {\n public static void probe() {\n  Object actual = EnumMethodOuter.Level.NONE.values();\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.NONE.values()"
+    },
+    {
+      "id": "qualified/values_on_value/isTest",
+      "shape": "qualified",
+      "method": "values_on_value",
+      "route": "isTest",
+      "name": "EnumMethod28",
+      "source": "@IsTest private class EnumMethod28 {\n @IsTest static void probe() {\n  Object actual = EnumMethodOuter.Level.NONE.values();\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.NONE.values()"
+    },
+    {
+      "id": "qualified/valueOf_on_value/named",
+      "shape": "qualified",
+      "method": "valueOf_on_value",
+      "route": "named",
+      "name": "EnumMethod29",
+      "source": "public class EnumMethod29 {\n public static void probe() {\n  Object actual = EnumMethodOuter.Level.NONE.valueOf('NONE');\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.NONE.valueOf('NONE')"
+    },
+    {
+      "id": "qualified/valueOf_on_value/isTest",
+      "shape": "qualified",
+      "method": "valueOf_on_value",
+      "route": "isTest",
+      "name": "EnumMethod30",
+      "source": "@IsTest private class EnumMethod30 {\n @IsTest static void probe() {\n  Object actual = EnumMethodOuter.Level.NONE.valueOf('NONE');\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.NONE.valueOf('NONE')"
+    },
+    {
+      "id": "qualified/equals/named",
+      "shape": "qualified",
+      "method": "equals",
+      "route": "named",
+      "name": "EnumMethod31",
+      "source": "public class EnumMethod31 {\n public static void probe() {\n  Object actual = EnumMethodOuter.Level.NONE.equals(EnumMethodOuter.Level.NONE);\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.NONE.equals(EnumMethodOuter.Level.NONE)"
+    },
+    {
+      "id": "qualified/equals/isTest",
+      "shape": "qualified",
+      "method": "equals",
+      "route": "isTest",
+      "name": "EnumMethod32",
+      "source": "@IsTest private class EnumMethod32 {\n @IsTest static void probe() {\n  Object actual = EnumMethodOuter.Level.NONE.equals(EnumMethodOuter.Level.NONE);\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.NONE.equals(EnumMethodOuter.Level.NONE)"
+    },
+    {
+      "id": "qualified/hashCode/named",
+      "shape": "qualified",
+      "method": "hashCode",
+      "route": "named",
+      "name": "EnumMethod33",
+      "source": "public class EnumMethod33 {\n public static void probe() {\n  Object actual = EnumMethodOuter.Level.NONE.hashCode();\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.NONE.hashCode()"
+    },
+    {
+      "id": "qualified/hashCode/isTest",
+      "shape": "qualified",
+      "method": "hashCode",
+      "route": "isTest",
+      "name": "EnumMethod34",
+      "source": "@IsTest private class EnumMethod34 {\n @IsTest static void probe() {\n  Object actual = EnumMethodOuter.Level.NONE.hashCode();\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.NONE.hashCode()"
+    },
+    {
+      "id": "qualified/toString/named",
+      "shape": "qualified",
+      "method": "toString",
+      "route": "named",
+      "name": "EnumMethod35",
+      "source": "public class EnumMethod35 {\n public static void probe() {\n  Object actual = EnumMethodOuter.Level.NONE.toString();\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.NONE.toString()"
+    },
+    {
+      "id": "qualified/toString/isTest",
+      "shape": "qualified",
+      "method": "toString",
+      "route": "isTest",
+      "name": "EnumMethod36",
+      "source": "@IsTest private class EnumMethod36 {\n @IsTest static void probe() {\n  Object actual = EnumMethodOuter.Level.NONE.toString();\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.NONE.toString()"
+    },
+    {
+      "id": "qualified/values_on_type/named",
+      "shape": "qualified",
+      "method": "values_on_type",
+      "route": "named",
+      "name": "EnumMethod37",
+      "source": "public class EnumMethod37 {\n public static void probe() {\n  Object actual = EnumMethodOuter.Level.values();\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.values()"
+    },
+    {
+      "id": "qualified/values_on_type/isTest",
+      "shape": "qualified",
+      "method": "values_on_type",
+      "route": "isTest",
+      "name": "EnumMethod38",
+      "source": "@IsTest private class EnumMethod38 {\n @IsTest static void probe() {\n  Object actual = EnumMethodOuter.Level.values();\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.values()"
+    },
+    {
+      "id": "qualified/valueOf_on_type/named",
+      "shape": "qualified",
+      "method": "valueOf_on_type",
+      "route": "named",
+      "name": "EnumMethod39",
+      "source": "public class EnumMethod39 {\n public static void probe() {\n  Object actual = EnumMethodOuter.Level.valueOf('NONE');\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.valueOf('NONE')"
+    },
+    {
+      "id": "qualified/valueOf_on_type/isTest",
+      "shape": "qualified",
+      "method": "valueOf_on_type",
+      "route": "isTest",
+      "name": "EnumMethod40",
+      "source": "@IsTest private class EnumMethod40 {\n @IsTest static void probe() {\n  Object actual = EnumMethodOuter.Level.valueOf('NONE');\n }\n}\n",
+      "expression": "EnumMethodOuter.Level.valueOf('NONE')"
+    },
+    {
+      "id": "top_level/unknown/named",
+      "shape": "top_level",
+      "method": "unknown",
+      "route": "named",
+      "name": "EnumMethod41",
+      "source": "public class EnumMethod41 {\n public static void probe() {\n  Object actual = EnumMethodLevel.NONE.bogusMethod();\n }\n}\n",
+      "expression": "EnumMethodLevel.NONE.bogusMethod()"
+    },
+    {
+      "id": "top_level/unknown/isTest",
+      "shape": "top_level",
+      "method": "unknown",
+      "route": "isTest",
+      "name": "EnumMethod42",
+      "source": "@IsTest private class EnumMethod42 {\n @IsTest static void probe() {\n  Object actual = EnumMethodLevel.NONE.bogusMethod();\n }\n}\n",
+      "expression": "EnumMethodLevel.NONE.bogusMethod()"
+    },
+    {
+      "id": "top_level/name/named",
+      "shape": "top_level",
+      "method": "name",
+      "route": "named",
+      "name": "EnumMethod43",
+      "source": "public class EnumMethod43 {\n public static void probe() {\n  Object actual = EnumMethodLevel.NONE.name();\n }\n}\n",
+      "expression": "EnumMethodLevel.NONE.name()"
+    },
+    {
+      "id": "top_level/name/isTest",
+      "shape": "top_level",
+      "method": "name",
+      "route": "isTest",
+      "name": "EnumMethod44",
+      "source": "@IsTest private class EnumMethod44 {\n @IsTest static void probe() {\n  Object actual = EnumMethodLevel.NONE.name();\n }\n}\n",
+      "expression": "EnumMethodLevel.NONE.name()"
+    },
+    {
+      "id": "top_level/ordinal/named",
+      "shape": "top_level",
+      "method": "ordinal",
+      "route": "named",
+      "name": "EnumMethod45",
+      "source": "public class EnumMethod45 {\n public static void probe() {\n  Object actual = EnumMethodLevel.NONE.ordinal();\n }\n}\n",
+      "expression": "EnumMethodLevel.NONE.ordinal()"
+    },
+    {
+      "id": "top_level/ordinal/isTest",
+      "shape": "top_level",
+      "method": "ordinal",
+      "route": "isTest",
+      "name": "EnumMethod46",
+      "source": "@IsTest private class EnumMethod46 {\n @IsTest static void probe() {\n  Object actual = EnumMethodLevel.NONE.ordinal();\n }\n}\n",
+      "expression": "EnumMethodLevel.NONE.ordinal()"
+    },
+    {
+      "id": "top_level/values_on_value/named",
+      "shape": "top_level",
+      "method": "values_on_value",
+      "route": "named",
+      "name": "EnumMethod47",
+      "source": "public class EnumMethod47 {\n public static void probe() {\n  Object actual = EnumMethodLevel.NONE.values();\n }\n}\n",
+      "expression": "EnumMethodLevel.NONE.values()"
+    },
+    {
+      "id": "top_level/values_on_value/isTest",
+      "shape": "top_level",
+      "method": "values_on_value",
+      "route": "isTest",
+      "name": "EnumMethod48",
+      "source": "@IsTest private class EnumMethod48 {\n @IsTest static void probe() {\n  Object actual = EnumMethodLevel.NONE.values();\n }\n}\n",
+      "expression": "EnumMethodLevel.NONE.values()"
+    },
+    {
+      "id": "top_level/valueOf_on_value/named",
+      "shape": "top_level",
+      "method": "valueOf_on_value",
+      "route": "named",
+      "name": "EnumMethod49",
+      "source": "public class EnumMethod49 {\n public static void probe() {\n  Object actual = EnumMethodLevel.NONE.valueOf('NONE');\n }\n}\n",
+      "expression": "EnumMethodLevel.NONE.valueOf('NONE')"
+    },
+    {
+      "id": "top_level/valueOf_on_value/isTest",
+      "shape": "top_level",
+      "method": "valueOf_on_value",
+      "route": "isTest",
+      "name": "EnumMethod50",
+      "source": "@IsTest private class EnumMethod50 {\n @IsTest static void probe() {\n  Object actual = EnumMethodLevel.NONE.valueOf('NONE');\n }\n}\n",
+      "expression": "EnumMethodLevel.NONE.valueOf('NONE')"
+    },
+    {
+      "id": "top_level/equals/named",
+      "shape": "top_level",
+      "method": "equals",
+      "route": "named",
+      "name": "EnumMethod51",
+      "source": "public class EnumMethod51 {\n public static void probe() {\n  Object actual = EnumMethodLevel.NONE.equals(EnumMethodLevel.NONE);\n }\n}\n",
+      "expression": "EnumMethodLevel.NONE.equals(EnumMethodLevel.NONE)"
+    },
+    {
+      "id": "top_level/equals/isTest",
+      "shape": "top_level",
+      "method": "equals",
+      "route": "isTest",
+      "name": "EnumMethod52",
+      "source": "@IsTest private class EnumMethod52 {\n @IsTest static void probe() {\n  Object actual = EnumMethodLevel.NONE.equals(EnumMethodLevel.NONE);\n }\n}\n",
+      "expression": "EnumMethodLevel.NONE.equals(EnumMethodLevel.NONE)"
+    },
+    {
+      "id": "top_level/hashCode/named",
+      "shape": "top_level",
+      "method": "hashCode",
+      "route": "named",
+      "name": "EnumMethod53",
+      "source": "public class EnumMethod53 {\n public static void probe() {\n  Object actual = EnumMethodLevel.NONE.hashCode();\n }\n}\n",
+      "expression": "EnumMethodLevel.NONE.hashCode()"
+    },
+    {
+      "id": "top_level/hashCode/isTest",
+      "shape": "top_level",
+      "method": "hashCode",
+      "route": "isTest",
+      "name": "EnumMethod54",
+      "source": "@IsTest private class EnumMethod54 {\n @IsTest static void probe() {\n  Object actual = EnumMethodLevel.NONE.hashCode();\n }\n}\n",
+      "expression": "EnumMethodLevel.NONE.hashCode()"
+    },
+    {
+      "id": "top_level/toString/named",
+      "shape": "top_level",
+      "method": "toString",
+      "route": "named",
+      "name": "EnumMethod55",
+      "source": "public class EnumMethod55 {\n public static void probe() {\n  Object actual = EnumMethodLevel.NONE.toString();\n }\n}\n",
+      "expression": "EnumMethodLevel.NONE.toString()"
+    },
+    {
+      "id": "top_level/toString/isTest",
+      "shape": "top_level",
+      "method": "toString",
+      "route": "isTest",
+      "name": "EnumMethod56",
+      "source": "@IsTest private class EnumMethod56 {\n @IsTest static void probe() {\n  Object actual = EnumMethodLevel.NONE.toString();\n }\n}\n",
+      "expression": "EnumMethodLevel.NONE.toString()"
+    },
+    {
+      "id": "top_level/values_on_type/named",
+      "shape": "top_level",
+      "method": "values_on_type",
+      "route": "named",
+      "name": "EnumMethod57",
+      "source": "public class EnumMethod57 {\n public static void probe() {\n  Object actual = EnumMethodLevel.values();\n }\n}\n",
+      "expression": "EnumMethodLevel.values()"
+    },
+    {
+      "id": "top_level/values_on_type/isTest",
+      "shape": "top_level",
+      "method": "values_on_type",
+      "route": "isTest",
+      "name": "EnumMethod58",
+      "source": "@IsTest private class EnumMethod58 {\n @IsTest static void probe() {\n  Object actual = EnumMethodLevel.values();\n }\n}\n",
+      "expression": "EnumMethodLevel.values()"
+    },
+    {
+      "id": "top_level/valueOf_on_type/named",
+      "shape": "top_level",
+      "method": "valueOf_on_type",
+      "route": "named",
+      "name": "EnumMethod59",
+      "source": "public class EnumMethod59 {\n public static void probe() {\n  Object actual = EnumMethodLevel.valueOf('NONE');\n }\n}\n",
+      "expression": "EnumMethodLevel.valueOf('NONE')"
+    },
+    {
+      "id": "top_level/valueOf_on_type/isTest",
+      "shape": "top_level",
+      "method": "valueOf_on_type",
+      "route": "isTest",
+      "name": "EnumMethod60",
+      "source": "@IsTest private class EnumMethod60 {\n @IsTest static void probe() {\n  Object actual = EnumMethodLevel.valueOf('NONE');\n }\n}\n",
+      "expression": "EnumMethodLevel.valueOf('NONE')"
+    },
+    {
+      "id": "system_namespace/unknown/named",
+      "shape": "system_namespace",
+      "method": "unknown",
+      "route": "named",
+      "name": "EnumMethod61",
+      "source": "public class EnumMethod61 {\n public static void probe() {\n  Object actual = System.LoggingLevel.DEBUG.bogusMethod();\n }\n}\n",
+      "expression": "System.LoggingLevel.DEBUG.bogusMethod()"
+    },
+    {
+      "id": "system_namespace/unknown/isTest",
+      "shape": "system_namespace",
+      "method": "unknown",
+      "route": "isTest",
+      "name": "EnumMethod62",
+      "source": "@IsTest private class EnumMethod62 {\n @IsTest static void probe() {\n  Object actual = System.LoggingLevel.DEBUG.bogusMethod();\n }\n}\n",
+      "expression": "System.LoggingLevel.DEBUG.bogusMethod()"
+    },
+    {
+      "id": "system_namespace/name/named",
+      "shape": "system_namespace",
+      "method": "name",
+      "route": "named",
+      "name": "EnumMethod63",
+      "source": "public class EnumMethod63 {\n public static void probe() {\n  Object actual = System.LoggingLevel.DEBUG.name();\n }\n}\n",
+      "expression": "System.LoggingLevel.DEBUG.name()"
+    },
+    {
+      "id": "system_namespace/name/isTest",
+      "shape": "system_namespace",
+      "method": "name",
+      "route": "isTest",
+      "name": "EnumMethod64",
+      "source": "@IsTest private class EnumMethod64 {\n @IsTest static void probe() {\n  Object actual = System.LoggingLevel.DEBUG.name();\n }\n}\n",
+      "expression": "System.LoggingLevel.DEBUG.name()"
+    },
+    {
+      "id": "system_namespace/ordinal/named",
+      "shape": "system_namespace",
+      "method": "ordinal",
+      "route": "named",
+      "name": "EnumMethod65",
+      "source": "public class EnumMethod65 {\n public static void probe() {\n  Object actual = System.LoggingLevel.DEBUG.ordinal();\n }\n}\n",
+      "expression": "System.LoggingLevel.DEBUG.ordinal()"
+    },
+    {
+      "id": "system_namespace/ordinal/isTest",
+      "shape": "system_namespace",
+      "method": "ordinal",
+      "route": "isTest",
+      "name": "EnumMethod66",
+      "source": "@IsTest private class EnumMethod66 {\n @IsTest static void probe() {\n  Object actual = System.LoggingLevel.DEBUG.ordinal();\n }\n}\n",
+      "expression": "System.LoggingLevel.DEBUG.ordinal()"
+    },
+    {
+      "id": "system_namespace/values_on_value/named",
+      "shape": "system_namespace",
+      "method": "values_on_value",
+      "route": "named",
+      "name": "EnumMethod67",
+      "source": "public class EnumMethod67 {\n public static void probe() {\n  Object actual = System.LoggingLevel.DEBUG.values();\n }\n}\n",
+      "expression": "System.LoggingLevel.DEBUG.values()"
+    },
+    {
+      "id": "system_namespace/values_on_value/isTest",
+      "shape": "system_namespace",
+      "method": "values_on_value",
+      "route": "isTest",
+      "name": "EnumMethod68",
+      "source": "@IsTest private class EnumMethod68 {\n @IsTest static void probe() {\n  Object actual = System.LoggingLevel.DEBUG.values();\n }\n}\n",
+      "expression": "System.LoggingLevel.DEBUG.values()"
+    },
+    {
+      "id": "system_namespace/valueOf_on_value/named",
+      "shape": "system_namespace",
+      "method": "valueOf_on_value",
+      "route": "named",
+      "name": "EnumMethod69",
+      "source": "public class EnumMethod69 {\n public static void probe() {\n  Object actual = System.LoggingLevel.DEBUG.valueOf('DEBUG');\n }\n}\n",
+      "expression": "System.LoggingLevel.DEBUG.valueOf('DEBUG')"
+    },
+    {
+      "id": "system_namespace/valueOf_on_value/isTest",
+      "shape": "system_namespace",
+      "method": "valueOf_on_value",
+      "route": "isTest",
+      "name": "EnumMethod70",
+      "source": "@IsTest private class EnumMethod70 {\n @IsTest static void probe() {\n  Object actual = System.LoggingLevel.DEBUG.valueOf('DEBUG');\n }\n}\n",
+      "expression": "System.LoggingLevel.DEBUG.valueOf('DEBUG')"
+    },
+    {
+      "id": "system_namespace/equals/named",
+      "shape": "system_namespace",
+      "method": "equals",
+      "route": "named",
+      "name": "EnumMethod71",
+      "source": "public class EnumMethod71 {\n public static void probe() {\n  Object actual = System.LoggingLevel.DEBUG.equals(System.LoggingLevel.DEBUG);\n }\n}\n",
+      "expression": "System.LoggingLevel.DEBUG.equals(System.LoggingLevel.DEBUG)"
+    },
+    {
+      "id": "system_namespace/equals/isTest",
+      "shape": "system_namespace",
+      "method": "equals",
+      "route": "isTest",
+      "name": "EnumMethod72",
+      "source": "@IsTest private class EnumMethod72 {\n @IsTest static void probe() {\n  Object actual = System.LoggingLevel.DEBUG.equals(System.LoggingLevel.DEBUG);\n }\n}\n",
+      "expression": "System.LoggingLevel.DEBUG.equals(System.LoggingLevel.DEBUG)"
+    },
+    {
+      "id": "system_namespace/hashCode/named",
+      "shape": "system_namespace",
+      "method": "hashCode",
+      "route": "named",
+      "name": "EnumMethod73",
+      "source": "public class EnumMethod73 {\n public static void probe() {\n  Object actual = System.LoggingLevel.DEBUG.hashCode();\n }\n}\n",
+      "expression": "System.LoggingLevel.DEBUG.hashCode()"
+    },
+    {
+      "id": "system_namespace/hashCode/isTest",
+      "shape": "system_namespace",
+      "method": "hashCode",
+      "route": "isTest",
+      "name": "EnumMethod74",
+      "source": "@IsTest private class EnumMethod74 {\n @IsTest static void probe() {\n  Object actual = System.LoggingLevel.DEBUG.hashCode();\n }\n}\n",
+      "expression": "System.LoggingLevel.DEBUG.hashCode()"
+    },
+    {
+      "id": "system_namespace/toString/named",
+      "shape": "system_namespace",
+      "method": "toString",
+      "route": "named",
+      "name": "EnumMethod75",
+      "source": "public class EnumMethod75 {\n public static void probe() {\n  Object actual = System.LoggingLevel.DEBUG.toString();\n }\n}\n",
+      "expression": "System.LoggingLevel.DEBUG.toString()"
+    },
+    {
+      "id": "system_namespace/toString/isTest",
+      "shape": "system_namespace",
+      "method": "toString",
+      "route": "isTest",
+      "name": "EnumMethod76",
+      "source": "@IsTest private class EnumMethod76 {\n @IsTest static void probe() {\n  Object actual = System.LoggingLevel.DEBUG.toString();\n }\n}\n",
+      "expression": "System.LoggingLevel.DEBUG.toString()"
+    },
+    {
+      "id": "system_namespace/values_on_type/named",
+      "shape": "system_namespace",
+      "method": "values_on_type",
+      "route": "named",
+      "name": "EnumMethod77",
+      "source": "public class EnumMethod77 {\n public static void probe() {\n  Object actual = System.LoggingLevel.values();\n }\n}\n",
+      "expression": "System.LoggingLevel.values()"
+    },
+    {
+      "id": "system_namespace/values_on_type/isTest",
+      "shape": "system_namespace",
+      "method": "values_on_type",
+      "route": "isTest",
+      "name": "EnumMethod78",
+      "source": "@IsTest private class EnumMethod78 {\n @IsTest static void probe() {\n  Object actual = System.LoggingLevel.values();\n }\n}\n",
+      "expression": "System.LoggingLevel.values()"
+    },
+    {
+      "id": "system_namespace/valueOf_on_type/named",
+      "shape": "system_namespace",
+      "method": "valueOf_on_type",
+      "route": "named",
+      "name": "EnumMethod79",
+      "source": "public class EnumMethod79 {\n public static void probe() {\n  Object actual = System.LoggingLevel.valueOf('DEBUG');\n }\n}\n",
+      "expression": "System.LoggingLevel.valueOf('DEBUG')"
+    },
+    {
+      "id": "system_namespace/valueOf_on_type/isTest",
+      "shape": "system_namespace",
+      "method": "valueOf_on_type",
+      "route": "isTest",
+      "name": "EnumMethod80",
+      "source": "@IsTest private class EnumMethod80 {\n @IsTest static void probe() {\n  Object actual = System.LoggingLevel.valueOf('DEBUG');\n }\n}\n",
+      "expression": "System.LoggingLevel.valueOf('DEBUG')"
+    },
+    {
+      "id": "lexical/local_enum_declaration/anonymous",
+      "shape": "lexical",
+      "method": "local_enum_declaration",
+      "route": "anonymous",
+      "source": "class AnonymousEnumMethod { public enum Level { NONE, HIGH } public void probe() {\nObject actual0 = Level.NONE.name();\nObject actual1 = Level.NONE.ordinal();\nObject actual2 = Level.NONE.equals(Level.NONE);\nObject actual3 = Level.NONE.hashCode();\nObject actual4 = Level.NONE.toString();\nObject actual5 = Level.values();\nObject actual6 = Level.valueOf('NONE');\n} }\nnew AnonymousEnumMethod().probe();",
+      "boundary": "Anonymous local classes cannot contain inner enums; method calls are not reached."
+    },
+    {
+      "id": "qualified/valid_methods/anonymous",
+      "shape": "qualified",
+      "method": "valid_methods",
+      "route": "anonymous",
+      "source": "Object actual0 = EnumMethodOuter.Level.NONE.name();\nObject actual1 = EnumMethodOuter.Level.NONE.ordinal();\nObject actual2 = EnumMethodOuter.Level.NONE.equals(EnumMethodOuter.Level.NONE);\nObject actual3 = EnumMethodOuter.Level.NONE.hashCode();\nObject actual4 = EnumMethodOuter.Level.NONE.toString();\nObject actual5 = EnumMethodOuter.Level.values();\nObject actual6 = EnumMethodOuter.Level.valueOf('NONE');"
+    },
+    {
+      "id": "qualified/unknown/anonymous",
+      "shape": "qualified",
+      "method": "unknown",
+      "route": "anonymous",
+      "source": "Object actual0 = EnumMethodOuter.Level.NONE.bogusMethod();"
+    },
+    {
+      "id": "qualified/values_on_value/anonymous",
+      "shape": "qualified",
+      "method": "values_on_value",
+      "route": "anonymous",
+      "source": "Object actual0 = EnumMethodOuter.Level.NONE.values();"
+    },
+    {
+      "id": "qualified/valueOf_on_value/anonymous",
+      "shape": "qualified",
+      "method": "valueOf_on_value",
+      "route": "anonymous",
+      "source": "Object actual0 = EnumMethodOuter.Level.NONE.valueOf('NONE');"
+    },
+    {
+      "id": "top_level/valid_methods/anonymous",
+      "shape": "top_level",
+      "method": "valid_methods",
+      "route": "anonymous",
+      "source": "Object actual0 = EnumMethodLevel.NONE.name();\nObject actual1 = EnumMethodLevel.NONE.ordinal();\nObject actual2 = EnumMethodLevel.NONE.equals(EnumMethodLevel.NONE);\nObject actual3 = EnumMethodLevel.NONE.hashCode();\nObject actual4 = EnumMethodLevel.NONE.toString();\nObject actual5 = EnumMethodLevel.values();\nObject actual6 = EnumMethodLevel.valueOf('NONE');"
+    },
+    {
+      "id": "top_level/unknown/anonymous",
+      "shape": "top_level",
+      "method": "unknown",
+      "route": "anonymous",
+      "source": "Object actual0 = EnumMethodLevel.NONE.bogusMethod();"
+    },
+    {
+      "id": "top_level/values_on_value/anonymous",
+      "shape": "top_level",
+      "method": "values_on_value",
+      "route": "anonymous",
+      "source": "Object actual0 = EnumMethodLevel.NONE.values();"
+    },
+    {
+      "id": "top_level/valueOf_on_value/anonymous",
+      "shape": "top_level",
+      "method": "valueOf_on_value",
+      "route": "anonymous",
+      "source": "Object actual0 = EnumMethodLevel.NONE.valueOf('NONE');"
+    },
+    {
+      "id": "system_namespace/valid_methods/anonymous",
+      "shape": "system_namespace",
+      "method": "valid_methods",
+      "route": "anonymous",
+      "source": "Object actual0 = System.LoggingLevel.DEBUG.name();\nObject actual1 = System.LoggingLevel.DEBUG.ordinal();\nObject actual2 = System.LoggingLevel.DEBUG.equals(System.LoggingLevel.DEBUG);\nObject actual3 = System.LoggingLevel.DEBUG.hashCode();\nObject actual4 = System.LoggingLevel.DEBUG.toString();\nObject actual5 = System.LoggingLevel.values();\nObject actual6 = System.LoggingLevel.valueOf('DEBUG');"
+    },
+    {
+      "id": "system_namespace/unknown/anonymous",
+      "shape": "system_namespace",
+      "method": "unknown",
+      "route": "anonymous",
+      "source": "Object actual0 = System.LoggingLevel.DEBUG.bogusMethod();"
+    },
+    {
+      "id": "system_namespace/values_on_value/anonymous",
+      "shape": "system_namespace",
+      "method": "values_on_value",
+      "route": "anonymous",
+      "source": "Object actual0 = System.LoggingLevel.DEBUG.values();"
+    },
+    {
+      "id": "system_namespace/valueOf_on_value/anonymous",
+      "shape": "system_namespace",
+      "method": "valueOf_on_value",
+      "route": "anonymous",
+      "source": "Object actual0 = System.LoggingLevel.DEBUG.valueOf('DEBUG');"
+    }
+  ]
+}

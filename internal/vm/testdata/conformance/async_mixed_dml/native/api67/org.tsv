@@ -1,0 +1,7 @@
+api	context	id	outcome	value
+67.0	istest	queueable	observation	"""success"""
+67.0	istest	future	observation	"""success"""
+67.0	istest	scheduled	observation	"""success"""
+67.0	istest	batch	observation	"""success"""
+67.0	istest	scheduled_batch	observation	"""success"""
+67.0	istest	finalizer	observation	"""mixed_dml"""

@@ -1,0 +1,18 @@
+id	shape	routes	apis
+UW01	HTTP after insert	anonymous,istest	62.0,67.0
+UW02	HTTP before insert	anonymous,istest	62.0,67.0
+UW03	DML before startTest	anonymous,istest	62.0,67.0
+UW04	DML inside startTest	anonymous,istest	62.0,67.0
+UW05	Active savepoint	anonymous,istest	62.0,67.0
+UW06	Rollback retains active savepoint	anonymous,istest	62.0,67.0
+UW07	PublishImmediately event	anonymous,istest	62.0,67.0
+UW08	PublishAfterCommit event	anonymous,istest	62.0,67.0
+UW09	Enqueue queueable	anonymous,istest	62.0,67.0
+UW10	Enqueue future	anonymous,istest	62.0,67.0
+UW11	Send email	anonymous,istest	62.0,67.0
+UW12	SOQL only	anonymous,istest	62.0,67.0
+UW13	SOAP after insert	anonymous,istest	62.0,67.0
+UW14	Rejected callout counter	anonymous,istest	62.0,67.0
+UW15	Queueable DML and callout	anonymous,istest	62.0,67.0
+UW16	All failed partial DML	anonymous,istest	62.0,67.0
+UW17	Unmocked HTTP after insert	anonymous,istest	62.0,67.0

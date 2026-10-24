@@ -1,0 +1,8 @@
+case	shape
+instance	Repeated instance calls read a wide receiver after earlier collection mutations
+static_object_argument	An Object parameter forwards the typed receiver through a cast without mutations
+static_typed_argument	A typed static forwarding call reads the same receiver through an instance call
+getter	A property getter reads the same receiver graph
+nested_call	A method calls another method without changing a collection
+mutating_twins	Instance, static argument and getter calls append to a shared nested list
+map_set	Collection writes remain visible through retained map and set aliases

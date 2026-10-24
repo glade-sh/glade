@@ -1,0 +1,673 @@
+api_version	parent_object	ordinal	child_sobject	field	relationship_name	cascade_delete	restricted_delete	deprecated_and_hidden
+62.0	Account	0	AIInsightValue	SobjectLookupValueId		true	false	false
+62.0	Account	1	AIRecordInsight	TargetId		false	false	false
+62.0	Account	2	Account	ParentId	ChildAccounts	false	false	false
+62.0	Account	3	AccountChangeEvent	ParentId		false	false	false
+62.0	Account	4	AccountCleanInfo	AccountId	AccountCleanInfos	true	false	false
+62.0	Account	5	AccountCleanInfoChangeEvent	AccountId		false	false	false
+62.0	Account	6	AccountContactRole	AccountId	AccountContactRoles	true	false	false
+62.0	Account	7	AccountContactRoleChangeEvent	AccountId		false	false	false
+62.0	Account	8	AccountFeed	ParentId	Feeds	true	false	false
+62.0	Account	9	AccountHistory	AccountId	Histories	true	false	false
+62.0	Account	10	AccountPartner	AccountFromId	AccountPartnersFrom	true	false	false
+62.0	Account	11	AccountPartner	AccountToId	AccountPartnersTo	true	false	false
+62.0	Account	12	AccountShare	AccountId	Shares	true	false	false
+62.0	Account	13	ActivityHistory	AccountId	ActivityHistories	true	false	false
+62.0	Account	14	AlternativePaymentMethod	AccountId	AlternativePaymentMethods	false	false	false
+62.0	Account	15	ApprovalSubmission	RelatedRecordId	ApprovalSubmissions	false	false	false
+62.0	Account	16	ApprovalWorkItem	RelatedRecordId	ApprovalWorkItems	false	false	false
+62.0	Account	17	Asset	AccountId	Assets	true	false	false
+62.0	Account	18	Asset	AssetProvidedById	ProvidedAssets	false	false	false
+62.0	Account	19	Asset	AssetServicedById	ServicedAssets	false	false	false
+62.0	Account	20	AssetAccountParticipant	AccountId	AssetAccountParticipantAccount	true	false	false
+62.0	Account	21	AssetAccountParticipantChangeEvent	AccountId		false	false	false
+62.0	Account	22	AssetChangeEvent	AccountId		false	false	false
+62.0	Account	23	AssetChangeEvent	AssetProvidedById		false	false	false
+62.0	Account	24	AssetChangeEvent	AssetServicedById		false	false	false
+62.0	Account	25	AssociatedLocation	ParentRecordId	AssociatedLocations	true	false	false
+62.0	Account	26	AssociatedLocationChangeEvent	ParentRecordId		false	false	false
+62.0	Account	27	AttachedContentDocument	LinkedEntityId	AttachedContentDocuments	true	false	false
+62.0	Account	28	Attachment	ParentId	Attachments	true	false	false
+62.0	Account	29	AuthorizationFormConsent	ConsentGiverId	AuthorizationFormConsents	false	true	false
+62.0	Account	30	AuthorizationFormConsent	RelatedRecordId	RelatedAuthorizationFormConsents	false	false	false
+62.0	Account	31	AuthorizationFormConsentChangeEvent	ConsentGiverId		false	false	false
+62.0	Account	32	AuthorizationFormConsentChangeEvent	RelatedRecordId		false	false	false
+62.0	Account	33	CampaignMember	LeadOrContactId		false	false	false
+62.0	Account	34	CardPaymentMethod	AccountId	CardPaymentMethods	false	false	false
+62.0	Account	35	Case	AccountId	Cases	false	true	false
+62.0	Account	36	CaseChangeEvent	AccountId		false	false	false
+62.0	Account	37	CollaborationGroupRecord	RecordId	RecordAssociatedGroups	true	false	false
+62.0	Account	38	CollaborationGroupRecordChangeEvent	RecordId		false	false	false
+62.0	Account	39	CombinedAttachment	ParentId	CombinedAttachments	true	false	false
+62.0	Account	40	CommSubscriptionConsent	ConsentGiverId	CommSubscriptionConsents	false	true	false
+62.0	Account	41	CommSubscriptionConsentChangeEvent	ConsentGiverId		false	false	false
+62.0	Account	42	Contact	AccountId	Contacts	true	false	false
+62.0	Account	43	ContactChangeEvent	AccountId		false	false	false
+62.0	Account	44	ContactPointAddress	ParentId	ContactPointAddresses	true	false	false
+62.0	Account	45	ContactPointAddressChangeEvent	ParentId		false	false	false
+62.0	Account	46	ContactPointEmail	ParentId	ContactPointEmails	true	false	false
+62.0	Account	47	ContactPointEmailChangeEvent	ParentId		false	false	false
+62.0	Account	48	ContactPointPhone	ParentId	ContactPointPhones	true	false	false
+62.0	Account	49	ContactPointPhoneChangeEvent	ParentId		false	false	false
+62.0	Account	50	ContactRequest	WhatId	ContactRequests	false	false	false
+62.0	Account	51	ContentDistribution	RelatedRecordId		true	false	false
+62.0	Account	52	ContentDocumentLink	LinkedEntityId	ContentDocumentLinks	true	false	false
+62.0	Account	53	ContentDocumentLinkChangeEvent	LinkedEntityId		false	false	false
+62.0	Account	54	ContentVersion	FirstPublishLocationId		false	false	false
+62.0	Account	55	ContentVersionChangeEvent	FirstPublishLocationId		false	false	false
+62.0	Account	56	Contract	AccountId	Contracts	true	true	false
+62.0	Account	57	ContractChangeEvent	AccountId		false	false	false
+62.0	Account	58	CreditMemo	BillingAccountId	CreditMemos	true	false	false
+62.0	Account	59	DigitalWallet	AccountId	DigitalWallets	false	false	false
+62.0	Account	60	DuplicateRecordItem	RecordId	DuplicateRecordItems	true	false	false
+62.0	Account	61	EmailMessage	RelatedToId	Emails	false	false	false
+62.0	Account	62	EmailMessageChangeEvent	RelatedToId		false	false	false
+62.0	Account	63	Entitlement	AccountId	Entitlements	true	true	false
+62.0	Account	64	EntitlementChangeEvent	AccountId		false	false	false
+62.0	Account	65	EntitySubscription	ParentId	FeedSubscriptionsForEntity	true	false	false
+62.0	Account	66	Event	AccountId		false	false	false
+62.0	Account	67	Event	WhatId	Events	true	false	false
+62.0	Account	68	EventChangeEvent	AccountId		false	false	false
+62.0	Account	69	EventChangeEvent	WhatId		false	false	false
+62.0	Account	70	EventRelationChangeEvent	RelationId		false	false	false
+62.0	Account	71	Expense	AccountId	Expenses	false	false	false
+62.0	Account	72	ExpenseChangeEvent	AccountId		false	false	false
+62.0	Account	73	FeedComment	ParentId		false	false	false
+62.0	Account	74	FeedItem	ParentId		true	false	false
+62.0	Account	75	FinanceBalanceSnapshot	AccountId	FinanceBalanceSnapshots	false	false	false
+62.0	Account	76	FinanceBalanceSnapshotChangeEvent	AccountId		false	false	false
+62.0	Account	77	FinanceTransaction	AccountId	FinanceTransactions	false	false	false
+62.0	Account	78	FinanceTransactionChangeEvent	AccountId		false	false	false
+62.0	Account	79	FlowExecutionErrorEvent	ContextRecordId		false	false	false
+62.0	Account	80	FlowOrchestrationWorkItem	RelatedRecordId	FlowOrchestrationWorkItems	false	false	false
+62.0	Account	81	FlowRecordRelation	RelatedRecordId		false	false	false
+62.0	Account	82	Invoice	BillingAccountId	Invoices	true	false	false
+62.0	Account	83	Lead	ConvertedAccountId		false	false	false
+62.0	Account	84	LeadChangeEvent	ConvertedAccountId		false	false	false
+62.0	Account	85	MaintenancePlan	AccountId	MaintenancePlans	false	false	false
+62.0	Account	86	MaintenancePlanChangeEvent	AccountId		false	false	false
+62.0	Account	87	MessagingEndUser	AccountId	MessagingEndUsers	false	false	false
+62.0	Account	88	MessagingEndUserChangeEvent	AccountId		false	false	false
+62.0	Account	89	MessagingSession	EndUserAccountId	MessagingSessions	false	false	false
+62.0	Account	90	MessagingSessionChangeEvent	EndUserAccountId		false	false	false
+62.0	Account	91	Note	ParentId	Notes	true	false	false
+62.0	Account	92	NoteAndAttachment	ParentId	NotesAndAttachments	true	false	false
+62.0	Account	93	OpenActivity	AccountId	OpenActivities	true	false	false
+62.0	Account	94	Opportunity	AccountId	Opportunities	true	false	false
+62.0	Account	95	OpportunityChangeEvent	AccountId		false	false	false
+62.0	Account	96	OpportunityPartner	AccountToId	OpportunityPartnersTo	true	false	false
+62.0	Account	97	Order	AccountId	Orders	true	true	false
+62.0	Account	98	OrderChangeEvent	AccountId		false	false	false
+62.0	Account	99	OutgoingEmail	RelatedToId		false	false	false
+62.0	Account	100	Partner	AccountFromId	PartnersFrom	true	false	false
+62.0	Account	101	Partner	AccountToId	PartnersTo	true	false	false
+62.0	Account	102	Payment	AccountId	Payments	false	false	false
+62.0	Account	103	PaymentAuthAdjustment	AccountId	PaymentAuthAdjustments	false	false	false
+62.0	Account	104	PaymentAuthorization	AccountId	PaymentAuthorizations	false	false	false
+62.0	Account	105	PaymentLineInvoice	AssociatedAccountId	PaymentLinesInvoice	false	false	false
+62.0	Account	106	PaymentMethod	AccountId		false	false	false
+62.0	Account	107	ProcessInstance	TargetObjectId	ProcessInstances	true	false	false
+62.0	Account	108	ProcessInstanceChangeEvent	TargetObjectId		false	false	false
+62.0	Account	109	ProcessInstanceHistory	TargetObjectId	ProcessSteps	false	false	false
+62.0	Account	110	ProductRequest	AccountId	ProductRequests	false	false	false
+62.0	Account	111	ProductRequestChangeEvent	AccountId		false	false	false
+62.0	Account	112	ProductRequestLineItem	AccountId	ProductRequestLineItems	false	false	false
+62.0	Account	113	ProductRequestLineItemChangeEvent	AccountId		false	false	false
+62.0	Account	114	RecordAction	RecordId	RecordActions	true	false	false
+62.0	Account	115	RecordActionHistory	ParentRecordId	RecordActionHistories	false	false	false
+62.0	Account	116	Refund	AccountId	Refunds	false	false	false
+62.0	Account	117	RefundLinePayment	AssociatedAccountId	RefundLinePayments	false	false	false
+62.0	Account	118	ResourcePreference	RelatedRecordId	ResourcePreferences	true	false	false
+62.0	Account	119	ResourcePreferenceChangeEvent	RelatedRecordId		false	false	false
+62.0	Account	120	ReturnOrder	AccountId	ReturnOrders	false	false	false
+62.0	Account	121	ReturnOrderChangeEvent	AccountId		false	false	false
+62.0	Account	122	ScorecardAssociation	TargetEntityId	ScorecardAssociations	true	false	false
+62.0	Account	123	ServiceAppointment	AccountId	ServiceAppointmentAccount	false	false	false
+62.0	Account	124	ServiceAppointment	ParentRecordId	ServiceAppointments	true	false	false
+62.0	Account	125	ServiceAppointmentChangeEvent	AccountId		false	false	false
+62.0	Account	126	ServiceAppointmentChangeEvent	ParentRecordId		false	false	false
+62.0	Account	127	ServiceContract	AccountId	ServiceContracts	false	true	false
+62.0	Account	128	ServiceContractChangeEvent	AccountId		false	false	false
+62.0	Account	129	ServiceResource	AccountId	ServiceResources	false	true	false
+62.0	Account	130	ServiceResourceChangeEvent	AccountId		false	false	false
+62.0	Account	131	Swarm	RelatedRecordId	Swarms	true	false	false
+62.0	Account	132	SwarmMember	RelatedRecordId	SwarmMembers	true	false	false
+62.0	Account	133	Task	AccountId		false	false	false
+62.0	Account	134	Task	WhatId	Tasks	true	false	false
+62.0	Account	135	TaskChangeEvent	AccountId		false	false	false
+62.0	Account	136	TaskChangeEvent	WhatId		false	false	false
+62.0	Account	137	TopicAssignment	EntityId	TopicAssignments	true	false	false
+62.0	Account	138	User	AccountId	Users	false	false	false
+62.0	Account	139	UserChangeEvent	AccountId		false	false	false
+62.0	Account	140	UserDefinedLabelAssignment	ItemId	UserDefinedLabelAssignments	true	false	false
+62.0	Account	141	UserRole	PortalAccountId		false	false	false
+62.0	Account	142	WorkOrder	AccountId	WorkOrders	false	false	false
+62.0	Account	143	WorkOrderChangeEvent	AccountId		false	false	false
+62.0	Account	144	WorkPlanSelectionRule	AccountId	WorkPlanSelectionRules	true	false	false
+62.0	Account	145	WorkPlanSelectionRuleChangeEvent	AccountId		false	false	false
+62.0	Contact	0	AIInsightValue	SobjectLookupValueId		true	false	false
+62.0	Contact	1	AIRecordInsight	TargetId		false	false	false
+62.0	Contact	2	AcceptedEventRelation	RelationId	AcceptedEventRelations	false	false	false
+62.0	Contact	3	AccountContactRole	ContactId	AccountContactRoles	true	false	false
+62.0	Contact	4	AccountContactRoleChangeEvent	ContactId		false	false	false
+62.0	Contact	5	ActivityHistory	WhoId	ActivityHistories	true	false	false
+62.0	Contact	6	ApprovalSubmission	RelatedRecordId	ApprovalSubmissions	false	false	false
+62.0	Contact	7	ApprovalWorkItem	RelatedRecordId	ApprovalWorkItems	false	false	false
+62.0	Contact	8	Asset	ContactId	Assets	true	false	false
+62.0	Contact	9	AssetChangeEvent	ContactId		false	false	false
+62.0	Contact	10	AssetContactParticipant	ContactId	AssetContactParticipantContact	true	false	false
+62.0	Contact	11	AttachedContentDocument	LinkedEntityId	AttachedContentDocuments	true	false	false
+62.0	Contact	12	Attachment	ParentId	Attachments	true	false	false
+62.0	Contact	13	AuthorizationFormConsent	ConsentGiverId	AuthorizationFormConsents	false	true	false
+62.0	Contact	14	AuthorizationFormConsentChangeEvent	ConsentGiverId		false	false	false
+62.0	Contact	15	CampaignMember	ContactId	CampaignMembers	true	false	false
+62.0	Contact	16	CampaignMember	LeadOrContactId		false	false	false
+62.0	Contact	17	CampaignMemberChangeEvent	ContactId		false	false	false
+62.0	Contact	18	Case	ContactId	Cases	false	true	false
+62.0	Contact	19	CaseChangeEvent	ContactId		false	false	false
+62.0	Contact	20	CaseContactRole	ContactId	CaseContactRoles	true	false	false
+62.0	Contact	21	CaseTeamMember	MemberId		true	false	false
+62.0	Contact	22	CaseTeamTemplateMember	MemberId		true	false	false
+62.0	Contact	23	CollaborationGroupRecord	RecordId	RecordAssociatedGroups	true	false	false
+62.0	Contact	24	CollaborationGroupRecordChangeEvent	RecordId		false	false	false
+62.0	Contact	25	CombinedAttachment	ParentId	CombinedAttachments	true	false	false
+62.0	Contact	26	CommSubscriptionConsent	ConsentGiverId	CommSubscriptionConsents	false	true	false
+62.0	Contact	27	CommSubscriptionConsentChangeEvent	ConsentGiverId		false	false	false
+62.0	Contact	28	Contact	ReportsToId		false	false	false
+62.0	Contact	29	ContactChangeEvent	ReportsToId		false	false	false
+62.0	Contact	30	ContactCleanInfo	ContactId	ContactCleanInfos	true	false	false
+62.0	Contact	31	ContactCleanInfoChangeEvent	ContactId		false	false	false
+62.0	Contact	32	ContactFeed	ParentId	Feeds	true	false	false
+62.0	Contact	33	ContactHistory	ContactId	Histories	true	false	false
+62.0	Contact	34	ContactRequest	WhoId	ContactRequests	false	false	false
+62.0	Contact	35	ContactShare	ContactId	Shares	true	false	false
+62.0	Contact	36	ContentDistribution	RelatedRecordId		true	false	false
+62.0	Contact	37	ContentDocumentLink	LinkedEntityId	ContentDocumentLinks	true	false	false
+62.0	Contact	38	ContentDocumentLinkChangeEvent	LinkedEntityId		false	false	false
+62.0	Contact	39	ContentVersion	FirstPublishLocationId		false	false	false
+62.0	Contact	40	ContentVersionChangeEvent	FirstPublishLocationId		false	false	false
+62.0	Contact	41	Contract	CustomerSignedId	ContractsSigned	false	true	false
+62.0	Contact	42	ContractChangeEvent	CustomerSignedId		false	false	false
+62.0	Contact	43	ContractContactRole	ContactId	ContractContactRoles	true	false	false
+62.0	Contact	44	ConversationParticipant	ParticipantEntityId	ConversationParticipants	false	false	false
+62.0	Contact	45	CreditMemo	BillToContactId	CreditMemos	false	false	false
+62.0	Contact	46	DeclinedEventRelation	RelationId	DeclinedEventRelations	false	false	false
+62.0	Contact	47	DuplicateRecordItem	RecordId	DuplicateRecordItems	true	false	false
+62.0	Contact	48	EmailBounceEvent	BouncedObjectId		false	false	false
+62.0	Contact	49	EmailMessage	FromId		false	false	false
+62.0	Contact	50	EmailMessageRelation	RelationId	EmailMessageRelations	true	false	false
+62.0	Contact	51	EmailStatus	WhoId	EmailStatuses	false	false	false
+62.0	Contact	52	EntitlementContact	ContactId	EntitlementContacts	true	false	false
+62.0	Contact	53	EntitySubscription	ParentId	FeedSubscriptionsForEntity	true	false	false
+62.0	Contact	54	Event	WhoId	Events	true	false	false
+62.0	Contact	55	EventChangeEvent	WhoId		false	false	false
+62.0	Contact	56	EventRelation	RelationId	EventRelations	true	false	false
+62.0	Contact	57	EventRelationChangeEvent	RelationId		false	false	false
+62.0	Contact	58	FeedComment	ParentId		false	false	false
+62.0	Contact	59	FeedItem	ParentId		true	false	false
+62.0	Contact	60	FlowExecutionErrorEvent	ContextRecordId		false	false	false
+62.0	Contact	61	FlowOrchestrationWorkItem	RelatedRecordId	FlowOrchestrationWorkItems	false	false	false
+62.0	Contact	62	FlowRecordRelation	RelatedRecordId		false	false	false
+62.0	Contact	63	Invoice	BillToContactId	Invoices	false	false	false
+62.0	Contact	64	Lead	ConvertedContactId		false	false	false
+62.0	Contact	65	LeadChangeEvent	ConvertedContactId		false	false	false
+62.0	Contact	66	ListEmail	RelatedToId	ListEmails	false	false	false
+62.0	Contact	67	ListEmailChangeEvent	RelatedToId		false	false	false
+62.0	Contact	68	ListEmailIndividualRecipient	RecipientId	ListEmailIndividualRecipients	true	false	false
+62.0	Contact	69	ListEmailSentResult	RecipientId	ListEmailRecipients	false	false	false
+62.0	Contact	70	ListEmailSentResultChangeEvent	RecipientId		false	false	false
+62.0	Contact	71	MaintenancePlan	ContactId	MaintenancePlans	false	false	false
+62.0	Contact	72	MaintenancePlanChangeEvent	ContactId		false	false	false
+62.0	Contact	73	MatchingInformation	SFDCIdId		true	false	false
+62.0	Contact	74	MessagingEndUser	ContactId	MessagingEndUsers	false	false	false
+62.0	Contact	75	MessagingEndUserChangeEvent	ContactId		false	false	false
+62.0	Contact	76	MessagingSession	EndUserContactId	MessagingSessions	false	false	false
+62.0	Contact	77	MessagingSessionChangeEvent	EndUserContactId		false	false	false
+62.0	Contact	78	Note	ParentId	Notes	true	false	false
+62.0	Contact	79	NoteAndAttachment	ParentId	NotesAndAttachments	true	false	false
+62.0	Contact	80	OpenActivity	WhoId	OpenActivities	true	false	false
+62.0	Contact	81	Opportunity	ContactId	Opportunities	false	false	false
+62.0	Contact	82	OpportunityChangeEvent	ContactId		false	false	false
+62.0	Contact	83	OpportunityContactRole	ContactId	OpportunityContactRoles	true	false	false
+62.0	Contact	84	OpportunityContactRoleChangeEvent	ContactId		false	false	false
+62.0	Contact	85	Order	BillToContactId		false	true	false
+62.0	Contact	86	Order	CustomerAuthorizedById		false	true	false
+62.0	Contact	87	Order	ShipToContactId		false	true	false
+62.0	Contact	88	OrderChangeEvent	BillToContactId		false	false	false
+62.0	Contact	89	OrderChangeEvent	CustomerAuthorizedById		false	false	false
+62.0	Contact	90	OrderChangeEvent	ShipToContactId		false	false	false
+62.0	Contact	91	OutgoingEmail	WhoId		false	false	false
+62.0	Contact	92	OutgoingEmailRelation	RelationId	OutgoingEmailRelations	false	false	false
+62.0	Contact	93	ProcessInstance	TargetObjectId	ProcessInstances	true	false	false
+62.0	Contact	94	ProcessInstanceChangeEvent	TargetObjectId		false	false	false
+62.0	Contact	95	ProcessInstanceHistory	TargetObjectId	ProcessSteps	false	false	false
+62.0	Contact	96	RecordAction	RecordId	RecordActions	true	false	false
+62.0	Contact	97	RecordActionHistory	ParentRecordId	RecordActionHistories	false	false	false
+62.0	Contact	98	ReturnOrder	ContactId	ReturnOrders	false	false	false
+62.0	Contact	99	ReturnOrderChangeEvent	ContactId		false	false	false
+62.0	Contact	100	ServiceAppointment	ContactId	ServiceAppointments	false	false	false
+62.0	Contact	101	ServiceAppointmentChangeEvent	ContactId		false	false	false
+62.0	Contact	102	ServiceContract	ContactId	ServiceContracts	false	true	false
+62.0	Contact	103	ServiceContractChangeEvent	ContactId		false	false	false
+62.0	Contact	104	Task	WhoId	Tasks	true	false	false
+62.0	Contact	105	TaskChangeEvent	WhoId		false	false	false
+62.0	Contact	106	TopicAssignment	EntityId	TopicAssignments	true	false	false
+62.0	Contact	107	UndecidedEventRelation	RelationId	UndecidedEventRelations	false	false	false
+62.0	Contact	108	User	ContactId	Users	false	true	false
+62.0	Contact	109	UserChangeEvent	ContactId		false	false	false
+62.0	Contact	110	UserDefinedLabelAssignment	ItemId	UserDefinedLabelAssignments	true	false	false
+62.0	Contact	111	UserEmailPreferredPerson	PersonRecordId	PersonRecord	true	false	false
+62.0	Contact	112	UserEmailPreferredPersonChangeEvent	PersonRecordId		false	false	false
+62.0	Contact	113	WorkOrder	ContactId	WorkOrders	false	false	false
+62.0	Contact	114	WorkOrderChangeEvent	ContactId		false	false	false
+62.0	Case	0	AIInsightValue	SobjectLookupValueId		true	false	false
+62.0	Case	1	AIRecordInsight	TargetId		false	false	false
+62.0	Case	2	ActivityHistory	WhatId	ActivityHistories	true	false	false
+62.0	Case	3	ApprovalSubmission	RelatedRecordId	ApprovalSubmissions	false	false	false
+62.0	Case	4	ApprovalWorkItem	RelatedRecordId	ApprovalWorkItems	false	false	false
+62.0	Case	5	AttachedContentDocument	LinkedEntityId	AttachedContentDocuments	true	false	false
+62.0	Case	6	Attachment	ParentId	Attachments	true	false	false
+62.0	Case	7	Case	ParentId	Cases	false	false	false
+62.0	Case	8	CaseChangeEvent	ParentId		false	false	false
+62.0	Case	9	CaseComment	ParentId	CaseComments	true	false	false
+62.0	Case	10	CaseContactRole	CasesId	CaseContactRoles	true	false	false
+62.0	Case	11	CaseFeed	ParentId	Feeds	true	false	false
+62.0	Case	12	CaseHistory	CaseId	Histories	true	false	false
+62.0	Case	13	CaseHistory2	CaseId		true	false	false
+62.0	Case	14	CaseHistory2ChangeEvent	CaseId		false	false	false
+62.0	Case	15	CaseMilestone	CaseId	CaseMilestones	true	false	false
+62.0	Case	16	CaseShare	CaseId	Shares	true	false	false
+62.0	Case	17	CaseSolution	CaseId	CaseSolutions	true	false	false
+62.0	Case	18	CaseTeamMember	ParentId	TeamMembers	true	false	false
+62.0	Case	19	CaseTeamTemplateRecord	ParentId	TeamTemplateRecords	true	false	false
+62.0	Case	20	CollaborationGroupRecord	RecordId	RecordAssociatedGroups	true	false	false
+62.0	Case	21	CollaborationGroupRecordChangeEvent	RecordId		false	false	false
+62.0	Case	22	CombinedAttachment	ParentId	CombinedAttachments	true	false	false
+62.0	Case	23	ContactRequest	WhatId	ContactRequests	false	false	false
+62.0	Case	24	ContentDistribution	RelatedRecordId		true	false	false
+62.0	Case	25	ContentDocumentLink	LinkedEntityId	ContentDocumentLinks	true	false	false
+62.0	Case	26	ContentDocumentLinkChangeEvent	LinkedEntityId		false	false	false
+62.0	Case	27	ContentVersion	FirstPublishLocationId		false	false	false
+62.0	Case	28	ContentVersionChangeEvent	FirstPublishLocationId		false	false	false
+62.0	Case	29	DuplicateRecordItem	RecordId	DuplicateRecordItems	true	false	false
+62.0	Case	30	EmailMessage	ParentId	EmailMessages	true	false	false
+62.0	Case	31	EmailMessage	RelatedToId	Emails	false	false	false
+62.0	Case	32	EmailMessageChangeEvent	ParentId		false	false	false
+62.0	Case	33	EmailMessageChangeEvent	RelatedToId		false	false	false
+62.0	Case	34	EntitySubscription	ParentId	FeedSubscriptionsForEntity	true	false	false
+62.0	Case	35	Event	WhatId	Events	true	false	false
+62.0	Case	36	EventChangeEvent	WhatId		false	false	false
+62.0	Case	37	EventRelationChangeEvent	RelationId		false	false	false
+62.0	Case	38	FeedComment	ParentId		false	false	false
+62.0	Case	39	FeedItem	ParentId		true	false	false
+62.0	Case	40	FlowExecutionErrorEvent	ContextRecordId		false	false	false
+62.0	Case	41	FlowOrchestrationWorkItem	RelatedRecordId	FlowOrchestrationWorkItems	false	false	false
+62.0	Case	42	FlowRecordRelation	RelatedRecordId		false	false	false
+62.0	Case	43	ListEmail	RelatedToId	ListEmails	false	false	false
+62.0	Case	44	ListEmailChangeEvent	RelatedToId		false	false	false
+62.0	Case	45	MessagingSession	CaseId	MessagingSessions	false	false	false
+62.0	Case	46	MessagingSessionChangeEvent	CaseId		false	false	false
+62.0	Case	47	OpenActivity	WhatId	OpenActivities	true	false	false
+62.0	Case	48	ProcessException	CaseId	ProcessExceptions	false	false	false
+62.0	Case	49	ProcessExceptionChangeEvent	CaseId		false	false	false
+62.0	Case	50	ProcessInstance	TargetObjectId	ProcessInstances	true	false	false
+62.0	Case	51	ProcessInstanceChangeEvent	TargetObjectId		false	false	false
+62.0	Case	52	ProcessInstanceHistory	TargetObjectId	ProcessSteps	false	false	false
+62.0	Case	53	ProductRequest	CaseId	ProductRequests	false	false	false
+62.0	Case	54	ProductRequestChangeEvent	CaseId		false	false	false
+62.0	Case	55	ProductRequestLineItem	CaseId	ProductRequestLineItems	false	false	false
+62.0	Case	56	ProductRequestLineItemChangeEvent	CaseId		false	false	false
+62.0	Case	57	RecordAction	RecordId	RecordActions	true	false	false
+62.0	Case	58	RecordActionHistory	ParentRecordId	RecordActionHistories	false	false	false
+62.0	Case	59	ReturnOrder	CaseId	ReturnOrders	false	false	false
+62.0	Case	60	ReturnOrderChangeEvent	CaseId		false	false	false
+62.0	Case	61	ServiceAppointment	ParentRecordId	ServiceAppointments	true	false	false
+62.0	Case	62	ServiceAppointmentChangeEvent	ParentRecordId		false	false	false
+62.0	Case	63	Swarm	RelatedRecordId	Swarms	true	false	false
+62.0	Case	64	SwarmMember	RelatedRecordId	SwarmMembers	true	false	false
+62.0	Case	65	Task	WhatId	Tasks	true	false	false
+62.0	Case	66	TaskChangeEvent	WhatId		false	false	false
+62.0	Case	67	TopicAssignment	EntityId	TopicAssignments	true	false	false
+62.0	Case	68	UserDefinedLabelAssignment	ItemId	UserDefinedLabelAssignments	true	false	false
+62.0	Case	69	WorkOrder	CaseId	WorkOrders	false	false	false
+62.0	Case	70	WorkOrderChangeEvent	CaseId		false	false	false
+67.0	Account	0	AIInsightValue	SobjectLookupValueId		true	false	false
+67.0	Account	1	AIRecordInsight	TargetId		false	false	false
+67.0	Account	2	Account	ParentId	ChildAccounts	false	false	false
+67.0	Account	3	AccountChangeEvent	ParentId		false	false	false
+67.0	Account	4	AccountCleanInfo	AccountId	AccountCleanInfos	true	false	false
+67.0	Account	5	AccountCleanInfoChangeEvent	AccountId		false	false	false
+67.0	Account	6	AccountContactRole	AccountId	AccountContactRoles	true	false	false
+67.0	Account	7	AccountContactRoleChangeEvent	AccountId		false	false	false
+67.0	Account	8	AccountFeed	ParentId	Feeds	true	false	false
+67.0	Account	9	AccountHistory	AccountId	Histories	true	false	false
+67.0	Account	10	AccountPartner	AccountFromId	AccountPartnersFrom	true	false	false
+67.0	Account	11	AccountPartner	AccountToId	AccountPartnersTo	true	false	false
+67.0	Account	12	AccountShare	AccountId	Shares	true	false	false
+67.0	Account	13	ActivityHistory	AccountId	ActivityHistories	true	false	false
+67.0	Account	14	AlternativePaymentMethod	AccountId	AlternativePaymentMethods	false	false	false
+67.0	Account	15	ApprovalSubmission	RelatedRecordId	ApprovalSubmissions	false	false	false
+67.0	Account	16	ApprovalWorkItem	RelatedRecordId	ApprovalWorkItems	false	false	false
+67.0	Account	17	Asset	AccountId	Assets	true	false	false
+67.0	Account	18	Asset	AssetProvidedById	ProvidedAssets	false	false	false
+67.0	Account	19	Asset	AssetServicedById	ServicedAssets	false	false	false
+67.0	Account	20	AssetAccountParticipant	AccountId	AssetAccountParticipantAccount	true	false	false
+67.0	Account	21	AssetAccountParticipantChangeEvent	AccountId		false	false	false
+67.0	Account	22	AssetChangeEvent	AccountId		false	false	false
+67.0	Account	23	AssetChangeEvent	AssetProvidedById		false	false	false
+67.0	Account	24	AssetChangeEvent	AssetServicedById		false	false	false
+67.0	Account	25	AssociatedLocation	ParentRecordId	AssociatedLocations	true	false	false
+67.0	Account	26	AssociatedLocationChangeEvent	ParentRecordId		false	false	false
+67.0	Account	27	AttachedContentDocument	LinkedEntityId	AttachedContentDocuments	true	false	false
+67.0	Account	28	Attachment	ParentId	Attachments	true	false	false
+67.0	Account	29	AuthProvider	FlowDefaultAccountId		false	false	false
+67.0	Account	30	AuthorizationFormConsent	ConsentGiverId	AuthorizationFormConsents	false	true	false
+67.0	Account	31	AuthorizationFormConsent	RelatedRecordId	RelatedAuthorizationFormConsents	false	false	false
+67.0	Account	32	AuthorizationFormConsentChangeEvent	ConsentGiverId		false	false	false
+67.0	Account	33	AuthorizationFormConsentChangeEvent	RelatedRecordId		false	false	false
+67.0	Account	34	CampaignMember	LeadOrContactId		false	false	false
+67.0	Account	35	CardPaymentMethod	AccountId	CardPaymentMethods	false	false	false
+67.0	Account	36	Case	AccountId	Cases	false	true	false
+67.0	Account	37	CaseChangeEvent	AccountId		false	false	false
+67.0	Account	38	CollaborationGroupRecord	RecordId	RecordAssociatedGroups	true	false	false
+67.0	Account	39	CollaborationGroupRecordChangeEvent	RecordId		false	false	false
+67.0	Account	40	CombinedAttachment	ParentId	CombinedAttachments	true	false	false
+67.0	Account	41	CommSubscriptionConsent	ConsentGiverId	CommSubscriptionConsents	false	true	false
+67.0	Account	42	CommSubscriptionConsentChangeEvent	ConsentGiverId		false	false	false
+67.0	Account	43	Contact	AccountId	Contacts	true	false	false
+67.0	Account	44	ContactChangeEvent	AccountId		false	false	false
+67.0	Account	45	ContactPointAddress	ParentId	ContactPointAddresses	true	false	false
+67.0	Account	46	ContactPointAddressChangeEvent	ParentId		false	false	false
+67.0	Account	47	ContactPointEmail	ParentId	ContactPointEmails	true	false	false
+67.0	Account	48	ContactPointEmailChangeEvent	ParentId		false	false	false
+67.0	Account	49	ContactPointPhone	ParentId	ContactPointPhones	true	false	false
+67.0	Account	50	ContactPointPhoneChangeEvent	ParentId		false	false	false
+67.0	Account	51	ContactRequest	WhatId	ContactRequests	false	false	false
+67.0	Account	52	ContentDistribution	RelatedRecordId		true	false	false
+67.0	Account	53	ContentDocumentLink	LinkedEntityId	ContentDocumentLinks	true	false	false
+67.0	Account	54	ContentDocumentLinkChangeEvent	LinkedEntityId		false	false	false
+67.0	Account	55	ContentVersion	FirstPublishLocationId		false	false	false
+67.0	Account	56	ContentVersionChangeEvent	FirstPublishLocationId		false	false	false
+67.0	Account	57	Contract	AccountId	Contracts	true	true	false
+67.0	Account	58	ContractChangeEvent	AccountId		false	false	false
+67.0	Account	59	CreditMemo	BillingAccountId	CreditMemos	true	false	false
+67.0	Account	60	DigitalWallet	AccountId	DigitalWallets	false	false	false
+67.0	Account	61	DuplicateRecordItem	RecordId	DuplicateRecordItems	true	false	false
+67.0	Account	62	EmailMessage	RelatedToId	Emails	false	false	false
+67.0	Account	63	EmailMessageChangeEvent	RelatedToId		false	false	false
+67.0	Account	64	Entitlement	AccountId	Entitlements	true	true	false
+67.0	Account	65	EntitlementChangeEvent	AccountId		false	false	false
+67.0	Account	66	EntitySubscription	ParentId	FeedSubscriptionsForEntity	true	false	false
+67.0	Account	67	Event	AccountId		false	false	false
+67.0	Account	68	Event	WhatId	Events	true	false	false
+67.0	Account	69	EventChangeEvent	AccountId		false	false	false
+67.0	Account	70	EventChangeEvent	WhatId		false	false	false
+67.0	Account	71	EventRelationChangeEvent	RelationId		false	false	false
+67.0	Account	72	Expense	AccountId	Expenses	false	false	false
+67.0	Account	73	ExpenseChangeEvent	AccountId		false	false	false
+67.0	Account	74	ExtlRecShrStagedRecord	AccountId	ExtlRecShrStagedRecordAccounts	true	false	false
+67.0	Account	75	ExtlRecShrStagedRecord	ParentRecordId	ParentRecords	true	false	false
+67.0	Account	76	FeedComment	ParentId		false	false	false
+67.0	Account	77	FeedItem	ParentId		true	false	false
+67.0	Account	78	FinanceBalanceSnapshot	AccountId	FinanceBalanceSnapshots	false	false	false
+67.0	Account	79	FinanceBalanceSnapshotChangeEvent	AccountId		false	false	false
+67.0	Account	80	FinanceTransaction	AccountId	FinanceTransactions	false	false	false
+67.0	Account	81	FinanceTransactionChangeEvent	AccountId		false	false	false
+67.0	Account	82	FlowExecutionErrorEvent	ContextRecordId		false	false	false
+67.0	Account	83	FlowOrchestrationWorkItem	RelatedRecordId	FlowOrchestrationWorkItems	false	false	false
+67.0	Account	84	FlowRecordRelation	RelatedRecordId		false	false	false
+67.0	Account	85	Invoice	BillingAccountId	Invoices	true	false	false
+67.0	Account	86	Lead	ConvertedAccountId		false	false	false
+67.0	Account	87	LeadChangeEvent	ConvertedAccountId		false	false	false
+67.0	Account	88	Location	AccountId	Locations	false	false	false
+67.0	Account	89	LocationChangeEvent	AccountId		false	false	false
+67.0	Account	90	MaintenancePlan	AccountId	MaintenancePlans	false	false	false
+67.0	Account	91	MaintenancePlanChangeEvent	AccountId		false	false	false
+67.0	Account	92	MessagingEndUser	AccountId	MessagingEndUsers	false	false	false
+67.0	Account	93	MessagingEndUserChangeEvent	AccountId		false	false	false
+67.0	Account	94	MessagingSession	EndUserAccountId	MessagingSessions	false	false	false
+67.0	Account	95	MessagingSessionChangeEvent	EndUserAccountId		false	false	false
+67.0	Account	96	Note	ParentId	Notes	true	false	false
+67.0	Account	97	NoteAndAttachment	ParentId	NotesAndAttachments	true	false	false
+67.0	Account	98	OpenActivity	AccountId	OpenActivities	true	false	false
+67.0	Account	99	Opportunity	AccountId	Opportunities	true	false	false
+67.0	Account	100	OpportunityChangeEvent	AccountId		false	false	false
+67.0	Account	101	OpportunityPartner	AccountToId	OpportunityPartnersTo	true	false	false
+67.0	Account	102	Order	AccountId	Orders	true	true	false
+67.0	Account	103	OrderChangeEvent	AccountId		false	false	false
+67.0	Account	104	OutgoingEmail	RelatedToId		false	false	false
+67.0	Account	105	Partner	AccountFromId	PartnersFrom	true	false	false
+67.0	Account	106	Partner	AccountToId	PartnersTo	true	false	false
+67.0	Account	107	Payment	AccountId	Payments	false	false	false
+67.0	Account	108	PaymentAuthAdjustment	AccountId	PaymentAuthAdjustments	false	false	false
+67.0	Account	109	PaymentAuthorization	AccountId	PaymentAuthorizations	false	false	false
+67.0	Account	110	PaymentLineInvoice	AssociatedAccountId	PaymentLinesInvoice	false	false	false
+67.0	Account	111	PaymentMethod	AccountId		false	false	false
+67.0	Account	112	ProcessInstance	TargetObjectId	ProcessInstances	true	false	false
+67.0	Account	113	ProcessInstanceChangeEvent	TargetObjectId		false	false	false
+67.0	Account	114	ProcessInstanceHistory	TargetObjectId	ProcessSteps	false	false	false
+67.0	Account	115	ProductRequest	AccountId	ProductRequests	false	false	false
+67.0	Account	116	ProductRequestChangeEvent	AccountId		false	false	false
+67.0	Account	117	ProductRequestLineItem	AccountId	ProductRequestLineItems	false	false	false
+67.0	Account	118	ProductRequestLineItemChangeEvent	AccountId		false	false	false
+67.0	Account	119	RecordAction	RecordId	RecordActions	true	false	false
+67.0	Account	120	RecordActionHistory	ParentRecordId	RecordActionHistories	false	false	false
+67.0	Account	121	Refund	AccountId	Refunds	false	false	false
+67.0	Account	122	RefundLinePayment	AssociatedAccountId	RefundLinePayments	false	false	false
+67.0	Account	123	ResourcePreference	RelatedRecordId	ResourcePreferences	true	false	false
+67.0	Account	124	ResourcePreferenceChangeEvent	RelatedRecordId		false	false	false
+67.0	Account	125	ReturnOrder	AccountId	ReturnOrders	false	false	false
+67.0	Account	126	ReturnOrderChangeEvent	AccountId		false	false	false
+67.0	Account	127	ScorecardAssociation	TargetEntityId	ScorecardAssociations	true	false	false
+67.0	Account	128	ServiceAppointment	AccountId	ServiceAppointmentAccount	false	false	false
+67.0	Account	129	ServiceAppointment	ParentRecordId	ServiceAppointments	true	false	false
+67.0	Account	130	ServiceAppointmentChangeEvent	AccountId		false	false	false
+67.0	Account	131	ServiceAppointmentChangeEvent	ParentRecordId		false	false	false
+67.0	Account	132	ServiceContract	AccountId	ServiceContracts	false	true	false
+67.0	Account	133	ServiceContractChangeEvent	AccountId		false	false	false
+67.0	Account	134	ServiceResource	AccountId	ServiceResources	false	true	false
+67.0	Account	135	ServiceResourceChangeEvent	AccountId		false	false	false
+67.0	Account	136	Swarm	RelatedRecordId	Swarms	true	false	false
+67.0	Account	137	SwarmMember	RelatedRecordId	SwarmMembers	true	false	false
+67.0	Account	138	Task	AccountId		false	false	false
+67.0	Account	139	Task	WhatId	Tasks	true	false	false
+67.0	Account	140	TaskChangeEvent	AccountId		false	false	false
+67.0	Account	141	TaskChangeEvent	WhatId		false	false	false
+67.0	Account	142	TopicAssignment	EntityId	TopicAssignments	true	false	false
+67.0	Account	143	User	AccountId	Users	false	false	false
+67.0	Account	144	UserChangeEvent	AccountId		false	false	false
+67.0	Account	145	UserDefinedLabelAssignment	ItemId	UserDefinedLabelAssignments	true	false	false
+67.0	Account	146	UserRole	PortalAccountId		false	false	false
+67.0	Account	147	WorkOrder	AccountId	WorkOrders	false	false	false
+67.0	Account	148	WorkOrderChangeEvent	AccountId		false	false	false
+67.0	Account	149	WorkPlanSelectionRule	AccountId	WorkPlanSelectionRules	true	false	false
+67.0	Account	150	WorkPlanSelectionRuleChangeEvent	AccountId		false	false	false
+67.0	Contact	0	AIInsightValue	SobjectLookupValueId		true	false	false
+67.0	Contact	1	AIRecordInsight	TargetId		false	false	false
+67.0	Contact	2	AcceptedEventRelation	RelationId	AcceptedEventRelations	false	false	false
+67.0	Contact	3	AccountContactRole	ContactId	AccountContactRoles	true	false	false
+67.0	Contact	4	AccountContactRoleChangeEvent	ContactId		false	false	false
+67.0	Contact	5	ActivityHistory	WhoId	ActivityHistories	true	false	false
+67.0	Contact	6	ApprovalSubmission	RelatedRecordId	ApprovalSubmissions	false	false	false
+67.0	Contact	7	ApprovalWorkItem	RelatedRecordId	ApprovalWorkItems	false	false	false
+67.0	Contact	8	Asset	ContactId	Assets	true	false	false
+67.0	Contact	9	AssetChangeEvent	ContactId		false	false	false
+67.0	Contact	10	AssetContactParticipant	ContactId	AssetContactParticipantContact	true	false	false
+67.0	Contact	11	AssetContactParticipantChangeEvent	ContactId		false	false	false
+67.0	Contact	12	AttachedContentDocument	LinkedEntityId	AttachedContentDocuments	true	false	false
+67.0	Contact	13	Attachment	ParentId	Attachments	true	false	false
+67.0	Contact	14	AuthorizationFormConsent	ConsentGiverId	AuthorizationFormConsents	false	true	false
+67.0	Contact	15	AuthorizationFormConsentChangeEvent	ConsentGiverId		false	false	false
+67.0	Contact	16	CampaignMember	ContactId	CampaignMembers	true	false	false
+67.0	Contact	17	CampaignMember	LeadOrContactId		false	false	false
+67.0	Contact	18	CampaignMemberChangeEvent	ContactId		false	false	false
+67.0	Contact	19	Case	ContactId	Cases	false	true	false
+67.0	Contact	20	CaseChangeEvent	ContactId		false	false	false
+67.0	Contact	21	CaseContactRole	ContactId	CaseContactRoles	true	false	false
+67.0	Contact	22	CaseTeamMember	MemberId		true	false	false
+67.0	Contact	23	CaseTeamTemplateMember	MemberId		true	false	false
+67.0	Contact	24	CollaborationGroupRecord	RecordId	RecordAssociatedGroups	true	false	false
+67.0	Contact	25	CollaborationGroupRecordChangeEvent	RecordId		false	false	false
+67.0	Contact	26	CombinedAttachment	ParentId	CombinedAttachments	true	false	false
+67.0	Contact	27	CommSubscriptionConsent	ConsentGiverId	CommSubscriptionConsents	false	true	false
+67.0	Contact	28	CommSubscriptionConsentChangeEvent	ConsentGiverId		false	false	false
+67.0	Contact	29	Contact	ReportsToId		false	false	false
+67.0	Contact	30	ContactChangeEvent	ReportsToId		false	false	false
+67.0	Contact	31	ContactCleanInfo	ContactId	ContactCleanInfos	true	false	false
+67.0	Contact	32	ContactCleanInfoChangeEvent	ContactId		false	false	false
+67.0	Contact	33	ContactFeed	ParentId	Feeds	true	false	false
+67.0	Contact	34	ContactHistory	ContactId	Histories	true	false	false
+67.0	Contact	35	ContactRequest	WhoId	ContactRequests	false	false	false
+67.0	Contact	36	ContactShare	ContactId	Shares	true	false	false
+67.0	Contact	37	ContentDistribution	RelatedRecordId		true	false	false
+67.0	Contact	38	ContentDocumentLink	LinkedEntityId	ContentDocumentLinks	true	false	false
+67.0	Contact	39	ContentDocumentLinkChangeEvent	LinkedEntityId		false	false	false
+67.0	Contact	40	ContentVersion	FirstPublishLocationId		false	false	false
+67.0	Contact	41	ContentVersionChangeEvent	FirstPublishLocationId		false	false	false
+67.0	Contact	42	Contract	CustomerSignedId	ContractsSigned	false	true	false
+67.0	Contact	43	ContractChangeEvent	CustomerSignedId		false	false	false
+67.0	Contact	44	ContractContactRole	ContactId	ContractContactRoles	true	false	false
+67.0	Contact	45	ConversationParticipant	ParticipantEntityId	ConversationParticipants	false	false	false
+67.0	Contact	46	CreditMemo	BillToContactId	CreditMemos	false	false	false
+67.0	Contact	47	DeclinedEventRelation	RelationId	DeclinedEventRelations	false	false	false
+67.0	Contact	48	DuplicateRecordItem	RecordId	DuplicateRecordItems	true	false	false
+67.0	Contact	49	EmailBounceEvent	BouncedObjectId		false	false	false
+67.0	Contact	50	EmailMessage	FromId		false	false	false
+67.0	Contact	51	EmailMessageRelation	RelationId	EmailMessageRelations	true	false	false
+67.0	Contact	52	EmailStatus	WhoId	EmailStatuses	false	false	false
+67.0	Contact	53	EntitlementContact	ContactId	EntitlementContacts	true	false	false
+67.0	Contact	54	EntitySubscription	ParentId	FeedSubscriptionsForEntity	true	false	false
+67.0	Contact	55	Event	WhoId	Events	true	false	false
+67.0	Contact	56	EventChangeEvent	WhoId		false	false	false
+67.0	Contact	57	EventRelation	RelationId	EventRelations	true	false	false
+67.0	Contact	58	EventRelationChangeEvent	RelationId		false	false	false
+67.0	Contact	59	ExtlRecShrStagedRecord	ParentRecordId	ParentRecords	true	false	false
+67.0	Contact	60	FeedComment	ParentId		false	false	false
+67.0	Contact	61	FeedItem	ParentId		true	false	false
+67.0	Contact	62	FlowExecutionErrorEvent	ContextRecordId		false	false	false
+67.0	Contact	63	FlowOrchestrationWorkItem	RelatedRecordId	FlowOrchestrationWorkItems	false	false	false
+67.0	Contact	64	FlowRecordRelation	RelatedRecordId		false	false	false
+67.0	Contact	65	Invoice	BillToContactId	Invoices	false	false	false
+67.0	Contact	66	Lead	ConvertedContactId		false	false	false
+67.0	Contact	67	LeadChangeEvent	ConvertedContactId		false	false	false
+67.0	Contact	68	ListEmail	RelatedToId	ListEmails	false	false	false
+67.0	Contact	69	ListEmailChangeEvent	RelatedToId		false	false	false
+67.0	Contact	70	ListEmailIndividualRecipient	RecipientId	ListEmailIndividualRecipients	true	false	false
+67.0	Contact	71	ListEmailSentResult	RecipientId	ListEmailRecipients	false	false	false
+67.0	Contact	72	ListEmailSentResultChangeEvent	RecipientId		false	false	false
+67.0	Contact	73	MaintenancePlan	ContactId	MaintenancePlans	false	false	false
+67.0	Contact	74	MaintenancePlanChangeEvent	ContactId		false	false	false
+67.0	Contact	75	MatchingInformation	SFDCIdId		true	false	false
+67.0	Contact	76	MessagingEndUser	ContactId	MessagingEndUsers	false	false	false
+67.0	Contact	77	MessagingEndUserChangeEvent	ContactId		false	false	false
+67.0	Contact	78	MessagingSession	EndUserContactId	MessagingSessions	false	false	false
+67.0	Contact	79	MessagingSessionChangeEvent	EndUserContactId		false	false	false
+67.0	Contact	80	Note	ParentId	Notes	true	false	false
+67.0	Contact	81	NoteAndAttachment	ParentId	NotesAndAttachments	true	false	false
+67.0	Contact	82	OpenActivity	WhoId	OpenActivities	true	false	false
+67.0	Contact	83	Opportunity	ContactId	Opportunities	false	false	false
+67.0	Contact	84	OpportunityChangeEvent	ContactId		false	false	false
+67.0	Contact	85	OpportunityContactRole	ContactId	OpportunityContactRoles	true	false	false
+67.0	Contact	86	OpportunityContactRoleChangeEvent	ContactId		false	false	false
+67.0	Contact	87	Order	BillToContactId		false	true	false
+67.0	Contact	88	Order	CustomerAuthorizedById		false	true	false
+67.0	Contact	89	Order	ShipToContactId		false	true	false
+67.0	Contact	90	OrderChangeEvent	BillToContactId		false	false	false
+67.0	Contact	91	OrderChangeEvent	CustomerAuthorizedById		false	false	false
+67.0	Contact	92	OrderChangeEvent	ShipToContactId		false	false	false
+67.0	Contact	93	OutgoingEmail	WhoId		false	false	false
+67.0	Contact	94	OutgoingEmailRelation	RelationId	OutgoingEmailRelations	false	false	false
+67.0	Contact	95	ProcessInstance	TargetObjectId	ProcessInstances	true	false	false
+67.0	Contact	96	ProcessInstanceChangeEvent	TargetObjectId		false	false	false
+67.0	Contact	97	ProcessInstanceHistory	TargetObjectId	ProcessSteps	false	false	false
+67.0	Contact	98	RecordAction	RecordId	RecordActions	true	false	false
+67.0	Contact	99	RecordActionHistory	ParentRecordId	RecordActionHistories	false	false	false
+67.0	Contact	100	ReturnOrder	ContactId	ReturnOrders	false	false	false
+67.0	Contact	101	ReturnOrderChangeEvent	ContactId		false	false	false
+67.0	Contact	102	ServiceAppointment	ContactId	ServiceAppointments	false	false	false
+67.0	Contact	103	ServiceAppointmentChangeEvent	ContactId		false	false	false
+67.0	Contact	104	ServiceContract	ContactId	ServiceContracts	false	true	false
+67.0	Contact	105	ServiceContractChangeEvent	ContactId		false	false	false
+67.0	Contact	106	Task	WhoId	Tasks	true	false	false
+67.0	Contact	107	TaskChangeEvent	WhoId		false	false	false
+67.0	Contact	108	TopicAssignment	EntityId	TopicAssignments	true	false	false
+67.0	Contact	109	UndecidedEventRelation	RelationId	UndecidedEventRelations	false	false	false
+67.0	Contact	110	User	ContactId	Users	false	true	false
+67.0	Contact	111	UserChangeEvent	ContactId		false	false	false
+67.0	Contact	112	UserDefinedLabelAssignment	ItemId	UserDefinedLabelAssignments	true	false	false
+67.0	Contact	113	UserEmailPreferredPerson	PersonRecordId	PersonRecord	true	false	false
+67.0	Contact	114	UserEmailPreferredPersonChangeEvent	PersonRecordId		false	false	false
+67.0	Contact	115	WorkOrder	ContactId	WorkOrders	false	false	false
+67.0	Contact	116	WorkOrderChangeEvent	ContactId		false	false	false
+67.0	Case	0	AIInsightValue	SobjectLookupValueId		true	false	false
+67.0	Case	1	AIRecordInsight	TargetId		false	false	false
+67.0	Case	2	ActivityHistory	WhatId	ActivityHistories	true	false	false
+67.0	Case	3	ApprovalSubmission	RelatedRecordId	ApprovalSubmissions	false	false	false
+67.0	Case	4	ApprovalWorkItem	RelatedRecordId	ApprovalWorkItems	false	false	false
+67.0	Case	5	AttachedContentDocument	LinkedEntityId	AttachedContentDocuments	true	false	false
+67.0	Case	6	Attachment	ParentId	Attachments	true	false	false
+67.0	Case	7	Case	ParentId	Cases	false	false	false
+67.0	Case	8	CaseChangeEvent	ParentId		false	false	false
+67.0	Case	9	CaseComment	ParentId	CaseComments	true	false	false
+67.0	Case	10	CaseContactRole	CasesId	CaseContactRoles	true	false	false
+67.0	Case	11	CaseFeed	ParentId	Feeds	true	false	false
+67.0	Case	12	CaseHistory	CaseId	Histories	true	false	false
+67.0	Case	13	CaseHistory2	CaseId		true	false	false
+67.0	Case	14	CaseHistory2ChangeEvent	CaseId		false	false	false
+67.0	Case	15	CaseMilestone	CaseId	CaseMilestones	true	false	false
+67.0	Case	16	CaseShare	CaseId	Shares	true	false	false
+67.0	Case	17	CaseSolution	CaseId	CaseSolutions	true	false	false
+67.0	Case	18	CaseTeamMember	ParentId	TeamMembers	true	false	false
+67.0	Case	19	CaseTeamTemplateRecord	ParentId	TeamTemplateRecords	true	false	false
+67.0	Case	20	CollaborationGroupRecord	RecordId	RecordAssociatedGroups	true	false	false
+67.0	Case	21	CollaborationGroupRecordChangeEvent	RecordId		false	false	false
+67.0	Case	22	CombinedAttachment	ParentId	CombinedAttachments	true	false	false
+67.0	Case	23	ContactRequest	WhatId	ContactRequests	false	false	false
+67.0	Case	24	ContentDistribution	RelatedRecordId		true	false	false
+67.0	Case	25	ContentDocumentLink	LinkedEntityId	ContentDocumentLinks	true	false	false
+67.0	Case	26	ContentDocumentLinkChangeEvent	LinkedEntityId		false	false	false
+67.0	Case	27	ContentVersion	FirstPublishLocationId		false	false	false
+67.0	Case	28	ContentVersionChangeEvent	FirstPublishLocationId		false	false	false
+67.0	Case	29	DuplicateRecordItem	RecordId	DuplicateRecordItems	true	false	false
+67.0	Case	30	EmailMessage	ParentId	EmailMessages	true	false	false
+67.0	Case	31	EmailMessage	RelatedToId	Emails	false	false	false
+67.0	Case	32	EmailMessageChangeEvent	ParentId		false	false	false
+67.0	Case	33	EmailMessageChangeEvent	RelatedToId		false	false	false
+67.0	Case	34	EntitySubscription	ParentId	FeedSubscriptionsForEntity	true	false	false
+67.0	Case	35	Event	WhatId	Events	true	false	false
+67.0	Case	36	EventChangeEvent	WhatId		false	false	false
+67.0	Case	37	EventRelationChangeEvent	RelationId		false	false	false
+67.0	Case	38	ExtlRecShrStagedRecord	ParentRecordId	ParentRecords	true	false	false
+67.0	Case	39	FeedComment	ParentId		false	false	false
+67.0	Case	40	FeedItem	ParentId		true	false	false
+67.0	Case	41	FlowExecutionErrorEvent	ContextRecordId		false	false	false
+67.0	Case	42	FlowOrchestrationWorkItem	RelatedRecordId	FlowOrchestrationWorkItems	false	false	false
+67.0	Case	43	FlowRecordRelation	RelatedRecordId		false	false	false
+67.0	Case	44	ListEmail	RelatedToId	ListEmails	false	false	false
+67.0	Case	45	ListEmailChangeEvent	RelatedToId		false	false	false
+67.0	Case	46	MessagingSession	CaseId	MessagingSessions	false	false	false
+67.0	Case	47	MessagingSessionChangeEvent	CaseId		false	false	false
+67.0	Case	48	OpenActivity	WhatId	OpenActivities	true	false	false
+67.0	Case	49	ProcessException	CaseId	ProcessExceptions	false	false	false
+67.0	Case	50	ProcessExceptionChangeEvent	CaseId		false	false	false
+67.0	Case	51	ProcessInstance	TargetObjectId	ProcessInstances	true	false	false
+67.0	Case	52	ProcessInstanceChangeEvent	TargetObjectId		false	false	false
+67.0	Case	53	ProcessInstanceHistory	TargetObjectId	ProcessSteps	false	false	false
+67.0	Case	54	ProductRequest	CaseId	ProductRequests	false	false	false
+67.0	Case	55	ProductRequestChangeEvent	CaseId		false	false	false
+67.0	Case	56	ProductRequestLineItem	CaseId	ProductRequestLineItems	false	false	false
+67.0	Case	57	ProductRequestLineItemChangeEvent	CaseId		false	false	false
+67.0	Case	58	RecordAction	RecordId	RecordActions	true	false	false
+67.0	Case	59	RecordActionHistory	ParentRecordId	RecordActionHistories	false	false	false
+67.0	Case	60	ReturnOrder	CaseId	ReturnOrders	false	false	false
+67.0	Case	61	ReturnOrderChangeEvent	CaseId		false	false	false
+67.0	Case	62	ServiceAppointment	ParentRecordId	ServiceAppointments	true	false	false
+67.0	Case	63	ServiceAppointmentChangeEvent	ParentRecordId		false	false	false
+67.0	Case	64	Swarm	RelatedRecordId	Swarms	true	false	false
+67.0	Case	65	SwarmMember	RelatedRecordId	SwarmMembers	true	false	false
+67.0	Case	66	Task	WhatId	Tasks	true	false	false
+67.0	Case	67	TaskChangeEvent	WhatId		false	false	false
+67.0	Case	68	TopicAssignment	EntityId	TopicAssignments	true	false	false
+67.0	Case	69	UserDefinedLabelAssignment	ItemId	UserDefinedLabelAssignments	true	false	false
+67.0	Case	70	WorkOrder	CaseId	WorkOrders	false	false	false
+67.0	Case	71	WorkOrderChangeEvent	CaseId		false	false	false

@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"encoding/xml"
 	"fmt"
 	"hash/fnv"
 	"os"
@@ -771,11 +772,13 @@ func applyProjectProfileRecords(org *storage.OrgState, p project.Project, permis
 		if !ok {
 			continue
 		}
+		parentID := ensureProjectProfilePermissionSet(org, profileID, &generator)
 		if metadata, ok := readPermissionSetMetadata(file, permissionSetMetadataCache); ok {
+			applyProjectSecurityEntityGrants(org, p, parentID, metadata, &generator)
 			applyProjectProfileLicense(org, profileID, metadata.UserLicense, &generator)
 			applyProjectProfileUserPermissions(org, profileID, metadata.UserPermissions)
 		}
-		applyProjectPermissionSetMetadataPermissions(org, file, string(profileID), &generator, objectPermissionKeys, fieldPermissionKeys, permissionSetMetadataCache)
+		applyProjectPermissionSetMetadataPermissions(org, file, string(parentID), &generator, objectPermissionKeys, fieldPermissionKeys, permissionSetMetadataCache)
 	}
 	org.IDSequences = generator.Sequences
 }
@@ -973,7 +976,7 @@ func seedProjectPermissionSetRecords(org *storage.OrgState, p project.Project, p
 		metadata, metadataOK := readPermissionSetMetadata(file, permissionSetMetadataCache)
 		if metadataOK {
 			if p.Namespace == "" {
-				applyProjectApexClassGrants(org, id, metadata.ClassAccesses, &generator)
+				applyProjectSecurityEntityGrants(org, p, id, metadata, &generator)
 			}
 			customPermissions := permissionSetCustomPermissionValues(metadata)
 			if len(customPermissions) > 0 {
@@ -1202,7 +1205,7 @@ func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, p
 	org.Objects["ObjectPermissions"] = objectState
 	org.Objects["FieldPermissions"] = fieldState
 }
-func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Project) {
+func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Project, readFile func(string) ([]byte, error)) {
 	if org == nil || len(p.PermissionSetGroupFiles) == 0 {
 		return
 	}
@@ -1223,6 +1226,17 @@ func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Proj
 	generator.Sequences = org.IDSequences
 	for _, file := range p.PermissionSetGroupFiles {
 		name := metadataNameFromPath(file, ".permissionsetgroup-meta.xml", ".permissionsetgroup")
+		var metadata struct {
+			Label string `xml:"label"`
+		}
+		data, err := readFile(file)
+		if err != nil || xml.Unmarshal(data, &metadata) != nil {
+			continue
+		}
+		label := strings.TrimSpace(metadata.Label)
+		if label == "" {
+			label = strings.ReplaceAll(name, "_", " ")
+		}
 		if name == "" {
 			continue
 		}
@@ -1238,7 +1252,7 @@ func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Proj
 				Object: "PermissionSetGroup",
 				Fields: map[string]storage.Value{
 					"DeveloperName": storage.StringValue(name),
-					"MasterLabel":   storage.StringValue(strings.ReplaceAll(name, "_", " ")),
+					"MasterLabel":   storage.StringValue(label),
 					"Status":        storage.StringValue("Updated"),
 				},
 			}
@@ -1255,6 +1269,7 @@ func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Proj
 			Object: "PermissionSet",
 			Fields: map[string]storage.Value{
 				"Name":                 storage.StringValue(name),
+				"Label":                storage.StringValue(label),
 				"Type":                 storage.StringValue("Group"),
 				"PermissionSetGroupId": storage.IDValue(id),
 				"IsCustom":             storage.BooleanValue(true),

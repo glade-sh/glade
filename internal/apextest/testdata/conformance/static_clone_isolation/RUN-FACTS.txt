@@ -1,0 +1,8 @@
+StaticIsolation62Test.aWrites: Pass
+StaticIsolation62Test.bReads: Pass
+StaticIsolation62Test.cInitializesOnce: Pass
+StaticIsolation62Test.dWritesCollection: Pass
+StaticIsolation67Test.aWrites: Pass
+StaticIsolation67Test.bReads: Pass
+StaticIsolation67Test.cInitializesOnce: Pass
+StaticIsolation67Test.dWritesCollection: Pass

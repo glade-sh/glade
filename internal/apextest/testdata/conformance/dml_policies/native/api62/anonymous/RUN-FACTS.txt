@@ -1,0 +1,8 @@
+api=62.0
+context=anonymous
+helper_class_api=62.0
+wrapper_class_api=62.0
+rows=58
+native_complete=true
+deployment_success=true
+captured_utc=2026-10-21T02:57:55.434816+00:00

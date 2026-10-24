@@ -1,0 +1,45 @@
+[
+  {
+    "method": "directHooks",
+    "routes": [
+      "anonymous",
+      "istest"
+    ],
+    "anonymous": "delete [SELECT Id FROM Account WHERE Name='Platform batch finish']; System.assert(false,'OBSERVED|directHooks|' + JSON.serialize(PlatformBatchObservation.directHooks()));",
+    "allocation": "JSON.deserialize"
+  },
+  {
+    "method": "inheritedStart",
+    "routes": [
+      "anonymous",
+      "istest"
+    ],
+    "anonymous": "System.assert(false,'OBSERVED|inheritedStart|' + JSON.serialize(PlatformBatchObservation.inheritedStart()));",
+    "allocation": "JSON.deserialize"
+  },
+  {
+    "method": "inheritedExecute",
+    "routes": [
+      "anonymous",
+      "istest"
+    ],
+    "anonymous": "System.assert(false,'OBSERVED|inheritedExecute|' + JSON.serialize(PlatformBatchObservation.inheritedExecute()));",
+    "allocation": "JSON.deserialize"
+  },
+  {
+    "method": "batchStop",
+    "routes": [
+      "istest"
+    ],
+    "allocation": "JSON.deserialize"
+  },
+  {
+    "method": "emptyConstructor",
+    "routes": [
+      "anonymous",
+      "istest"
+    ],
+    "anonymous": "System.assert(false,'OBSERVED|emptyConstructor|' + JSON.serialize(PlatformBatchObservation.emptyConstructor()));",
+    "allocation": "constructor"
+  }
+]

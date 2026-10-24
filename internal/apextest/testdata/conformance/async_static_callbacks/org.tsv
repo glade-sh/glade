@@ -1,0 +1,9 @@
+source_api	route	observation
+62.0	isTest	["staticBatchExecute","staticBatchFinish","staticBatchStart","staticQueueable","staticScheduled"]
+62.0	anonymous	["staticBatchExecute","staticBatchFinish","staticBatchStart","staticQueueable","staticScheduled"]
+62.0	scheduledBatch-isTest	[]
+62.0	scheduledBatch-anonymous	["staticBatchExecute","staticBatchFinish","staticBatchStart"]
+67.0	isTest	["staticBatchExecute","staticBatchFinish","staticBatchStart","staticQueueable","staticScheduled"]
+67.0	anonymous	["staticBatchExecute","staticBatchFinish","staticBatchStart","staticQueueable","staticScheduled"]
+67.0	scheduledBatch-isTest	[]
+67.0	scheduledBatch-anonymous	["staticBatchExecute","staticBatchFinish","staticBatchStart"]

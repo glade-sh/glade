@@ -65,6 +65,9 @@ func (e *Engine) updateInvocableFlowRecord(record storage.Record) error {
 }
 
 func (e *Engine) InvocableFlowActionError(err error) (Error, bool) {
+	if failure, ok := FlowActionInputFailureResult(err); ok {
+		return Error{StatusCode: "UNKNOWN_EXCEPTION", Message: failure.Error}, true
+	}
 	var create *invocableFlowActionCreateError
 	if !errors.As(err, &create) {
 		return Error{}, false

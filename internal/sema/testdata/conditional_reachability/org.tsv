@@ -1,0 +1,37 @@
+api	route	case	outcome	diagnostic
+62.0	istest	one_branch_boundary	accepted	-
+62.0	istest	both_return_boundary	accepted	-
+62.0	anonymous	both_return_rejection	accepted	-
+62.0	named	both_return_rejection	rejected	Unreachable statement
+62.0	istest	both_return_rejection	rejected	Unreachable statement
+62.0	anonymous	direct_return_rejection	accepted	-
+62.0	named	direct_return_rejection	rejected	Unreachable statement
+62.0	istest	direct_return_rejection	rejected	Unreachable statement
+62.0	anonymous	one_branch_boundary	accepted	-
+62.0	named	one_branch_boundary	accepted	-
+62.0	anonymous	both_return_boundary	accepted	-
+62.0	named	both_return_boundary	accepted	-
+67.0	istest	one_branch_boundary	accepted	-
+67.0	istest	both_return_boundary	accepted	-
+67.0	anonymous	both_return_rejection	accepted	-
+67.0	named	both_return_rejection	rejected	Unreachable statement
+67.0	istest	both_return_rejection	rejected	Unreachable statement
+67.0	anonymous	direct_return_rejection	accepted	-
+67.0	named	direct_return_rejection	rejected	Unreachable statement
+67.0	istest	direct_return_rejection	rejected	Unreachable statement
+67.0	anonymous	one_branch_boundary	accepted	-
+67.0	named	one_branch_boundary	accepted	-
+67.0	anonymous	both_return_boundary	accepted	-
+67.0	named	both_return_boundary	accepted	-
+62.0	anonymous	break_rejection	rejected	Break statement must be in loop
+62.0	named	break_rejection	rejected	Break statement must be in loop
+62.0	istest	break_rejection	rejected	Break statement must be in loop
+67.0	anonymous	break_rejection	rejected	Break statement must be in loop
+67.0	named	break_rejection	rejected	Break statement must be in loop
+67.0	istest	break_rejection	rejected	Break statement must be in loop
+62.0	anonymous	break_after_return_rejection	rejected	Break statement must be in loop
+62.0	named	break_after_return_rejection	rejected	Break statement must be in loop; Unreachable statement
+62.0	istest	break_after_return_rejection	rejected	Break statement must be in loop; Unreachable statement
+67.0	anonymous	break_after_return_rejection	rejected	Break statement must be in loop
+67.0	named	break_after_return_rejection	rejected	Break statement must be in loop; Unreachable statement
+67.0	istest	break_after_return_rejection	rejected	Break statement must be in loop; Unreachable statement

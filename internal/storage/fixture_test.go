@@ -266,7 +266,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	for _, objectName := range []string{"Organization", "UserRole", "User", "UserLogin", "Profile", "UserLicense", "Network", "PermissionSet", "PermissionSetAssignment", "ObjectPermissions", "RecordType"} {
 		want := 1
 		if objectName == "Profile" {
-			want = 10
+			want = 14
 		}
 		if objectName == "User" {
 			want = 2
@@ -275,7 +275,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 			want = 2
 		}
 		if objectName == "Network" {
-			want = 1
+			want = 0
 		}
 		if objectName == "PermissionSet" {
 			want = 11
@@ -284,7 +284,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 			want = 6
 		}
 		if objectName == "UserLicense" {
-			want = 4
+			want = 6
 		}
 		if objectName == "RecordType" {
 			want = 0
@@ -315,7 +315,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 			t.Fatalf("describe-only Master was seeded as a record for %s", objectName)
 		}
 	}
-	if len(org.Objects["User"].Records) != 2 || len(org.Objects["UserLogin"].Records) != 2 || len(org.Objects["Profile"].Records) != 10 || len(org.Objects["UserLicense"].Records) != 4 {
+	if len(org.Objects["User"].Records) != 2 || len(org.Objects["UserLogin"].Records) != 2 || len(org.Objects["Profile"].Records) != 14 || len(org.Objects["UserLicense"].Records) != 6 {
 		t.Fatalf("platform records = %#v", InspectOrg("", org))
 	}
 	if _, ok := findRecordByStringField(org.Objects["Profile"].Records, "Name", "Customer Community Guest User"); !ok {
@@ -344,8 +344,8 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if !automatedProcessUser.Fields["IsActive"].Boolean || automatedProcessUser.Fields["ProfileId"].ID != "00e000000000009" {
 		t.Fatalf("automated process user active/profile fields = %#v", automatedProcessUser.Fields)
 	}
-	if got := org.IDSequences["Profile"]; got != 12 {
-		t.Fatalf("profile seed sequence = %d, want 12", got)
+	if got := org.IDSequences["Profile"]; got != 16 {
+		t.Fatalf("profile seed sequence = %d, want 16", got)
 	}
 	automatedProfileID := automatedProcessUser.Fields["ProfileId"].ID
 	if profile, ok := org.Objects["Profile"].Records[automatedProfileID]; ok {
@@ -362,8 +362,8 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if license, ok := org.Objects["UserLicense"].Records["100000000000002"]; !ok || license.Fields["LicenseDefinitionKey"].String != "PID_Customer_Community_Login" {
 		t.Fatalf("community license = %#v, %v", license, ok)
 	}
-	if network, ok := org.Objects["Network"].Records["0DB000000000001"]; !ok || network.Fields["SelfRegProfileId"].ID == "" {
-		t.Fatalf("network = %#v, %v", network, ok)
+	if _, ok := org.Objects["Network"]; ok {
+		t.Fatal("default org without Communities must not expose Network schema")
 	}
 	minimumAccessPermissionSet, ok := org.Objects["PermissionSet"].Records["0PS000000000004"]
 	if !ok || !minimumAccessPermissionSet.Fields["IsOwnedByProfile"].Boolean || minimumAccessPermissionSet.Fields["ProfileId"].ID != "00e000000000002" {

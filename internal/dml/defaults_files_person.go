@@ -207,6 +207,9 @@ func defaultValueForRecordField(org *storage.OrgState, definition storage.Object
 }
 
 func defaultValueForRecordFieldWithOptions(org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field, options FormulaEvaluationOptions) (storage.Value, bool) {
+	if !PersonAccountCustomFieldDefaultAllowed(org, definition, record, field) {
+		return storage.Value{}, false
+	}
 	rawDefault := strings.TrimSpace(field.DefaultValue)
 	if strings.EqualFold(rawDefault, "$RecordType.Name") || strings.EqualFold(rawDefault, "$RecordType.DeveloperName") {
 		if value, _, ok := workflowLiteralValue(field, formulaRecordTypeValue(definition, record, rawDefault)); ok {

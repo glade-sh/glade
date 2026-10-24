@@ -351,7 +351,7 @@ func (vm *VM) lookup(name string) (Value, error) {
 			}
 			if !strings.Contains(className, ".") {
 				suffix := "." + className
-				for _, class := range vm.Classes {
+				for _, class := range vm.ClassEntries() {
 					if !strings.HasSuffix(class.Name, suffix) || len(class.EnumValues) == 0 {
 						continue
 					}
@@ -805,6 +805,7 @@ func (vm *VM) setGraphFieldValue(object *Value, name string, value Value) {
 	if object == nil {
 		return
 	}
+	vm.invalidateFlatObjectAliasIndexesForValue(value)
 	vm.advanceAliasContainmentMutation()
 	if object.Fields == nil {
 		object.Fields = make(map[string]Value)
@@ -824,6 +825,7 @@ func coerceReadSchemaFieldIdentity(receiver, value Value, field storage.Field) V
 }
 
 func (vm *VM) setExplicitSObjectFieldValue(object *Value, name string, value Value) {
+	vm.invalidateFlatObjectAliasIndexesForValue(value)
 	if object != nil && object.Kind == ValueObject {
 		vm.markCollectionRefsEscaped(value)
 		vm.registerSObjectAliasField(*object, name, value)
@@ -1307,6 +1309,16 @@ func storageFieldTypeName(field storage.Field) string {
 	default:
 		return ""
 	}
+}
+
+func sObjectTypedIDAssignmentError(value Value, field storage.Field) error {
+	if value.Kind != ValueString || (field.Type != storage.FieldID && field.Type != storage.FieldReference) || fieldReferencesNamedMetadata(field) {
+		return nil
+	}
+	if err := validateApexIDShape(value.Text); err != nil {
+		return newExceptionError("System.StringException", "Invalid id: "+value.Text)
+	}
+	return nil
 }
 
 // Dynamic put and Object-typed direct writes share Apex's runtime type spelling.
@@ -2145,7 +2157,7 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				}
 			}
 		case "Schema.SObjectFieldMap":
-			mapValue, ok := current.Fields["map"]
+			mapValue, ok := vm.privateDescribeFieldMap(current)
 			if !ok || mapValue.Kind != ValueMap {
 				return Null, fmt.Errorf("Schema.SObjectFieldMap is missing map")
 			}
@@ -2376,6 +2388,14 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 					current = shell
 					continue
 				}
+			}
+			if definition, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonicalPart); exists && fieldDef.Type == storage.FieldBoolean &&
+				(storage.IsCustomMetadataDefinition(definition) || !isExplicitSObjectField(current, canonicalPart) &&
+					!storage.IsCustomSettingDefinition(definition) && hasSuffixFold(definition.APIName, "__c")) {
+				// Raw null from newSObject(loadDefaults=false) is false on dotted
+				// access; dynamic get retains the native null observation.
+				current = Bool(false)
+				continue
 			}
 			if isExplicitSObjectField(current, canonicalPart) {
 				if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonicalPart); exists && fieldDef.Type == storage.FieldBoolean {
@@ -2777,7 +2797,7 @@ func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 					storageName := staticFieldStorageName(memberName, field)
 					key := owner + "." + storageName
 					if vm.activeSetters[key] > 0 {
-						class := vm.Classes[owner]
+						class, _ := vm.classEntry(owner)
 						vm.writeStaticFieldValue(owner, memberName, class, field, value)
 						return nil
 					}
@@ -2793,12 +2813,12 @@ func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 						return err
 					}
 					if vm.isCurrentGetter(field.Getter) {
-						class := vm.Classes[owner]
+						class, _ := vm.classEntry(owner)
 						vm.writeStaticFieldValue(owner, memberName, class, field, value)
 					}
 					return nil
 				}
-				class := vm.Classes[owner]
+				class, _ := vm.classEntry(owner)
 				vm.writeStaticFieldValue(owner, memberName, class, field, value)
 				return nil
 			}
@@ -2939,7 +2959,7 @@ func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 				storageName := staticFieldStorageName(name, field)
 				key := owner + "." + storageName
 				if vm.activeSetters[key] > 0 {
-					class := vm.Classes[owner]
+					class, _ := vm.classEntry(owner)
 					vm.writeStaticFieldValue(owner, name, class, field, value)
 					return nil
 				}
@@ -2955,12 +2975,12 @@ func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 					return err
 				}
 				if vm.isCurrentGetter(field.Getter) {
-					class := vm.Classes[owner]
+					class, _ := vm.classEntry(owner)
 					vm.writeStaticFieldValue(owner, name, class, field, value)
 				}
 				return nil
 			}
-			class := vm.Classes[owner]
+			class, _ := vm.classEntry(owner)
 			vm.writeStaticFieldValue(owner, name, class, field, value)
 			return nil
 		}
@@ -3124,9 +3144,9 @@ func (vm *VM) assignPathWithStaticIndexDelta(root Value, parts []string, value V
 		// Quip's Folder/FolderRef DTOs). Only apply sObject Id validation when
 		// the receiver is not a loaded Apex class with the same runtime name.
 		if _, classExists := vm.lookupClass(current.Type); !classExists {
-			if _, field, ok := vm.sObjectFieldDefinition(current.Type, fieldName); ok && field.Type == storage.FieldID {
-				if err := validateApexIDShape(value.Text); err != nil {
-					return newExceptionError("System.StringException", "Invalid id: "+value.Text)
+			if _, field, ok := vm.sObjectFieldDefinition(current.Type, fieldName); ok {
+				if err := sObjectTypedIDAssignmentError(value, field); err != nil {
+					return err
 				}
 			}
 		}
@@ -3136,7 +3156,7 @@ func (vm *VM) assignPathWithStaticIndexDelta(root Value, parts []string, value V
 	if reason, ok := sobjectReadOnlyReason(current); ok {
 		if isTriggerSObject(current) {
 			// Trigger records reject direct field assignment.
-			return fmt.Errorf("System.FinalException: Record is read-only")
+			return &RuntimeError{Type: "System.FinalException", Message: "Record is read-only"}
 		}
 		return fmt.Errorf("cannot modify read-only %s", reason)
 	}

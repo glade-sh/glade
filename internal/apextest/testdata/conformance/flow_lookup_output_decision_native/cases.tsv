@@ -1,0 +1,5 @@
+case	observation
+L01	before-save decision IsNull false on a Get Records element that used outputAssignments (literal-only update path), with a match and without
+L02	IsNull true on the same element shape (assignNullValuesIfNoRecordsFound true)
+L03	control: storeOutputAutomatically lookup with the same decision
+L04	IsNull false on the outputAssignments element, then a field copied from the assigned variable

@@ -1,0 +1,13 @@
+id	group	route	status	value
+AR03	assignment_rules	istest	runtime	{"exception":null,"owner":"OracleFirst"}
+AR04	assignment_rules	istest	runtime	{"errors":[],"exception":null,"owner":"OracleSecond","success":true}
+AR05	assignment_rules	istest	runtime	{"errors":[],"exception":null,"owner":"user","success":true}
+AR07	assignment_rules	istest	runtime	{"errors":[],"exception":null,"owner":"OracleFirst","success":true}
+AR08	assignment_rules	istest	runtime	{"booleanOwner":"OracleFirst","errors":[],"exception":null,"owner":"OracleFirst","success":true}
+AR09	assignment_rules	istest	runtime	{"errors":[],"exception":null,"owner":"OracleFirst","success":true}
+AR10	assignment_rules	istest	runtime	{"afterInsertOwnerQueue":false,"afterInserts":1,"afterUpdates":1,"errors":[],"exception":null,"owner":"OracleFirst","success":true}
+AR11	assignment_rules	istest	runtime	{"errors":[],"exception":null,"flowOwners":["queue"],"owner":"OracleFirst","success":true}
+AR12	assignment_rules	istest	runtime	{"cases":[{"errors":[],"owner":"OracleFirst","success":true},{"errors":[],"owner":"user","success":true}],"exception":null}
+AR13	assignment_rules	istest	runtime	{"exception":"System.UnexpectedException","message":"Cannot specify both useDefaultRule=true and a specific assignmentRuleId in the AssignmentRule Header","uncaught":true}
+AR14	assignment_rules	istest	runtime	{"errors":[],"exception":null,"owner":"user","success":true}
+AR15	assignment_rules	istest	runtime	{"activeLeadRules":1,"exception":null}

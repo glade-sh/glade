@@ -106,7 +106,7 @@ func TestLookupOverflowOwnedDescribeTraversalCandidate(t *testing.T) {
 		for _, api := range []string{"46.0", "62.0", "67.0", "68.0"} {
 			for _, isTest := range []bool{false, true} {
 				t.Run(fmt.Sprintf("%s/%s/test=%t", namespace, api, isTest), func(t *testing.T) {
-					executeLookupOverflow(t, namespace, api, isTest, `
+					source := `
 Map<String,Schema.SObjectField> fields=Account.SObjectType.getDescribe().fields.getMap();
 List<String> eligible=new List<String>();
 List<Schema.SObjectField> overflow=new List<Schema.SObjectField>();
@@ -118,7 +118,8 @@ for(String key:new List<String>(new Set<String>(fields.keySet()))){
  if(ordinal>=4)overflow.add(token);
  ordinal++;
 }
-System.assertEquals(8,eligible.size());
+System.assertEquals(9,eligible.size());
+System.assert(eligible.contains('DandbCompanyId'),'Native writable Account lookup remains eligible');
 System.assert(overflow.contains(Account.ZetaBridge__c),'Candidate places the last local lookup beyond four slots');
 List<String> valueNames=new List<String>();
 for(Schema.SObjectField token:fields.values()){
@@ -126,7 +127,15 @@ for(Schema.SObjectField token:fields.values()){
  if(facet.getType()==Schema.DisplayType.REFERENCE&&facet.isUpdateable())valueNames.add(facet.getLocalName());
 }
 System.assertEquals(eligible,valueNames,'Key and value traversal stay aligned');
-`)
+`
+					for _, route := range []struct{ name, fields string }{
+						{"objectDescribeFieldMap", "Account.SObjectType.getDescribe().fields.getMap()"},
+						{"directFieldMap", "Schema.SObjectType.Account.fields.getMap()"},
+					} {
+						t.Run(route.name, func(t *testing.T) {
+							executeLookupOverflow(t, namespace, api, isTest, strings.Replace(source, "Account.SObjectType.getDescribe().fields.getMap()", route.fields, 1))
+						})
+					}
 				})
 			}
 		}

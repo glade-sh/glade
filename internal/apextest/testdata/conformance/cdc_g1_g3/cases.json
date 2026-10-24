@@ -1,0 +1,125 @@
+{
+  "apis": [
+    "62.0",
+    "67.0"
+  ],
+  "routes": [
+    "anonymous",
+    "istest",
+    "deploy_istest"
+  ],
+  "cases": [
+    {
+      "id": "setup_a_first",
+      "class": "CdcSetupTwinA",
+      "method": "setup_a_first",
+      "gap": "G1",
+      "description": "First method replays its class setup Account journal after enable"
+    },
+    {
+      "id": "setup_a_second",
+      "class": "CdcSetupTwinA",
+      "method": "setup_a_second",
+      "gap": "G1",
+      "description": "Second method independently replays the same class setup journal"
+    },
+    {
+      "id": "setup_b_first",
+      "class": "CdcSetupTwinB",
+      "method": "setup_b_first",
+      "gap": "G1",
+      "description": "Second class replays only its own setup Account journal"
+    },
+    {
+      "id": "setup_selected",
+      "class": "CdcSetupSelected",
+      "method": "setup_selected",
+      "gap": "G2",
+      "description": "Selected Contact setup journal delivers without enable"
+    },
+    {
+      "id": "selected_direct",
+      "class": "CdcMutationObservationTest",
+      "method": "selected_direct",
+      "gap": "G2",
+      "description": "Selected Contact direct insert delivers without enable"
+    },
+    {
+      "id": "cascade_delete",
+      "class": "CdcMutationObservationTest",
+      "method": "cascade_delete",
+      "gap": "G3",
+      "description": "Deleting Account cascades to selected Contact"
+    },
+    {
+      "id": "merge_accounts",
+      "class": "CdcMutationObservationTest",
+      "method": "merge_accounts",
+      "gap": "G4",
+      "description": "Merging Accounts emits change events after initial journal drain"
+    },
+    {
+      "id": "external_upsert",
+      "class": "CdcMutationObservationTest",
+      "method": "external_upsert",
+      "gap": "G5",
+      "description": "External-ID insert and update before a single delivery"
+    }
+  ],
+  "source_sha256": {
+    "62.0": {
+      "project/force-app/main/default/classes/CdcGapObservation.cls": "55285a3be542af035c89d14dd95c19e40e74b65f65e5876b1162da2c475f64de",
+      "project/force-app/main/default/classes/CdcGapObservation.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "project/force-app/main/default/classes/CdcMutationObservationTest.cls": "722154d47ae9c8730ea99acbad6424204110ecfe225ccd4a9bcc7acfec3e4438",
+      "project/force-app/main/default/classes/CdcMutationObservationTest.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "project/force-app/main/default/classes/CdcSetupSelected.cls": "86a2264724c0f2f0479194088be99337a85b79fc80b397f6ca53c36d18512a45",
+      "project/force-app/main/default/classes/CdcSetupSelected.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "project/force-app/main/default/classes/CdcSetupTwinA.cls": "b266924332e0b85b443a4c4359b65ee738226f76ff5a14a06ceeca4127475b60",
+      "project/force-app/main/default/classes/CdcSetupTwinA.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "project/force-app/main/default/classes/CdcSetupTwinB.cls": "b1f4da29825be4257aa1c53293805bd2287ba39b7d4879d6b1201ff0f5c2c336",
+      "project/force-app/main/default/classes/CdcSetupTwinB.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+      "project/force-app/main/default/objects/CdcItem__c/CdcItem__c.object-meta.xml": "490a15631f3ad8147b721566dc823476302ba888088fe1c9bffc1c64279f7660",
+      "project/force-app/main/default/objects/CdcItem__c/fields/External__c.field-meta.xml": "bfd656b0f6c30f1023aaf2bec5514b1fcf701ef3256f6e05270844649fd0ca52",
+      "project/force-app/main/default/objects/CdcItem__c/fields/Value__c.field-meta.xml": "1f3d0b5ef0239ef295bccc4e6b166e28cd6e75047ab8cf88b8462c4995df7c19",
+      "project/force-app/main/default/objects/CdcLog__c/CdcLog__c.object-meta.xml": "11e482f62ca4ca5c70d466370b485f29df1eea35e143ccd9f932cc2fa7d23c92",
+      "project/force-app/main/default/objects/CdcLog__c/fields/Data__c.field-meta.xml": "5f7d7770ff5e8339293315f1c70ea1e79b7fc46a0e536324cfb24d7b51e9ad44",
+      "project/force-app/main/default/permissionsets/CdcFixture.permissionset-meta.xml": "41bd34b62f5633c1cf7137918a6306a485a3178455fa3d13dadf4aa7645ffb52",
+      "project/force-app/main/default/platformEventChannelMembers/ChangeEvents_ContactChangeEvent.platformEventChannelMember-meta.xml": "4e0f140bd8ef751ecffd4355b771890813b3486ca2dfec2deddf9709ce722aec",
+      "project/force-app/main/default/triggers/CdcAccountObserver.trigger": "f360ffe810e5a222c71016d17363ee118ec1a5e58cb7eae157de5ea92757bab0",
+      "project/force-app/main/default/triggers/CdcAccountObserver.trigger-meta.xml": "1b8cf49920815aa83084b93834c39cc2c56e0cee742c4d7e67fedefddfa32b96",
+      "project/force-app/main/default/triggers/CdcContactObserver.trigger": "b797a403cf65fe9d88c31063ccfff74e50a2d0a2ce9e0e5e9913a0a430f10ac4",
+      "project/force-app/main/default/triggers/CdcContactObserver.trigger-meta.xml": "1b8cf49920815aa83084b93834c39cc2c56e0cee742c4d7e67fedefddfa32b96",
+      "project/force-app/main/default/triggers/CdcItemObserver.trigger": "1a56a6e6fa6e0a871513b84cbf218c9e915db87ef0b7936e9fefb40e13ff0793",
+      "project/force-app/main/default/triggers/CdcItemObserver.trigger-meta.xml": "1b8cf49920815aa83084b93834c39cc2c56e0cee742c4d7e67fedefddfa32b96",
+      "project/sfdx-project.json": "f1f53451ea0caab9f718ebb8b7598b79d47c1298f65bb37f549f280b2e199ef9",
+      "anonymous.apex": "efac88a6c41136b4022f201b7dba16b17e5b2b07a3acf7de1448b76984c705e7"
+    },
+    "67.0": {
+      "project/force-app/main/default/classes/CdcGapObservation.cls": "55285a3be542af035c89d14dd95c19e40e74b65f65e5876b1162da2c475f64de",
+      "project/force-app/main/default/classes/CdcGapObservation.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "project/force-app/main/default/classes/CdcMutationObservationTest.cls": "722154d47ae9c8730ea99acbad6424204110ecfe225ccd4a9bcc7acfec3e4438",
+      "project/force-app/main/default/classes/CdcMutationObservationTest.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "project/force-app/main/default/classes/CdcSetupSelected.cls": "86a2264724c0f2f0479194088be99337a85b79fc80b397f6ca53c36d18512a45",
+      "project/force-app/main/default/classes/CdcSetupSelected.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "project/force-app/main/default/classes/CdcSetupTwinA.cls": "b266924332e0b85b443a4c4359b65ee738226f76ff5a14a06ceeca4127475b60",
+      "project/force-app/main/default/classes/CdcSetupTwinA.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "project/force-app/main/default/classes/CdcSetupTwinB.cls": "b1f4da29825be4257aa1c53293805bd2287ba39b7d4879d6b1201ff0f5c2c336",
+      "project/force-app/main/default/classes/CdcSetupTwinB.cls-meta.xml": "eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7",
+      "project/force-app/main/default/objects/CdcItem__c/CdcItem__c.object-meta.xml": "490a15631f3ad8147b721566dc823476302ba888088fe1c9bffc1c64279f7660",
+      "project/force-app/main/default/objects/CdcItem__c/fields/External__c.field-meta.xml": "bfd656b0f6c30f1023aaf2bec5514b1fcf701ef3256f6e05270844649fd0ca52",
+      "project/force-app/main/default/objects/CdcItem__c/fields/Value__c.field-meta.xml": "1f3d0b5ef0239ef295bccc4e6b166e28cd6e75047ab8cf88b8462c4995df7c19",
+      "project/force-app/main/default/objects/CdcLog__c/CdcLog__c.object-meta.xml": "11e482f62ca4ca5c70d466370b485f29df1eea35e143ccd9f932cc2fa7d23c92",
+      "project/force-app/main/default/objects/CdcLog__c/fields/Data__c.field-meta.xml": "5f7d7770ff5e8339293315f1c70ea1e79b7fc46a0e536324cfb24d7b51e9ad44",
+      "project/force-app/main/default/permissionsets/CdcFixture.permissionset-meta.xml": "41bd34b62f5633c1cf7137918a6306a485a3178455fa3d13dadf4aa7645ffb52",
+      "project/force-app/main/default/platformEventChannelMembers/ChangeEvents_ContactChangeEvent.platformEventChannelMember-meta.xml": "4e0f140bd8ef751ecffd4355b771890813b3486ca2dfec2deddf9709ce722aec",
+      "project/force-app/main/default/triggers/CdcAccountObserver.trigger": "f360ffe810e5a222c71016d17363ee118ec1a5e58cb7eae157de5ea92757bab0",
+      "project/force-app/main/default/triggers/CdcAccountObserver.trigger-meta.xml": "14ea83a9ae4d9213280344a2f60a06fbc2c2888c4f63029ebc6d1487970cba40",
+      "project/force-app/main/default/triggers/CdcContactObserver.trigger": "b797a403cf65fe9d88c31063ccfff74e50a2d0a2ce9e0e5e9913a0a430f10ac4",
+      "project/force-app/main/default/triggers/CdcContactObserver.trigger-meta.xml": "14ea83a9ae4d9213280344a2f60a06fbc2c2888c4f63029ebc6d1487970cba40",
+      "project/force-app/main/default/triggers/CdcItemObserver.trigger": "1a56a6e6fa6e0a871513b84cbf218c9e915db87ef0b7936e9fefb40e13ff0793",
+      "project/force-app/main/default/triggers/CdcItemObserver.trigger-meta.xml": "14ea83a9ae4d9213280344a2f60a06fbc2c2888c4f63029ebc6d1487970cba40",
+      "project/sfdx-project.json": "2bc58206d0b9c401181c61264ca1a7084dff5c8afdec3c0d7edeea86a65d9484",
+      "anonymous.apex": "efac88a6c41136b4022f201b7dba16b17e5b2b07a3acf7de1448b76984c705e7"
+    }
+  }
+}

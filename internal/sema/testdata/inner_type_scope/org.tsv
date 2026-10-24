@@ -1,0 +1,35 @@
+id	api	route	compiled	success	outcome
+org_project	62.0	named	true	false	Pass
+org_project	67.0	named	true	false	Pass
+org_lexical_static_reject	62.0	named	false	false	Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeLexicalReject.EventBus.publish(List<SObject>)
+org_lexical_static_reject	67.0	named	false	false	Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeLexicalReject.EventBus.publish(List<SObject>)
+org_lexical_mixed_reject	62.0	named	false	false	Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeMixedReject.EVENTBUS.publish(List<SObject>)
+org_lexical_mixed_reject	67.0	named	false	false	Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeMixedReject.EVENTBUS.publish(List<SObject>)
+org_anonymous_mixed	62.0	anonymous	true	true	Pass
+org_anonymous_mixed	67.0	anonymous	true	true	Pass
+org_anonymous_qualified	62.0	anonymous	true	true	Pass
+org_anonymous_qualified	67.0	anonymous	true	true	Pass
+org_anonymous_system	62.0	anonymous	true	true	Pass
+org_anonymous_system	67.0	anonymous	true	true	Pass
+org_test_runner	62.0	isTest	true	true	Pass
+org_test_runner	67.0	isTest	true	true	Pass
+enum-org_enum_project	62.0	named	true	false	Pass
+enum-org_enum_project	67.0	named	true	false	Pass
+enum-org_anonymous_enum_publish	62.0	anonymous	true	true	Pass
+enum-org_anonymous_enum_publish	67.0	anonymous	true	true	Pass
+enum-org_enum_test_runner	62.0	isTest	true	true	Pass
+enum-org_enum_test_runner	67.0	isTest	true	true	Pass
+enum-org_lexical_static_reject	62.0	named	false	false	Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeLexicalReject.EventBus.publish(List<SObject>)
+enum-org_lexical_static_reject	67.0	named	false	false	Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeLexicalReject.EventBus.publish(List<SObject>)
+enum-org_lexical_mixed_reject	62.0	named	false	false	Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeMixedReject.EVENTBUS.publish(List<SObject>)
+enum-org_lexical_mixed_reject	67.0	named	false	false	Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeMixedReject.EVENTBUS.publish(List<SObject>)
+enum-org_lexical_enum_publish_reject	62.0	named	false	false	Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeEnumReject.EventBus | Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeEnumReject.EventBus | Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeEnumReject.EventBus | Method does not exist or incorrect signature: void pUbLiSh(List<SObject>) from the type ScopeEnumReject.EventBus
+enum-org_lexical_enum_publish_reject	67.0	named	false	false	Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeEnumReject.EventBus | Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeEnumReject.EventBus | Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeEnumReject.EventBus | Method does not exist or incorrect signature: void pUbLiSh(List<SObject>) from the type ScopeEnumReject.EventBus
+enum-org_lexical_enum_test_reject	62.0	isTest	false	false	Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeEnumTestReject.EventBus
+enum-org_lexical_enum_test_reject	67.0	isTest	false	false	Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeEnumTestReject.EventBus
+static-org_inherited_static_success	62.0	named	true	false	Pass
+static-org_inherited_static_success	67.0	named	true	false	Pass
+static-org_lexical_missing_reject	62.0	named	false	false	Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeMissingReject.EventBus
+static-org_lexical_missing_reject	67.0	named	false	false	Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeMissingReject.EventBus
+review-org_inherited_static_reject	62.0	named	false	false	Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeStore.EventBus.publish(List<SObject>)
+review-org_inherited_static_reject	67.0	named	false	false	Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeStore.EventBus.publish(List<SObject>)

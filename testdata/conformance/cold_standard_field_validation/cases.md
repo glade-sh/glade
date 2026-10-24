@@ -1,0 +1,1 @@
+Each construction route in cases.tsv runs the same field contract: unknown get/put, String assigned to Decimal through name/token put, readonly CreatedDate through name/token put, and valid get/put. Capture anonymous and @IsTest at APIs 62 and 67. Local tests replay cold and loaded Asset schemas and check that their schema generation does not change.

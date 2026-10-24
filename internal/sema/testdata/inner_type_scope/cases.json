@@ -1,0 +1,719 @@
+[
+  {
+    "id": "org_project",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopePublisher": "public class ScopePublisher {\n    public List<SObject> records = new List<SObject>();\n    public List<Database.SaveResult> publish() { return EventBus.publish(this.records); }\n    public List<Database.SaveResult> mixedCase() { return eVeNtBuS.PuBlIsH(this.records); }\n    public List<Database.SaveResult> qualified() { return new ScopeStore.EventBus().publish(this.records); }\n}\n",
+      "ScopePublisherTest": "@IsTest\nprivate class ScopePublisherTest {\n    @IsTest static void unrelatedSystemReceiver() { System.assertEquals(0, new ScopePublisher().publish().size()); }\n    @IsTest static void unrelatedMixedCaseReceiver() { System.assertEquals(0, new ScopePublisher().mixedCase().size()); }\n    @IsTest static void qualifiedInnerInstance() { System.assertEquals(null, new ScopePublisher().qualified()); }\n    @IsTest static void lexicalInnerInstance() { System.assertEquals(null, new ScopeStore.Reader().lexical()); }\n    @IsTest static void lexicalExplicitSystem() { System.assertEquals(0, new ScopeStore.Reader().explicitSystem().size()); }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n"
+    },
+    "routes": [
+      "named"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "named",
+        "compiled": true,
+        "success": false,
+        "outcome": "Pass",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 2
+      },
+      {
+        "api": "67.0",
+        "route": "named",
+        "compiled": true,
+        "success": false,
+        "outcome": "Pass",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 11
+      }
+    ],
+    "compileOnly": true,
+    "restoredFrom": {
+      "table": "org.tsv",
+      "case": "project",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    }
+  },
+  {
+    "id": "org_lexical_static_reject",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopePublisher": "public class ScopePublisher {\n    public List<SObject> records = new List<SObject>();\n    public List<Database.SaveResult> publish() { return EventBus.publish(this.records); }\n    public List<Database.SaveResult> mixedCase() { return eVeNtBuS.PuBlIsH(this.records); }\n    public List<Database.SaveResult> qualified() { return new ScopeStore.EventBus().publish(this.records); }\n}\n",
+      "ScopePublisherTest": "@IsTest\nprivate class ScopePublisherTest {\n    @IsTest static void unrelatedSystemReceiver() { System.assertEquals(0, new ScopePublisher().publish().size()); }\n    @IsTest static void unrelatedMixedCaseReceiver() { System.assertEquals(0, new ScopePublisher().mixedCase().size()); }\n    @IsTest static void qualifiedInnerInstance() { System.assertEquals(null, new ScopePublisher().qualified()); }\n    @IsTest static void lexicalInnerInstance() { System.assertEquals(null, new ScopeStore.Reader().lexical()); }\n    @IsTest static void lexicalExplicitSystem() { System.assertEquals(0, new ScopeStore.Reader().explicitSystem().size()); }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n",
+      "ScopeLexicalReject": "public class ScopeLexicalReject {\n    public class EventBus { public List<Database.SaveResult> publish(List<SObject> events) { return null; } }\n    public class Reader { public List<Database.SaveResult> run() { return EventBus.publish(new List<SObject>()); } }\n}\n"
+    },
+    "routes": [
+      "named"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeLexicalReject.EventBus.publish(List<SObject>)",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 3
+      },
+      {
+        "api": "67.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeLexicalReject.EventBus.publish(List<SObject>)",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 12
+      }
+    ],
+    "compileOnly": true,
+    "restoredFrom": {
+      "table": "org.tsv",
+      "case": "lexical_static_reject",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    }
+  },
+  {
+    "id": "org_lexical_mixed_reject",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopePublisher": "public class ScopePublisher {\n    public List<SObject> records = new List<SObject>();\n    public List<Database.SaveResult> publish() { return EventBus.publish(this.records); }\n    public List<Database.SaveResult> mixedCase() { return eVeNtBuS.PuBlIsH(this.records); }\n    public List<Database.SaveResult> qualified() { return new ScopeStore.EventBus().publish(this.records); }\n}\n",
+      "ScopePublisherTest": "@IsTest\nprivate class ScopePublisherTest {\n    @IsTest static void unrelatedSystemReceiver() { System.assertEquals(0, new ScopePublisher().publish().size()); }\n    @IsTest static void unrelatedMixedCaseReceiver() { System.assertEquals(0, new ScopePublisher().mixedCase().size()); }\n    @IsTest static void qualifiedInnerInstance() { System.assertEquals(null, new ScopePublisher().qualified()); }\n    @IsTest static void lexicalInnerInstance() { System.assertEquals(null, new ScopeStore.Reader().lexical()); }\n    @IsTest static void lexicalExplicitSystem() { System.assertEquals(0, new ScopeStore.Reader().explicitSystem().size()); }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n",
+      "ScopeMixedReject": "public class ScopeMixedReject {\n    public class EVENTBUS { public List<Database.SaveResult> publish(List<SObject> events) { return null; } }\n    public class Reader { public List<Database.SaveResult> run() { return eVeNtBuS.publish(new List<SObject>()); } }\n}\n"
+    },
+    "routes": [
+      "named"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeMixedReject.EVENTBUS.publish(List<SObject>)",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 4
+      },
+      {
+        "api": "67.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeMixedReject.EVENTBUS.publish(List<SObject>)",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 13
+      }
+    ],
+    "compileOnly": true,
+    "restoredFrom": {
+      "table": "org.tsv",
+      "case": "lexical_mixed_reject",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    }
+  },
+  {
+    "id": "org_anonymous_mixed",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopePublisher": "public class ScopePublisher {\n    public List<SObject> records = new List<SObject>();\n    public List<Database.SaveResult> publish() { return EventBus.publish(this.records); }\n    public List<Database.SaveResult> mixedCase() { return eVeNtBuS.PuBlIsH(this.records); }\n    public List<Database.SaveResult> qualified() { return new ScopeStore.EventBus().publish(this.records); }\n}\n",
+      "ScopePublisherTest": "@IsTest\nprivate class ScopePublisherTest {\n    @IsTest static void unrelatedSystemReceiver() { System.assertEquals(0, new ScopePublisher().publish().size()); }\n    @IsTest static void unrelatedMixedCaseReceiver() { System.assertEquals(0, new ScopePublisher().mixedCase().size()); }\n    @IsTest static void qualifiedInnerInstance() { System.assertEquals(null, new ScopePublisher().qualified()); }\n    @IsTest static void lexicalInnerInstance() { System.assertEquals(null, new ScopeStore.Reader().lexical()); }\n    @IsTest static void lexicalExplicitSystem() { System.assertEquals(0, new ScopeStore.Reader().explicitSystem().size()); }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n"
+    },
+    "routes": [
+      "anonymous"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "Pass",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 7
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "Pass",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 16
+      }
+    ],
+    "compileOnly": false,
+    "restoredFrom": {
+      "table": "org.tsv",
+      "case": "anonymous_mixed",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    },
+    "body": "System.assertEquals(0, eVeNtBuS.PuBlIsH(new List<SObject>()).size());\n"
+  },
+  {
+    "id": "org_anonymous_qualified",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopePublisher": "public class ScopePublisher {\n    public List<SObject> records = new List<SObject>();\n    public List<Database.SaveResult> publish() { return EventBus.publish(this.records); }\n    public List<Database.SaveResult> mixedCase() { return eVeNtBuS.PuBlIsH(this.records); }\n    public List<Database.SaveResult> qualified() { return new ScopeStore.EventBus().publish(this.records); }\n}\n",
+      "ScopePublisherTest": "@IsTest\nprivate class ScopePublisherTest {\n    @IsTest static void unrelatedSystemReceiver() { System.assertEquals(0, new ScopePublisher().publish().size()); }\n    @IsTest static void unrelatedMixedCaseReceiver() { System.assertEquals(0, new ScopePublisher().mixedCase().size()); }\n    @IsTest static void qualifiedInnerInstance() { System.assertEquals(null, new ScopePublisher().qualified()); }\n    @IsTest static void lexicalInnerInstance() { System.assertEquals(null, new ScopeStore.Reader().lexical()); }\n    @IsTest static void lexicalExplicitSystem() { System.assertEquals(0, new ScopeStore.Reader().explicitSystem().size()); }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n"
+    },
+    "routes": [
+      "anonymous"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "Pass",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 8
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "Pass",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 17
+      }
+    ],
+    "compileOnly": false,
+    "restoredFrom": {
+      "table": "org.tsv",
+      "case": "anonymous_qualified",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    },
+    "body": "System.assertEquals(null, new ScopeStore.EventBus().publish(new List<SObject>()));\n"
+  },
+  {
+    "id": "org_anonymous_system",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopePublisher": "public class ScopePublisher {\n    public List<SObject> records = new List<SObject>();\n    public List<Database.SaveResult> publish() { return EventBus.publish(this.records); }\n    public List<Database.SaveResult> mixedCase() { return eVeNtBuS.PuBlIsH(this.records); }\n    public List<Database.SaveResult> qualified() { return new ScopeStore.EventBus().publish(this.records); }\n}\n",
+      "ScopePublisherTest": "@IsTest\nprivate class ScopePublisherTest {\n    @IsTest static void unrelatedSystemReceiver() { System.assertEquals(0, new ScopePublisher().publish().size()); }\n    @IsTest static void unrelatedMixedCaseReceiver() { System.assertEquals(0, new ScopePublisher().mixedCase().size()); }\n    @IsTest static void qualifiedInnerInstance() { System.assertEquals(null, new ScopePublisher().qualified()); }\n    @IsTest static void lexicalInnerInstance() { System.assertEquals(null, new ScopeStore.Reader().lexical()); }\n    @IsTest static void lexicalExplicitSystem() { System.assertEquals(0, new ScopeStore.Reader().explicitSystem().size()); }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n"
+    },
+    "routes": [
+      "anonymous"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "Pass",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 9
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "Pass",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 18
+      }
+    ],
+    "compileOnly": false,
+    "restoredFrom": {
+      "table": "org.tsv",
+      "case": "anonymous_system",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    },
+    "body": "System.assertEquals(0, EventBus.publish(new List<SObject>()).size());\n"
+  },
+  {
+    "id": "org_test_runner",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopePublisher": "public class ScopePublisher {\n    public List<SObject> records = new List<SObject>();\n    public List<Database.SaveResult> publish() { return EventBus.publish(this.records); }\n    public List<Database.SaveResult> mixedCase() { return eVeNtBuS.PuBlIsH(this.records); }\n    public List<Database.SaveResult> qualified() { return new ScopeStore.EventBus().publish(this.records); }\n}\n",
+      "ScopePublisherTest": "@IsTest\nprivate class ScopePublisherTest {\n    @IsTest static void unrelatedSystemReceiver() { System.assertEquals(0, new ScopePublisher().publish().size()); }\n    @IsTest static void unrelatedMixedCaseReceiver() { System.assertEquals(0, new ScopePublisher().mixedCase().size()); }\n    @IsTest static void qualifiedInnerInstance() { System.assertEquals(null, new ScopePublisher().qualified()); }\n    @IsTest static void lexicalInnerInstance() { System.assertEquals(null, new ScopeStore.Reader().lexical()); }\n    @IsTest static void lexicalExplicitSystem() { System.assertEquals(0, new ScopeStore.Reader().explicitSystem().size()); }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n"
+    },
+    "routes": [
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "Pass",
+        "command": "sf apex run test --synchronous",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 10
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "Pass",
+        "command": "sf apex run test --synchronous",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 19
+      }
+    ],
+    "compileOnly": false,
+    "restoredFrom": {
+      "table": "org.tsv",
+      "case": "test_runner",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    },
+    "testClass": "ScopePublisherTest",
+    "expectedTests": 5
+  },
+  {
+    "id": "enum-org_enum_project",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopeEnumPublisher": "public class ScopeEnumPublisher {\n    public enum EventBus { One }\n    public static Integer publish() { return System.EventBus.publish(new List<SObject>()).size(); }\n    public static Integer mixed() { return sYsTeM.eVeNtBuS.pUbLiSh(new List<SObject>()).size(); }\n    public static Integer qualified() { return System.EventBus.publish(new List<SObject>()).size(); }\n    public static Integer enumValues() { return EventBus.values().size(); }\n    public class Reader {\n        public Integer publish() { return System.EventBus.publish(new List<SObject>()).size(); }\n    }\n}\n",
+      "ScopeEnumTest": "@IsTest private class ScopeEnumTest {\n    private enum EventBus { One }\n    @IsTest static void lexicalEnumPublish() {\n        System.assertEquals(0, System.EventBus.publish(new List<SObject>()).size());\n        System.assertEquals(0, sYsTeM.eVeNtBuS.pUbLiSh(new List<SObject>()).size());\n        System.assertEquals(0, System.EventBus.publish(new List<SObject>()).size());\n        System.assertEquals(1, EventBus.values().size());\n    }\n    @IsTest static void namedAndNestedPublish() {\n        System.assertEquals(0, ScopeEnumPublisher.publish());\n        System.assertEquals(0, ScopeEnumPublisher.mixed());\n        System.assertEquals(0, ScopeEnumPublisher.qualified());\n        System.assertEquals(1, ScopeEnumPublisher.enumValues());\n        System.assertEquals(0, new ScopeEnumPublisher.Reader().publish());\n    }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n"
+    },
+    "routes": [
+      "named"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "named",
+        "compiled": true,
+        "success": false,
+        "outcome": "Pass",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 2
+      },
+      {
+        "api": "67.0",
+        "route": "named",
+        "compiled": true,
+        "success": false,
+        "outcome": "Pass",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 9
+      }
+    ],
+    "compileOnly": true,
+    "restoredFrom": {
+      "table": "enum-org.tsv",
+      "case": "enum_project",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    }
+  },
+  {
+    "id": "enum-org_anonymous_enum_publish",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopeEnumPublisher": "public class ScopeEnumPublisher {\n    public enum EventBus { One }\n    public static Integer publish() { return System.EventBus.publish(new List<SObject>()).size(); }\n    public static Integer mixed() { return sYsTeM.eVeNtBuS.pUbLiSh(new List<SObject>()).size(); }\n    public static Integer qualified() { return System.EventBus.publish(new List<SObject>()).size(); }\n    public static Integer enumValues() { return EventBus.values().size(); }\n    public class Reader {\n        public Integer publish() { return System.EventBus.publish(new List<SObject>()).size(); }\n    }\n}\n",
+      "ScopeEnumTest": "@IsTest private class ScopeEnumTest {\n    private enum EventBus { One }\n    @IsTest static void lexicalEnumPublish() {\n        System.assertEquals(0, System.EventBus.publish(new List<SObject>()).size());\n        System.assertEquals(0, sYsTeM.eVeNtBuS.pUbLiSh(new List<SObject>()).size());\n        System.assertEquals(0, System.EventBus.publish(new List<SObject>()).size());\n        System.assertEquals(1, EventBus.values().size());\n    }\n    @IsTest static void namedAndNestedPublish() {\n        System.assertEquals(0, ScopeEnumPublisher.publish());\n        System.assertEquals(0, ScopeEnumPublisher.mixed());\n        System.assertEquals(0, ScopeEnumPublisher.qualified());\n        System.assertEquals(1, ScopeEnumPublisher.enumValues());\n        System.assertEquals(0, new ScopeEnumPublisher.Reader().publish());\n    }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n"
+    },
+    "routes": [
+      "anonymous"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "Pass",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 3
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "Pass",
+        "command": "sf apex run",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 10
+      }
+    ],
+    "compileOnly": false,
+    "restoredFrom": {
+      "table": "enum-org.tsv",
+      "case": "anonymous_enum_publish",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    },
+    "body": "System.assertEquals(0, ScopeEnumPublisher.publish());\nSystem.assertEquals(0, ScopeEnumPublisher.mixed());\nSystem.assertEquals(0, ScopeEnumPublisher.qualified());\nSystem.assertEquals(1, ScopeEnumPublisher.enumValues());\nSystem.assertEquals(0, new ScopeEnumPublisher.Reader().publish());\nSystem.assertEquals(0, EventBus.publish(new List<SObject>()).size());\n"
+  },
+  {
+    "id": "enum-org_enum_test_runner",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopeEnumPublisher": "public class ScopeEnumPublisher {\n    public enum EventBus { One }\n    public static Integer publish() { return System.EventBus.publish(new List<SObject>()).size(); }\n    public static Integer mixed() { return sYsTeM.eVeNtBuS.pUbLiSh(new List<SObject>()).size(); }\n    public static Integer qualified() { return System.EventBus.publish(new List<SObject>()).size(); }\n    public static Integer enumValues() { return EventBus.values().size(); }\n    public class Reader {\n        public Integer publish() { return System.EventBus.publish(new List<SObject>()).size(); }\n    }\n}\n",
+      "ScopeEnumTest": "@IsTest private class ScopeEnumTest {\n    private enum EventBus { One }\n    @IsTest static void lexicalEnumPublish() {\n        System.assertEquals(0, System.EventBus.publish(new List<SObject>()).size());\n        System.assertEquals(0, sYsTeM.eVeNtBuS.pUbLiSh(new List<SObject>()).size());\n        System.assertEquals(0, System.EventBus.publish(new List<SObject>()).size());\n        System.assertEquals(1, EventBus.values().size());\n    }\n    @IsTest static void namedAndNestedPublish() {\n        System.assertEquals(0, ScopeEnumPublisher.publish());\n        System.assertEquals(0, ScopeEnumPublisher.mixed());\n        System.assertEquals(0, ScopeEnumPublisher.qualified());\n        System.assertEquals(1, ScopeEnumPublisher.enumValues());\n        System.assertEquals(0, new ScopeEnumPublisher.Reader().publish());\n    }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n"
+    },
+    "routes": [
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "Pass",
+        "command": "sf apex run test --synchronous",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 4
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "Pass",
+        "command": "sf apex run test --synchronous",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 11
+      }
+    ],
+    "compileOnly": false,
+    "restoredFrom": {
+      "table": "enum-org.tsv",
+      "case": "enum_test_runner",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    },
+    "testClass": "ScopeEnumTest",
+    "expectedTests": 2
+  },
+  {
+    "id": "enum-org_lexical_static_reject",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopeEnumPublisher": "public class ScopeEnumPublisher {\n    public enum EventBus { One }\n    public static Integer publish() { return System.EventBus.publish(new List<SObject>()).size(); }\n    public static Integer mixed() { return sYsTeM.eVeNtBuS.pUbLiSh(new List<SObject>()).size(); }\n    public static Integer qualified() { return System.EventBus.publish(new List<SObject>()).size(); }\n    public static Integer enumValues() { return EventBus.values().size(); }\n    public class Reader {\n        public Integer publish() { return System.EventBus.publish(new List<SObject>()).size(); }\n    }\n}\n",
+      "ScopeEnumTest": "@IsTest private class ScopeEnumTest {\n    private enum EventBus { One }\n    @IsTest static void lexicalEnumPublish() {\n        System.assertEquals(0, System.EventBus.publish(new List<SObject>()).size());\n        System.assertEquals(0, sYsTeM.eVeNtBuS.pUbLiSh(new List<SObject>()).size());\n        System.assertEquals(0, System.EventBus.publish(new List<SObject>()).size());\n        System.assertEquals(1, EventBus.values().size());\n    }\n    @IsTest static void namedAndNestedPublish() {\n        System.assertEquals(0, ScopeEnumPublisher.publish());\n        System.assertEquals(0, ScopeEnumPublisher.mixed());\n        System.assertEquals(0, ScopeEnumPublisher.qualified());\n        System.assertEquals(1, ScopeEnumPublisher.enumValues());\n        System.assertEquals(0, new ScopeEnumPublisher.Reader().publish());\n    }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n",
+      "ScopeLexicalReject": "public class ScopeLexicalReject {\n    public class EventBus { public List<Database.SaveResult> publish(List<SObject> events) { return null; } }\n    public class Reader { public List<Database.SaveResult> run() { return EventBus.publish(new List<SObject>()); } }\n}\n"
+    },
+    "routes": [
+      "named"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeLexicalReject.EventBus.publish(List<SObject>)",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 5
+      },
+      {
+        "api": "67.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeLexicalReject.EventBus.publish(List<SObject>)",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 12
+      }
+    ],
+    "compileOnly": true,
+    "restoredFrom": {
+      "table": "enum-org.tsv",
+      "case": "lexical_static_reject",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    }
+  },
+  {
+    "id": "enum-org_lexical_mixed_reject",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopeEnumPublisher": "public class ScopeEnumPublisher {\n    public enum EventBus { One }\n    public static Integer publish() { return System.EventBus.publish(new List<SObject>()).size(); }\n    public static Integer mixed() { return sYsTeM.eVeNtBuS.pUbLiSh(new List<SObject>()).size(); }\n    public static Integer qualified() { return System.EventBus.publish(new List<SObject>()).size(); }\n    public static Integer enumValues() { return EventBus.values().size(); }\n    public class Reader {\n        public Integer publish() { return System.EventBus.publish(new List<SObject>()).size(); }\n    }\n}\n",
+      "ScopeEnumTest": "@IsTest private class ScopeEnumTest {\n    private enum EventBus { One }\n    @IsTest static void lexicalEnumPublish() {\n        System.assertEquals(0, System.EventBus.publish(new List<SObject>()).size());\n        System.assertEquals(0, sYsTeM.eVeNtBuS.pUbLiSh(new List<SObject>()).size());\n        System.assertEquals(0, System.EventBus.publish(new List<SObject>()).size());\n        System.assertEquals(1, EventBus.values().size());\n    }\n    @IsTest static void namedAndNestedPublish() {\n        System.assertEquals(0, ScopeEnumPublisher.publish());\n        System.assertEquals(0, ScopeEnumPublisher.mixed());\n        System.assertEquals(0, ScopeEnumPublisher.qualified());\n        System.assertEquals(1, ScopeEnumPublisher.enumValues());\n        System.assertEquals(0, new ScopeEnumPublisher.Reader().publish());\n    }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n",
+      "ScopeMixedReject": "public class ScopeMixedReject {\n    public class EVENTBUS { public List<Database.SaveResult> publish(List<SObject> events) { return null; } }\n    public class Reader { public List<Database.SaveResult> run() { return eVeNtBuS.publish(new List<SObject>()); } }\n}\n"
+    },
+    "routes": [
+      "named"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeMixedReject.EVENTBUS.publish(List<SObject>)",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 6
+      },
+      {
+        "api": "67.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeMixedReject.EVENTBUS.publish(List<SObject>)",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 13
+      }
+    ],
+    "compileOnly": true,
+    "restoredFrom": {
+      "table": "enum-org.tsv",
+      "case": "lexical_mixed_reject",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    }
+  },
+  {
+    "id": "enum-org_lexical_enum_publish_reject",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopeEnumPublisher": "public class ScopeEnumPublisher {\n    public enum EventBus { One }\n    public static Integer publish() { return System.EventBus.publish(new List<SObject>()).size(); }\n    public static Integer mixed() { return sYsTeM.eVeNtBuS.pUbLiSh(new List<SObject>()).size(); }\n    public static Integer qualified() { return System.EventBus.publish(new List<SObject>()).size(); }\n    public static Integer enumValues() { return EventBus.values().size(); }\n    public class Reader {\n        public Integer publish() { return System.EventBus.publish(new List<SObject>()).size(); }\n    }\n}\n",
+      "ScopeEnumTest": "@IsTest private class ScopeEnumTest {\n    private enum EventBus { One }\n    @IsTest static void lexicalEnumPublish() {\n        System.assertEquals(0, System.EventBus.publish(new List<SObject>()).size());\n        System.assertEquals(0, sYsTeM.eVeNtBuS.pUbLiSh(new List<SObject>()).size());\n        System.assertEquals(0, System.EventBus.publish(new List<SObject>()).size());\n        System.assertEquals(1, EventBus.values().size());\n    }\n    @IsTest static void namedAndNestedPublish() {\n        System.assertEquals(0, ScopeEnumPublisher.publish());\n        System.assertEquals(0, ScopeEnumPublisher.mixed());\n        System.assertEquals(0, ScopeEnumPublisher.qualified());\n        System.assertEquals(1, ScopeEnumPublisher.enumValues());\n        System.assertEquals(0, new ScopeEnumPublisher.Reader().publish());\n    }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n",
+      "ScopeEnumReject": "public class ScopeEnumReject {\n    public enum EventBus { One }\n    public List<Database.SaveResult> run() { return EventBus.publish(new List<SObject>()); }\n    public void statement() { EventBus.publish(new List<SObject>()); }\n    public void mixed() { eVeNtBuS.pUbLiSh(new List<SObject>()); }\n    public class Reader {\n        public void run() { EventBus.publish(new List<SObject>()); }\n    }\n}\n"
+    },
+    "routes": [
+      "named"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeEnumReject.EventBus | Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeEnumReject.EventBus | Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeEnumReject.EventBus | Method does not exist or incorrect signature: void pUbLiSh(List<SObject>) from the type ScopeEnumReject.EventBus",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 7
+      },
+      {
+        "api": "67.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeEnumReject.EventBus | Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeEnumReject.EventBus | Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeEnumReject.EventBus | Method does not exist or incorrect signature: void pUbLiSh(List<SObject>) from the type ScopeEnumReject.EventBus",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 14
+      }
+    ],
+    "compileOnly": true,
+    "restoredFrom": {
+      "table": "enum-org.tsv",
+      "case": "lexical_enum_publish_reject",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    }
+  },
+  {
+    "id": "enum-org_lexical_enum_test_reject",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopeEnumPublisher": "public class ScopeEnumPublisher {\n    public enum EventBus { One }\n    public static Integer publish() { return System.EventBus.publish(new List<SObject>()).size(); }\n    public static Integer mixed() { return sYsTeM.eVeNtBuS.pUbLiSh(new List<SObject>()).size(); }\n    public static Integer qualified() { return System.EventBus.publish(new List<SObject>()).size(); }\n    public static Integer enumValues() { return EventBus.values().size(); }\n    public class Reader {\n        public Integer publish() { return System.EventBus.publish(new List<SObject>()).size(); }\n    }\n}\n",
+      "ScopeEnumTest": "@IsTest private class ScopeEnumTest {\n    private enum EventBus { One }\n    @IsTest static void lexicalEnumPublish() {\n        System.assertEquals(0, System.EventBus.publish(new List<SObject>()).size());\n        System.assertEquals(0, sYsTeM.eVeNtBuS.pUbLiSh(new List<SObject>()).size());\n        System.assertEquals(0, System.EventBus.publish(new List<SObject>()).size());\n        System.assertEquals(1, EventBus.values().size());\n    }\n    @IsTest static void namedAndNestedPublish() {\n        System.assertEquals(0, ScopeEnumPublisher.publish());\n        System.assertEquals(0, ScopeEnumPublisher.mixed());\n        System.assertEquals(0, ScopeEnumPublisher.qualified());\n        System.assertEquals(1, ScopeEnumPublisher.enumValues());\n        System.assertEquals(0, new ScopeEnumPublisher.Reader().publish());\n    }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n",
+      "ScopeEnumTestReject": "@IsTest private class ScopeEnumTestReject {\n    private enum EventBus { One }\n    @IsTest static void lexicalEnumPublish() { EventBus.publish(new List<SObject>()); }\n}\n"
+    },
+    "routes": [
+      "isTest"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeEnumTestReject.EventBus",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 8
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeEnumTestReject.EventBus",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 15
+      }
+    ],
+    "compileOnly": true,
+    "restoredFrom": {
+      "table": "enum-org.tsv",
+      "case": "lexical_enum_test_reject",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    },
+    "testClass": "ScopeEnumTestReject",
+    "expectedTests": 1
+  },
+  {
+    "id": "static-org_inherited_static_success",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopePublisher": "public class ScopePublisher {\n    public List<SObject> records = new List<SObject>();\n    public List<Database.SaveResult> publish() { return EventBus.publish(this.records); }\n    public List<Database.SaveResult> mixedCase() { return eVeNtBuS.PuBlIsH(this.records); }\n    public List<Database.SaveResult> qualified() { return new ScopeStore.EventBus().publish(this.records); }\n}\n",
+      "ScopePublisherTest": "@IsTest\nprivate class ScopePublisherTest {\n    @IsTest static void unrelatedSystemReceiver() { System.assertEquals(0, new ScopePublisher().publish().size()); }\n    @IsTest static void unrelatedMixedCaseReceiver() { System.assertEquals(0, new ScopePublisher().mixedCase().size()); }\n    @IsTest static void qualifiedInnerInstance() { System.assertEquals(null, new ScopePublisher().qualified()); }\n    @IsTest static void lexicalInnerInstance() { System.assertEquals(null, new ScopeStore.Reader().lexical()); }\n    @IsTest static void lexicalExplicitSystem() { System.assertEquals(0, new ScopeStore.Reader().explicitSystem().size()); }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n",
+      "ScopeBusBase": "public virtual class ScopeBusBase { public static String publish() { return 'ok'; } }\n",
+      "ScopeStaticOuter": "public class ScopeStaticOuter {\n public class EventBus extends ScopeBusBase {}\n public class Reader { public String run() { return EventBus.publish(); } }\n}\n"
+    },
+    "routes": [
+      "named"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "named",
+        "compiled": true,
+        "success": false,
+        "outcome": "Pass",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 2
+      },
+      {
+        "api": "67.0",
+        "route": "named",
+        "compiled": true,
+        "success": false,
+        "outcome": "Pass",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 4
+      }
+    ],
+    "compileOnly": true,
+    "restoredFrom": {
+      "table": "static-org.tsv",
+      "case": "inherited_static_success",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    }
+  },
+  {
+    "id": "static-org_lexical_missing_reject",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopePublisher": "public class ScopePublisher {\n    public List<SObject> records = new List<SObject>();\n    public List<Database.SaveResult> publish() { return EventBus.publish(this.records); }\n    public List<Database.SaveResult> mixedCase() { return eVeNtBuS.PuBlIsH(this.records); }\n    public List<Database.SaveResult> qualified() { return new ScopeStore.EventBus().publish(this.records); }\n}\n",
+      "ScopePublisherTest": "@IsTest\nprivate class ScopePublisherTest {\n    @IsTest static void unrelatedSystemReceiver() { System.assertEquals(0, new ScopePublisher().publish().size()); }\n    @IsTest static void unrelatedMixedCaseReceiver() { System.assertEquals(0, new ScopePublisher().mixedCase().size()); }\n    @IsTest static void qualifiedInnerInstance() { System.assertEquals(null, new ScopePublisher().qualified()); }\n    @IsTest static void lexicalInnerInstance() { System.assertEquals(null, new ScopeStore.Reader().lexical()); }\n    @IsTest static void lexicalExplicitSystem() { System.assertEquals(0, new ScopeStore.Reader().explicitSystem().size()); }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n",
+      "ScopeMissingReject": "public class ScopeMissingReject {\n public class EventBus {}\n public class Reader { public List<Database.SaveResult> run() { return EventBus.publish(new List<SObject>()); } }\n}\n"
+    },
+    "routes": [
+      "named"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeMissingReject.EventBus",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 3
+      },
+      {
+        "api": "67.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void publish(List<SObject>) from the type ScopeMissingReject.EventBus",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 5
+      }
+    ],
+    "compileOnly": true,
+    "restoredFrom": {
+      "table": "static-org.tsv",
+      "case": "lexical_missing_reject",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    }
+  },
+  {
+    "id": "review-org_inherited_static_reject",
+    "shape": "restored_scope",
+    "classes": {
+      "ScopePublisher": "public class ScopePublisher {\n    public List<SObject> records = new List<SObject>();\n    public List<Database.SaveResult> publish() { return EventBus.publish(this.records); }\n    public List<Database.SaveResult> mixedCase() { return eVeNtBuS.PuBlIsH(this.records); }\n    public List<Database.SaveResult> qualified() { return new ScopeStore.EventBus().publish(this.records); }\n}\n",
+      "ScopePublisherTest": "@IsTest\nprivate class ScopePublisherTest {\n    @IsTest static void unrelatedSystemReceiver() { System.assertEquals(0, new ScopePublisher().publish().size()); }\n    @IsTest static void unrelatedMixedCaseReceiver() { System.assertEquals(0, new ScopePublisher().mixedCase().size()); }\n    @IsTest static void qualifiedInnerInstance() { System.assertEquals(null, new ScopePublisher().qualified()); }\n    @IsTest static void lexicalInnerInstance() { System.assertEquals(null, new ScopeStore.Reader().lexical()); }\n    @IsTest static void lexicalExplicitSystem() { System.assertEquals(0, new ScopeStore.Reader().explicitSystem().size()); }\n}\n",
+      "ScopeStore": "public virtual class ScopeStore {\n    public virtual class EventBus {\n        public virtual List<Database.SaveResult> publish(List<SObject> events) { return null; }\n    }\n    public class Hidden {}\n    public class Reader {\n        public List<Database.SaveResult> lexical() { return new EventBus().publish(new List<SObject>()); }\n        public List<Database.SaveResult> explicitSystem() { return System.EventBus.publish(new List<SObject>()); }\n    }\n}\n",
+      "ScopeInheritedReject": "public class ScopeInheritedReject extends ScopeStore { public List<Database.SaveResult> run() { return EventBus.publish(new List<SObject>()); } }\n"
+    },
+    "routes": [
+      "named"
+    ],
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeStore.EventBus.publish(List<SObject>)",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 2
+      },
+      {
+        "api": "67.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Non static method cannot be referenced from a static context: List<Database.SaveResult> ScopeStore.EventBus.publish(List<SObject>)",
+        "command": "sf project deploy start",
+        "capturedAt": "2026-10-22",
+        "restoredRow": 4
+      }
+    ],
+    "compileOnly": true,
+    "restoredFrom": {
+      "table": "review-org.tsv",
+      "case": "inherited_static_reject",
+      "capturedAt": "2026-10-22",
+      "note": "Previously captured owned synthetic source; source API and request API matched. Fresh one-day unmanaged Developer scratch org; source deploy, anonymous execution and synchronous test runner. Org deletion was verified after capture."
+    }
+  }
+]

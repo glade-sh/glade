@@ -105,7 +105,7 @@ Boolean taskDenied = false;
 try {
 	Database.query('SELECT Id, Who.Type FROM Task WITH USER_MODE');
 } catch (QueryException qe) {
-	taskDenied = qe.getMessage().contains('Task') && qe.getMessage().contains('USER_MODE');
+	taskDenied = qe.getMessage() == 'sObject type \'Task\' is not supported. If you are attempting to use a custom object, be sure to append the \'__c\' after the entity name. Please reference your WSDL or the describe call for the appropriate names.';
 }
 System.assertEquals(true, taskDenied);
 `

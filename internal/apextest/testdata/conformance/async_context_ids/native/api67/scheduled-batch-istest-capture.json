@@ -1,0 +1,12 @@
+{
+  "api": "67.0",
+  "deploy_id": "0Afhv000000a01VCAQ",
+  "tests": [
+    {
+      "MethodName": "observeScheduledBatch",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBS|{}",
+      "StackTrace": "Class.AsyncIdentityProbeTest.observeScheduledBatch: line 10, column 1"
+    }
+  ]
+}

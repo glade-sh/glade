@@ -1,0 +1,7 @@
+case	setup	variants
+missing	Account with nonexistent developer name	single default/true/false; list default/true/false
+inactive	Account with inactive process name	single default/true/false; list default/true/false
+no_applicable	Contact with no process and no name	single default/true/false; list default/true/false
+pending	Account already submitted to active process	single default/true/false; list default/true/false
+null_id	Request with no object ID	single default/true/false; list default/true/false
+success	Account submitted to active process	result and ProcessInstance/ProcessInstanceStep/ProcessInstanceWorkitem

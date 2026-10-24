@@ -83,6 +83,10 @@ an error. A skipped file does not disable other automation files.
 
 `glade doctor --json` uses its own schema, currently `1.1`, including
 `parserOK`; do not infer its shape from the priority-command envelope.
+Its optional `orgSetup` array contains undeclared feature or permission-set
+advice with `kind`, `feature` or `names`, `reason`, evidence `files`, and suggested
+`yaml`. It is omitted when empty. This advice does not change runtime setup or
+the command's exit code. See [configuration suggestions](CONFIG.md#undeclared-setup-suggestions).
 
 ## Diagnostics
 

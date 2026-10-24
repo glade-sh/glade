@@ -1,0 +1,3 @@
+api	context	id	outcome	value
+62.0	anonymous	result	observation	"{""interface"": ""System.TypeException: System.Finalizer cannot be constructed"", ""limits"": ""System.TypeException: Limit cannot be constructed"", ""lookup"": true, ""namespace"": true, ""qualified"": true, ""record"": true, ""string"": true, ""unqualified"": true}"
+62.0	istest	result	observation	"{""interface"": ""System.TypeException: System.Finalizer cannot be constructed"", ""limits"": ""System.TypeException: Limit cannot be constructed"", ""lookup"": true, ""namespace"": true, ""qualified"": true, ""record"": true, ""string"": true, ""unqualified"": true}"

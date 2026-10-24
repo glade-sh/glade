@@ -263,7 +263,8 @@ func (ctx *semaProjectReferencedSchemaContext) allowsFieldInference(objectName s
 		return false
 	}
 	if semaIsExternalManagedPackageAPIName(ctx.namespace, objectName) {
-		return true
+		idx, ok := ctx.schemaObjectIndex(objectName, false)
+		return ok && ctx.objects[idx].Partial
 	}
 	if semaHasAPISuffixFold(objectName, "__mdt") {
 		idx, ok := ctx.schemaObjectIndex(objectName, false)
@@ -969,6 +970,8 @@ func semaSkipProjectReferencedSchemaField(fieldName string) bool {
 	fieldName = strings.TrimSpace(fieldName)
 	return fieldName == "" ||
 		semaHasAPISuffixFold(fieldName, "__r") ||
+		semaHasAPISuffixFold(fieldName, "__pc") ||
+		semaHasAPISuffixFold(fieldName, "__pr") ||
 		semaProjectReferencedCommonRelationshipName(fieldName) ||
 		strings.EqualFold(fieldName, "class") ||
 		strings.EqualFold(fieldName, "SObjectType") ||

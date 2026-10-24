@@ -1,0 +1,37 @@
+api	route	case	accepted	observation
+62.0	anonymous	date_now	false	Illegal assignment from Datetime to Date
+62.0	anonymous	date_today	true	compiled and executed
+62.0	anonymous	date_null	true	compiled and executed
+62.0	anonymous	list_insert	true	compiled and executed
+62.0	anonymous	helper_insert	true	compiled and executed
+62.0	anonymous	scalar_result	false	Illegal assignment from List<Database.SaveResult> to Database.SaveResult
+62.0	named	date_today	true	compiled
+62.0	named	date_null	true	compiled
+62.0	named	list_insert	true	compiled
+62.0	named	helper_insert	true	compiled
+62.0	named	date_now	false	Illegal assignment from Datetime to Date
+62.0	named	scalar_result	false	Illegal assignment from List<Database.SaveResult> to Database.SaveResult
+62.0	istest	date_today	true	compiled and test passed
+62.0	istest	date_null	true	compiled and test passed
+62.0	istest	list_insert	true	compiled and test passed
+62.0	istest	helper_insert	true	compiled and test passed
+62.0	istest	date_now	false	Illegal assignment from Datetime to Date
+62.0	istest	scalar_result	false	Illegal assignment from List<Database.SaveResult> to Database.SaveResult
+67.0	anonymous	date_now	false	Illegal assignment from Datetime to Date
+67.0	anonymous	date_today	true	compiled and executed
+67.0	anonymous	date_null	true	compiled and executed
+67.0	anonymous	list_insert	true	compiled and executed
+67.0	anonymous	helper_insert	true	compiled and executed
+67.0	anonymous	scalar_result	false	Illegal assignment from List<Database.SaveResult> to Database.SaveResult
+67.0	named	date_today	true	compiled
+67.0	named	date_null	true	compiled
+67.0	named	list_insert	true	compiled
+67.0	named	helper_insert	true	compiled
+67.0	named	date_now	false	Illegal assignment from Datetime to Date
+67.0	named	scalar_result	false	Illegal assignment from List<Database.SaveResult> to Database.SaveResult
+67.0	istest	date_today	true	compiled and test passed
+67.0	istest	date_null	true	compiled and test passed
+67.0	istest	list_insert	true	compiled and test passed
+67.0	istest	helper_insert	true	compiled and test passed
+67.0	istest	date_now	false	Illegal assignment from Datetime to Date
+67.0	istest	scalar_result	false	Illegal assignment from List<Database.SaveResult> to Database.SaveResult

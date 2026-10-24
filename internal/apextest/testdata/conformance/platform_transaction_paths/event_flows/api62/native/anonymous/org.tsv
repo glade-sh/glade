@@ -1,0 +1,8 @@
+id	group	route	status	value
+P01	event_flows	anonymous	runtime	{"after":0,"before":0,"exception":null,"published":true}
+P02	event_flows	anonymous	runtime	{"before":0,"exception":"System.TypeException","published":true}
+P03	event_flows	anonymous	runtime	{"before":0,"exception":"System.TypeException","published":true}
+P04	event_flows	anonymous	runtime	{"before":0,"exception":"System.TypeException","published":true}
+P05	event_flows	anonymous	runtime	{"before":0,"exception":"System.TypeException","published":true}
+P06	event_flows	anonymous	runtime	{"before":0,"exception":"System.TypeException"}
+P07	event_flows	anonymous	runtime	{"exception":"System.FinalException","message":"Method only allowed during testing","uncaught":true}

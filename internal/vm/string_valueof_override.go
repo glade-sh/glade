@@ -9,6 +9,9 @@ import (
 // Keep this value-returning route separate from concatenation/format display,
 // whose null-override behavior has not been captured.
 func (vm *VM) stringValueOfOverride(value Value, result *Result) (Value, bool, error) {
+	if text, ok := originalIDDisplayText(value); ok {
+		return String(text), true, nil
+	}
 	if value.Kind != ValueObject || isStubProxy(value) || vm.isSubclass(value.Type, "Exception") {
 		return Null, false, nil
 	}

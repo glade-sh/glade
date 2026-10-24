@@ -1,0 +1,6 @@
+id	shape
+K01	constant to variable to record field
+K02	constant directly to record field
+K03	number constant to variable to record field
+K04	variable Add constant
+K05	number constant directly to record field

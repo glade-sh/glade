@@ -1,0 +1,85 @@
+api	route	case	html
+67.0	Direct	plain	12,345.625|&lt;em&gt;Blue &amp; green&lt;/em&gt;|12,345.625
+67.0	Direct	integer	 12,346
+67.0	Direct	decimal	 12,345.62
+67.0	Direct	negative	- 12,345.62
+67.0	Direct	zero	 000,000.00
+67.0	Direct	tie	2
+67.0	Direct	null	abc
+67.0	Direct	missing	&lt;em&gt;Blue &amp; green&lt;/em&gt;|{2}
+67.0	Direct	quoted	{0} '&lt;em&gt;Blue &amp; green&lt;/em&gt;'
+67.0	Direct	date	09.02.2024
+67.0	Direct	datetime	2024-02-09 17:06:03
+67.0	Direct	raw	&#60;b&#62;<em>Blue & green</em>&#60;/b&#62;
+67.0	Custom	plain	12,345.625|&lt;em&gt;Blue &amp; green&lt;/em&gt;|12,345.625
+67.0	Custom	integer	 12,346
+67.0	Custom	decimal	 12,345.62
+67.0	Custom	negative	- 12,345.62
+67.0	Custom	zero	 000,000.00
+67.0	Custom	tie	2
+67.0	Custom	null	abc
+67.0	Custom	missing	&lt;em&gt;Blue &amp; green&lt;/em&gt;|{2}
+67.0	Custom	quoted	{0} '&lt;em&gt;Blue &amp; green&lt;/em&gt;'
+67.0	Custom	date	09.02.2024
+67.0	Custom	datetime	2024-02-09 17:06:03
+67.0	Custom	raw	&#60;b&#62;<em>Blue & green</em>&#60;/b&#62;
+67.0	Include	plain	12,345.625|&lt;em&gt;Blue &amp; green&lt;/em&gt;|12,345.625
+67.0	Include	integer	 12,346
+67.0	Include	decimal	 12,345.62
+67.0	Include	negative	- 12,345.62
+67.0	Include	zero	 000,000.00
+67.0	Include	tie	2
+67.0	Include	null	abc
+67.0	Include	missing	&lt;em&gt;Blue &amp; green&lt;/em&gt;|{2}
+67.0	Include	quoted	{0} '&lt;em&gt;Blue &amp; green&lt;/em&gt;'
+67.0	Include	date	09.02.2024
+67.0	Include	datetime	2024-02-09 17:06:03
+67.0	Include	raw	&#60;b&#62;<em>Blue & green</em>&#60;/b&#62;
+67.0	Repeat	plain	12,345.625|&lt;em&gt;Blue &amp; green&lt;/em&gt;|12,345.625
+67.0	Repeat	integer	 12,346
+67.0	Repeat	decimal	 12,345.62
+67.0	Repeat	negative	- 12,345.62
+67.0	Repeat	zero	 000,000.00
+67.0	Repeat	tie	2
+67.0	Repeat	null	abc
+67.0	Repeat	missing	&lt;em&gt;Blue &amp; green&lt;/em&gt;|{2}
+67.0	Repeat	quoted	{0} '&lt;em&gt;Blue &amp; green&lt;/em&gt;'
+67.0	Repeat	date	09.02.2024
+67.0	Repeat	datetime	2024-02-09 17:06:03
+67.0	Repeat	raw	&#60;b&#62;<em>Blue & green</em>&#60;/b&#62;
+67.0	DataTable	plain	12,345.625|&lt;em&gt;Blue &amp; green&lt;/em&gt;|12,345.625
+67.0	DataTable	integer	 12,346
+67.0	DataTable	decimal	 12,345.62
+67.0	DataTable	negative	- 12,345.62
+67.0	DataTable	zero	 000,000.00
+67.0	DataTable	tie	2
+67.0	DataTable	null	abc
+67.0	DataTable	missing	&lt;em&gt;Blue &amp; green&lt;/em&gt;|{2}
+67.0	DataTable	quoted	{0} '&lt;em&gt;Blue &amp; green&lt;/em&gt;'
+67.0	DataTable	date	09.02.2024
+67.0	DataTable	datetime	2024-02-09 17:06:03
+67.0	DataTable	raw	&#60;b&#62;<em>Blue & green</em>&#60;/b&#62;
+67.0	PageBlockTable	plain	12,345.625|&lt;em&gt;Blue &amp; green&lt;/em&gt;|12,345.625
+67.0	PageBlockTable	integer	 12,346
+67.0	PageBlockTable	decimal	 12,345.62
+67.0	PageBlockTable	negative	- 12,345.62
+67.0	PageBlockTable	zero	 000,000.00
+67.0	PageBlockTable	tie	2
+67.0	PageBlockTable	null	abc
+67.0	PageBlockTable	missing	&lt;em&gt;Blue &amp; green&lt;/em&gt;|{2}
+67.0	PageBlockTable	quoted	{0} '&lt;em&gt;Blue &amp; green&lt;/em&gt;'
+67.0	PageBlockTable	date	09.02.2024
+67.0	PageBlockTable	datetime	2024-02-09 17:06:03
+67.0	PageBlockTable	raw	&#60;b&#62;<em>Blue & green</em>&#60;/b&#62;
+67.0	DataList	plain	12,345.625|&lt;em&gt;Blue &amp; green&lt;/em&gt;|12,345.625
+67.0	DataList	integer	 12,346
+67.0	DataList	decimal	 12,345.62
+67.0	DataList	negative	- 12,345.62
+67.0	DataList	zero	 000,000.00
+67.0	DataList	tie	2
+67.0	DataList	null	abc
+67.0	DataList	missing	&lt;em&gt;Blue &amp; green&lt;/em&gt;|{2}
+67.0	DataList	quoted	{0} '&lt;em&gt;Blue &amp; green&lt;/em&gt;'
+67.0	DataList	date	09.02.2024
+67.0	DataList	datetime	2024-02-09 17:06:03
+67.0	DataList	raw	&#60;b&#62;<em>Blue & green</em>&#60;/b&#62;

@@ -688,7 +688,7 @@ func TestLoadReportsMissingLocalSFDXPackageDependency(t *testing.T) {
 	}
 	diagnostic := p.DependencyDiagnostics[0]
 	if diagnostic.Namespace != "MissingPkg" || diagnostic.Status != "missing" || diagnostic.Code != "dependency_missing" ||
-		diagnostic.Message != "declared SFDX package dependency has no configured source or artifact" {
+		diagnostic.Message != `declared SFDX package dependency "MissingPkg" has no configured source or artifact; add the directory that holds its sfdx-project.json (or a parent of it) to glade.yml, for example project.dependencyPaths: ["../path/to/MissingPkg"], or project.managedPackageDependencies for a namespaced package` {
 		t.Fatalf("diagnostic = %#v", diagnostic)
 	}
 }

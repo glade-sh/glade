@@ -1,0 +1,9 @@
+source_api	method	observation
+62.0	inheritedField	{"value":"Account:Note:Contact:JWT"}
+62.0	inheritedLocal	{"value":"Account:Note:Contact:JWT"}
+62.0	nested	{"value":"Account:Note:Contact:JWT"}
+62.0	topLevel	{"value":"Account:Note:JWT:Account:Note:JWT"}
+67.0	inheritedField	{"value":"Account:Note:Contact:JWT"}
+67.0	inheritedLocal	{"value":"Account:Note:Contact:JWT"}
+67.0	nested	{"value":"Account:Note:Contact:JWT"}
+67.0	topLevel	{"value":"Account:Note:JWT:Account:Note:JWT"}

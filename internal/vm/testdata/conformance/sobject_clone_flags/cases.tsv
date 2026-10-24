@@ -1,0 +1,74 @@
+case	shape
+source	populated fields
+single_default	populated fields
+list_default	populated fields
+single_false_false_false_false	populated fields
+single_false_false_false_true	populated fields
+list_false_false_false	populated fields
+single_false_false_true_false	populated fields
+single_false_false_true_true	populated fields
+list_false_false_true	populated fields
+single_false_true_false_false	populated fields
+single_false_true_false_true	populated fields
+list_false_true_false	populated fields
+single_false_true_true_false	populated fields
+single_false_true_true_true	populated fields
+list_false_true_true	populated fields
+single_true_false_false_false	populated fields
+single_true_false_false_true	populated fields
+list_true_false_false	populated fields
+single_true_false_true_false	populated fields
+single_true_false_true_true	populated fields
+list_true_false_true	populated fields
+single_true_true_false_false	populated fields
+single_true_true_false_true	populated fields
+list_true_true_false	populated fields
+single_true_true_true_false	populated fields
+single_true_true_true_true	populated fields
+list_true_true_true	populated fields
+insert_default	DML outcome or stored value
+insert_list	DML outcome or stored value
+insert_wrapper_double_clone	DML outcome or stored value
+insert_preserved	DML outcome or stored value
+insert_json	DML outcome or stored value
+update_preserved	DML outcome or stored value
+update_json	DML outcome or stored value
+insert_json_CreatedById	DML outcome or stored value
+update_json_CreatedById	DML outcome or stored value
+insert_json_CreatedDate	DML outcome or stored value
+update_json_CreatedDate	DML outcome or stored value
+insert_json_LastModifiedById	DML outcome or stored value
+update_json_LastModifiedById	DML outcome or stored value
+insert_json_LastModifiedDate	DML outcome or stored value
+update_json_LastModifiedDate	DML outcome or stored value
+insert_json_SystemModstamp	DML outcome or stored value
+update_json_SystemModstamp	DML outcome or stored value
+insert_json_IsDeleted	DML outcome or stored value
+update_json_IsDeleted	DML outcome or stored value
+insert_json_Sequence__c	DML outcome or stored value
+update_json_Sequence__c	DML outcome or stored value
+insert_historical_CreatedDate	DML outcome or stored value
+insert_historical_stored_CreatedDate	DML outcome or stored value
+update_historical_CreatedDate	DML outcome or stored value
+update_historical_stored_CreatedDate	DML outcome or stored value
+insert_historical_LastModifiedDate	DML outcome or stored value
+insert_historical_stored_LastModifiedDate	DML outcome or stored value
+update_historical_LastModifiedDate	DML outcome or stored value
+update_historical_stored_LastModifiedDate	DML outcome or stored value
+insert_historical_SystemModstamp	DML outcome or stored value
+insert_historical_stored_SystemModstamp	DML outcome or stored value
+update_historical_SystemModstamp	DML outcome or stored value
+update_historical_stored_SystemModstamp	DML outcome or stored value
+insert_historical_IsDeleted	DML outcome or stored value
+insert_historical_stored_IsDeleted	DML outcome or stored value
+update_historical_IsDeleted	DML outcome or stored value
+update_historical_stored_IsDeleted	DML outcome or stored value
+insert_formula_false	DML outcome or stored value
+update_formula_false	DML outcome or stored value
+insert_formula_true	DML outcome or stored value
+update_formula_true	DML outcome or stored value
+insert_user_default	DML outcome or stored value
+insert_user_list	DML outcome or stored value
+insert_user_preserved	DML outcome or stored value
+update_user_preserved	DML outcome or stored value
+source_after	populated fields

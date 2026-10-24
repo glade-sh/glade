@@ -1,0 +1,15 @@
+id	value
+after_after_http	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+after_after_soap	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+before_after_http	ok
+before_after_soap	ok
+before_inside_http	ok
+before_inside_soap	ok
+both_after_http	ok
+both_after_soap	ok
+clean_after_http	ok
+clean_after_soap	ok
+inside_after_http	ok
+inside_after_soap	ok
+inside_inside_http	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out
+inside_inside_soap	System.CalloutException|You have uncommitted work pending. Please commit or rollback before calling out

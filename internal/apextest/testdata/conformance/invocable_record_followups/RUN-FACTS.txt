@@ -1,5 +1,5 @@
 api=62.0
-transport=intentional result-bearing assertion; not native test-pass credit
+transport=System.assert
 deployment_success=true
 captured_utc=2026-10-19T15:35:12.727675+00:00
 source_sha256:62.0:config/project-scratch-def.json=da00c3e895cebd5623003ccd8617191058e23ef02233a93c42a6745e1155a702

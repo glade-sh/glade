@@ -1,0 +1,4 @@
+case	coverage
+opportunity/lead/account	Complete ordered values, labels, active/default flags and restriction through static tokens, global describe and describeSObjects
+boundary	Non-picklist Account.Name returns an empty list
+rejection	Absent dynamic field token is null and dereference throws

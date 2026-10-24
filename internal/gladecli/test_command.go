@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -34,9 +35,19 @@ import (
 	"github.com/glade-sh/glade/internal/watch"
 )
 
-func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Writer) (testreport.Run, error) {
-	if err := ctx.Err(); err != nil {
-		return testreport.Run{}, err
+func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Writer) (finalRun testreport.Run, runErr error) {
+	// Control commands do not start a run or produce terminal test reports.
+	controlCommand := hasUIFlag(args)
+	if len(args) > 0 {
+		controlCommand = controlCommand || isHelpArg(args[0]) || args[0] == "clear-cache" || args[0] == "daemon" || args[0] == "serve"
+	}
+	if len(args) > 1 && (args[0] == "changed" || args[0] == "failed") {
+		controlCommand = controlCommand || isHelpArg(args[1])
+	}
+	if controlCommand {
+		if err := ctx.Err(); err != nil {
+			return testreport.Run{}, err
+		}
 	}
 	if len(args) > 0 && isHelpArg(args[0]) {
 		_ = writeTestHelp(w)
@@ -147,6 +158,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	cpuProfilePath := ""
 	memProfilePath := ""
 	perfJSONPath := ""
+	impactJSONPath := ""
 	tracePath := ""
 	servicesPath := ""
 	debounce := watch.DefaultDebounce
@@ -179,6 +191,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		String("cpu-profile", "").
 		String("mem-profile", "").
 		String("perf-json", "").
+		String("impact-json", "").
 		String("trace", "").
 		String("services", "").
 		String("junit", "").
@@ -317,6 +330,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	cpuProfilePath = parsed.String("cpu-profile")
 	memProfilePath = parsed.String("mem-profile")
 	perfJSONPath = parsed.String("perf-json")
+	impactJSONPath = strings.TrimSpace(parsed.String("impact-json"))
 	tracePath = strings.TrimSpace(parsed.String("trace"))
 	servicesPath = strings.TrimSpace(parsed.String("services"))
 	junitPath = parsed.String("junit")
@@ -374,6 +388,41 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 		backend = parsedBackend
 	}
+	// Own startup cancellation at the command boundary, including discovery,
+	// read-only loading and connection setup. Watch runners own their terminal
+	// event once delegated, so they must not be finalized a second time here.
+	outputHandled := false
+	var serverStopErr error
+	defer func() {
+		if serverStopErr != nil {
+			runErr = errors.Join(runErr, serverStopErr)
+		}
+		if wizard {
+			return
+		}
+		if outputHandled {
+			return
+		}
+		if debug {
+			// Stdout carries DAP frames, including while a stopped run exits.
+			runErr = reportTestStartupStop(ctx, progressW, finalRun, runErr, "console", false)
+			return
+		}
+		runErr = reportTestStartupStop(ctx, w, finalRun, runErr, format, watchMode)
+	}()
+	writeResult := func(result testreport.Run, reason string) (testreport.Run, error) {
+		// Commit the report and command outcome together before writing. A
+		// cancellation during output cannot revise the status already published.
+		var stopErr error
+		if reason != "" && serverStopErr == nil && result.Summary().OK() {
+			stopErr = ctx.Err()
+		}
+		outputHandled = true
+		return result, errors.Join(stopErr, writeTestStoppedResult(w, result, format, junitPath, reason))
+	}
+	if err := ctx.Err(); err != nil {
+		return testreport.Run{}, err
+	}
 	if readOnly {
 		switch {
 		case wizard:
@@ -406,11 +455,28 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			cliArtifactDestination{Name: "--cpu-profile", Path: cpuProfilePath},
 			cliArtifactDestination{Name: "--mem-profile", Path: memProfilePath},
 			cliArtifactDestination{Name: "--perf-json", Path: perfJSONPath},
+			cliArtifactDestination{Name: "--impact-json", Path: impactJSONPath},
 			cliArtifactDestination{Name: "--trace", Path: tracePath},
 			cliArtifactDestination{Name: "--write-class-shards", Path: writeClassShardsDir},
 		); err != nil {
 			return testreport.Run{}, err
 		}
+	}
+	if impactJSONPath != "" {
+		for _, mode := range []struct {
+			enabled bool
+			name    string
+		}{
+			{connectMode, "--connect"}, {daemonMode, "--daemon"},
+			{watchOnce, "--watch-once"}, {watchMode, "--watch"},
+			{wizard, "--wizard"}, {debug, "--debug"},
+			{lastFailed, "--last-failed"}, {writeClassShardsDir != "", "--write-class-shards"},
+		} {
+			if mode.enabled {
+				return testreport.Run{}, fmt.Errorf("--impact-json cannot be combined with %s", mode.name)
+			}
+		}
+		noServe = true
 	}
 	perfEnabled := strings.TrimSpace(perfJSONPath) != ""
 	if perfEnabled {
@@ -474,6 +540,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	}
 	if err := validateDistinctCLIArtifactDestinations(
 		cliArtifactDestination{Name: "--perf-json", Path: strings.TrimSpace(perfJSONPath)},
+		cliArtifactDestination{Name: "--impact-json", Path: impactJSONPath},
 		cliArtifactDestination{Name: "--cpu-profile", Path: strings.TrimSpace(cpuProfilePath)},
 		cliArtifactDestination{Name: "--mem-profile", Path: strings.TrimSpace(memProfilePath)},
 		cliArtifactDestination{Name: "--trace", Path: tracePath},
@@ -503,6 +570,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if classFile != "" && len(selectedClasses) == 0 {
 		for _, output := range []cliArtifactDestination{
 			{Name: "--perf-json", Path: perfJSONPath},
+			{Name: "--impact-json", Path: impactJSONPath},
 			{Name: "--cpu-profile", Path: cpuProfilePath},
 			{Name: "--mem-profile", Path: memProfilePath},
 		} {
@@ -532,10 +600,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 				return result, err
 			}
 		}
-		if format == "json" {
-			return result, writeTestJSONEnvelope(w, result, junitPath)
-		}
-		return result, testreport.WriteConsole(w, result)
+		return writeResult(result, testRunStopReason(ctx, result, nil))
 	}
 	stopProfile, err := startCLIProfiler(cpuProfilePath, memProfilePath)
 	if err != nil {
@@ -622,30 +687,44 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		perfExecution.ExecutionMode = "server"
 		request := testdaemon.NewRunRequestV1(testOpts, changedSince, effectiveShardCount, shardIndex, writeClassShardsDir != "")
 		if response, used, err := tryTestServerRequest(ctx, root, connectMode, request); used || err != nil {
-			if err != nil {
+			stoppedResponse := response.Op == testdaemon.OpError &&
+				(response.Error == context.Canceled.Error() || response.Error == context.DeadlineExceeded.Error())
+			if stoppedResponse {
+				// Keep the remote stop cause even if a later artifact write fails.
+				// The caller's context can still be live when the server stops.
+				serverStopErr = context.Canceled
+				if response.Error == context.DeadlineExceeded.Error() {
+					serverStopErr = context.DeadlineExceeded
+				}
+				err = nil
+			}
+			if err != nil && !stoppedResponse {
 				return testreport.Run{}, err
 			}
-			if !response.OK {
+			if !response.OK && !stoppedResponse {
 				message := strings.TrimSpace(response.Error)
 				if message == "" {
 					message = "test server run failed"
 				}
 				return testreport.Run{}, errors.New(message)
 			}
-			if writeClassShardsDir != "" && (response.Run == nil || response.Run.Summary().Total == 0) {
+			if !stoppedResponse && writeClassShardsDir != "" && (response.Run == nil || response.Run.Summary().Total == 0) {
 				if response.ShardPlan == nil {
 					return testreport.Run{}, errors.New("test server did not return a class shard plan")
 				}
 				return testreport.Run{}, writeCLIClassShardPlan(writeClassShardsDir, *response.ShardPlan, effectiveShardCount)
 			}
-			if response.Run == nil {
+			if response.Run == nil && !stoppedResponse {
 				message := strings.TrimSpace(response.Error)
 				if message == "" {
 					message = "test server run failed"
 				}
 				return testreport.Run{}, errors.New(message)
 			}
-			result := *response.Run
+			var result testreport.Run
+			if response.Run != nil {
+				result = *response.Run
+			}
 			if err := maybeWriteCLIDurationHistory(durationHistoryWritePath, result, durationHistory); err != nil {
 				return result, err
 			}
@@ -664,12 +743,11 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 					return result, err
 				}
 			}
-			switch format {
-			case "json":
-				return result, writeTestJSONEnvelope(w, result, junitPath)
-			default:
-				return result, testreport.WriteConsole(w, result)
+			reason := testRunStopReason(ctx, result, serverStopErr)
+			if stoppedResponse {
+				reason = response.Error
 			}
+			return writeResult(result, reason)
 		}
 	}
 
@@ -681,6 +759,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 		if watchMode {
 			perfExecution.ExecutionMode = "watch"
+			outputHandled = true
 			return runWatchTestsDaemon(ctx, root, daemon, testOpts, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
 		}
 		request := testdaemon.NewRunRequestV1(testOpts, changedSince, effectiveShardCount, shardIndex, writeClassShardsDir != "")
@@ -732,12 +811,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 				return result, err
 			}
 		}
-		switch format {
-		case "json":
-			return result, writeTestJSONEnvelope(w, result, junitPath)
-		default:
-			return result, testreport.WriteConsole(w, result)
-		}
+		return writeResult(result, testRunStopReason(ctx, result, nil))
 	}
 	if perfEnabled {
 		perfRunStarted = time.Now()
@@ -773,9 +847,11 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	}
 	if watchMode {
 		perfExecution.ExecutionMode = "watch"
+		outputHandled = true
 		return runWatchTests(ctx, root, loadedProject, index, testOpts, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
 	}
 	var result testreport.Run
+	var impactReport apextest.ImpactReport
 	if strings.TrimSpace(changedSince) != "" {
 		var discoverStarted time.Time
 		if perfEnabled {
@@ -816,7 +892,11 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			}
 			testOpts.BuildArtifacts = &buildArtifacts
 			testOpts.SourceDigests = buildArtifacts.SourceDigests
-			result = apextest.RunCasesContext(ctx, index, testOpts, cases)
+			if impactJSONPath != "" {
+				result, impactReport = apextest.RunCasesWithImpactContext(ctx, index, testOpts, cases, &loadedProject)
+			} else {
+				result = apextest.RunCasesContext(ctx, index, testOpts, cases)
+			}
 			if perfEnabled {
 				perfSnapshot = apextest.SnapshotPerfCounters()
 			}
@@ -856,10 +936,22 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			}
 			testOpts.BuildArtifacts = &buildArtifacts
 			testOpts.SourceDigests = buildArtifacts.SourceDigests
-			result = apextest.RunCasesContext(ctx, index, testOpts, cases)
+			if impactJSONPath != "" {
+				result, impactReport = apextest.RunCasesWithImpactContext(ctx, index, testOpts, cases, &loadedProject)
+			} else {
+				result = apextest.RunCasesContext(ctx, index, testOpts, cases)
+			}
 			if perfEnabled {
 				perfSnapshot = apextest.SnapshotPerfCounters()
 			}
+		}
+	}
+	if impactJSONPath != "" {
+		if impactReport.Version == 0 {
+			impactReport = apextest.ImpactReport{Version: 1, SharedInputs: []string{}, Tests: []apextest.TestImpact{}}
+		}
+		if err := writeTestImpactJSON(impactJSONPath, impactReport); err != nil {
+			return result, err
 		}
 	}
 	if progressReporter != nil {
@@ -924,12 +1016,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			return result, err
 		}
 	}
-	switch format {
-	case "json":
-		return result, writeTestJSONEnvelope(w, result, junitPath)
-	default:
-		return result, testreport.WriteConsole(w, result)
-	}
+	return writeResult(result, testRunStopReason(ctx, result, nil))
 }
 
 // testBuildGeneration is one immutable input snapshot for a local one-shot
@@ -1189,15 +1276,96 @@ func preRunPerfSnapshot(phases apextest.PreRunPhaseDurations) apextest.PerfCount
 }
 
 func writeTestJSONEnvelope(w io.Writer, result testreport.Run, junitPath string) error {
+	return writeTestJSONEnvelopeWithStop(w, result, junitPath, testRunStopReason(context.Background(), result, nil))
+}
+
+// A per-test timeout does not stop a run: subsequent tests can still finish.
+// A cancelled case, expired caller context or explicit server stop does.
+func testRunStopReason(ctx context.Context, result testreport.Run, runErr error) string {
+	for _, suite := range result.Suites {
+		for _, testCase := range suite.Cases {
+			if testCase.Reason == testreport.ReasonCancelled {
+				return "cancelled"
+			}
+			if testCase.Reason == testreport.ReasonTimeout && errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				return "deadline exceeded"
+			}
+		}
+	}
+	if err := ctx.Err(); err != nil {
+		return err.Error()
+	}
+	if errors.Is(runErr, context.Canceled) {
+		return context.Canceled.Error()
+	}
+	if errors.Is(runErr, context.DeadlineExceeded) {
+		return context.DeadlineExceeded.Error()
+	}
+	return ""
+}
+
+func reportTestStartupStop(ctx context.Context, w io.Writer, result testreport.Run, runErr error, format string, watchMode bool) error {
+	reason := testRunStopReason(ctx, result, runErr)
+	if reason == "" {
+		return runErr
+	}
+	if stopErr := ctx.Err(); stopErr != nil && !errors.Is(runErr, stopErr) {
+		runErr = errors.Join(runErr, stopErr)
+	}
+	if watchMode {
+		return errors.Join(runErr, writeWatchStoppedEventWithReason(reason, 0, result, w))
+	}
+	// A failed artifact write must not hide completed results or advertise an
+	// artifact that was not produced. Keep the write error alongside the report.
+	return errors.Join(runErr, writeTestStoppedResult(w, result, format, "", reason))
+}
+
+func writeTestRunResult(ctx context.Context, w io.Writer, result testreport.Run, format, junitPath string) error {
+	return writeTestStoppedResult(w, result, format, junitPath, testRunStopReason(ctx, result, nil))
+}
+
+func writeTestStoppedResult(w io.Writer, result testreport.Run, format, junitPath, reason string) error {
+	if format == "json" {
+		return writeTestJSONEnvelopeWithStop(w, result, junitPath, reason)
+	}
+	if err := testreport.WriteConsole(w, result); err != nil {
+		return err
+	}
+	if reason == "" {
+		return nil
+	}
+	completed, cancelled, timedOut := 0, 0, 0
+	for _, suite := range result.Suites {
+		for _, testCase := range suite.Cases {
+			switch testCase.Reason {
+			case testreport.ReasonCancelled:
+				cancelled++
+			case testreport.ReasonTimeout:
+				timedOut++
+			default:
+				completed++
+			}
+		}
+	}
+	_, err := fmt.Fprintf(w, "\nTest run stopped (%s): %d completed, %d cancelled, %d timed out.\n", reason, completed, cancelled, timedOut)
+	return err
+}
+
+func writeTestJSONEnvelopeWithStop(w io.Writer, result testreport.Run, junitPath, stopReason string) error {
 	summary := result.Summary()
 	ok := summary.OK()
+	status := testStatusForSummary(summary)
+	if stopReason != "" {
+		status = "stopped"
+		ok = false
+	}
 	artifacts := []any{}
 	if strings.TrimSpace(junitPath) != "" {
 		artifacts = append(artifacts, map[string]string{"kind": "junit", "path": junitPath})
 	}
 	return writeCLIJSONEnvelope(w, cliJSONEnvelope{
 		Command:     "test",
-		Status:      testStatusForSummary(summary),
+		Status:      status,
 		ExitCode:    exitCodeForOK(ok),
 		Summary:     summary,
 		Tests:       flattenTestCases(result),
@@ -1713,6 +1881,7 @@ Common flags:
   --cpu-profile <path>      Write a CPU profile for this local one-shot run.
   --mem-profile <path>      Write a heap profile after this local one-shot run.
   --perf-json <path>        Write opt-in performance counters for this local one-shot run.
+  --impact-json <path>      Write per-test execution dependencies and shared inputs (local one-shot).
   --trace <path>            Write a Chrome trace JSON document for this run.
   --services <path>         Validate a services.yml virtualization config.
   --progress                Show progress on stderr; uses a progress bar on TTY and line output when redirected.
@@ -1731,7 +1900,8 @@ Common flags:
   --test-timeout <dur>      Per-test wall-clock cap; overrides GLADE_TEST_TIMEOUT (default 10m; 0 disables).
   --runtime-rest-api-version <version>
                            Test org REST context (default 65.0); does not change source API versions.
-  --gc-aggressive           Reduce heap growth on memory-constrained hosts.
+  --gc-aggressive           Follow the soft memory limit instead of heap growth;
+                           unlimited memory falls back to GOGC=50 (default limit 4 GiB).
   --limit-mode <mode>       Use strict or permissive governor limits.
 
 Serve flags:
@@ -2319,6 +2489,59 @@ func applyTestMemoryLimits(aggressive bool) {
 		debug.SetMemoryLimit(4 << 30)
 	}
 	if aggressive {
-		debug.SetGCPercent(50)
+		// Let the soft memory ceiling drive collection instead of heap growth.
+		percent := -1
+		if debug.SetMemoryLimit(-1) == math.MaxInt64 {
+			// Keep heap-growth collection when the soft limit is disabled.
+			percent = 50
+		}
+		debug.SetGCPercent(percent)
 	}
+}
+
+// writeTestOrgSetupHint prints the glade.yml lines that doctor suggests when
+// tests failed and the project source uses org setup that glade.yml does not
+// declare. The failure messages for missing setup are often indirect (for
+// example a required-field error), so the hint is tied to source evidence,
+// not to message text. It stays on stderr so structured stdout is unchanged.
+func writeTestOrgSetupHint(w io.Writer, args []string, result testreport.Run) {
+	if result.Summary().OK() {
+		return
+	}
+	root := "."
+	for i, arg := range args {
+		if (arg == "--project" || arg == "-p") && i+1 < len(args) {
+			root = args[i+1]
+		} else if strings.HasPrefix(arg, "--project=") {
+			root = strings.TrimPrefix(arg, "--project=")
+		}
+	}
+	suggestions := project.SuggestOrgSetup(root)
+	if len(suggestions) == 0 {
+		return
+	}
+	fmt.Fprintln(w, "\nHint: some failures may come from org setup this project uses but glade.yml does not declare.")
+	seen := map[string]bool{}
+	configHeading := false
+	for _, s := range suggestions {
+		if s.YAML == "" {
+			fmt.Fprintln(w, "  "+s.Reason)
+			continue
+		}
+		if s.Kind == "scratchFeature" {
+			continue
+		}
+		if seen[s.YAML] {
+			continue
+		}
+		if !configHeading {
+			fmt.Fprintln(w, "Add to glade.yml:")
+			configHeading = true
+		}
+		seen[s.YAML] = true
+		for _, line := range strings.Split(s.YAML, "\n") {
+			fmt.Fprintln(w, "  "+line)
+		}
+	}
+	fmt.Fprintln(w, "Run glade doctor for the evidence.")
 }

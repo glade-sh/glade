@@ -67,3 +67,43 @@ func TestScratchSettingsQuoteTrigger(t *testing.T) {
 		}
 	}
 }
+
+func TestOrgShapeFeaturesDetectsPersonAccountsFromRetrievedRecordType(t *testing.T) {
+	for name, layout := range map[string]string{
+		"standard":     "force-app/main/default/objects/PersonAccount/recordTypes/Individual.recordType-meta.xml",
+		"nested":       "App Name/force-app/main/default/objects/PersonAccount/recordTypes/Individual.recordType-meta.xml",
+		"mdapi":        "src/objects/PersonAccount/recordTypes/Individual.recordType-meta.xml",
+		"no-sfdx-root": "objects/PersonAccount/recordTypes/Individual.recordType-meta.xml",
+	} {
+		t.Run(name, func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, layout), `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Individual</fullName></RecordType>`)
+			got := OrgShapeFeatures(root)
+			if len(got) != 1 || got[0] != "PersonAccounts" {
+				t.Fatalf("features = %#v, want [PersonAccounts]", got)
+			}
+		})
+	}
+}
+
+func TestOrgShapeFeaturesIgnoresPersonAccountLookalikes(t *testing.T) {
+	root := t.TempDir()
+	// An Account record type, a PersonAccount name elsewhere, and an empty object folder are not evidence.
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/recordTypes/PersonAccount.recordType-meta.xml"), `<RecordType/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/PersonAccount.cls"), `public class PersonAccount {}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/PersonAccount/compactLayouts/L.compactLayout-meta.xml"), `<CompactLayout/>`)
+	writeFile(t, filepath.Join(root, "node_modules/pkg/objects/PersonAccount/recordTypes/X.recordType-meta.xml"), `<RecordType/>`)
+	if got := OrgShapeFeatures(root); len(got) != 0 {
+		t.Fatalf("features = %#v, want none", got)
+	}
+}
+
+func TestOrgShapeFeaturesDedupesDetectedPersonAccounts(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), `{"features": ["PersonAccounts"]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/PersonAccount/recordTypes/I.recordType-meta.xml"), `<RecordType/>`)
+	got := OrgShapeFeatures(root)
+	if len(got) != 1 || got[0] != "PersonAccounts" {
+		t.Fatalf("features = %#v, want one PersonAccounts", got)
+	}
+}

@@ -168,7 +168,7 @@ func l11SalesforceConformance(t *testing.T) {
 	// server port and browser context. Captured layouts are read-only; list view
 	// and preference mutations write only that observation's temporary project.
 	// No environment is mutated. Keep source/group order within each API pass.
-	observe := func(pass int) []l11DOMObservation {
+	observe := func(t *testing.T, pass int) []l11DOMObservation {
 		api := versions[pass]
 		var observations []l11DOMObservation
 		for _, source := range []string{"api" + api[:2], "api67_original"} {
@@ -216,7 +216,7 @@ func l11SalesforceConformance(t *testing.T) {
 	}
 	var observedPasses [][]l11DOMObservation
 	if parallel > 1 {
-		observedPasses = runBrowserPasses(len(versions), parallel, observe)
+		observedPasses = runBrowserPasses(t, versions, parallel, observe)
 	}
 	for pass, api := range versions {
 		compiled := firstCompiled
@@ -226,7 +226,7 @@ func l11SalesforceConformance(t *testing.T) {
 		var observations []l11DOMObservation
 		if parallel == 1 {
 			// Keep compile/observe/report interleaved in the legacy capped mode.
-			observations = observe(pass)
+			observations = observe(t, pass)
 		} else {
 			observations = observedPasses[pass]
 		}

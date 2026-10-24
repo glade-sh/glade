@@ -86,7 +86,7 @@ func (vm *VM) replayDescribeDatabaseDML(op string, args []Value, result *Result)
 		if op != "insert" {
 			return Null, false, nil
 		}
-		if vm.testContext != nil && vm.replayDescribeStandardPublishMode(record) == 0 {
+		if vm.testContext != nil && vm.replayDescribeStandardPublishMode(record) == 0 && vm.namedStandardEventPublishMode(record) == 0 {
 			return Null, false, nil
 		}
 	}
@@ -95,7 +95,8 @@ func (vm *VM) replayDescribeDatabaseDML(op string, args []Value, result *Result)
 		// Database.insert does not expose the publication UUID on the input.
 		// EventBus.publish does; publishing a private copy shares its result
 		// and delivery machinery without mutating the caller's field map.
-		value, err := vm.eventBusPublishWithNamedSource([]Value{cloneValue(record)}, result, false)
+		// Standard events retain the captured named-method source policy.
+		value, err := vm.eventBusPublishWithNamedSource([]Value{cloneValue(record)}, result, standardEvent)
 		return value, true, err
 	case "update":
 		message := "DML operation UPDATE not allowed on " + record.Type
@@ -113,4 +114,40 @@ func (vm *VM) replayDescribeDatabaseDML(op string, args []Value, result *Result)
 		return Null, true, newExceptionError("System.DmlException", "Argument must be of internal sObject type. use deleteAsync() or deleteImmediate() instead")
 	}
 	return Null, false, nil
+}
+
+// Standard-event statement inserts retain their scalar/concrete-list boundary.
+// An erased list of blank events is accepted only by the pre-gate named test
+// contract; publication and partial Database.insert return SaveResults instead.
+func (vm *VM) standardEventStatementInsertBoundary(value Value) error {
+	eventType := runtimeObjectType(value)
+	if value.Kind == ValueList {
+		eventType, _ = collectionElementType(eventType)
+	}
+	if class, ok := vm.lookupClass(eventType); ok && !class.PlatformType {
+		return nil
+	}
+	standardEvent := vm.replayDescribeStandardEvent(eventType)
+	if standardEvent && !value.projectClass {
+		return newExceptionError("System.DmlException", "Argument must be of internal sObject type. use insertAsync() or insertImmediate() instead")
+	}
+	if value.Kind == ValueList {
+		// Schema classification is constant for a type during this statement.
+		// Keep record-specific publication policy checks inside the loop.
+		standardEvents := map[string]bool{eventType: standardEvent}
+		for _, record := range value.List {
+			if record.projectClass {
+				continue
+			}
+			isEvent, checked := standardEvents[record.Type]
+			if !checked {
+				isEvent = vm.replayDescribeStandardEvent(record.Type)
+				standardEvents[record.Type] = isEvent
+			}
+			if isEvent && vm.namedStandardEventPublishMode(record) != 1 {
+				return newExceptionError("System.TypeException", "DML operation INSERT not allowed on "+record.Type)
+			}
+		}
+	}
+	return nil
 }

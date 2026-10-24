@@ -95,6 +95,9 @@ System.assertEquals(0, finished.getNewWorkitemIds().size());
 				t.Fatalf("ProcessInstance.Status = %q, want %s", got, tt.status)
 			}
 			workitem := testOnlyRecord(t, machine.Org, "ProcessInstanceWorkitem")
+			if !workitem.System.IsDeleted {
+				t.Fatal("single-request completed workitem remains visible to SOQL")
+			}
 			if got := strings.ToLower(storageStringField(workitem, "IsDeleted")); got != "true" {
 				t.Fatalf("ProcessInstanceWorkitem.IsDeleted = %q, want true", got)
 			}
@@ -111,7 +114,7 @@ request.setObjectId(account.Id);
 Approval.ProcessResult result = Approval.process(request, false);
 System.assertEquals(false, result.isSuccess());
 System.assertEquals(1, result.getErrors().size());
-System.assert(result.getErrors().get(0).getMessage().contains('ProcessDefinition'));
+System.assertEquals('No applicable approval process was found.', result.getErrors().get(0).getMessage());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -135,7 +138,7 @@ Boolean caught = false;
 try {
 	Approval.process(request, true);
 } catch (DmlException e) {
-	caught = e.getMessage().contains('ProcessDefinition');
+	caught = e.getMessage().contains('NO_APPLICABLE_PROCESS');
 }
 System.assertEquals(true, caught);
 `)

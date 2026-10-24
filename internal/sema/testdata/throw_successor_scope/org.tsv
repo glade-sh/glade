@@ -1,0 +1,13 @@
+api	route	case	outcome	diagnostic	runtime_error
+62.0	anonymous	top_debug	accepted	-	System.IllegalArgumentException: branch
+62.0	anonymous	top_assignment	accepted	-	System.IllegalArgumentException: branch
+62.0	anonymous	try_debug	rejected	Unreachable statement	-
+62.0	anonymous	try_assignment	rejected	Unreachable statement	-
+62.0	anonymous	block_debug	rejected	Unreachable statement	-
+62.0	anonymous	if_debug	rejected	Unreachable statement	-
+67.0	anonymous	top_debug	accepted	-	System.IllegalArgumentException: branch
+67.0	anonymous	top_assignment	accepted	-	System.IllegalArgumentException: branch
+67.0	anonymous	try_debug	rejected	Unreachable statement	-
+67.0	anonymous	try_assignment	rejected	Unreachable statement	-
+67.0	anonymous	block_debug	rejected	Unreachable statement	-
+67.0	anonymous	if_debug	rejected	Unreachable statement	-

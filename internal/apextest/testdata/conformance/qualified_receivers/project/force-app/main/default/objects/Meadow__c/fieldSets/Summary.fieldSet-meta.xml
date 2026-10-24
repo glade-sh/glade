@@ -1,0 +1,1 @@
+<FieldSet xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Summary</fullName><description>Receiver observation</description><displayedFields><field>Flag__c</field><isFieldManaged>false</isFieldManaged><isRequired>false</isRequired></displayedFields><label>Summary</label></FieldSet>

@@ -7,7 +7,7 @@ import (
 )
 
 func flowFirstRecordNullDecisionValue(item storage.WorkflowCriteriaItem, frame *flowFrame) (storage.Value, bool) {
-	if frame == nil || !frame.saveDecisions || !strings.EqualFold(strings.TrimSpace(item.Operation), "isnull") {
+	if frame == nil || !strings.EqualFold(strings.TrimSpace(item.Operation), "isnull") {
 		return storage.Value{}, false
 	}
 	want := trimFormulaLiteral(item.Value)

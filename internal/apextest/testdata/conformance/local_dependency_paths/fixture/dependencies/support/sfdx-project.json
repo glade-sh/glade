@@ -1,0 +1,11 @@
+{
+  "packageDirectories": [
+    {
+      "path": "force-app",
+      "default": true,
+      "package": "LocalBridgeSupport"
+    }
+  ],
+  "namespace": "",
+  "sourceApiVersion": "67.0"
+}

@@ -252,11 +252,15 @@ func runDevTest(ctx context.Context, args []string, w io.Writer, progressW io.Wr
 		testArgs = append(testArgs, "--changed-since", "HEAD")
 	}
 	testArgs = append(testArgs, progressArgs...)
-	result, err := runTest(ctx, testArgs, io.Discard, progressW)
-	if err != nil {
-		return result, err
+	result, runErr := runTest(ctx, testArgs, io.Discard, progressW)
+	stopReason := testRunStopReason(ctx, result, runErr)
+	if runErr != nil && stopReason == "" {
+		return result, runErr
 	}
 	run, err := writeDevTestArtifacts(outRoot, root, result, nil)
+	if stopReason != "" {
+		return result, errors.Join(runErr, err, writeTestStoppedResult(w, result, "console", "", stopReason))
+	}
 	if err != nil {
 		return result, err
 	}
@@ -361,11 +365,15 @@ func runDevWatch(ctx context.Context, root, outRoot string, once bool, opts apex
 	fmt.Fprintln(w, "Press Ctrl-C to stop.")
 	fmt.Fprintln(w)
 	var events bytes.Buffer
-	result, err := runWatchTests(ctx, root, p, index, opts, watch.Config{Root: root}, once, &events)
-	if err != nil {
-		return result, err
+	result, runErr := runWatchTests(ctx, root, p, index, opts, watch.Config{Root: root}, once, &events)
+	stopped := ctx.Err() != nil && errors.Is(runErr, ctx.Err())
+	if runErr != nil && !stopped {
+		return result, runErr
 	}
 	run, err := writeDevTestArtifacts(outRoot, root, result, events.Bytes())
+	if stopped {
+		return result, errors.Join(runErr, err, writeTestStoppedResult(w, result, "console", "", ctx.Err().Error()))
+	}
 	if err != nil {
 		return result, err
 	}
@@ -840,7 +848,7 @@ func runWatchTests(ctx context.Context, root string, p project.Project, index ty
 	requestedBackend := cfg.Backend
 	replacement, err := prepareInitialLocalWatchReplacement(ctx, root, cfg, requestedBackend, watch.CaptureScope)
 	if err != nil {
-		return testreport.Run{}, err
+		return testreport.Run{}, reportTestStartupStop(ctx, w, testreport.Run{}, err, "", true)
 	}
 	index = replacement.index
 	graph := replacement.graph
@@ -865,9 +873,11 @@ func runWatchTests(ctx context.Context, root string, p project.Project, index ty
 	if once {
 		select {
 		case <-ctx.Done():
-			coordinator.Stop()
-			return result, ctx.Err()
+			return stopWatchTests(ctx, coordinator, result, w)
 		case finished := <-runDone:
+			if ctx.Err() != nil {
+				return finishStoppedWatchTests(ctx, finished, w)
+			}
 			result = finished.Result
 			if err := writeJSONLine(w, watch.NewRunFinishedEvent(time.Now().UTC(), finished.RunID, watchSummary(result))); err != nil {
 				return result, err
@@ -877,15 +887,20 @@ func runWatchTests(ctx context.Context, root string, p project.Project, index ty
 					return result, err
 				}
 			}
+			if ctx.Err() != nil {
+				return result, errors.Join(ctx.Err(), writeWatchStoppedEvent(ctx, finished.RunID, result, w))
+			}
 			return result, nil
 		}
 	}
 	for {
 		select {
 		case <-ctx.Done():
-			coordinator.Stop()
-			return result, ctx.Err()
+			return stopWatchTests(ctx, coordinator, result, w)
 		case finished := <-runDone:
+			if ctx.Err() != nil {
+				return finishStoppedWatchTests(ctx, finished, w)
+			}
 			emit, next := coordinator.Complete(finished)
 			if emit {
 				result = finished.Result
@@ -906,11 +921,17 @@ func runWatchTests(ctx context.Context, root string, p project.Project, index ty
 			runDone = coordinator.Done()
 		case err, ok := <-watcher.Errors():
 			if !ok {
+				if ctx.Err() != nil {
+					return stopWatchTests(ctx, coordinator, result, w)
+				}
 				return result, nil
 			}
 			_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), err.Error(), root))
 		case changes, ok := <-watcher.Changes():
 			if !ok {
+				if ctx.Err() != nil {
+					return stopWatchTests(ctx, coordinator, result, w)
+				}
 				return result, nil
 			}
 			if err := writeJSONLine(w, watch.NewChangesEvent(time.Now().UTC(), changes)); err != nil {
@@ -1166,7 +1187,7 @@ func runWatchTestsDaemon(ctx context.Context, root string, daemon *testdaemon.Da
 	requestedBackend := cfg.Backend
 	watcher, cfg, err := prepareInitialDaemonWatch(ctx, daemon, cfg, requestedBackend, watch.CaptureScope)
 	if err != nil {
-		return testreport.Run{}, err
+		return testreport.Run{}, reportTestStartupStop(ctx, w, testreport.Run{}, err, "", true)
 	}
 	defer func() { _ = watcher.Close() }()
 	if err := writeJSONLine(w, watch.NewWatchStartedEvent(time.Now().UTC(), cfg)); err != nil {
@@ -1188,9 +1209,11 @@ func runWatchTestsDaemon(ctx context.Context, root string, daemon *testdaemon.Da
 	if once {
 		select {
 		case <-ctx.Done():
-			coordinator.Stop()
-			return result, ctx.Err()
+			return stopWatchTests(ctx, coordinator, result, w)
 		case finished := <-runDone:
+			if ctx.Err() != nil {
+				return finishStoppedWatchTests(ctx, finished, w)
+			}
 			result = finished.Result
 			if err := writeJSONLine(w, watch.NewRunFinishedEvent(time.Now().UTC(), finished.RunID, watchSummary(result))); err != nil {
 				return result, err
@@ -1200,15 +1223,20 @@ func runWatchTestsDaemon(ctx context.Context, root string, daemon *testdaemon.Da
 					return result, err
 				}
 			}
+			if ctx.Err() != nil {
+				return result, errors.Join(ctx.Err(), writeWatchStoppedEvent(ctx, finished.RunID, result, w))
+			}
 			return result, nil
 		}
 	}
 	for {
 		select {
 		case <-ctx.Done():
-			coordinator.Stop()
-			return result, ctx.Err()
+			return stopWatchTests(ctx, coordinator, result, w)
 		case finished := <-runDone:
+			if ctx.Err() != nil {
+				return finishStoppedWatchTests(ctx, finished, w)
+			}
 			emit, next := coordinator.Complete(finished)
 			if emit {
 				result = finished.Result
@@ -1229,11 +1257,17 @@ func runWatchTestsDaemon(ctx context.Context, root string, daemon *testdaemon.Da
 			runDone = coordinator.Done()
 		case err, ok := <-watcher.Errors():
 			if !ok {
+				if ctx.Err() != nil {
+					return stopWatchTests(ctx, coordinator, result, w)
+				}
 				return result, nil
 			}
 			_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), err.Error(), root))
 		case changes, ok := <-watcher.Changes():
 			if !ok {
+				if ctx.Err() != nil {
+					return stopWatchTests(ctx, coordinator, result, w)
+				}
 				return result, nil
 			}
 			if err := writeJSONLine(w, watch.NewChangesEvent(time.Now().UTC(), changes)); err != nil {
@@ -1298,6 +1332,53 @@ func runWatchTestsDaemon(ctx context.Context, root string, daemon *testdaemon.Da
 			}
 		}
 	}
+}
+
+// Stop without starting a queued replacement, and retain the active run's results.
+func stopWatchTests(ctx context.Context, coordinator *watchRunCoordinator, result testreport.Run, w io.Writer) (testreport.Run, error) {
+	coordinator.Stop()
+	if done := coordinator.Done(); done != nil {
+		timer := time.NewTimer(2 * time.Second)
+		defer timer.Stop()
+		select {
+		case finished := <-done:
+			return finishStoppedWatchTests(ctx, finished, w)
+		case <-timer.C:
+			return result, errors.Join(ctx.Err(), errors.New("timed out waiting for stopped watch run"), writeWatchStoppedEvent(ctx, coordinator.activeRunID, result, w))
+		}
+	}
+	return result, errors.Join(ctx.Err(), writeWatchStoppedEvent(ctx, coordinator.nextRunID-1, result, w))
+}
+
+func finishStoppedWatchTests(ctx context.Context, finished watchRunResult, w io.Writer) (testreport.Run, error) {
+	result := finished.Result
+	if err := writeJSONLine(w, watch.NewRunFinishedEvent(time.Now().UTC(), finished.RunID, watchSummary(result))); err != nil {
+		return result, errors.Join(ctx.Err(), err)
+	}
+	if summary, ok := watchProfileSummary(result); ok {
+		if err := writeJSONLine(w, watch.NewProfileSummaryEvent(time.Now().UTC(), finished.RunID, summary)); err != nil {
+			return result, errors.Join(ctx.Err(), err)
+		}
+	}
+	return result, errors.Join(ctx.Err(), writeWatchStoppedEvent(ctx, finished.RunID, result, w))
+}
+
+func writeWatchStoppedEvent(ctx context.Context, runID int, result testreport.Run, w io.Writer) error {
+	return writeWatchStoppedEventWithReason(ctx.Err().Error(), runID, result, w)
+}
+
+func writeWatchStoppedEventWithReason(reason string, runID int, result testreport.Run, w io.Writer) error {
+	return writeJSONLine(w, map[string]any{
+		"schemaVersion": watch.WatchEventSchemaVersion,
+		"event":         "watch.stopped",
+		"time":          time.Now().UTC(),
+		"runId":         runID,
+		"status":        "stopped",
+		"exitCode":      1,
+		"reason":        reason,
+		"summary":       result.Summary(),
+		"tests":         flattenTestCases(result),
+	})
 }
 
 type watchRunResult struct {

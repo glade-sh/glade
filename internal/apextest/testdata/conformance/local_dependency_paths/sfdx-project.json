@@ -1,0 +1,15 @@
+{
+  "packageDirectories": [
+    {
+      "path": "fixture/consumer/force-app",
+      "default": true,
+      "package": "LocalBridgeConsumer",
+      "dependencies": [{ "package": "LocalBridgeSupport" }]
+    },
+    {
+      "path": "fixture/dependencies/support/force-app"
+    }
+  ],
+  "namespace": "",
+  "sourceApiVersion": "67.0"
+}

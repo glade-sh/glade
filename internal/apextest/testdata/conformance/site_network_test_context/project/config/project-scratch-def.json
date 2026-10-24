@@ -1,0 +1,13 @@
+{
+  "orgName": "Synthetic authentication context",
+  "edition": "Developer",
+  "features": [
+    "Sites",
+    "Communities"
+  ],
+  "settings": {
+    "communitiesSettings": {
+      "enableNetworksEnabled": false
+    }
+  }
+}

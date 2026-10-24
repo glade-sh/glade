@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <label>Linden_Prior_67</label>
+    <processMetadataValues><name>BuilderType</name><value><stringValue>LightningFlowBuilder</stringValue></value></processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <decisions>
+        <name>Dec_A</name><label>Dec A</label>
+        <locationX>50</locationX><locationY>200</locationY>
+        <defaultConnector><targetReference>Upd_A_no</targetReference></defaultConnector>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules>
+            <name>Prior_Acct_Set</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record__Prior.AccountId</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue><booleanValue>false</booleanValue></rightValue>
+            </conditions>
+            <connector><targetReference>Upd_A_yes</targetReference></connector>
+            <label>Prior Acct Set</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Dec_B</name><label>Dec B</label>
+        <locationX>50</locationX><locationY>500</locationY>
+        <defaultConnector><targetReference>Dec_C</targetReference></defaultConnector>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules>
+            <name>Prior_Title_Null</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record__Prior.Title</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue><booleanValue>true</booleanValue></rightValue>
+            </conditions>
+            <connector><targetReference>Upd_B_yes</targetReference></connector>
+            <label>Prior Title Null</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Dec_C</name><label>Dec C</label>
+        <locationX>50</locationX><locationY>800</locationY>
+        <defaultConnector><targetReference>Upd_C_no</targetReference></defaultConnector>
+        <defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules>
+            <name>Prior_Title_T1</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record__Prior.Title</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue><stringValue>T1</stringValue></rightValue>
+            </conditions>
+            <connector><targetReference>Upd_C_yes</targetReference></connector>
+            <label>Prior Title T1</label>
+        </rules>
+    </decisions>
+    <recordUpdates><name>Upd_A_yes</name><label>Upd A_yes</label><locationX>50</locationX><locationY>100</locationY>
+        <connector><targetReference>Dec_B</targetReference></connector>
+        <inputAssignments><field>Department</field><value><stringValue>A_yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_A_no</name><label>Upd A_no</label><locationX>50</locationX><locationY>100</locationY>
+        <connector><targetReference>Dec_B</targetReference></connector>
+        <inputAssignments><field>Department</field><value><stringValue>A_no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_B_yes</name><label>Upd B_yes</label><locationX>50</locationX><locationY>100</locationY>
+        <connector><targetReference>Dec_C</targetReference></connector>
+        <inputAssignments><field>AssistantName</field><value><stringValue>B_yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_C_yes</name><label>Upd C_yes</label><locationX>50</locationX><locationY>100</locationY>
+        <inputAssignments><field>Description</field><value><stringValue>C_yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_C_no</name><label>Upd C_no</label><locationX>50</locationX><locationY>100</locationY>
+        <inputAssignments><field>Description</field><value><stringValue>C_no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <start>
+        <locationX>0</locationX><locationY>0</locationY>
+        <connector><targetReference>Dec_A</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>FirstName</field><operator>IsChanged</operator><value><booleanValue>true</booleanValue></value></filters>
+        <object>Contact</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

@@ -4803,6 +4803,10 @@ private class UserProvisioningInheritedRuntimeTest {
 	}
 }
 
+// Native: ../sema/testdata/platform_batch_superclass/org.tsv:6,13 (complete
+// subclass compiles), testdata/conformance/platform_batch_runtime/org.tsv:2,3,
+// 11,12 (direct hooks on a JSON-built instance) and 9,10,18,19 (the
+// constructor rejects an empty row list).
 func TestRunCoversUserProvisioningBatchableRuntime(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -4811,6 +4815,10 @@ func TestRunCoversUserProvisioningBatchableRuntime(t *testing.T) {
 private class UserProvisioningBatchableRuntimeTest {
   private class ConcretePluginBatchable extends UserProvisioning.PluginBatchable {
     ConcretePluginBatchable() { super(new List<SObject>()); }
+    public override String getEventPrefix() { return 'owned'; }
+    public override void postBatchProcessing() {}
+    public override void flowPostProcessing(UserProvisioning.ProvisioningProcessHandlerOutput output, SObject row) {}
+    public void finish(Database.BatchableContext context) {}
     public override Map<String,Object> flowInputPreprocessing(Map<String,Object> values) {
       values.put('sourceOverride', true);
       return values;
@@ -4820,7 +4828,7 @@ private class UserProvisioningBatchableRuntimeTest {
   @IsTest static void matchesSalesforce() {
     UserProvisioning.CollectingBatchable batch = new UserProvisioning.CollectingBatchable('0', 'upr', 'app');
     System.assertNotEquals(null, batch.flowInputPreprocessing(new Map<String,Object>()));
-    UserProvisioning.PluginBatchable plugin = new ConcretePluginBatchable();
+    UserProvisioning.PluginBatchable plugin = (ConcretePluginBatchable)JSON.deserialize('{}', ConcretePluginBatchable.class);
     System.assertEquals(true, plugin.flowInputPreprocessing(new Map<String,Object>()).get('sourceOverride'));
   }
 }
@@ -8462,7 +8470,12 @@ public class FirstQueue {
   public void execute(Object qc) {
     AsyncState.queueRan = AsyncState.queueRan + 1;
     insert new Account(Name = 'queue-1');
-    System.enqueueJob(new SecondQueue());
+    try {
+      System.enqueueJob(new SecondQueue());
+      System.assert(false, 'expected uncapped child rejection');
+    } catch (AsyncException failure) {
+      System.assertEquals('Maximum stack depth has been reached.', failure.getMessage());
+    }
   }
 }
 `)
@@ -8498,7 +8511,7 @@ private class AsyncSemanticsTest {
     Integer afterRows = [SELECT COUNT() FROM Account];
     System.assertEquals(9, afterRows);
     List<AsyncApexJob> jobs = [SELECT Id, Status, JobType FROM AsyncApexJob];
-    System.assertEquals(8, jobs.size());
+    System.assertEquals(7, jobs.size());
     System.assertEquals(2, [SELECT COUNT() FROM AsyncApexJob WHERE JobType = 'BatchApexWorker']);
     List<CronTrigger> crons = [SELECT Id, State FROM CronTrigger];
     System.assertEquals(2, crons.size());
@@ -8861,12 +8874,12 @@ private class AsyncContextIdsTest {
     String queueId = System.enqueueJob(new ContextQueue());
     String batchId = Database.executeBatch(new ContextBatch(), 2);
     String schedId = System.schedule('nightly', '0 0 0 * * ?', new ContextSchedule());
-    System.assertEquals('707000000000001', queueId);
+    System.assertEquals('707000000000001AAA', queueId);
     System.assertEquals('707000000000002', batchId);
     System.assertEquals('08e000000000003', schedId);
     Test.stopTest();
-    Integer batchRows = [SELECT COUNT() FROM Account WHERE Name = '707000000000002'];
-    Integer queueRows = [SELECT COUNT() FROM Account WHERE Name = '707000000000001'];
+    Integer batchRows = [SELECT COUNT() FROM Account WHERE Name = '707000000000002AAA'];
+    Integer queueRows = [SELECT COUNT() FROM Account WHERE Name = '707000000000001AAA'];
     // Native R029/R031: an Id bind uses its 18-character text; Name
     // does not treat a 15-character text literal as the same stored text.
     Id triggerBind = (Id) schedId;
@@ -9065,9 +9078,9 @@ private class RunAsTest {
     // A30 J016 and A26 R008 (API 62/67): UserInfo returns the 18-character user Id.
     Id originalUserId = UserInfo.getUserId();
     System.assertEquals('`+storage.DefaultUserID+`', originalUserId);
-    System.runAs(new User(Id = 'user-a', ProfileId = 'profile-a', Username = 'user-a@example.test')) {
-      System.assertEquals('user-a', UserInfo.getUserId());
-      System.assertEquals('profile-a', UserInfo.getProfileId());
+    System.runAs(new User(Id = '005000000000001AAA', ProfileId = '00e000000000001AAA', Username = 'user-a@example.test')) {
+      System.assertEquals('005000000000001AAA', UserInfo.getUserId());
+      System.assertEquals('00e000000000001AAA', UserInfo.getProfileId());
       System.assertEquals('user-a@example.test', UserInfo.getUserName());
     }
     System.assertEquals(originalUserId, UserInfo.getUserId());
@@ -11865,12 +11878,30 @@ func TestOrgFromIndexIncludesProjectProfiles(t *testing.T) {
 	if !foundCommunityLoginProfile {
 		t.Fatalf("customer community login profile row was not created; records=%#v", profiles)
 	}
+	// The orgFromIndex route must expose profile grants through PermissionSet,
+	// as captured by security_model_rows object_profile/object_sourceProfile.
+	var communityLoginPermissionSetID storage.ID
+	for _, record := range org.Objects["PermissionSet"].Records {
+		if !storageIDValueEqualsText(record.Fields["ProfileId"], string(communityLoginProfileID)) {
+			continue
+		}
+		if !record.Fields["IsOwnedByProfile"].Boolean {
+			t.Fatalf("profile permission set is not profile-owned: %#v", record)
+		}
+		if communityLoginPermissionSetID != "" {
+			t.Fatal("customer community profile has multiple owning permission sets")
+		}
+		communityLoginPermissionSetID = record.ID
+	}
+	if communityLoginPermissionSetID == "" || storage.IDsEqual(communityLoginPermissionSetID, communityLoginProfileID) {
+		t.Fatalf("customer community profile-owned permission set missing: profile=%q permissionSet=%q", communityLoginProfileID, communityLoginPermissionSetID)
+	}
 	foundCartPermission := false
 	for _, record := range org.Objects["ObjectPermissions"].Records {
 		parent, hasParent := record.GetField("ParentId")
 		objectValue, hasObject := record.GetField("SobjectType")
 		if hasParent && hasObject &&
-			storageIDValueEqualsText(parent, string(communityLoginProfileID)) &&
+			storageIDValueEqualsText(parent, string(communityLoginPermissionSetID)) &&
 			storageStringValueEqualsText(objectValue, "pkg__Cart__c") {
 			foundCartPermission = true
 			break

@@ -945,6 +945,7 @@ type semanticProject struct {
 	Namespace                 string                     `json:"namespace,omitempty"`
 	SourceAPIVersion          string                     `json:"sourceApiVersion,omitempty"`
 	PackageDirectories        []project.PackageDirectory `json:"packageDirectories"`
+	ExtraMetadataDirs         []string                   `json:"extraMetadataDirs,omitempty"`
 	NamespaceRemaps           []string                   `json:"namespaceRemaps,omitempty"`
 	NamespaceRemapFingerprint string                     `json:"namespaceRemapFingerprint,omitempty"`
 	Dependencies              []semanticDependency       `json:"dependencies,omitempty"`
@@ -994,6 +995,10 @@ func projectSemantics(root string, p project.Project, seen map[string]bool) sema
 		PackageDirectories:        canonicalPackageDirectories(p.PackageDirectories),
 		NamespaceRemapFingerprint: namespaceremap.Fingerprint(p.NamespaceRemaps),
 	}
+	for _, dir := range p.ExtraMetadataDirs {
+		out.ExtraMetadataDirs = append(out.ExtraMetadataDirs, semanticPath(root, dir))
+	}
+	out.ExtraMetadataDirs = deduplicateStrings(out.ExtraMetadataDirs)
 	for _, remap := range p.NamespaceRemaps {
 		out.NamespaceRemaps = append(out.NamespaceRemaps, remap.From+":"+remap.To)
 	}
@@ -1095,6 +1100,9 @@ func appendProjectFilesFromProject(p project.Project) []string {
 	out := make([]string, 0, 128)
 	pValue := reflect.ValueOf(p)
 	for i := 0; i < pValue.NumField(); i++ {
+		if pValue.Type().Field(i).Name == "ExtraMetadataDirs" {
+			continue
+		}
 		field := pValue.Field(i)
 		if field.Kind() != reflect.Slice || field.Type().Elem().Kind() != reflect.String {
 			continue
@@ -1214,7 +1222,7 @@ func collectConfigPaths(p project.Project) ([]string, error) {
 }
 
 func packageRootsForProject(p project.Project) []string {
-	roots := make([]string, 0, len(p.PackageDirectories))
+	roots := append([]string(nil), p.ExtraMetadataDirs...)
 	for _, dir := range p.PackageDirectories {
 		if dir.Path == "" {
 			continue

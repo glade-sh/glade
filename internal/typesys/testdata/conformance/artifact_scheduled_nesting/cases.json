@@ -1,0 +1,20 @@
+{
+  "apiVersions": [
+    "62.0",
+    "67.0"
+  ],
+  "methods": [
+    "innerArtifact",
+    "topArtifact"
+  ],
+  "routes": [
+    "namedIsTest",
+    "runner"
+  ],
+  "anonymousBoundary": "Test.startTest and Test.stopTest require a named test context.",
+  "sourceSHA256": {
+    "MeadowScheduleContainer": "805c32387750c76e37678c711b1539c93bc6685a19d2e97ea68ebfab75d98345",
+    "MeadowTopSchedule": "d7b3d8b64a64f44da86ba5cb1be6b9fcecb5cb339b99d99162542baaa636f306",
+    "MeadowArtifactScheduleTest": "00a5cf5fdd99fb388a236ca189b3204defffd430296f2d1c18c6d47e35fea9a4"
+  }
+}

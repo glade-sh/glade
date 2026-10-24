@@ -29,20 +29,44 @@ func (vm *VM) executeApprovalProcess(args []Value) (Value, error) {
 
 func (vm *VM) executeApprovalProcessList(requests Value, allOrNone bool) (Value, error) {
 	rollback := vm.beginDMLRollbackPoint(allOrNone, false)
-	sideEffects := vm.snapshotSideEffects()
+	defer vm.finishDMLRollbackPoint(rollback)
 	results := typedList("List<Approval.ProcessResult>")
-	for _, request := range requests.List {
-		result, err := vm.executeApprovalProcessRequest(request, allOrNone)
+	failures := make([]dml.Result, len(requests.List))
+	failed := false
+	for index, request := range requests.List {
+		// Collect per-request failures before applying the list's atomic boundary.
+		result, err := vm.executeApprovalProcessRequest(request, false)
 		if err != nil {
 			if allOrNone {
 				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
 					return Null, rollbackErr
 				}
-				vm.restoreSideEffects(sideEffects)
 			}
 			return Null, err
 		}
 		results.List = append(results.List, result)
+		if !allOrNone || result.Fields["success"].Bool {
+			continue
+		}
+		failed = true
+		failure := dml.Result{}
+		for _, problem := range result.Fields["errors"].List {
+			detail := dml.Error{StatusCode: problem.Fields["statusCode"].Text, Message: problem.Fields["message"].Text}
+			for _, field := range problem.Fields["fields"].List {
+				detail.Fields = append(detail.Fields, field.Text)
+			}
+			failure.Errors = append(failure.Errors, detail)
+			if len(failure.Errors) == 1 {
+				failure.StatusCode, failure.Error, failure.Fields = detail.StatusCode, detail.Message, detail.Fields
+			}
+		}
+		failures[index] = failure
+	}
+	if failed {
+		if err := vm.restoreDMLRollbackPoint(rollback); err != nil {
+			return Null, err
+		}
+		return Null, rowDMLException("process", failures, nil)
 	}
 	return results, nil
 }
@@ -67,7 +91,7 @@ func (vm *VM) executeApprovalProcessRequest(request Value, allOrNone bool) (Valu
 func (vm *VM) approvalProcessSubmitRequest(request Value, allOrNone bool) (Value, error) {
 	objectID := approvalRequestID(request, "ObjectId")
 	if objectID.Kind == ValueNull {
-		return approvalProcessMissingIDResult(allOrNone, "ObjectId")
+		return approvalSubmitFailureResult(allOrNone, "REQUIRED_FIELD_MISSING", "missing required field: [objectId]", []string{"objectId"})
 	}
 	objectIDText, ok := approvalValueIDText(objectID)
 	if !ok || strings.TrimSpace(objectIDText) == "" {
@@ -82,12 +106,12 @@ func (vm *VM) approvalProcessSubmitRequest(request Value, allOrNone bool) (Value
 	}
 	definition, ok := vm.approvalProcessDefinitionForRequest(request, objectName)
 	if !ok {
-		if !vm.approvalHasProcessDefinitionObject() {
-			if approvalRequestString(request, "ProcessDefinitionNameOrId") == "" {
-				return Null, unsupportedCallError("Approval.process hosted approval engine routing")
-			}
+		return approvalSubmitFailureResult(allOrNone, "NO_APPLICABLE_PROCESS", "No applicable approval process was found.", nil)
+	}
+	for _, instance := range vm.Org.Objects["ProcessInstance"].Records {
+		if storage.IDsEqual(storage.ID(storageStringField(instance, "TargetObjectId")), storage.ID(objectIDText)) && strings.EqualFold(storageStringField(instance, "Status"), "Pending") {
+			return approvalSubmitFailureResult(allOrNone, "ALREADY_IN_PROCESS", "This record is currently in an approval process. A record can be in only one approval process at a time.", nil)
 		}
-		return approvalProcessFailureResult(allOrNone, objectID, "INVALID_CROSS_REFERENCE_KEY", "ProcessDefinition is required", []string{"ProcessDefinitionId"})
 	}
 	actorID, err := vm.approvalSubmitActor(request, definition)
 	if err != nil {
@@ -101,6 +125,7 @@ func (vm *VM) approvalProcessSubmitRequest(request Value, allOrNone bool) (Value
 	if err != nil {
 		return Null, err
 	}
+	vm.approvalCreateStep(instanceID, storage.ID(vm.currentUserID()), "Started", approvalRequestString(request, "Comments"))
 	result := approvalProcessResult(true, objectID, nil)
 	result.Fields["instanceId"] = platformScalar("Id", string(instanceID))
 	result.Fields["instanceStatus"] = String("Pending")
@@ -173,6 +198,16 @@ func approvalProcessFailureResult(allOrNone bool, entityID Value, statusCode, me
 	return approvalProcessResult(false, entityID, []Value{errValue}), nil
 }
 
+func approvalSubmitFailureResult(allOrNone bool, statusCode, message string, fields []string) (Value, error) {
+	if allOrNone {
+		return Null, rowDMLException("process", []dml.Result{{StatusCode: statusCode, Error: message, Fields: fields}}, nil)
+	}
+	errValue := databaseErrorValue(dml.Error{StatusCode: statusCode, Message: message, Fields: fields})
+	result := approvalProcessResult(false, Null, []Value{errValue})
+	result.Fields["actorIds"] = Null
+	return result, nil
+}
+
 func approvalProcessResult(success bool, entityID Value, errors []Value) Value {
 	result := Object("Approval.ProcessResult")
 	result.Fields["success"] = Bool(success)
@@ -213,14 +248,6 @@ func (vm *VM) approvalNamedProcessDefinition(nameOrID string) (storage.Record, b
 		}
 	}
 	return storage.Record{}, false
-}
-
-func (vm *VM) approvalHasProcessDefinitionObject() bool {
-	if vm == nil || vm.Org == nil {
-		return false
-	}
-	_, ok := vm.Org.Objects["ProcessDefinition"]
-	return ok
 }
 
 func (vm *VM) approvalLocalProcessDefinition(objectName string) (storage.Record, bool) {
@@ -356,7 +383,10 @@ func (vm *VM) approvalApplyWorkitemAction(workitemID storage.ID, action string, 
 	case "reject", "rejected":
 		status = "Rejected"
 	default:
-		return approvalProcessFailureResult(allOrNone, platformScalar("Id", string(workitemID)), "INVALID_FIELD", "Action is invalid", []string{"Action"})
+		if allOrNone {
+			return Null, rowDMLException("process", []dml.Result{{StatusCode: "INVALID_OPERATION", Error: "Illegal transition type"}}, nil)
+		}
+		return approvalProcessFailureResult(false, platformScalar("Id", string(workitemID)), "INVALID_OPERATION", "Illegal transition type", nil)
 	}
 	workitem, ok := vm.approvalRecordByID("ProcessInstanceWorkitem", workitemID)
 	if !ok {
@@ -374,6 +404,7 @@ func (vm *VM) approvalApplyWorkitemAction(workitemID storage.ID, action string, 
 	vm.approvalUpdateRecord(instance, instanceBefore)
 
 	workitemBefore := workitem.Clone()
+	workitem.System.IsDeleted = true
 	workitem.Fields["IsDeleted"] = storage.BooleanValue(true)
 	vm.approvalUpdateRecord(workitem, workitemBefore)
 	vm.approvalCreateStep(instanceID, actorID, status, comments)

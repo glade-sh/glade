@@ -22,6 +22,7 @@ import (
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/server"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/testutil/browserapi"
 )
 
 type l14Case struct {
@@ -155,15 +156,19 @@ func TestL14SalesforceConformance(t *testing.T) {
 		}
 	}
 
+	observeAPI := browserapi.Prepare(t, versions, func(t *testing.T, api string) map[string]string {
+		dom := l14ObserveDOM(t, api, runtimeCases, dependencyRoot, false)
+		for id, value := range l14ObserveDOM(t, api, vfCases, dependencyRoot, true) {
+			dom[id] = value
+		}
+		return dom
+	})
 	var report strings.Builder
 	report.WriteString("api\tid\tkind\tstatus\tactual\texpected\treason\tactual_diagnostics\texpected_diagnostics\tdiagnostic_status\n")
 	matches, total, outcomeMatches, diagnosticMatches, diagnosticTotal := 0, 0, 0, 0, 0
 	for _, api := range versions {
 		compiler := l14CompileRows(t, api, compileCases)
-		dom := l14ObserveDOM(t, api, runtimeCases, dependencyRoot, false)
-		for id, value := range l14ObserveDOM(t, api, vfCases, dependencyRoot, true) {
-			dom[id] = value
-		}
+		dom := observeAPI(api)
 		apiMatches, compileMatches, domMatches, apiOutcomeMatches, apiDiagnosticMatches, apiDiagnosticTotal := 0, 0, 0, 0, 0, 0
 		for _, c := range cases {
 			got, reason := "", "L14: native-vs-local navigation DOM output differs"

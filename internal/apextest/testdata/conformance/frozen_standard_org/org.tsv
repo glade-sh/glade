@@ -1,0 +1,5 @@
+source_api	route	test_class	test_method	outcome
+59.0	isTest	FrozenStandardOrgIsolationTest	aWritesStandardRow	Pass
+59.0	isTest	FrozenStandardOrgIsolationTest	bStartsWithoutPriorRows	Pass
+67.0	isTest	FrozenStandardOrgIsolationTest	aWritesStandardRow	Pass
+67.0	isTest	FrozenStandardOrgIsolationTest	bStartsWithoutPriorRows	Pass

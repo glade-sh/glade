@@ -19,6 +19,7 @@ import (
 	"github.com/glade-sh/glade/internal/lwc/compile"
 	"github.com/glade-sh/glade/internal/lwcbrowser"
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/testutil/browserapi"
 )
 
 type l22Case struct {
@@ -144,13 +145,12 @@ func TestL22SalesforceConformance(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	var report strings.Builder
-	fmt.Fprintln(&report, "api\tid\tkind\tstatus\tactual\texpected\treason")
-	matches, compileMatches, domMatches, domRows := 0, 0, 0, 0
-	diagnosticMatches, diagnosticRows := 0, 0
-	controlMatches := 0
-	for _, api := range []string{"59.0", "67.0"} {
-		compiled := l22CompileCases(t, api, compilerCases)
+	type apiObservation struct {
+		dom        map[string]string
+		errors     map[string]string
+		runtimeErr error
+	}
+	observeAPI := browserapi.Prepare(t, []string{"59.0", "67.0"}, func(t *testing.T, api string) apiObservation {
 		fixture, ok := fixtures[api]
 		if !ok || fixture.Page != "familyL22Runtime"+api[:2] {
 			t.Fatalf("missing captured runtime fixture API %s", api)
@@ -159,6 +159,17 @@ func TestL22SalesforceConformance(t *testing.T) {
 		// runtime protocol. Expected output never reaches the browser.
 		fixture = l22WithControlSpecs(t, fixture, controls)
 		dom, errors, runtimeErr := l22ObserveDOM(t, api, runtimeCases, fixture, repo, dependencies)
+		return apiObservation{dom, errors, runtimeErr}
+	})
+	var report strings.Builder
+	fmt.Fprintln(&report, "api\tid\tkind\tstatus\tactual\texpected\treason")
+	matches, compileMatches, domMatches, domRows := 0, 0, 0, 0
+	diagnosticMatches, diagnosticRows := 0, 0
+	controlMatches := 0
+	for _, api := range []string{"59.0", "67.0"} {
+		compiled := l22CompileCases(t, api, compilerCases)
+		result := observeAPI(api)
+		dom, errors, runtimeErr := result.dom, result.errors, result.runtimeErr
 		compileIndex, apiMatches, apiDOMRows := 0, 0, 0
 		for _, c := range cases {
 			want, got, reason := c.Expected[api], "COMPILE_OK", ""

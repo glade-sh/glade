@@ -1,0 +1,14 @@
+source_api=62.0
+context=anonymous
+rows=73
+native_complete=true
+captured_utc=2026-10-21T05:24:13.340966+00:00
+project/force-app/main/default/classes/CloneFlagsObservation.cls sha256=daee967065fe4e571c57b6e36880d909e2e49876b58a7c2764df8777c93cf98e
+project/force-app/main/default/classes/CloneFlagsObservation.cls-meta.xml sha256=51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d
+project/force-app/main/default/classes/CloneFlagsObservationTest.cls sha256=2de125b93b56a35ac8e7a8e79604c7a654e5c7633605f0759108fb2a1e946b21
+project/force-app/main/default/classes/CloneFlagsObservationTest.cls-meta.xml sha256=51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d
+project/force-app/main/default/objects/CloneSample__c/CloneSample__c.object-meta.xml sha256=077f812e84f1b7705b23d9802208e502169cd7fa0c98e793bc497891d3a2a45b
+project/force-app/main/default/objects/CloneSample__c/fields/FormulaA__c.field-meta.xml sha256=63cc2f6d9c436bd406a108dbcb5f392aed6c9d2e39a2be1b929f36705ad83d93
+project/force-app/main/default/objects/CloneSample__c/fields/FormulaZ__c.field-meta.xml sha256=48436578785da4b7e11ecec4c53beb6c23593b44d0fd7d728b466a15d2584cff
+project/force-app/main/default/objects/CloneSample__c/fields/Sequence__c.field-meta.xml sha256=197e1cc0614f3173f33cbe7898a11cfd6dc60edda246159ca10f5543d317a6f8
+project/force-app/main/default/permissionsets/CloneFlagsAccess.permissionset-meta.xml sha256=db4f113fb3d16301065eb10e95361107228c2dec39fc933fc3a273addf77e957

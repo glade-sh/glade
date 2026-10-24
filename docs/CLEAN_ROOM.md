@@ -38,7 +38,7 @@ should come from Salesforce itself or from a written public specification, not
 from proprietary implementation internals.
 
 When runtime behavior is ambiguous, confirm it against the connected scratch org
-before changing `glade`. Use an explicitly authorized scratch-org alias such as
+before changing `glade`. Use an explicitly authorized scratch org alias such as
 `glade-probe` for small executable probes:
 
 ```bash
@@ -52,5 +52,5 @@ fixture.
 When the blocker is a missing system class, method, field, or object shape,
 consult the public Apex system stubs before patching. Use them to fill the
 nearby public surface area, not just the single failing member, while still
-keeping the implementation minimal and backed by scratch-org behavior or an
+keeping the implementation minimal and backed by scratch org behavior or an
 owned regression.

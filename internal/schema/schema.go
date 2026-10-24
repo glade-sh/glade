@@ -76,7 +76,9 @@ type NameField struct {
 }
 
 type Field struct {
-	Name                          string             `json:"name"`
+	Name string `json:"name"`
+	// File is the declaring metadata source, retained through schema projections.
+	File                          string             `json:"-"`
 	GeneratedRecentAccess         bool               `json:"generatedRecentAccess,omitempty"`
 	Label                         string             `json:"label,omitempty"`
 	InlineHelpText                string             `json:"inlineHelpText,omitempty"`
@@ -799,6 +801,7 @@ func loadObject(path string, p project.Project) (Object, error) {
 	object.SharingReasons, object.SharingReasonLabels = loadSharingReasons(path, p)
 	for _, rawField := range raw.Fields {
 		field := fieldFromXML(rawField, "")
+		field.File = path
 		if field.Name != "" {
 			field = remapProjectField(p, field)
 			field = namespaceObjectField(p.Namespace, object.Name, field)
@@ -873,7 +876,9 @@ func loadField(path string) (Field, error) {
 	if err := xml.Unmarshal(escapeBareAmpersands(data), &raw); err != nil {
 		return Field{}, err
 	}
-	return fieldFromXML(raw, trimMetadataSuffix(filepath.Base(path), ".field-meta.xml")), nil
+	field := fieldFromXML(raw, trimMetadataSuffix(filepath.Base(path), ".field-meta.xml"))
+	field.File = path
+	return field, nil
 }
 
 func fieldFromXML(raw customFieldXML, fallback string) Field {

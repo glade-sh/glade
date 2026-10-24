@@ -330,7 +330,7 @@ func l19SalesforceConformance(t *testing.T) {
 		runtimeCompileErr error
 		browserErr        error
 	}
-	observe := func(api string, result browserPass) browserPass {
+	observe := func(t *testing.T, api string, result browserPass) browserPass {
 		result.dom, result.domErrors, result.runtimeCompileErr, result.browserErr = l19ObserveDOM(t, api, runtimeCases[api], dependencyRoot, fixture.FixturePicklists)
 		return result
 	}
@@ -349,8 +349,8 @@ func l19SalesforceConformance(t *testing.T) {
 		// Each API owns its temporary projects, output files, org/server and Node
 		// process. Shared toolchains are now initialized; inputs are read-only.
 		// Keep failures, comparisons, logging and report writes on this goroutine.
-		passes = runBrowserPasses(len(versions), parallel, func(pass int) browserPass {
-			return observe(versions[pass], prepared[pass])
+		passes = runBrowserPasses(t, versions, parallel, func(t *testing.T, pass int) browserPass {
+			return observe(t, versions[pass], prepared[pass])
 		})
 	}
 	for pass, api := range versions {
@@ -361,7 +361,7 @@ func l19SalesforceConformance(t *testing.T) {
 			if result.compileErr != nil {
 				t.Fatal(result.compileErr)
 			}
-			result = observe(api, result)
+			result = observe(t, api, result)
 		} else {
 			result = passes[pass]
 		}

@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Disabled__c</fullName><label>Disabled</label><type>Checkbox</type><defaultValue>false</defaultValue></CustomField>

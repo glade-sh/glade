@@ -37,11 +37,11 @@ func TestPlatformEventsOrgConformance(t *testing.T) {
 	}
 	type nativeTest struct{ Class, Method, Outcome, Message, Owner, Reason string }
 	var data struct {
-		APIVersions                 []string `json:"apiVersions"`
-		Files, NamedObservations    map[string]string
+		APIVersions              []string `json:"apiVersions"`
+		Files, NamedObservations map[string]string
 		// NamedByAPI holds native named-route answers that differ by source
 		// version, from event_publish_forwarding (API 62 and 67, @IsTest route).
-		NamedByAPI map[string]map[string]string `json:"namedByApi"`
+		NamedByAPI                  map[string]map[string]string `json:"namedByApi"`
 		Cases, Controls             []familyCase
 		Remaining, Excluded         []familyCase
 		NativeTests, NativeExcluded []nativeTest
@@ -188,7 +188,7 @@ func TestPlatformEventsOrgConformance(t *testing.T) {
 		return "ACCEPTED"
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCounts()
 			defer counts.Log(t, "platform events", api, "")
 			apiRows, nativeTests := rows, data.NativeTests

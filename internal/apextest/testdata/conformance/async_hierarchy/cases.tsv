@@ -1,0 +1,5 @@
+case	question
+nested_completion	Nearest protected override on outer and nested subclass, through a separate completion base
+ancestor_reference	Protected lookup retains the outer field view after ancestor-typed scalar and list mutations
+base_callback	A base-typed completion field accepts a narrower hierarchy field after broad alias mutation
+queued_completion	A nested subclass reaches the protected outer override from a drained queueable finalizer; named test route only

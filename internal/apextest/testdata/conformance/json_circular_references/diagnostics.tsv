@@ -1,0 +1,12 @@
+62.0	labelledPair	serialize	{"message":"Cycle detected. Multiple references to {label=b, next={label=a, next=(already output)}}","type":"System.JSONException"}
+62.0	labelledPair	generator	{"message":"Cycle detected. Multiple references to {label=b, next={label=a, next=(already output)}} (through reference chain: java.util.LinkedHashMap[\"next\"])","type":"System.JSONException"}
+62.0	wrapped	serialize	{"message":"Cycle detected. Multiple references to {self=(already output)}","type":"System.JSONException"}
+62.0	wrapped	generator	{"message":"Cycle detected. Multiple references to {self=(already output)} (through reference chain: java.util.LinkedHashMap[\"outer\"])","type":"System.JSONException"}
+62.0	listRoot	serialize	{"message":"Cycle detected. Multiple references to {self=(already output)}","type":"System.JSONException"}
+62.0	listRoot	generator	{"message":"Cycle detected. Multiple references to {self=(already output)} (through reference chain: java.util.ArrayList[0])","type":"System.JSONException"}
+67.0	labelledPair	serialize	{"message":"Cycle detected. Multiple references to {label=b, next={label=a, next=(already output)}}","type":"System.JSONException"}
+67.0	labelledPair	generator	{"message":"Cycle detected. Multiple references to {label=b, next={label=a, next=(already output)}} (through reference chain: java.util.LinkedHashMap[\"next\"])","type":"System.JSONException"}
+67.0	wrapped	serialize	{"message":"Cycle detected. Multiple references to {self=(already output)}","type":"System.JSONException"}
+67.0	wrapped	generator	{"message":"Cycle detected. Multiple references to {self=(already output)} (through reference chain: java.util.LinkedHashMap[\"outer\"])","type":"System.JSONException"}
+67.0	listRoot	serialize	{"message":"Cycle detected. Multiple references to {self=(already output)}","type":"System.JSONException"}
+67.0	listRoot	generator	{"message":"Cycle detected. Multiple references to {self=(already output)} (through reference chain: java.util.ArrayList[0])","type":"System.JSONException"}

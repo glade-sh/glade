@@ -1,0 +1,6 @@
+route	operation
+shared	constructor from declared cast list, local variable and helper return, Id and String keys
+shared	raw generic list rejection and matching-record control
+shared	get, values, getSObjectType and putAll after constructor
+anonymous	invoke named helper outside test context
+isTest	invoke same helper through test runner

@@ -1,0 +1,26 @@
+[
+  {
+    "ID": "top_debug",
+    "Body": "throw new IllegalArgumentException('branch'); System.debug('after');"
+  },
+  {
+    "ID": "top_assignment",
+    "Body": "throw new IllegalArgumentException('branch'); Integer reached = 1;"
+  },
+  {
+    "ID": "try_debug",
+    "Body": "try { throw new IllegalArgumentException('branch'); System.debug('after'); } catch (Exception failure) {}"
+  },
+  {
+    "ID": "try_assignment",
+    "Body": "try { throw new IllegalArgumentException('branch'); Integer reached = 1; } catch (Exception failure) {}"
+  },
+  {
+    "ID": "block_debug",
+    "Body": "{ throw new IllegalArgumentException('branch'); System.debug('after'); }"
+  },
+  {
+    "ID": "if_debug",
+    "Body": "if (true) { throw new IllegalArgumentException('branch'); System.debug('after'); }"
+  }
+]

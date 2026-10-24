@@ -1,0 +1,6 @@
+apis=62.0,67.0
+routes=anonymous,named,istest
+rows=42
+native_complete=true
+source_sha256 cases.json f7767463cf35cd28f177665b126c28543fec5ad2c85305c668ded902816763cc
+source_sha256 classes/Find.cls 1c9b2bb85a525e65180ad9f171a05e00d58d057c3e1a4cb57db65faa45629da9

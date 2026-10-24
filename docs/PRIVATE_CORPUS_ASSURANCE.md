@@ -56,7 +56,7 @@ records across local and remote hosts. Superseded resource-contention and
 exhausted-hub attempts are retained outside the final receipt; their isolated
 replacements passed and are the records used for readiness.
 
-Fresh scratch-org proof closed all 77 planned Salesforce obligations: 23
+Fresh scratch org proof closed all 77 planned Salesforce obligations: 23
 compile observations and 54 runtime observations. The scratch orgs and both
 remote attempt roots were removed, with cleanup receipts reporting no residue.
 

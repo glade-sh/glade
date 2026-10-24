@@ -1,0 +1,13 @@
+case	route	shape
+cdcExplicit	istest	cdc
+cdcStop	istest	cdc
+cdcDisabled	istest	cdc
+cdcLateEnable	istest	cdc
+cdcOperations	istest	cdc
+cdcBulk	istest	cdc
+cdcDisabledDelivery	istest	cdc
+cdcRollback	istest	cdc
+cdcPartial	istest	cdc
+cdcNameUpdate	istest	cdc
+cdcUpsert	istest	cdc-upsert
+cdcHeaders	istest	cdc-header-fields

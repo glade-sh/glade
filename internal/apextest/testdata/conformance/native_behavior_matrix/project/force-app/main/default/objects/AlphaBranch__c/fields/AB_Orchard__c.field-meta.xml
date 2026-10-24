@@ -1,0 +1,4 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>AB_Orchard__c</fullName><deleteConstraint>SetNull</deleteConstraint><label>AB Orchard</label>
+  <referenceTo>Orchard__c</referenceTo><relationshipLabel>Zulu Entries</relationshipLabel><relationshipName>ZuluEntries</relationshipName><type>Lookup</type>
+</CustomField>

@@ -1,0 +1,27 @@
+case	api_version	route	synthetic_shape	native_observation
+null_list_iteration	62.0	anonymous	null list argument traversed by enhanced-for	System.NullPointerException|Attempt to de-reference a null object
+null_list_iteration	67.0	anonymous	null list argument traversed by enhanced-for	System.NullPointerException|Attempt to de-reference a null object
+null_element_dereference	62.0	anonymous	list containing null element with field read	System.NullPointerException|Attempt to de-reference a null object
+null_element_dereference	67.0	anonymous	list containing null element with field read	System.NullPointerException|Attempt to de-reference a null object
+child_relationship_order	62.0	anonymous	multiple custom lookups with field and relationship names in opposing order	"[""AlphaBranch__c|AB_Orchard__c|ZuluEntries__r"",""AlphaBranch__c|Aa_Orchard__c|KiloEntries__r"",""AlphaBranch__c|aC_Orchard__c|AlphaEntries__r"",""ZuluBranch__c|Orchard__c|ZuluBranches__r""]"
+child_relationship_order	67.0	anonymous	multiple custom lookups with field and relationship names in opposing order	"[""AlphaBranch__c|AB_Orchard__c|ZuluEntries__r"",""AlphaBranch__c|Aa_Orchard__c|KiloEntries__r"",""AlphaBranch__c|aC_Orchard__c|AlphaEntries__r"",""ZuluBranch__c|Orchard__c|ZuluBranches__r""]"
+child_relationship_creation_order	62.0	anonymous	six custom lookups deployed in two stages: Ee and Mm before Aa, Cc, Dd, Qq	"[""Kid__c.Cmp__r.Aa__c"",""Kid__c.RelX__r.Cc__c"",""Kid__c.Rel_X__r.Dd__c"",""Kid__c.Bbb__r.Ee__c"",""Kid__c.Ztt__r.Mm__c"",""Kid__c.bAa__r.Qq__c""]"
+child_relationship_creation_order	62.0	istest	six custom lookups deployed in two stages: Ee and Mm before Aa, Cc, Dd, Qq	"[""Kid__c.Cmp__r.Aa__c"",""Kid__c.RelX__r.Cc__c"",""Kid__c.Rel_X__r.Dd__c"",""Kid__c.Bbb__r.Ee__c"",""Kid__c.Ztt__r.Mm__c"",""Kid__c.bAa__r.Qq__c""]"
+child_relationship_creation_order	67.0	anonymous	six custom lookups deployed in two stages: Ee and Mm before Aa, Cc, Dd, Qq	"[""Kid__c.Cmp__r.Aa__c"",""Kid__c.RelX__r.Cc__c"",""Kid__c.Rel_X__r.Dd__c"",""Kid__c.Bbb__r.Ee__c"",""Kid__c.Ztt__r.Mm__c"",""Kid__c.bAa__r.Qq__c""]"
+child_relationship_creation_order	67.0	istest	six custom lookups deployed in two stages: Ee and Mm before Aa, Cc, Dd, Qq	"[""Kid__c.Cmp__r.Aa__c"",""Kid__c.RelX__r.Cc__c"",""Kid__c.Rel_X__r.Dd__c"",""Kid__c.Bbb__r.Ee__c"",""Kid__c.Ztt__r.Mm__c"",""Kid__c.bAa__r.Qq__c""]"
+child_order_tie_query	62.0	anonymous	same-date child rows selected with descending order	"[""First"",""Second"",""Third""]"
+child_order_tie_query	67.0	anonymous	same-date child rows selected with descending order	"[""First"",""Second"",""Third""]"
+standard_profile_field_access	62.0	istest	Standard User profile checks Contact.DoNotCall access	false
+standard_profile_field_access	67.0	istest	Standard User profile checks Contact.DoNotCall access	false
+fieldset_member_paths	62.0	anonymous	field set has local scalar and relationship paths	"[""Title__c"",""Partner__r.Name""]"
+fieldset_member_paths	67.0	anonymous	field set has local scalar and relationship paths	"[""Title__c"",""Partner__r.Name""]"
+clock_tick_samples	62.0	anonymous	2000 back-to-back System.now and currentTimeMillis pairs	System.now=4/2000,maxDeltaMs=1;currentTimeMillis=1/2000,maxDeltaMs=1
+clock_tick_samples	67.0	anonymous	2000 back-to-back System.now and currentTimeMillis pairs	System.now=0/2000,maxDeltaMs=0;currentTimeMillis=2/2000,maxDeltaMs=1
+feature_parameter_lookup	62.0	anonymous	lookup of an undeclared integer package feature parameter	System.NoDataFoundException|Unable to retrieve feature parameter MissingMatrixFeature. No results found.
+feature_parameter_lookup	67.0	anonymous	lookup of an undeclared integer package feature parameter	System.NoDataFoundException|Unable to retrieve feature parameter MissingMatrixFeature. No results found.
+generic_type_identity	62.0	istest	class literal compared with reflected generic parameter type	true|List<Orchard__c>
+generic_type_identity	67.0	istest	class literal compared with reflected generic parameter type	true|List<Orchard__c>
+list_index_bounds	62.0	anonymous	index zero from an empty list	System.ListException|List index out of bounds: 0
+list_index_bounds	67.0	anonymous	index zero from an empty list	System.ListException|List index out of bounds: 0
+formula_recalculation_cardinality	62.0	anonymous	recalculate a queried record type without formula fields	0
+formula_recalculation_cardinality	67.0	anonymous	recalculate a queried record type without formula fields	0

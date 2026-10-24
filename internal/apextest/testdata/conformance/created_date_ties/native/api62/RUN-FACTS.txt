@@ -6,4 +6,4 @@ deployment_success=true
 class_api=62.0
 source_sha256=0e03144e15ac8e31f6ae19541365c9015532044e34e54d67c2323fe495c132b7
 captured_utc=2026-10-19T07:53:17.986412+00:00
-transport=observeRows uses an intentional terminal assertion carrying JSON; assumesNewest independently exercises the ordering assumption
+transport=System.assert

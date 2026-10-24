@@ -7,7 +7,7 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// A scratch-org flow (API 62.0, 67.0, 68.0) assigned Get_Records.Id to a
+// A scratch org flow (API 62.0, 67.0, 68.0) assigned Get_Records.Id to a
 // triggering-record lookup field. With no matching record the field ended
 // null. The assignment must keep the lookup reference as its source so the
 // runtime can resolve it, rather than lowering it to an empty literal.

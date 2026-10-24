@@ -87,7 +87,8 @@ func (f *frozenClassLookup) buildContributors(classes map[string]Class) {
 }
 
 // beginClassLookupOverlay returns the overlay registration writes through, or
-// nil when this VM must use the full rebuild path.
+// nil when this VM must use the full rebuild path. Registration calls it after
+// prepareClassMapWrite, so vm.Classes holds this VM's class values.
 func (vm *VM) beginClassLookupOverlay() *classLookupOverlay {
 	if vm.classOverlay != nil {
 		return vm.classOverlay
@@ -164,7 +165,7 @@ func (o *classLookupOverlay) storeAlias(name string, class Class) {
 	o.overrides[canonicalClassLookupKey(name)] = class
 }
 
-func (o *classLookupOverlay) lookup(classes map[string]Class, typeName string) (Class, bool) {
+func (o *classLookupOverlay) lookup(vm *VM, typeName string) (Class, bool) {
 	if class, ok := foldLookupClassMap(o.overrides, typeName); ok {
 		return class, true
 	}
@@ -175,13 +176,13 @@ func (o *classLookupOverlay) lookup(classes map[string]Class, typeName string) (
 	if class, ok := o.prior[alias]; ok {
 		return class, true
 	}
-	class, ok := classes[alias]
-	return class, ok
+	return vm.classEntry(alias)
 }
 
 // freezeClassLookupOverlay publishes the overlay as a layer over the root
 // generation. It returns false when a class value write since the overlay
-// began requires the full build.
+// began requires the full build. FreezeClassLookup folds class value overlays
+// first, so vm.Classes holds this VM's class values.
 func (vm *VM) freezeClassLookupOverlay(o *classLookupOverlay) bool {
 	if vm.classValuesWritten {
 		return false
@@ -240,7 +241,7 @@ func (vm *VM) freezeClassLookupOverlay(o *classLookupOverlay) bool {
 func (vm *VM) recomputeClassLookupKey(contributors, written []string, key, previous string) (string, bool) {
 	best, bestNS, bestRank, found := "", "", 0, false
 	consider := func(alias string) {
-		class, ok := vm.Classes[alias]
+		class, ok := vm.classEntry(alias)
 		if !ok {
 			return
 		}
@@ -320,7 +321,7 @@ func (vm *VM) patchTopLevelClassLookup(base map[string]topLevelClassLookup, cont
 		var entry topLevelClassLookup
 		found := false
 		visit := func(alias string) {
-			class, ok := vm.Classes[alias]
+			class, ok := vm.classEntry(alias)
 			if !ok {
 				return
 			}

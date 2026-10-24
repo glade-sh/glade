@@ -20,6 +20,7 @@ import (
 	"github.com/glade-sh/glade/internal/gladehome"
 	"github.com/glade-sh/glade/internal/lwc/compile"
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/testutil/browserapi"
 )
 
 type l16Case struct {
@@ -188,6 +189,16 @@ func TestL16SalesforceConformance(t *testing.T) {
 		}
 	}
 
+	type apiObservation struct {
+		dom       map[string]json.RawMessage
+		domErrors map[string]string
+		domErr    error
+	}
+	observeAPI := browserapi.Prepare(t, versions, func(t *testing.T, api string) apiObservation {
+
+		dom, domErrors, domErr := l16ObserveDOM(t, api, runtimeCases, repo, dependencies)
+		return apiObservation{dom, domErrors, domErr}
+	})
 	var report strings.Builder
 	report.WriteString("API\tID\tKIND\tSTATUS\tACTUAL\tEXPECTED\tREASON\n")
 	matches, total, compileMatches, domMatches, localDOMRows := 0, 0, 0, 0, 0
@@ -195,7 +206,8 @@ func TestL16SalesforceConformance(t *testing.T) {
 	diagnosticMatches, diagnosticTotal, diagnosticCarried := 0, 0, 0
 	for _, api := range versions {
 		compiled := l16CompileCases(t, api, compilerCases)
-		dom, domErrors, domErr := l16ObserveDOM(t, api, runtimeCases, repo, dependencies)
+		result := observeAPI(api)
+		dom, domErrors, domErr := result.dom, result.domErrors, result.domErr
 		compileIndex, apiMatches := 0, 0
 		for _, c := range cases {
 			got, want, reason := "", c.Expected[api], ""

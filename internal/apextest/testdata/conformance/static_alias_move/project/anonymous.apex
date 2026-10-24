@@ -1,0 +1,1 @@
+Map<String,Object> observed = new Map<String,Object>(); for (String variant : new List<String>{'assignment','put','rejected','empty'}) { observed.put(variant, StaticMoveProbe.observe(variant)); } System.assert(false, 'OBS|' + JSON.serialize(observed));

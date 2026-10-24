@@ -1,0 +1,5 @@
+Source APIs: 62, 63, 64, 65, 66, 67. Routes: anonymous, isTest; local twins: request runtime, project runner, direct named VM.
+Each observation covers with/without sharing, organization-only and user override, original administrator and Standard User runAs.
+Getters (getInstance/getOrgDefaults/getValues) and SOQL (static, dynamic, count, queryWithBinds, explicit SYSTEM_MODE/USER_MODE) report errors independently.
+Anonymous captures retain the runAs-only-in-tests boundary.
+Grant controls: Standard User assigned ViewAllCustomSettings, source APIs 62 and 67, both sharing declarations.

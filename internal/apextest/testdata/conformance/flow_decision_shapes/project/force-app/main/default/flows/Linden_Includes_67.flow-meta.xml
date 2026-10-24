@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <label>Linden_Includes_67</label>
+    <processType>AutoLaunchedFlow</processType>
+    <decisions><name>Dec_Inc</name><label>Dec Inc</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Dec_Case_no</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>Not_Applicable</name><conditionLogic>(1 AND 2) OR 3</conditionLogic>
+<conditions><leftValueReference>isA</leftValueReference><operator>EqualTo</operator><rightValue><booleanValue>false</booleanValue></rightValue></conditions><conditions><leftValueReference>$Record.Department</leftValueReference><operator>NotEqualTo</operator><rightValue><stringValue>X</stringValue></rightValue></conditions><conditions><leftValueReference>isB</leftValueReference><operator>EqualTo</operator><rightValue><booleanValue>false</booleanValue></rightValue></conditions>
+<connector><targetReference>Dec_Case_yes</targetReference></connector><label>NA</label></rules>
+    </decisions>
+    <decisions><name>Dec_Case_yes</name><label>Dec Case yes</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Upd_yes_no</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>Lower_yes</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>isLower</leftValueReference><operator>EqualTo</operator><rightValue><booleanValue>true</booleanValue></rightValue></conditions><connector><targetReference>Upd_yes_yes</targetReference></connector><label>Lower</label></rules>
+    </decisions>
+    <decisions><name>Dec_Case_no</name><label>Dec Case no</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Upd_no_no</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>Lower_no</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>isLower</leftValueReference><operator>EqualTo</operator><rightValue><booleanValue>true</booleanValue></rightValue></conditions><connector><targetReference>Upd_no_yes</targetReference></connector><label>Lower</label></rules>
+    </decisions>
+    <formulas><name>isA</name><dataType>Boolean</dataType><expression>INCLUDES({!Get_Acct.Linden_MS__c}, 'A')</expression></formulas>
+    <formulas><name>isB</name><dataType>Boolean</dataType><expression>INCLUDES({!Get_Acct.Linden_MS__c}, 'B')</expression></formulas>
+    <formulas><name>isLower</name><dataType>Boolean</dataType><expression>INCLUDES({!Get_Acct.Linden_MS__c}, 'a')</expression></formulas>
+    <recordLookups><name>Get_Acct</name><label>Get Acct</label><locationX>0</locationX><locationY>0</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector><targetReference>Dec_Inc</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>Id</field><operator>EqualTo</operator><value><elementReference>$Record.AccountId</elementReference></value></filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>Account</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <recordUpdates><name>Upd_yes_yes</name><label>Upd yes yes</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Linden_Q__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputAssignments><field>Linden_S__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_yes_no</name><label>Upd yes no</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Linden_Q__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputAssignments><field>Linden_S__c</field><value><stringValue>no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_no_yes</name><label>Upd no yes</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Linden_Q__c</field><value><stringValue>no</stringValue></value></inputAssignments><inputAssignments><field>Linden_S__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_no_no</name><label>Upd no no</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Linden_Q__c</field><value><stringValue>no</stringValue></value></inputAssignments><inputAssignments><field>Linden_S__c</field><value><stringValue>no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <start>
+        <locationX>0</locationX><locationY>0</locationY>
+        <connector><targetReference>Get_Acct</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>Linden_O__c</field><operator>IsChanged</operator><value><booleanValue>true</booleanValue></value></filters>
+        <object>Contact</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

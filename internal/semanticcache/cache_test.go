@@ -510,6 +510,7 @@ func testIdentity() Identity {
 		ProjectContentSHA256: "project",
 		SchemaContentSHA256:  "schema",
 		DependencySHA256:     "dependency",
+		BuildFingerprint:     "binary",
 		SemanticABI:          sema.SemanticABI,
 		PlatformABI:          "platform",
 		OptionsFingerprint: sema.AnalyzeOptionsFingerprint(sema.AnalyzeOptions{

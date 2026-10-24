@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"fields":2,"hasAccount":true,"hasOwner":true,"name":"Discovery","nameOnly":"Discovery","nameOnlyFields":1,"nameOnlyPresent":true}
+62.0	isTest	{"fields":2,"hasAccount":true,"hasOwner":true,"name":"Discovery","nameOnly":"Discovery","nameOnlyFields":1,"nameOnlyPresent":true}
+67.0	anonymous	{"fields":2,"hasAccount":true,"hasOwner":true,"name":"Discovery","nameOnly":"Discovery","nameOnlyFields":1,"nameOnlyPresent":true}
+67.0	isTest	{"fields":2,"hasAccount":true,"hasOwner":true,"name":"Discovery","nameOnly":"Discovery","nameOnlyFields":1,"nameOnlyPresent":true}

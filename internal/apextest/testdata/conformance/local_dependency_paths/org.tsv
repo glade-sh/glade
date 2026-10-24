@@ -1,0 +1,3 @@
+source_api	route	observation
+62.0	isTest	{"Class":"LocalBridgeDependency62Test","TestsRun":1,"Failures":0,"Outcome":"Passed"}
+67.0	isTest	{"Class":"LocalBridgeDependency67Test","TestsRun":1,"Failures":0,"Outcome":"Passed"}

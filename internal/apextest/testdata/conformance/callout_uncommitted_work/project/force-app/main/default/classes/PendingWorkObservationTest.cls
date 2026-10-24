@@ -1,0 +1,20 @@
+@IsTest private class PendingWorkObservationTest {
+ @IsTest static void uw01() {PendingWorkProbe.emit('UW01');}
+ @IsTest static void uw02() {PendingWorkProbe.emit('UW02');}
+ @IsTest static void uw03() {PendingWorkProbe.emit('UW03');}
+ @IsTest static void uw04() {PendingWorkProbe.emit('UW04');}
+ @IsTest static void uw05() {PendingWorkProbe.emit('UW05');}
+ @IsTest static void uw06() {PendingWorkProbe.emit('UW06');}
+ @IsTest static void uw07() {PendingWorkProbe.emit('UW07');}
+ @IsTest static void uw08() {PendingWorkProbe.emit('UW08');}
+ @IsTest static void uw09() {PendingWorkProbe.emit('UW09');}
+ @IsTest static void uw10() {PendingWorkProbe.emit('UW10');}
+ @IsTest static void uw11() {PendingWorkProbe.emit('UW11');}
+ @IsTest static void uw12() {PendingWorkProbe.emit('UW12');}
+ @IsTest static void uw13() {PendingWorkProbe.emit('UW13');}
+ @IsTest static void uw14() {PendingWorkProbe.emit('UW14');}
+ @IsTest static void uw15() {PendingWorkProbe.emit('UW15');}
+ @IsTest static void uw16() {PendingWorkProbe.emit('UW16');}
+ @IsTest static void uw17() {PendingWorkProbe.emit('UW17');}
+ @IsTest static void UW10Qualified() {System.assert(false,'OBSERVED|UW10Qualified|'+PendingWorkProbe.qualifiedFuture());}
+}

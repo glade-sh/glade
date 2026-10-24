@@ -1,0 +1,10 @@
+resource	observation
+ValueInvalidEmpty	field integrity exception: unknown (The assignment using the Equals operator uses a reference to "$GlobalConstant.EmptyString", which doesn't exist.)
+ValueInvalidEmptyStringUpdate	field integrity exception: unknown (The assignment that uses the field "Result__c" has an invalid reference in "$GlobalConstant.EmptyString".)
+ValueInvalidFalse	field integrity exception: unknown (The assignment using the Equals operator uses a reference to "$GlobalConstant.False", which doesn't exist.)
+ValueInvalidFalseUpdate	field integrity exception: unknown (The assignment that uses the field "False__c" has an invalid reference in "$GlobalConstant.False".)
+ValueInvalidGlobal	field integrity exception: unknown (The assignment using the Equals operator uses a reference to "$GlobalConstant.Null", which doesn't exist.)
+ValueInvalidNullUpdate	field integrity exception: unknown (The assignment that uses the field "Result__c" has an invalid reference in "$GlobalConstant.Null".)
+ValueInvalidParentReference	Save (Update Records) - You can't use the sObjectInputReference field with the inputAssignments field. Remove the value for the sObjectInputReference field and try again.
+ValueInvalidTrue	field integrity exception: unknown (The assignment using the Equals operator uses a reference to "$GlobalConstant.True", which doesn't exist.)
+ValueInvalidTrueUpdate	field integrity exception: unknown (The assignment that uses the field "True__c" has an invalid reference in "$GlobalConstant.True".)

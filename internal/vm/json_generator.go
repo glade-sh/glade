@@ -589,7 +589,8 @@ func jsonGeneratorException(format string, args ...any) error {
 }
 
 func (vm *VM) jsonGeneratorRenderAny(value Value) (string, error) {
-	data, err := jsonMarshalNoEscape(vm.jsonFromValueForSerialize(value, false))
+	state := jsonSerializationState{rejectCycles: true, root: true, rootValue: value, generator: true}
+	data, err := jsonMarshalNoEscape(vm.jsonFromValueForSerializeWithState(value, false, &state))
 	if err != nil {
 		return "", err
 	}

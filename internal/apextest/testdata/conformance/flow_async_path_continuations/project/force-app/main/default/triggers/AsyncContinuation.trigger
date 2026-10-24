@@ -1,0 +1,1 @@
+trigger AsyncContinuation on AsyncParcel__c (after update) { for(AsyncParcel__c row:Trigger.new) { if(row.Delayed__c && !Trigger.oldMap.get(row.Id).Delayed__c) insert new Account(Name='Async trigger continuation'); } }

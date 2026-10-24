@@ -1,0 +1,8 @@
+api	child_describe
+62.0	unavailable
+63.0	unavailable
+64.0	unavailable
+65.0	unavailable
+66.0	unavailable
+67.0	AccountId|REFERENCE|Account|true|true|true|false|Account|true
+67.0	ParentRecordId|REFERENCE|Account,Case,Contact,Lead,Opportunity,Product2|false|true|true|false|ParentRecord|true

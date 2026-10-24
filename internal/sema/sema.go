@@ -23,12 +23,12 @@ import (
 // SemanticABI identifies the behavior of semantic diagnostics, inference,
 // visibility, and exported types. Any change to those behaviors must bump this
 // value so persisted semantic results fail closed.
-const SemanticABI = "sema-v69"
+const SemanticABI = "sema-v70"
 
 // PlatformABI identifies the built-in Salesforce platform model consumed by
 // semantic analysis. Changes to built-in signatures, aliases, or visibility
 // must bump this value so persisted semantic results fail closed.
-const PlatformABI = "salesforce-platform-v56"
+const PlatformABI = "salesforce-platform-v57"
 
 type Result struct {
 	Project     typesys.ProjectInfo      `json:"project"`
@@ -421,6 +421,7 @@ func enrichIndexWithSchemaDerivedObjects(index typesys.Index) typesys.Index {
 		return index
 	}
 	index.Objects = schema.WithGeneratedHistoryObjects(index.Objects)
+	index.Objects = semaWithCustomChangeEventObjects(index.Objects)
 	out := make([]schema.Object, 0, len(index.Objects)*2)
 	seen := make(map[string]bool, len(index.Objects)*2)
 	for _, object := range index.Objects {
@@ -1007,7 +1008,7 @@ func (a *Analyzer) collectAdditionalSemaLocalDecls(typ typesys.TypeSymbol, membe
 	if isSemaKeyword(typeName) {
 		return nil
 	}
-	if semaLocalDeclLooksLikeSOQLClause(typeName, "") {
+	if semaLocalDeclLooksLikeSOQLClause(typeName, "") && !a.hasKnownAtVersion(resolveNestedTypeReference(model, typ.Name, typeName), typ.EffectiveAPIVersion) {
 		return nil
 	}
 	if match[1] <= 0 || body[match[1]-1] == ';' {
@@ -1516,19 +1517,27 @@ func semaReturnValueRange(match []int) (int, int, bool) {
 }
 
 func semaLocalDeclMatchInIgnoredText(ignored *semaIgnoredText, match []int) bool {
-	body := ignored.body
 	if len(match) >= 4 && match[2] >= 0 {
-		typeName := strings.TrimSpace(body[match[2]:match[3]])
-		name := ""
-		if len(match) >= 6 && match[4] >= 0 {
-			name = strings.TrimSpace(body[match[4]:match[5]])
-		}
-		if semaLocalDeclLooksLikeSOQLClause(typeName, name) {
-			return true
-		}
 		return ignored.contains(match[2]) || ignored.inParenGroup(match[2])
 	}
 	return len(match) < 1 || match[0] < 0 || ignored.contains(match[0]) || ignored.inParenGroup(match[0])
+}
+
+// semaQueryStart skips leading trivia so keywords inside comments cannot
+// determine whether a bracketed expression is a query.
+func semaQueryStart(source string, start int) int {
+	for start < len(source) {
+		if isWhitespace(source[start]) {
+			start++
+			continue
+		}
+		if end, comment := skipSemaComment(source, start); comment {
+			start = end + 1
+			continue
+		}
+		break
+	}
+	return start
 }
 
 func semaLocalDeclLooksLikeSOQLClause(typeName, name string) bool {
@@ -1832,6 +1841,9 @@ func semaLooksLikeSObjectFieldTokenInModel(expr string, model *semaTypeMemberVie
 		return true
 	}
 	if len(parts) == 3 && semaFieldTokenPart(parts[0]) && strings.EqualFold(parts[1], "fields") && semaFieldTokenPart(parts[2]) && isSemaSObjectLike(parts[0], model) {
+		return true
+	}
+	if len(parts) == 4 && strings.EqualFold(parts[0], "Schema") && semaFieldTokenPart(parts[1]) && strings.EqualFold(parts[2], "fields") && semaFieldTokenPart(parts[3]) && isSemaSObjectLike(parts[1], model) {
 		return true
 	}
 	for i := 0; i+2 < len(parts); i++ {
@@ -3880,7 +3892,7 @@ func (r Result) MarshalJSON() ([]byte, error) {
 	return json.Marshal(alias(r))
 }
 
-var builtinTypes = []string{
+var builtinTypes = append([]string{
 	"void",
 	"Object",
 	"SObject",
@@ -3898,40 +3910,9 @@ var builtinTypes = []string{
 	"Datetime",
 	"Time",
 	"Type",
-	"Exception",
-	"AssertException",
-	"AuraHandledException",
-	"AsyncException",
-	"CalloutException",
-	"DmlException",
-	"DMLException",
-	"EmailException",
-	"ExternalObjectException",
-	"IllegalArgumentException",
-	"IllegalStateException",
-	"InvalidParameterValueException",
-	"JSONException",
-	"LimitException",
-	"ListException",
-	"MathException",
-	"NoAccessException",
-	"NoDataFoundException",
-	"NoSuchElementException",
-	"NullPointerException",
-	"PatternSyntaxException",
-	"QueryException",
-	"RequiredFeatureMissingException",
 	"Savepoint",
 	"System.Savepoint",
-	"SearchException",
-	"SecurityException",
-	"SerializationException",
-	"SObjectException",
-	"StringException",
-	"TypeException",
-	"VisualforceException",
-	"XmlException",
-}
+}, typesys.StandardExceptionTypeNames()...)
 
 var platformTypes = []string{
 	"Account",

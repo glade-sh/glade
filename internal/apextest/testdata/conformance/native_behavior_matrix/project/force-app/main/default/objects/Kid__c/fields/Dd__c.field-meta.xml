@@ -1,0 +1,9 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>Dd__c</fullName>
+  <deleteConstraint>SetNull</deleteConstraint>
+  <label>Dd Label</label>
+  <referenceTo>Contact</referenceTo>
+  <relationshipLabel>Rel_X Rows</relationshipLabel>
+  <relationshipName>Rel_X</relationshipName>
+  <type>Lookup</type>
+</CustomField>

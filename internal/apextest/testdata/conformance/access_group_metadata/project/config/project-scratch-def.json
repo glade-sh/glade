@@ -1,0 +1,9 @@
+{
+  "orgName": "Access Metadata Probe",
+  "edition": "Developer",
+  "settings": {
+    "currencySettings": {
+      "enableMultiCurrency": true
+    }
+  }
+}

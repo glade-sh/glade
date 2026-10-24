@@ -1,0 +1,12 @@
+{
+  "api": "62.0",
+  "deploy_id": "0Afhv000000ZzwfCAC",
+  "tests": [
+    {
+      "MethodName": "observeScheduledBatch",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBS|[]",
+      "StackTrace": "Class.StaticCallbackProbeTest.observeScheduledBatch: line 12, column 1"
+    }
+  ]
+}

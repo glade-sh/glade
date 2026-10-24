@@ -1,0 +1,95 @@
+ROW xml/false/0 error=""
+ROW xml/false/0/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/false/0/1 kind=START_ELEMENT name=root ns= text="" location="Line: 1 Column: 8" startLine=1
+ROW xml/false/0/2 kind=END_ELEMENT name=root ns= text="" location="Line: 1 Column: 8" startLine=0
+ROW xml/false/0/3 kind=END_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/false/1 error=""
+ROW xml/false/1/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/false/1/1 kind=START_ELEMENT name=root ns= text="" location="Line: 1 Column: 28" startLine=1
+ROW xml/false/1/2 kind=CHARACTERS name= ns= text="\nΩ😀" location="Line: 2 Column: 4" startLine=0
+ROW xml/false/1/3 kind=START_ELEMENT name=x ns= text="" location="Line: 2 Column: 13" startLine=2
+ROW xml/false/1/4 kind=END_ELEMENT name=x ns= text="" location="Line: 2 Column: 13" startLine=0
+ROW xml/false/1/5 kind=CHARACTERS name= ns= text="tail" location="Line: 2 Column: 18" startLine=0
+ROW xml/false/1/6 kind=END_ELEMENT name=root ns= text="" location="Line: 2 Column: 24" startLine=0
+ROW xml/false/1/7 kind=END_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/false/2 error=""
+ROW xml/false/2/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/false/2/1 kind=START_ELEMENT name=r ns= text="" location="Line: 1 Column: 20" startLine=1
+ROW xml/false/2/2 kind=START_ELEMENT name=x ns=urn:n text="" location="Line: 1 Column: 33" startLine=1
+ROW xml/false/2/3 kind=CHARACTERS name= ns= text="a&b" location="Line: 1 Column: 41" startLine=0
+ROW xml/false/2/4 kind=COMMENT name= ns= text="c" location="Line: 1 Column: 48" startLine=0
+ROW xml/false/2/5 kind=CHARACTERS name= ns= text="d" location="Line: 1 Column: 62" startLine=0
+ROW xml/false/2/6 kind=END_ELEMENT name=x ns=urn:n text="" location="Line: 1 Column: 67" startLine=0
+ROW xml/false/2/7 kind=END_ELEMENT name=r ns= text="" location="Line: 1 Column: 71" startLine=0
+ROW xml/false/2/8 kind=END_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/false/3 error="ParseError at [row,col]:[1,9]\nMessage: The element type \"x\" must be terminated by the matching end-tag \"</x>\"."
+ROW xml/false/3/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/false/3/1 kind=START_ELEMENT name=r ns= text="" location="Line: 1 Column: 4" startLine=1
+ROW xml/false/3/2 kind=START_ELEMENT name=x ns= text="" location="Line: 1 Column: 7" startLine=1
+ROW xml/false/4 error=""
+ROW xml/false/4/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/false/4/1 kind=START_ELEMENT name=r ns= text="" location="Line: 1 Column: 17" startLine=1
+ROW xml/false/4/2 kind=END_ELEMENT name=r ns= text="" location="Line: 1 Column: 17" startLine=0
+ROW xml/false/4/3 kind=END_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/false/5 error=""
+ROW xml/false/5/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/false/5/1 kind=START_ELEMENT name=r ns= text="" location="Line: 1 Column: 4" startLine=1
+ROW xml/false/5/2 kind=START_ELEMENT name=x ns=n text="" location="Line: 1 Column: 10" startLine=1
+ROW xml/false/5/3 kind=END_ELEMENT name=x ns=n text="" location="Line: 1 Column: 10" startLine=0
+ROW xml/false/5/4 kind=END_ELEMENT name=r ns= text="" location="Line: 1 Column: 14" startLine=0
+ROW xml/false/5/5 kind=END_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/false/6 error="ParseError at [row,col]:[1,4]\nMessage: XML document structures must start and end within the same entity."
+ROW xml/false/6/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/false/6/1 kind=START_ELEMENT name=r ns= text="" location="Line: 1 Column: 4" startLine=1
+ROW xml/false/7 error="ParseError at [row,col]:[1,1]\nMessage: Premature end of file."
+ROW xml/false/7/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/false/8 error="ParseError at [row,col]:[1,6]\nMessage: The markup in the document following the root element must be well-formed."
+ROW xml/false/8/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/false/8/1 kind=START_ELEMENT name=r ns= text="" location="Line: 1 Column: 5" startLine=1
+ROW xml/false/8/2 kind=END_ELEMENT name=r ns= text="" location="Line: 1 Column: 5" startLine=0
+ROW xml/true/0 error=""
+ROW xml/true/0/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/true/0/1 kind=START_ELEMENT name=root ns= text="" location="Line: 1 Column: 8" startLine=1
+ROW xml/true/0/2 kind=END_ELEMENT name=root ns= text="" location="Line: 1 Column: 8" startLine=0
+ROW xml/true/0/3 kind=END_DOCUMENT name= ns= text="" location="" startLine=0
+ROW dom/0 xml="<?xml version=\"1.0\" encoding=\"UTF-8\"?><root />"
+ROW xml/true/1 error=""
+ROW xml/true/1/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/true/1/1 kind=START_ELEMENT name=root ns= text="" location="Line: 1 Column: 28" startLine=1
+ROW xml/true/1/2 kind=CHARACTERS name= ns= text="\nΩ😀" location="Line: 2 Column: 3" startLine=0
+ROW xml/true/1/3 kind=START_ELEMENT name=x ns= text="" location="Line: 2 Column: 13" startLine=2
+ROW xml/true/1/4 kind=END_ELEMENT name=x ns= text="" location="Line: 2 Column: 13" startLine=0
+ROW xml/true/1/5 kind=CHARACTERS name= ns= text="tail" location="Line: 2 Column: 17" startLine=0
+ROW xml/true/1/6 kind=END_ELEMENT name=root ns= text="" location="Line: 2 Column: 24" startLine=0
+ROW xml/true/1/7 kind=END_DOCUMENT name= ns= text="" location="" startLine=0
+ROW dom/1 xml="<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>\nΩ😀<x a=\"v\" />tail</root>"
+ROW xml/true/2 error=""
+ROW xml/true/2/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/true/2/1 kind=START_ELEMENT name=r ns= text="" location="Line: 1 Column: 20" startLine=1
+ROW xml/true/2/2 kind=START_ELEMENT name=x ns=urn:n text="" location="Line: 1 Column: 33" startLine=1
+ROW xml/true/2/3 kind=CHARACTERS name= ns= text="a" location="Line: 1 Column: 40" startLine=0
+ROW xml/true/2/4 kind=CHARACTERS name= ns= text="&" location="Line: 1 Column: 40" startLine=0
+ROW xml/true/2/5 kind=CHARACTERS name= ns= text="b" location="Line: 1 Column: 40" startLine=0
+ROW xml/true/2/6 kind=COMMENT name= ns= text="c" location="Line: 1 Column: 48" startLine=0
+ROW xml/true/2/7 kind=END_ELEMENT name=x ns=urn:n text="" location="Line: 1 Column: 67" startLine=0
+ROW xml/true/2/8 kind=END_ELEMENT name=r ns= text="" location="Line: 1 Column: 71" startLine=0
+ROW xml/true/2/9 kind=END_DOCUMENT name= ns= text="" location="" startLine=0
+ROW dom/2 xml="<?xml version=\"1.0\" encoding=\"UTF-8\"?><r xmlns:n=\"urn:n\"><n:x n:a=\"v\">a&amp;b<!--c--></n:x></r>"
+ROW xml/true/3 error="Failed to parse XML due to: end tag name </r> must be the same as start tag <x> from line 1 (position: START_TAG seen <r><x></r>... @1:10) "
+ROW xml/true/3/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/true/3/1 kind=START_ELEMENT name=r ns= text="" location="Line: 1 Column: 4" startLine=1
+ROW xml/true/3/2 kind=START_ELEMENT name=x ns= text="" location="Line: 1 Column: 7" startLine=1
+ROW xml/true/4 error="Failed to parse XML due to: duplicated attributes :a and :a (position: START_DOCUMENT seen <r a=\"1\" a=\"2\"/>... @1:16) "
+ROW xml/true/4/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/true/5 error="Failed to parse XML due to: could not determine namespace bound to element prefix n (position: START_TAG seen <r><n:x/>... @1:9) "
+ROW xml/true/5/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/true/5/1 kind=START_ELEMENT name=r ns= text="" location="Line: 1 Column: 4" startLine=1
+ROW xml/true/6 error="Encountered premature end of XML: no more data available - expected end tag </r> to close start tag <r> from line 1, parser stopped on START_TAG seen <r>... @1:3"
+ROW xml/true/6/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/true/6/1 kind=START_ELEMENT name=r ns= text="" location="Line: 1 Column: 4" startLine=1
+ROW xml/true/7 error="Encountered premature end of XML: input contained no data"
+ROW xml/true/7/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/true/8 error="Failed to parse XML due to: in epilog non whitespace content is not allowed but got o (position: END_TAG seen <r/>o... @1:5) "
+ROW xml/true/8/0 kind=START_DOCUMENT name= ns= text="" location="" startLine=0
+ROW xml/true/8/1 kind=START_ELEMENT name=r ns= text="" location="Line: 1 Column: 5" startLine=1
+ROW xml/true/8/2 kind=END_ELEMENT name=r ns= text="" location="Line: 1 Column: 5" startLine=0

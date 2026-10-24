@@ -1,0 +1,5 @@
+apiVersion	route	observation
+62.0	anonymous	"{""invalidUser"":""System.StringException|Invalid id: 005-community-user"",""userBlobCounted"":true,""validUser"":""005000000000071AAA""}"
+62.0	isTest	"{""invalidUser"":""System.StringException|Invalid id: 005-community-user"",""userBlobCounted"":true,""validUser"":""005000000000071AAA""}"
+67.0	anonymous	"{""invalidUser"":""System.StringException|Invalid id: 005-community-user"",""userBlobCounted"":true,""validUser"":""005000000000071AAA""}"
+67.0	isTest	"{""invalidUser"":""System.StringException|Invalid id: 005-community-user"",""userBlobCounted"":true,""validUser"":""005000000000071AAA""}"

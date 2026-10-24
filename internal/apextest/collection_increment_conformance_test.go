@@ -68,7 +68,7 @@ func TestCollectionIncrementOrgConformance(t *testing.T) {
 		r4Rows["r4"] = append(r4Rows["r4"], n)
 	}
 	for _, api := range matrix.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			build := func(sources map[string]string, anonymous bool) typesys.Index {
 				t.Helper()
 				root := t.TempDir()
@@ -358,9 +358,10 @@ func TestCollectionIncrementRuntimeBoundary(t *testing.T) {
 		{accounts + "--/*c*/m.get('one').AnnualRevenue;", ""},
 		{accounts + "++m.get(key).AnnualRevenue;", ""},      // R4-07 is anonymous-only
 		{accounts + "++m.get(acc.Name).AnnualRevenue;", ""}, // R4-11 is anonymous-only
-		{longs + "++l[0];", ""}, // R4-43 holds only --
-		{longs + "++/*c*/l[0];", ""},
-		{boxes + "++m.get('one').amount;", ""}, // R4-29 holds Long, Double and String fields
+		// Both routes: increment_value_routes/org.tsv list_long and map_field_decimal.
+		{longs + "++l[0];", "System.assertEquals(3L, l[0]);"},
+		{longs + "++/*c*/l[0];", "System.assertEquals(3L, l[0]);"},
+		{boxes + "++m.get('one').amount;", "System.assertEquals(3, m.get('one').amount);"},
 	}
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, row := range named {

@@ -1,0 +1,6 @@
+id	kind	source
+missing_prefix_known_type	named_compile	compile_cases/MissingPrefixKnownTypeProbe.cls
+unknown_dotted_receiver	named_compile	compile_cases/UnknownDottedReceiverProbe.cls
+missing_prefix_known_nested_type	named_compile	compile_cases/MissingPrefixKnownNestedTypeProbe.cls
+inner_before_top_level	runtime	inner_before_top_level.apex
+project_class_before_platform	runtime	project_class_before_platform.apex

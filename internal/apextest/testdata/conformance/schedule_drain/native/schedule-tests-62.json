@@ -1,0 +1,61 @@
+{
+  "error": null,
+  "tests": [
+    {
+      "FullName": "ScheduleDrainObservationTest.batchFinishInnerClass",
+      "MethodName": "batchFinishInnerClass",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|batchFinishInnerClass|{\"cron\":1,\"relay\":0,\"queue\":0,\"batch\":1,\"scheduled\":0}",
+      "StackTrace": "Class.ScheduleDrainObservationTest.batchFinishInnerClass: line 52, column 1"
+    },
+    {
+      "FullName": "ScheduleDrainObservationTest.batchFinishTopLevel",
+      "MethodName": "batchFinishTopLevel",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|batchFinishTopLevel|{\"cron\":1,\"relay\":0,\"queue\":0,\"batch\":1,\"scheduled\":1}",
+      "StackTrace": "Class.ScheduleDrainObservationTest.batchFinishTopLevel: line 39, column 1"
+    },
+    {
+      "FullName": "ScheduleDrainObservationTest.directInnerClass",
+      "MethodName": "directInnerClass",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|directInnerClass|{\"cron\":1,\"relay\":0,\"queue\":0,\"batch\":0,\"scheduled\":0}",
+      "StackTrace": "Class.ScheduleDrainObservationTest.directInnerClass: line 26, column 1"
+    },
+    {
+      "FullName": "ScheduleDrainObservationTest.directTopLevel",
+      "MethodName": "directTopLevel",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|directTopLevel|{\"cron\":1,\"relay\":0,\"queue\":0,\"batch\":0,\"scheduled\":1}",
+      "StackTrace": "Class.ScheduleDrainObservationTest.directTopLevel: line 13, column 1"
+    },
+    {
+      "FullName": "ScheduleDrainObservationTest.queueableInnerClass",
+      "MethodName": "queueableInnerClass",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|queueableInnerClass|{\"cron\":1,\"relay\":0,\"queue\":1,\"batch\":0,\"scheduled\":0}",
+      "StackTrace": "Class.ScheduleDrainObservationTest.queueableInnerClass: line 78, column 1"
+    },
+    {
+      "FullName": "ScheduleDrainObservationTest.queueableTopLevel",
+      "MethodName": "queueableTopLevel",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|queueableTopLevel|{\"cron\":1,\"relay\":0,\"queue\":1,\"batch\":0,\"scheduled\":1}",
+      "StackTrace": "Class.ScheduleDrainObservationTest.queueableTopLevel: line 65, column 1"
+    },
+    {
+      "FullName": "ScheduleDrainObservationTest.scheduledCallbackInnerClass",
+      "MethodName": "scheduledCallbackInnerClass",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|scheduledCallbackInnerClass|{\"cron\":2,\"relay\":1,\"queue\":0,\"batch\":0,\"scheduled\":0}",
+      "StackTrace": "Class.ScheduleDrainObservationTest.scheduledCallbackInnerClass: line 104, column 1"
+    },
+    {
+      "FullName": "ScheduleDrainObservationTest.scheduledCallbackTopLevel",
+      "MethodName": "scheduledCallbackTopLevel",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|scheduledCallbackTopLevel|{\"cron\":2,\"relay\":1,\"queue\":0,\"batch\":0,\"scheduled\":0}",
+      "StackTrace": "Class.ScheduleDrainObservationTest.scheduledCallbackTopLevel: line 91, column 1"
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <label>Linden_Out_67</label>
+    <processType>AutoLaunchedFlow</processType>
+    <decisions><name>Dec_O1</name><label>Dec O1</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Upd_O1_no</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>R_O1</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>acctVar.Industry</leftValueReference><operator>NotEqualTo</operator><rightValue><stringValue>Energy</stringValue></rightValue></conditions><conditions><leftValueReference>acctVar.Industry</leftValueReference><operator>NotEqualTo</operator><rightValue><stringValue>Retail</stringValue></rightValue></conditions><connector><targetReference>Upd_O1_yes</targetReference></connector><label>R O1</label></rules>
+    </decisions>
+    <decisions><name>Dec_O2</name><label>Dec O2</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Upd_O2_no</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>R_O2</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>vPhone</leftValueReference><operator>EqualTo</operator></conditions><connector><targetReference>Upd_O2_yes</targetReference></connector><label>R O2</label></rules>
+    </decisions>
+    <decisions><name>Dec_O3</name><label>Dec O3</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Upd_O3_no</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>R_O3</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>vInd</leftValueReference><operator>EqualTo</operator><rightValue><stringValue>Banking</stringValue></rightValue></conditions><connector><targetReference>Upd_O3_yes</targetReference></connector><label>R O3</label></rules>
+    </decisions>
+    <decisions><name>Dec_O4</name><label>Dec O4</label><locationX>0</locationX><locationY>0</locationY>
+        <defaultConnector><targetReference>Upd_O4_no</targetReference></defaultConnector><defaultConnectorLabel>No</defaultConnectorLabel>
+        <rules><name>R_O4</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>vPhone</leftValueReference><operator>NotEqualTo</operator></conditions><connector><targetReference>Upd_O4_yes</targetReference></connector><label>R O4</label></rules>
+    </decisions>
+    <recordLookups><name>Get_Acct</name><label>Get Acct</label><locationX>0</locationX><locationY>0</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector><targetReference>Get_Acct2</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>Id</field><operator>EqualTo</operator><value><elementReference>$Record.AccountId</elementReference></value></filters>
+        <object>Account</object><outputReference>acctVar</outputReference>
+        <queriedFields>Id</queriedFields><queriedFields>Name</queriedFields><queriedFields>Industry</queriedFields>
+    </recordLookups>
+    <recordLookups><name>Get_Acct2</name><label>Get Acct2</label><locationX>0</locationX><locationY>0</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector><targetReference>Dec_O1</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>Id</field><operator>EqualTo</operator><value><elementReference>$Record.AccountId</elementReference></value></filters>
+        <object>Account</object>
+        <outputAssignments><assignToReference>vPhone</assignToReference><field>Phone</field></outputAssignments>
+        <outputAssignments><assignToReference>vInd</assignToReference><field>Industry</field></outputAssignments>
+    </recordLookups>
+    <recordUpdates><name>Upd_O1_yes</name><label>Upd O1_yes</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_O2</targetReference></connector>
+        <inputAssignments><field>Linden_J__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_O1_no</name><label>Upd O1_no</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_O2</targetReference></connector>
+        <inputAssignments><field>Linden_J__c</field><value><stringValue>no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_O2_yes</name><label>Upd O2_yes</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_O3</targetReference></connector>
+        <inputAssignments><field>Linden_K__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_O2_no</name><label>Upd O2_no</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_O3</targetReference></connector>
+        <inputAssignments><field>Linden_K__c</field><value><stringValue>no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_O3_yes</name><label>Upd O3_yes</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_O4</targetReference></connector>
+        <inputAssignments><field>Linden_L__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_O3_no</name><label>Upd O3_no</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Dec_O4</targetReference></connector>
+        <inputAssignments><field>Linden_L__c</field><value><stringValue>no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_O4_yes</name><label>Upd O4_yes</label><locationX>0</locationX><locationY>0</locationY>
+        <inputAssignments><field>Linden_M__c</field><value><stringValue>yes</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <recordUpdates><name>Upd_O4_no</name><label>Upd O4_no</label><locationX>0</locationX><locationY>0</locationY>
+        <inputAssignments><field>Linden_M__c</field><value><stringValue>no</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates>
+    <start>
+        <locationX>0</locationX><locationY>0</locationY>
+        <connector><targetReference>Get_Acct</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>Linden_N__c</field><operator>IsChanged</operator><value><booleanValue>true</booleanValue></value></filters>
+        <object>Contact</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+    <variables><name>acctVar</name><dataType>SObject</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput><objectType>Account</objectType></variables>
+    <variables><name>vInd</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput></variables>
+    <variables><name>vPhone</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput></variables>
+</Flow>

@@ -127,7 +127,7 @@ func debugFileMatches(breakpointFile, statementFile string) bool {
 
 func (vm *VM) debugStaticValues() map[string]Value {
 	out := make(map[string]Value)
-	for className, class := range vm.Classes {
+	for className, class := range vm.ClassEntries() {
 		fields := orderedFieldNames(class.StaticFields, class.StaticFieldOrder)
 		if len(fields) == 0 {
 			continue
@@ -178,6 +178,7 @@ func cloneValue(value Value) Value {
 func cloneValueWithSeen(value Value, seen map[uint64]bool) Value {
 	value = value.currentMapKeySet()
 	out := value
+	out.primitiveSetState = clonePrimitiveSetState(value.primitiveSetState)
 	out.mapKeySetSource = nil
 	out.mapKeySetHashes = nil
 	switch value.Kind {
@@ -234,6 +235,7 @@ func cloneValueWithSeen(value Value, seen map[uint64]bool) Value {
 			out.Set[i] = cloneValueWithSeen(child, seen)
 		}
 	}
+	bindPrimitiveSetCloneState(value, &out)
 	return out
 }
 

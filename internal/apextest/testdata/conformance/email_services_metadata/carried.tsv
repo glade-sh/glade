@@ -1,0 +1,13 @@
+source_api	configuration	route	case_id	reason
+62.0	plain	anonymous	active	Email services metadata: deployed function/address metadata has no corresponding local query rows.
+62.0	plain	anonymous	inactive	Email services metadata: deployed function/address metadata has no corresponding local query rows.
+62.0	plain	anonymous	limited	Email services metadata: deployed function/address metadata has no corresponding local query rows.
+62.0	plain	isTest	active	Email services metadata: deployed function/address metadata has no corresponding local query rows.
+62.0	plain	isTest	inactive	Email services metadata: deployed function/address metadata has no corresponding local query rows.
+62.0	plain	isTest	limited	Email services metadata: deployed function/address metadata has no corresponding local query rows.
+67.0	plain	anonymous	active	Email services metadata: deployed function/address metadata has no corresponding local query rows.
+67.0	plain	anonymous	inactive	Email services metadata: deployed function/address metadata has no corresponding local query rows.
+67.0	plain	anonymous	limited	Email services metadata: deployed function/address metadata has no corresponding local query rows.
+67.0	plain	isTest	active	Email services metadata: deployed function/address metadata has no corresponding local query rows.
+67.0	plain	isTest	inactive	Email services metadata: deployed function/address metadata has no corresponding local query rows.
+67.0	plain	isTest	limited	Email services metadata: deployed function/address metadata has no corresponding local query rows.

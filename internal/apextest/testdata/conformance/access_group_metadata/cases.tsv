@@ -1,0 +1,5 @@
+observation	native_source_apis	routes
+roleQueryAccess	62.0,67.0	anonymous,isTest
+internalRoleGroups	62.0,67.0	anonymous,isTest
+groupMetricsCardinality	62.0,67.0	anonymous,isTest
+childRelationshipMetadataFilter	62.0,67.0	anonymous,isTest

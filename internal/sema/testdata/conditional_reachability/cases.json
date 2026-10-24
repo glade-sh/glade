@@ -1,0 +1,32 @@
+[
+  {
+    "ID": "both_return_rejection",
+    "Body": "Boolean flag = true; if (flag) { return; } else { return; } System.debug('after');",
+    "Reject": true,
+    "AnonymousAccepted": true
+  },
+  {
+    "ID": "direct_return_rejection",
+    "Body": "return; System.debug('after');",
+    "Reject": true,
+    "AnonymousAccepted": true
+  },
+  {
+    "ID": "one_branch_boundary",
+    "Body": "Boolean flag = false; if (flag) { return; } else { System.debug('branch'); } System.debug('after');"
+  },
+  {
+    "ID": "both_return_boundary",
+    "Body": "Boolean flag = true; if (flag) { return; } else { return; }"
+  },
+  {
+    "ID": "break_rejection",
+    "Body": "break;",
+    "Reject": true
+  },
+  {
+    "ID": "break_after_return_rejection",
+    "Body": "return; break;",
+    "Reject": true
+  }
+]

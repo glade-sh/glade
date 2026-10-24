@@ -3,4 +3,4 @@ context=istest
 rows=20
 native_complete=true
 deployment_success=true
-transport=intentional result-bearing assertion; not native test pass
+transport=System.assert

@@ -1017,8 +1017,8 @@ func TestApplyOrgShapeAddsOptionalFeatureObjectsAndRecords(t *testing.T) {
 	if site := org.Objects["Site"]; len(site.Records) == 0 || site.Definition.Fields["GuestUserId"].Type != FieldReference {
 		t.Fatalf("Site shape/records = %#v", site)
 	}
-	if network := org.Objects["Network"]; len(network.Records) == 0 {
-		t.Fatalf("Network records = %#v", network.Records)
+	if network := org.Objects["Network"]; len(network.Records) != 0 || network.Definition.APIName != "Network" {
+		t.Fatalf("enabled Network schema without deployed metadata: %#v", network)
 	}
 	if cache := org.Objects["PlatformCachePartition"]; len(cache.Records) == 0 {
 		t.Fatalf("PlatformCachePartition records = %#v", cache.Records)

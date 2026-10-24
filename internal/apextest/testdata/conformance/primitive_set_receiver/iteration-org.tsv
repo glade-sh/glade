@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	System.FinalException: Cannot modify a collection while it is being iterated.
+62.0	isTest	System.FinalException: Cannot modify a collection while it is being iterated.
+67.0	anonymous	System.FinalException: Cannot modify a collection while it is being iterated.
+67.0	isTest	System.FinalException: Cannot modify a collection while it is being iterated.

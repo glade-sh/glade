@@ -129,37 +129,37 @@
       {
         "api": "62.0",
         "context": "anonymous",
-        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version 62.0 --file <synthetic-probe>/api62.apex --json",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <example-org> --api-version 62.0 --file <synthetic-probe>/api62.apex --json",
         "rawResponseSha256": "1e790c80544d5e96b7ebc7119d06a7dd444bbf42789e362ea0dde240ff26861f"
       },
       {
         "api": "62.0",
         "context": "istest",
-        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names TransientLocalObserved62 --synchronous --result-format json --wait 15 --json",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <example-org> --class-names TransientLocalObserved62 --synchronous --result-format json --wait 15 --json",
         "rawResponseSha256": "77db47ab62a341076fa1dbf7f7afe2d599d0d9c688433aa1fad3290e62ac3fe6"
       },
       {
         "api": "67.0",
         "context": "anonymous",
-        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version 67.0 --file <synthetic-probe>/api67.apex --json",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <example-org> --api-version 67.0 --file <synthetic-probe>/api67.apex --json",
         "rawResponseSha256": "5046813215655dafef3d927dee5ab8e21573cc0da516397beaf2edb8d5f3cfc0"
       },
       {
         "api": "67.0",
         "context": "istest",
-        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names TransientLocalObserved67 --synchronous --result-format json --wait 15 --json",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <example-org> --class-names TransientLocalObserved67 --synchronous --result-format json --wait 15 --json",
         "rawResponseSha256": "bd185b111175bfb46f1fbda526156da39430574fe0c57474c63b36625a7b3074"
       },
       {
         "api": "68.0",
         "context": "anonymous",
-        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <scratch-org> --api-version 68.0 --file <synthetic-probe>/api68.apex --json",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --target-org <example-org> --api-version 68.0 --file <synthetic-probe>/api68.apex --json",
         "rawResponseSha256": "ae74610d8912fafe1f384cb6f440f1130e34e746b2c449c29cc9474700363a15"
       },
       {
         "api": "68.0",
         "context": "istest",
-        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <scratch-org> --class-names TransientLocalObserved68 --synchronous --result-format json --wait 15 --json",
+        "command": "HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --target-org <example-org> --class-names TransientLocalObserved68 --synchronous --result-format json --wait 15 --json",
         "rawResponseSha256": "5716d89b5088ef1a484f249eb02a00bb210119cf1f266a0e08ff4139634982d0"
       }
     ],

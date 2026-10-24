@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"iter"
 	"maps"
 	"reflect"
 	"slices"
@@ -85,11 +86,16 @@ type VM struct {
 	ownedStaticClasses       map[string]bool
 	sharedStaticClasses      bool
 	// classMapShared marks a Classes map that another VM may also hold (a
-	// frozen-shared clone and its source). The first write copies the map.
+	// frozen-shared clone and its source). Value writes to existing keys go
+	// to classValueOverlay; any other write copies the map first.
 	// classMapWritten records any write since this VM was built, after which
 	// the frozen copy plan may no longer describe the map's alias values.
 	classMapShared  atomic.Bool
 	classMapWritten bool
+	// classValueOverlay holds the class values this VM wrote while sharing
+	// Classes, keyed by existing Classes keys. Reads go through classEntry and
+	// ClassEntries; prepareClassMapWrite folds it into a private copy.
+	classValueOverlay map[string]Class
 	// classOverlay holds registrations made on top of a frozen generation
 	// until the next FreezeClassLookup (see class_lookup_overlay.go).
 	classOverlay *classLookupOverlay
@@ -120,8 +126,11 @@ type VM struct {
 	testExecutionEntry      *testExecutionEntry
 	reflectionConstructType string
 	testContext             *TestContext
+	mixedDML                mixedDMLState
 	localAsyncJobs          []AsyncJob
 	localAsyncSeq           int
+	flowAsyncSeq            uint64
+	flowPathSavepoints      map[string]uint64
 	localAsyncDrain         bool
 	localAsyncChain         bool
 	rejectAsyncActions      bool
@@ -150,8 +159,13 @@ type VM struct {
 	// The first millis read can share the most recent now() timestamp without
 	// leaving subsequent millis reads pinned to that cached timestamp.
 	hasPendingNowMillis bool
+
+	testClockStart    time.Time
+	hasTestClockStart bool
+
 	// --- Async/queueable scheduling ---
 	currentAsyncKind             string
+	futureBodyDepth              int
 	inBatchFinish                bool
 	currentQueueableDepth        int
 	currentQueueableMaxDepth     int
@@ -171,6 +185,7 @@ type VM struct {
 	activeTriggerNamespaces []string
 	installContextDepth     int
 	// --- Transaction state (savepoints) ---
+	calloutPendingWork calloutPendingWork
 	savepoints         map[string]storage.OrgState
 	savepointMarks     map[string]storage.IsolationMark
 	emailSavepoints    map[string][]CapturedEmail
@@ -178,6 +193,7 @@ type VM struct {
 	nextSavepoint      int
 	recordCreations    *dml.RecordCreations
 	lookupHistoryScope *storage.LookupHistoryScope
+	duplicateReports   []dml.DuplicateReport
 	creationSavepoints map[string]recordCreationCheckpoint
 	// --- Visualforce / page context ---
 	pageMessages              []Value
@@ -233,12 +249,13 @@ type VM struct {
 	lastAmbiguous      *overloadDiagnostic
 	activeConstructors map[string]int
 	// --- Describe caches ---
-	describeCache                map[string]Value
-	fieldDescribeCache           map[string]Value
+	describeCache                map[describeCacheKey]Value
+	fieldDescribeCache           map[describeCacheKey]Value
 	globalDescribeCache          *Value
 	describeTabsCache            *Value
 	describeDefCache             map[string]storage.ObjectDefinition
 	customDataCache              map[string]Value
+	managedFeatureParameters     map[string]storage.FeatureParameterMetadata
 	soqlExecutionCache           *soql.ExecutionCache
 	dmlSummaryByChild            *dml.SummaryRelationCache
 	summarySideEffectObjects     *summarySideEffectObjectCache
@@ -251,10 +268,18 @@ type VM struct {
 	fieldResolveCache            *fieldResolveLookupCache
 	loadedChildRelCache          *loadedChildRelationshipLookupCache
 	lazyChildRelCache            *lazyChildRelationshipLookupCache
-	objectNameCache              map[string]objectNameLookup
+	objectNameCache              map[objectNameLookupKey]objectNameLookup
 	recentlyViewed               map[string]map[storage.ID]recentlyViewedEntry
 	metadataCacheStamp           string
 	isolationJournal             *storage.IsolationJournal
+	// describeShare holds the describe parts shared by clones of a primed
+	// base. describeShareDefinitions and sharedDescribeFieldMaps hold the
+	// entries this VM used; the latter, keyed by map identity, also tells
+	// privateDescribeFieldMap which field maps its describe roots share.
+	// Both outlive clearMetadataCaches: earlier roots can still be in use.
+	describeShare            *describeShareCache
+	describeShareDefinitions []*describeShareDefinition
+	sharedDescribeFieldMaps  map[uintptr]*describeShareFieldMap
 	// --- Static-field reference tracking (alias invalidation) ---
 	staticValueRefs       map[uint64]bool
 	staticValueRefFields  map[uint64]staticFieldRefSet
@@ -274,6 +299,11 @@ type VM struct {
 	collectionMutationRefSeq    map[uint64]uint64
 	collectionMutationRefFloor  uint64
 	collectionMutationSeq       uint64
+	nestedReceiverCache         map[uint64]nestedReceiverGraph
+	nestedReceiverMapRoots      map[uintptr]map[uint64]struct{}
+	nestedReceiverCacheRefs     int
+	flatAliasIndex              map[flatObjectAliasIndexKey]*flatObjectAliasIndex
+	flatAliasIndexSlots         int
 	splitBackingRefs            map[uint64]struct{}
 	splitBackingAll             bool
 	mapKeySetBackings           map[uint64]mapKeySetSourceRef
@@ -330,6 +360,11 @@ type loadedChildRelationshipLookup struct {
 	ParentRelationshipExists bool
 	ChildRelationshipNames   []string
 	CandidateNames           []string
+}
+
+type objectNameLookupKey struct {
+	Namespace string
+	Name      string
 }
 
 type objectNameLookup struct {
@@ -474,8 +509,10 @@ type CapturedEmail struct {
 }
 
 type sideEffectSnapshot struct {
+	changeJournal   []changeDataCaptureEntry
 	capturedEmails  []CapturedEmail
 	recordCreations recordCreationCheckpoint
+	flowPathMark    uint64
 }
 
 // DebugEvent records a System.debug invocation with its logging level and the
@@ -569,6 +606,10 @@ type TestContext struct {
 	PlatformEventPublishes   int
 	PlatformEventStartIndex  int
 	ChangeDataCaptureEnabled bool
+	changeJournal            []changeDataCaptureEntry
+	changeSavepoints         map[string][]changeDataCaptureEntry
+	changeSequence           int64
+	changeTransaction        string
 	ReadOnlyApplication      bool
 	Draining                 bool
 	StopDraining             bool
@@ -605,6 +646,7 @@ type AsyncJob struct {
 	Args                []Value
 	BatchSize           int
 	Name                string
+	FlowPath            *flowAsyncPathJob
 	Cron                string
 	ParentJobID         string
 	LastProcessed       string
@@ -705,8 +747,8 @@ func newVM(stdout io.Writer, recorder *PerfRecorder) *VM {
 		ctx:                          context.Background(),
 		activeGetters:                make(map[string]int),
 		activeSetters:                make(map[string]int),
-		describeCache:                make(map[string]Value),
-		fieldDescribeCache:           make(map[string]Value),
+		describeCache:                make(map[describeCacheKey]Value),
+		fieldDescribeCache:           make(map[describeCacheKey]Value),
 		describeDefCache:             make(map[string]storage.ObjectDefinition),
 		customDataCache:              make(map[string]Value),
 		managedFeatureValues:         make(map[string]Value),
@@ -718,7 +760,7 @@ func newVM(stdout io.Writer, recorder *PerfRecorder) *VM {
 		fieldResolveCache:            newFieldResolveLookupCache(),
 		loadedChildRelCache:          newLoadedChildRelationshipLookupCache(),
 		lazyChildRelCache:            newLazyChildRelationshipLookupCache(),
-		objectNameCache:              make(map[string]objectNameLookup),
+		objectNameCache:              make(map[objectNameLookupKey]objectNameLookup),
 		recentlyViewed:               make(map[string]map[storage.ID]recentlyViewedEntry),
 	}
 	machine.SetPerfRecorder(recorder)
@@ -755,6 +797,11 @@ func (vm *VM) CloneRuntimeFrozenShared(stdout io.Writer) *VM {
 
 func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	clone := newVM(stdout, vm.perfRecorder)
+	clone.testClockStart = vm.testClockStart
+	clone.hasTestClockStart = vm.hasTestClockStart
+	if clone.hasTestClockStart {
+		clone.fakeNow = clone.testClockStart
+	}
 	clone.expressionTypeResolver = vm.expressionTypeResolver
 	// Methods, MethodOverloads, MethodFolded, and Triggers are compiled
 	// artifacts that are only mutated by Register*/unregister* at setup, never
@@ -777,10 +824,17 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	// with a populated cache therefore collect their own index; the empty-cache
 	// fast path is unchanged.
 	shareStaticValueRefs := shareFrozenStatics && len(vm.platformCache) == 0
+	// The copies below start from the source's class values. A source with
+	// overlay values gets a combined map; the source itself is not changed.
+	classes := vm.Classes
+	if vm.classValueOverlay != nil {
+		classes = vm.classMapCopy()
+	}
 	if shareFrozenStatics && vm.canShareClassMap() {
 		// The source map already holds what the planned copy would build:
 		// every alias carries its primary's value and statics stay shared
-		// until first access. Share it by pointer and copy on first write.
+		// until first access. Share it by pointer; this VM's later value
+		// writes go to its overlay and other writes copy the map.
 		if !vm.classMapShared.Load() {
 			vm.classMapShared.Store(true)
 		}
@@ -789,26 +843,26 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		clone.sharedClassCopyPlan = vm.sharedClassCopyPlan
 		clone.sharedStaticClasses = true
 	} else if shareFrozenStatics && vm.sharedClassCopyPlan != nil {
-		clone.Classes = copyClassMapSharedStaticsWithPlan(vm.Classes, vm.sharedClassCopyPlan)
+		clone.Classes = copyClassMapSharedStaticsWithPlan(classes, vm.sharedClassCopyPlan)
 		clone.sharedClassCopyPlan = vm.sharedClassCopyPlan
 		clone.sharedStaticClasses = true
 		// A planned copy can normalize divergent aliases. Only reuse the
 		// source index if that leaves every static location unchanged.
 		for name, class := range clone.Classes {
-			source := vm.Classes[name]
+			source := classes[name]
 			if !sameMap(class.StaticFields, source.StaticFields) || runtimeClassName(class) != runtimeClassName(source) {
 				shareStaticValueRefs = false
 				break
 			}
 		}
 	} else if shareFrozenStatics {
-		clone.Classes = copyClassMapSharedStatics(vm.Classes)
+		clone.Classes = copyClassMapSharedStatics(classes)
 		clone.sharedStaticClasses = true
 	} else if vm.sharedClassCopyPlan != nil {
-		clone.Classes = copyClassMapWithPlan(vm.Classes, vm.sharedClassCopyPlan)
+		clone.Classes = copyClassMapWithPlan(classes, vm.sharedClassCopyPlan)
 		clone.sharedClassCopyPlan = vm.sharedClassCopyPlan
 	} else {
-		clone.Classes = copyClassMap(vm.Classes)
+		clone.Classes = copyClassMap(classes)
 	}
 	if shareFrozenStatics {
 		vm.staticValueRefsMu.Lock()
@@ -863,6 +917,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		clone.summarySideEffectIndex = vm.summarySideEffectIndex
 		clone.loadedChildRelCache = vm.loadedChildRelCache
 		clone.lazyChildRelCache = vm.lazyChildRelCache
+		clone.describeShare = vm.describeShare
 	} else {
 		clone.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
 		clone.childRelCache = newChildRelationshipCache()
@@ -873,6 +928,9 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		clone.loadedChildRelCache = newLoadedChildRelationshipLookupCache()
 		clone.lazyChildRelCache = newLazyChildRelationshipLookupCache()
 	}
+	// Values copied from the source can hold its describe roots; keep their
+	// shared field maps private on first use in the clone as well.
+	clone.sharedDescribeFieldMaps = maps.Clone(vm.sharedDescribeFieldMaps)
 	clone.traceEnabled = vm.traceEnabled
 	clone.toolingExecuteAnonymous = vm.toolingExecuteAnonymous
 	clone.rejectAsyncActions = vm.rejectAsyncActions
@@ -880,6 +938,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	clone.staticInitState = nil
 	clone.pageReferences = copyStringMap(vm.pageReferences)
 	clone.platformCache = copyCacheMap(vm.platformCache)
+	clone.managedFeatureParameters = copyFeatureParameterMetadataMap(vm.managedFeatureParameters)
 	clone.managedFeatureValues = copyValueMap(vm.managedFeatureValues)
 	clone.isolationJournal = vm.isolationJournal
 	clone.testDocumentBaseline = vm.testDocumentBaseline
@@ -892,7 +951,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		// their types against the source schema during this private scan;
 		// callers still install their own org on the returned runtime.
 		clone.Org = vm.Org
-		for _, class := range clone.Classes {
+		for _, class := range clone.ClassEntries() {
 			for _, field := range class.StaticFields {
 				clone.registerSObjectAliasRecord(field.Value)
 				clone.registerSObjectAliasRecord(field.InitialValue)
@@ -937,18 +996,94 @@ func (vm *VM) ensureRuntimeArtifactsOwned() {
 // whose aliases all hold their primary's value, and no write since freeze
 // that could have made one alias diverge.
 func (vm *VM) canShareClassMap() bool {
-	return vm.sharedClassCopyPlan != nil && vm.sharedClassCopyPlan.uniformAliases && !vm.classMapWritten
+	return vm.sharedClassCopyPlan != nil && vm.sharedClassCopyPlan.uniformAliases && !vm.classMapWritten && vm.classValueOverlay == nil
 }
 
-// prepareClassMapWrite runs before every write to vm.Classes. A map shared
-// with another VM is copied first so neither side sees the other's writes.
+// prepareClassMapWrite runs before every write to vm.Classes except a value
+// update of existing keys (writeExistingClassEntry). A map shared with another
+// VM is copied first, with this VM's overlay values, so neither side sees the
+// other's writes.
 func (vm *VM) prepareClassMapWrite() {
 	vm.classMapWritten = true
 	if !vm.classMapShared.Load() {
 		return
 	}
 	vm.classMapShared.Store(false)
-	vm.Classes = copyClassMapSharedStatics(vm.Classes)
+	vm.Classes = vm.classMapCopy()
+	vm.classValueOverlay = nil
+}
+
+// foldClassValueOverlay gives a VM with overlay values a private Classes map
+// that holds them, for steps that read the map as a whole.
+func (vm *VM) foldClassValueOverlay() {
+	if vm.classValueOverlay != nil {
+		vm.prepareClassMapWrite()
+	}
+}
+
+// classMapCopy returns a new map with this VM's class values. It does not
+// change the VM, so concurrent clones of one source may call it.
+func (vm *VM) classMapCopy() map[string]Class {
+	classes := copyClassMapSharedStatics(vm.Classes)
+	for name, class := range vm.classValueOverlay {
+		classes[name] = class
+	}
+	return classes
+}
+
+// writeExistingClassEntry stores a value at a key vm.Classes already holds. A
+// map shared with another VM is not written; the value goes to this VM's
+// overlay, so a first static write no longer copies every class entry.
+func (vm *VM) writeExistingClassEntry(name string, class Class) {
+	if vm.classMapShared.Load() {
+		if vm.classValueOverlay == nil {
+			vm.classValueOverlay = make(map[string]Class)
+		}
+		vm.classValueOverlay[name] = class
+		return
+	}
+	vm.Classes[name] = class
+}
+
+// classEntry reads one vm.Classes key: the value this VM wrote while sharing
+// the map, else the map's value. Read Classes entries through it.
+func (vm *VM) classEntry(name string) (class Class, ok bool) {
+	if vm.classValueOverlay != nil {
+		if class, ok = vm.classValueOverlay[name]; ok {
+			return class, ok
+		}
+	}
+	class, ok = vm.Classes[name]
+	return class, ok
+}
+
+// ClassEntries ranges over the class entries with classEntry's values. A range
+// that starts without overlay values is a plain range over vm.Classes, so when
+// that map is shared, values the loop body writes are not seen, as when a first
+// write copied the map. A range that starts with overlay values reads each
+// key's current value when the loop reaches it, as a range over a private map
+// does.
+func (vm *VM) ClassEntries() iter.Seq2[string, Class] {
+	return func(yield func(string, Class) bool) {
+		classes := vm.Classes
+		if vm.classValueOverlay == nil {
+			for name, class := range classes {
+				if !yield(name, class) {
+					return
+				}
+			}
+			return
+		}
+		for name := range classes {
+			class, ok := vm.classEntry(name)
+			if !ok {
+				continue
+			}
+			if !yield(name, class) {
+				return
+			}
+		}
+	}
 }
 
 func (vm *VM) SetIsolationJournal(journal *storage.IsolationJournal) {
@@ -1291,8 +1426,7 @@ func copyClassMap(in map[string]Class) map[string]Class {
 
 func (vm *VM) ensureMutableClass(name string) (Class, bool) {
 	if !vm.sharedStaticClasses {
-		class, ok := vm.Classes[name]
-		return class, ok
+		return vm.classEntry(name)
 	}
 	class, ok := vm.lookupClass(name)
 	if !ok {
@@ -1525,10 +1659,18 @@ func (vm *VM) SetCurrentPageURLNull() {
 }
 
 func (vm *VM) SetOrg(org *storage.OrgState) {
+	vm.ensureChangeEventObjects(org)
 	vm.recordCreations = nil
 	vm.lookupHistoryScope = nil
 	vm.creationSavepoints = nil
 	vm.sObjectAliasTypes = nil
+	if org != nil {
+		for name, state := range org.Objects {
+			storage.PrepareRelationshipTargets(&state.Definition)
+			org.Objects[name] = state
+		}
+		org.InvalidateRuntimeGeneration()
+	}
 	nextStamp := runtimeSchemaStampHintForOrg(org)
 	if nextStamp == "" {
 		nextStamp = schemaCacheStampForOrg(org)
@@ -1541,12 +1683,13 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 		vm.metadataCacheStamp = nextStamp
 	}
 	vm.Org = org
+	vm.installManagedFeatureParameters(org, false)
 	// Host code may install schema after supplying values. Recheck those
 	// roots before newly resolved SObject types become eligible for pruning.
 	for _, value := range vm.Globals {
 		vm.registerSObjectAliasRecord(value)
 	}
-	for _, class := range vm.Classes {
+	for _, class := range vm.ClassEntries() {
 		for _, field := range class.StaticFields {
 			vm.registerSObjectAliasRecord(field.Value)
 			vm.registerSObjectAliasRecord(field.InitialValue)
@@ -1558,6 +1701,7 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 	vm.clearTriggerMatchCache()
 	if vm.Org != nil {
 		vm.Org.Now = func() time.Time { return vm.fakeNow }
+		vm.Org.Today = vm.currentLocalNow
 	}
 	if vm.testContext != nil && isPlaceholderCurrentUser(vm.testContext.CurrentUser) {
 		vm.testContext.CurrentUser = vm.defaultTestCurrentUser()
@@ -1567,6 +1711,7 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 // SetRuntimeTemplateOrg installs a fresh clone of the schema generation that
 // this VM was cloned from. All other org changes must use SetOrg.
 func (vm *VM) SetRuntimeTemplateOrg(org *storage.OrgState) {
+	vm.ensureChangeEventObjects(org)
 	vm.recordCreations = nil
 	vm.lookupHistoryScope = nil
 	vm.creationSavepoints = nil
@@ -1575,12 +1720,14 @@ func (vm *VM) SetRuntimeTemplateOrg(org *storage.OrgState) {
 		vm.SetOrg(org)
 		return
 	}
+	vm.installManagedFeatureParameters(org, true)
 	vm.Org = org
 	if vm.soqlExecutionCache == nil {
 		vm.soqlExecutionCache = soql.NewExecutionCache()
 	}
 	if vm.Org != nil {
 		vm.Org.Now = func() time.Time { return vm.fakeNow }
+		vm.Org.Today = vm.currentLocalNow
 	}
 	if vm.testContext != nil && isPlaceholderCurrentUser(vm.testContext.CurrentUser) {
 		vm.testContext.CurrentUser = vm.defaultTestCurrentUser()
@@ -1600,10 +1747,26 @@ func (vm *VM) PrimeMetadataSchema(org *storage.OrgState) {
 	}
 	if stamp != "" {
 		vm.metadataCacheStamp = stamp
-		// Clones share this pointer; create it here so the first clone whose
-		// org still carries this stamp builds the summary index for all.
-		if vm.summarySideEffectObjects == nil || vm.summarySideEffectObjects.stamp != stamp {
-			vm.summarySideEffectObjects = newSummarySideEffectObjectCache(stamp)
+		if org != nil && strings.TrimSpace(org.RuntimeSchemaStamp) != "" {
+			caches := runtimeGenerationCachesForOrg(org, stamp)
+			vm.childRelCache = caches.childRel
+			vm.childRelationshipLookupCache = caches.childRelationshipLookup
+			vm.jsonChildRelTypeCache = caches.jsonChildRelType
+			vm.sObjectFieldAliasCache = caches.sObjectFieldAlias
+			vm.fieldResolveCache = caches.fieldResolve
+			vm.soqlExecutionCache = caches.soqlExecution
+			vm.loadedChildRelCache = caches.loadedChildRelationship
+			vm.lazyChildRelCache = caches.lazyChildRelationship
+			vm.summarySideEffectObjects = caches.summarySideEffectObjects
+			vm.describeShare = caches.describeShare
+			vm.dmlSummaryByChild = summaryRelationCacheForOrg(org)
+		} else {
+			if vm.summarySideEffectObjects == nil || vm.summarySideEffectObjects.stamp != stamp {
+				vm.summarySideEffectObjects = newSummarySideEffectObjectCache(stamp)
+			}
+			if vm.describeShare == nil || vm.describeShare.stamp != stamp {
+				vm.describeShare = newDescribeShareCache(stamp)
+			}
 		}
 	}
 }
@@ -1612,9 +1775,20 @@ func PrimeRuntimeTemplateSchema(template *storage.RuntimeTemplate) {
 	if template == nil {
 		return
 	}
+	// Rebuild derived keys before definitions are shared with test clones.
+	// Serialized runtimes omit them, and definition clones copy parent slices.
+	for name, state := range template.Org.Objects {
+		storage.PrepareRelationshipTargets(&state.Definition)
+		template.Org.Objects[name] = state
+	}
+	if strings.TrimSpace(template.Org.RuntimeSchemaStamp) == "" {
+		template.Org.InvalidateRuntimeGeneration()
+	}
+	storage.EnsureUniqueKeyPrefixes(&template.Org)
 	stamp := schemaCacheStampForOrg(&template.Org)
 	template.RuntimeSchemaStamp = stamp
 	template.Org.RuntimeSchemaStamp = stamp
+	template.Org.StoreRuntimeGenerationCache("vm:schema-stamp", stamp)
 	storage.PrimeObjectNameIndex(template.Org)
 }
 
@@ -1678,12 +1852,19 @@ func schemaStampHashLower(h uint64, s string) uint64 {
 // fingerprint is not a complete manifest of describe-visible metadata and must
 // not authorize cache retention across a SetOrg boundary.
 //
-// Known standard objects reuse a memoized per-object hash only after their
-// current content matches a private snapshot of every hashed input, so an
-// in-place map or slice write is always seen (see schemaStampObjectMemo).
+// A primed runtime generation reuses its stamp until a schema mutation clears
+// that generation. Uncached generations hash known standard objects only after
+// their current content matches a private snapshot of every hashed input (see
+// schemaStampObjectMemo). SetOrg invalidates the generation cache before
+// installing mutable schema maps.
 func schemaCacheStampForOrg(org *storage.OrgState) string {
 	if org == nil {
 		return ""
+	}
+	if cached, ok := org.LoadRuntimeGenerationCache("vm:schema-stamp"); ok {
+		if stamp, ok := cached.(string); ok {
+			return stamp
+		}
 	}
 	h := schemaStampFNVOffset
 	h = schemaStampHashLower(h, org.Namespace)
@@ -1702,7 +1883,9 @@ func schemaCacheStampForOrg(org *storage.OrgState) string {
 			h = schemaStampHashByte(h, byte(objectHash>>shift))
 		}
 	}
-	return strconv.FormatUint(h, 16)
+	stamp := strconv.FormatUint(h, 16)
+	org.StoreRuntimeGenerationCache("vm:schema-stamp", stamp)
+	return stamp
 }
 
 // schemaStampObjectMemos maps an exact object name to the immutable
@@ -1959,6 +2142,10 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 		vm.dmlSummaryByChild = dml.NewSummaryRelationCache()
 	}
 	engine.SummaryByChild = vm.dmlSummaryByChild
+	if vm.testContext != nil && vm.hasChangeDataCaptureSubscribers() {
+		engine.ChangeObserver = vm.observeChangeDataCapture
+		engine.ChangeCheckpoint = vm.changeDataCaptureCheckpoint
+	}
 	engine.IsolationJournal = vm.isolationJournal
 	engine.RecordCreations = vm.recordCreationState()
 	engine.LookupHistoryScope = vm.lookupHistoryState()
@@ -1976,6 +2163,10 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	}
 	engine.FlowActionInvokerWithContext = func(action storage.FlowAction, record storage.Record, context dml.FlowActionContext) error {
 		return vm.invokeFlowActionWithContext(action, record, context, result)
+	}
+	engine.FlowPathEnqueuer = vm.enqueueFlowAsyncPath
+	if vm.currentAsyncKind == "FlowAsyncPath" {
+		vm.configureFlowAsyncPathEngine(&engine, result)
 	}
 	engine.WorkflowEmailer = func(alert storage.WorkflowEmailAlert, record storage.Record) error {
 		return vm.captureWorkflowEmail(alert, record, result)
@@ -2105,6 +2296,10 @@ func (vm *VM) flowActionInputObject(action storage.FlowAction, record storage.Re
 		value, ok := vm.flowActionInputValue(input, record, context)
 		if !ok {
 			value = Null
+		}
+		value, err := vm.flowActionDeclaredInput(elementType, name, value)
+		if err != nil {
+			return Null, err
 		}
 		item.Fields[name] = value
 	}
@@ -2314,7 +2509,7 @@ func (vm *VM) resolveFlowInvocableMethod(action storage.FlowAction) (Method, boo
 			candidates = vm.registeredFolded(strings.ToLower(className + "." + methodName))
 		}
 		if len(candidates) == 0 {
-			class, ok := vm.Classes[className]
+			class, ok := vm.classEntry(className)
 			if !ok {
 				return Method{}, false, nil
 			}
@@ -2337,7 +2532,7 @@ func (vm *VM) resolveFlowInvocableMethod(action storage.FlowAction) (Method, boo
 			return Method{}, false, nil
 		}
 	}
-	class, ok := vm.Classes[className]
+	class, ok := vm.classEntry(className)
 	if !ok {
 		return Method{}, false, nil
 	}
@@ -2477,13 +2672,17 @@ func (vm *VM) refireAutomationUpdateTriggers(objectName string, id storage.ID, o
 func (vm *VM) snapshotSideEffects() sideEffectSnapshot {
 	return sideEffectSnapshot{
 		capturedEmails:  append([]CapturedEmail(nil), vm.capturedEmails...),
+		changeJournal:   vm.snapshotChangeDataCapture(),
 		recordCreations: vm.creationCheckpoint(),
+		flowPathMark:    vm.flowAsyncSeq,
 	}
 }
 
 func (vm *VM) restoreSideEffects(snapshot sideEffectSnapshot) {
+	vm.restoreChangeDataCapture(snapshot.changeJournal)
 	vm.capturedEmails = append([]CapturedEmail(nil), snapshot.capturedEmails...)
 	snapshot.recordCreations.restore()
+	vm.rollbackFlowPathsAfter(snapshot.flowPathMark)
 }
 
 func (vm *VM) RegisterTrigger(trigger Trigger) error {
@@ -2498,8 +2697,17 @@ func (vm *VM) RegisterTrigger(trigger Trigger) error {
 		vm.Triggers = make(map[string][]Trigger)
 	}
 	vm.Triggers[trigger.Object] = append(vm.Triggers[trigger.Object], trigger)
+	if storage.EnsureChangeEventObject(vm.Org, trigger.Object) {
+		vm.clearMetadataCaches()
+	}
 	vm.clearTriggerMatchCache()
 	return nil
+}
+
+func (vm *VM) ensureChangeEventObjects(org *storage.OrgState) {
+	for object := range vm.Triggers {
+		storage.EnsureChangeEventObject(org, object)
+	}
 }
 
 func (vm *VM) clearTriggerMatchCache() {
@@ -2511,6 +2719,7 @@ func (vm *VM) clearTriggerMatchCache() {
 }
 
 func (vm *VM) EnableTestContext() {
+	vm.mixedDML = mixedDMLState{}
 	vm.testContext = &TestContext{
 		CurrentUser:           vm.defaultTestCurrentUser(),
 		ContinuationResponses: make(map[string]Value),
@@ -2518,6 +2727,7 @@ func (vm *VM) EnableTestContext() {
 		SoqlStubs:             make(map[string]Value),
 	}
 	vm.ensureAsyncObjects()
+	vm.restoreChangeDataCaptureTestSetup()
 }
 
 func (vm *VM) SetTestSeeAllData(enabled bool) {
@@ -2631,7 +2841,7 @@ func (vm *VM) defaultOrgUserRecord() (storage.Record, bool) {
 }
 
 func (vm *VM) ResetStatics() error {
-	for className, class := range vm.Classes {
+	for className, class := range vm.ClassEntries() {
 		if len(class.StaticFields) == 0 {
 			continue
 		}
@@ -2650,7 +2860,7 @@ func (vm *VM) ResetStatics() error {
 
 func (vm *VM) ResetTestAsyncStaticCollections() error {
 	resetClasses := make(map[string]Class)
-	for className, class := range vm.Classes {
+	for className, class := range vm.ClassEntries() {
 		if len(class.StaticFields) == 0 {
 			continue
 		}
@@ -2783,8 +2993,17 @@ func (vm *VM) ExecuteTestInClass(program ir.Program, className string) (Result, 
 }
 
 func (vm *VM) execute(program ir.Program, className string) (result Result, err error) {
+	if vm.testContext == nil {
+		previous := vm.mixedDML
+		vm.mixedDML = mixedDMLState{}
+		defer func() { vm.mixedDML = previous }()
+	}
+	vm.clearFlatObjectAliasIndexes()
+	defer vm.clearFlatObjectAliasIndexes()
 	restoreCreations := vm.beginRecordCreationTransaction()
 	defer restoreCreations()
+	finishDuplicateReports := vm.beginDuplicateReportTransaction()
+	defer func() { finishDuplicateReports(err == nil) }()
 	callerClosedLocals, callerBindRoute := vm.closedSOQLLocals, vm.dynamicSOQLBindRoute
 	vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = nil, ""
 	defer func() {

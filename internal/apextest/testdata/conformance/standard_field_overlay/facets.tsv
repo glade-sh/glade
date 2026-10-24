@@ -1,0 +1,18 @@
+object	field	type	length	precision	scale	nillable	createable	updateable	permissionable	defaultedOnCreate	referenceTo	relationshipName	picklist(value:active:default)
+Account	Tradestyle	string	255	0	0	True	True	True	True	False		None	
+Account	NaicsCode	string	8	0	0	True	True	True	True	False		None	
+Account	NaicsDesc	string	120	0	0	True	True	True	True	False		None	
+Account	YearStarted	string	4	0	0	True	True	True	True	False		None	
+Account	DandbCompanyId	reference	18	0	0	True	True	True	True	False	DandBCompany	DandbCompany	
+Lead	CompanyDunsNumber	string	9	0	0	True	True	True	True	False		None	
+Lead	CleanStatus	picklist	40	0	0	True	True	True	True	False		None	Matched:True:False;Different:True:False;Acknowledged:True:False;NotFound:True:False;Inactive:True:False;Pending:True:False;SelectMatch:True:False;Skipped:True:False
+Lead	Fax	phone	40	0	0	True	True	True	True	False		None	
+Lead	MobilePhone	phone	40	0	0	True	True	True	True	False		None	
+Lead	DandbCompanyId	reference	18	0	0	True	True	True	True	False	DandBCompany	DandbCompany	
+Contact	CleanStatus	picklist	40	0	0	True	True	True	True	False		None	Matched:True:False;Different:True:False;Acknowledged:True:False;NotFound:True:False;Inactive:True:False;Pending:True:False;SelectMatch:True:False;Skipped:True:False
+Order	PoNumber	string	80	0	0	True	True	True	True	False		None	
+Order	PoDate	date	0	0	0	True	True	True	True	False		None	
+Order	BillToContactId	reference	18	0	0	True	True	True	True	False	Contact	BillToContact	
+Order	ShipToContactId	reference	18	0	0	True	True	True	True	False	Contact	ShipToContact	
+Order	CompanyAuthorizedDate	date	0	0	0	True	True	True	True	False		None	
+Order	CustomerAuthorizedDate	date	0	0	0	True	True	True	True	False		None	

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+<apiVersion>62.0</apiVersion>
+<decisions><name>Choose</name><label>Choose</label><locationX>0</locationX><locationY>0</locationY><defaultConnectorLabel>No match</defaultConnectorLabel><rules><name>Match</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>InputText</leftValueReference><operator>StartsWith</operator><rightValue><stringValue>Hello</stringValue></rightValue></conditions><connector><targetReference>Mark</targetReference></connector><label>Match</label></rules></decisions>
+<interviewLabel>ScalarText_startswith_mismatch</interviewLabel><label>ScalarText_startswith_mismatch</label><processType>AutoLaunchedFlow</processType>
+<recordCreates><name>Mark</name><label>Mark</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Subject</field><value><stringValue>Scalar text match</stringValue></value></inputAssignments><object>Task</object><storeOutputAutomatically>true</storeOutputAutomatically></recordCreates>
+<start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Choose</targetReference></connector><object>Account</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordAfterSave</triggerType><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>ScalarText_startswith_mismatch</stringValue></value></filters></start><status>Active</status>
+<variables><name>InputText</name><dataType>String</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>false</isOutput><value><stringValue>unrelated</stringValue></value></variables>
+</Flow>

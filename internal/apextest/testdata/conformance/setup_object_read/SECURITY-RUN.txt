@@ -1,0 +1,6 @@
+Owned legacy-security observation from the same scratch org.
+API 62: helper and wrapper compiled at 62.0; sf apex run test --class-names MeadowSetupProbeTest --synchronous --result-format json --api-version 62.0; intentional OBS assertion captured in security-enforced-api62.tsv.
+Source: security-enforced-api62.cls.txt; wrapper is MeadowSetupProbeTest.cls.
+API 67 deployment of the same legacy clause failed: WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.
+Plain baseline before enabling Communities: plain-source.cls.txt and plain-org.tsv (API 62/67; anonymous/isTest).
+The replay compares access denial, without asserting the legacy exception class.

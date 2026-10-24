@@ -10,7 +10,8 @@ import (
 )
 
 // The reference functions below are the per-offset scanners that
-// semaIgnoredText replaced, kept verbatim as the oracle.
+// semaIgnoredText replaced. Query starts include comments, as captured in
+// testdata/query_keyword_comments/org.tsv.
 
 func referenceSemaOffsetInIgnoredText(body string, pos int) bool {
 	if referenceSemaOffsetInSOQLLiteral(body, pos) {
@@ -101,8 +102,16 @@ func referenceSemaOffsetInSOQLLiteral(body string, pos int) bool {
 			i = skipSemaString(body, i)
 		case '[':
 			queryStart := i + 1
-			for queryStart < len(body) && isWhitespace(body[queryStart]) {
-				queryStart++
+			for queryStart < len(body) {
+				if isWhitespace(body[queryStart]) {
+					queryStart++
+					continue
+				}
+				if end, comment := skipSemaComment(body, queryStart); comment {
+					queryStart = end + 1
+					continue
+				}
+				break
 			}
 			if !strings.HasPrefix(strings.ToLower(body[queryStart:]), "select") && !strings.HasPrefix(strings.ToLower(body[queryStart:]), "find") {
 				continue

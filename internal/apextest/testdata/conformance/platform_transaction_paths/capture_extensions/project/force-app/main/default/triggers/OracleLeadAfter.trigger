@@ -1,0 +1,1 @@
+trigger OracleLeadAfter on Lead (after insert,after update) {if(Trigger.isInsert) {PathObservation.afterInserts+=Trigger.new.size();PathObservation.afterOwnerQueue=String.valueOf(Trigger.new[0].OwnerId).startsWith('00G');}else PathObservation.afterUpdates+=Trigger.new.size();}

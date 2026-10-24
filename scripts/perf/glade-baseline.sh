@@ -46,7 +46,7 @@ GODEBUG=inittrace=1 "$bin" version >"$out_dir/version.init.stdout" 2>"$out_dir/v
 # which is blocked by some macOS sandboxed checkouts and makes profiling fail
 # before the benchmark starts.
 apextest_bin="$out_dir/apextest.test"
-go test -c -o "$apextest_bin" ./internal/apextest
+go test -trimpath -c -o "$apextest_bin" ./internal/apextest
 "$apextest_bin" \
   -test.run '^$' \
   -test.bench '^BenchmarkRunTestSuiteWithClassSetup$' \
@@ -71,11 +71,11 @@ for benchmark in "${sema_benchmarks[@]}"; do
   for size in 200 2000; do
     leaf="$benchmark/size=$size/mode=cold"
     GLADE_SEMA_BENCH_COLD_LEAF="$leaf" \
-      go test -run '^$' -bench="^${benchmark}$/^size=${size}$/^mode=cold$" \
+      go test -trimpath -run '^$' -bench="^${benchmark}$/^size=${size}$/^mode=cold$" \
         -benchmem -benchtime=1x -count=1 ./internal/sema \
       | tee -a "$out_dir/sema.cold.bench"
 
-    go test -run '^$' -bench="^${benchmark}$/^size=${size}$/^mode=warm$" \
+    go test -trimpath -run '^$' -bench="^${benchmark}$/^size=${size}$/^mode=warm$" \
       -benchmem -benchtime=5x -count=1 ./internal/sema \
       | tee -a "$out_dir/sema.warm.bench"
   done
@@ -83,7 +83,7 @@ done
 
 echo "note: sema.process profiles include fixture setup, warm-up, and result oracle work; they are not benchmark timing evidence"
 sema_bin="$out_dir/sema.test"
-go test -c -o "$sema_bin" ./internal/sema
+go test -trimpath -c -o "$sema_bin" ./internal/sema
 "$sema_bin" \
   -test.run '^$' \
   -test.bench '^BenchmarkAnalyzeIndex$/^size=200$/^mode=warm$' \
@@ -99,7 +99,7 @@ if [[ "$profile_rows" != "1" ]]; then
 fi
 
 lsp_bin="$out_dir/lsp.test"
-go test -c -o "$lsp_bin" ./internal/lsp
+go test -trimpath -c -o "$lsp_bin" ./internal/lsp
 "$lsp_bin" \
   -test.run '^$' \
   -test.bench '^BenchmarkWorkspaceSymbols$' \

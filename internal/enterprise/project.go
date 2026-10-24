@@ -53,7 +53,7 @@ func (c Context) Summary() ProjectSummary {
 }
 
 func CountMetadataFiles(p project.Project) int {
-	return len(p.ObjectFiles) + len(p.FieldFiles) + len(p.FieldSetFiles) +
+	return len(p.ObjectFiles) + len(p.FieldFiles) + len(p.FieldSetFiles) + len(p.FeatureParameterFiles) +
 		len(p.RecordTypeFiles) + len(p.ValidationRuleFiles) + len(p.LabelFiles) +
 		len(p.TranslationFiles) + len(p.StaticResourceFiles) + len(p.StaticResourceMetas) +
 		len(p.DataWeaveFiles) + len(p.DataWeaveMetas) + len(p.ContentAssetFiles) +

@@ -401,7 +401,7 @@ func scanPublicAsset(rel, data string, visit func(string, string)) error {
 	reader := strings.NewReader(data)
 	wantMembers := -1
 	if strings.HasSuffix(rel, ".pack") {
-		if len(data) < 16 || (data[:8] != "GLADEC2\x00" && data[:8] != "GLADER2\x00") ||
+		if len(data) < 16 || (data[:8] != "GLADEC2\x00" && data[:8] != "GLADER2\x00" && data[:8] != "GLADES2\x00") ||
 			binary.BigEndian.Uint32([]byte(data[8:12])) != 2 {
 			return fmt.Errorf("unsupported or corrupt compressed pack")
 		}
@@ -612,6 +612,10 @@ func TestPublicAssetScanning(t *testing.T) {
 		{"gzip magic", "a.bin", private, false, 1, 1},
 		{"second member", "a.gz", safe + private, false, 2, 1},
 		{"pack", "a.pack", string(header) + safe + private, false, 2, 1},
+		{"stub pack", "a.pack", "GLADES2\x00" + string(header[8:]) + safe + safe, false, 2, 0},
+		{"stub private", "a.pack", "GLADES2\x00" + string(header[8:]) + safe + private, false, 2, 1},
+		{"stub truncated", "a.pack", "GLADES2\x00" + string(header[8:]) + safe + private[:len(private)-4], true, 1, 0},
+		{"stub missing member", "a.pack", "GLADES2\x00" + string(header[8:]) + safe, true, 1, 0},
 		{"catalog ID", "a.pack", string(header) + safe + id, false, 2, 1},
 		{"owned fixture ID", "testdata/a.gz", id, false, 1, 0},
 		{"captured fixture ID", "internal/lwc/compile/testdata/native.json.gz", id, false, 1, 1},

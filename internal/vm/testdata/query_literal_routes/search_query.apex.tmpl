@@ -1,0 +1,1 @@
+Object rows = Search.query('FIND {OwnedClockLiteral} IN ALL FIELDS RETURNING Contact(Id WHERE LastName = \'OwnedClockLiteral\' AND {{field}} >= {{literal}})');

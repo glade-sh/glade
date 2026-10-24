@@ -1,0 +1,5 @@
+shape	routes	variants
+mixed_late	anonymous,istest; API 62,67	base and typed lists; default,true,false
+mixed_early	anonymous,istest; API 62,67	base and typed lists; default,true,false
+mixed_success	anonymous,istest; API 62,67	base and typed lists; default,true,false
+mixed_workitems	anonymous,istest; API 62,67	base and typed lists; default,true,false

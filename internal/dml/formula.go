@@ -1309,6 +1309,19 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaBool, bool: matches}, true
+	case "INCLUDES":
+		if len(args) != 2 {
+			return formulaValue{}, false
+		}
+		if args[0].isNull() {
+			return formulaValue{kind: formulaBool}, true
+		}
+		for _, part := range strings.Split(args[0].asString(), ";") {
+			if strings.EqualFold(part, args[1].asString()) {
+				return formulaValue{kind: formulaBool, bool: true}, true
+			}
+		}
+		return formulaValue{kind: formulaBool}, true
 	case "ISPICKVAL":
 		if len(args) != 2 {
 			return formulaValue{}, false
@@ -1347,6 +1360,9 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		now := time.Now().UTC()
 		if p.org != nil && p.org.Now != nil {
 			now = p.org.Now().UTC()
+		}
+		if p.org != nil && p.org.Today != nil {
+			now = p.org.Today()
 		}
 		return formulaValue{kind: formulaDate, text: now.Format("2006-01-02")}, true
 	case "NOW":

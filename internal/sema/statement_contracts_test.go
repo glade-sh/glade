@@ -1,6 +1,10 @@
 package sema
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/glade-sh/glade/internal/typesys"
+)
 
 func TestStatementContextRejectsIllegalBreakAndContinue(t *testing.T) {
 	t.Parallel()
@@ -351,5 +355,22 @@ func TestSwitchContractsQualifiedPlatformEnumWithProjectShadow(t *testing.T) {
 	})
 	if result.HasErrors() {
 		t.Fatalf("qualified platform enum switch was rejected with project shadow: %#v", result.Diagnostics)
+	}
+}
+
+// Native verifier_display_contexts plain_S09 (API 62/67/68, anonymous):
+// a statement after throw inside a try block is "Unreachable statement",
+// while conditional_reachability accepts statements after return.
+func TestAnonymousStatementContractsRejectInstructionsAfterThrow(t *testing.T) {
+	t.Parallel()
+	for _, version := range []string{"62.0", "67.0", "68.0"} {
+		result := AnalyzeAnonymous(typesys.Index{}, "try { String rendered = 'x'; throw new NullPointerException(); System.debug(rendered); } catch (Exception failure) { }", version)
+		found := false
+		for _, d := range result.Diagnostics {
+			found = found || d.NativeMessage == "Unreachable statement"
+		}
+		if !found {
+			t.Fatalf("API %s: native rejects the successor of throw in anonymous Apex: %#v", version, result.Diagnostics)
+		}
 	}
 }

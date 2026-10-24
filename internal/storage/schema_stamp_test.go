@@ -14,10 +14,15 @@ func TestEnsureStandardObjectKeepsRuntimeSchemaStampOnlyForNoop(t *testing.T) {
 
 	org := ensured()
 	org.RuntimeSchemaStamp = "trusted"
+	generation := org.RuntimeGenerationID()
+	schemaGeneration := org.SchemaGeneration()
 	before := org.Objects["PermissionSetAssignment"].Definition.Clone()
 	EnsureStandardObject(&org, "PermissionSetAssignment")
 	if org.RuntimeSchemaStamp != "trusted" {
 		t.Fatal("no-op EnsureStandardObject dropped the runtime schema stamp")
+	}
+	if org.RuntimeGenerationID() != generation || org.SchemaGeneration() != schemaGeneration {
+		t.Fatal("no-op EnsureStandardObject changed the runtime schema generation")
 	}
 	if after := org.Objects["PermissionSetAssignment"].Definition; !reflect.DeepEqual(after, before) {
 		t.Fatal("EnsureStandardObject changed a definition it reported as a no-op")

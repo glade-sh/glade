@@ -91,7 +91,13 @@ func semaPlatformEventCallMessage(receiver, method, mode string, args []string, 
 				return "DML operation Insert not allowed on BatchApexErrorEvent"
 			}
 			if semaDMLRecordType(arg, model) {
-				if !strings.EqualFold(arg, "SObject") && !semaPlatformEventType(arg, model) {
+				standardName := arg
+				if schemaName, ok := semaSchemaQualifiedTypeName(arg); ok {
+					standardName = schemaName
+				}
+				// This standard event is publishable without the custom platform-event marker.
+				standardEvent := strings.EqualFold(standardName, "FlowOrchestrationEvent")
+				if !strings.EqualFold(arg, "SObject") && !semaPlatformEventType(arg, model) && !standardEvent {
 					return "Argument must be a Platform Event sObject type."
 				}
 			} else if !strings.EqualFold(arg, "null") && !(strings.EqualFold(base, "List") && len(elements) == 1 && semaDMLRecordType(elements[0], model)) {

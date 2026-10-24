@@ -86,21 +86,12 @@ func (vm *VM) wrapTriggerExecutionError(trigger Trigger, err error) error {
 	if errors.As(err, &thrown) {
 		value, stack = thrown.value, thrown.stack
 	} else {
-		message := err.Error()
-		var runtimeErr *RuntimeError
-		if errors.As(err, &runtimeErr) {
-			if runtimeErr.Type != "RuntimeError" {
-				return err
-			}
-			message = runtimeErr.Message
-		}
-		switch message {
-		case "System.FinalException: Record is read-only", "System.FinalException: Collection is read-only":
-			value = Object("System.FinalException")
-			value.Fields["message"] = String(strings.TrimPrefix(message, "System.FinalException: "))
-		default:
+		message, readonly := triggerReadOnlyMessage(err)
+		if !readonly {
 			return err
 		}
+		value = Object("System.FinalException")
+		value.Fields["message"] = String(strings.TrimPrefix(message, "System.FinalException: "))
 	}
 	if len(stack) == 0 {
 		stack = vm.rawStackFrames()
@@ -143,19 +134,7 @@ func dmlExceptionFromTriggerError(op string, err error) error {
 			message = detail
 		}
 	} else {
-		// Preserve fatal/uncatchable raw errors, including LimitException.
-		// Method calls return the captured readonly failures as RuntimeErrors.
-		readonlyMessage := message
-		var runtimeErr *RuntimeError
-		if errors.As(err, &runtimeErr) {
-			if runtimeErr.Type != "RuntimeError" {
-				return err
-			}
-			readonlyMessage = runtimeErr.Message
-		}
-		switch readonlyMessage {
-		case "System.FinalException: Record is read-only", "System.FinalException: Collection is read-only":
-		default:
+		if _, readonly := triggerReadOnlyMessage(err); !readonly {
 			return err
 		}
 	}
@@ -168,6 +147,30 @@ func dmlExceptionFromTriggerError(op string, err error) error {
 	}
 	return wrapped
 }
+
+// Read-only trigger failures escape Apex catches but become row-bearing DML
+// failures at the trigger boundary. Other fatal runtime errors stay fatal.
+func triggerReadOnlyMessage(err error) (string, bool) {
+	message := err.Error()
+	var runtimeErr *RuntimeError
+	if errors.As(err, &runtimeErr) {
+		switch runtimeErr.Type {
+		case "System.FinalException":
+			message = runtimeErr.Error()
+		case "RuntimeError":
+			message = runtimeErr.Message
+		default:
+			return "", false
+		}
+	}
+	switch message {
+	case "System.FinalException: Record is read-only", "System.FinalException: Collection is read-only":
+		return message, true
+	default:
+		return "", false
+	}
+}
+
 func (vm *VM) inAfterUndeleteTrigger() bool {
 	if vm == nil || vm.triggerGlobals == nil {
 		return false

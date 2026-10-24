@@ -1,0 +1,66 @@
+public with sharing class MeadowSetupProbe implements Schedulable {
+    public void execute(SchedulableContext context) {}
+    private static Set<Id> roleIds;
+    private static Id groupId, permissionId, assignmentId, scheduleId, jobId, adminProfileId;
+    public static Map<String, Object> observe() {
+        List<UserRole> roles = new List<UserRole>{
+            new UserRole(Name='Meadow One', DeveloperName='MeadowOne'),
+            new UserRole(Name='Meadow Two', DeveloperName='MeadowTwo'),
+            new UserRole(Name='Meadow Three', DeveloperName='MeadowThree')
+        };
+        insert roles;
+        roleIds = new Map<Id, UserRole>(roles).keySet();
+        Group regular = new Group(Name='Meadow Readers', DeveloperName='MeadowReaders', Type='Regular');
+        insert regular;
+        groupId = regular.Id;
+        PermissionSet permission = new PermissionSet(Name='MeadowRead', Label='Meadow Read');
+        insert permission;
+        permissionId = permission.Id;
+        PermissionSetAssignment assignment = new PermissionSetAssignment(PermissionSetId=permissionId, AssigneeId=UserInfo.getUserId());
+        insert assignment;
+        assignmentId = assignment.Id;
+        adminProfileId = UserInfo.getProfileId();
+        scheduleId = System.schedule('Meadow Setup Read', '0 0 0 1 1 ? 2099', new MeadowSetupProbe());
+        jobId = System.enqueueJob(new MeadowSetupJob());
+        Map<String, Object> result = new Map<String, Object>();
+        snapshot(result, 'admin');
+        if (Test.isRunningTest()) {
+            for (String profileName : new List<String>{'Standard User', 'Minimum Access - Salesforce'}) {
+                Profile profile = [SELECT Id FROM Profile WHERE Name=:profileName LIMIT 1];
+                User reader = new User(ProfileId=profile.Id, Username='meadow.'+profile.Id+'@example.invalid',
+                    Email='meadow@example.invalid', LastName='Reader', Alias='meadow', TimeZoneSidKey='America/Los_Angeles',
+                    LocaleSidKey='en_US', EmailEncodingKey='UTF-8', LanguageLocaleKey='en_US');
+                System.runAs(reader) { snapshot(result, profileName); }
+            }
+        }
+        return result;
+    }
+    private static void snapshot(Map<String, Object> result, String route) {
+        List<String> names = new List<String>();
+        for (UserRole role : [SELECT DeveloperName FROM UserRole WHERE Id IN :roleIds ORDER BY DeveloperName]) names.add(role.DeveloperName);
+        result.put(route+'.roles.list', names);
+        result.put(route+'.roles.count', [SELECT COUNT() FROM UserRole WHERE Id IN :roleIds]);
+        result.put(route+'.roles.dynamic', Database.query('SELECT Id FROM UserRole WHERE Id IN :roleIds').size());
+        List<AggregateResult> grouped = [SELECT DeveloperName n, COUNT(Id) c FROM UserRole WHERE Id IN :roleIds GROUP BY DeveloperName];
+        result.put(route+'.roles.grouped', grouped.size());
+        Map<String, Object> binds = new Map<String, Object>{'ids'=>roleIds};
+        result.put(route+'.roles.binds', Database.queryWithBinds('SELECT Id FROM UserRole WHERE Id IN :ids', binds, AccessLevel.SYSTEM_MODE).size());
+        result.put(route+'.roles.bindCount', Database.countQueryWithBinds('SELECT COUNT() FROM UserRole WHERE Id IN :ids', binds, AccessLevel.SYSTEM_MODE));
+        try { result.put(route+'.roles.user', [SELECT COUNT() FROM UserRole WHERE Id IN :roleIds WITH USER_MODE]); }
+        catch (Exception e) { result.put(route+'.roles.user', e.getTypeName()); }
+        try { result.put(route+'.roles.security', [SELECT COUNT() FROM UserRole WHERE Id IN :roleIds WITH SECURITY_ENFORCED]); }
+        catch (Exception e) { result.put(route+'.roles.security', e.getTypeName()); }
+        result.put(route+'.roles.accessible', Schema.SObjectType.UserRole.isAccessible());
+        result.put(route+'.group.regular', [SELECT COUNT() FROM Group WHERE Id=:groupId]);
+        result.put(route+'.group.internal', [SELECT COUNT() FROM Group WHERE DeveloperName='AllInternalUsers' AND Type='Organization']);
+        result.put(route+'.group.customer', [SELECT COUNT() FROM Group WHERE DeveloperName='AllCustomerPortalUsers']);
+        result.put(route+'.group.partner', [SELECT COUNT() FROM Group WHERE DeveloperName='AllPartnerUsers']);
+        result.put(route+'.profile', [SELECT COUNT() FROM Profile WHERE Id=:adminProfileId]);
+        result.put(route+'.permission', [SELECT COUNT() FROM PermissionSet WHERE Id=:permissionId]);
+        result.put(route+'.assignment', [SELECT COUNT() FROM PermissionSetAssignment WHERE Id=:assignmentId]);
+        result.put(route+'.recordtype', [SELECT COUNT() FROM RecordType WHERE DeveloperName='MeadowRecord' AND SObjectType='Account']);
+        result.put(route+'.schedule.detail', [SELECT COUNT() FROM CronJobDetail WHERE Name='Meadow Setup Read']);
+        result.put(route+'.schedule', [SELECT COUNT() FROM CronTrigger WHERE Id=:scheduleId]);
+        result.put(route+'.job', [SELECT COUNT() FROM AsyncApexJob WHERE Id=:jobId]);
+    }
+}

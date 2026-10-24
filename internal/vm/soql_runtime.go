@@ -20,7 +20,11 @@ func (vm *VM) parseSOQLAt(queryText string) (soql.Query, error) {
 	if vm != nil && vm.Org != nil {
 		month = soql.FiscalYearStartMonth(*vm.Org)
 	}
-	return soql.ParseAtWithFiscalYearStartMonthAndTimeZone(queryText, vm.fakeNow, month, vm.currentUserTimeZoneID())
+	query, err := soql.ParseAtWithFiscalYearStartMonthAndTimeZone(queryText, vm.fakeNow, month, vm.currentUserTimeZoneID())
+	if err == nil {
+		err = soql.ValidateFormulaVersion(query, vm.currentSourceExecutionPolicy().APIVersion)
+	}
+	return query, err
 }
 
 func (vm *VM) countQueryParseError(err error, queryText string) error {
@@ -56,6 +60,12 @@ func (vm *VM) executeSOQLRowsWithAccountingAndSource(raw string, execResult *Res
 }
 
 func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result, expand func(string) (string, error), binds Value, accessLevelMode, permissionSetID string, accounting soqlHandleAccounting, captureSource func(*storage.OrgState), denialDetails, explicitBindAccessLevel bool) ([]Value, error) {
+	applyHierarchyQueryPolicy := accounting == soqlOrdinaryAccounting
+	// Pagination keeps ordinary query accounting without adopting hierarchy
+	// behavior captured only for static SOQL and Database.query routes.
+	if accounting == soqlPaginationAccounting {
+		accounting = soqlOrdinaryAccounting
+	}
 	if soql.IsSOSLFind(raw) {
 		return nil, unsupportedCallError("SOSL/FIND local search surface")
 	}
@@ -153,9 +163,25 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 		}
 	}
 	if defaultMode && accounting == soqlOrdinaryAccounting {
+		if applyHierarchyQueryPolicy && query.Count && vm.runAsSecureDefaults() && vm.hierarchyCustomSettingQueryDenied(query.Object, permissionSetID) {
+			return nil, newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", query.Object))
+		}
 		if err := vm.defaultRunAsSOQLDenial(query); err != nil {
 			return nil, err
 		}
+	}
+	// Native hierarchy-setting observations cover ordinary SOQL, query/countQuery
+	// AccessLevel overloads and their bind-map variants. Query handles retain
+	// their existing permission and record-sharing behavior.
+	// WITH SECURITY_ENFORCED has no native hierarchy-setting row; it keeps the
+	// baseline record-sharing path.
+	ordinaryHierarchyQuery := applyHierarchyQueryPolicy && !strings.EqualFold(query.SecurityMode, "SECURITY_ENFORCED") && vm.isHierarchyCustomSetting(query.Object)
+	if ordinaryHierarchyQuery && strings.EqualFold(query.SecurityMode, "USER_MODE") && vm.hierarchyCustomSettingQueryDenied(query.Object, permissionSetID) {
+		objectName := query.Object
+		if canonical, ok := vm.resolveObjectName(objectName); ok {
+			objectName = canonical
+		}
+		return nil, newExceptionError("QueryException", soql.MissingObjectMessage(objectName))
 	}
 	if err := vm.enforceSOQLSecurity(query, permissionSetID); err != nil {
 		return nil, err
@@ -196,13 +222,13 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 		syntheticOrg := vm.orgWithSyntheticFlowMetadata()
 		executeOrg = &syntheticOrg
 	}
-	if accounting == soqlOrdinaryAccounting {
+	if accounting == soqlOrdinaryAccounting && !ordinaryHierarchyQuery {
 		executeOrg = vm.orgWithVisibleAggregateInputs(executeOrg, query)
 	}
 	if captureSource != nil {
 		captureSource(executeOrg)
 	}
-	result, err := soql.ExecuteWithCacheAndContext(*executeOrg, executeQuery, vm.soqlExecutionCacheForOrg(executeOrg), soql.ExecutionContext{UserID: storage.ID(vm.currentUserID()), UserRecordAccess: vm.userRecordAccessForRecord})
+	result, err := soql.ExecuteWithCacheAndContext(*executeOrg, executeQuery, vm.soqlExecutionCacheForOrg(executeOrg), soql.ExecutionContext{APIVersion: vm.currentSourceExecutionPolicy().APIVersion, UserID: storage.ID(vm.currentUserID()), UserRecordAccess: vm.userRecordAccessForRecord})
 	if err != nil {
 		var queryErr *soql.QueryError
 		if errors.As(err, &queryErr) && queryErr.Message != "" {
@@ -217,7 +243,9 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	// Ordinary aggregate inputs already respect sharing. Keep their row
 	// provenance when the later output filter handles other query routes.
 	aggregateInputRows := result.AggregateInputRows
-	result = vm.applySOQLSharing(query, result)
+	if !ordinaryHierarchyQuery {
+		result = vm.applySOQLSharing(query, result)
+	}
 	if accounting == soqlOrdinaryAccounting {
 		result.AggregateInputRows = aggregateInputRows
 	}
@@ -2003,7 +2031,7 @@ func containsFold(text, needle string) bool {
 }
 
 func soslRecordMatchesWhere(record storage.Record, where *sosl.Condition) bool {
-	matches, _ := soslWhereResult(record, where, nil, record.GetField)
+	matches, _ := soslWhereResult(record, where, nil, record.GetField, nil)
 	return matches
 }
 
@@ -2036,12 +2064,19 @@ func (vm *VM) soslRecordMatchesWhere(record storage.Record, where *sosl.Conditio
 		// Owned datetime-null D01- named rows at API62/67/68 also
 		// preserve unknown through NOT/AND/OR. Other types remain uncaptured.
 		switch definition.Type {
-		case storage.FieldString, storage.FieldInteger, storage.FieldDecimal, storage.FieldDateTime:
+		case storage.FieldString, storage.FieldInteger, storage.FieldDecimal, storage.FieldDate, storage.FieldDateTime:
 		default:
 			boundary = unsupportedCallError("SOSL ordered null predicate for " + string(definition.Type))
 		}
 		return definition.Type
-	}, fieldValue)
+	}, fieldValue, func(value storage.Value, condition *sosl.Condition) (bool, bool) {
+		parsed, err := vm.parseSOQLAt("SELECT Id FROM SObject WHERE Value " + condition.Operator + " " + condition.Value)
+		if err != nil {
+			boundary = vm.soslParseError(err)
+			return false, false
+		}
+		return soql.MatchesDateLiteralRange(value, parsed.Where)
+	})
 	if known {
 		return matches, nil
 	}
@@ -2050,11 +2085,11 @@ func (vm *VM) soslRecordMatchesWhere(record storage.Record, where *sosl.Conditio
 
 // Q004/Q021-Q023/Q034-Q036/Q043-Q044 preserve unknown numeric null
 // comparisons through NOT/AND/OR. Equality, LIKE and IN retain their own rules.
-func soslWhereResult(record storage.Record, where *sosl.Condition, fieldType func(string) storage.FieldType, fieldValue func(string) (storage.Value, bool)) (matches, known bool) {
+func soslWhereResult(record storage.Record, where *sosl.Condition, fieldType func(string) storage.FieldType, fieldValue func(string) (storage.Value, bool), relativeDate func(storage.Value, *sosl.Condition) (bool, bool)) (matches, known bool) {
 	if where != nil && where.Not {
 		positive := *where
 		positive.Not = false
-		matches, known := soslWhereResult(record, &positive, fieldType, fieldValue)
+		matches, known := soslWhereResult(record, &positive, fieldType, fieldValue, relativeDate)
 		return known && !matches, known
 	}
 	if where == nil {
@@ -2063,7 +2098,7 @@ func soslWhereResult(record storage.Record, where *sosl.Condition, fieldType fun
 	if len(where.And) > 0 {
 		known := true
 		for i := range where.And {
-			matches, childKnown := soslWhereResult(record, &where.And[i], fieldType, fieldValue)
+			matches, childKnown := soslWhereResult(record, &where.And[i], fieldType, fieldValue, relativeDate)
 			if childKnown && !matches {
 				return false, true
 			}
@@ -2074,7 +2109,7 @@ func soslWhereResult(record storage.Record, where *sosl.Condition, fieldType fun
 	if len(where.Or) > 0 {
 		known := true
 		for i := range where.Or {
-			matches, childKnown := soslWhereResult(record, &where.Or[i], fieldType, fieldValue)
+			matches, childKnown := soslWhereResult(record, &where.Or[i], fieldType, fieldValue, relativeDate)
 			if childKnown && matches {
 				return true, true
 			}
@@ -2091,9 +2126,18 @@ func soslWhereResult(record storage.Record, where *sosl.Condition, fieldType fun
 		text, ok = string(record.ID), record.ID != ""
 		value = storage.StringValue(text)
 	}
+	if where.RelativeDate {
+		if relativeDate == nil {
+			return false, false
+		}
+		return relativeDate(value, where)
+	}
 	matches = false
 	notIn := strings.EqualFold(where.Operator, "NOT IN")
 	if strings.EqualFold(where.Operator, "IN") || notIn {
+		if !ok || value.Kind == storage.ValueNull {
+			return where.NullInList != notIn, true
+		}
 		if ok {
 			for _, candidate := range where.Values {
 				if strings.EqualFold(where.Field, "Id") {
@@ -2798,6 +2842,9 @@ func (vm *VM) enforceSOQLSecurity(query soql.Query, permissionSetID string) erro
 		if vm.userModeInaccessibleSecureDenial(query, permissionSetID) {
 			return newExceptionError("QueryException", "Insufficient permissions: secure query included inaccessible field")
 		}
+		if mode == "USER_MODE" && permissionSetID == "" {
+			return newExceptionError("QueryException", soql.MissingObjectMessage(objectName))
+		}
 		return newExceptionError("QueryException", fmt.Sprintf("sObject type '%s' is not supported by %s", objectName, mode))
 	}
 	for _, field := range query.Fields {
@@ -2879,7 +2926,9 @@ func soqlConditionFields(condition *soql.Condition) []string {
 	for i := range condition.Or {
 		out = append(out, soqlConditionFields(&condition.Or[i])...)
 	}
-	if strings.TrimSpace(condition.Field) != "" {
+	if condition.Formula != nil {
+		out = append(out, condition.Formula.Left, condition.Formula.Right)
+	} else if strings.TrimSpace(condition.Field) != "" {
 		out = append(out, condition.Field)
 	}
 	return out
@@ -3237,7 +3286,7 @@ func (vm *VM) applySOQLSharing(query soql.Query, result soql.Result) soql.Result
 		if !userMode {
 			visibleQuery.SecurityMode = ""
 		}
-		visibleResult, err := soql.ExecuteWithCacheAndContext(*vm.Org, visibleQuery, vm.soqlExecutionCacheForOrg(vm.Org), soql.ExecutionContext{UserID: storage.ID(vm.currentUserID()), UserRecordAccess: vm.userRecordAccessForRecord})
+		visibleResult, err := soql.ExecuteWithCacheAndContext(*vm.Org, visibleQuery, vm.soqlExecutionCacheForOrg(vm.Org), soql.ExecutionContext{APIVersion: vm.currentSourceExecutionPolicy().APIVersion, UserID: storage.ID(vm.currentUserID()), UserRecordAccess: vm.userRecordAccessForRecord})
 		if err == nil {
 			visibleResult = vm.applySOQLSharing(visibleQuery, visibleResult)
 			count := storage.IntegerValue(int64(len(visibleResult.Records)))
@@ -3792,6 +3841,39 @@ func (vm *VM) executeSOQLWithDenialDetails(raw string, execResult *Result, denia
 	return out, nil
 }
 
+// Pagination has ordinary query budgets and retains its existing hierarchy
+// permission and sharing behavior until that route has native observations.
+func (vm *VM) executePaginationSOQL(raw string, binds Value, accessLevel Value, execResult *Result) (Value, error) {
+	expand := vm.expandSOQLBinds
+	mode, permissionSetID := "", ""
+	explicitBindAccessLevel := false
+	if binds.Kind == ValueMap {
+		expand = func(query string) (string, error) { return vm.expandSOQLBindsFromMap(query, binds) }
+		mode = databaseAccessLevelSecurityMode(accessLevel)
+		explicitBindAccessLevel = mode == "SYSTEM_MODE" || mode == "USER_MODE"
+		if explicitBindAccessLevel {
+			permissionSetID = accessLevelPermissionSetID(accessLevel)
+		}
+	} else {
+		if soql.IsSOSLFind(raw) {
+			return vm.executeSOSL(raw, execResult)
+		}
+		binds = typedMap("Map<String,Object>")
+	}
+	values, err := vm.executeSOQLRowsWithSecurityDetails(raw, execResult, expand, binds, mode, permissionSetID, soqlPaginationAccounting, nil, false, explicitBindAccessLevel)
+	if err != nil {
+		return Null, err
+	}
+	out := List(values...)
+	if len(values) > 0 && values[0].Type != "" {
+		out.Type = "List<" + values[0].Type + ">"
+	} else if objectName := vm.soqlResultObjectNameWithExpander(raw, expand); objectName != "" {
+		out.Type = "List<" + objectName + ">"
+	}
+	tagSOQLQueryList(&out, raw)
+	return out, nil
+}
+
 func (vm *VM) executeCursorSOQL(raw string, binds Value, execResult *Result) (Value, error) {
 	expand := vm.expandSOQLBinds
 	if binds.Kind == ValueMap {
@@ -3888,8 +3970,8 @@ func (vm *VM) executeSOQLWithBindMap(raw string, binds Value, execResult *Result
 	return out, nil
 }
 func (vm *VM) executeSOQLWithBindMapAccessLevel(raw string, binds Value, accessLevel Value, execResult *Result) (Value, error) {
-	// queryWithBinds supplies an explicit access level. Keep this provenance
-	// separate from defaults and other access-level routes until observed.
+	// queryWithBinds and countQueryWithBinds supply an explicit access level.
+	// Preserve that provenance when choosing SYSTEM_MODE sharing behavior.
 	values, err := vm.executeSOQLRowsWithSecurityDetails(raw, execResult, func(query string) (string, error) {
 		return vm.expandSOQLBindsFromMap(query, binds)
 	}, binds, databaseAccessLevelSecurityMode(accessLevel), accessLevelPermissionSetID(accessLevel), soqlOrdinaryAccounting, nil, false, true)
@@ -3981,12 +4063,8 @@ func (vm *VM) executeSOQLForType(raw, typeName string, result *Result) (Value, e
 	return value.List[0], nil
 }
 
-// Empty collections and DTO projections are local data. Requiring an absent
-// Network record is a hosted dependency; clearing a populated query list is not.
+// Empty singleton queries have the same catchable error for every object.
 func (vm *VM) emptySObjectQueryError(value Value) error {
-	if strings.EqualFold(value.Fields["__soqlEmptyResultType"].Text, "Network") {
-		return &RuntimeError{Type: "UnsupportedFeature", Message: "Network configuration record is unavailable locally; singleton assignment requires hosted Experience Cloud data"}
-	}
 	return newExceptionError("QueryException", "List has no rows for assignment to SObject")
 }
 

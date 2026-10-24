@@ -179,9 +179,25 @@ func l07SalesforceConformance(t *testing.T) {
 	for _, api := range versions {
 		compiledByAPI[api] = l07CompileCases(t, api, compileCases)
 	}
-	observations, browserErr := l07ObserveDOM(t, versions, runtimeCases, dependencyRoot)
-	if browserErr != nil {
-		t.Fatalf("L07 browser environment: %v", browserErr)
+	var observations map[string]l07DOMObservation
+	if browserAPIParallelism(len(versions)) > 1 {
+		passes := runBrowserPasses(t, versions, 2, func(t *testing.T, pass int) l07DOMObservation {
+			rows, err := l07ObserveDOM(t, versions[pass:pass+1], runtimeCases, dependencyRoot)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return rows[versions[pass]]
+		})
+		observations = make(map[string]l07DOMObservation, len(versions))
+		for pass, api := range versions {
+			observations[api] = passes[pass]
+		}
+	} else {
+		var browserErr error
+		observations, browserErr = l07ObserveDOM(t, versions, runtimeCases, dependencyRoot)
+		if browserErr != nil {
+			t.Fatalf("L07 browser environment: %v", browserErr)
+		}
 	}
 	for _, api := range versions {
 		compiled := compiledByAPI[api]

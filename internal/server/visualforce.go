@@ -581,7 +581,7 @@ func (s *Server) renderVisualforceResponse(ctx context.Context, w http.ResponseW
 			writeVisualforceRenderError(w, err, result)
 			return
 		}
-		pdf, err := visualforce.RenderPDFContent(ctx, result.HTML, "/apex/"+strings.TrimSpace(strings.Join(parts, "/")))
+		pdf, err := visualforce.RenderPDFContent(ctx, result.HTML, "/apex/"+strings.TrimSpace(strings.Join(parts, "/")), s.Source.Project.PDF.Command)
 		if err != nil {
 			writeVisualforceRenderError(w, err, result)
 			return

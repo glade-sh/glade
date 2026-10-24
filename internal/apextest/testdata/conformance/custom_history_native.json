@@ -123,12 +123,12 @@
   ],
   "nativeOrgSha256": "bdfb37c18f33c38f01c452c3b971391e21af1d88976f04f7f345483198c0a5bd",
   "normalizedCommands": {
-    "checkOnlyDeploy": "sf project deploy start --target-org <scratch-org> --source-dir force-app --dry-run --wait 15 --json",
-    "deployClasses": "sf project deploy start --target-org <scratch-org> --source-dir force-app/main/default/classes --wait 15 --json",
-    "deployProject": "sf project deploy start --target-org <scratch-org> --source-dir force-app --wait 15 --json",
-    "deploySchema": "sf project deploy start --target-org <scratch-org> --source-dir force-app/main/default/objects --wait 15 --json",
-    "runAnonymous": "sf apex run --target-org <scratch-org> --api-version <api> --file <synthetic-apex> --json",
-    "runTest": "sf apex run test --target-org <scratch-org> --class-names <synthetic-class> --synchronous --result-format json --wait 15 --json"
+    "checkOnlyDeploy": "sf project deploy start --target-org <example-org> --source-dir force-app --dry-run --wait 15 --json",
+    "deployClasses": "sf project deploy start --target-org <example-org> --source-dir force-app/main/default/classes --wait 15 --json",
+    "deployProject": "sf project deploy start --target-org <example-org> --source-dir force-app --wait 15 --json",
+    "deploySchema": "sf project deploy start --target-org <example-org> --source-dir force-app/main/default/objects --wait 15 --json",
+    "runAnonymous": "sf apex run --target-org <example-org> --api-version <api> --file <synthetic-apex> --json",
+    "runTest": "sf apex run test --target-org <example-org> --class-names <synthetic-class> --synchronous --result-format json --wait 15 --json"
   },
   "projectManifests": {
     "descriptor": {

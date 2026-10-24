@@ -1,0 +1,1 @@
+System.debug('CONTINUATION|'+JSON.serialize(new Map<String,Object>{'delayed'=>[SELECT count() FROM AsyncParcel__c WHERE Delayed__c=true],'trigger'=>[SELECT count() FROM Account WHERE Name='Async trigger continuation'],'flow'=>[SELECT count() FROM Account WHERE Name='Async flow continuation']}));

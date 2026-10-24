@@ -1,0 +1,12 @@
+{
+  "api": "62.0",
+  "deploy_id": "0Afhv000000a10nCAA",
+  "tests": [
+    {
+      "MethodName": "observe",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBS|{\"scheduled\":[[18,18,18,18,18,true,true,true,true],false,15],\"queueable\":[[18,18,18,18,18,true,true,true,true],true,18],\"finalizer\":[[18,18,18,18,18,true,true,true,true],true,18],\"batchStart\":[[18,18,18,18,18,true,true,true,true],false,15],\"batchFinish\":[[18,18,18,18,18,true,true,true,true],false,15],\"batchExecute\":[[18,18,18,18,18,true,true,true,true],false,15]}",
+      "StackTrace": "Class.AsyncIdentityProbeTest.observe: line 8, column 1"
+    }
+  ]
+}

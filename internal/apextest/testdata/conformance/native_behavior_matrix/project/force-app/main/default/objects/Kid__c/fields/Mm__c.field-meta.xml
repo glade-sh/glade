@@ -1,0 +1,9 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>Mm__c</fullName>
+  <deleteConstraint>SetNull</deleteConstraint>
+  <label>Mm Label</label>
+  <referenceTo>Contact</referenceTo>
+  <relationshipLabel>Ztt Rows</relationshipLabel>
+  <relationshipName>Ztt</relationshipName>
+  <type>Lookup</type>
+</CustomField>

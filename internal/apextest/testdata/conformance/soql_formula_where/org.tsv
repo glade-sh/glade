@@ -1,0 +1,241 @@
+source_api	route	case	observation
+62.0	anonymous	add	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	bare_field	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	boolean_field	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	date_add_date	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	date_add_number	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	date_difference	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	date_subtract_number	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	datetime_add_number	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	datetime_difference	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	datetime_difference_seconds	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	datetime_subtract_number	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	divide	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	empty	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	equal	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	extra_argument	System.QueryException|unexpected token: ','
+62.0	anonymous	extra_operand	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	field_comparison	System.QueryException|unexpected token: 'NumberOfEmployees'
+62.0	anonymous	function_operand	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	having	System.QueryException|unexpected token: 'HAVING'
+62.0	anonymous	in	System.QueryException|unexpected token: 'IN'
+62.0	anonymous	less	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	less_equal	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	like	System.QueryException|unexpected token: 'LIKE'
+62.0	anonymous	literal_operand	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	lower_case	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	mixed_date_datetime	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	multiple	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	multiply	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	not_equal	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	null_result	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	null_sum	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	number_minus_date	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	relationship	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	same_field	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	select	System.QueryException|unexpected token: 'FORMULA(''
+62.0	anonymous	string_comparison	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	string_field	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	subtract	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	unknown_field	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+62.0	anonymous	unquoted	System.QueryException|unexpected token: 'FORMULA(AnnualRevenue -'
+67.0	anonymous	add	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	bare_field	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	boolean_field	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	date_add_date	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	date_add_number	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	date_difference	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	date_subtract_number	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	datetime_add_number	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	datetime_difference	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	datetime_difference_seconds	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	datetime_subtract_number	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	divide	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	empty	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	equal	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	extra_argument	System.QueryException|unexpected token: ','
+67.0	anonymous	extra_operand	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	field_comparison	System.QueryException|unexpected token: 'NumberOfEmployees'
+67.0	anonymous	function_operand	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	having	System.QueryException|unexpected token: 'HAVING'
+67.0	anonymous	in	System.QueryException|unexpected token: 'IN'
+67.0	anonymous	less	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	less_equal	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	like	System.QueryException|unexpected token: 'LIKE'
+67.0	anonymous	literal_operand	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	lower_case	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	mixed_date_datetime	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	multiple	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	multiply	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	not_equal	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	null_result	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	null_sum	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	number_minus_date	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	relationship	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	same_field	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	select	System.QueryException|unexpected token: 'FORMULA(''
+67.0	anonymous	string_comparison	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	string_field	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	subtract	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	unknown_field	System.QueryException|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	anonymous	unquoted	System.QueryException|unexpected token: 'FORMULA(AnnualRevenue -'
+68.0	anonymous	add	OK|Arithmetic A,Arithmetic B
+68.0	anonymous	bare_field	System.QueryException|Invalid formula: operator must be + or -, found: AnnualRevenue
+68.0	anonymous	boolean_field	System.QueryException|Invalid formula expression: Field IsDeleted does not exist. Check spelling.
+68.0	anonymous	date_add_date	System.QueryException|Invalid formula expression: Incorrect parameter type for operator '+'. Expected Number, received Date
+68.0	anonymous	date_add_number	OK|Arithmetic A
+68.0	anonymous	date_difference	OK|Arithmetic A
+68.0	anonymous	date_subtract_number	OK|Arithmetic A
+68.0	anonymous	datetime_add_number	System.QueryException|Unsupported formula return type for WHERE expression
+68.0	anonymous	datetime_difference	OK|Arithmetic A
+68.0	anonymous	datetime_difference_seconds	OK|
+68.0	anonymous	datetime_subtract_number	System.QueryException|Unsupported formula return type for WHERE expression
+68.0	anonymous	divide	System.QueryException|Invalid formula: operator must be + or -, found: /
+68.0	anonymous	empty	System.QueryException|Formula source cannot be null or empty
+68.0	anonymous	equal	OK|Arithmetic B
+68.0	anonymous	extra_argument	System.QueryException|unexpected token: ','
+68.0	anonymous	extra_operand	System.QueryException|Invalid formula: left operand must be a field identifier, found: +
+68.0	anonymous	field_comparison	System.QueryException|unexpected token: 'NumberOfEmployees'
+68.0	anonymous	function_operand	System.QueryException|Invalid formula: left operand must be a field identifier, found: ABS
+68.0	anonymous	having	System.QueryException|unexpected token: 'HAVING'
+68.0	anonymous	in	System.QueryException|unexpected token: 'IN'
+68.0	anonymous	less	OK|Arithmetic B,Arithmetic C
+68.0	anonymous	less_equal	OK|Arithmetic B,Arithmetic C
+68.0	anonymous	like	System.QueryException|unexpected token: 'LIKE'
+68.0	anonymous	literal_operand	System.QueryException|Invalid formula: right operand must be a field identifier, found: 2
+68.0	anonymous	lower_case	OK|Arithmetic A
+68.0	anonymous	mixed_date_datetime	System.QueryException|Invalid formula expression: Incorrect parameter type for operator '-'. Expected Number, Date, received Date/Time
+68.0	anonymous	multiple	OK|Arithmetic A,Arithmetic B
+68.0	anonymous	multiply	System.QueryException|Invalid formula: operator must be + or -, found: *
+68.0	anonymous	not_equal	OK|Arithmetic A,Arithmetic C,Arithmetic D,Sample Account for Entitlements
+68.0	anonymous	null_result	OK|
+68.0	anonymous	null_sum	OK|Arithmetic C
+68.0	anonymous	number_minus_date	System.QueryException|Invalid formula expression: Incorrect parameter type for operator '-'. Expected Number, received Date
+68.0	anonymous	relationship	OK|
+68.0	anonymous	same_field	OK|Arithmetic C
+68.0	anonymous	select	System.QueryException|unexpected token: 'FORMULA(''
+68.0	anonymous	string_comparison	System.QueryException|Formula result type (ColumnType.Double) is incompatible with the literal value type (String)
+68.0	anonymous	string_field	System.QueryException|Invalid formula expression: Incorrect parameter type for operator '+'. Expected Text, received Number
+68.0	anonymous	subtract	OK|Arithmetic A
+68.0	anonymous	unknown_field	System.QueryException|Invalid formula: no such field: Missing__c
+68.0	anonymous	unquoted	System.QueryException|unexpected token: 'FORMULA(AnnualRevenue -'
+62.0	istest	add	System.QueryException
+62.0	istest	bare_field	System.QueryException
+62.0	istest	boolean_field	System.QueryException
+62.0	istest	date_add_date	System.QueryException
+62.0	istest	date_add_number	System.QueryException
+62.0	istest	date_difference	System.QueryException
+62.0	istest	date_subtract_number	System.QueryException
+62.0	istest	datetime_add_number	System.QueryException
+62.0	istest	datetime_difference	System.QueryException
+62.0	istest	datetime_difference_seconds	System.QueryException
+62.0	istest	datetime_subtract_number	System.QueryException
+62.0	istest	divide	System.QueryException
+62.0	istest	empty	System.QueryException
+62.0	istest	equal	System.QueryException
+62.0	istest	extra_argument	System.QueryException
+62.0	istest	extra_operand	System.QueryException
+62.0	istest	field_comparison	System.QueryException
+62.0	istest	function_operand	System.QueryException
+62.0	istest	having	System.QueryException
+62.0	istest	in	System.QueryException
+62.0	istest	less	System.QueryException
+62.0	istest	less_equal	System.QueryException
+62.0	istest	like	System.QueryException
+62.0	istest	literal_operand	System.QueryException
+62.0	istest	lower_case	System.QueryException
+62.0	istest	mixed_date_datetime	System.QueryException
+62.0	istest	multiple	System.QueryException
+62.0	istest	multiply	System.QueryException
+62.0	istest	not_equal	System.QueryException
+62.0	istest	null_result	System.QueryException
+62.0	istest	null_sum	System.QueryException
+62.0	istest	number_minus_date	System.QueryException
+62.0	istest	relationship	System.QueryException
+62.0	istest	same_field	System.QueryException
+62.0	istest	select	System.QueryException
+62.0	istest	string_comparison	System.QueryException
+62.0	istest	string_field	System.QueryException
+62.0	istest	subtract	System.QueryException
+62.0	istest	unknown_field	System.QueryException
+62.0	istest	unquoted	System.QueryException
+67.0	istest	add	System.QueryException
+67.0	istest	bare_field	System.QueryException
+67.0	istest	boolean_field	System.QueryException
+67.0	istest	date_add_date	System.QueryException
+67.0	istest	date_add_number	System.QueryException
+67.0	istest	date_difference	System.QueryException
+67.0	istest	date_subtract_number	System.QueryException
+67.0	istest	datetime_add_number	System.QueryException
+67.0	istest	datetime_difference	System.QueryException
+67.0	istest	datetime_difference_seconds	System.QueryException
+67.0	istest	datetime_subtract_number	System.QueryException
+67.0	istest	divide	System.QueryException
+67.0	istest	empty	System.QueryException
+67.0	istest	equal	System.QueryException
+67.0	istest	extra_argument	System.QueryException
+67.0	istest	extra_operand	System.QueryException
+67.0	istest	field_comparison	System.QueryException
+67.0	istest	function_operand	System.QueryException
+67.0	istest	having	System.QueryException
+67.0	istest	in	System.QueryException
+67.0	istest	less	System.QueryException
+67.0	istest	less_equal	System.QueryException
+67.0	istest	like	System.QueryException
+67.0	istest	literal_operand	System.QueryException
+67.0	istest	lower_case	System.QueryException
+67.0	istest	mixed_date_datetime	System.QueryException
+67.0	istest	multiple	System.QueryException
+67.0	istest	multiply	System.QueryException
+67.0	istest	not_equal	System.QueryException
+67.0	istest	null_result	System.QueryException
+67.0	istest	null_sum	System.QueryException
+67.0	istest	number_minus_date	System.QueryException
+67.0	istest	relationship	System.QueryException
+67.0	istest	same_field	System.QueryException
+67.0	istest	select	System.QueryException
+67.0	istest	string_comparison	System.QueryException
+67.0	istest	string_field	System.QueryException
+67.0	istest	subtract	System.QueryException
+67.0	istest	unknown_field	System.QueryException
+67.0	istest	unquoted	System.QueryException
+68.0	istest	add	OK|Arithmetic A,Arithmetic B
+68.0	istest	bare_field	System.QueryException
+68.0	istest	boolean_field	System.QueryException
+68.0	istest	date_add_date	System.QueryException
+68.0	istest	date_add_number	OK|Arithmetic A
+68.0	istest	date_difference	OK|Arithmetic A
+68.0	istest	date_subtract_number	OK|Arithmetic A
+68.0	istest	datetime_add_number	System.QueryException
+68.0	istest	datetime_difference	OK|Arithmetic A
+68.0	istest	datetime_difference_seconds	OK|
+68.0	istest	datetime_subtract_number	System.QueryException
+68.0	istest	divide	System.QueryException
+68.0	istest	empty	System.QueryException
+68.0	istest	equal	OK|Arithmetic B
+68.0	istest	extra_argument	System.QueryException
+68.0	istest	extra_operand	System.QueryException
+68.0	istest	field_comparison	System.QueryException
+68.0	istest	function_operand	System.QueryException
+68.0	istest	having	System.QueryException
+68.0	istest	in	System.QueryException
+68.0	istest	less	OK|Arithmetic B,Arithmetic C
+68.0	istest	less_equal	OK|Arithmetic B,Arithmetic C
+68.0	istest	like	System.QueryException
+68.0	istest	literal_operand	System.QueryException
+68.0	istest	lower_case	OK|Arithmetic A
+68.0	istest	mixed_date_datetime	System.QueryException
+68.0	istest	multiple	OK|Arithmetic A,Arithmetic B
+68.0	istest	multiply	System.QueryException
+68.0	istest	not_equal	OK|Arithmetic A,Arithmetic C,Arithmetic D
+68.0	istest	null_result	OK|
+68.0	istest	null_sum	OK|Arithmetic C
+68.0	istest	number_minus_date	System.QueryException
+68.0	istest	relationship	OK|
+68.0	istest	same_field	OK|Arithmetic C
+68.0	istest	select	System.QueryException
+68.0	istest	string_comparison	System.QueryException
+68.0	istest	string_field	System.QueryException
+68.0	istest	subtract	OK|Arithmetic A
+68.0	istest	unknown_field	System.QueryException
+68.0	istest	unquoted	System.QueryException

@@ -291,6 +291,9 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 				}
 			case "instanceof":
 				target := strings.TrimSpace(current.Right.Name)
+				if nested := semaLexicalShadowingInner(model, typ.Name, target); nested != "" {
+					target = nested
+				}
 				if strings.EqualFold(left, "null") {
 					// C006: a null literal is rejected at compile time; typed null
 					// variables remain valid runtime tests.
@@ -334,6 +337,9 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 			}
 			if strings.HasPrefix(current.Callee, "__cast:") && len(current.Args) == 1 {
 				target := strings.TrimPrefix(current.Callee, "__cast:")
+				if nested := semaLexicalShadowingInner(model, typ.Name, target); nested != "" {
+					target = nested
+				}
 				if detail := semaGenericInterfaceCastTypeError(target, model); detail != "" {
 					appendDiagnostic(detail)
 				}

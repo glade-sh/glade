@@ -1,0 +1,33 @@
+id	family	shape	routes	apis
+C01	cdc	disabled delivery control	anonymous,istest	62.0,67.0
+C02	cdc	enabled explicit event delivery	anonymous,istest	62.0,67.0
+C03	cdc	enabled stopTest delivery and static isolation	anonymous,istest	62.0,67.0
+C04	cdc	enabled empty event bus boundary	anonymous,istest	62.0,67.0
+F01	flow_paths	record async before stopTest	anonymous,istest	62.0,67.0
+F02	flow_paths	record async after stopTest	anonymous,istest	62.0,67.0
+F03	flow_paths	future scheduled path before stopTest	anonymous,istest	62.0,67.0
+F04	flow_paths	future scheduled path after stopTest	anonymous,istest	62.0,67.0
+F05	flow_paths	scheduled-trigger exclusion from ordinary DML	anonymous,istest	62.0,67.0
+P01	event_flows	publish without explicit delivery	anonymous,istest	62.0,67.0
+P02	event_flows	publish and explicit delivery	anonymous,istest	62.0,67.0
+P03	event_flows	second delivery does not replay	anonymous,istest	62.0,67.0
+P04	event_flows	two-event batch delivery	anonymous,istest	62.0,67.0
+P05	event_flows	event decision rejection twin	anonymous,istest	62.0,67.0
+P06	event_flows	empty event bus boundary	anonymous,istest	62.0,67.0
+P07	event_flows	stopTest delivery boundary	anonymous,istest	62.0,67.0
+D01	duplicate_rules	first distinct record control	anonymous,istest	62.0,67.0
+D02	duplicate_rules	duplicate insert blocked	anonymous,istest	62.0,67.0
+D03	duplicate_rules	allowSave on blocking rule	anonymous,istest	62.0,67.0
+D04	duplicate_rules	null matching field boundary	anonymous,istest	62.0,67.0
+D05	duplicate_rules	duplicate update blocked	anonymous,istest	62.0,67.0
+A01	assignment_rules	matching lead without assignment header	anonymous,istest	62.0,67.0
+A02	assignment_rules	matching lead with default assignment header	anonymous,istest	62.0,67.0
+A03	assignment_rules	nonmatching lead rejection twin	anonymous,istest	62.0,67.0
+A04	assignment_rules	matching lead with explicit rule id	anonymous,istest	62.0,67.0
+A05	assignment_rules	invalid assignment rule id boundary	anonymous,istest	62.0,67.0
+W01	callout_work	no DML unauthorized endpoint control	anonymous,istest	62.0,67.0
+W02	callout_work	DML before unmocked callout	anonymous,istest	62.0,67.0
+W03	callout_work	no DML mocked callout	anonymous,istest	62.0,67.0
+W04	callout_work	DML before mocked callout	anonymous,istest	62.0,67.0
+W05	callout_work	rollback before mocked callout	anonymous,istest	62.0,67.0
+W06	callout_work	rollback and release before mocked callout	anonymous,istest	62.0,67.0

@@ -22,6 +22,7 @@ import (
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/server"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/testutil/browserapi"
 )
 
 type l20Case struct {
@@ -157,13 +158,25 @@ func l20SalesforceConformance(t *testing.T) {
 		}
 	}
 
+	type apiObservation struct {
+		values            map[string]json.RawMessage
+		errors            map[string]string
+		runtimeCompileErr error
+		browserErr        error
+	}
+	observeAPI := browserapi.Prepare(t, versions, func(t *testing.T, api string) apiObservation {
+
+		values, errors, runtimeCompileErr, browserErr := l20ObserveDOM(t, api, runtimeCases, dependencyRoot)
+		return apiObservation{values, errors, runtimeCompileErr, browserErr}
+	})
 	var report strings.Builder
 	fmt.Fprintln(&report, "api\tid\tkind\tscope\tstatus\tactual\texpected\treason")
 	matches, total, errorMatches, errorTotal := 0, 0, 0, 0
 	diagnosticMatches, diagnosticTotal := 0, 0
 	for _, api := range versions {
 		compiled := l20CompileCases(t, api, compilerCases)
-		values, errors, runtimeCompileErr, browserErr := l20ObserveDOM(t, api, runtimeCases, dependencyRoot)
+		result := observeAPI(api)
+		values, errors, runtimeCompileErr, browserErr := result.values, result.errors, result.runtimeCompileErr, result.browserErr
 		if browserErr != nil {
 			t.Fatal(browserErr)
 		}

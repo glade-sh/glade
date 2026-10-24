@@ -1,0 +1,65 @@
+context	id	observation
+anonymous	direct_A	{"matched":true}
+anonymous	direct_B	{"matched":true}
+anonymous	direct_C	{"matched":false}
+anonymous	direct_D	{"matched":false}
+anonymous	direct_EB	{"matched":false}
+anonymous	direct_EC	{"matched":true}
+anonymous	direct_FE	{"matched":true}
+anonymous	direct_FS	{"matched":true}
+anonymous	direct_FF	{"matched":true}
+anonymous	subflow_A	{"matched":true}
+anonymous	subflow_B	{"matched":true}
+anonymous	subflow_C	{"matched":false}
+anonymous	subflow_D	{"matched":false}
+anonymous	subflow_EB	{"matched":false}
+anonymous	subflow_EC	{"matched":true}
+anonymous	subflow_FE	{"matched":true}
+anonymous	subflow_FS	{"matched":true}
+anonymous	subflow_FF	{"matched":true}
+anonymous	direct_email_true	{"addressMatches":true,"body":"variable body","completed":true,"count":1}
+anonymous	direct_email_false	{"completed":true,"count":0}
+anonymous	direct_email_omitted	{"completed":true,"count":0}
+anonymous	subflow_email_true	{"addressMatches":true,"body":"variable body","completed":true,"count":1}
+anonymous	subflow_email_false	{"completed":true,"count":0}
+anonymous	subflow_email_omitted	{"completed":true,"count":0}
+anonymous	trigger_email_true	{"addressMatches":true,"body":"variable body","count":1}
+anonymous	trigger_email_false	{"count":0}
+anonymous	trigger_email_omitted	{"count":0}
+anonymous	trigger_subflow_email_true	{"addressMatches":true,"body":"variable body","count":1}
+anonymous	trigger_subflow_email_false	{"count":0}
+anonymous	trigger_subflow_email_omitted	{"count":0}
+anonymous	direct_email_formula	{"addressMatches":true,"body":"formula variable body","completed":true,"count":1}
+anonymous	subflow_email_formula	{"addressMatches":true,"body":"formula variable body","completed":true,"count":1}
+istest	direct_A	{"matched":true}
+istest	direct_B	{"matched":true}
+istest	direct_C	{"matched":false}
+istest	direct_D	{"matched":false}
+istest	direct_EB	{"matched":false}
+istest	direct_EC	{"matched":true}
+istest	direct_FE	{"matched":true}
+istest	direct_FS	{"matched":true}
+istest	direct_FF	{"matched":true}
+istest	subflow_A	{"matched":true}
+istest	subflow_B	{"matched":true}
+istest	subflow_C	{"matched":false}
+istest	subflow_D	{"matched":false}
+istest	subflow_EB	{"matched":false}
+istest	subflow_EC	{"matched":true}
+istest	subflow_FE	{"matched":true}
+istest	subflow_FS	{"matched":true}
+istest	subflow_FF	{"matched":true}
+istest	direct_email_true	{"addressMatches":true,"body":"variable body","completed":true,"count":1}
+istest	direct_email_false	{"completed":true,"count":0}
+istest	direct_email_omitted	{"completed":true,"count":0}
+istest	subflow_email_true	{"addressMatches":true,"body":"variable body","completed":true,"count":1}
+istest	subflow_email_false	{"completed":true,"count":0}
+istest	subflow_email_omitted	{"completed":true,"count":0}
+istest	trigger_email_true	{"addressMatches":true,"body":"variable body","count":1}
+istest	trigger_email_false	{"count":0}
+istest	trigger_email_omitted	{"count":0}
+istest	trigger_subflow_email_true	{"addressMatches":true,"body":"variable body","count":1}
+istest	trigger_subflow_email_false	{"count":0}
+istest	trigger_subflow_email_omitted	{"count":0}
+istest	direct_email_formula	{"addressMatches":true,"body":"formula variable body","completed":true,"count":1}
+istest	subflow_email_formula	{"addressMatches":true,"body":"formula variable body","completed":true,"count":1}

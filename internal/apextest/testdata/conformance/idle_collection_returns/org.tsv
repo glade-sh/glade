@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"first":[1,2,7,8,9,10],"getterReads":288,"instanceReads":288,"leaf":[1,2,7,8,9,10],"nestedReads":288,"second":[1,2,7,8,9,10],"setContainsTwo":true,"setSize":2,"shared":[1,2,7,8,9,10],"staticReads":288,"typedStaticReads":288}
+62.0	isTest	{"first":[1,2,7,8,9,10],"getterReads":288,"instanceReads":288,"leaf":[1,2,7,8,9,10],"nestedReads":288,"second":[1,2,7,8,9,10],"setContainsTwo":true,"setSize":2,"shared":[1,2,7,8,9,10],"staticReads":288,"typedStaticReads":288}
+67.0	anonymous	{"first":[1,2,7,8,9,10],"getterReads":288,"instanceReads":288,"leaf":[1,2,7,8,9,10],"nestedReads":288,"second":[1,2,7,8,9,10],"setContainsTwo":true,"setSize":2,"shared":[1,2,7,8,9,10],"staticReads":288,"typedStaticReads":288}
+67.0	isTest	{"first":[1,2,7,8,9,10],"getterReads":288,"instanceReads":288,"leaf":[1,2,7,8,9,10],"nestedReads":288,"second":[1,2,7,8,9,10],"setContainsTwo":true,"setSize":2,"shared":[1,2,7,8,9,10],"staticReads":288,"typedStaticReads":288}

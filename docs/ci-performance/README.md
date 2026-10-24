@@ -92,6 +92,38 @@ race.** A separate change must expose the long LWC API passes as independently
 selectable work, with native row/result union validation. Existing Apex/VF API
 manifests alone do not make the current planner schedule those subtests.
 
+## Apex duration balance
+
+Apex and sema history refresh enforce the existing 1.5× median duration limit
+at every shard count. PRs report timing imbalance as an advisory and retain the
+observations for the next plan. Push, scheduled, manual and local refreshes reject
+imbalance. Discovery, selection and terminal union validation remain mandatory
+before either outcome; invalid evidence never publishes history. LWC and
+Visualforce keep their existing history policy for indivisible long tests.
+
+The existing longest-first planner uses refreshed per-test durations to rebalance
+the next assignment. Both source and shared-binary synthetic project routes pin
+the full 12-test union while reducing a deliberately skewed 8-second shard to at
+most 4 seconds. The timing observations in this regression are fixed synthetic
+values, independent of runner speed.
+
+A read-only scheduling projection used the six shard artifacts from
+[the audited CI run](https://github.com/glade-sh/glade/actions/runs/39598388070).
+Its 1,552 discovered top-level tests had 1,534 passes, three failures and 15
+deferrals. Replanning the same exact union with their recorded elapsed values
+produced these aggregate estimates:
+
+| Assignment | Shortest shard | Median shard | Longest shard |
+| --- | ---: | ---: | ---: |
+| Observed assignment | 1138.56 s | 1528.32 s | 1762.15 s |
+| Measured-duration replan | 1475.42 s | 1475.42 s | 1475.43 s |
+
+The projected longest shard is 16.3% shorter. These are summed test durations,
+excluding setup and compilation. Failed and deferred observations were included
+only for this scheduling analysis; they do not form an accepted CI history or
+establish passing coverage. No history cache was published. The current tree has
+additional tests, and actual hosted timing remains unverified.
+
 ## Coverage and execution
 
 Normal CI's discovery, selection regexes, shard counts, native assertions and
@@ -105,9 +137,9 @@ incompatible artifacts fail closed. Local runs still use ordinary go test.
 The push race scope is in `scripts/ci-race-push.json`. It retains full Test*
 execution for 18 packages with concurrency or shared mutable state, including VM,
 storage, sema, typesys, caches, server, debugger, test daemon and watcher paths.
-Apex and CLI retain 15 and 57 tests that start goroutines or reach local concurrent
-fixture helpers. VF retains its concurrent render-environment test. LWC retains
-the generic browser-pass scheduling and ordering tests; JavaScript execution is
+Apex and CLI retain all tests that start goroutines, run parallel subtests or
+reach local concurrent fixture helpers. VF retains its concurrent render-environment
+test. LWC retains the generic browser-pass scheduling and ordering tests; JavaScript execution is
 not instrumented by Go's race detector. Full native browser observations still
 run in normal CI and in scheduled/manual Race.
 

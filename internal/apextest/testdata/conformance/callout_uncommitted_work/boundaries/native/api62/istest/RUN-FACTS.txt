@@ -1,0 +1,11 @@
+api=62.0
+context=istest
+rows=14
+native_complete=true
+deployment_success=true
+captured_utc=2026-10-22T19:23:14.633102+00:00
+transport=System.assert
+source_sha256=force-app/main/default/classes/PendingBoundaryObservationTest.cls|b67c276df78a6b2aaced50b650c55a0be23102a6095a3db07f7064cf8d48a25b
+source_sha256=force-app/main/default/classes/PendingBoundaryObservationTest.cls-meta.xml|51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d
+source_sha256=force-app/main/default/classes/PendingBoundaryProbe.cls|2ae411f9c119cbb0fb4bbf2ee9048f4763d99c6ab682f169a6fe6340b688d64b
+source_sha256=force-app/main/default/classes/PendingBoundaryProbe.cls-meta.xml|51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d

@@ -19,6 +19,7 @@ import (
 
 	lwcembed "github.com/glade-sh/glade/internal/lwcruntime/embed"
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/testutil/browserapi"
 )
 
 type l06Bundle struct {
@@ -152,6 +153,16 @@ func TestL06SalesforceConformance(t *testing.T) {
 		}
 	}
 
+	type apiObservation struct {
+		dom       map[string]json.RawMessage
+		domErrors map[string]string
+		domErr    error
+	}
+	observeAPI := browserapi.Prepare(t, versions, func(t *testing.T, api string) apiObservation {
+
+		dom, domErrors, domErr := l06ObserveDOM(t, api, runtimeCases, roots.ScriptRoot, roots.DependencyRoot)
+		return apiObservation{dom, domErrors, domErr}
+	})
 	var report strings.Builder
 	matches, total, compilerMatches, domMatches, observedDOM, carried := 0, 0, 0, 0, 0, 0
 	sourceCompileMatches, diagnosticMatches, diagnosticTotal := 0, 0, 0
@@ -160,7 +171,8 @@ func TestL06SalesforceConformance(t *testing.T) {
 			c := compilerCases[index]
 			l06PrepareCase(t, root, c.BundleName, c, api)
 		})
-		dom, domErrors, domErr := l06ObserveDOM(t, api, runtimeCases, roots.ScriptRoot, roots.DependencyRoot)
+		result := observeAPI(api)
+		dom, domErrors, domErr := result.dom, result.domErrors, result.domErr
 		compilerIndex := 0
 		for _, c := range cases {
 			want := c.Expected[api]

@@ -6,6 +6,56 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+// Native ordinary custom-object DML ignores retained audit values on JSON,
+// queried and cloned records. Only the copied payload loses these values.
+func (vm *VM) filterSObjectAuditDMLFields(records []storage.Record, targets []*Value) {
+	for i, target := range targets {
+		if i >= len(records) || target == nil || target.Kind != ValueObject || target.classInstance {
+			continue
+		}
+		marker := target.Fields[sobjectExplicitFieldsField]
+		json := marker.Kind == ValueMap && marker.Runtime == jsonDeserializedSObjectFieldOrder
+		_, cloned := target.Fields[sobjectCloneMarkerField]
+		_, queried := target.Fields[sobjectQueriedFieldsField]
+		if !json && !cloned && !queried {
+			continue
+		}
+		_, definition, ok := vm.describeObjectDefinition(target.Type)
+		if !ok || !creationTimestampOrdinaryCustomObject(definition) {
+			continue
+		}
+		for _, name := range []string{"CreatedById", "CreatedDate", "LastModifiedById", "LastModifiedDate", "SystemModstamp", "IsDeleted"} {
+			definition, field, ok := vm.sObjectFieldDefinition(target.Type, name)
+			if !ok || !strings.EqualFold(definition.APIName, records[i].Object) ||
+				field.Createable == nil || *field.Createable || field.Updateable == nil || *field.Updateable ||
+				isUserSetSObjectField(*target, name) {
+				continue
+			}
+			if name == "IsDeleted" {
+				if field.Type != storage.FieldBoolean {
+					continue
+				}
+			} else if strings.HasSuffix(name, "Date") || name == "SystemModstamp" {
+				if field.Type != storage.FieldDateTime {
+					continue
+				}
+			} else if field.Type != storage.FieldReference && field.Type != storage.FieldID {
+				continue
+			}
+			for key := range records[i].Fields {
+				if strings.EqualFold(key, field.APIName) {
+					delete(records[i].Fields, key)
+				}
+			}
+			for key := range records[i].ExplicitNulls {
+				if strings.EqualFold(key, field.APIName) {
+					delete(records[i].ExplicitNulls, key)
+				}
+			}
+		}
+	}
+}
+
 func (vm *VM) filterJSONInsertCreationTimestamp(records []storage.Record, targets []*Value, resolvedMode string) {
 	vm.filterJSONCreationTimestamp("insert", records, targets, resolvedMode)
 }

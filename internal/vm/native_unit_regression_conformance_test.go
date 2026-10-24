@@ -20,8 +20,25 @@ type nativeUnitRegressionRow struct {
 
 func TestNativeUnitRegressionRows(t *testing.T) {
 	rows := readNativeUnitRegressionRows(t)
-	if len(rows) != 12 {
-		t.Fatalf("native rows=%d, want 12", len(rows))
+	seen := make(map[string]bool, len(rows))
+	cases := make(map[string]bool)
+	for _, row := range rows {
+		key := row.api + "/" + row.name
+		if seen[key] {
+			t.Fatalf("duplicate native row %s", key)
+		}
+		seen[key] = true
+		cases[row.name] = true
+	}
+	if len(cases) == 0 {
+		t.Fatal("no native unit regression rows")
+	}
+	for name := range cases {
+		for _, api := range []string{"62.0", "67.0"} {
+			if !seen[api+"/"+name] {
+				t.Fatalf("missing native row %s/%s", api, name)
+			}
+		}
 	}
 	for _, row := range rows {
 		row := row

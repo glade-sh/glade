@@ -1,0 +1,6 @@
+id	group	route	status	value
+D01	duplicate_rules	istest	runtime	{"count":2,"exception":null,"success":true}
+D02	duplicate_rules	istest	runtime	{"count":1,"exception":null,"status":"DUPLICATES_DETECTED","success":false}
+D03	duplicate_rules	istest	runtime	{"count":1,"exception":null,"status":"DUPLICATES_DETECTED","success":false}
+D04	duplicate_rules	istest	runtime	{"count":2,"exception":null,"success":true}
+D05	duplicate_rules	istest	runtime	{"count":2,"exception":null,"status":"DUPLICATES_DETECTED","success":false}

@@ -607,7 +607,7 @@ export function harnessHTML(baseURL, config, moduleScript) {
 // executable shared; each server still owns its temporary state and cleanup.
 let devServerBuild;
 after(() => {
-  if (devServerBuild) {
+  if (devServerBuild?.dir) {
     fs.rmSync(devServerBuild.dir, { recursive: true, force: true });
   }
 });
@@ -615,6 +615,16 @@ after(() => {
 function buildDevServerBinary(t) {
   if (devServerBuild) {
     return devServerBuild.binary;
+  }
+  const configuredBinary = process.env.GLADE_LWCRUNTIME_TEST_BINARY;
+  if (configuredBinary) {
+    const binary = path.resolve(repoRoot, configuredBinary);
+    if (!fs.existsSync(binary)) {
+      t.skip(`configured runtime test binary is missing: ${path.relative(repoRoot, binary)}`);
+      return null;
+    }
+    devServerBuild = { dir: null, binary };
+    return binary;
   }
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "glade-browser-binary-"));
   const binary = path.join(dir, process.platform === "win32" ? "glade.exe" : "glade");

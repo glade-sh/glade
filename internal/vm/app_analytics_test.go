@@ -67,15 +67,15 @@ System.assert(caught);
 	}
 }
 
-func TestExecAppAnalyticsPreservesUncapturedHostedBoundary(t *testing.T) {
+func TestExecAppAnalyticsCapturedRejectionsAndUncapturedOverload(t *testing.T) {
 	for _, tc := range []struct {
-		name, arguments string
-		testContext     bool
+		name, arguments, rejection string
+		testContext                bool
 	}{
-		{"testUncapturedOverload", "ResidualLens.Gesture.Opened, true", true},
-		{"testNumericOverload", "1, (Id)null", true},
-		{"testPlatformOverload", "System.LoggingLevel.INFO, (Id)null", true},
-		{"testObjectLabel", "new Account()", true},
+		{"testUncapturedOverload", "ResidualLens.Gesture.Opened, true", "", true},
+		{"testNumericOverload", "1, (Id)null", "must be an Apex enum.", true},
+		{"testPlatformOverload", "System.LoggingLevel.INFO, (Id)null", "must have the same namespace as the Apex code that called the method.", true},
+		{"testObjectLabel", "new Account()", "must be an Apex enum.", true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			program, err := CompileAnonymous("IsvPartners.AppAnalytics.logCustomInteraction(" + tc.arguments + ");")
@@ -86,7 +86,12 @@ func TestExecAppAnalyticsPreservesUncapturedHostedBoundary(t *testing.T) {
 			if tc.testContext {
 				machine.EnableTestContext()
 			}
-			if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "hosted telemetry") {
+			_, err = machine.Execute(program)
+			if tc.rejection != "" {
+				if err == nil || !strings.Contains(err.Error(), "InvalidParameterValueException") || !strings.Contains(err.Error(), tc.rejection) {
+					t.Fatalf("expected native label rejection, got %v", err)
+				}
+			} else if err == nil || !strings.Contains(err.Error(), "hosted telemetry") {
 				t.Fatalf("expected existing hosted boundary, got %v", err)
 			}
 		})

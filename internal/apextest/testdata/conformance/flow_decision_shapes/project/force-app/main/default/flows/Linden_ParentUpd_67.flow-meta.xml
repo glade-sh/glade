@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>67.0</apiVersion>
+    <label>Linden_ParentUpd_67</label>
+    <processType>AutoLaunchedFlow</processType>
+    <recordUpdates>
+        <name>Upd_Parent</name><label>Upd Parent</label><locationX>0</locationX><locationY>0</locationY>
+        <filterLogic>and</filterLogic>
+        <filters><field>Name</field><operator>NotEqualTo</operator><value><stringValue>Closed</stringValue></value></filters>
+        <inputAssignments><field>Linden_Dt__c</field><value><elementReference>$Record.LastModifiedDate</elementReference></value></inputAssignments>
+        <inputAssignments><field>Linden_Tx__c</field><value><elementReference>$Record.LastName</elementReference></value></inputAssignments>
+        <inputAssignments><field>Linden_Dd__c</field><value><elementReference>$Record.LastModifiedDate</elementReference></value></inputAssignments>
+        <inputReference>$Record.Linden_Acct__r</inputReference>
+    </recordUpdates>
+    <start>
+        <locationX>0</locationX><locationY>0</locationY>
+        <connector><targetReference>Upd_Parent</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>Linden_O__c</field><operator>IsChanged</operator><value><booleanValue>true</booleanValue></value></filters>
+        <object>Contact</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

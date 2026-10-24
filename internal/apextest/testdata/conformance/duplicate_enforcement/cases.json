@@ -1,0 +1,682 @@
+{
+  "cases": [
+    {
+      "id": "DR01",
+      "shape": "Block SaveResult and DuplicateError graph",
+      "fixture": "extension",
+      "method": "DR01",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "DR02",
+      "shape": "Block all-or-none DmlException",
+      "fixture": "extension",
+      "method": "DR02",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "DR03",
+      "shape": "Allow Alert without allowSave",
+      "fixture": "extension",
+      "method": "DR03",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "DR04",
+      "shape": "Allow Alert with allowSave",
+      "fixture": "extension",
+      "method": "DR04",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "DR05",
+      "shape": "Block with allowSave remains blocked",
+      "fixture": "existing",
+      "method": "D03",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "DR06",
+      "shape": "Allow Report and report-record counts",
+      "fixture": "extension",
+      "method": "DR06",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "DR07",
+      "shape": "Duplicates inside one insert list",
+      "fixture": "extension",
+      "method": "DR07",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "DR08",
+      "shape": "Update into existing duplicate",
+      "fixture": "existing",
+      "method": "D05",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "DR09",
+      "shape": "NullNotAllowed and MatchBlanks null keys",
+      "fixture": "extension",
+      "method": "DR09",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "DR10",
+      "shape": "Exact matching letter case",
+      "fixture": "extension",
+      "method": "DR10",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "DR11",
+      "shape": "Inactive rule control",
+      "fixture": "extension",
+      "method": "DR11",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "DR12",
+      "shape": "Default Contact duplicate rule and seeded rule inventory",
+      "fixture": "extension",
+      "method": "DR12",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "DR13",
+      "shape": "Before-trigger match and validation precedence",
+      "fixture": "extension",
+      "method": "DR13",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "DR14",
+      "shape": "FindDuplicates and FindDuplicatesByIds active-rule graph",
+      "fixture": "extension",
+      "method": "DR14",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "DR15",
+      "shape": "Rule filter scope rejection twin",
+      "fixture": "extension",
+      "method": "DR15",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "DR16",
+      "shape": "First matching duplicate rule by sortOrder",
+      "fixture": "extension",
+      "method": "DR16",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "DR17",
+      "shape": "Anonymous twin of Block SaveResult",
+      "fixture": "extension",
+      "method": "DR01",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "reused"
+    },
+    {
+      "id": "ST01",
+      "shape": "Default duplicate rules including IsActive and standard matching-rule inventory",
+      "fixture": "standard_extended",
+      "method": "ST01",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "captured"
+    },
+    {
+      "id": "ST02",
+      "shape": "Standard Account findDuplicates, errors and matching result details",
+      "fixture": "standard",
+      "method": "ST02",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "captured"
+    },
+    {
+      "id": "ST03",
+      "shape": "Standard Contact findDuplicates and cross-object Contact/Lead scope",
+      "fixture": "standard",
+      "method": "ST03",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "captured"
+    },
+    {
+      "id": "ST04",
+      "shape": "Standard Lead findDuplicates and cross-object Lead/Contact scope",
+      "fixture": "standard",
+      "method": "ST04",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "captured"
+    },
+    {
+      "id": "ST05",
+      "shape": "Mixed Account Contact Lead input order, no-match twin and API entry points",
+      "fixture": "standard",
+      "method": "ST05",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "captured"
+    },
+    {
+      "id": "ST06",
+      "shape": "FindDuplicates empty/null input and fifty-record boundary",
+      "fixture": "standard",
+      "method": "ST06",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "captured"
+    },
+    {
+      "id": "ST07",
+      "shape": "Standard Contact runAsCurrentUser and allowSave through per-record setOptions",
+      "fixture": "standard",
+      "method": "ST07",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "captured"
+    },
+    {
+      "id": "ST08",
+      "shape": "Account/Contact/Lead default duplicate enforcement and update twins",
+      "fixture": "standard",
+      "method": "ST08",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "captured"
+    },
+    {
+      "id": "ST09",
+      "shape": "Allow Report committed record-set/item counts",
+      "fixture": "standard",
+      "method": "ST09",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "captured"
+    },
+    {
+      "id": "ST10",
+      "shape": "Native standard matching-rule definitions: boolean filter, match engine, ordered fields/methods/blank behavior",
+      "fixture": "standard",
+      "method": "ST10",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "captured"
+    },
+    {
+      "id": "HD01",
+      "shape": "Apex DuplicateRuleHeader.includeRecordDetails is rejected (SOAP-only field)",
+      "fixture": "rejection",
+      "method": "headerField",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "captured"
+    },
+    {
+      "id": "ST11",
+      "shape": "Standard Account/Contact/Lead matching: name plus phone/email/website/address and missing-first-name discriminators",
+      "fixture": "standard_extended",
+      "method": "ST11",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "anonymous",
+        "istest"
+      ],
+      "native": "captured"
+    },
+    {
+      "id": "MD01",
+      "shape": "Retrieved default DuplicateRule settings and empty standard MatchingRules documents",
+      "fixture": "metadata",
+      "method": "defaults",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "metadata"
+      ],
+      "native": "captured"
+    },
+    {
+      "id": "CM01",
+      "shape": "Allow Report committed save and two immediate separate-request report-record readbacks",
+      "fixture": "committed",
+      "method": "ST09",
+      "apis": [
+        "62.0",
+        "67.0"
+      ],
+      "routes": [
+        "committed_anonymous"
+      ],
+      "native": "captured"
+    }
+  ],
+  "projects": {
+    "extension": {
+      "force-app/main/default/assignmentRules/Case.assignmentRules-meta.xml": "<AssignmentRules xmlns=\"http://soap.sforce.com/2006/04/metadata\"><assignmentRule><fullName>OracleCaseActive</fullName><active>true</active><ruleEntry><assignedTo>OracleFirst</assignedTo><assignedToType>Queue</assignedToType><criteriaItems><field>Case.Subject</field><operation>equals</operation><value>match</value></criteriaItems></ruleEntry></assignmentRule></AssignmentRules>\n",
+      "force-app/main/default/assignmentRules/Lead.assignmentRules-meta.xml": "<AssignmentRules xmlns=\"http://soap.sforce.com/2006/04/metadata\"><assignmentRule><fullName>OracleLeadActive</fullName><active>true</active><ruleEntry><assignedTo>OracleFirst</assignedTo><assignedToType>Queue</assignedToType><formula>CONTAINS(Company, \"formula\")</formula></ruleEntry><ruleEntry><assignedTo>OracleFirst</assignedTo><assignedToType>Queue</assignedToType><booleanFilter>1 OR 2</booleanFilter><criteriaItems><field>Lead.Company</field><operation>equals</operation><value>match</value></criteriaItems><criteriaItems><field>Lead.Company</field><operation>equals</operation><value>multi</value></criteriaItems></ruleEntry><ruleEntry><assignedTo>OracleSecond</assignedTo><assignedToType>Queue</assignedToType><criteriaItems><field>Lead.Company</field><operation>equals</operation><value>multi</value></criteriaItems></ruleEntry></assignmentRule><assignmentRule><fullName>OracleLeadInactive</fullName><active>false</active><ruleEntry><assignedTo>OracleSecond</assignedTo><assignedToType>Queue</assignedToType><formula>TRUE</formula></ruleEntry></assignmentRule></AssignmentRules>\n",
+      "force-app/main/default/classes/PathObservation.cls": "public class PathObservation {\n public static Integer afterInserts=0, afterUpdates=0;\n public static Boolean afterOwnerQueue;\n public class MakePath implements Queueable {public void execute(QueueableContext context) {insert new PathOracle__c(Name='queued',Mode__c='plain',Value__c='queued');}}\n public static String ownerKind(Id owner) {if(String.valueOf(owner).startsWith('00G')) return [SELECT DeveloperName FROM Group WHERE Id=:owner].DeveloperName;return 'user';}\n public static Map<String,Object> duplicateGraph(Datacloud.DuplicateResult result) {\n  List<Object> matches=new List<Object>();\n  for(Datacloud.MatchResult match:result.getMatchResults()) {\n   List<Object> records=new List<Object>();for(Datacloud.MatchRecord record:match.getMatchRecords()) records.add(new Map<String,Object>{'confidence'=>record.getMatchConfidence(),'recordType'=>String.valueOf(record.getRecord().getSObjectType())});\n   matches.add(new Map<String,Object>{'entity'=>match.getEntityType(),'success'=>match.isSuccess(),'records'=>records});\n  }\n  return new Map<String,Object>{'rule'=>result.getDuplicateRule(),'allowSave'=>result.isAllowSave(),'matches'=>matches};\n }\n public static void saveObservation(Map<String,Object> out,Database.SaveResult result) {\n  out.put('success',result.isSuccess());List<Object> errors=new List<Object>();\n  for(Database.Error failure:result.getErrors()) {\n   Map<String,Object> error=new Map<String,Object>{'status'=>String.valueOf(failure.getStatusCode()),'message'=>failure.getMessage(),'duplicateError'=>failure instanceof Database.DuplicateError};\n   if(failure instanceof Database.DuplicateError) error.put('duplicate',duplicateGraph(((Database.DuplicateError)failure).getDuplicateResult()));errors.add(error);\n  }out.put('errors',errors);\n }\n public static void cdcLog(SObject event,EventBus.ChangeEventHeader header) {\n  List<String> changed=new List<String>(),nulled=new List<String>();\n  for(String field:header.changedFields) if(field=='Name'||field=='Description'||field=='Value__c'||field=='Other__c') changed.add(field);\n  for(String field:header.nulledFields) if(field=='Name'||field=='Description'||field=='Value__c'||field=='Other__c') nulled.add(field);\n  changed.sort();nulled.sort();\n  Map<String,Object> row=new Map<String,Object>{'entity'=>header.entityName,'type'=>header.changeType,'recordCount'=>header.recordIds.size(),'changed'=>changed,'nulled'=>nulled,'commitUserIsSubscriber'=>header.commitUser==UserInfo.getUserId(),'automatedSubscriber'=>UserInfo.getName()=='Automated Process','commitUser'=>header.commitUser,'transactionKey'=>header.transactionKey,'sequence'=>header.sequenceNumber};\n  if(header.entityName=='Account') {row.put('name',event.get('Name'));row.put('description',event.get('Description'));}\n  if(header.entityName=='ChangeOracle__c') {row.put('value',event.get('Value__c'));row.put('other',event.get('Other__c'));}\n  insert new OracleLog__c(Name='cdc',Data__c=JSON.serialize(row));\n }\n public static void collectCDC(Map<String,Object> out) {\n  List<Object> events=new List<Object>();String firstKey;Long lastSequence;Boolean sameKey=true,increasing=true;\n  for(OracleLog__c log:[SELECT Data__c FROM OracleLog__c WHERE Name='cdc' ORDER BY CreatedDate,Id]) {\n   Map<String,Object> event=(Map<String,Object>)JSON.deserializeUntyped(log.Data__c);event.put('commitUserIsCaller',event.remove('commitUser')==UserInfo.getUserId());String txn=(String)event.remove('transactionKey');Long seq=Long.valueOf(String.valueOf(event.remove('sequence')));\n   if(firstKey==null) firstKey=txn;else sameKey=sameKey&&(txn==firstKey);if(lastSequence!=null) increasing=increasing&&(seq>lastSequence);lastSequence=seq;events.add(event);\n  }out.put('events',events);out.put('sameTransaction',sameKey);out.put('increasingSequence',increasing);\n }\n public static Map<String,Object> observe(String key) {\n  Map<String,Object> out=new Map<String,Object>{'exception'=>null};\n  try {\n   if(key.startsWith('SP')) {\n    String mode=key=='SP05'?'reject':key=='SP06'?'fault':key=='SP08'?'past':key=='SP09'?'future':'plain';\n    PathOracle__c row=new PathOracle__c(Name=key,Mode__c=mode,Value__c='initial',Due__c=System.now().addDays(-1));\n    Savepoint point;\n    if(key=='SP03') {insert row;Test.startTest();}else {Test.startTest();if(key=='SP07') point=Database.setSavepoint();if(key=='SP10') System.enqueueJob(new MakePath());else insert row;}\n    if(key=='SP04') {row.Value__c='updated';update row;}if(key=='SP05') {row.Mode__c='update';update row;}if(key=='SP07') Database.rollback(point);\n    out.put('beforeCopied',[SELECT count() FROM PathOracle__c WHERE Copied__c!=null]);Test.stopTest();\n    List<Object> values=new List<Object>();for(PathOracle__c record:[SELECT Value__c,Copied__c FROM PathOracle__c ORDER BY Name]) values.add(new Map<String,Object>{'value'=>record.Value__c,'copied'=>record.Copied__c});out.put('records',values);\n    if(key=='SP11') {out.put('jobs',[SELECT count() FROM AsyncApexJob]);out.put('interviews',[SELECT count() FROM FlowInterview]);}\n   } else if(key.startsWith('CDC')) {\n    if(key=='CDC03') {insert new Contact(LastName='selected');Test.getEventBus().deliver();collectCDC(out);return out;}\n    if(key=='CDC17') {out.put('setupRecords',[SELECT count() FROM Account WHERE Name='oracle-setup']);Test.enableChangeDataCapture();Test.getEventBus().deliver();collectCDC(out);return out;}\n    Account account=new Account(Name='initial',Description='kept');if(key=='CDC04'||key=='CDC05'||key=='CDC06'||key=='CDC07'||key=='CDC12') insert account;Test.enableChangeDataCapture();\n    if(key=='CDC04'||key=='CDC05'||key=='CDC06'||key=='CDC07') {Test.getEventBus().deliver();delete [SELECT Id FROM OracleLog__c WHERE Name='cdc'];}\n    if(key=='CDC10') {insert new Account(Name='before-start');Test.startTest();}\n    if(key=='CDC11') {Savepoint point=Database.setSavepoint();insert account;Database.rollback(point);}\n    else if(key=='CDC04') {account.Name='changed';update account;}else if(key=='CDC05') {account.Description=null;update account;}else if(key=='CDC06') delete account;else if(key=='CDC07') {delete account;Test.getEventBus().deliver();delete [SELECT Id FROM OracleLog__c WHERE Name='cdc'];undelete account;}\n    else if(key=='CDC08') insert new List<Account>{new Account(Name='same'),new Account(Name='same')};else if(key=='CDC09') {insert account;account.Name='changed';update account;}\n    else if(key=='CDC12') {}else if(key=='CDC14'||key=='CDC15') insert new ChangeOracle__c(Name=key=='CDC15'?'flow':'custom',Value__c='original',Other__c='kept');else insert account;\n    out.put('before',[SELECT count() FROM OracleLog__c WHERE Name='cdc']);if(key=='CDC10') Test.stopTest();else Test.getEventBus().deliver();collectCDC(out);\n   } else if(key.startsWith('DR')) {\n    if(key=='DR12') {insert new Contact(LastName='Synthetic',FirstName='Exact',Email='owned@example.invalid');saveObservation(out,Database.insert(new Contact(LastName='Synthetic',FirstName='Exact',Email='owned@example.invalid'),false));return out;}\n    String token=key=='DR09'?null:'same-key';insert new MatchOracle__c(Name='seed',Key__c=token,Mode__c='seed');\n    String mode=key=='DR03'||key=='DR04'?'alert':key=='DR06'?'report':key=='DR09'?'blank':key=='DR11'?'inactive':key=='DR13'?'before':key=='DR16'?'multi':'block';\n    MatchOracle__c row=new MatchOracle__c(Name='candidate',Key__c=key=='DR10'?'SAME-KEY':key=='DR13'?'different':token,Mode__c=mode,Enabled__c=key!='DR15');\n    if(key=='DR02') {try {insert row;out.put('saved',true);}catch(DmlException failure) {out.put('exception',failure.getTypeName());out.put('status',String.valueOf(failure.getDmlType(0)));out.put('mentionsDuplicate',failure.getMessage().contains('Owned exact-key duplicate'));}}\n    else if(key=='DR07') {List<Database.SaveResult> results=Database.insert(new List<MatchOracle__c>{new MatchOracle__c(Name='one',Key__c='new-key',Mode__c='block',Enabled__c=true),new MatchOracle__c(Name='two',Key__c='new-key',Mode__c='block',Enabled__c=true)},false);List<Object> statuses=new List<Object>();for(Database.SaveResult result:results) {Map<String,Object> status=new Map<String,Object>();saveObservation(status,result);statuses.add(status);}out.put('results',statuses);}\n    else if(key=='DR14') {List<Datacloud.FindDuplicatesResult> found=Datacloud.FindDuplicates.findDuplicates(new List<SObject>{row});List<Object> graphs=new List<Object>();for(Datacloud.FindDuplicatesResult result:found) {List<Object> duplicates=new List<Object>();for(Datacloud.DuplicateResult duplicate:result.getDuplicateResults()) duplicates.add(duplicateGraph(duplicate));graphs.add(new Map<String,Object>{'success'=>result.isSuccess(),'duplicates'=>duplicates});}out.put('results',graphs);\n     delete [SELECT Id FROM MatchOracle__c];insert row;insert new MatchOracle__c(Name='id-match',Key__c=token,Mode__c='seed');\n     List<Object> idGraphs=new List<Object>();for(Datacloud.FindDuplicatesResult result:Datacloud.FindDuplicatesByIds.findDuplicatesByIds(new List<Id>{row.Id})) {List<Object> duplicates=new List<Object>();for(Datacloud.DuplicateResult duplicate:result.getDuplicateResults()) duplicates.add(duplicateGraph(duplicate));idGraphs.add(new Map<String,Object>{'success'=>result.isSuccess(),'duplicates'=>duplicates});}out.put('byIds',idGraphs);}\n    else if(key=='DR13') {saveObservation(out,Database.insert(row,false));MatchOracle__c invalid=new MatchOracle__c(Name='invalid',Key__c=token,Mode__c='block',Enabled__c=true);Map<String,Object> validation=new Map<String,Object>();saveObservation(validation,Database.insert(invalid,false));out.put('validation',validation);}\n    else {Database.DMLOptions options=new Database.DMLOptions();options.DuplicateRuleHeader.allowSave=key=='DR04';saveObservation(out,Database.insert(row,options));}\n    out.put('count',[SELECT count() FROM MatchOracle__c]);if(key=='DR06') {out.put('sets',[SELECT count() FROM DuplicateRecordSet]);out.put('items',[SELECT count() FROM DuplicateRecordItem]);}\n   } else if(key.startsWith('AR')) {\n    afterInserts=0;afterUpdates=0;afterOwnerQueue=null;if(key=='AR15') {out.put('activeLeadRules',[SELECT count() FROM AssignmentRule WHERE SobjectType='Lead' AND Active=true]);return out;}\n    Database.DMLOptions options=new Database.DMLOptions();options.assignmentRuleHeader.useDefaultRule=true;\n    if(key=='AR04'||key=='AR13') {options.assignmentRuleHeader.assignmentRuleId=[SELECT Id FROM AssignmentRule WHERE Name='OracleLeadInactive' AND SobjectType='Lead' LIMIT 1].Id;if(key=='AR04') options.assignmentRuleHeader.useDefaultRule=null;}\n    if(key=='AR05') {options.assignmentRuleHeader.useDefaultRule=null;options.assignmentRuleHeader.assignmentRuleId=[SELECT Id FROM AssignmentRule WHERE SobjectType='Case' AND Active=true LIMIT 1].Id;}if(key=='AR14') options.assignmentRuleHeader.useDefaultRule=false;\n    if(key=='AR12') {List<Object> cases=new List<Object>();for(String subject:new List<String>{'match','miss'}) {Case row=new Case(Subject=subject,Status='New',Origin='Web');Database.SaveResult result=Database.insert(row,options);Map<String,Object> status=new Map<String,Object>();saveObservation(status,result);if(result.isSuccess()) {row=[SELECT OwnerId FROM Case WHERE Id=:result.Id];status.put('owner',ownerKind(row.OwnerId));}cases.add(status);}out.put('cases',cases);return out;}\n    Lead lead=new Lead(LastName='Synthetic',Company=key=='AR07'?'multi':key=='AR08'?'formula':key=='AR09'?'miss':'match');Database.SaveResult result;\n    if(key=='AR03') {lead.setOptions(options);insert lead;out.put('owner',ownerKind([SELECT OwnerId FROM Lead WHERE Id=:lead.Id].OwnerId));}\n    else if(key=='AR09') {insert lead;lead.Company='match';result=Database.update(lead,options);}else result=Database.insert(lead,options);\n    if(result!=null) {saveObservation(out,result);if(result.isSuccess()) out.put('owner',ownerKind([SELECT OwnerId FROM Lead WHERE Id=:result.Id].OwnerId));}\n    if(key=='AR08') {Lead booleanLead=new Lead(LastName='Boolean',Company='multi');Database.SaveResult second=Database.insert(booleanLead,options);out.put('booleanOwner',ownerKind([SELECT OwnerId FROM Lead WHERE Id=:second.Id].OwnerId));}\n    if(key=='AR10') {out.put('afterInsertOwnerQueue',afterOwnerQueue);out.put('afterInserts',afterInserts);out.put('afterUpdates',afterUpdates);}\n    if(key=='AR11') {List<Object> owners=new List<Object>();for(OracleLog__c log:[SELECT Data__c FROM OracleLog__c WHERE Name='lead-owner']) owners.add(log.Data__c);out.put('flowOwners',owners);}\n   }\n  } catch(Exception failure) {out.put('exception',failure.getTypeName());}return out;\n }\n public static void emit(String key) {System.assert(false,'PATH_OBS|'+key+'|'+JSON.serialize(observe(key)));}\n}\n",
+      "force-app/main/default/classes/PathObservation.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "force-app/main/default/classes/PathObservationTest.cls": "@IsTest public class PathObservationTest {\n @IsTest static void SP03() {PathObservation.emit('SP03');}\n @IsTest static void SP04() {PathObservation.emit('SP04');}\n @IsTest static void SP05() {PathObservation.emit('SP05');}\n @IsTest static void SP06() {PathObservation.emit('SP06');}\n @IsTest static void SP07() {PathObservation.emit('SP07');}\n @IsTest static void SP08() {PathObservation.emit('SP08');}\n @IsTest static void SP09() {PathObservation.emit('SP09');}\n @IsTest static void SP10() {PathObservation.emit('SP10');}\n @IsTest static void SP11() {PathObservation.emit('SP11');}\n @IsTest static void CDC01() {PathObservation.emit('CDC01');}\n @IsTest static void CDC03() {PathObservation.emit('CDC03');}\n @IsTest static void CDC04() {PathObservation.emit('CDC04');}\n @IsTest static void CDC05() {PathObservation.emit('CDC05');}\n @IsTest static void CDC06() {PathObservation.emit('CDC06');}\n @IsTest static void CDC07() {PathObservation.emit('CDC07');}\n @IsTest static void CDC08() {PathObservation.emit('CDC08');}\n @IsTest static void CDC09() {PathObservation.emit('CDC09');}\n @IsTest static void CDC10() {PathObservation.emit('CDC10');}\n @IsTest static void CDC11() {PathObservation.emit('CDC11');}\n @IsTest static void CDC12() {PathObservation.emit('CDC12');}\n @IsTest static void CDC13() {PathObservation.emit('CDC13');}\n @IsTest static void CDC14() {PathObservation.emit('CDC14');}\n @IsTest static void CDC15() {PathObservation.emit('CDC15');}\n @IsTest static void DR01() {PathObservation.emit('DR01');}\n @IsTest static void DR02() {PathObservation.emit('DR02');}\n @IsTest static void DR03() {PathObservation.emit('DR03');}\n @IsTest static void DR04() {PathObservation.emit('DR04');}\n @IsTest static void DR06() {PathObservation.emit('DR06');}\n @IsTest static void DR07() {PathObservation.emit('DR07');}\n @IsTest static void DR09() {PathObservation.emit('DR09');}\n @IsTest static void DR10() {PathObservation.emit('DR10');}\n @IsTest static void DR11() {PathObservation.emit('DR11');}\n @IsTest static void DR12() {PathObservation.emit('DR12');}\n @IsTest static void DR13() {PathObservation.emit('DR13');}\n @IsTest static void DR14() {PathObservation.emit('DR14');}\n @IsTest static void DR15() {PathObservation.emit('DR15');}\n @IsTest static void DR16() {PathObservation.emit('DR16');}\n @IsTest static void AR03() {PathObservation.emit('AR03');}\n @IsTest static void AR04() {PathObservation.emit('AR04');}\n @IsTest static void AR05() {PathObservation.emit('AR05');}\n @IsTest static void AR07() {PathObservation.emit('AR07');}\n @IsTest static void AR08() {PathObservation.emit('AR08');}\n @IsTest static void AR09() {PathObservation.emit('AR09');}\n @IsTest static void AR10() {PathObservation.emit('AR10');}\n @IsTest static void AR11() {PathObservation.emit('AR11');}\n @IsTest static void AR12() {PathObservation.emit('AR12');}\n @IsTest static void AR13() {PathObservation.emit('AR13');}\n @IsTest static void AR14() {PathObservation.emit('AR14');}\n @IsTest static void AR15() {PathObservation.emit('AR15');}\n}\n",
+      "force-app/main/default/classes/PathObservationTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "force-app/main/default/classes/PathSetupObservationTest.cls": "@IsTest public class PathSetupObservationTest {\n @TestSetup static void seed() {insert new Account(Name='oracle-setup');}\n @IsTest static void CDC17() {PathObservation.emit('CDC17');}\n}\n",
+      "force-app/main/default/classes/PathSetupObservationTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "force-app/main/default/duplicateRules/MatchOracle__c.OracleAlert.duplicateRule-meta.xml": "<DuplicateRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><actionOnInsert>Allow</actionOnInsert><actionOnUpdate>Allow</actionOnUpdate><alertText>Owned exact-key duplicate</alertText><duplicateRuleFilter><booleanFilter>1 OR 2</booleanFilter><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>alert</value><sortOrder>1</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>multi</value><sortOrder>2</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems></duplicateRuleFilter><duplicateRuleMatchRules><matchRuleSObjectType>MatchOracle__c</matchRuleSObjectType><matchingRule>OracleExact</matchingRule></duplicateRuleMatchRules><isActive>true</isActive><masterLabel>OracleAlert</masterLabel><operationsOnInsert>Alert</operationsOnInsert><operationsOnUpdate>Alert</operationsOnUpdate><securityOption>BypassSharingRules</securityOption><sortOrder>2</sortOrder></DuplicateRule>\n",
+      "force-app/main/default/duplicateRules/MatchOracle__c.OracleBlanks.duplicateRule-meta.xml": "<DuplicateRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><actionOnInsert>Block</actionOnInsert><actionOnUpdate>Block</actionOnUpdate><alertText>Owned exact-key duplicate</alertText><duplicateRuleFilter><booleanFilter>1</booleanFilter><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>blank</value><sortOrder>1</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems></duplicateRuleFilter><duplicateRuleMatchRules><matchRuleSObjectType>MatchOracle__c</matchRuleSObjectType><matchingRule>OracleBlank</matchingRule></duplicateRuleMatchRules><isActive>true</isActive><masterLabel>OracleBlanks</masterLabel><securityOption>BypassSharingRules</securityOption><sortOrder>4</sortOrder></DuplicateRule>\n",
+      "force-app/main/default/duplicateRules/MatchOracle__c.OracleBlock.duplicateRule-meta.xml": "<DuplicateRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><actionOnInsert>Block</actionOnInsert><actionOnUpdate>Block</actionOnUpdate><alertText>Owned exact-key duplicate</alertText><duplicateRuleFilter><booleanFilter>(1 OR 2 OR 3) AND 4</booleanFilter><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>block</value><sortOrder>1</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>before</value><sortOrder>2</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>multi</value><sortOrder>3</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems><duplicateRuleFilterItems><field>Enabled__c</field><operation>equals</operation><value>true</value><sortOrder>4</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems></duplicateRuleFilter><duplicateRuleMatchRules><matchRuleSObjectType>MatchOracle__c</matchRuleSObjectType><matchingRule>OracleExact</matchingRule></duplicateRuleMatchRules><isActive>true</isActive><masterLabel>OracleBlock</masterLabel><securityOption>BypassSharingRules</securityOption><sortOrder>1</sortOrder></DuplicateRule>\n",
+      "force-app/main/default/duplicateRules/MatchOracle__c.OracleInactive.duplicateRule-meta.xml": "<DuplicateRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><actionOnInsert>Block</actionOnInsert><actionOnUpdate>Block</actionOnUpdate><alertText>Owned exact-key duplicate</alertText><duplicateRuleFilter><booleanFilter>1</booleanFilter><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>inactive</value><sortOrder>1</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems></duplicateRuleFilter><duplicateRuleMatchRules><matchRuleSObjectType>MatchOracle__c</matchRuleSObjectType><matchingRule>OracleExact</matchingRule></duplicateRuleMatchRules><isActive>false</isActive><masterLabel>OracleInactive</masterLabel><securityOption>BypassSharingRules</securityOption><sortOrder>5</sortOrder></DuplicateRule>\n",
+      "force-app/main/default/duplicateRules/MatchOracle__c.OracleReport.duplicateRule-meta.xml": "<DuplicateRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><actionOnInsert>Allow</actionOnInsert><actionOnUpdate>Allow</actionOnUpdate><duplicateRuleFilter><booleanFilter>1</booleanFilter><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>report</value><sortOrder>1</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems></duplicateRuleFilter><duplicateRuleMatchRules><matchRuleSObjectType>MatchOracle__c</matchRuleSObjectType><matchingRule>OracleExact</matchingRule></duplicateRuleMatchRules><isActive>true</isActive><masterLabel>OracleReport</masterLabel><operationsOnInsert>Report</operationsOnInsert><operationsOnUpdate>Report</operationsOnUpdate><securityOption>BypassSharingRules</securityOption><sortOrder>3</sortOrder></DuplicateRule>\n",
+      "force-app/main/default/flows/OracleChangeUpdate.flow-meta.xml": "<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><interviewLabel>Oracle change update</interviewLabel><label>Oracle change update</label><processType>AutoLaunchedFlow</processType><recordUpdates><name>Effect</name><label>Effect</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Other__c</field><value><stringValue>flow-updated</stringValue></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Effect</targetReference></connector><filterLogic>and</filterLogic><filters><field>Name</field><operator>EqualTo</operator><value><stringValue>flow</stringValue></value></filters><object>ChangeOracle__c</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordAfterSave</triggerType></start><status>Active</status></Flow>\n",
+      "force-app/main/default/flows/OracleLeadOwner.flow-meta.xml": "<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><interviewLabel>Oracle lead owner</interviewLabel><label>Oracle lead owner</label><processType>AutoLaunchedFlow</processType><formulas><name>OwnerKind</name><dataType>String</dataType><expression>IF(BEGINS({!$Record.OwnerId}, \"00G\"), \"queue\", \"user\")</expression></formulas><recordCreates><name>Effect</name><label>Effect</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Name</field><value><stringValue>lead-owner</stringValue></value></inputAssignments><inputAssignments><field>Data__c</field><value><elementReference>OwnerKind</elementReference></value></inputAssignments><object>OracleLog__c</object><storeOutputAutomatically>true</storeOutputAutomatically></recordCreates><start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>Effect</targetReference></connector><object>Lead</object><recordTriggerType>Create</recordTriggerType><triggerType>RecordAfterSave</triggerType></start><status>Active</status></Flow>\n",
+      "force-app/main/default/flows/OraclePathFault.flow-meta.xml": "<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><interviewLabel>Oracle fault</interviewLabel><label>Oracle fault</label><processType>AutoLaunchedFlow</processType><recordCreates><name>Effect</name><label>Effect</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>LastName</field><value><stringValue>missing company</stringValue></value></inputAssignments><object>Lead</object><storeOutputAutomatically>true</storeOutputAutomatically></recordCreates><start><locationX>0</locationX><locationY>0</locationY><filterLogic>and</filterLogic><filters><field>Mode__c</field><operator>EqualTo</operator><value><stringValue>fault</stringValue></value></filters><object>PathOracle__c</object><recordTriggerType>Create</recordTriggerType><scheduledPaths><name>Later</name><connector><targetReference>Effect</targetReference></connector><pathType>AsyncAfterCommit</pathType></scheduledPaths><triggerType>RecordAfterSave</triggerType></start><status>Active</status></Flow>\n",
+      "force-app/main/default/flows/OraclePathFuture.flow-meta.xml": "<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><interviewLabel>Oracle future</interviewLabel><label>Oracle future</label><processType>AutoLaunchedFlow</processType><recordUpdates><name>Effect</name><label>Effect</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Copied__c</field><value><elementReference>$Record.Value__c</elementReference></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates><start><locationX>0</locationX><locationY>0</locationY><filterLogic>and</filterLogic><filters><field>Mode__c</field><operator>EqualTo</operator><value><stringValue>future</stringValue></value></filters><object>PathOracle__c</object><recordTriggerType>Create</recordTriggerType><scheduledPaths><name>Later</name><connector><targetReference>Effect</targetReference></connector><offsetNumber>1</offsetNumber><offsetUnit>Hours</offsetUnit><timeSource>RecordTriggerEvent</timeSource></scheduledPaths><triggerType>RecordAfterSave</triggerType></start><status>Active</status></Flow>\n",
+      "force-app/main/default/flows/OraclePathPast.flow-meta.xml": "<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><interviewLabel>Oracle past</interviewLabel><label>Oracle past</label><processType>AutoLaunchedFlow</processType><recordUpdates><name>Effect</name><label>Effect</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Copied__c</field><value><elementReference>$Record.Value__c</elementReference></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates><start><locationX>0</locationX><locationY>0</locationY><filterLogic>and</filterLogic><filters><field>Mode__c</field><operator>EqualTo</operator><value><stringValue>past</stringValue></value></filters><object>PathOracle__c</object><recordTriggerType>Create</recordTriggerType><scheduledPaths><name>Later</name><connector><targetReference>Effect</targetReference></connector><offsetNumber>0</offsetNumber><offsetUnit>Hours</offsetUnit><recordField>Due__c</recordField><timeSource>RecordField</timeSource></scheduledPaths><triggerType>RecordAfterSave</triggerType></start><status>Active</status></Flow>\n",
+      "force-app/main/default/flows/OraclePathPlain.flow-meta.xml": "<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><interviewLabel>Oracle plain</interviewLabel><label>Oracle plain</label><processType>AutoLaunchedFlow</processType><recordUpdates><name>Effect</name><label>Effect</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Copied__c</field><value><elementReference>$Record.Value__c</elementReference></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates><start><locationX>0</locationX><locationY>0</locationY><filterLogic>and</filterLogic><filters><field>Mode__c</field><operator>EqualTo</operator><value><stringValue>plain</stringValue></value></filters><object>PathOracle__c</object><recordTriggerType>Create</recordTriggerType><scheduledPaths><name>Later</name><connector><targetReference>Effect</targetReference></connector><pathType>AsyncAfterCommit</pathType></scheduledPaths><triggerType>RecordAfterSave</triggerType></start><status>Active</status></Flow>\n",
+      "force-app/main/default/flows/OraclePathUpdate.flow-meta.xml": "<Flow xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><interviewLabel>Oracle update</interviewLabel><label>Oracle update</label><processType>AutoLaunchedFlow</processType><recordUpdates><name>Effect</name><label>Effect</label><locationX>0</locationX><locationY>0</locationY><inputAssignments><field>Copied__c</field><value><elementReference>$Record.Value__c</elementReference></value></inputAssignments><inputReference>$Record</inputReference></recordUpdates><start><locationX>0</locationX><locationY>0</locationY><doesRequireRecordChangedToMeetCriteria>true</doesRequireRecordChangedToMeetCriteria><filterLogic>and</filterLogic><filters><field>Mode__c</field><operator>EqualTo</operator><value><stringValue>update</stringValue></value></filters><object>PathOracle__c</object><recordTriggerType>CreateAndUpdate</recordTriggerType><scheduledPaths><name>Later</name><connector><targetReference>Effect</targetReference></connector><pathType>AsyncAfterCommit</pathType></scheduledPaths><triggerType>RecordAfterSave</triggerType></start><status>Active</status></Flow>\n",
+      "force-app/main/default/matchingRules/MatchOracle__c.matchingRule-meta.xml": "<MatchingRules xmlns=\"http://soap.sforce.com/2006/04/metadata\"><matchingRules><fullName>OracleExact</fullName><label>OracleExact</label><matchingRuleItems><blankValueBehavior>NullNotAllowed</blankValueBehavior><fieldName>Key__c</fieldName><matchingMethod>Exact</matchingMethod></matchingRuleItems><ruleStatus>Active</ruleStatus></matchingRules><matchingRules><fullName>OracleBlank</fullName><label>OracleBlank</label><matchingRuleItems><blankValueBehavior>MatchBlanks</blankValueBehavior><fieldName>Key__c</fieldName><matchingMethod>Exact</matchingMethod></matchingRuleItems><ruleStatus>Active</ruleStatus></matchingRules></MatchingRules>\n",
+      "force-app/main/default/objects/ChangeOracle__c/ChangeOracle__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>ChangeOracle</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>ChangeOracle rows</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+      "force-app/main/default/objects/ChangeOracle__c/fields/Other__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Other__c</fullName><label>Other</label><length>120</length><type>Text</type></CustomField>\n",
+      "force-app/main/default/objects/ChangeOracle__c/fields/Value__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Value__c</fullName><label>Value</label><length>120</length><type>Text</type></CustomField>\n",
+      "force-app/main/default/objects/MatchOracle__c/MatchOracle__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>MatchOracle</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>MatchOracle rows</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+      "force-app/main/default/objects/MatchOracle__c/fields/Enabled__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Enabled__c</fullName><label>Enabled</label><defaultValue>false</defaultValue><type>Checkbox</type></CustomField>\n",
+      "force-app/main/default/objects/MatchOracle__c/fields/Key__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Key__c</fullName><label>Key</label><length>120</length><type>Text</type></CustomField>\n",
+      "force-app/main/default/objects/MatchOracle__c/fields/Mode__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Mode__c</fullName><label>Mode</label><length>120</length><type>Text</type></CustomField>\n",
+      "force-app/main/default/objects/MatchOracle__c/validationRules/OracleInvalid.validationRule-meta.xml": "<ValidationRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>OracleInvalid</fullName><active>true</active><errorConditionFormula>Name = \"invalid\"</errorConditionFormula><errorMessage>Owned validation rejection</errorMessage></ValidationRule>\n",
+      "force-app/main/default/objects/OracleLog__c/OracleLog__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>OracleLog</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>OracleLog rows</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+      "force-app/main/default/objects/OracleLog__c/fields/Data__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Data__c</fullName><label>Data</label><length>32768</length><visibleLines>3</visibleLines><type>LongTextArea</type></CustomField>\n",
+      "force-app/main/default/objects/PathOracle__c/PathOracle__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>PathOracle</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>PathOracle rows</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+      "force-app/main/default/objects/PathOracle__c/fields/Copied__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Copied__c</fullName><label>Copied</label><length>120</length><type>Text</type></CustomField>\n",
+      "force-app/main/default/objects/PathOracle__c/fields/Due__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Due__c</fullName><label>Due</label><type>DateTime</type></CustomField>\n",
+      "force-app/main/default/objects/PathOracle__c/fields/Mode__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Mode__c</fullName><label>Mode</label><length>120</length><type>Text</type></CustomField>\n",
+      "force-app/main/default/objects/PathOracle__c/fields/Value__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Value__c</fullName><label>Value</label><length>120</length><type>Text</type></CustomField>\n",
+      "force-app/main/default/permissionsets/OracleFixture.permissionset-meta.xml": "<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fieldPermissions><editable>true</editable><field>PathOracle__c.Mode__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>PathOracle__c.Value__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>PathOracle__c.Copied__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>PathOracle__c.Due__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>ChangeOracle__c.Value__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>ChangeOracle__c.Other__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>MatchOracle__c.Key__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>MatchOracle__c.Mode__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>MatchOracle__c.Enabled__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>OracleLog__c.Data__c</field><readable>true</readable></fieldPermissions><label>Oracle fixture access</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>PathOracle__c</object><viewAllRecords>true</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>ChangeOracle__c</object><viewAllRecords>true</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>MatchOracle__c</object><viewAllRecords>true</viewAllRecords></objectPermissions><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>OracleLog__c</object><viewAllRecords>true</viewAllRecords></objectPermissions></PermissionSet>\n",
+      "force-app/main/default/platformEventChannelMembers/ChangeEvents_ContactChangeEvent.platformEventChannelMember-meta.xml": "<PlatformEventChannelMember xmlns=\"http://soap.sforce.com/2006/04/metadata\"><eventChannel>ChangeEvents</eventChannel><selectedEntity>ContactChangeEvent</selectedEntity></PlatformEventChannelMember>\n",
+      "force-app/main/default/platformEventChannelMembers/ChangeEvents_OracleCustom.platformEventChannelMember-meta.xml": "<PlatformEventChannelMember xmlns=\"http://soap.sforce.com/2006/04/metadata\"><eventChannel>ChangeEvents</eventChannel><selectedEntity>ChangeOracle__ChangeEvent</selectedEntity></PlatformEventChannelMember>\n",
+      "force-app/main/default/queues/OracleFirst.queue-meta.xml": "<Queue xmlns=\"http://soap.sforce.com/2006/04/metadata\"><doesSendEmailToMembers>false</doesSendEmailToMembers><name>OracleFirst</name><queueSobject><sobjectType>Lead</sobjectType></queueSobject><queueSobject><sobjectType>Case</sobjectType></queueSobject></Queue>\n",
+      "force-app/main/default/queues/OracleSecond.queue-meta.xml": "<Queue xmlns=\"http://soap.sforce.com/2006/04/metadata\"><doesSendEmailToMembers>false</doesSendEmailToMembers><name>OracleSecond</name><queueSobject><sobjectType>Lead</sobjectType></queueSobject><queueSobject><sobjectType>Case</sobjectType></queueSobject></Queue>\n",
+      "force-app/main/default/triggers/OracleAccountChange.trigger": "trigger OracleAccountChange on AccountChangeEvent (after insert) {for(AccountChangeEvent event:Trigger.new) PathObservation.cdcLog(event,event.ChangeEventHeader);}\n",
+      "force-app/main/default/triggers/OracleAccountChange.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexTrigger>\n",
+      "force-app/main/default/triggers/OracleContactChange.trigger": "trigger OracleContactChange on ContactChangeEvent (after insert) {for(ContactChangeEvent event:Trigger.new) PathObservation.cdcLog(event,event.ChangeEventHeader);}\n",
+      "force-app/main/default/triggers/OracleContactChange.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexTrigger>\n",
+      "force-app/main/default/triggers/OracleCustomChange.trigger": "trigger OracleCustomChange on ChangeOracle__ChangeEvent (after insert) {for(ChangeOracle__ChangeEvent event:Trigger.new) PathObservation.cdcLog(event,event.ChangeEventHeader);}\n",
+      "force-app/main/default/triggers/OracleCustomChange.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexTrigger>\n",
+      "force-app/main/default/triggers/OracleLeadAfter.trigger": "trigger OracleLeadAfter on Lead (after insert,after update) {if(Trigger.isInsert) {PathObservation.afterInserts+=Trigger.new.size();PathObservation.afterOwnerQueue=String.valueOf(Trigger.new[0].OwnerId).startsWith('00G');}else PathObservation.afterUpdates+=Trigger.new.size();}\n",
+      "force-app/main/default/triggers/OracleLeadAfter.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexTrigger>\n",
+      "force-app/main/default/triggers/OracleMatchBefore.trigger": "trigger OracleMatchBefore on MatchOracle__c (before insert) {for(MatchOracle__c row:Trigger.new) if(row.Mode__c=='before') row.Key__c='same-key';}\n",
+      "force-app/main/default/triggers/OracleMatchBefore.trigger-meta.xml": "<ApexTrigger xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexTrigger>\n",
+      "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"namespace\": \"\", \"sourceApiVersion\": \"62.0\"}\n"
+    },
+    "standard": {
+      "force-app/main/default/duplicateRules/MatchOracle__c.OracleAlert.duplicateRule-meta.xml": "<DuplicateRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><actionOnInsert>Allow</actionOnInsert><actionOnUpdate>Allow</actionOnUpdate><alertText>Owned exact-key duplicate</alertText><duplicateRuleFilter><booleanFilter>1 OR 2</booleanFilter><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>alert</value><sortOrder>1</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>multi</value><sortOrder>2</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems></duplicateRuleFilter><duplicateRuleMatchRules><matchRuleSObjectType>MatchOracle__c</matchRuleSObjectType><matchingRule>OracleExact</matchingRule></duplicateRuleMatchRules><isActive>true</isActive><masterLabel>OracleAlert</masterLabel><operationsOnInsert>Alert</operationsOnInsert><operationsOnUpdate>Alert</operationsOnUpdate><securityOption>BypassSharingRules</securityOption><sortOrder>2</sortOrder></DuplicateRule>\n",
+      "force-app/main/default/duplicateRules/MatchOracle__c.OracleBlanks.duplicateRule-meta.xml": "<DuplicateRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><actionOnInsert>Block</actionOnInsert><actionOnUpdate>Block</actionOnUpdate><alertText>Owned exact-key duplicate</alertText><duplicateRuleFilter><booleanFilter>1</booleanFilter><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>blank</value><sortOrder>1</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems></duplicateRuleFilter><duplicateRuleMatchRules><matchRuleSObjectType>MatchOracle__c</matchRuleSObjectType><matchingRule>OracleBlank</matchingRule></duplicateRuleMatchRules><isActive>true</isActive><masterLabel>OracleBlanks</masterLabel><securityOption>BypassSharingRules</securityOption><sortOrder>4</sortOrder></DuplicateRule>\n",
+      "force-app/main/default/duplicateRules/MatchOracle__c.OracleBlock.duplicateRule-meta.xml": "<DuplicateRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><actionOnInsert>Block</actionOnInsert><actionOnUpdate>Block</actionOnUpdate><alertText>Owned exact-key duplicate</alertText><duplicateRuleFilter><booleanFilter>(1 OR 2 OR 3) AND 4</booleanFilter><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>block</value><sortOrder>1</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>before</value><sortOrder>2</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>multi</value><sortOrder>3</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems><duplicateRuleFilterItems><field>Enabled__c</field><operation>equals</operation><value>true</value><sortOrder>4</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems></duplicateRuleFilter><duplicateRuleMatchRules><matchRuleSObjectType>MatchOracle__c</matchRuleSObjectType><matchingRule>OracleExact</matchingRule></duplicateRuleMatchRules><isActive>true</isActive><masterLabel>OracleBlock</masterLabel><securityOption>BypassSharingRules</securityOption><sortOrder>1</sortOrder></DuplicateRule>\n",
+      "force-app/main/default/duplicateRules/MatchOracle__c.OracleInactive.duplicateRule-meta.xml": "<DuplicateRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><actionOnInsert>Block</actionOnInsert><actionOnUpdate>Block</actionOnUpdate><alertText>Owned exact-key duplicate</alertText><duplicateRuleFilter><booleanFilter>1</booleanFilter><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>inactive</value><sortOrder>1</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems></duplicateRuleFilter><duplicateRuleMatchRules><matchRuleSObjectType>MatchOracle__c</matchRuleSObjectType><matchingRule>OracleExact</matchingRule></duplicateRuleMatchRules><isActive>false</isActive><masterLabel>OracleInactive</masterLabel><securityOption>BypassSharingRules</securityOption><sortOrder>5</sortOrder></DuplicateRule>\n",
+      "force-app/main/default/duplicateRules/MatchOracle__c.OracleReport.duplicateRule-meta.xml": "<DuplicateRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><actionOnInsert>Allow</actionOnInsert><actionOnUpdate>Allow</actionOnUpdate><duplicateRuleFilter><booleanFilter>1</booleanFilter><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>report</value><sortOrder>1</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems></duplicateRuleFilter><duplicateRuleMatchRules><matchRuleSObjectType>MatchOracle__c</matchRuleSObjectType><matchingRule>OracleExact</matchingRule></duplicateRuleMatchRules><isActive>true</isActive><masterLabel>OracleReport</masterLabel><operationsOnInsert>Report</operationsOnInsert><operationsOnUpdate>Report</operationsOnUpdate><securityOption>BypassSharingRules</securityOption><sortOrder>3</sortOrder></DuplicateRule>\n",
+      "force-app/main/default/matchingRules/MatchOracle__c.matchingRule-meta.xml": "<MatchingRules xmlns=\"http://soap.sforce.com/2006/04/metadata\"><matchingRules><fullName>OracleExact</fullName><label>OracleExact</label><matchingRuleItems><blankValueBehavior>NullNotAllowed</blankValueBehavior><fieldName>Key__c</fieldName><matchingMethod>Exact</matchingMethod></matchingRuleItems><ruleStatus>Active</ruleStatus></matchingRules><matchingRules><fullName>OracleBlank</fullName><label>OracleBlank</label><matchingRuleItems><blankValueBehavior>MatchBlanks</blankValueBehavior><fieldName>Key__c</fieldName><matchingMethod>Exact</matchingMethod></matchingRuleItems><ruleStatus>Active</ruleStatus></matchingRules></MatchingRules>\n",
+      "force-app/main/default/objects/MatchOracle__c/MatchOracle__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>MatchOracle</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>MatchOracle rows</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+      "force-app/main/default/objects/MatchOracle__c/fields/Enabled__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Enabled__c</fullName><label>Enabled</label><defaultValue>false</defaultValue><type>Checkbox</type></CustomField>\n",
+      "force-app/main/default/objects/MatchOracle__c/fields/Key__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Key__c</fullName><label>Key</label><length>120</length><type>Text</type></CustomField>\n",
+      "force-app/main/default/objects/MatchOracle__c/fields/Mode__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Mode__c</fullName><label>Mode</label><length>120</length><type>Text</type></CustomField>\n",
+      "force-app/main/default/objects/MatchOracle__c/validationRules/OracleInvalid.validationRule-meta.xml": "<ValidationRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>OracleInvalid</fullName><active>true</active><errorConditionFormula>Name = \"invalid\"</errorConditionFormula><errorMessage>Owned validation rejection</errorMessage></ValidationRule>\n",
+      "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"namespace\": \"\", \"sourceApiVersion\": \"62.0\"}\n",
+      "force-app/main/default/classes/StandardDuplicateProbe.cls": "public class StandardDuplicateProbe {\n public static Map<String,Object> graph(Datacloud.DuplicateResult d) {\n  List<Object> matches=new List<Object>();\n  for(Datacloud.MatchResult m:d.getMatchResults()) {\n   List<Object> records=new List<Object>();\n   for(Datacloud.MatchRecord r:m.getMatchRecords()) {List<String> fields=new List<String>();fields.addAll(r.getRecord().getPopulatedFieldsAsMap().keySet());fields.sort();records.add(new Map<String,Object>{'type'=>String.valueOf(r.getRecord().getSObjectType()),'confidence'=>r.getMatchConfidence(),'fields'=>fields});}\n   matches.add(new Map<String,Object>{'entity'=>m.getEntityType(),'rule'=>m.getRule(),'engine'=>m.getMatchEngine(),'size'=>m.getSize(),'success'=>m.isSuccess(),'errors'=>m.getErrors().size(),'records'=>records});\n  }\n  return new Map<String,Object>{'rule'=>d.getDuplicateRule(),'entity'=>d.getDuplicateRuleEntityType(),'allowSave'=>d.isAllowSave(),'message'=>d.getErrorMessage(),'matches'=>matches};\n }\n public static List<Object> found(List<SObject> rows) {\n  List<Object> out=new List<Object>();for(Datacloud.FindDuplicatesResult f:Datacloud.FindDuplicates.findDuplicates(rows)) {List<Object> duplicates=new List<Object>();for(Datacloud.DuplicateResult d:f.getDuplicateResults()) duplicates.add(graph(d));out.add(new Map<String,Object>{'success'=>f.isSuccess(),'errors'=>f.getErrors().size(),'duplicates'=>duplicates});}return out;\n }\n public static List<Object> byIds(List<Id> ids) {\n  List<Object> out=new List<Object>();for(Datacloud.FindDuplicatesResult f:Datacloud.FindDuplicatesByIds.findDuplicatesByIds(ids)) {List<Object> duplicates=new List<Object>();for(Datacloud.DuplicateResult d:f.getDuplicateResults()) duplicates.add(graph(d));out.add(new Map<String,Object>{'success'=>f.isSuccess(),'errors'=>f.getErrors().size(),'duplicates'=>duplicates});}return out;\n }\n public static Map<String,Object> save(Database.SaveResult r) {\n  List<Object> errors=new List<Object>();for(Database.Error e:r.getErrors()) {Map<String,Object> x=new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields(),'duplicateError'=>e instanceof Database.DuplicateError};if(e instanceof Database.DuplicateError)x.put('duplicate',graph(((Database.DuplicateError)e).getDuplicateResult()));errors.add(x);}return new Map<String,Object>{'success'=>r.isSuccess(),'errors'=>errors};\n }\n public static Account account(String name) {return new Account(Name=name,Phone='4155550142',BillingStreet='17 Orchard Way',BillingCity='Portland',BillingState='OR',BillingPostalCode='97201',BillingCountry='USA',Website='https://orchard.invalid');}\n public static Contact contact() {return new Contact(FirstName='Iris',LastName='Orchard',Email='iris@orchard.invalid',Phone='4155550143',MailingStreet='18 Orchard Way',MailingCity='Portland',MailingState='OR',MailingPostalCode='97201',MailingCountry='USA');}\n public static Lead lead() {return new Lead(FirstName='Iris',LastName='Orchard',Company='Orchard',Email='iris@orchard.invalid',Phone='4155550143',Street='18 Orchard Way',City='Portland',State='OR',PostalCode='97201',Country='USA');}\n public static void seed(SObject row) {Database.DMLOptions o=new Database.DMLOptions();o.DuplicateRuleHeader.allowSave=true;Database.SaveResult r=Database.insert(row,o);System.assert(r.isSuccess(),'seed failed');}\n public static Map<String,Object> observe(String key) {\n  Map<String,Object> out=new Map<String,Object>{'exception'=>null};\n  try {\n   if(key=='ST01') {\n    List<String> duplicates=new List<String>(),matching=new List<String>();\n    for(DuplicateRule r:[SELECT DeveloperName,SobjectType,SobjectSubtype FROM DuplicateRule WHERE SobjectType IN ('Account','Contact','Lead') ORDER BY SobjectType,DeveloperName]) duplicates.add(r.SobjectType+':'+r.DeveloperName+':'+r.SobjectSubtype);\n    for(SObject r:Database.query('SELECT DeveloperName,SobjectType,RuleStatus FROM MatchingRule WHERE SobjectType IN (\\'Account\\',\\'Contact\\',\\'Lead\\') ORDER BY SobjectType,DeveloperName')) matching.add(String.valueOf(r.get('SobjectType'))+':'+String.valueOf(r.get('DeveloperName'))+':'+String.valueOf(r.get('RuleStatus')));\n    out.put('duplicateRules',duplicates);out.put('matchingRules',matching);\n   } else if(key=='ST02') {Account a=account('Orchard Studio');insert a;out.put('exact',found(new List<SObject>{account('Orchard Studio')}));out.put('nameOnly',found(new List<SObject>{new Account(Name='Orchard Studio')}));out.put('miss',found(new List<SObject>{new Account(Name='Unrelated Planet')}));out.put('byIds',byIds(new List<Id>{a.Id}));}\n   else if(key=='ST03') {Contact c=contact();insert c;out.put('exact',found(new List<SObject>{contact()}));out.put('emailOnly',found(new List<SObject>{new Contact(LastName='Other',Email='iris@orchard.invalid')}));out.put('nameOnly',found(new List<SObject>{new Contact(FirstName='Iris',LastName='Orchard')}));out.put('crossLead',found(new List<SObject>{lead()}));out.put('miss',found(new List<SObject>{new Contact(LastName='Unrelated')}));}\n   else if(key=='ST04') {Lead l=lead();insert l;out.put('exact',found(new List<SObject>{lead()}));out.put('crossContact',found(new List<SObject>{contact()}));out.put('miss',found(new List<SObject>{new Lead(LastName='Unrelated',Company='Planet')}));}\n   else if(key=='ST05') {insert account('Orchard Studio');insert contact();seed(lead());out.put('results',found(new List<SObject>{lead(),account('Orchard Studio'),contact(),new Account(Name='No match')}));out.put('byIds',byIds(new List<Id>{[SELECT Id FROM Lead LIMIT 1].Id,[SELECT Id FROM Contact LIMIT 1].Id,[SELECT Id FROM Account LIMIT 1].Id}));}\n   else if(key=='ST06') {\n    try {out.put('empty',found(new List<SObject>()));}catch(Exception e){out.put('emptyException',e.getTypeName());out.put('emptyMessage',e.getMessage());}\n    try {out.put('null',found(null));}catch(Exception e){out.put('nullException',e.getTypeName());out.put('nullMessage',e.getMessage());}\n    try {out.put('nullElement',found(new List<SObject>{null}));}catch(Exception e){out.put('nullElementException',e.getTypeName());out.put('nullElementMessage',e.getMessage());}\n    List<SObject> many=new List<SObject>();for(Integer i=0;i<50;i++)many.add(new Account(Name='No match '+i));out.put('fifty',Datacloud.FindDuplicates.findDuplicates(many).size());many.add(new Account(Name='No match 51'));\n    try {out.put('fiftyOne',Datacloud.FindDuplicates.findDuplicates(many).size());}catch(Exception e){out.put('fiftyOneException',e.getTypeName());out.put('fiftyOneMessage',e.getMessage());}\n   } else if(key=='ST07') {\n    insert contact();List<Object> results=new List<Object>();\n    for(Boolean asUser:new List<Boolean>{false,true}) {Contact c=contact();Database.DMLOptions o=new Database.DMLOptions();o.DuplicateRuleHeader.runAsCurrentUser=asUser;results.add(save(Database.insert(c,o)));}out.put('runAs',results);\n    Contact c=contact();Database.DMLOptions allow=new Database.DMLOptions();allow.DuplicateRuleHeader.allowSave=true;c.setOptions(allow);try {insert c;out.put('setOptionsSaved',true);}catch(DmlException e){out.put('setOptionsSaved',false);out.put('setOptionsStatus',String.valueOf(e.getDmlType(0)));}out.put('count',[SELECT count() FROM Contact]);\n   } else if(key=='ST08') {\n    Account a=account('Orchard Studio');insert a;out.put('accountInsert',save(Database.insert(account('Orchard Studio'),false)));Account a2=new Account(Name='Other');insert a2;a2.Name=a.Name;out.put('accountUpdate',save(Database.update(a2,false)));\n    Contact c=contact();insert c;out.put('contactInsert',save(Database.insert(contact(),false)));Contact c2=new Contact(LastName='Other');insert c2;c2.FirstName=c.FirstName;c2.LastName=c.LastName;c2.Email=c.Email;out.put('contactUpdate',save(Database.update(c2,false)));\n    Lead l=lead();seed(l);out.put('leadInsert',save(Database.insert(lead(),false)));Lead l2=new Lead(LastName='Other',Company='Planet');insert l2;l2.FirstName=l.FirstName;l2.LastName=l.LastName;l2.Email=l.Email;out.put('leadUpdate',save(Database.update(l2,false)));\n   } else if(key=='ST10') {\n    List<Object> definitions=new List<Object>();\n    for(SObject r:Database.query('SELECT Id,SobjectType,DeveloperName,MatchEngine,BooleanFilter,RuleStatus FROM MatchingRule WHERE SobjectType IN (\\'Account\\',\\'Contact\\',\\'Lead\\') ORDER BY SobjectType,DeveloperName')) {\n     Id ruleId=(Id)r.get('Id');List<Object> items=new List<Object>();\n     for(SObject item:Database.query('SELECT SortOrder,Field,MatchingMethod,BlankValueBehavior FROM MatchingRuleItem WHERE MatchingRuleId=:ruleId ORDER BY SortOrder')) items.add(new Map<String,Object>{'order'=>item.get('SortOrder'),'field'=>item.get('Field'),'method'=>item.get('MatchingMethod'),'blank'=>item.get('BlankValueBehavior')});\n     definitions.add(new Map<String,Object>{'object'=>r.get('SobjectType'),'name'=>r.get('DeveloperName'),'engine'=>r.get('MatchEngine'),'filter'=>r.get('BooleanFilter'),'status'=>r.get('RuleStatus'),'items'=>items});\n    }out.put('definitions',definitions);\n   } else if(key=='ST09') {MatchOracle__c a=new MatchOracle__c(Name='report-seed',Key__c='report-persist',Mode__c='seed');insert a;MatchOracle__c b=new MatchOracle__c(Name='report-candidate',Key__c='report-persist',Mode__c='report');out.put('save',save(Database.insert(b,false)));out.put('sets',[SELECT count() FROM DuplicateRecordSet]);out.put('items',[SELECT count() FROM DuplicateRecordItem]);}\n  } catch(Exception e) {out.put('exception',e.getTypeName());out.put('message',e.getMessage());}return out;\n }\n public static void emit(String key) {System.assert(false,'STANDARD_OBS|'+key+'|'+JSON.serialize(observe(key)));}\n}\n",
+      "force-app/main/default/classes/StandardDuplicateProbeTest.cls": "@IsTest public class StandardDuplicateProbeTest {\n @IsTest static void ST01() {StandardDuplicateProbe.emit('ST01');}\n @IsTest static void ST02() {StandardDuplicateProbe.emit('ST02');}\n @IsTest static void ST03() {StandardDuplicateProbe.emit('ST03');}\n @IsTest static void ST04() {StandardDuplicateProbe.emit('ST04');}\n @IsTest static void ST05() {StandardDuplicateProbe.emit('ST05');}\n @IsTest static void ST06() {StandardDuplicateProbe.emit('ST06');}\n @IsTest static void ST07() {StandardDuplicateProbe.emit('ST07');}\n @IsTest static void ST08() {StandardDuplicateProbe.emit('ST08');}\n @IsTest static void ST09() {StandardDuplicateProbe.emit('ST09');}\n @IsTest static void ST10() {StandardDuplicateProbe.emit('ST10');}\n}\n",
+      "force-app/main/default/classes/StandardDuplicateProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "force-app/main/default/classes/StandardDuplicateProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "force-app/main/default/permissionsets/StandardDuplicateFixture.permissionset-meta.xml": "<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fieldPermissions><editable>true</editable><field>MatchOracle__c.Key__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>MatchOracle__c.Mode__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>MatchOracle__c.Enabled__c</field><readable>true</readable></fieldPermissions><label>Standard duplicate fixture</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>MatchOracle__c</object><viewAllRecords>true</viewAllRecords></objectPermissions></PermissionSet>\n"
+    },
+    "standard_extended": {
+      "force-app/main/default/duplicateRules/MatchOracle__c.OracleAlert.duplicateRule-meta.xml": "<DuplicateRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><actionOnInsert>Allow</actionOnInsert><actionOnUpdate>Allow</actionOnUpdate><alertText>Owned exact-key duplicate</alertText><duplicateRuleFilter><booleanFilter>1 OR 2</booleanFilter><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>alert</value><sortOrder>1</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>multi</value><sortOrder>2</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems></duplicateRuleFilter><duplicateRuleMatchRules><matchRuleSObjectType>MatchOracle__c</matchRuleSObjectType><matchingRule>OracleExact</matchingRule></duplicateRuleMatchRules><isActive>true</isActive><masterLabel>OracleAlert</masterLabel><operationsOnInsert>Alert</operationsOnInsert><operationsOnUpdate>Alert</operationsOnUpdate><securityOption>BypassSharingRules</securityOption><sortOrder>2</sortOrder></DuplicateRule>\n",
+      "force-app/main/default/duplicateRules/MatchOracle__c.OracleBlanks.duplicateRule-meta.xml": "<DuplicateRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><actionOnInsert>Block</actionOnInsert><actionOnUpdate>Block</actionOnUpdate><alertText>Owned exact-key duplicate</alertText><duplicateRuleFilter><booleanFilter>1</booleanFilter><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>blank</value><sortOrder>1</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems></duplicateRuleFilter><duplicateRuleMatchRules><matchRuleSObjectType>MatchOracle__c</matchRuleSObjectType><matchingRule>OracleBlank</matchingRule></duplicateRuleMatchRules><isActive>true</isActive><masterLabel>OracleBlanks</masterLabel><securityOption>BypassSharingRules</securityOption><sortOrder>4</sortOrder></DuplicateRule>\n",
+      "force-app/main/default/duplicateRules/MatchOracle__c.OracleBlock.duplicateRule-meta.xml": "<DuplicateRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><actionOnInsert>Block</actionOnInsert><actionOnUpdate>Block</actionOnUpdate><alertText>Owned exact-key duplicate</alertText><duplicateRuleFilter><booleanFilter>(1 OR 2 OR 3) AND 4</booleanFilter><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>block</value><sortOrder>1</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>before</value><sortOrder>2</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>multi</value><sortOrder>3</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems><duplicateRuleFilterItems><field>Enabled__c</field><operation>equals</operation><value>true</value><sortOrder>4</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems></duplicateRuleFilter><duplicateRuleMatchRules><matchRuleSObjectType>MatchOracle__c</matchRuleSObjectType><matchingRule>OracleExact</matchingRule></duplicateRuleMatchRules><isActive>true</isActive><masterLabel>OracleBlock</masterLabel><securityOption>BypassSharingRules</securityOption><sortOrder>1</sortOrder></DuplicateRule>\n",
+      "force-app/main/default/duplicateRules/MatchOracle__c.OracleInactive.duplicateRule-meta.xml": "<DuplicateRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><actionOnInsert>Block</actionOnInsert><actionOnUpdate>Block</actionOnUpdate><alertText>Owned exact-key duplicate</alertText><duplicateRuleFilter><booleanFilter>1</booleanFilter><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>inactive</value><sortOrder>1</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems></duplicateRuleFilter><duplicateRuleMatchRules><matchRuleSObjectType>MatchOracle__c</matchRuleSObjectType><matchingRule>OracleExact</matchingRule></duplicateRuleMatchRules><isActive>false</isActive><masterLabel>OracleInactive</masterLabel><securityOption>BypassSharingRules</securityOption><sortOrder>5</sortOrder></DuplicateRule>\n",
+      "force-app/main/default/duplicateRules/MatchOracle__c.OracleReport.duplicateRule-meta.xml": "<DuplicateRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><actionOnInsert>Allow</actionOnInsert><actionOnUpdate>Allow</actionOnUpdate><duplicateRuleFilter><booleanFilter>1</booleanFilter><duplicateRuleFilterItems><field>Mode__c</field><operation>equals</operation><value>report</value><sortOrder>1</sortOrder><table>MatchOracle__c</table></duplicateRuleFilterItems></duplicateRuleFilter><duplicateRuleMatchRules><matchRuleSObjectType>MatchOracle__c</matchRuleSObjectType><matchingRule>OracleExact</matchingRule></duplicateRuleMatchRules><isActive>true</isActive><masterLabel>OracleReport</masterLabel><operationsOnInsert>Report</operationsOnInsert><operationsOnUpdate>Report</operationsOnUpdate><securityOption>BypassSharingRules</securityOption><sortOrder>3</sortOrder></DuplicateRule>\n",
+      "force-app/main/default/matchingRules/MatchOracle__c.matchingRule-meta.xml": "<MatchingRules xmlns=\"http://soap.sforce.com/2006/04/metadata\"><matchingRules><fullName>OracleExact</fullName><label>OracleExact</label><matchingRuleItems><blankValueBehavior>NullNotAllowed</blankValueBehavior><fieldName>Key__c</fieldName><matchingMethod>Exact</matchingMethod></matchingRuleItems><ruleStatus>Active</ruleStatus></matchingRules><matchingRules><fullName>OracleBlank</fullName><label>OracleBlank</label><matchingRuleItems><blankValueBehavior>MatchBlanks</blankValueBehavior><fieldName>Key__c</fieldName><matchingMethod>Exact</matchingMethod></matchingRuleItems><ruleStatus>Active</ruleStatus></matchingRules></MatchingRules>\n",
+      "force-app/main/default/objects/MatchOracle__c/MatchOracle__c.object-meta.xml": "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"><deploymentStatus>Deployed</deploymentStatus><label>MatchOracle</label><nameField><label>Name</label><type>Text</type></nameField><pluralLabel>MatchOracle rows</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>\n",
+      "force-app/main/default/objects/MatchOracle__c/fields/Enabled__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Enabled__c</fullName><label>Enabled</label><defaultValue>false</defaultValue><type>Checkbox</type></CustomField>\n",
+      "force-app/main/default/objects/MatchOracle__c/fields/Key__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Key__c</fullName><label>Key</label><length>120</length><type>Text</type></CustomField>\n",
+      "force-app/main/default/objects/MatchOracle__c/fields/Mode__c.field-meta.xml": "<CustomField xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>Mode__c</fullName><label>Mode</label><length>120</length><type>Text</type></CustomField>\n",
+      "force-app/main/default/objects/MatchOracle__c/validationRules/OracleInvalid.validationRule-meta.xml": "<ValidationRule xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fullName>OracleInvalid</fullName><active>true</active><errorConditionFormula>Name = \"invalid\"</errorConditionFormula><errorMessage>Owned validation rejection</errorMessage></ValidationRule>\n",
+      "sfdx-project.json": "{\"packageDirectories\": [{\"path\": \"force-app\", \"default\": true}], \"namespace\": \"\", \"sourceApiVersion\": \"62.0\"}\n",
+      "force-app/main/default/classes/StandardDuplicateProbe.cls": "public class StandardDuplicateProbe {\n public static Map<String,Object> graph(Datacloud.DuplicateResult d) {\n  List<Object> matches=new List<Object>();\n  for(Datacloud.MatchResult m:d.getMatchResults()) {\n   List<Object> records=new List<Object>();\n   for(Datacloud.MatchRecord r:m.getMatchRecords()) {List<String> fields=new List<String>();fields.addAll(r.getRecord().getPopulatedFieldsAsMap().keySet());fields.sort();records.add(new Map<String,Object>{'type'=>String.valueOf(r.getRecord().getSObjectType()),'confidence'=>r.getMatchConfidence(),'fields'=>fields});}\n   matches.add(new Map<String,Object>{'entity'=>m.getEntityType(),'rule'=>m.getRule(),'engine'=>m.getMatchEngine(),'size'=>m.getSize(),'success'=>m.isSuccess(),'errors'=>m.getErrors().size(),'records'=>records});\n  }\n  return new Map<String,Object>{'rule'=>d.getDuplicateRule(),'entity'=>d.getDuplicateRuleEntityType(),'allowSave'=>d.isAllowSave(),'message'=>d.getErrorMessage(),'matches'=>matches};\n }\n public static List<Object> found(List<SObject> rows) {\n  List<Object> out=new List<Object>();for(Datacloud.FindDuplicatesResult f:Datacloud.FindDuplicates.findDuplicates(rows)) {List<Object> duplicates=new List<Object>();for(Datacloud.DuplicateResult d:f.getDuplicateResults()) duplicates.add(graph(d));out.add(new Map<String,Object>{'success'=>f.isSuccess(),'errors'=>f.getErrors().size(),'duplicates'=>duplicates});}return out;\n }\n public static List<Object> byIds(List<Id> ids) {\n  List<Object> out=new List<Object>();for(Datacloud.FindDuplicatesResult f:Datacloud.FindDuplicatesByIds.findDuplicatesByIds(ids)) {List<Object> duplicates=new List<Object>();for(Datacloud.DuplicateResult d:f.getDuplicateResults()) duplicates.add(graph(d));out.add(new Map<String,Object>{'success'=>f.isSuccess(),'errors'=>f.getErrors().size(),'duplicates'=>duplicates});}return out;\n }\n public static Map<String,Object> save(Database.SaveResult r) {\n  List<Object> errors=new List<Object>();for(Database.Error e:r.getErrors()) {Map<String,Object> x=new Map<String,Object>{'status'=>String.valueOf(e.getStatusCode()),'message'=>e.getMessage(),'fields'=>e.getFields(),'duplicateError'=>e instanceof Database.DuplicateError};if(e instanceof Database.DuplicateError)x.put('duplicate',graph(((Database.DuplicateError)e).getDuplicateResult()));errors.add(x);}return new Map<String,Object>{'success'=>r.isSuccess(),'errors'=>errors};\n }\n public static Account account(String name) {return new Account(Name=name,Phone='4155550142',BillingStreet='17 Orchard Way',BillingCity='Portland',BillingState='OR',BillingPostalCode='97201',BillingCountry='USA',Website='https://orchard.invalid');}\n public static Contact contact() {return new Contact(FirstName='Iris',LastName='Orchard',Email='iris@orchard.invalid',Phone='4155550143',MailingStreet='18 Orchard Way',MailingCity='Portland',MailingState='OR',MailingPostalCode='97201',MailingCountry='USA');}\n public static Lead lead() {return new Lead(FirstName='Iris',LastName='Orchard',Company='Orchard',Email='iris@orchard.invalid',Phone='4155550143',Street='18 Orchard Way',City='Portland',State='OR',PostalCode='97201',Country='USA');}\n public static void seed(SObject row) {Database.DMLOptions o=new Database.DMLOptions();o.DuplicateRuleHeader.allowSave=true;Database.SaveResult r=Database.insert(row,o);System.assert(r.isSuccess(),'seed failed');}\n public static Map<String,Object> observe(String key) {\n  Map<String,Object> out=new Map<String,Object>{'exception'=>null};\n  try {\n   if(key=='ST01') {\n    List<String> duplicates=new List<String>(),matching=new List<String>();\n    for(DuplicateRule r:[SELECT DeveloperName,SobjectType,SobjectSubtype,IsActive FROM DuplicateRule WHERE SobjectType IN ('Account','Contact','Lead') ORDER BY SobjectType,DeveloperName]) duplicates.add(r.SobjectType+':'+r.DeveloperName+':'+r.SobjectSubtype+':'+r.IsActive);\n    for(SObject r:Database.query('SELECT DeveloperName,SobjectType,RuleStatus FROM MatchingRule WHERE SobjectType IN (\\'Account\\',\\'Contact\\',\\'Lead\\') ORDER BY SobjectType,DeveloperName')) matching.add(String.valueOf(r.get('SobjectType'))+':'+String.valueOf(r.get('DeveloperName'))+':'+String.valueOf(r.get('RuleStatus')));\n    out.put('duplicateRules',duplicates);out.put('matchingRules',matching);\n   } else if(key=='ST02') {Account a=account('Orchard Studio');insert a;out.put('exact',found(new List<SObject>{account('Orchard Studio')}));out.put('nameOnly',found(new List<SObject>{new Account(Name='Orchard Studio')}));out.put('miss',found(new List<SObject>{new Account(Name='Unrelated Planet')}));out.put('byIds',byIds(new List<Id>{a.Id}));}\n   else if(key=='ST03') {Contact c=contact();insert c;out.put('exact',found(new List<SObject>{contact()}));out.put('emailOnly',found(new List<SObject>{new Contact(LastName='Other',Email='iris@orchard.invalid')}));out.put('nameOnly',found(new List<SObject>{new Contact(FirstName='Iris',LastName='Orchard')}));out.put('crossLead',found(new List<SObject>{lead()}));out.put('miss',found(new List<SObject>{new Contact(LastName='Unrelated')}));}\n   else if(key=='ST04') {Lead l=lead();insert l;out.put('exact',found(new List<SObject>{lead()}));out.put('crossContact',found(new List<SObject>{contact()}));out.put('miss',found(new List<SObject>{new Lead(LastName='Unrelated',Company='Planet')}));}\n   else if(key=='ST05') {insert account('Orchard Studio');insert contact();seed(lead());out.put('results',found(new List<SObject>{lead(),account('Orchard Studio'),contact(),new Account(Name='No match')}));out.put('byIds',byIds(new List<Id>{[SELECT Id FROM Lead LIMIT 1].Id,[SELECT Id FROM Contact LIMIT 1].Id,[SELECT Id FROM Account LIMIT 1].Id}));}\n   else if(key=='ST06') {\n    try {out.put('empty',found(new List<SObject>()));}catch(Exception e){out.put('emptyException',e.getTypeName());out.put('emptyMessage',e.getMessage());}\n    try {out.put('null',found(null));}catch(Exception e){out.put('nullException',e.getTypeName());out.put('nullMessage',e.getMessage());}\n    try {out.put('nullElement',found(new List<SObject>{null}));}catch(Exception e){out.put('nullElementException',e.getTypeName());out.put('nullElementMessage',e.getMessage());}\n    List<SObject> many=new List<SObject>();for(Integer i=0;i<50;i++)many.add(new Account(Name='No match '+i));out.put('fifty',Datacloud.FindDuplicates.findDuplicates(many).size());many.add(new Account(Name='No match 51'));\n    try {out.put('fiftyOne',Datacloud.FindDuplicates.findDuplicates(many).size());}catch(Exception e){out.put('fiftyOneException',e.getTypeName());out.put('fiftyOneMessage',e.getMessage());}\n   } else if(key=='ST07') {\n    insert contact();List<Object> results=new List<Object>();\n    for(Boolean asUser:new List<Boolean>{false,true}) {Contact c=contact();Database.DMLOptions o=new Database.DMLOptions();o.DuplicateRuleHeader.runAsCurrentUser=asUser;results.add(save(Database.insert(c,o)));}out.put('runAs',results);\n    Contact c=contact();Database.DMLOptions allow=new Database.DMLOptions();allow.DuplicateRuleHeader.allowSave=true;c.setOptions(allow);try {insert c;out.put('setOptionsSaved',true);}catch(DmlException e){out.put('setOptionsSaved',false);out.put('setOptionsStatus',String.valueOf(e.getDmlType(0)));}out.put('count',[SELECT count() FROM Contact]);\n   } else if(key=='ST08') {\n    Account a=account('Orchard Studio');insert a;out.put('accountInsert',save(Database.insert(account('Orchard Studio'),false)));Account a2=new Account(Name='Other');insert a2;a2.Name=a.Name;out.put('accountUpdate',save(Database.update(a2,false)));\n    Contact c=contact();insert c;out.put('contactInsert',save(Database.insert(contact(),false)));Contact c2=new Contact(LastName='Other');insert c2;c2.FirstName=c.FirstName;c2.LastName=c.LastName;c2.Email=c.Email;out.put('contactUpdate',save(Database.update(c2,false)));\n    Lead l=lead();seed(l);out.put('leadInsert',save(Database.insert(lead(),false)));Lead l2=new Lead(LastName='Other',Company='Planet');insert l2;l2.FirstName=l.FirstName;l2.LastName=l.LastName;l2.Email=l.Email;out.put('leadUpdate',save(Database.update(l2,false)));\n   } else if(key=='ST11') {\n    insert account('Orchard Studio');insert contact();seed(lead());\n    List<SObject> accounts=new List<SObject>{new Account(Name='Orchard Studio',Phone='4155550142'),new Account(Name='Orchard Studio',Website='https://orchard.invalid'),new Account(Name='Orchard Studio',BillingStreet='17 Orchard Way',BillingCity='Portland',BillingPostalCode='97201')};out.put('accounts',found(accounts));\n    List<SObject> contacts=new List<SObject>{new Contact(FirstName='Iris',LastName='Orchard',Email='iris@orchard.invalid'),new Contact(LastName='Orchard',Email='iris@orchard.invalid'),new Contact(FirstName='Iris',LastName='Orchard',Phone='4155550143'),new Contact(FirstName='Iris',LastName='Orchard',MailingStreet='18 Orchard Way',MailingCity='Portland',MailingPostalCode='97201')};out.put('contacts',found(contacts));\n    List<SObject> leads=new List<SObject>{new Lead(FirstName='Iris',LastName='Orchard',Company='Orchard',Email='iris@orchard.invalid'),new Lead(LastName='Orchard',Company='Orchard',Email='iris@orchard.invalid'),new Lead(FirstName='Iris',LastName='Orchard',Company='Orchard',Phone='4155550143')};out.put('leads',found(leads));\n   } else if(key=='ST10') {\n    List<Object> definitions=new List<Object>();\n    for(SObject r:Database.query('SELECT Id,SobjectType,DeveloperName,MatchEngine,BooleanFilter,RuleStatus FROM MatchingRule WHERE SobjectType IN (\\'Account\\',\\'Contact\\',\\'Lead\\') ORDER BY SobjectType,DeveloperName')) {\n     Id ruleId=(Id)r.get('Id');List<Object> items=new List<Object>();\n     for(SObject item:Database.query('SELECT SortOrder,Field,MatchingMethod,BlankValueBehavior FROM MatchingRuleItem WHERE MatchingRuleId=:ruleId ORDER BY SortOrder')) items.add(new Map<String,Object>{'order'=>item.get('SortOrder'),'field'=>item.get('Field'),'method'=>item.get('MatchingMethod'),'blank'=>item.get('BlankValueBehavior')});\n     definitions.add(new Map<String,Object>{'object'=>r.get('SobjectType'),'name'=>r.get('DeveloperName'),'engine'=>r.get('MatchEngine'),'filter'=>r.get('BooleanFilter'),'status'=>r.get('RuleStatus'),'items'=>items});\n    }out.put('definitions',definitions);\n   } else if(key=='ST09') {MatchOracle__c a=new MatchOracle__c(Name='report-seed',Key__c='report-persist',Mode__c='seed');insert a;MatchOracle__c b=new MatchOracle__c(Name='report-candidate',Key__c='report-persist',Mode__c='report');out.put('save',save(Database.insert(b,false)));out.put('sets',[SELECT count() FROM DuplicateRecordSet]);out.put('items',[SELECT count() FROM DuplicateRecordItem]);}\n  } catch(Exception e) {out.put('exception',e.getTypeName());out.put('message',e.getMessage());}return out;\n }\n public static void emit(String key) {System.assert(false,'STANDARD_OBS|'+key+'|'+JSON.serialize(observe(key)));}\n}\n",
+      "force-app/main/default/classes/StandardDuplicateProbeTest.cls": "@IsTest public class StandardDuplicateProbeTest {\n @IsTest static void ST01() {StandardDuplicateProbe.emit('ST01');}\n @IsTest static void ST02() {StandardDuplicateProbe.emit('ST02');}\n @IsTest static void ST03() {StandardDuplicateProbe.emit('ST03');}\n @IsTest static void ST04() {StandardDuplicateProbe.emit('ST04');}\n @IsTest static void ST05() {StandardDuplicateProbe.emit('ST05');}\n @IsTest static void ST06() {StandardDuplicateProbe.emit('ST06');}\n @IsTest static void ST07() {StandardDuplicateProbe.emit('ST07');}\n @IsTest static void ST08() {StandardDuplicateProbe.emit('ST08');}\n @IsTest static void ST09() {StandardDuplicateProbe.emit('ST09');}\n @IsTest static void ST10() {StandardDuplicateProbe.emit('ST10');}\n @IsTest static void ST11() {StandardDuplicateProbe.emit('ST11');}\n}\n",
+      "force-app/main/default/classes/StandardDuplicateProbe.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "force-app/main/default/classes/StandardDuplicateProbeTest.cls-meta.xml": "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>\n",
+      "force-app/main/default/permissionsets/StandardDuplicateFixture.permissionset-meta.xml": "<PermissionSet xmlns=\"http://soap.sforce.com/2006/04/metadata\"><fieldPermissions><editable>true</editable><field>MatchOracle__c.Key__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>MatchOracle__c.Mode__c</field><readable>true</readable></fieldPermissions><fieldPermissions><editable>true</editable><field>MatchOracle__c.Enabled__c</field><readable>true</readable></fieldPermissions><label>Standard duplicate fixture</label><objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>MatchOracle__c</object><viewAllRecords>true</viewAllRecords></objectPermissions></PermissionSet>\n"
+    }
+  },
+  "captures": {
+    "extension": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "source_digests_verified": true,
+        "matching_rules_active": true,
+        "org_deleted": true,
+        "org_deletion_verified": true
+      },
+      {
+        "api": "62.0",
+        "route": "istest",
+        "source_digests_verified": true,
+        "matching_rules_active": true,
+        "org_deleted": true,
+        "org_deletion_verified": true
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "source_digests_verified": true,
+        "matching_rules_active": true,
+        "org_deleted": true,
+        "org_deletion_verified": true
+      },
+      {
+        "api": "67.0",
+        "route": "istest",
+        "source_digests_verified": true,
+        "matching_rules_active": true,
+        "org_deleted": true,
+        "org_deletion_verified": true
+      }
+    ],
+    "standard": [
+      {
+        "api": "62.0",
+        "routes": [
+          "anonymous",
+          "istest"
+        ],
+        "captured_utc": "2026-10-22T21:46:02.642210+00:00",
+        "deployment_success": true,
+        "matching_rules_active": true,
+        "permission_set_assigned": true
+      },
+      {
+        "api": "67.0",
+        "routes": [
+          "anonymous",
+          "istest"
+        ],
+        "captured_utc": "2026-10-22T21:46:42.098846+00:00",
+        "deployment_success": true,
+        "matching_rules_active": true,
+        "permission_set_assigned": true
+      }
+    ],
+    "standard_extended": [
+      {
+        "api": "62.0",
+        "routes": [
+          "anonymous",
+          "istest"
+        ],
+        "captured_utc": "2026-10-22T21:49:24.976924+00:00",
+        "deployment_success": true,
+        "matching_rules_active": true,
+        "permission_set_assigned": true
+      },
+      {
+        "api": "67.0",
+        "routes": [
+          "anonymous",
+          "istest"
+        ],
+        "captured_utc": "2026-10-22T21:49:32.415319+00:00",
+        "deployment_success": true,
+        "matching_rules_active": true,
+        "permission_set_assigned": true
+      }
+    ]
+  },
+  "notes": [
+    "The case table precedes new captures. Existing native duplicate observations are reused with verified original source digests and deletion confirmation.",
+    "DR17 replays DR01 through the anonymous route; its named route is retained as a twin.",
+    "Standard rules are observed on a fresh Developer scratch org without custom standard-object rule metadata.",
+    "Standard matching-rule retrieval succeeds with empty MatchingRules documents; MatchingRuleItem SOQL returns no standard items. Active builtin matching remains observable through native result graphs and field discriminators; fuzzy internals are not exposed.",
+    "Default Account/Contact/Lead same-object duplicate rules are active. Cross-object Contact/Lead rules exist but are inactive.",
+    "Report records are absent inside the saving transaction and appear after commit: one set and two items. Captures start with empty report tables; the isolated API67 recapture removes prior owned synthetic report sets.",
+    "API62 and API67 observations agree. No API68 behavior is claimed."
+  ],
+  "anonymous_standard": "for(String key:new List<String>{'ST01','ST02','ST03','ST04','ST05','ST06','ST07','ST08','ST09','ST10'}) {Savepoint point=Database.setSavepoint();System.debug('STANDARD_OBS|'+key+'|'+JSON.serialize(StandardDuplicateProbe.observe(key)));Database.rollback(point);Database.releaseSavepoint(point);}\n",
+  "header_rejection": {
+    "anonymous": "Database.DMLOptions options=new Database.DMLOptions();options.DuplicateRuleHeader.includeRecordDetails=true;\n",
+    "named": "@IsTest public class HeaderRecordDetailsRejectionTest {@IsTest static void headerField() {Database.DMLOptions options=new Database.DMLOptions();options.DuplicateRuleHeader.includeRecordDetails=true;\n}}\n"
+  },
+  "committed": {
+    "write": "System.debug('COMMITTED_OBS|'+JSON.serialize(StandardDuplicateProbe.observe('ST09')));\n",
+    "readback": "System.debug('COMMITTED_OBS|'+JSON.serialize(new Map<String,Object>{'records'=>[SELECT count() FROM MatchOracle__c WHERE Key__c='report-persist'],'sets'=>[SELECT count() FROM DuplicateRecordSet],'items'=>[SELECT count() FROM DuplicateRecordItem]}));\n"
+  },
+  "metadata_captures": [
+    {
+      "api": "62.0",
+      "captured_utc": "2026-10-22T21:50:00.803646+00:00",
+      "retrieve_success": true
+    },
+    {
+      "api": "67.0",
+      "captured_utc": "2026-10-22T21:50:12.191720+00:00",
+      "retrieve_success": true
+    }
+  ],
+  "cleanup": {
+    "org_deleted": true,
+    "org_deletion_verified": true,
+    "auth_removed": true,
+    "verified_utc": "2026-10-22T21:51:09.366334+00:00",
+    "verification": "Owned ScratchOrgInfo is Deleted, ActiveScratchOrg absent, alias and scratch authentication absent"
+  }
+}

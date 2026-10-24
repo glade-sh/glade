@@ -7,7 +7,7 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-func TestEmptyNetworkQuerySingletonBoundary(t *testing.T) {
+func TestEmptyNetworkQuerySingletonNativeBoundary(t *testing.T) {
 	machine := New(nil)
 	org := testDataOrg()
 	storage.EnsureStandardObject(&org, "Network")
@@ -16,8 +16,8 @@ func TestEmptyNetworkQuerySingletonBoundary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := machine.coerceAssignable("SObject", empty); err == nil || !strings.Contains(err.Error(), "Network configuration record") {
-		t.Fatalf("missing configuration must report its boundary: %v", err)
+	if _, err := machine.coerceAssignable("SObject", empty); err == nil || !strings.Contains(err.Error(), "List has no rows for assignment to SObject") {
+		t.Fatalf("missing configuration must retain native QueryException: %v", err)
 	}
 	for _, populated := range []bool{false, true} {
 		records := List()

@@ -11,6 +11,10 @@ import (
 
 const defaultDialTimeout = 3 * time.Second
 
+// Give a cancelled run time to return completed tests before closing its
+// response stream. An unresponsive daemon must still release the caller.
+const clientRunDrainTimeoutV1 = 2 * time.Second
+
 var (
 	clientControlIOTimeoutV1 = 3 * time.Second
 	clientRunIOTimeoutV1     = time.Hour
@@ -92,14 +96,25 @@ func callV1(ctx context.Context, socket string, req RequestV1) (ResponseV1, erro
 	}
 	deadline := time.Now().Add(timeout)
 	callerDeadlineApplied := false
-	if callerDeadline, ok := ctx.Deadline(); ok && callerDeadline.Before(deadline) {
+	if callerDeadline, ok := ctx.Deadline(); req.Op != OpRun && ok && callerDeadline.Before(deadline) {
 		deadline = callerDeadline
 		callerDeadlineApplied = true
 	}
 	if err := conn.SetDeadline(deadline); err != nil {
 		return ResponseV1{}, err
 	}
-	stopCancel := context.AfterFunc(ctx, func() { _ = conn.Close() })
+	stopCancel := context.AfterFunc(ctx, func() {
+		if req.Op == OpRun {
+			if unixConn, ok := conn.(*net.UnixConn); ok {
+				// The server's disconnect monitor cancels on request EOF.
+				// Keep reading so its final run is not lost with the signal.
+				_ = unixConn.CloseWrite()
+				_ = conn.SetDeadline(time.Now().Add(clientRunDrainTimeoutV1))
+				return
+			}
+		}
+		_ = conn.Close()
+	})
 	defer stopCancel()
 
 	if err := EncodeRequestV1(conn, req); err != nil {

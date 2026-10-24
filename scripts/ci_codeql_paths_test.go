@@ -18,15 +18,15 @@ func TestCICodeQLGeneratedPathsInitializationRoutes(t *testing.T) {
 			}
 		}
 	}
-	if err := yaml.Unmarshal([]byte(readWorkflowFile(t, "security.yml")), &workflow); err != nil {
+	if err := yaml.Unmarshal([]byte(readWorkflowFile(t, "codeql.yml")), &workflow); err != nil {
 		t.Fatal(err)
 	}
 	for _, route := range []struct {
 		name string
 		step string
 	}{
-		{"pull_request_small_diff", "Initialize pull request CodeQL"},
-		{"full_branch_large_pr_push_schedule_dispatch", "Initialize full-branch CodeQL"},
+		{"pull_request_fast_any_size", "Initialize pull request CodeQL"},
+		{"full_weekly_release_tag_dispatch", "Initialize full-branch CodeQL"},
 	} {
 		t.Run(route.name, func(t *testing.T) {
 			var configs []string

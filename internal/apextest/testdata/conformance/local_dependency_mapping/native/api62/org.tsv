@@ -1,0 +1,2 @@
+case_id	outcome	message
+unnamespaced_library_call	accepted	MappedConsumerTest.invokesUnnamespacedLibrary passed

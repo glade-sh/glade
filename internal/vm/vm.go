@@ -24,6 +24,7 @@ import (
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 func industryMapResult() Value {
@@ -280,8 +281,14 @@ func storageStringValueEquals(value storage.Value, text string) bool {
 }
 
 func (vm *VM) shouldEnqueueFuture(method Method) bool {
-	if vm.testContext == nil || vm.testContext.Draining {
+	if vm.testContext == nil {
 		return false
+	}
+	if vm.testContext.Draining {
+		// async_stack_depth mixed_four (istest and project runner, API 62/67):
+		// a future submitted by a Queueable body drained at stopTest is
+		// accepted and never runs.
+		return vm.currentAsyncKind == "Queueable" && vm.futureBodyDepth == 0 && methodHasModifier(method.Modifiers, "future")
 	}
 	return methodHasModifier(method.Modifiers, "future")
 }
@@ -321,6 +328,9 @@ func (vm *VM) enqueueFuture(method Method, args []Value, result *Result) (Value,
 		Kind:   "Future",
 		Method: method,
 		Args:   coercedArgs,
+	}
+	if vm.testContext.Draining {
+		return Null, nil
 	}
 	vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs, job)
 	vm.recordAsyncJob(job, "Queued", "")
@@ -527,7 +537,7 @@ func (vm *VM) hasExactRuntimeClass(name string) bool {
 	if vm == nil || strings.TrimSpace(name) == "" {
 		return false
 	}
-	if _, ok := vm.Classes[name]; ok {
+	if _, ok := vm.classEntry(name); ok {
 		return true
 	}
 	if _, ok := generatedPlatformTypes()[strings.ToLower(name)]; ok {
@@ -561,6 +571,11 @@ func (vm *VM) webServiceCalloutInvoke(args []Value, result *Result) (Value, erro
 	for _, option := range args[3].List {
 		if option.Kind != ValueString && option.Kind != ValueNull {
 			return Null, fmt.Errorf("WebServiceCallout.invoke expects 7 option strings")
+		}
+	}
+	if vm.testContext == nil || vm.testContext.WebServiceMock.Kind == ValueObject {
+		if err := vm.checkCalloutAllowed(); err != nil {
+			return Null, err
 		}
 	}
 	// A missing callout stub fails before hosted transport. Registered
@@ -959,6 +974,7 @@ var standardSObjectPrefixes = map[string]string{
 	"00D": "Organization",
 	"500": "Case",
 	"701": "Campaign",
+	"707": "AsyncApexJob",
 }
 
 var commonSObjectTypeNames []string
@@ -4258,7 +4274,7 @@ func (vm *VM) classNameSearchEntries() []classNameSearchEntry {
 		return vm.classNameSearchCache
 	}
 	classNames := make([]string, 0, len(vm.Classes))
-	for name := range vm.Classes {
+	for name := range vm.ClassEntries() {
 		classNames = append(classNames, name)
 	}
 	sort.Strings(classNames)
@@ -4366,7 +4382,7 @@ func (vm *VM) queryLocatorIterable(typeName string, value Value) (Value, error) 
 		if err != nil {
 			return Null, err
 		}
-		iterable.List[i] = coerced
+		vm.setListElement(iterable, i, coerced)
 	}
 	return iterable, nil
 }
@@ -4406,7 +4422,7 @@ func (vm *VM) resolveEnumClass(typeName string) (Class, bool) {
 
 func (vm *VM) rebuildEnumSuffixLookup() {
 	vm.enumSuffixLookup = make(map[string]enumClassLookup)
-	for _, class := range vm.Classes {
+	for _, class := range vm.ClassEntries() {
 		if len(class.EnumValues) == 0 {
 			continue
 		}
@@ -4552,6 +4568,13 @@ func (vm *VM) coerceCastForOperand(typeName string, value Value, directQuery boo
 			coerced.Static = typeName
 		}
 		return coerced, err
+	}
+	// A record and a same-named user class have different allocation provenance.
+	// Reject this cast before assignment's equal-runtime-name shortcut accepts it.
+	if value.Kind == ValueObject && !value.classInstance && vm.isSObjectLikeType(runtimeObjectType(value)) {
+		if class, ok := vm.lookupClass(typeName); ok && !class.Dependency && sObjectTypeNamespaceEquivalent(runtimeObjectType(value), class.Name) {
+			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", vm.typeExceptionSourceName(runtimeValueTypeName(value)), vm.typeExceptionDisplayName(typeName)))
+		}
 	}
 	coerced, err := vm.coerceAssignable(typeName, value)
 	if err == nil {
@@ -4745,6 +4768,10 @@ func runtimeError(thrown Value, stack []callFrame) error {
 		message = thrown.String()
 		if thrown.Kind == ValueObject && thrown.Type != "" {
 			errorType = thrown.Type
+			_, standard := typesys.StandardExceptionParent(thrown.Type)
+			if _, present := thrown.Fields["message"]; !present && standard {
+				message = "Script-thrown exception"
+			}
 			if context, ok := thrown.Fields["__diagnosticContext"]; ok && context.Kind == ValueString && strings.TrimSpace(context.Text) != "" {
 				rawMessage := message
 				exceptionMessage = &rawMessage
@@ -4876,6 +4903,9 @@ func stackFrames(frames []callFrame) []StackFrame {
 }
 
 func (vm *VM) callMethod(method Method, args []Value, result *Result) (Value, error) {
+	if vm.testContext == nil && vm.currentAsyncKind != "Future" && methodHasModifier(method.Modifiers, "future") {
+		vm.calloutPendingWork.pending = true
+	}
 	return vm.callMethodWithReceiver(method, Null, args, result)
 }
 
@@ -4925,7 +4955,7 @@ func (vm *VM) synchronizeFabricatedSObjectRelationships(value Value) Value {
 		fabricatedChildren := List()
 		for i, child := range childList.List {
 			child = vm.synchronizeFabricatedSObjectRelationships(child)
-			childList.List[i] = child
+			vm.setListElement(childList, i, child)
 			if _, childFabricated, ok := objectFieldValue(child, "fabricatedSObject"); ok && childFabricated.Kind == ValueObject {
 				fabricatedChildren.List = append(fabricatedChildren.List, childFabricated)
 			}
@@ -5141,11 +5171,17 @@ func (vm *VM) callCustomNotificationMember(receiver Value, method string, args [
 		if receiver.Fields["notificationTypeId"].Kind == ValueNull {
 			return Null, receiver, false, true, newExceptionError("HandledException", "Missing required input parameter: customNotifTypeId")
 		}
+		if typeID := receiver.Fields["notificationTypeId"]; typeID.Kind == ValueString && validateApexIDShape(typeID.Text) != nil {
+			return Null, receiver, false, true, newExceptionError("HandledException", "Invalid parameter value for: customNotifTypeId")
+		}
+		if title := receiver.Fields["title"]; title.Kind == ValueNull || (title.Kind == ValueString && title.Text == "") {
+			return Null, receiver, false, true, newExceptionError("HandledException", "Missing required input parameter: title")
+		}
 		if len(args) != 1 || args[0].Kind != ValueSet {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.CustomNotification.send expects Set<String>")
 		}
 		if receiver.Fields["targetId"].Kind == ValueNull && receiver.Fields["targetPageRef"].Kind == ValueNull {
-			return Null, receiver, false, true, fmt.Errorf("notification target is required")
+			return Null, receiver, false, true, newExceptionError("HandledException", "You can't send a custom notification without a navigation target. Specify either a Target ID or Target Page Reference on the Send Custom Notification action.")
 		}
 		return Null, receiver, false, true, newExceptionError("UnsupportedOperationException", "Messaging.CustomNotification.send requires hosted notification delivery")
 	default:

@@ -9,6 +9,41 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+func (vm *VM) isHierarchyCustomSetting(objectName string) bool {
+	_, definition, kind, ok := vm.customDataObject(objectName)
+	return ok && kind == "custom setting" && strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy")
+}
+
+// The ungranted Standard User can use hierarchy getters, but cannot query the
+// setting in user mode. Keep this query boundary separate from getter merging
+// and the existing describe/CRUD fallback for other profiles.
+func (vm *VM) hierarchyCustomSettingQueryDenied(objectName, permissionSetID string) bool {
+	if permissionSetID != "" || !vm.isHierarchyCustomSetting(objectName) {
+		return false
+	}
+	user := vm.executionUser
+	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
+		user = vm.testContext.CurrentUser
+	}
+	if vm.currentUserProfileName(user) != "Standard User" {
+		return false
+	}
+	profileID := stringField(user, "ProfileId")
+	profileSetID := vm.profileOwnedPermissionSetID(profileID)
+	if vm.customSettingManagementPermission(user, profileSetID) || userHasPermission(user, "ViewAllCustomSettings") {
+		return false
+	}
+	parents := append([]string{profileID, profileSetID}, vm.assignedPermissionSetIDs(stringField(user, "Id"))...)
+	for _, id := range parents {
+		if record, ok := vm.findOrgRecord("PermissionSet", storage.ID(id)); ok {
+			if flag, ok := record.GetField("PermissionsViewAllCustomSettings"); ok && flag.Kind == storage.ValueBoolean && flag.Boolean {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func customDataArgsCacheKey(args []Value) string {
 	if len(args) == 0 {
 		return ""

@@ -317,10 +317,10 @@ func describeChildRelationships(objectName string, org *storage.OrgState) []map[
 	for _, childName := range childNames {
 		relationships := append([]storage.Relationship(nil), org.Objects[childName].Definition.Relations...)
 		sort.Slice(relationships, func(i, j int) bool {
-			if relationships[i].ChildRelationship == relationships[j].ChildRelationship {
-				return relationships[i].Field < relationships[j].Field
+			if relationships[i].Field == relationships[j].Field {
+				return relationships[i].ChildRelationship < relationships[j].ChildRelationship
 			}
-			return relationships[i].ChildRelationship < relationships[j].ChildRelationship
+			return relationships[i].Field < relationships[j].Field
 		})
 		for _, relationship := range relationships {
 			if !relationshipTargetsObject(relationship, objectName) {

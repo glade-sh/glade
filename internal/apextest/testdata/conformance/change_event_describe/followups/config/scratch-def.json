@@ -1,0 +1,13 @@
+{
+  "orgName": "Change event followup capture",
+  "edition": "Developer",
+  "features": [
+    "Division",
+    "Communities"
+  ],
+  "settings": {
+    "communitiesSettings": {
+      "enableNetworksEnabled": false
+    }
+  }
+}

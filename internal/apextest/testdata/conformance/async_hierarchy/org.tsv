@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	{"callback":"accepted","outer":"outer","variant":"outer"}
+62.0	isTest	{"asyncResult":"outer","callback":"accepted","outer":"outer","variant":"outer"}
+67.0	anonymous	{"callback":"accepted","outer":"outer","variant":"outer"}
+67.0	isTest	{"asyncResult":"outer","callback":"accepted","outer":"outer","variant":"outer"}

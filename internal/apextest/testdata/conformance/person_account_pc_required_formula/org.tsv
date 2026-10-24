@@ -1,0 +1,25 @@
+api	route	id	value
+62.0	anonymous	biz_insert	[true,""]
+62.0	anonymous	pa_no_pc_insert	[false,"[REQUIRED_FIELD_MISSING:Required fields are missing: [Must__pc]]"]
+62.0	anonymous	pa_pc_insert	[true,""]
+62.0	anonymous	must_describe	{"nillable":false,"createable":true}
+62.0	anonymous	mail_read	["f{u}@example.com","f{u}@example.com"]
+62.0	anonymous	key_read	["nf{u}@example.com","nf{u}@example.com"]
+62.0	istest	biz_insert	[true,""]
+62.0	istest	pa_no_pc_insert	[false,"[REQUIRED_FIELD_MISSING:Required fields are missing: [Must__pc]]"]
+62.0	istest	pa_pc_insert	[true,""]
+62.0	istest	must_describe	{"nillable":false,"createable":true}
+62.0	istest	mail_read	["f{u}@example.com","f{u}@example.com"]
+62.0	istest	key_read	["nf{u}@example.com","nf{u}@example.com"]
+67.0	anonymous	biz_insert	[true,""]
+67.0	anonymous	pa_no_pc_insert	[false,"[REQUIRED_FIELD_MISSING:Required fields are missing: [Must__pc]]"]
+67.0	anonymous	pa_pc_insert	[true,""]
+67.0	anonymous	must_describe	{"nillable":false,"createable":true}
+67.0	anonymous	mail_read	["f{u}@example.com","f{u}@example.com"]
+67.0	anonymous	key_read	["nf{u}@example.com","nf{u}@example.com"]
+67.0	istest	biz_insert	[true,""]
+67.0	istest	pa_no_pc_insert	[false,"[REQUIRED_FIELD_MISSING:Required fields are missing: [Must__pc]]"]
+67.0	istest	pa_pc_insert	[true,""]
+67.0	istest	must_describe	{"nillable":false,"createable":true}
+67.0	istest	mail_read	["f{u}@example.com","f{u}@example.com"]
+67.0	istest	key_read	["nf{u}@example.com","nf{u}@example.com"]

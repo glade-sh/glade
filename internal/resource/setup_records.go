@@ -48,6 +48,15 @@ func SetupRecordMetadataFiles(p project.Project) []string {
 		for _, path := range current.BusinessHoursSettingsFiles {
 			files[path] = true
 		}
+		for _, path := range current.AssignmentRuleFiles {
+			files[path] = true
+		}
+		for _, path := range current.MatchingRuleFiles {
+			files[path] = true
+		}
+		for _, path := range current.PlatformEventChannelMemberFiles {
+			files[path] = true
+		}
 		for _, path := range current.DuplicateRuleFiles {
 			files[path] = true
 		}
@@ -79,7 +88,16 @@ func applySetupRecordMetadata(org *storage.OrgState, p project.Project, readMeta
 	if len(paths) == 0 {
 		return nil
 	}
+	// Native MD01/ST01: deployed rules sit beside the org's default rules.
+	for _, path := range paths {
+		lower := strings.ToLower(path)
+		if strings.HasSuffix(lower, ".duplicaterule-meta.xml") || strings.HasSuffix(lower, ".duplicaterule") {
+			storage.EnsureDefaultDuplicateRules(org)
+			break
+		}
+	}
 	staged := *org
+	staged.Metadata.ChangeEventEntities = append([]string(nil), org.Metadata.ChangeEventEntities...)
 	staged.Objects = maps.Clone(org.Objects)
 	if staged.Objects == nil {
 		staged.Objects = make(map[string]storage.ObjectState)
@@ -88,7 +106,7 @@ func applySetupRecordMetadata(org *storage.OrgState, p project.Project, readMeta
 	if staged.IDSequences == nil {
 		staged.IDSequences = make(map[string]uint64)
 	}
-	for _, name := range []string{"BusinessHours", "DuplicateRule"} {
+	for _, name := range []string{"BusinessHours", "DuplicateRule", "AssignmentRule"} {
 		if state, exists := org.Objects[name]; exists {
 			staged.Objects[name] = state.Clone()
 		}
@@ -96,12 +114,47 @@ func applySetupRecordMetadata(org *storage.OrgState, p project.Project, readMeta
 	}
 	generator := storage.NewStandardIDGenerator()
 	generator.Sequences = staged.IDSequences
+	// Assignment metadata uses the local runtime identity range.
+	assignmentIDs := storage.NewRuntimeIDGeneratorForOrg(&staged)
+	assignmentIDs.Sequences = staged.IDSequences
 	for _, path := range paths {
 		body, err := readMetadata(path)
 		if err != nil {
 			return fmt.Errorf("load setup metadata %s: %w", path, err)
 		}
 		lower := strings.ToLower(path)
+		if strings.HasSuffix(lower, ".platformeventchannelmember-meta.xml") || strings.HasSuffix(lower, ".platformeventchannelmember") {
+			if err := applyChangeEventChannelMember(&staged, body); err != nil {
+				return fmt.Errorf("load PlatformEventChannelMember metadata %s: %w", path, err)
+			}
+			continue
+		}
+		if strings.HasSuffix(lower, ".assignmentrules-meta.xml") || strings.HasSuffix(lower, ".assignmentrules") {
+			var document struct {
+				XMLName xml.Name `xml:"AssignmentRules"`
+				Rules   []struct {
+					Name   string `xml:"fullName"`
+					Active bool   `xml:"active"`
+				} `xml:"assignmentRule"`
+			}
+			if err := xml.Unmarshal(body, &document); err != nil {
+				return fmt.Errorf("load AssignmentRule metadata %s: %w", path, err)
+			}
+			object := trimKnownSuffix(trimKnownSuffix(filepath.Base(path), ".assignmentRules-meta.xml"), ".assignmentRules")
+			for _, rule := range document.Rules {
+				if strings.TrimSpace(rule.Name) == "" {
+					return fmt.Errorf("load AssignmentRule metadata %s: missing fullName", path)
+				}
+				fields := map[string]storage.Value{"Name": storage.StringValue(rule.Name), "SobjectType": storage.StringValue(object), "Active": storage.BooleanValue(rule.Active)}
+				if err := upsertSetupMetadataRecord(&staged, &assignmentIDs, "AssignmentRule", fields, []string{"Name", "SobjectType"}); err != nil {
+					return err
+				}
+			}
+			continue
+		}
+		if strings.HasSuffix(lower, ".matchingrule-meta.xml") || strings.HasSuffix(lower, ".matchingrule") {
+			continue // Matching declarations are installed by the automation loader.
+		}
 		if strings.HasSuffix(lower, ".duplicaterule-meta.xml") || strings.HasSuffix(lower, ".duplicaterule") {
 			var rule duplicateRuleRecordXML
 			if err := xml.Unmarshal(body, &rule); err != nil {
@@ -169,10 +222,11 @@ func applySetupRecordMetadata(org *storage.OrgState, p project.Project, readMeta
 			}
 		}
 	}
-	for _, name := range []string{"BusinessHours", "DuplicateRule"} {
+	for _, name := range []string{"BusinessHours", "DuplicateRule", "AssignmentRule"} {
 		org.Objects[name] = staged.Objects[name]
 		storage.RebuildObjectIndexes(org, name)
 	}
+	org.Metadata.ChangeEventEntities = staged.Metadata.ChangeEventEntities
 	org.IDSequences = generator.Sequences
 	org.ClearRuntimeSchemaStamp()
 	return nil

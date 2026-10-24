@@ -1,0 +1,6 @@
+public class ShapePerson {
+    // Compile-only: a Contact custom field is exposed on Account with the __pc suffix.
+    public static void compileRoute(Account person) {
+        String nickname = person.Nickname__pc;
+    }
+}

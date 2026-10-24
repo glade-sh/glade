@@ -8,4 +8,4 @@ helper_class_api=62.0
 wrapper_class_api=62.0
 helper_source_sha256=4b86e5bca589371793c9f8877316b2520dd9dd99cb14c660fc9032beaf0b3a3d
 wrapper_source_sha256=69bfeca0f3034342ee93a8eeea181bd2752d26705269b416a07fe8257faaf223
-transport=uncaught limit or deliberate terminal observation assertion
+transport=System.assert

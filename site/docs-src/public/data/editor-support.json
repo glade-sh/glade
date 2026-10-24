@@ -3,9 +3,9 @@
   "generatedFrom": "docs/STDLIB_COVERAGE.md",
   "summary": {
     "supported": 269,
-    "partial": 0,
+    "partial": 1,
     "stub": 0,
-    "unsupported": 19,
+    "unsupported": 18,
     "unknown": 0
   },
   "statusLabels": {
@@ -204,6 +204,13 @@
       "api": "Assert.isTrue",
       "status": "supported",
       "notes": "Routes through local assertion failures with optional message text."
+    },
+    {
+      "id": "[\"Blob / PageReference\",\"Blob.toPdf, PageReference.getContent and getContentAsPDF\"]",
+      "area": "Blob / PageReference",
+      "api": "Blob.toPdf, PageReference.getContent and getContentAsPDF",
+      "status": "partial",
+      "notes": "Blob.toPdf, PageReference.getContent and getContentAsPDF render locally with a text-only PDF writer that follows the layout of Salesforce's renderer (PDF-1.4, Letter, Times-Roman, Flate streams). It is not Salesforce's Flying Saucer/iText engine: CSS, tables, images and embedded fonts are not rendered, and output is deterministic where Salesforce's is not. Set pdf.command to an external HTML-to-PDF program for real rendering. PageReference.getContent returns HTML for pages without renderAs=\"pdf\". The pdf.command setting applies to Visualforce page rendering; Blob.toPdf uses the local writer."
     },
     {
       "id": "[\"Boolean\",\"Boolean.valueOf(Object)\"]",
@@ -1023,13 +1030,6 @@
       "api": "PageReference(record)",
       "status": "supported",
       "notes": "Builds a Visualforce PageReference from a local ApexPage SObject record."
-    },
-    {
-      "id": "[\"PageReference\",\"PageReference.getContent and getContentAsPDF\"]",
-      "area": "PageReference",
-      "api": "PageReference.getContent and getContentAsPDF",
-      "status": "unsupported",
-      "notes": "Visualforce rendering and PDF generation require the hosted rendering service and raise stable UnsupportedFeature diagnostics locally."
     },
     {
       "id": "[\"Pattern\",\"Matcher.find\"]",

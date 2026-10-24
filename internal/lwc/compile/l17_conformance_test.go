@@ -23,6 +23,7 @@ import (
 	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/server"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/testutil/browserapi"
 )
 
 type l17ConsoleExclusion struct {
@@ -129,6 +130,16 @@ func TestL17SalesforceConformance(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	type apiObservation struct {
+		dom       map[string]json.RawMessage
+		domErrors map[string]string
+		domErr    error
+	}
+	observeAPI := browserapi.Prepare(t, apis, func(t *testing.T, api string) apiObservation {
+
+		dom, domErrors, domErr := l17ObserveDOM(t, api, runtimeCases, dependencies)
+		return apiObservation{dom, domErrors, domErr}
+	})
 	var report strings.Builder
 	report.WriteString("API\tID\tKIND\tSTATUS\tACTUAL\tEXPECTED\tREASON\n")
 	matches, total, compileMatches, domMatches, observedDOM := 0, 0, 0, 0, 0
@@ -143,7 +154,8 @@ func TestL17SalesforceConformance(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		dom, domErrors, domErr := l17ObserveDOM(t, api, runtimeCases, dependencies)
+		result := observeAPI(api)
+		dom, domErrors, domErr := result.dom, result.domErrors, result.domErr
 		compileIndex, apiMatches, apiQualified, apiCarried := 0, 0, 0, 0
 		for _, c := range cases {
 			if c.Excluded != "" {

@@ -1,0 +1,13 @@
+System.debug('SPLIT_ROWS|fold_dotted_i|'+JSON.serialize(ConservativeSplitProbe.observe('(?iu)'+String.fromCharArray(new List<Integer>{304})+'','i')));
+System.debug('SPLIT_ROWS|octal_class_400|'+JSON.serialize(ConservativeSplitProbe.observe('[\\400]',''+String.fromCharArray(new List<Integer>{256})+'')));
+System.debug('SPLIT_ROWS|octal_class_777|'+JSON.serialize(ConservativeSplitProbe.observe('[\\777]',''+String.fromCharArray(new List<Integer>{511})+'')));
+System.debug('SPLIT_ROWS|ascii|'+JSON.serialize(ConservativeSplitProbe.observe('-','-')));
+System.debug('SPLIT_ROWS|ascii_fold|'+JSON.serialize(ConservativeSplitProbe.observe('(?i)a','A')));
+System.debug('SPLIT_ROWS|unicode|'+JSON.serialize(ConservativeSplitProbe.observe(''+String.fromCharArray(new List<Integer>{233})+'',''+String.fromCharArray(new List<Integer>{233})+'')));
+System.debug('SPLIT_ROWS|escaped_dot|'+JSON.serialize(ConservativeSplitProbe.observe('\\.','.')));
+System.debug('SPLIT_ROWS|octal_zero|'+JSON.serialize(ConservativeSplitProbe.observe('\\010',''+String.fromCharArray(new List<Integer>{8})+'')));
+System.debug('SPLIT_ROWS|escaped_backslash|'+JSON.serialize(ConservativeSplitProbe.observe('\\\\10','\\10')));
+System.debug('SPLIT_ROWS|ascii_class|'+JSON.serialize(ConservativeSplitProbe.observe('[1]0','10')));
+System.debug('SPLIT_ROWS|quoted|'+JSON.serialize(ConservativeSplitProbe.observe('\\Qabc\\E','abc')));
+System.debug('SPLIT_ROWS|ref10|'+JSON.serialize(ConservativeSplitProbe.observe('(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\\10','abcdefghijj')));
+System.debug('SPLIT_ROWS|ref10_nonmatch|'+JSON.serialize(ConservativeSplitProbe.observe('(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\\10','abcdefghij'+String.fromCharArray(new List<Integer>{8})+'')));

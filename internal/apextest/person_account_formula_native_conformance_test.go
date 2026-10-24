@@ -1,0 +1,206 @@
+package apextest
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"reflect"
+	"regexp"
+	"strings"
+	"testing"
+
+	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/vm"
+)
+
+func TestPersonAccountFormulaNativeConformance(t *testing.T) {
+	for _, route := range []string{"statement", "database", "upsert", "typed_interview"} {
+		t.Run(route, func(t *testing.T) { personAccountFormulaNativeConformance(t, route) })
+	}
+}
+
+func personAccountFormulaNativeConformance(t *testing.T, mutationRoute string) {
+	const fixture = "testdata/conformance/person_account_formulas/"
+	raw, err := os.ReadFile(fixture + "cases.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cases struct {
+		Files     map[string]string
+		Anonymous string
+	}
+	if err := json.Unmarshal(raw, &cases); err != nil {
+		t.Fatal(err)
+	}
+	raw, err = os.ReadFile(fixture + "org.tsv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wants := map[string]map[string]any{}
+	for _, line := range strings.Split(strings.TrimSpace(string(raw)), "\n")[1:] {
+		row := strings.SplitN(line, "\t", 4)
+		if len(row) != 4 {
+			t.Fatal(line)
+		}
+		if row[2] == "static_rejection" {
+			continue
+		}
+		key := row[0] + "/" + row[1]
+		if wants[key] == nil {
+			wants[key] = map[string]any{}
+		}
+		var value any
+		if err := json.Unmarshal([]byte(row[3]), &value); err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := wants[key][row[2]]; ok {
+			t.Fatal("duplicate native row")
+		}
+		wants[key][row[2]] = value
+	}
+	if len(wants) != 4 {
+		t.Fatalf("native routes=%d", len(wants))
+	}
+	for _, api := range []string{"62.0", "67.0"} {
+		root := t.TempDir()
+		writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
+		writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [PersonAccounts]\n")
+		for name, body := range cases.Files {
+			if strings.HasSuffix(name, ".cls") {
+				switch mutationRoute {
+				case "typed_interview":
+					body = regexp.MustCompile(`Flow\.Interview\.createInterview\('([^']+)',`).ReplaceAllString(body, "new Flow.Interview.$1(")
+				case "database":
+					body = regexp.MustCompile(`\binsert (\w+);`).ReplaceAllString(body, "Database.insert($1);")
+					body = regexp.MustCompile(`\bupdate (\w+);`).ReplaceAllString(body, "Database.update($1);")
+				case "upsert":
+					body = regexp.MustCompile(`\b(insert|update) (\w+);`).ReplaceAllString(body, "upsert $2;")
+				}
+			}
+			writeFile(t, filepath.Join(root, name), strings.ReplaceAll(body, "62.0", api))
+		}
+		index := loadTestIndex(t, root)
+		for _, route := range []string{"anonymous", "istest"} {
+			t.Run(api+"/"+route, func(t *testing.T) {
+				want := wants[api+"/"+route]
+				if len(want) != 13 {
+					t.Fatalf("native rows=%d", len(want))
+				}
+				if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
+					t.Fatalf("native declarations accepted; Glade: %v %v", index.Diagnostics, analysis.Diagnostics)
+				}
+				var message string
+				if route == "anonymous" {
+					if analysis := sema.AnalyzeAnonymous(index, cases.Anonymous, api); analysis.HasErrors() {
+						t.Fatal(analysis.Diagnostics)
+					}
+					program, err := vm.CompileAnonymousWithOptions(cases.Anonymous, vm.CompileOptions{APIVersion: api})
+					if err != nil {
+						t.Fatal(err)
+					}
+					org := orgFromIndex(index)
+					org.APIVersion = api
+					runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+					_, err = runner.newMachine().Execute(program)
+					var observation *vm.RuntimeError
+					if !errors.As(err, &observation) || flowRefsExceptionType(observation.Type) != "System.AssertException" {
+						t.Fatalf("missing observation: %v", err)
+					}
+					message = observation.ExceptionMessage()
+				} else {
+					run := Run(index, Options{SelectedClasses: []string{"PersonFormulaProbeTest"}, SelectedMethod: "observeFields", NoDiskCache: true, Parallelism: 1})
+					if run.Summary().Total != 1 || len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 {
+						t.Fatalf("unexpected selection: %+v", run.Summary())
+					}
+					result := run.Suites[0].Cases[0]
+					if result.Problem == nil || flowRefsExceptionType(result.Problem.Type) != "System.AssertException" {
+						t.Fatalf("missing observation: %+v", result)
+					}
+					message = result.Problem.Message
+				}
+				_, payload, found := strings.Cut(message, "PERSON_FORMULA|")
+				var got map[string]any
+				if !found || json.Unmarshal([]byte(payload), &got) != nil || len(got) != len(want) {
+					t.Fatalf("invalid observation: %s", message)
+				}
+				for id, value := range want {
+					t.Run(id, func(t *testing.T) {
+						if !reflect.DeepEqual(got[id], value) {
+							t.Fatalf("native=%v; Glade=%v", value, got[id])
+						}
+					})
+				}
+			})
+		}
+	}
+}
+
+// Run two native test bodies together, then rerun the same index to exercise
+// cached schema/runtime construction without cross-test mutation leakage.
+func TestPersonAccountFormulaNativeCachedParallelRunner(t *testing.T) {
+	const fixture = "testdata/conformance/person_account_formulas/"
+	raw, err := os.ReadFile(fixture + "cases.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cases struct{ Files map[string]string }
+	if err := json.Unmarshal(raw, &cases); err != nil {
+		t.Fatal(err)
+	}
+	raw, err = os.ReadFile(fixture + "org.tsv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, api := range []string{"62.0", "67.0"} {
+		want := map[string]any{}
+		for _, line := range strings.Split(strings.TrimSpace(string(raw)), "\n")[1:] {
+			row := strings.SplitN(line, "\t", 4)
+			if row[0] != api || row[1] != "istest" {
+				continue
+			}
+			var value any
+			if err := json.Unmarshal([]byte(row[3]), &value); err != nil {
+				t.Fatal(err)
+			}
+			want[row[2]] = value
+		}
+		if len(want) != 13 {
+			t.Fatalf("native rows=%d", len(want))
+		}
+		root := t.TempDir()
+		writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
+		writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [PersonAccounts]\n")
+		for name, body := range cases.Files {
+			writeFile(t, filepath.Join(root, name), strings.ReplaceAll(body, "62.0", api))
+		}
+		const twin = "force-app/main/default/classes/PersonFormulaTwinTest.cls"
+		writeFile(t, filepath.Join(root, twin), strings.ReplaceAll(cases.Files["force-app/main/default/classes/PersonFormulaProbeTest.cls"], "PersonFormulaProbeTest", "PersonFormulaTwinTest"))
+		writeFile(t, filepath.Join(root, twin+"-meta.xml"), strings.ReplaceAll(cases.Files["force-app/main/default/classes/PersonFormulaProbeTest.cls-meta.xml"], "62.0", api))
+		index := loadTestIndex(t, root)
+		for _, route := range []string{"cold_parallel", "warm_parallel"} {
+			t.Run(api+"/"+route, func(t *testing.T) {
+				run := Run(index, Options{SelectedClasses: []string{"PersonFormulaProbeTest", "PersonFormulaTwinTest"}, SelectedMethod: "observeFields", Parallelism: 2})
+				if run.Summary().Total != 2 {
+					t.Fatalf("selection: %+v", run.Summary())
+				}
+				for _, suite := range run.Suites {
+					for _, result := range suite.Cases {
+						if result.Problem == nil || flowRefsExceptionType(result.Problem.Type) != "System.AssertException" {
+							t.Fatalf("missing observation: %+v", result)
+						}
+						_, payload, found := strings.Cut(result.Problem.Message, "PERSON_FORMULA|")
+						var got map[string]any
+						if !found || json.Unmarshal([]byte(payload), &got) != nil {
+							t.Fatalf("invalid observation: %s", result.Problem.Message)
+						}
+						if !reflect.DeepEqual(got, want) {
+							t.Fatalf("native=%v; Glade=%v", want, got)
+						}
+					}
+				}
+			})
+		}
+	}
+}

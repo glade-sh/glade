@@ -1,5 +1,5 @@
 api=62.0
-transport=intentional result-bearing assertion; not native test-pass credit
+transport=System.assert
 deployment_success=true
 captured_utc=2026-10-19T15:28:26.337866+00:00
 source_sha256:62.0:force-app/main/default/classes/OrchardObservationTest.cls=6e79c429f301d4bbb58919ea8c6ac7a0dec2f8dd19708c4a5ab2138317c6c696

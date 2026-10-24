@@ -125,7 +125,7 @@ func TestRunAsDefaultSecurityConformance(t *testing.T) {
 		t.Fatalf("native cells = %v, want %v", actual, wantCounts)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "RunAsDefaultSecurity", api)
 			f := data.Fixtures[api]
 			metadata := map[string]string{}

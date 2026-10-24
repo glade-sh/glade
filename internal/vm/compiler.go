@@ -8,6 +8,7 @@ import (
 
 	apexparser "github.com/glade-sh/apex-parser"
 	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/soql"
 )
 
 type RuntimeLoweringError struct {
@@ -187,6 +188,7 @@ func lex(source string) ([]token, error) {
 
 func lexWithAnnotations(source string, annotations bool) ([]token, error) {
 	var tokens []token
+	bracketDepth, queryDepth := 0, 0
 	for i := 0; i < len(source); {
 		r := rune(source[i])
 		switch {
@@ -213,9 +215,20 @@ func lexWithAnnotations(source string, annotations bool) ([]token, error) {
 			for i < len(source) && isIdentPart(source[i]) {
 				i++
 			}
+			if queryDepth == 0 && len(tokens) > 0 && tokens[len(tokens)-1].kind == tokenSymbol && tokens[len(tokens)-1].text == "[" &&
+				(strings.EqualFold(source[start:i], "SELECT") || strings.EqualFold(source[start:i], "FIND")) {
+				queryDepth = bracketDepth
+			}
 			tokens = append(tokens, token{kind: tokenIdent, text: source[start:i], pos: start})
 		case source[i] >= '0' && source[i] <= '9':
 			start := i
+			if queryDepth > 0 {
+				if end := queryDateTimeLiteralEnd(source, start); end > start {
+					tokens = append(tokens, token{kind: tokenIdent, text: source[start:end], pos: start})
+					i = end
+					continue
+				}
+			}
 			i++
 			for i < len(source) && source[i] >= '0' && source[i] <= '9' {
 				i++
@@ -327,6 +340,14 @@ func lexWithAnnotations(source string, annotations bool) ([]token, error) {
 			}
 			switch source[i] {
 			case '@', '(', ')', '{', '}', '[', ']', ';', ',', '.', ':', '?', '+', '-', '*', '/', '%', '=', '<', '>', '!', '&', '|', '^', '~':
+				if source[i] == '[' {
+					bracketDepth++
+				} else if source[i] == ']' {
+					if queryDepth == bracketDepth {
+						queryDepth = 0
+					}
+					bracketDepth--
+				}
 				tokens = append(tokens, token{kind: tokenSymbol, text: source[i : i+1], pos: start})
 				i++
 			default:
@@ -2047,7 +2068,16 @@ func (p *parser) parseSOQLLiteral(pos int) (ir.Expr, error) {
 						parts = compactCapturedInlineReturningParts(parts, queryTokens, p.apiVersion)
 						parts = compactSOSLWindowParts(parts)
 					}
-					return ir.Expr{Kind: ir.ExprSOQL, Value: strings.Join(parts, " ")}, nil
+					text := strings.Join(parts, " ")
+					for _, part := range parts {
+						if strings.EqualFold(part, "FORMULA") {
+							if query, err := soql.Parse(text); err == nil && soql.ValidateFormulaVersion(query, p.apiVersion) != nil {
+								return ir.Expr{}, &ApexSyntaxError{Message: soql.FormulaWhereVersionMessage, NativeMessage: soql.FormulaWhereVersionMessage, Offset: pos}
+							}
+							break
+						}
+					}
+					return ir.Expr{Kind: ir.ExprSOQL, Value: text}, nil
 				}
 			}
 		}

@@ -1,0 +1,11 @@
+api	route	case	compiled	observation
+62.0	named_class	missing_prefix_known_type	false	Variable does not exist: missingns.KnownType
+62.0	named_class	unknown_dotted_receiver	false	Variable does not exist: a.b.c
+62.0	named_class	missing_prefix_known_nested_type	false	Variable does not exist: missingns.KnownType.Instance
+62.0	anonymous	inner_before_top_level	true	inner
+62.0	anonymous	project_class_before_platform	true	project-url
+67.0	named_class	missing_prefix_known_type	false	Variable does not exist: missingns.KnownType
+67.0	named_class	unknown_dotted_receiver	false	Variable does not exist: a.b.c
+67.0	named_class	missing_prefix_known_nested_type	false	Variable does not exist: missingns.KnownType.Instance
+67.0	anonymous	inner_before_top_level	true	inner
+67.0	anonymous	project_class_before_platform	true	project-url

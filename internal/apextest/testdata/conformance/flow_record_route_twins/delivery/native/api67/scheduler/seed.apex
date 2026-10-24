@@ -1,0 +1,1 @@
+delete [SELECT Id FROM Account WHERE Name LIKE 'Timer %']; insert new List<Account>{new Account(Name='Timer Direct 67.0',Phone='111'),new Account(Name='Timer Nested 67.0',Phone='111')};

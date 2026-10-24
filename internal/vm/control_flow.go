@@ -83,7 +83,12 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 			}
 		}
 		if vm.traceEnabled && result != nil {
-			appendResultTrace(result, statementTraceEvent(seq, inst, program.Source))
+			if len(result.Trace) >= maxTraceEvents {
+				// A capped trace only counts drops; its event payload is discarded.
+				appendResultTrace(result, trace.Event{})
+			} else {
+				appendResultTrace(result, statementTraceEvent(seq, inst, program.Source))
+			}
 		}
 		vm.setCurrentStatement(inst, program.Source)
 		if err := vm.maybePauseForDebug(inst); err != nil {
@@ -263,8 +268,32 @@ func (vm *VM) updateHeapLimit() error {
 
 func (vm *VM) currentHeapSize() int {
 	total := 0
-	for name, value := range vm.Globals {
-		total += len(name) + approxValueSize(value)
+	seenValues := make(map[approxVisitKey]bool)
+	addScope := func(scope map[string]Value) {
+		for name, value := range scope {
+			total += len(name) + approxValueSizeSeen(value, seenValues)
+		}
+	}
+	addScope(vm.Globals)
+
+	seenClasses := make(map[string]bool)
+	for name, class := range vm.ClassEntries() {
+		if class.PlatformType {
+			continue
+		}
+		owner := runtimeClassName(class)
+		if owner == "" {
+			owner = name
+		}
+		if seenClasses[owner] {
+			continue
+		}
+		seenClasses[owner] = true
+		for fieldName, field := range class.StaticFields {
+			if field.Static {
+				total += len(fieldName) + approxValueSizeSeen(field.Value, seenValues)
+			}
+		}
 	}
 	return total
 }

@@ -1,5 +1,5 @@
 context=istest
-transport=intentional result-bearing assertion; not native test-pass credit
+transport=System.assert
 api=62.0
 source_sha256:62.0:force-app/main/default/classes/JuniperInputObservationTest.cls=3cbde46b04b6dda934d5c7cadc0b6d6a8d52d9a82374ff009c7768a00478f1ed
 source_sha256:62.0:force-app/main/default/classes/JuniperInputObservationTest.cls-meta.xml=51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d

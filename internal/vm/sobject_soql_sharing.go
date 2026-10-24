@@ -300,6 +300,10 @@ func standardObjectDefaultsToPublicRead(objectName string) bool {
 		// Setup definitions remain queryable by an unassigned Standard User;
 		// their creator is not a record-sharing boundary.
 		return true
+	case "userrole", "profile", "recordtype", "crontrigger", "cronjobdetail", "asyncapexjob", "permissionsetassignment", "permissionsetgroup", "queuesobject":
+		// Owned setup query captures establish that internal creator ownership
+		// is not a sharing boundary. Query CRUD/FLS checks still apply.
+		return true
 	}
 	switch standardObjectDefaultSharingModel(objectName) {
 	case "ReadWrite", "ReadWriteTransfer":

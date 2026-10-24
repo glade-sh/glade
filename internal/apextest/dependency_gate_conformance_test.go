@@ -84,6 +84,7 @@ func runDependencyGateConformance(t *testing.T, cluster string, cells int) {
 	for _, api := range data.APIVersions {
 		counts[api] = newConformanceCountLog(t, "dependency-gate-"+cluster, api)
 	}
+	bases := newConformanceSchemaCache(t)
 	seen := map[string]bool{}
 	for _, cell := range data.Cells {
 		key := cell.API + "/" + cell.ID + "/" + cell.Route
@@ -91,7 +92,7 @@ func runDependencyGateConformance(t *testing.T, cluster string, cells int) {
 			t.Fatalf("repeated or unsupported native cell %s", key)
 		}
 		seen[key] = true
-		t.Run(cell.API+"/"+cell.ID+"/"+cell.Route, func(t *testing.T) {
+		runConformanceSubtestParallel(t, cell.API+"/"+cell.ID+"/"+cell.Route, func(t *testing.T) {
 			dependencyGateCheckSources(t, cell)
 			if cell.Carry != "" && cell.Kind != "package" {
 				t.Logf("gate scope an invalid trigger dependency or file less dependency_missing should not carry: %s; native=%s", cell.Carry, cell.Native.Outcome)
@@ -161,7 +162,7 @@ func runDependencyGateConformance(t *testing.T, cluster string, cells int) {
 					index = filterCompileGateIndex(index, gate.excludedFiles)
 				}
 			}
-			dependencyGateExecute(t, cell, index)
+			dependencyGateExecute(t, bases, cell, index)
 		})
 	}
 }
@@ -284,7 +285,7 @@ func dependencyGatePackage(t *testing.T, cell dependencyGateCell, index typesys.
 	}
 }
 
-func dependencyGateExecute(t *testing.T, cell dependencyGateCell, index typesys.Index) {
+func dependencyGateExecute(t *testing.T, bases *conformanceSchemaCache, cell dependencyGateCell, index typesys.Index) {
 	t.Helper()
 	var diagnostics []diagnostic.Diagnostic
 	body := cell.Anonymous
@@ -337,13 +338,12 @@ func dependencyGateExecute(t *testing.T, cell dependencyGateCell, index typesys.
 			t.Fatalf("native executes; compiler=%v", diagnostics)
 		}
 	}
-	runtime, err := CompileProjectRuntimeForRequestWithSourceDigests(index, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	org := orgFromIndex(index)
-	org.APIVersion = cell.API
-	runner := newConformanceRunner(t, index, conformanceRunnerOptions{RequestRuntime: &runtime, Org: &org})
+	base := bases.get(t, cell.API, "", cell.Objects, func(t *testing.T) *conformanceRunner {
+		metadata := dependencyGateCell{API: cell.API, Objects: cell.Objects}
+		return conformanceSchemaBase(t, dependencyGateIndex(t, metadata), cell.API)
+	})
+	runtime := conformanceSchemaRequestRuntime(t, index)
+	runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, RequestRuntime: &runtime, Org: base.orgSource})
 	var execErr error
 	if cell.Route == "anonymous" {
 		program, err := vm.CompileAnonymousWithOptions(body, vm.CompileOptions{APIVersion: cell.API})

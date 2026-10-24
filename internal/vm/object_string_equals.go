@@ -19,5 +19,8 @@ func (vm *VM) objectViewStringEquals(receiverName string, receiver Value, method
 	if !strings.EqualFold(view, "Object") && !strings.EqualFold(view, "System.Object") {
 		return Null, false
 	}
+	if looksLikeComparableIDText(receiver.Text) && looksLikeComparableIDText(args[0].Text) && apexIDTextEqual(receiver.Text, args[0].Text) {
+		return Bool(true), true
+	}
 	return Bool(strings.EqualFold(receiver.Text, args[0].Text)), true
 }
