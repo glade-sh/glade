@@ -61,7 +61,7 @@ placeholder does produce the diagnostic; that is a distinct index-entry route.
 
 The metadata variants set only `Broken` to API 999.0 or use truncated object XML.
 The unindexable variant replaces `Broken` with
-`public class Broken { public static Integer value({`.
+`public class Broken { public static Integer value( {`.
 
 The same case shapes are exercised at source APIs 62.0, 67.0, and 68.0. Counts
 are selected test methods, not excluded units or diagnostic counts.

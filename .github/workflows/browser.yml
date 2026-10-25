@@ -201,10 +201,10 @@ jobs:
           npm_pipeline_status=("${PIPESTATUS[@]}")
           npm_rc=${npm_pipeline_status[0]}
           npm_tee_rc=${npm_pipeline_status[1]}
-          if ((npm_rc != 0 )); then
+          if (( npm_rc != 0 )); then
             exit "$npm_rc"
           fi
-          if ((npm_tee_rc != 0 )); then
+          if (( npm_tee_rc != 0 )); then
             exit "$npm_tee_rc"
           fi
           exit 0
@@ -319,15 +319,15 @@ jobs:
           validator_rc=$?
           set -e
 
-          if ((native_rc != 0 )); then
+          if (( native_rc != 0 )); then
             echo "native go test failed with status $native_rc" >&2
             exit "$native_rc"
           fi
-          if ((pipeline_rc != 0 )); then
+          if (( pipeline_rc != 0 )); then
             echo "go test evidence pipeline failed with status $pipeline_rc" >&2
             exit "$pipeline_rc"
           fi
-          if ((validator_rc != 0 )); then
+          if (( validator_rc != 0 )); then
             echo "browser evidence validation failed with status $validator_rc" >&2
             exit "$validator_rc"
           fi

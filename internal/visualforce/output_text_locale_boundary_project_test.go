@@ -119,9 +119,14 @@ func TestOutputTextDateStyleLocaleBoundaryProjectRoutes(t *testing.T) {
 									rendered = result.Debug[0]
 								}
 							}
-							// The existing Visualforce locale resolver rejects active test-user
-							// contexts and falls back to en_US on that local route.
-							if locale != "en_US" && pattern.name == "Short" && route != "TestContextGetContent" {
+							if route == "TestContextGetContent" {
+								var runtimeErr *vm.RuntimeError
+								if !errors.As(renderErr, &runtimeErr) || strings.TrimPrefix(runtimeErr.Type, "System.") != "VisualforceException" || runtimeErr.ExceptionMessage() != "Methods defined as TestMethod do not support getContent call" {
+									t.Fatalf("error=%v, want native test-context VisualforceException", renderErr)
+								}
+								return
+							}
+							if locale != "en_US" && pattern.name == "Short" {
 								var runtimeErr *vm.RuntimeError
 								if !errors.As(renderErr, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" {
 									t.Fatalf("date=%q error=%v, want UnsupportedFeature locale boundary", outputTextCaseHTML(t, rendered)["date"], renderErr)

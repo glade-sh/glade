@@ -71,7 +71,7 @@
         "digests.json": "e71dcae063cfa50497683826294e5308b8a5205a596b2884753f61909495920f",
         "deploy.json": "ed68004f354a0e17f25ac1fdac8971a6664318aa784d5fbc5cb83078ee9c65a5",
         "deploy.command.json": "0b712d0e90472be0d2562e5e562d000616c8766bd89eeee93e609267ebba121a",
-        "ORG-RUN.txt": "12c7eb8babe8f4b1b41881eb1dc5778bc265e79752659014b14d41e767b3a5b1",
+        "ORG-RUN.txt": "3734c229a8508215cc1cbbb6d4b310157adcf52e63e0deba734599d03a383ab5",
         "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=3f19baff10e1558139e38fb8271f1b3fab121538652619fe247d05eb7f01dd49\nsourceApi=61.0\ncallerApi=61.0\ntransportApi=62.0\ncontext=@IsTest\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"OwnerContactObservation\", \"--target-org\", \"example-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T18:55:20Z\nexitCode=1\ndeploymentId=0Af000000000uZUCAY\nobservedRows=2\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T18:55:26Z\n",
@@ -337,7 +337,7 @@
         "digests.json": "7834dda1f621ae8644772b310e113eac95700186d6ead6a578c38f84b35c7ec3",
         "deploy.json": "47536e931e622239672b7594fb9786202aa582a4a763bb5758dce33e0bc88eda",
         "deploy.command.json": "0b712d0e90472be0d2562e5e562d000616c8766bd89eeee93e609267ebba121a",
-        "ORG-RUN.txt": "1b31318c78251cddec5e0cfc8cfbb347b0e0b6d0028d1e9d8cd3ff36e8016391",
+        "ORG-RUN.txt": "d6fa3af2193de889d4132dcec13023abdb5363754dba15c2c50cb95acf8d27a6",
         "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=3f19baff10e1558139e38fb8271f1b3fab121538652619fe247d05eb7f01dd49\nsourceApi=62.0\ncallerApi=62.0\ntransportApi=62.0\ncontext=@IsTest\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"OwnerContactObservation\", \"--target-org\", \"example-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T18:56:05Z\nexitCode=1\ndeploymentId=0Af000000000shzCAA\nobservedRows=2\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T18:56:09Z\n",
@@ -603,7 +603,7 @@
         "digests.json": "f8cbf91d4ecab4adfa8909534087bd04e22e5ade5fd379e218d6b8159b5de0e3",
         "deploy.json": "444182817e54358fef130a23f4e403650db887b073a1da84f09dcc69b0e9c422",
         "deploy.command.json": "0b712d0e90472be0d2562e5e562d000616c8766bd89eeee93e609267ebba121a",
-        "ORG-RUN.txt": "bacfcadf7f74c9bc640c2f411d0a8d2d0f97e9eff8efdace3f0bbdecd1993138",
+        "ORG-RUN.txt": "c74ba7d1c7bf72c0bdb9c10d54171b469703736a8d1c3e4a381d9b232086a06e",
         "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=3f19baff10e1558139e38fb8271f1b3fab121538652619fe247d05eb7f01dd49\nsourceApi=67.0\ncallerApi=67.0\ntransportApi=62.0\ncontext=@IsTest\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"OwnerContactObservation\", \"--target-org\", \"example-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T18:56:09Z\nexitCode=1\ndeploymentId=0Af000000000pMkCAI\nobservedRows=2\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T18:56:14Z\n",

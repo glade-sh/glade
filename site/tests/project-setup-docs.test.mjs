@@ -15,10 +15,10 @@ test('site config explains local dependency discovery and explicit org setup', a
   assert.match(page, /glade doctor --project \. --json/)
 })
 
-test('doctor references describe optional setup advice within schema 1.0', async () => {
+test('doctor references describe optional setup advice within schema 1.1', async () => {
   const page = await read('reference/json-schema.md')
   const doctor = page.split('## Doctor JSON')[1].split('## Diagnostic object')[0]
-  assert.match(doctor, /schema version `1\.0`/)
+  assert.match(doctor, /schema version `1\.1`/)
   for (const field of ['orgSetup', 'kind', 'feature', 'names', 'reason', 'files', 'yaml']) {
     assert.ok(doctor.includes('`' + field + '`'), `doctor JSON should describe ${field}`)
   }

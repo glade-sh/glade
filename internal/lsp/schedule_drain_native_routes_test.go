@@ -18,7 +18,7 @@ func TestScheduleDrainNativeNamedLSPRoutes(t *testing.T) {
 		for _, api := range []string{"62.0", "67.0"} {
 			t.Run(family+"/"+api, func(t *testing.T) {
 				fixture := filepath.Join("..", "apextest", "testdata", "conformance", family)
-				if _, err := os.Stat(filepath.Join(fixture, "ORG-RUN.txt")); err != nil {
+				if _, err := os.Stat(filepath.Join(fixture, "org.tsv")); err != nil {
 					t.Fatal(err)
 				}
 				source := filepath.Join(fixture, "project")
