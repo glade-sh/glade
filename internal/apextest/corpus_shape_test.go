@@ -58,25 +58,26 @@ func TestCorpusShape(t *testing.T) {
 		})
 	}
 	t.Run("personAccountFields", func(t *testing.T) {
-		t.Skip("Person Account __pc field synthesis is not implemented yet")
 		for _, api := range []string{"62.0", "67.0"} {
-			root := copyCorpusShapeProject(t, api)
-			source, err := os.ReadFile(filepath.Join(root, "person-account/ShapePerson.cls.pending"))
-			if err != nil {
-				t.Fatal(err)
-			}
-			classes := filepath.Join(root, "force-app/main/default/classes")
-			writeFile(t, filepath.Join(classes, "ShapePerson.cls"), string(source))
-			writeFile(t, filepath.Join(classes, "ShapePerson.cls-meta.xml"), `<ApexClass><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
-			writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [PersonAccounts]\n")
-			writeFile(t, filepath.Join(root, "force-app/main/default/objects/Contact/fields/Nickname__c.field-meta.xml"), `<CustomField><fullName>Nickname__c</fullName><label>Nickname</label><type>Text</type><length>80</length></CustomField>`)
-			index := loadTestIndex(t, root)
-			if len(index.Diagnostics) != 0 {
-				t.Fatal(index.Diagnostics)
-			}
-			if result := sema.Analyze(index); len(result.Diagnostics) != 0 {
-				t.Fatalf("Person Account project check diagnostics: %v", result.Diagnostics)
-			}
+			t.Run("API"+api, func(t *testing.T) {
+				root := copyCorpusShapeProject(t, api)
+				source, err := os.ReadFile(filepath.Join(root, "person-account/ShapePerson.cls.pending"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				classes := filepath.Join(root, "force-app/main/default/classes")
+				writeFile(t, filepath.Join(classes, "ShapePerson.cls"), string(source))
+				writeFile(t, filepath.Join(classes, "ShapePerson.cls-meta.xml"), `<ApexClass><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
+				writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [PersonAccounts]\n")
+				writeFile(t, filepath.Join(root, "force-app/main/default/objects/Contact/fields/Nickname__c.field-meta.xml"), `<CustomField><fullName>Nickname__c</fullName><label>Nickname</label><type>Text</type><length>80</length></CustomField>`)
+				index := loadTestIndex(t, root)
+				if len(index.Diagnostics) != 0 {
+					t.Fatal(index.Diagnostics)
+				}
+				if result := sema.Analyze(index); len(result.Diagnostics) != 0 {
+					t.Fatalf("Person Account project check diagnostics: %v", result.Diagnostics)
+				}
+			})
 		}
 	})
 	if elapsed := time.Since(started); elapsed >= time.Minute {

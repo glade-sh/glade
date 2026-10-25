@@ -56,6 +56,7 @@ func TestScheduledDetailAbortNativeConformance(t *testing.T) {
 		seen[key] = true
 	}
 	for _, api := range []string{"62.0", "67.0"} {
+		counts := newConformanceCountLog(t, "ScheduledDetailAbort", api)
 		index := nativeBoundaryIndex(t, api, classes, nil)
 		if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
 			t.Fatalf("native classes compiled: %v %v", index.Diagnostics, analysis.Diagnostics)
@@ -65,6 +66,12 @@ func TestScheduledDetailAbortNativeConformance(t *testing.T) {
 				continue
 			}
 			t.Run(strings.Join(row[:3], "/"), func(t *testing.T) {
+				kind := "exact"
+				route := row[1]
+				if route == "istest" {
+					route = "isTest"
+				}
+				defer func() { counts.record(route, kind, 1, !t.Failed()) }()
 				var want map[string]any
 				if err := json.Unmarshal([]byte(row[3]), &want); err != nil || len(want) != 22 {
 					t.Fatalf("invalid native observation: %v", err)
@@ -83,10 +90,14 @@ func TestScheduledDetailAbortNativeConformance(t *testing.T) {
 					var fault *vm.RuntimeError
 					if errors.As(err, &fault) {
 						if row[2] == "queuedSchedule" && fault.Type == "UnsupportedFeature" && fault.Message == `unsupported call "System.abortJob local async scheduling surface"` {
-							t.Skip("native anonymous abort captured; local scheduled Apex abort outside test context remains unsupported")
+							kind = "carried"
+							t.Logf("CARRIED scheduled Apex abort outside test context remains unsupported; native row=%s/org.tsv %s; native=%s; local=%v", fixture, strings.Join(row[:3], "/"), row[3], err)
+							return
 						}
 						if row[2] == "queuedBatch" && fault.Type == "System.StringException" && fault.ExceptionMessage() == "Job does not exist or is already aborted." {
-							t.Skip("native anonymous abort captured; local scheduled batch abort outside test context has no AsyncApexJob record")
+							kind = "carried"
+							t.Logf("CARRIED scheduled batch abort outside test context has no AsyncApexJob record; native row=%s/org.tsv %s; native=%s; local=%v", fixture, strings.Join(row[:3], "/"), row[3], err)
+							return
 						}
 					}
 					if err != nil || len(result.Debug) != 1 {
