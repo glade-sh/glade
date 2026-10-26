@@ -414,6 +414,9 @@ func isStringConcatOperand(value Value) bool {
 }
 
 func concatStringText(value Value, fallback string) string {
+	if text, ok := originalIDDisplayText(value); ok {
+		return text
+	}
 	if value.Kind == ValueDecimal {
 		return numericDisplayText(value)
 	}

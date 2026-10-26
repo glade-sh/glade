@@ -22,6 +22,7 @@ type graphemeBoundaryTable struct {
 }
 
 type regexp2Plan struct {
+	originalSource     string
 	source             string
 	matchSource        string
 	re                 *regexp2.Regexp
@@ -86,6 +87,7 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 	}
 	re.MatchTimeout = regexp2MatchTimeout
 	return &regexp2Plan{
+		originalSource:     source,
 		source:             regexp2Source,
 		matchSource:        markedSource,
 		re:                 re,

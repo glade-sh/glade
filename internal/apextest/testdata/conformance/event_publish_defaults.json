@@ -8,7 +8,7 @@
     "anonymous",
     "istest"
   ],
-  "source": "Owned plain Developer scratch-org observations, 2026-10-14.",
+  "source": "Owned plain Developer example-org observations, 2026-10-14.",
   "notes": [
     "Synthetic fixture and marker names are renamed consistently; publication and delivery observations are unchanged.",
     "The default event was first created at API 62.0; API 67.0/68.0 metadata cells are redeploy/retrieve observations on that same fixture, not independent first creation.",

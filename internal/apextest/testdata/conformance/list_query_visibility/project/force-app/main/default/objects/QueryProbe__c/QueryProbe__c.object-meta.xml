@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <deploymentStatus>Deployed</deploymentStatus>
+  <label>Query Probe</label>
+  <nameField><label>Query Probe Name</label><type>Text</type></nameField>
+  <pluralLabel>Query Probes</pluralLabel>
+  <recordTypes>
+    <fullName>Alpha</fullName><active>true</active><label>Alpha</label>
+  </recordTypes>
+  <recordTypes>
+    <fullName>Beta</fullName><active>true</active><label>Beta</label>
+  </recordTypes>
+  <sharingModel>Private</sharingModel>
+</CustomObject>

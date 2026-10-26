@@ -1,0 +1,17 @@
+System.assertEquals('0', PersonQueryStaticSelect.observe()); System.debug('ROW|staticSelect|' + PersonQueryStaticSelect.observe());
+System.assertEquals('0', PersonQueryStaticWhere.observe()); System.debug('ROW|staticWhere|' + PersonQueryStaticWhere.observe());
+System.assertEquals('0', PersonQueryStaticOrder.observe()); System.debug('ROW|staticOrder|' + PersonQueryStaticOrder.observe());
+System.assertEquals('0', PersonQueryStaticAggregate.observe()); System.debug('ROW|staticAggregate|' + PersonQueryStaticAggregate.observe());
+System.assertEquals('0', PersonQueryStaticQualified.observe()); System.debug('ROW|staticQualified|' + PersonQueryStaticQualified.observe());
+System.assertEquals('0', PersonQueryQuery.observe()); System.debug('ROW|query|' + PersonQueryQuery.observe());
+System.assertEquals('0', PersonQueryQueryWithBinds.observe()); System.debug('ROW|queryWithBinds|' + PersonQueryQueryWithBinds.observe());
+System.assertEquals('false', PersonQueryGetQueryLocator.observe()); System.debug('ROW|getQueryLocator|' + PersonQueryGetQueryLocator.observe());
+System.assertEquals('false', PersonQueryGetQueryLocatorWithBinds.observe()); System.debug('ROW|getQueryLocatorWithBinds|' + PersonQueryGetQueryLocatorWithBinds.observe());
+System.assertEquals('0', PersonQueryCountQuery.observe()); System.debug('ROW|countQuery|' + PersonQueryCountQuery.observe());
+System.assertEquals('0', PersonQueryCountQueryWithBinds.observe()); System.debug('ROW|countQueryWithBinds|' + PersonQueryCountQueryWithBinds.observe());
+System.assertEquals('0', PersonQueryStaticAlias.observe()); System.debug('ROW|staticAlias|' + PersonQueryStaticAlias.observe());
+System.assertEquals('0', PersonQueryDynamicAlias.observe()); System.debug('ROW|dynamicAlias|' + PersonQueryDynamicAlias.observe());
+System.assertEquals('0', PersonQueryContactField.observe()); System.debug('ROW|contactField|' + PersonQueryContactField.observe());
+System.assertEquals('missing', PersonQueryMissingField.observe()); System.debug('ROW|missingField|' + PersonQueryMissingField.observe());
+System.assertEquals('inert', PersonQueryInertLiteral.observe()); System.debug('ROW|inertLiteral|' + PersonQueryInertLiteral.observe());
+System.assertEquals('true/true', PersonQueryFieldMetadata.observe()); System.debug('ROW|fieldMetadata|' + PersonQueryFieldMetadata.observe());

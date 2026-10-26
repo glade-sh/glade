@@ -226,7 +226,7 @@ func (e *Engine) afterInsertPersonAccount(account storage.Record) error {
 	}
 	contact := storage.Record{
 		Object: "Contact",
-		Fields: personContactFields(account),
+		Fields: e.personContactFields(account),
 	}
 	contactID, err := e.insertOne(contact, nil)
 	if err != nil {
@@ -247,11 +247,11 @@ func (e *Engine) afterInsertPersonAccount(account storage.Record) error {
 	return nil
 }
 
-func personContactFields(account storage.Record) map[string]storage.Value {
+func (e *Engine) personContactFields(account storage.Record) map[string]storage.Value {
 	fields := map[string]storage.Value{
 		"AccountId": storage.IDValue(account.ID),
 	}
-	for _, mapping := range personContactFieldMappings() {
+	for _, mapping := range e.personAccountFieldMappings() {
 		copyPersonContactField(fields, account, mapping.account, mapping.contact)
 	}
 	if _, ok := fields["LastName"]; !ok || fields["LastName"].Kind == storage.ValueNull {
@@ -271,26 +271,10 @@ type personContactFieldMapping struct {
 }
 
 func personContactFieldMappings() []personContactFieldMapping {
-	mappings := []personContactFieldMapping{
-		{"FirstName", "FirstName"},
-		{"LastName", "LastName"},
-		{"PersonEmail", "Email"},
-		{"PersonHomePhone", "HomePhone"},
-		{"PersonMobilePhone", "MobilePhone"},
-		{"PersonTitle", "Title"},
-		{"PersonDepartment", "Department"},
-		{"PersonBirthdate", "Birthdate"},
-		{"PersonDoNotCall", "DoNotCall"},
-		{"PersonHasOptedOutOfEmail", "HasOptedOutOfEmail"},
-		{"PersonHasOptedOutOfFax", "HasOptedOutOfFax"},
-		{"PersonEmailBouncedReason", "EmailBouncedReason"},
-		{"PersonEmailBouncedDate", "EmailBouncedDate"},
-	}
-	for _, suffix := range []string{"Street", "City", "State", "StateCode", "PostalCode", "Country", "CountryCode"} {
-		mappings = append(mappings,
-			personContactFieldMapping{"PersonMailing" + suffix, "Mailing" + suffix},
-			personContactFieldMapping{"PersonOther" + suffix, "Other" + suffix},
-		)
+	standard := storage.PersonAccountStandardFieldMappings()
+	mappings := make([]personContactFieldMapping, 0, len(standard))
+	for _, mapping := range standard {
+		mappings = append(mappings, personContactFieldMapping{mapping.Account, mapping.Contact})
 	}
 	return mappings
 }
@@ -302,6 +286,10 @@ func copyPersonContactField(fields map[string]storage.Value, account storage.Rec
 }
 
 func (e *Engine) syncPersonContact(account storage.Record) error {
+	if strings.EqualFold(account.Object, "Contact") {
+		e.syncPersonAccountCustomFields(account)
+		return nil
+	}
 	if !isPersonAccountRecord(account) {
 		return nil
 	}
@@ -327,21 +315,21 @@ func (e *Engine) syncPersonContact(account storage.Record) error {
 	if e.IsolationJournal != nil {
 		e.IsolationJournal.RecordUpdate("Contact", contactID, contact)
 	}
-	for field, value := range personContactFields(account) {
+	for field, value := range e.personContactFields(account) {
 		contact.Fields[field] = value.Clone()
 		delete(contact.ExplicitNulls, field)
 	}
-	clearExplicitPersonContactFields(&contact, account)
+	clearExplicitPersonContactFields(&contact, account, e.personAccountFieldMappings())
 	contactObject.Records[contactID] = contact
 	e.Org.Objects["Contact"] = contactObject
 	return nil
 }
 
-func clearExplicitPersonContactFields(contact *storage.Record, account storage.Record) {
+func clearExplicitPersonContactFields(contact *storage.Record, account storage.Record, mappings []personContactFieldMapping) {
 	if contact == nil {
 		return
 	}
-	for _, mapping := range personContactFieldMappings() {
+	for _, mapping := range mappings {
 		if !account.HasExplicitNull(mapping.account) {
 			continue
 		}
@@ -352,4 +340,94 @@ func clearExplicitPersonContactFields(contact *storage.Record, account storage.R
 		}
 		contact.ExplicitNulls[mapping.contact] = true
 	}
+}
+
+// Only fields declared on both objects participate in custom-field mirroring.
+// The Account schema has already been derived from the Contact metadata.
+func (e *Engine) personAccountCustomFieldMappings() []personContactFieldMapping {
+	account := e.Org.Objects["Account"].Definition
+	contact := e.Org.Objects["Contact"].Definition
+	var mappings []personContactFieldMapping
+	for name := range account.Fields {
+		if !strings.HasSuffix(strings.ToLower(name), "__pc") {
+			continue
+		}
+		source, ok := storage.ResolveFieldName(contact, e.Org.Namespace, name[:len(name)-4]+"__c")
+		if ok {
+			mappings = append(mappings, personContactFieldMapping{name, source})
+		}
+	}
+	return mappings
+}
+
+func (e *Engine) personAccountFieldMappings() []personContactFieldMapping {
+	return append(personContactFieldMappings(), e.personAccountCustomFieldMappings()...)
+}
+
+func (e *Engine) validatePersonAccountCustomFieldWrites(record storage.Record, existing ...storage.Record) error {
+	if !strings.EqualFold(record.Object, "Account") || isPersonAccountRecord(record) {
+		return nil
+	}
+	if len(existing) > 0 && isPersonAccountRecord(existing[0]) {
+		return nil
+	}
+	for _, mapping := range e.personAccountCustomFieldMappings() {
+		// Queried or deserialized formula values are ignored during updates.
+		// Other person fields still reject explicit Business Account writes.
+		if len(existing) > 0 && strings.TrimSpace(e.Org.Objects["Account"].Definition.Fields[mapping.account].Formula) != "" {
+			continue
+		}
+		_, present := record.GetField(mapping.account)
+		if present || record.HasExplicitNull(mapping.account) {
+			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{mapping.account}, "Cannot specify Person Account field %s on a Business Account", mapping.account)
+		}
+	}
+	return nil
+}
+
+func (e *Engine) syncPersonAccountCustomFields(contact storage.Record) {
+	accountID := idFromStorageValue(contact.Fields["AccountId"])
+	object := e.Org.Objects["Account"]
+	storedID, account, found := storage.LookupRecordByID(object.Records, accountID)
+	if !found || account.System.IsDeleted || !isPersonAccountRecord(account) || !storage.IDsEqual(idFromStorageValue(account.Fields["PersonContactId"]), contact.ID) {
+		return
+	}
+	mappings := e.personAccountCustomFieldMappings()
+	if len(mappings) == 0 {
+		return
+	}
+	storage.EnsureMutableObjectRecords(e.Org, "Account")
+	object = e.Org.Objects["Account"]
+	account = object.Records[storedID]
+	if e.IsolationJournal != nil {
+		e.IsolationJournal.RecordUpdate("Account", storedID, account)
+	}
+	for _, mapping := range mappings {
+		if contact.HasExplicitNull(mapping.contact) {
+			deleteCaseInsensitiveField(account.Fields, mapping.account)
+			if account.ExplicitNulls == nil {
+				account.ExplicitNulls = make(map[string]bool)
+			}
+			account.ExplicitNulls[mapping.account] = true
+		} else if value, present := contact.GetField(mapping.contact); present {
+			account.Fields[mapping.account] = value.Clone()
+			delete(account.ExplicitNulls, mapping.account)
+		}
+	}
+	object.Records[storedID] = account
+	e.Org.Objects["Account"] = object
+}
+
+// PersonAccountCustomFieldDefaultAllowed keeps Contact defaults on Person
+// Accounts. Callers use the declared mirror and Contact source metadata; a
+// Business Account must not acquire a person-only field as an implicit input.
+func PersonAccountCustomFieldDefaultAllowed(org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field) bool {
+	name := field.APIName
+	if org == nil || !strings.EqualFold(definition.APIName, "Account") || !strings.HasSuffix(strings.ToLower(name), "__pc") {
+		return true
+	}
+	if _, declared := storage.ResolveFieldName(org.Objects["Contact"].Definition, org.Namespace, name[:len(name)-4]+"__c"); !declared {
+		return true
+	}
+	return isPersonAccountRecord(record) || hasPersonAccountFieldSignal(record)
 }

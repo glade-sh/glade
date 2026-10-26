@@ -1,0 +1,31 @@
+api	case	page	html
+67.0	percent	PatternProbe0	12.5%
+67.0	permille	PatternProbe1	125.0&#8240;
+67.0	currency-symbol	PatternProbe2	$12,345.62
+67.0	currency-code	PatternProbe3	USD 12,345.62
+67.0	negative-subpattern	PatternProbe4	(12,345.62)
+67.0	positive-subpattern	PatternProbe5	12,345.62
+67.0	zero-subpattern	PatternProbe6	0.00
+67.0	quoted-affix	PatternProbe7	USD 12,345.62 net
+67.0	quoted-percent	PatternProbe8	0.12%
+67.0	apostrophe-affix	PatternProbe9	0.12 o'clock
+67.0	number-integer	PatternProbe10	12,346
+67.0	number-currency	PatternProbe11	$12,345.62
+67.0	number-percent	PatternProbe12	12%
+67.0	scientific	PatternProbe13	1.23E4
+67.0	scientific-zero	PatternProbe14	0.00E0
+67.0	date-default	PatternProbe15	Feb 9, 2024
+67.0	date-short	PatternProbe16	2/9/24
+67.0	date-medium	PatternProbe17	Feb 9, 2024
+67.0	date-long	PatternProbe18	February 9, 2024
+67.0	date-full	PatternProbe19	Friday, February 9, 2024
+67.0	date-month-short	PatternProbe20	Feb 9, 2024
+67.0	date-month-long	PatternProbe21	February 9, 2024
+67.0	date-weekday	PatternProbe22	Fri Friday
+67.0	date-clock	PatternProbe23	5:06:03 PM GMT +0000
+67.0	time-default	PatternProbe24	5:06:03 PM
+67.0	time-short	PatternProbe25	5:06 PM
+67.0	time-medium	PatternProbe26	5:06:03 PM
+67.0	time-long	PatternProbe27	5:06:03 PM GMT
+67.0	time-full	PatternProbe28	5:06:03 PM GMT
+67.0	date-only-month-long	PatternProbe29	February 9, 2024

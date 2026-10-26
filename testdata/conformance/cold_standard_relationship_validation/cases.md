@@ -1,0 +1,1 @@
+Each construction route in cases.tsv runs unknown and wrong-target putSObject, unknown isSet/getSObject/getSObjects, and valid name/token relationship and isSet controls. Capture anonymous and @IsTest at APIs 62 and 67. Replay cold and loaded schemas without schema mutation.

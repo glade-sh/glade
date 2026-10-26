@@ -24,6 +24,7 @@ import (
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/server"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/testutil/browserapi"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -167,6 +168,17 @@ func l09SalesforceConformance(t *testing.T) {
 		}
 	}
 
+	type apiObservation struct {
+		dom               map[string]json.RawMessage
+		domErrors         map[string]string
+		runtimeCompileErr error
+		browserErr        error
+	}
+	observeAPI := browserapi.Prepare(t, versions, func(t *testing.T, api string) apiObservation {
+
+		dom, domErrors, runtimeCompileErr, browserErr := l09ObserveDOM(t, api, runtimeCases, dependencyRoot, l09PayloadUserTimeZone(t, api, payloadCases[0].Payload))
+		return apiObservation{dom, domErrors, runtimeCompileErr, browserErr}
+	})
 	var report strings.Builder
 	fmt.Fprintln(&report, "api\tid\tkind\tstatus\tactual\texpected\treason\tdiagnostic_status\tdiagnostic_actual\tdiagnostic_expected\tdiagnostic_reason")
 	matches, total, compileMatches, domMatches, localDOMRows := 0, 0, 0, 0, 0
@@ -180,7 +192,8 @@ func l09SalesforceConformance(t *testing.T) {
 	}
 	for _, api := range versions {
 		compiled := l09CompileCases(t, api, compileCases)
-		dom, domErrors, runtimeCompileErr, browserErr := l09ObserveDOM(t, api, runtimeCases, dependencyRoot, l09PayloadUserTimeZone(t, api, payloadCases[0].Payload))
+		result := observeAPI(api)
+		dom, domErrors, runtimeCompileErr, browserErr := result.dom, result.domErrors, result.runtimeCompileErr, result.browserErr
 		if browserErr != nil {
 			t.Fatalf("L09 browser environment: %v", browserErr)
 		}

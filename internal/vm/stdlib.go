@@ -490,6 +490,9 @@ func stringStatic(callee string, args []Value) (Value, error) {
 			}
 			return String(fmt.Sprintf("Blob[%d]", len(raw))), nil
 		}
+		if text, ok := originalIDDisplayText(args[0]); ok {
+			return String(text), nil
+		}
 		if idText, ok := typedIDValueText(args[0]); ok {
 			return String(displayIDText(idText)), nil
 		}
@@ -1722,6 +1725,14 @@ func allocatedGenericSObjectList(receiver Value) bool {
 	if !ok || !strings.EqualFold(element, "SObject") {
 		return false
 	}
+	// A concrete declared view does not change generic SObject backing,
+	// including empty lists and views returned by a typed helper.
+	typedView := false
+	for _, view := range []string{receiver.Type, receiver.Static} {
+		if element, ok := collectionElementType(view); ok && !strings.EqualFold(element, "SObject") && listSObjectElementTypeName(element) != "" {
+			typedView = true
+		}
+	}
 	// Named schema_classification_boundaries rows extend the existing Id-only
 	// singleton case to collections built with newSObject(Id). Ordinary
 	// constructor twins retain their prior behavior pending exact observations.
@@ -1742,6 +1753,9 @@ func allocatedGenericSObjectList(receiver Value) bool {
 			if hasSuffixFold(typeName, "__e") || strings.EqualFold(typeName, "BatchApexErrorEvent") || strings.EqualFold(typeName, "AggregateResult") {
 				return false
 			}
+			if typedView {
+				continue
+			}
 			for field, value := range item.Fields {
 				if isInternalSObjectField(field) || strings.EqualFold(field, "Id") ||
 					(isDefaultedSObjectField(item, field) && !isExplicitSObjectField(item, field)) {
@@ -1752,6 +1766,9 @@ func allocatedGenericSObjectList(receiver Value) bool {
 				}
 			}
 		}
+	}
+	if typedView {
+		return true
 	}
 	if len(receiver.List) >= 1 && len(receiver.List) <= 2 && receiver.List[0].Kind == ValueNull {
 		return true

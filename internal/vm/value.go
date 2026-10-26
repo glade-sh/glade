@@ -34,6 +34,8 @@ type Value struct {
 	// Keep the observed String-constructor display separate from runtime faults,
 	// cause constructors and default exception construction.
 	exceptionMessageConstructor bool
+	// Some platform Ids retain their original text for valueOf and concatenation.
+	idOriginalDisplay bool
 
 	Kind          ValueKind `json:"kind"`
 	Int           int64     `json:"int,omitempty"`
@@ -53,8 +55,12 @@ type Value struct {
 	// Retain constructor provenance so the captured newSObject(Id) fix does
 	// not change unobserved ordinary-constructor twins.
 	schemaIDConstructor bool
+	// JSON-deserialized PluginBatchable subclasses skip the platform
+	// constructor (platform_batch_runtime org.tsv:4-8,13-17).
+	pluginBatchableDetached bool
 	// Set history belongs to this collection, not to its mutable elements.
 	setInsertionHashes []setInsertionHash
+	primitiveSetState  *primitiveSetState
 	mapKeySetSource    *mapKeySetBacking
 	mapKeySetHashes    *mapKeySetHashCache
 
@@ -228,6 +234,7 @@ func Set(values ...Value) Value {
 			out.Set = append(out.Set, value)
 		}
 	}
+	out.primitiveSetState = &primitiveSetState{items: out.Set}
 	return out
 }
 
@@ -321,10 +328,35 @@ func (v Value) String() string {
 	}
 }
 
+var accessLevelConstantRefs = [2]uint64{newValueRef(), newValueRef()}
+
+func isAccessLevelValue(value Value) bool {
+	return value.Kind == ValueObject && !value.classInstance && strings.EqualFold(value.Type, "AccessLevel") &&
+		value.Fields["currentAccessPermissions"].Kind == ValueString
+}
+
+// accessLevelHasCustomScope reports a withPermissionSetId scope. Native rows
+// cover only the System/User constants, so custom scopes keep base behaviour.
+func accessLevelHasCustomScope(value Value) bool {
+	_, custom := value.Fields["permissionSetId"]
+	return custom
+}
+
+func accessLevelUsesReferenceEquality(left, right Value) bool {
+	if !isAccessLevelValue(left) || !isAccessLevelValue(right) {
+		return false
+	}
+	_, leftCustom := left.Fields["permissionSetId"]
+	_, rightCustom := right.Fields["permissionSetId"]
+	return !leftCustom && !rightCustom
+}
+
 func accessLevelValue(mode string) Value {
 	system := Object("AccessLevel")
+	system.Ref = accessLevelConstantRefs[0]
 	system.Text = "SYSTEM_MODE"
 	user := Object("AccessLevel")
+	user.Ref = accessLevelConstantRefs[1]
 	user.Text = "USER_MODE"
 	system.Fields["SYSTEM_MODE"] = system
 	system.Fields["USER_MODE"] = user
@@ -743,6 +775,9 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 		}
 		return true
 	case ValueObject:
+		if accessLevelUsesReferenceEquality(v, other) {
+			return v.Ref != 0 && v.Ref == other.Ref
+		}
 		if strings.EqualFold(v.Type, "Matcher") || strings.EqualFold(other.Type, "Matcher") {
 			return strings.EqualFold(v.Type, other.Type) && v.Ref != 0 && v.Ref == other.Ref
 		}
@@ -1091,6 +1126,9 @@ func valueIdentityEqual(left, right Value) bool {
 	}
 	switch left.Kind {
 	case ValueList, ValueSet, ValueMap, ValueObject:
+		if accessLevelUsesReferenceEquality(left, right) {
+			return left.Ref != 0 && left.Ref == right.Ref
+		}
 		if left.Kind == ValueObject && schemaTokenIdentityEqual(left, right) {
 			return true
 		}

@@ -148,7 +148,8 @@ func runFieldKeyConformance(t *testing.T, cluster string, shapes int) {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "FieldKey"+cluster, api)
 			baseIndex := fieldKeyIndex(t, api, nil, metadata)
-			base := newConformanceRunner(t, baseIndex, conformanceRunnerOptions{})
+			org := fieldKeyOrg(t, baseIndex, api)
+			base := newConformanceRunner(t, baseIndex, conformanceRunnerOptions{LinkProject: true, Org: &org})
 			for _, row := range data.Rows {
 				t.Run(row.ID, func(t *testing.T) {
 					for _, route := range data.Routes {
@@ -173,9 +174,9 @@ func runFieldKeyConformance(t *testing.T, cluster string, shapes int) {
 								if want.Outcome == "compile-rejected" {
 									return
 								}
-								org := fieldKeyOrg(t, index, api)
+								org := base.orgSource
 								fixturePrefix = org.Objects["KeyFixture__c"].Definition.KeyPrefix
-								runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, Org: &org})
+								runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, Org: org})
 								_, execErr = runner.execute(program)
 							} else {
 								analysis := sema.Analyze(index)
@@ -197,9 +198,9 @@ func runFieldKeyConformance(t *testing.T, cluster string, shapes int) {
 								if methodErrors[key] != nil || programErrors[key] != nil {
 									t.Fatalf("named compile: %v %v", methodErrors[key], programErrors[key])
 								}
-								org := fieldKeyOrg(t, index, api)
+								org := base.orgSource
 								fixturePrefix = org.Objects["KeyFixture__c"].Definition.KeyPrefix
-								runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, LinkProject: true, Org: &org})
+								runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, LinkProject: true, Org: org})
 								machine := runner.newMachine()
 								if err := machine.RegisterMethod(methods[key]); err != nil {
 									t.Fatal(err)

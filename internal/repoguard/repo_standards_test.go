@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"regexp/syntax"
-	"runtime"
 	"slices"
 	"sort"
 	"strings"
@@ -290,6 +289,7 @@ func projectFiles(p project.Project) []string {
 	out = append(out, p.ObjectFiles...)
 	out = append(out, p.FieldFiles...)
 	out = append(out, p.FieldSetFiles...)
+	out = append(out, p.FeatureParameterFiles...)
 	out = append(out, p.RecordTypeFiles...)
 	out = append(out, p.ValidationRuleFiles...)
 	out = append(out, p.LabelFiles...)
@@ -428,12 +428,36 @@ func repoRoot(t *testing.T) string {
 	return canonicalRepoRoot
 }
 
-func repositoryRootPath() string {
-	_, file, _, ok := runtime.Caller(0)
-	if !ok {
-		panic("runtime caller unavailable")
+func TestRepositoryRootPathFindsModuleRoot(t *testing.T) {
+	root := repositoryRootPath()
+	if _, err := os.Stat(filepath.Join(root, "go.mod")); err != nil {
+		t.Fatal("repository root does not contain go.mod")
 	}
-	return filepath.Clean(filepath.Join(filepath.Dir(file), "..", ".."))
+	if _, err := os.Stat(filepath.Join(root, "internal", "repoguard", "repo_standards_test.go")); err != nil {
+		t.Fatal("repository root does not contain the repoguard package")
+	}
+}
+
+func repositoryRootPath() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		panic("working directory unavailable")
+	}
+	for dir = filepath.Clean(dir); ; {
+		module := filepath.Join(dir, "go.mod")
+		packageDir := filepath.Join(dir, "internal", "repoguard")
+		if _, err := os.Stat(module); err == nil {
+			if info, err := os.Stat(packageDir); err == nil && info.IsDir() {
+				return dir
+			}
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	panic("repository root not found")
 }
 
 func repoGoFiles(t *testing.T, root string) []string {

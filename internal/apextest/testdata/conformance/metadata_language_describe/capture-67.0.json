@@ -1,0 +1,72 @@
+{
+  "api": "67.0",
+  "captured_at": "2026-10-22T01:05:23.300370+00:00",
+  "deployment": {
+    "status": "Succeeded",
+    "success": true,
+    "numberComponentErrors": 0,
+    "numberComponentsDeployed": 4
+  },
+  "tests": [
+    {
+      "MethodName": "allLanguage",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|allLanguage|{\"value\":\"en_US\"}",
+      "StackTrace": "Class.LocaleRuleProbeTest.allLanguage: line 6, column 1"
+    },
+    {
+      "MethodName": "constructedLanguage",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|constructedLanguage|{\"value\":\"fr\"}",
+      "StackTrace": "Class.LocaleRuleProbeTest.constructedLanguage: line 7, column 1"
+    },
+    {
+      "MethodName": "describeDynamic",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|describeDynamic|{\"value\":\"PICKLIST:40:true:true:true\"}",
+      "StackTrace": "Class.LocaleRuleProbeTest.describeDynamic: line 3, column 1"
+    },
+    {
+      "MethodName": "describeStatic",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|describeStatic|{\"value\":\"PICKLIST:40:true:true:true\"}",
+      "StackTrace": "Class.LocaleRuleProbeTest.describeStatic: line 2, column 1"
+    },
+    {
+      "MethodName": "instanceLanguage",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|instanceLanguage|{\"value\":\"en_US\"}",
+      "StackTrace": "Class.LocaleRuleProbeTest.instanceLanguage: line 5, column 1"
+    },
+    {
+      "MethodName": "queryLanguage",
+      "Outcome": "Fail",
+      "Message": "System.AssertException: Assertion Failed: OBSERVED|queryLanguage|{\"value\":\"en_US\"}",
+      "StackTrace": "Class.LocaleRuleProbeTest.queryLanguage: line 4, column 1"
+    }
+  ],
+  "anonymous": {
+    "compiled": true,
+    "success": true,
+    "observations": {
+      "describeStatic": {
+        "value": "PICKLIST:40:true:true:true"
+      },
+      "describeDynamic": {
+        "value": "PICKLIST:40:true:true:true"
+      },
+      "queryLanguage": {
+        "value": "en_US"
+      },
+      "instanceLanguage": {
+        "value": "en_US"
+      },
+      "allLanguage": {
+        "value": "en_US"
+      },
+      "constructedLanguage": {
+        "value": "fr"
+      }
+    }
+  }
+}

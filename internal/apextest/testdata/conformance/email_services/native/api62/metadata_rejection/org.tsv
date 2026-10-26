@@ -1,0 +1,4 @@
+id	value
+TooLong	"Value too long for field: LocalPart maximum length is:64"
+UnknownClass	"An Apex Class must be specified when creating an Email Service."
+UnknownUser	"In field: Username - no User named missing@example.invalid found"

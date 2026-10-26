@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/testutil/browserapi"
 )
 
 type l03Case struct {
@@ -155,6 +156,9 @@ func TestL03SalesforceConformance(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(roots.DependencyRoot, "third_party", "lwc", "node_modules", "@lwc", "compiler", "package.json")); err != nil {
 		t.Fatal(err)
 	}
+	observeAPI := browserapi.Prepare(t, []string{"59.0", "67.0", "68.0"}, func(t *testing.T, api string) map[string]string {
+		return l03BrowserDOM(t, cases, api, roots)
+	})
 	var report strings.Builder
 	report.WriteString("API\tID\tCHECK\tSTATUS\tACTUAL\tEXPECTED\tREASON\n")
 	matches, total, compileMatches, compileTotal, domMatches, domTotal := 0, 0, 0, 0, 0, 0
@@ -182,7 +186,7 @@ func TestL03SalesforceConformance(t *testing.T) {
 		boundary := api == "65.0" || api == "66.0"
 		var dom map[string]string
 		if !boundary {
-			dom = l03BrowserDOM(t, cases, api, roots)
+			dom = observeAPI(api)
 		}
 		compiled := compileConformanceBatch(t, api, len(cases), func(root string, index int) {
 			l03WriteCompileBundle(t, root, cases[index], api)

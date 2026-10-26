@@ -79,7 +79,7 @@ func TestTypeTextOrgConformance(t *testing.T) {
 		}
 		for name, code := range hashed {
 			digest := sha256.Sum256([]byte(code))
-			if want := row.SourceSha256[name]; want != "<redacted-provenance>" && hex.EncodeToString(digest[:]) != want {
+			if hex.EncodeToString(digest[:]) != row.SourceSha256[name] {
 				t.Fatalf("captured source digest changed: %s/%s", key, name)
 			}
 		}

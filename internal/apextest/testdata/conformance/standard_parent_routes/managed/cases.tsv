@@ -1,0 +1,5 @@
+case	shape
+constructed	subscriber project lookup to standard Contact parent, installed managed-package field read
+queried	inline SOQL installed managed-package field projection through subscriber parent relationship and read
+dynamic_rejection	unknown leaf through the subscriber standard-parent relationship rejected by dynamic SOQL
+null_boundary	null lookup parent stays null after installed managed-package field projection

@@ -1,0 +1,3 @@
+<apex:page controller="PatternProbeController" showHeader="false" sidebar="false" standardStylesheets="false" language="en_US">
+<div data-case="number-integer"><apex:outputText value="{0,number,integer}"><apex:param value="{!amount}"/></apex:outputText></div>
+</apex:page>

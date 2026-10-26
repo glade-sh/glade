@@ -2017,8 +2017,10 @@ test("LWC shell workbench builder exposes context controls", async (t) => {
     });
     assert.ok(objectDropdownMetrics.maxHeight <= 260, `object dropdown max-height = ${objectDropdownMetrics.maxHeight}`);
     assert.match(objectDropdownMetrics.overflowY, /auto|scroll/);
+    const firstObjectAPIName = await objectDropdown.locator("[data-glade-object-result]").first().getAttribute("data-glade-api-name");
+    assert.ok(firstObjectAPIName, "first object option has an API name");
     await objectCombobox.press("ArrowDown");
-    assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("data-glade-api-name")), "Account");
+    assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("data-glade-api-name")), firstObjectAPIName);
     await page.keyboard.press("Escape");
     assert.equal(await objectCombobox.getAttribute("aria-expanded"), "false");
     await objectCombobox.fill("acc");

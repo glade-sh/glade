@@ -17,9 +17,16 @@ type Engine struct {
 	UserID            storage.ID
 	Options           Options
 	FlowActionInvoker func(storage.FlowAction, storage.Record) error
+	// FlowPathEnqueuer submits matched deferred paths to the host transaction.
+	FlowPathEnqueuer func(string, storage.FlowRule, storage.FlowPath, storage.ID)
 	// SystemTimestampObserver reports generated audit timestamps to the host
 	// clock. Explicit record dates do not pass through this observer.
 	SystemTimestampObserver func(time.Time)
+	// ChangeObserver receives successful record mutations. Snapshots belong to
+	// the engine; observers must copy anything retained after this call.
+	ChangeObserver func(operation string, before, after storage.Record)
+	// ChangeCheckpoint captures observer state for engine-owned rollbacks.
+	ChangeCheckpoint func() func()
 	// FlowActionInvokerWithContext receives the values materialized by Flow
 	// assignments and lookups for an Apex action. The legacy invoker remains
 	// available for callers that only model the triggering record.
@@ -56,6 +63,7 @@ type Engine struct {
 
 	pendingCreatedAutomation  map[storage.ID]bool
 	activeCreatedAutomationID storage.ID
+	duplicates                duplicateState
 }
 
 // FlowActionContext contains the runtime references visible to a Flow Apex
@@ -127,6 +135,10 @@ func (c *SummaryRelationCache) store(childObjectName string, relations []summary
 }
 
 type Options struct {
+	AssignmentRule *storage.AssignmentRuleSelection
+	// Apex insert/update statements enforce duplicate rules; explicit
+	// Database.DMLOptions.DuplicateRuleHeader.allowSave saves Allow+Alert matches.
+	EnforceDuplicateRules, AllowDuplicateSave bool
 	// Resolved access mode for captured Apex custom-object insert contracts.
 	// Empty preserves non-Apex engine callers' existing record-type defaults.
 	ApexRecordTypeInsertMode string
@@ -167,18 +179,20 @@ type Result struct {
 }
 
 type rollbackPoint struct {
-	enabled   bool
-	journal   bool
-	mark      storage.IsolationMark
-	org       storage.OrgState
-	sequences map[string]uint64
-	creations int
+	restoreChanges func()
+	enabled        bool
+	journal        bool
+	mark           storage.IsolationMark
+	org            storage.OrgState
+	sequences      map[string]uint64
+	creations      int
 }
 
 type Error struct {
-	Message    string   `json:"message"`
-	StatusCode string   `json:"statusCode,omitempty"`
-	Fields     []string `json:"fields,omitempty"`
+	Message    string           `json:"message"`
+	StatusCode string           `json:"statusCode,omitempty"`
+	Fields     []string         `json:"fields,omitempty"`
+	Duplicate  *DuplicateResult `json:"-"`
 }
 
 type deleteRelation struct {
@@ -208,7 +222,7 @@ func NewEngine(org *storage.OrgState) Engine {
 	if org.Now != nil {
 		now = org.Now
 	}
-	return Engine{
+	engine := Engine{
 		Org:                org,
 		RecordCreations:    &RecordCreations{},
 		LookupHistoryScope: storage.NewLookupHistoryScope(),
@@ -221,6 +235,12 @@ func NewEngine(org *storage.OrgState) Engine {
 		uniqueFields:       make(map[string][]string),
 		uniqueIndexes:      make(map[string]map[string]map[storage.ID]bool),
 	}
+	if org != nil && strings.TrimSpace(org.RuntimeSchemaStamp) != "" {
+		engine.SummaryByChild = org.RuntimeGenerationCacheValue("dml:summary-relations", func() any {
+			return NewSummaryRelationCache()
+		}).(*SummaryRelationCache)
+	}
+	return engine
 }
 
 // RunAutolaunchedFlow executes an autolaunched Flow from an Apex interview in
@@ -299,7 +319,18 @@ func (e *Engine) RunAutolaunchedFlowWithOutput(rule storage.FlowRule, input Flow
 		}
 	}
 	record := storage.Record{}
-	_, err := e.applyFlowStepsWithFrame(rule.Name, "", &record, storage.ObjectDefinition{}, rule.Steps, frame)
+	definition := storage.ObjectDefinition{}
+	if strings.EqualFold(rule.TriggerType, "Scheduled") {
+		// Scheduled lookup criteria use triggering-record field references.
+		// An explicit Apex interview supplies that record through its inputs.
+		record = frame.records[flowFrameKey("$Record")].Clone()
+		if e.Org != nil {
+			if name, found := storage.ResolveObjectName(*e.Org, record.Object); found {
+				definition = e.Org.Objects[name].Definition
+			}
+		}
+	}
+	_, err := e.applyFlowStepsWithFrame(rule.Name, record.Object, &record, definition, rule.Steps, frame)
 	for name, assigned := range frame.assigned {
 		output.Assigned[name] = assigned
 	}
@@ -500,6 +531,9 @@ func (e *Engine) Undelete(records []storage.Record) []Result {
 		e.restoreCascadeDeletedChildren(objectName, storedID, make(map[string]bool))
 		e.restoreDeletedParentReferences(objectName, storedID)
 		e.recalculateSummaryFieldsForChildren(objectName, stored)
+		if e.ChangeObserver != nil {
+			e.ChangeObserver("UNDELETE", storage.Record{}, stored)
+		}
 		results[i] = Result{ID: record.ID, Success: true}
 	}
 	return results
@@ -637,6 +671,9 @@ func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Res
 		object.Records[storedDuplicateID] = storedDuplicate
 		e.Org.Objects[objectName] = object
 		e.removeUniqueIndexRecord(objectName, object.Definition, storedDuplicate)
+		if e.ChangeObserver != nil {
+			e.ChangeObserver("DELETE", storedDuplicate, storage.Record{})
+		}
 		results[i] = Result{ID: master.ID, Success: true, MergedRecordIDs: []storage.ID{duplicate.ID}, UpdatedRelatedIDs: updatedRelatedIDs}
 	}
 	return results
@@ -736,16 +773,28 @@ func (e *Engine) reparentLookups(parentObject string, oldID, newID storage.ID) [
 func (e *Engine) WithTransaction(fn func(*Engine) error) error {
 	before := storage.SnapshotRuntimeOrg(e.Org)
 	creations := e.RecordCreations.Mark()
+	var restoreChanges func()
+	if e.ChangeCheckpoint != nil {
+		restoreChanges = e.ChangeCheckpoint()
+	}
 	if err := fn(e); err != nil {
 		*e.Org = before
 		e.IDs.Sequences = copySequences(before.IDSequences)
 		e.RecordCreations.Rollback(creations)
+		if restoreChanges != nil {
+			restoreChanges()
+		}
 		return err
 	}
 	return nil
 }
 
-func (e *Engine) beginRollbackPoint(enabled bool) rollbackPoint {
+func (e *Engine) beginRollbackPoint(enabled bool) (point rollbackPoint) {
+	defer func() {
+		if point.enabled && e.ChangeCheckpoint != nil {
+			point.restoreChanges = e.ChangeCheckpoint()
+		}
+	}()
 	if !enabled {
 		return rollbackPoint{}
 	}
@@ -763,6 +812,9 @@ func (e *Engine) beginRollbackPoint(enabled bool) rollbackPoint {
 func (e *Engine) restoreRollbackPoint(point rollbackPoint) error {
 	if e == nil || !point.enabled {
 		return nil
+	}
+	if point.restoreChanges != nil {
+		defer point.restoreChanges()
 	}
 	if point.journal && e.IsolationJournal != nil {
 		if err := e.IsolationJournal.Rollback(point.mark); err != nil {
@@ -815,6 +867,9 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 		return "", err
 	}
 	normalizeNameFields(objectName, object.Definition, &record)
+	if err := e.validatePersonAccountCustomFieldWrites(record); err != nil {
+		return "", err
+	}
 	stripImplicitReadOnlyDefaultFields(object.Definition, e.Org.Namespace, &record, true)
 	if err := e.validateInsertFieldWriteability(object.Definition, record); err != nil {
 		return "", err
@@ -884,6 +939,10 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	if err := e.validateLookupFilters(object.Definition, record); err != nil {
 		return "", err
 	}
+	duplicateReport, err := e.checkDuplicateRules(record, false, statementStamp)
+	if err != nil {
+		return "", err
+	}
 	if err := e.validateUnique(objectName, object.Definition, record, ""); err != nil {
 		return "", err
 	}
@@ -906,6 +965,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	if err := storage.ValidateID(record.ID); err != nil {
 		return "", err
 	}
+	e.noteDuplicateInsert(statementStamp, duplicateReport, record.ID)
 	if record.HierarchyNameUsesRecordID || customTextNameUsesRecordID(object.Definition, record) {
 		if record.Fields == nil {
 			record.Fields = make(map[string]storage.Value)
@@ -951,6 +1011,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	}
 	materializeEmailMessageName(&record)
 	storedRecord := record.Clone()
+	storedRecord.AssignmentRule = nil
 	storedRecord.ParentRelationships = nil
 	storedRecord.LoadedReferences = nil
 	storedRecord.ClearClearedLookupHistory()
@@ -986,12 +1047,15 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	}
 	e.markCreatedAutomation(record.ID)
 	if !e.DeferAutomation {
-		if _, err := e.ApplyAutomation(objectName, record.ID); err != nil {
+		if _, err := e.ApplyAutomation(objectName, record.ID, record); err != nil {
 			if rollbackErr := e.restoreRollbackPoint(rollback); rollbackErr != nil {
 				return "", rollbackErr
 			}
 			return "", err
 		}
+	}
+	if e.ChangeObserver != nil {
+		e.ChangeObserver("CREATE", storage.Record{}, e.Org.Objects[objectName].Records[record.ID])
 	}
 	return record.ID, nil
 }

@@ -1,0 +1,3 @@
+grapheme-repeated-boundary: same NumericRouteObservation.grapheme source as the capture, except text is e + U+0301 + e + U+0301.
+Native String.split and Pattern.split return [e + U+0301, U+0301] at API 62/67, anonymous/isTest.
+The pre-optimization Glade matcher plan returns the original input unsplit. This existing grapheme-matcher mismatch is not asserted as parity by this regression.

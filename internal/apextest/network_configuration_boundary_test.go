@@ -9,12 +9,10 @@ import (
 	"github.com/glade-sh/glade/internal/testreport"
 )
 
-func TestNetworkQueryResultBoundaries(t *testing.T) {
-	// List/DTO operations and existing records are local data operations. Only
-	// requiring a missing configuration record crosses the hosted boundary.
-	unsupported := map[string]bool{
+func TestNetworkQueryResultNativeTestRunnerRoutes(t *testing.T) {
+	// Native empty singleton queries fail with a catchable QueryException.
+	queryFailures := map[string]bool{
 		"literalUnmatched":     true,
-		"dynamicUnmatched":     true,
 		"indexedBindUnmatched": true,
 		"inlineFieldUnmatched": true,
 	}
@@ -25,15 +23,15 @@ func TestNetworkQueryResultBoundaries(t *testing.T) {
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes/CommunityQueryTest.cls"), `@IsTest private class CommunityQueryTest {
  public class CommunityView { public String Id; public String Name; }
  @IsTest static void literalSeeded() {
-  Network record = [SELECT Id, Name FROM Network WHERE Name = 'Local Community'];
-  System.assertEquals('Local Community',record.Name);
+  Network record = [SELECT Id, Name FROM Network WHERE Name = 'Synthetic Portal'];
+  System.assertEquals('Synthetic Portal',record.Name);
  }
  @IsTest static void literalUnmatched() {
   Network record = [SELECT Id, Name FROM Network WHERE Name = 'Missing Synthetic Community'];
  }
  @IsTest static void dynamicSeeded() {
-  SObject record = Database.query('SELECT Id, Name FROM Network WHERE Name = \'Local Community\'');
-  System.assertEquals('Local Community',record.get('Name'));
+  SObject record = Database.query('SELECT Id, Name FROM Network WHERE Name = \'Synthetic Portal\'');
+  System.assertEquals('Synthetic Portal',record.get('Name'));
  }
  @IsTest static void dynamicUnmatched() {
   try {
@@ -49,7 +47,7 @@ func TestNetworkQueryResultBoundaries(t *testing.T) {
   String name = [SELECT Name FROM Network WHERE Name = 'Missing Synthetic Community'].Name;
  }
  @IsTest static void countSeeded() {
-  System.assertEquals(1,[SELECT COUNT() FROM Network WHERE Name = 'Local Community']);
+  System.assertEquals(1,[SELECT COUNT() FROM Network WHERE Name = 'Synthetic Portal']);
  }
  @IsTest static void countUnmatched() {
   System.assertEquals(0,[SELECT COUNT() FROM Network WHERE Name = 'Missing Synthetic Community']);
@@ -91,10 +89,12 @@ func TestNetworkQueryResultBoundaries(t *testing.T) {
  }
 }`)
 			writeFile(t, filepath.Join(root, "force-app/main/default/classes/CommunityQueryTest.cls-meta.xml"), fmt.Sprintf(`<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>%s</apiVersion><status>Active</status></ApexClass>`, api))
+			writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [Communities]\n")
+			writeFile(t, filepath.Join(root, "force-app/main/default/networks/Synthetic Portal.network-meta.xml"), `<Network><status>UnderConstruction</status><urlPathPrefix>synthetic</urlPathPrefix></Network>`)
 			index := loadTestIndex(t, root)
 			org := orgFromIndex(index)
 			if len(org.Objects["Network"].Records) == 0 {
-				t.Fatal("expected deterministic Network metadata seed")
+				t.Fatal("expected deployed Network metadata row")
 			}
 			run := Run(index, Options{NoDiskCache: true})
 			if run.Summary().Total != 13 {
@@ -103,15 +103,15 @@ func TestNetworkQueryResultBoundaries(t *testing.T) {
 			for _, suite := range run.Suites {
 				for _, row := range suite.Cases {
 					want := testreport.StatusPass
-					if unsupported[row.MethodName] {
-						want = testreport.StatusUnsupported
+					if queryFailures[row.MethodName] {
+						want = testreport.StatusFail
 					}
 					if row.Status != want {
 						t.Errorf("%s: status=%s want=%s reason=%s problem=%#v", row.MethodName, row.Status, want, row.Reason, row.Problem)
 						continue
 					}
-					if want == testreport.StatusUnsupported && (row.Reason != testreport.ReasonUnsupportedFeature || row.Problem == nil || row.Problem.Type != "UnsupportedFeature" || !strings.Contains(row.Problem.Message, "Network configuration")) {
-						t.Errorf("%s: expected explicit Network configuration boundary, got %#v", row.MethodName, row.Problem)
+					if want == testreport.StatusFail && (row.Problem == nil || !strings.HasSuffix(row.Problem.Type, "QueryException") || row.Problem.Message != "List has no rows for assignment to SObject") {
+						t.Errorf("%s: expected native Network query rejection, got %#v", row.MethodName, row.Problem)
 					}
 				}
 			}

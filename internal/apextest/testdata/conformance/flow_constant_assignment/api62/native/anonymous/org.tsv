@@ -1,0 +1,6 @@
+id	group	route	status	value
+K01	FLOW_CONSTANT_ASSIGNMENT	anonymous	runtime	{"description":"constant & text","employees":null,"exception":null}
+K02	FLOW_CONSTANT_ASSIGNMENT	anonymous	runtime	{"description":"constant & text","employees":null,"exception":null}
+K03	FLOW_CONSTANT_ASSIGNMENT	anonymous	runtime	{"description":null,"employees":42,"exception":null}
+K04	FLOW_CONSTANT_ASSIGNMENT	anonymous	runtime	{"description":"seed:constant & text","employees":null,"exception":null}
+K05	FLOW_CONSTANT_ASSIGNMENT	anonymous	runtime	{"description":null,"employees":42,"exception":null}

@@ -1,0 +1,3 @@
+context	case	observation
+deployment	PlainIntegerDeclaration	{"deploymentSuccess":true,"diagnostics":[]}
+deployment	QualifiedIntegerDeclaration	{"deploymentSuccess":false,"diagnostics":[{"column":106,"line":1,"message":"InvocableVariable fields do not support type of System.Integer"},{"column":91,"line":1,"message":"Invalid type: System.Integer"}]}

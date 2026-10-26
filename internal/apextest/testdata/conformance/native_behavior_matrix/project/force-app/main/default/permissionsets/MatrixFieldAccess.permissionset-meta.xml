@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Matrix Field Access</label>
+  <fieldPermissions><editable>true</editable><field>AlphaBranch__c.AB_Orchard__c</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>true</editable><field>AlphaBranch__c.Aa_Orchard__c</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>true</editable><field>AlphaBranch__c.aC_Orchard__c</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>true</editable><field>AlphaBranch__c.VisitDate__c</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>true</editable><field>Orchard__c.Partner__c</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>true</editable><field>Orchard__c.Title__c</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>true</editable><field>ZuluBranch__c.Orchard__c</field><readable>true</readable></fieldPermissions>
+  <objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>AlphaBranch__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
+  <objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>Orchard__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
+  <objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>ZuluBranch__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
+</PermissionSet>

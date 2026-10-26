@@ -1,0 +1,20 @@
+{
+  "cases": 229,
+  "casesSHA256": "b233564c0be308263af519b0a10e6ba08453f5cd0fd6499bcb4e6bdf40ffdbd0",
+  "rows": 458,
+  "runtimeSourceSHA256": {
+    "AssertException": "a8c97b169e0fe621a5d8fb22b64c4835cc1cf537bdcd4562c9ce053d93059edf",
+    "EventObjectException": "5e66c79fe593f3bf02228a413da53cc87a874a82594f60cb6b0e576cc1951573",
+    "FinalException": "e05c66987c904cd35cc9424d78dfac57e0e5cf48f801367f3dac060d2b833ac9",
+    "LarchException": "58f74d75e9f019e05cb28d432fecc6620f9b0a51b01772e0e3a4d39375c6c0be",
+    "LarchHierarchyTest": "2f8af7bc0cd999bd829fca4a042867fe72b082da72381ef42024ee4ad2b4f17f",
+    "LarchListException": "e95e75a3dbdafbe3c102f95c7b546ae2eae751660e98254955dc63661455ff04",
+    "LimitException": "d357f8e1c40b650883505cce0a0792a36b5ff586e28d4640cf050582ae5fdc6b",
+    "ProcedureException": "09aa3f77a06a5f63d6baedfe77b08b6b102d70491d3db73f95d765bddfdeff21",
+    "UnexpectedException": "e02da2276a1510c7f5e4706c66287c4caf64c7ca5b17e529ad1b2987d536366f"
+  },
+  "sourceAPI": "67.0",
+  "testMethods": 168,
+  "transport": "System.assert",
+  "types": 52
+}

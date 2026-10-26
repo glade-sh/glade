@@ -1,0 +1,14 @@
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <deploymentStatus>Deployed</deploymentStatus>
+  <label>Orchard</label>
+  <nameField><label>Orchard Name</label><type>Text</type></nameField>
+  <pluralLabel>Orchards</pluralLabel>
+  <sharingModel>ReadWrite</sharingModel>
+  <fieldSets>
+    <fullName>Overview</fullName>
+    <description>Owned field path probe.</description>
+    <displayedFields><field>Title__c</field></displayedFields>
+    <displayedFields><field>Partner__r.Name</field></displayedFields>
+    <label>Overview</label>
+  </fieldSets>
+</CustomObject>

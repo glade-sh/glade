@@ -32,9 +32,55 @@ func TestCIScaleApexWorkflowRoutes(t *testing.T) {
 	}
 }
 
+func TestCIScaleApexSixShardDispatcherRoute(t *testing.T) {
+	t.Setenv("CI_APEXTEST_SHARDS", "6")
+	var shards []map[string]any
+	var discovery strings.Builder
+	for index := range 6 {
+		name := fmt.Sprintf("TestScale%d", index)
+		fmt.Fprintln(&discovery, name)
+		shards = append(shards, map[string]any{"index": index, "tests": []string{name}, "estimatedDurationMillis": 0, "regex": "^(?:" + name + ")$"})
+	}
+	plan, err := json.Marshal(map[string]any{"version": 1, "package": fixturePackage, "historyUsed": false, "shards": shards})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for index := range 6 {
+		t.Run(fmt.Sprint(index), func(t *testing.T) {
+			out, err, artifacts := runApexShardFixture(t, fmt.Sprint(index), discovery.String(), 0, string(plan), 0, passEvent(fmt.Sprintf("TestScale%d", index)), 0)
+			if err != nil {
+				t.Fatalf("six-shard dispatcher failed: %v\n%s", err, out)
+			}
+			calls, err := os.ReadFile(filepath.Join(filepath.Dir(artifacts), "calls"))
+			if err != nil || !strings.Contains(string(calls), "-count=1 -timeout=90m") {
+				t.Fatalf("CI route must run uncached with the larger budget: %v %s", err, calls)
+			}
+		})
+	}
+}
+
+func TestCIScaleApexLocalReleaseRouteIgnoresCIShardCount(t *testing.T) {
+	for index, name := range []string{"TestAlpha", "TestBeta"} {
+		t.Run(fmt.Sprint(index), func(t *testing.T) {
+			out, err, calls, artifacts := runLocalReleaseLaneFixture(t, []string{"local-release-lane", fmt.Sprintf("apex-%d", index)}, localReleaseLaneFixture{
+				events: passEvent(name), env: []string{"CI_APEXTEST_SHARDS=6"},
+			})
+			if err != nil || !strings.Contains(calls, "-count=1 -timeout=90m") {
+				t.Fatalf("local-release route must retain its two-shard plan and budget: %v %s\n%s", err, calls, out)
+			}
+			data, err := os.ReadFile(filepath.Join(artifacts, fmt.Sprintf("apex-%d", index), "selected-shard.json"))
+			var selected struct{ Tests []string }
+			if err != nil || json.Unmarshal(data, &selected) != nil || len(selected.Tests) != 1 || selected.Tests[0] != name {
+				t.Fatalf("local release selected the wrong partition: %v %s", err, data)
+			}
+		})
+	}
+}
+
 // Exercise the real dispatcher, discovery, planner, test execution, validators
 // and history collector on an owned project through both execution routes.
 func TestCIScaleApexSourceAndSharedBinaryProjectRoutes(t *testing.T) {
+	t.Setenv("GITHUB_EVENT_NAME", "pull_request")
 	root := t.TempDir()
 	pkgDir := filepath.Join(root, "internal", "apextest")
 	if err := os.MkdirAll(pkgDir, 0700); err != nil {
@@ -119,6 +165,7 @@ func check(t *testing.T) {
 			if err != nil || json.Unmarshal(plan, &replanned) != nil || !replanned.HistoryUsed {
 				t.Fatalf("six-shard planner must consume refreshed history: %v %s", err, plan)
 			}
+			assertApexProjectHistoryRebalances(t, planner, output, dirs)
 			if err := os.Remove(filepath.Join(dirs[5], "events.json")); err != nil {
 				t.Fatal(err)
 			}
@@ -190,13 +237,13 @@ print(json.dumps(dict(Action="pass", Package=package, Elapsed=1)))
 }
 
 func TestCIScaleCodeQLJobAndAnalyzeRoutes(t *testing.T) {
-	jobs := workflowJobBlocks(t, readWorkflowFile(t, "security.yml"))
+	jobs := workflowJobBlocks(t, readWorkflowFile(t, "codeql.yml"))
 	job := jobs["codeql"]
-	if !strings.Contains(job, "    timeout-minutes: 100\n") {
+	if !strings.Contains(job, "    timeout-minutes: 15\n") {
 		t.Error("CodeQL job needs setup and upload time around analysis")
 	}
-	if !strings.Contains(workflowStepBlock(t, job, "name: Analyze CodeQL"), "timeout-minutes: 90") {
-		t.Error("CodeQL analysis needs a 90-minute budget")
+	if !strings.Contains(workflowStepBlock(t, job, "name: Analyze CodeQL"), "timeout-minutes: 6") {
+		t.Error("CodeQL analysis needs a five-minute process budget plus cleanup")
 	}
 }
 

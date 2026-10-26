@@ -91,7 +91,7 @@ insert new PermissionSetGroup(DeveloperName = 'GrovePermissions', MasterLabel = 
 		machine := New(nil)
 		machine.SetOrg(&org)
 		machine.EnableTestContext()
-		if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "Mixed DML") {
+		if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "MIXED_DML_OPERATION") {
 			t.Fatalf("expected mixed DML rejection, got %v", err)
 		}
 	}

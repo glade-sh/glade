@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Group__c</fullName><label>Group__c</label><length>255</length><type>Text</type></CustomField>

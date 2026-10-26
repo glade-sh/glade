@@ -1,0 +1,8 @@
+id	shape	contract
+setup	@TestSetup then test method insert	Observe ordering across the setup boundary
+separate	Two separate insert statements	Observe CreatedDate resolution and newest-row selection
+list	One list insert	Shared CreatedDate; observe tie order and explicit Id DESC
+trigger	After-insert trigger creates a Contact	Observe parent/child timestamps
+update	Update the second inserted Account	CreatedDate is preserved; modification fields follow the update
+explicit	Test.setCreatedDate followed by update	Explicit CreatedDate survives
+cutoff	Datetime.now after DML	Completed audit timestamps are not in the future

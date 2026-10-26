@@ -1,0 +1,230 @@
+[
+  {
+    "key": "INSIGHTS_INTEGRATION_USER",
+    "license": "Analytics Cloud Integration User",
+    "name": "Analytics Cloud Integration User",
+    "userType": "Standard"
+  },
+  {
+    "key": "INSIGHTS_INTEGRATION_USER",
+    "license": "Analytics Cloud Integration User",
+    "name": "Analytics Cloud Security User",
+    "userType": "Standard"
+  },
+  {
+    "key": "Platform_Portal_User",
+    "license": "Authenticated Website",
+    "name": "Authenticated Website",
+    "userType": "CspLitePortal"
+  },
+  {
+    "key": "PLATFORM_PORTAL",
+    "license": "Authenticated Website",
+    "name": "Authenticated Website",
+    "userType": "CspLitePortal"
+  },
+  {
+    "key": "PID_External_Apps_Login",
+    "license": "External Apps Login",
+    "name": "B2B Reordering Portal Buyer Profile",
+    "userType": "CspLitePortal"
+  },
+  {
+    "key": "CSN_External_User",
+    "license": "Chatter External",
+    "name": "Chatter External User",
+    "userType": "CsnOnly"
+  },
+  {
+    "key": "CSN_User",
+    "license": "Chatter Free",
+    "name": "Chatter Free User",
+    "userType": "CsnOnly"
+  },
+  {
+    "key": "CSN_User",
+    "license": "Chatter Free",
+    "name": "Chatter Moderator User",
+    "userType": "CsnOnly"
+  },
+  {
+    "key": "PID_COMPANY_COMMUNITIES",
+    "license": "Company Communities",
+    "name": "Company Communities User",
+    "userType": "Standard"
+  },
+  {
+    "key": "SFDC",
+    "license": "Salesforce",
+    "name": "Contract Manager",
+    "userType": "Standard"
+  },
+  {
+    "key": "PID_CpqIntegration",
+    "license": "CPQ Integration User",
+    "name": "CPQ Integration User",
+    "userType": "Standard"
+  },
+  {
+    "key": "PID_XOrg_Proxy_User",
+    "license": "XOrg Proxy User",
+    "name": "Cross Org Data Proxy User",
+    "userType": "Standard"
+  },
+  {
+    "key": "PID_Customer_Community_Login",
+    "license": "Customer Community Login",
+    "name": "Customer Community Login User",
+    "userType": "CspLitePortal"
+  },
+  {
+    "key": "PID_Customer_Community_Plus_Login",
+    "license": "Customer Community Plus Login",
+    "name": "Customer Community Plus Login User",
+    "userType": "PowerCustomerSuccess"
+  },
+  {
+    "key": "PID_Customer_Community_Plus",
+    "license": "Customer Community Plus",
+    "name": "Customer Community Plus User",
+    "userType": "PowerCustomerSuccess"
+  },
+  {
+    "key": "PID_Customer_Community",
+    "license": "Customer Community",
+    "name": "Customer Community User",
+    "userType": "CspLitePortal"
+  },
+  {
+    "key": "PID_Customer_Portal_Standard",
+    "license": "Customer Portal Manager Custom",
+    "name": "Customer Portal Manager Custom",
+    "userType": "PowerCustomerSuccess"
+  },
+  {
+    "key": "PID_Customer_Portal_Basic",
+    "license": "Customer Portal Manager Standard",
+    "name": "Customer Portal Manager Standard",
+    "userType": "PowerCustomerSuccess"
+  },
+  {
+    "key": "PID_External_Apps_Login",
+    "license": "External Apps Login",
+    "name": "External Apps Login User",
+    "userType": "CspLitePortal"
+  },
+  {
+    "key": "PID_External_Identity",
+    "license": "External Identity",
+    "name": "External Identity User",
+    "userType": "CspLitePortal"
+  },
+  {
+    "key": "FDC_SUB",
+    "license": "Force.com - App Subscription",
+    "name": "Force.com - App Subscription User",
+    "userType": "Standard"
+  },
+  {
+    "key": "PID_FDC_FREE",
+    "license": "Force.com - Free",
+    "name": "Force.com - Free User",
+    "userType": "Standard"
+  },
+  {
+    "key": "PID_STRATEGIC_PRM",
+    "license": "Gold Partner",
+    "name": "Gold Partner User",
+    "userType": "PowerPartner"
+  },
+  {
+    "key": "HIGH_VOLUME_PORTAL",
+    "license": "High Volume Customer Portal",
+    "name": "High Volume Customer Portal",
+    "userType": "CspLitePortal"
+  },
+  {
+    "key": "High_Volume_Customer_Portal_User",
+    "license": "High Volume Customer Portal",
+    "name": "High Volume Customer Portal User",
+    "userType": "CspLitePortal"
+  },
+  {
+    "key": "PID_Identity_User",
+    "license": "Identity",
+    "name": "Identity User",
+    "userType": "Standard"
+  },
+  {
+    "key": "SFDC",
+    "license": "Salesforce",
+    "name": "Marketing User",
+    "userType": "Standard"
+  },
+  {
+    "key": "SALESFORCE_INTEGRATION_USER",
+    "license": "Salesforce Integration",
+    "name": "Minimum Access - API Only Integrations",
+    "userType": "Standard"
+  },
+  {
+    "key": "SFDC",
+    "license": "Salesforce",
+    "name": "Minimum Access - Salesforce",
+    "userType": "Standard"
+  },
+  {
+    "key": "FDC_ISV_SUB",
+    "license": "Partner App Subscription",
+    "name": "Partner App Subscription User",
+    "userType": "Standard"
+  },
+  {
+    "key": "PID_Partner_Community_Login",
+    "license": "Partner Community Login",
+    "name": "Partner Community Login User",
+    "userType": "PowerPartner"
+  },
+  {
+    "key": "PID_Partner_Community",
+    "license": "Partner Community",
+    "name": "Partner Community User",
+    "userType": "PowerPartner"
+  },
+  {
+    "key": "PID_STANDARD_PRM",
+    "license": "Silver Partner",
+    "name": "Silver Partner User",
+    "userType": "PowerPartner"
+  },
+  {
+    "key": "SFDC",
+    "license": "Salesforce",
+    "name": "Solution Manager",
+    "userType": "Standard"
+  },
+  {
+    "key": "AUL",
+    "license": "Salesforce Platform",
+    "name": "Standard Platform User",
+    "userType": "Standard"
+  },
+  {
+    "key": "SFDC",
+    "license": "Salesforce",
+    "name": "Standard User",
+    "userType": "Standard"
+  },
+  {
+    "key": "SFDC",
+    "license": "Salesforce",
+    "name": "System Administrator",
+    "userType": "Standard"
+  },
+  {
+    "key": "PID_WCUSER",
+    "license": "Work.com Only",
+    "name": "Work.com Only User",
+    "userType": "Standard"
+  }
+]

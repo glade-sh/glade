@@ -1,0 +1,229 @@
+configuration	source_api	route	case	observation
+networks_disabled	62.0	anonymous	external_empty	EXCEPTION|System.NoAccessException|Insufficient Privileges: You do not have the level of access necessary to perform the operation you requested. Please contact the owner of the record or your administrator if access is necessary.
+networks_disabled	62.0	anonymous	external_null_profile	EXCEPTION|System.NoAccessException|Insufficient Privileges: You do not have the level of access necessary to perform the operation you requested. Please contact the owner of the record or your administrator if access is necessary.
+networks_disabled	62.0	anonymous	external_portal_profile	EXCEPTION|System.NoAccessException|Insufficient Privileges: You do not have the level of access necessary to perform the operation you requested. Please contact the owner of the record or your administrator if access is necessary.
+networks_disabled	62.0	anonymous	forward_one_null	NULL
+networks_disabled	62.0	anonymous	forward_one_path	NULL
+networks_disabled	62.0	anonymous	forward_two_display	NULL
+networks_disabled	62.0	anonymous	forward_two_null	NULL
+networks_disabled	62.0	anonymous	forward_two_path	NULL
+networks_disabled	62.0	anonymous	isTest	false
+networks_disabled	62.0	anonymous	login_blank_null	NULL
+networks_disabled	62.0	anonymous	login_blank_path	NULL
+networks_disabled	62.0	anonymous	login_nonblank_null	NULL
+networks_disabled	62.0	anonymous	login_nonblank_path	NULL
+networks_disabled	62.0	anonymous	login_null_null	NULL
+networks_disabled	62.0	anonymous	networkCount	UNAVAILABLE
+networks_disabled	62.0	anonymous	networkId	NULL
+networks_disabled	62.0	anonymous	portalProfile	true
+networks_disabled	62.0	anonymous	siteCount	0
+networks_disabled	62.0	anonymous	siteId	NULL
+networks_disabled	62.0	istest	external_empty	EXCEPTION|System.NoAccessException|Insufficient Privileges: You do not have the level of access necessary to perform the operation you requested. Please contact the owner of the record or your administrator if access is necessary.
+networks_disabled	62.0	istest	external_null_profile	EXCEPTION|System.NoAccessException|Insufficient Privileges: You do not have the level of access necessary to perform the operation you requested. Please contact the owner of the record or your administrator if access is necessary.
+networks_disabled	62.0	istest	external_portal_profile	EXCEPTION|System.NoAccessException|Insufficient Privileges: You do not have the level of access necessary to perform the operation you requested. Please contact the owner of the record or your administrator if access is necessary.
+networks_disabled	62.0	istest	forward_one_null	NULL
+networks_disabled	62.0	istest	forward_one_path	NULL
+networks_disabled	62.0	istest	forward_two_display	NULL
+networks_disabled	62.0	istest	forward_two_null	NULL
+networks_disabled	62.0	istest	forward_two_path	NULL
+networks_disabled	62.0	istest	isTest	true
+networks_disabled	62.0	istest	login_blank_null	NULL
+networks_disabled	62.0	istest	login_blank_path	NULL
+networks_disabled	62.0	istest	login_nonblank_null	NULL
+networks_disabled	62.0	istest	login_nonblank_path	NULL
+networks_disabled	62.0	istest	login_null_null	NULL
+networks_disabled	62.0	istest	networkCount	UNAVAILABLE
+networks_disabled	62.0	istest	networkId	NULL
+networks_disabled	62.0	istest	portalProfile	true
+networks_disabled	62.0	istest	siteCount	0
+networks_disabled	62.0	istest	siteId	NULL
+networks_disabled	67.0	anonymous	external_empty	EXCEPTION|System.NoAccessException|Insufficient Privileges: You do not have the level of access necessary to perform the operation you requested. Please contact the owner of the record or your administrator if access is necessary.
+networks_disabled	67.0	anonymous	external_null_profile	EXCEPTION|System.NoAccessException|Insufficient Privileges: You do not have the level of access necessary to perform the operation you requested. Please contact the owner of the record or your administrator if access is necessary.
+networks_disabled	67.0	anonymous	external_portal_profile	EXCEPTION|System.NoAccessException|Insufficient Privileges: You do not have the level of access necessary to perform the operation you requested. Please contact the owner of the record or your administrator if access is necessary.
+networks_disabled	67.0	anonymous	forward_one_null	NULL
+networks_disabled	67.0	anonymous	forward_one_path	NULL
+networks_disabled	67.0	anonymous	forward_two_display	NULL
+networks_disabled	67.0	anonymous	forward_two_null	NULL
+networks_disabled	67.0	anonymous	forward_two_path	NULL
+networks_disabled	67.0	anonymous	isTest	false
+networks_disabled	67.0	anonymous	login_blank_null	NULL
+networks_disabled	67.0	anonymous	login_blank_path	NULL
+networks_disabled	67.0	anonymous	login_nonblank_null	NULL
+networks_disabled	67.0	anonymous	login_nonblank_path	NULL
+networks_disabled	67.0	anonymous	login_null_null	NULL
+networks_disabled	67.0	anonymous	networkCount	UNAVAILABLE
+networks_disabled	67.0	anonymous	networkId	NULL
+networks_disabled	67.0	anonymous	portalProfile	true
+networks_disabled	67.0	anonymous	siteCount	0
+networks_disabled	67.0	anonymous	siteId	NULL
+networks_disabled	67.0	istest	external_empty	EXCEPTION|System.NoAccessException|Insufficient Privileges: You do not have the level of access necessary to perform the operation you requested. Please contact the owner of the record or your administrator if access is necessary.
+networks_disabled	67.0	istest	external_null_profile	EXCEPTION|System.NoAccessException|Insufficient Privileges: You do not have the level of access necessary to perform the operation you requested. Please contact the owner of the record or your administrator if access is necessary.
+networks_disabled	67.0	istest	external_portal_profile	EXCEPTION|System.NoAccessException|Insufficient Privileges: You do not have the level of access necessary to perform the operation you requested. Please contact the owner of the record or your administrator if access is necessary.
+networks_disabled	67.0	istest	forward_one_null	NULL
+networks_disabled	67.0	istest	forward_one_path	NULL
+networks_disabled	67.0	istest	forward_two_display	NULL
+networks_disabled	67.0	istest	forward_two_null	NULL
+networks_disabled	67.0	istest	forward_two_path	NULL
+networks_disabled	67.0	istest	isTest	true
+networks_disabled	67.0	istest	login_blank_null	NULL
+networks_disabled	67.0	istest	login_blank_path	NULL
+networks_disabled	67.0	istest	login_nonblank_null	NULL
+networks_disabled	67.0	istest	login_nonblank_path	NULL
+networks_disabled	67.0	istest	login_null_null	NULL
+networks_disabled	67.0	istest	networkCount	UNAVAILABLE
+networks_disabled	67.0	istest	networkId	NULL
+networks_disabled	67.0	istest	portalProfile	true
+networks_disabled	67.0	istest	siteCount	0
+networks_disabled	67.0	istest	siteId	NULL
+networks_enabled	62.0	anonymous	external_empty	EXCEPTION|Site.ExternalUserCreateException|[Exception while getting site information from the request.]
+networks_enabled	62.0	anonymous	external_null_profile	EXCEPTION|Site.ExternalUserCreateException|[Exception while getting site information from the request.]
+networks_enabled	62.0	anonymous	external_portal_profile	EXCEPTION|Site.ExternalUserCreateException|[Exception while getting site information from the request.]
+networks_enabled	62.0	anonymous	forward_one_null	NULL
+networks_enabled	62.0	anonymous	forward_one_path	NULL
+networks_enabled	62.0	anonymous	forward_two_display	NULL
+networks_enabled	62.0	anonymous	forward_two_null	NULL
+networks_enabled	62.0	anonymous	forward_two_path	NULL
+networks_enabled	62.0	anonymous	isTest	false
+networks_enabled	62.0	anonymous	login_blank_null	NULL
+networks_enabled	62.0	anonymous	login_blank_path	NULL
+networks_enabled	62.0	anonymous	login_nonblank_null	NULL
+networks_enabled	62.0	anonymous	login_nonblank_path	NULL
+networks_enabled	62.0	anonymous	login_null_null	NULL
+networks_enabled	62.0	anonymous	networkCount	0
+networks_enabled	62.0	anonymous	networkId	NULL
+networks_enabled	62.0	anonymous	portalProfile	true
+networks_enabled	62.0	anonymous	siteCount	0
+networks_enabled	62.0	anonymous	siteId	NULL
+networks_enabled	62.0	istest	external_empty	NULL
+networks_enabled	62.0	istest	external_null_profile	NULL
+networks_enabled	62.0	istest	external_portal_profile	NULL
+networks_enabled	62.0	istest	forward_one_null	NULL
+networks_enabled	62.0	istest	forward_one_path	NULL
+networks_enabled	62.0	istest	forward_two_display	NULL
+networks_enabled	62.0	istest	forward_two_null	NULL
+networks_enabled	62.0	istest	forward_two_path	NULL
+networks_enabled	62.0	istest	isTest	true
+networks_enabled	62.0	istest	login_blank_null	NULL
+networks_enabled	62.0	istest	login_blank_path	NULL
+networks_enabled	62.0	istest	login_nonblank_null	NULL
+networks_enabled	62.0	istest	login_nonblank_path	NULL
+networks_enabled	62.0	istest	login_null_null	NULL
+networks_enabled	62.0	istest	networkCount	0
+networks_enabled	62.0	istest	networkId	NULL
+networks_enabled	62.0	istest	portalProfile	true
+networks_enabled	62.0	istest	siteCount	0
+networks_enabled	62.0	istest	siteId	NULL
+networks_enabled	67.0	anonymous	external_empty	EXCEPTION|Site.ExternalUserCreateException|[Exception while getting site information from the request.]
+networks_enabled	67.0	anonymous	external_null_profile	EXCEPTION|Site.ExternalUserCreateException|[Exception while getting site information from the request.]
+networks_enabled	67.0	anonymous	external_portal_profile	EXCEPTION|Site.ExternalUserCreateException|[Exception while getting site information from the request.]
+networks_enabled	67.0	anonymous	forward_one_null	NULL
+networks_enabled	67.0	anonymous	forward_one_path	NULL
+networks_enabled	67.0	anonymous	forward_two_display	NULL
+networks_enabled	67.0	anonymous	forward_two_null	NULL
+networks_enabled	67.0	anonymous	forward_two_path	NULL
+networks_enabled	67.0	anonymous	isTest	false
+networks_enabled	67.0	anonymous	login_blank_null	NULL
+networks_enabled	67.0	anonymous	login_blank_path	NULL
+networks_enabled	67.0	anonymous	login_nonblank_null	NULL
+networks_enabled	67.0	anonymous	login_nonblank_path	NULL
+networks_enabled	67.0	anonymous	login_null_null	NULL
+networks_enabled	67.0	anonymous	networkCount	0
+networks_enabled	67.0	anonymous	networkId	NULL
+networks_enabled	67.0	anonymous	portalProfile	true
+networks_enabled	67.0	anonymous	siteCount	0
+networks_enabled	67.0	anonymous	siteId	NULL
+networks_enabled	67.0	istest	external_empty	NULL
+networks_enabled	67.0	istest	external_null_profile	NULL
+networks_enabled	67.0	istest	external_portal_profile	NULL
+networks_enabled	67.0	istest	forward_one_null	NULL
+networks_enabled	67.0	istest	forward_one_path	NULL
+networks_enabled	67.0	istest	forward_two_display	NULL
+networks_enabled	67.0	istest	forward_two_null	NULL
+networks_enabled	67.0	istest	forward_two_path	NULL
+networks_enabled	67.0	istest	isTest	true
+networks_enabled	67.0	istest	login_blank_null	NULL
+networks_enabled	67.0	istest	login_blank_path	NULL
+networks_enabled	67.0	istest	login_nonblank_null	NULL
+networks_enabled	67.0	istest	login_nonblank_path	NULL
+networks_enabled	67.0	istest	login_null_null	NULL
+networks_enabled	67.0	istest	networkCount	0
+networks_enabled	67.0	istest	networkId	NULL
+networks_enabled	67.0	istest	portalProfile	true
+networks_enabled	67.0	istest	siteCount	0
+networks_enabled	67.0	istest	siteId	NULL
+community_created	62.0	anonymous	external_empty	EXCEPTION|Site.ExternalUserCreateException|[Exception while getting site information from the request.]
+community_created	62.0	anonymous	external_null_profile	EXCEPTION|Site.ExternalUserCreateException|[Exception while getting site information from the request.]
+community_created	62.0	anonymous	external_portal_profile	EXCEPTION|Site.ExternalUserCreateException|[Exception while getting site information from the request.]
+community_created	62.0	anonymous	forward_one_null	NULL
+community_created	62.0	anonymous	forward_one_path	NULL
+community_created	62.0	anonymous	forward_two_display	NULL
+community_created	62.0	anonymous	forward_two_null	NULL
+community_created	62.0	anonymous	forward_two_path	NULL
+community_created	62.0	anonymous	isTest	false
+community_created	62.0	anonymous	login_blank_null	NULL
+community_created	62.0	anonymous	login_blank_path	NULL
+community_created	62.0	anonymous	login_nonblank_null	NULL
+community_created	62.0	anonymous	login_nonblank_path	NULL
+community_created	62.0	anonymous	login_null_null	NULL
+community_created	62.0	anonymous	networkCount	1
+community_created	62.0	anonymous	networkId	NULL
+community_created	62.0	anonymous	portalProfile	true
+community_created	62.0	anonymous	siteCount	2
+community_created	62.0	anonymous	siteId	NULL
+community_created	62.0	istest	external_empty	NULL
+community_created	62.0	istest	external_null_profile	NULL
+community_created	62.0	istest	external_portal_profile	NULL
+community_created	62.0	istest	forward_one_null	NULL
+community_created	62.0	istest	forward_one_path	NULL
+community_created	62.0	istest	forward_two_display	NULL
+community_created	62.0	istest	forward_two_null	NULL
+community_created	62.0	istest	forward_two_path	NULL
+community_created	62.0	istest	isTest	true
+community_created	62.0	istest	login_blank_null	NULL
+community_created	62.0	istest	login_blank_path	NULL
+community_created	62.0	istest	login_nonblank_null	NULL
+community_created	62.0	istest	login_nonblank_path	NULL
+community_created	62.0	istest	login_null_null	NULL
+community_created	62.0	istest	networkCount	1
+community_created	62.0	istest	networkId	NULL
+community_created	62.0	istest	portalProfile	true
+community_created	62.0	istest	siteCount	2
+community_created	62.0	istest	siteId	NULL
+community_created	67.0	anonymous	external_empty	EXCEPTION|Site.ExternalUserCreateException|[Exception while getting site information from the request.]
+community_created	67.0	anonymous	external_null_profile	EXCEPTION|Site.ExternalUserCreateException|[Exception while getting site information from the request.]
+community_created	67.0	anonymous	external_portal_profile	EXCEPTION|Site.ExternalUserCreateException|[Exception while getting site information from the request.]
+community_created	67.0	anonymous	forward_one_null	NULL
+community_created	67.0	anonymous	forward_one_path	NULL
+community_created	67.0	anonymous	forward_two_display	NULL
+community_created	67.0	anonymous	forward_two_null	NULL
+community_created	67.0	anonymous	forward_two_path	NULL
+community_created	67.0	anonymous	isTest	false
+community_created	67.0	anonymous	login_blank_null	NULL
+community_created	67.0	anonymous	login_blank_path	NULL
+community_created	67.0	anonymous	login_nonblank_null	NULL
+community_created	67.0	anonymous	login_nonblank_path	NULL
+community_created	67.0	anonymous	login_null_null	NULL
+community_created	67.0	anonymous	networkCount	1
+community_created	67.0	anonymous	networkId	NULL
+community_created	67.0	anonymous	portalProfile	true
+community_created	67.0	anonymous	siteCount	2
+community_created	67.0	anonymous	siteId	NULL
+community_created	67.0	istest	external_empty	NULL
+community_created	67.0	istest	external_null_profile	NULL
+community_created	67.0	istest	external_portal_profile	NULL
+community_created	67.0	istest	forward_one_null	NULL
+community_created	67.0	istest	forward_one_path	NULL
+community_created	67.0	istest	forward_two_display	NULL
+community_created	67.0	istest	forward_two_null	NULL
+community_created	67.0	istest	forward_two_path	NULL
+community_created	67.0	istest	isTest	true
+community_created	67.0	istest	login_blank_null	NULL
+community_created	67.0	istest	login_blank_path	NULL
+community_created	67.0	istest	login_nonblank_null	NULL
+community_created	67.0	istest	login_nonblank_path	NULL
+community_created	67.0	istest	login_null_null	NULL
+community_created	67.0	istest	networkCount	1
+community_created	67.0	istest	networkId	NULL
+community_created	67.0	istest	portalProfile	true
+community_created	67.0	istest	siteCount	2
+community_created	67.0	istest	siteId	NULL

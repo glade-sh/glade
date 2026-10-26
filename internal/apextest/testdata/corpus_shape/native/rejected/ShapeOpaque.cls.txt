@@ -1,0 +1,7 @@
+public class ShapeOpaque {
+    // Compile-only: the provider is deliberately absent; do not infer its shape.
+    public cloudkit.Envelope forward(cloudkit.Envelope request) {
+        cloudkit.Envelope response = request;
+        return response;
+    }
+}

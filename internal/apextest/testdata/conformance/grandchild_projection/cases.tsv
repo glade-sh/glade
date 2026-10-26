@@ -1,0 +1,6 @@
+id	shape
+descendants	Two account children of one user, each with an opportunity grandchild; requery and walk both parent relationships
+fields	Compare populated field sets at each relationship level and recover the complete descendant set
+projection	Compare scalar and relationship field projections without depending on SOQL result order
+dynamicCanonicalFields	Dynamic SOQL mixes relationship casing; populated keys retain schema spelling at all three levels
+inlineCanonicalFields	Inline SOQL twin of the mixed-case relationship projection

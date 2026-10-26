@@ -1,0 +1,15 @@
+case_id	api	route	status	observed
+IDENTIFIERS	62.0	named-class	OBSERVED	false/label
+LITERAL	62.0	named-class	OBSERVED	IsPortalEnabled
+USER_TYPE_NAME	62.0	named-class	OBSERVED	true
+TERRITORY_NAME	62.0	named-class	OBSERVED	label
+DYNAMIC_FIELD	62.0	named-class	OBSERVED	System.SObjectException
+ALIASED_RECORD_TYPE	62.0	named-class	OBSERVED	0
+DIRECT_WITH_RELATIONSHIP	62.0	named-class	OBSERVED	0
+IDENTIFIERS	67.0	named-class	OBSERVED	false/label
+LITERAL	67.0	named-class	OBSERVED	IsPortalEnabled
+USER_TYPE_NAME	67.0	named-class	OBSERVED	true
+TERRITORY_NAME	67.0	named-class	OBSERVED	label
+DYNAMIC_FIELD	67.0	named-class	OBSERVED	System.SObjectException
+ALIASED_RECORD_TYPE	67.0	named-class	OBSERVED	0
+DIRECT_WITH_RELATIONSHIP	67.0	named-class	OBSERVED	0

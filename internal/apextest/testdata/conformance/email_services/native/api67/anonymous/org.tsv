@@ -1,0 +1,12 @@
+id	route	value
+Boundary	anonymous	"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm|true|null|MailReceiver|true|true"
+Disabled	anonymous	"mail_disabled|false|null|MailReceiver|true|true"
+Dormant	anonymous	"mail_dormant|true|null|MailDormant|true|true"
+E001	anonymous	"2"
+E002	anonymous	"4"
+E003	anonymous	"4"
+E004	anonymous	"0"
+E005	anonymous	"System.SObjectException:Field EmailDomainName is not editable"
+Enabled	anonymous	"mail_receiver|true|sender@example.invalid|MailReceiver|true|true"
+MailDormant	anonymous	"MailDormant|false|EmailServiceHandler|All|Discard|Bounce|Discard|Bounce|Requeue|example.invalid|errors@example.invalid|false|true|true|true"
+MailReceiver	anonymous	"MailReceiver|true|EmailServiceHandler|All|Discard|Bounce|Discard|Bounce|Requeue|example.invalid|errors@example.invalid|false|true|true|true"

@@ -4,4 +4,4 @@ rows=8
 native_complete=true
 deployment_success=true
 captured_utc=2026-10-19T07:02:12.523756+00:00
-transport=intentional result-bearing assertion; not native test pass
+transport=System.assert

@@ -46,7 +46,7 @@ func runApexShardFixtureWithDiscoveryStderr(t *testing.T, index, discovery, disc
 	}
 	writeApexFixtureExecutable(t, filepath.Join(binDir, "go"), `#!/usr/bin/env bash
 set -u
-if [[ "$*" == "test -list ^Test ./internal/apextest" ]]; then
+if [[ "$*" == "test -vet=off -trimpath -list ^Test ./internal/apextest" ]]; then
   cat "$FIXTURE_DISCOVERY"
   cat "$FIXTURE_DISCOVERY_STDERR" >&2
   exit "$FIXTURE_DISCOVERY_RC"

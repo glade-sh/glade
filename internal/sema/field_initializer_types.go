@@ -1,6 +1,8 @@
 package sema
 
 import (
+	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexast"
@@ -40,6 +42,10 @@ func (a *Analyzer) checkFieldInitializerTypes(index typesys.Index, model *semaTy
 				continue
 			}
 			initializer := strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(declaration[equals+1:]), ";"))
+			if d, rejected := semaStaticFieldSelfReference(typ, member, initializer); rejected {
+				diagnostics = append(diagnostics, d)
+				continue
+			}
 			program, err := vm.CompileAnonymous("return " + initializer + ";")
 			if err != nil || len(program.Instructions) != 1 || program.Instructions[0].Op != ir.OpReturn {
 				continue
@@ -50,4 +56,22 @@ func (a *Analyzer) checkFieldInitializerTypes(index typesys.Index, model *semaTy
 		}
 	}
 	return diagnostics
+}
+
+var semaStaticFieldMemberAccess = regexp.MustCompile(`^([A-Za-z_][A-Za-z0-9_]*)\s*\.\s*[A-Za-z_][A-Za-z0-9_]*$`)
+
+// Native inner_type_shapes field_enum_collision (API 62/67): in
+// "static Level level = Level.LOW" the head name binds to the field being
+// declared, not to the same-spelled type, and the read is rejected.
+func semaStaticFieldSelfReference(typ typesys.TypeSymbol, member typesys.MemberSymbol, initializer string) (diagnostic.Diagnostic, bool) {
+	if !hasModifier(member.Modifiers, "static") {
+		return diagnostic.Diagnostic{}, false
+	}
+	match := semaStaticFieldMemberAccess.FindStringSubmatch(initializer)
+	if match == nil || !strings.EqualFold(match[1], member.Name) {
+		return diagnostic.Diagnostic{}, false
+	}
+	d := declarationContractDiagnostic(typ, member.Range, fmt.Sprintf("static field %q reads itself in its initializer", member.Name))
+	d.NativeMessage = "Illegal forward reference: " + member.Name
+	return d, true
 }

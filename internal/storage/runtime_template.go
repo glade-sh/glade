@@ -8,6 +8,7 @@ type RuntimeTemplate struct {
 }
 
 func NewRuntimeTemplate(org OrgState) RuntimeTemplate {
+	org.ensureRuntimeGeneration()
 	return RuntimeTemplate{Org: org}
 }
 
@@ -15,6 +16,7 @@ func (t RuntimeTemplate) CloneRuntimeOrg() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := t.Org
 	out.Features = append([]string(nil), t.Org.Features...)
+	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), t.Org.Metadata.FeatureParameters...)
 	out.RuntimeSchemaStamp = t.RuntimeSchemaStamp
 	if t.Org.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(t.Org.Objects))

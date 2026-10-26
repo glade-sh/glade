@@ -1,0 +1,187 @@
+[
+  {
+    "id": "local_integer",
+    "body": "Integer value = 2;\nList<String> observations = new List<String>();\nInteger result0 = value++; observations.add(String.valueOf(result0));\nobservations.add(String.valueOf(value));\nInteger result1 = ++value; observations.add(String.valueOf(result1));\nobservations.add(String.valueOf(value));\nInteger result2 = value--; observations.add(String.valueOf(result2));\nobservations.add(String.valueOf(value));\nInteger result3 = --value; observations.add(String.valueOf(result3));\nobservations.add(String.valueOf(value));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "field_integer",
+    "body": "OperatorCell cell = new OperatorCell();\nList<String> observations = new List<String>();\nInteger result0 = cell.integerField++; observations.add(String.valueOf(result0));\nobservations.add(String.valueOf(cell.integerField));\nInteger result1 = ++cell.integerField; observations.add(String.valueOf(result1));\nobservations.add(String.valueOf(cell.integerField));\nInteger result2 = cell.integerField--; observations.add(String.valueOf(result2));\nobservations.add(String.valueOf(cell.integerField));\nInteger result3 = --cell.integerField; observations.add(String.valueOf(result3));\nobservations.add(String.valueOf(cell.integerField));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "property_integer",
+    "body": "OperatorCell cell = new OperatorCell();\nList<String> observations = new List<String>();\nInteger result0 = cell.integerProperty++; observations.add(String.valueOf(result0));\nobservations.add(String.valueOf(cell.integerProperty));\nInteger result1 = ++cell.integerProperty; observations.add(String.valueOf(result1));\nobservations.add(String.valueOf(cell.integerProperty));\nInteger result2 = cell.integerProperty--; observations.add(String.valueOf(result2));\nobservations.add(String.valueOf(cell.integerProperty));\nInteger result3 = --cell.integerProperty; observations.add(String.valueOf(result3));\nobservations.add(String.valueOf(cell.integerProperty));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "list_integer",
+    "body": "List<Integer> values = new List<Integer>{2};\nList<String> observations = new List<String>();\nvalues[0]++;\nobservations.add(String.valueOf(values[0]));\n++values[0];\nobservations.add(String.valueOf(values[0]));\nvalues[0]--;\nobservations.add(String.valueOf(values[0]));\n--values[0];\nobservations.add(String.valueOf(values[0]));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "array_integer",
+    "body": "Integer[] values = new Integer[]{2};\nList<String> observations = new List<String>();\nvalues[0]++;\nobservations.add(String.valueOf(values[0]));\n++values[0];\nobservations.add(String.valueOf(values[0]));\nvalues[0]--;\nobservations.add(String.valueOf(values[0]));\n--values[0];\nobservations.add(String.valueOf(values[0]));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "map_field_integer",
+    "body": "Map<String,OperatorCell> cells = new Map<String,OperatorCell>{'one'=>new OperatorCell()};\nList<String> observations = new List<String>();\ncells.get('one').integerField++;\nobservations.add(String.valueOf(cells.get('one').integerField));\n++cells.get('one').integerField;\nobservations.add(String.valueOf(cells.get('one').integerField));\ncells.get('one').integerField--;\nobservations.add(String.valueOf(cells.get('one').integerField));\n--cells.get('one').integerField;\nobservations.add(String.valueOf(cells.get('one').integerField));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "boxed_integer",
+    "body": "Object boxed = 2; Integer value = (Integer)boxed;\nList<String> observations = new List<String>();\nInteger result0 = value++; observations.add(String.valueOf(result0));\nobservations.add(String.valueOf(value));\nInteger result1 = ++value; observations.add(String.valueOf(result1));\nobservations.add(String.valueOf(value));\nInteger result2 = value--; observations.add(String.valueOf(result2));\nobservations.add(String.valueOf(value));\nInteger result3 = --value; observations.add(String.valueOf(result3));\nobservations.add(String.valueOf(value));\nobservations.add(String.valueOf(boxed));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "local_long",
+    "body": "Long value = 2L;\nList<String> observations = new List<String>();\nLong result0 = value++; observations.add(String.valueOf(result0));\nobservations.add(String.valueOf(value));\nLong result1 = ++value; observations.add(String.valueOf(result1));\nobservations.add(String.valueOf(value));\nLong result2 = value--; observations.add(String.valueOf(result2));\nobservations.add(String.valueOf(value));\nLong result3 = --value; observations.add(String.valueOf(result3));\nobservations.add(String.valueOf(value));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "field_long",
+    "body": "OperatorCell cell = new OperatorCell();\nList<String> observations = new List<String>();\nLong result0 = cell.longField++; observations.add(String.valueOf(result0));\nobservations.add(String.valueOf(cell.longField));\nLong result1 = ++cell.longField; observations.add(String.valueOf(result1));\nobservations.add(String.valueOf(cell.longField));\nLong result2 = cell.longField--; observations.add(String.valueOf(result2));\nobservations.add(String.valueOf(cell.longField));\nLong result3 = --cell.longField; observations.add(String.valueOf(result3));\nobservations.add(String.valueOf(cell.longField));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "property_long",
+    "body": "OperatorCell cell = new OperatorCell();\nList<String> observations = new List<String>();\nLong result0 = cell.longProperty++; observations.add(String.valueOf(result0));\nobservations.add(String.valueOf(cell.longProperty));\nLong result1 = ++cell.longProperty; observations.add(String.valueOf(result1));\nobservations.add(String.valueOf(cell.longProperty));\nLong result2 = cell.longProperty--; observations.add(String.valueOf(result2));\nobservations.add(String.valueOf(cell.longProperty));\nLong result3 = --cell.longProperty; observations.add(String.valueOf(result3));\nobservations.add(String.valueOf(cell.longProperty));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "list_long",
+    "body": "List<Long> values = new List<Long>{2L};\nList<String> observations = new List<String>();\nvalues[0]++;\nobservations.add(String.valueOf(values[0]));\n++values[0];\nobservations.add(String.valueOf(values[0]));\nvalues[0]--;\nobservations.add(String.valueOf(values[0]));\n--values[0];\nobservations.add(String.valueOf(values[0]));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "array_long",
+    "body": "Long[] values = new Long[]{2L};\nList<String> observations = new List<String>();\nvalues[0]++;\nobservations.add(String.valueOf(values[0]));\n++values[0];\nobservations.add(String.valueOf(values[0]));\nvalues[0]--;\nobservations.add(String.valueOf(values[0]));\n--values[0];\nobservations.add(String.valueOf(values[0]));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "map_field_long",
+    "body": "Map<String,OperatorCell> cells = new Map<String,OperatorCell>{'one'=>new OperatorCell()};\nList<String> observations = new List<String>();\ncells.get('one').longField++;\nobservations.add(String.valueOf(cells.get('one').longField));\n++cells.get('one').longField;\nobservations.add(String.valueOf(cells.get('one').longField));\ncells.get('one').longField--;\nobservations.add(String.valueOf(cells.get('one').longField));\n--cells.get('one').longField;\nobservations.add(String.valueOf(cells.get('one').longField));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "boxed_long",
+    "body": "Object boxed = 2L; Long value = (Long)boxed;\nList<String> observations = new List<String>();\nLong result0 = value++; observations.add(String.valueOf(result0));\nobservations.add(String.valueOf(value));\nLong result1 = ++value; observations.add(String.valueOf(result1));\nobservations.add(String.valueOf(value));\nLong result2 = value--; observations.add(String.valueOf(result2));\nobservations.add(String.valueOf(value));\nLong result3 = --value; observations.add(String.valueOf(result3));\nobservations.add(String.valueOf(value));\nobservations.add(String.valueOf(boxed));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "local_decimal",
+    "body": "Decimal value = 2.0;\nList<String> observations = new List<String>();\nDecimal result0 = value++; observations.add(String.valueOf(result0));\nobservations.add(String.valueOf(value));\nDecimal result1 = ++value; observations.add(String.valueOf(result1));\nobservations.add(String.valueOf(value));\nDecimal result2 = value--; observations.add(String.valueOf(result2));\nobservations.add(String.valueOf(value));\nDecimal result3 = --value; observations.add(String.valueOf(result3));\nobservations.add(String.valueOf(value));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "field_decimal",
+    "body": "OperatorCell cell = new OperatorCell();\nList<String> observations = new List<String>();\nDecimal result0 = cell.decimalField++; observations.add(String.valueOf(result0));\nobservations.add(String.valueOf(cell.decimalField));\nDecimal result1 = ++cell.decimalField; observations.add(String.valueOf(result1));\nobservations.add(String.valueOf(cell.decimalField));\nDecimal result2 = cell.decimalField--; observations.add(String.valueOf(result2));\nobservations.add(String.valueOf(cell.decimalField));\nDecimal result3 = --cell.decimalField; observations.add(String.valueOf(result3));\nobservations.add(String.valueOf(cell.decimalField));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "property_decimal",
+    "body": "OperatorCell cell = new OperatorCell();\nList<String> observations = new List<String>();\nDecimal result0 = cell.decimalProperty++; observations.add(String.valueOf(result0));\nobservations.add(String.valueOf(cell.decimalProperty));\nDecimal result1 = ++cell.decimalProperty; observations.add(String.valueOf(result1));\nobservations.add(String.valueOf(cell.decimalProperty));\nDecimal result2 = cell.decimalProperty--; observations.add(String.valueOf(result2));\nobservations.add(String.valueOf(cell.decimalProperty));\nDecimal result3 = --cell.decimalProperty; observations.add(String.valueOf(result3));\nobservations.add(String.valueOf(cell.decimalProperty));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "list_decimal",
+    "body": "List<Decimal> values = new List<Decimal>{2.0};\nList<String> observations = new List<String>();\nvalues[0]++;\nobservations.add(String.valueOf(values[0]));\n++values[0];\nobservations.add(String.valueOf(values[0]));\nvalues[0]--;\nobservations.add(String.valueOf(values[0]));\n--values[0];\nobservations.add(String.valueOf(values[0]));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "array_decimal",
+    "body": "Decimal[] values = new Decimal[]{2.0};\nList<String> observations = new List<String>();\nvalues[0]++;\nobservations.add(String.valueOf(values[0]));\n++values[0];\nobservations.add(String.valueOf(values[0]));\nvalues[0]--;\nobservations.add(String.valueOf(values[0]));\n--values[0];\nobservations.add(String.valueOf(values[0]));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "map_field_decimal",
+    "body": "Map<String,OperatorCell> cells = new Map<String,OperatorCell>{'one'=>new OperatorCell()};\nList<String> observations = new List<String>();\ncells.get('one').decimalField++;\nobservations.add(String.valueOf(cells.get('one').decimalField));\n++cells.get('one').decimalField;\nobservations.add(String.valueOf(cells.get('one').decimalField));\ncells.get('one').decimalField--;\nobservations.add(String.valueOf(cells.get('one').decimalField));\n--cells.get('one').decimalField;\nobservations.add(String.valueOf(cells.get('one').decimalField));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "boxed_decimal",
+    "body": "Object boxed = 2.0; Decimal value = (Decimal)boxed;\nList<String> observations = new List<String>();\nDecimal result0 = value++; observations.add(String.valueOf(result0));\nobservations.add(String.valueOf(value));\nDecimal result1 = ++value; observations.add(String.valueOf(result1));\nobservations.add(String.valueOf(value));\nDecimal result2 = value--; observations.add(String.valueOf(result2));\nobservations.add(String.valueOf(value));\nDecimal result3 = --value; observations.add(String.valueOf(result3));\nobservations.add(String.valueOf(value));\nobservations.add(String.valueOf(boxed));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "local_double",
+    "body": "Double value = 2.0D;\nList<String> observations = new List<String>();\nDouble result0 = value++; observations.add(String.valueOf(result0));\nobservations.add(String.valueOf(value));\nDouble result1 = ++value; observations.add(String.valueOf(result1));\nobservations.add(String.valueOf(value));\nDouble result2 = value--; observations.add(String.valueOf(result2));\nobservations.add(String.valueOf(value));\nDouble result3 = --value; observations.add(String.valueOf(result3));\nobservations.add(String.valueOf(value));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "field_double",
+    "body": "OperatorCell cell = new OperatorCell();\nList<String> observations = new List<String>();\nDouble result0 = cell.doubleField++; observations.add(String.valueOf(result0));\nobservations.add(String.valueOf(cell.doubleField));\nDouble result1 = ++cell.doubleField; observations.add(String.valueOf(result1));\nobservations.add(String.valueOf(cell.doubleField));\nDouble result2 = cell.doubleField--; observations.add(String.valueOf(result2));\nobservations.add(String.valueOf(cell.doubleField));\nDouble result3 = --cell.doubleField; observations.add(String.valueOf(result3));\nobservations.add(String.valueOf(cell.doubleField));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "property_double",
+    "body": "OperatorCell cell = new OperatorCell();\nList<String> observations = new List<String>();\nDouble result0 = cell.doubleProperty++; observations.add(String.valueOf(result0));\nobservations.add(String.valueOf(cell.doubleProperty));\nDouble result1 = ++cell.doubleProperty; observations.add(String.valueOf(result1));\nobservations.add(String.valueOf(cell.doubleProperty));\nDouble result2 = cell.doubleProperty--; observations.add(String.valueOf(result2));\nobservations.add(String.valueOf(cell.doubleProperty));\nDouble result3 = --cell.doubleProperty; observations.add(String.valueOf(result3));\nobservations.add(String.valueOf(cell.doubleProperty));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "list_double",
+    "body": "List<Double> values = new List<Double>{2.0D};\nList<String> observations = new List<String>();\nvalues[0]++;\nobservations.add(String.valueOf(values[0]));\n++values[0];\nobservations.add(String.valueOf(values[0]));\nvalues[0]--;\nobservations.add(String.valueOf(values[0]));\n--values[0];\nobservations.add(String.valueOf(values[0]));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "array_double",
+    "body": "Double[] values = new Double[]{2.0D};\nList<String> observations = new List<String>();\nvalues[0]++;\nobservations.add(String.valueOf(values[0]));\n++values[0];\nobservations.add(String.valueOf(values[0]));\nvalues[0]--;\nobservations.add(String.valueOf(values[0]));\n--values[0];\nobservations.add(String.valueOf(values[0]));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "map_field_double",
+    "body": "Map<String,OperatorCell> cells = new Map<String,OperatorCell>{'one'=>new OperatorCell()};\nList<String> observations = new List<String>();\ncells.get('one').doubleField++;\nobservations.add(String.valueOf(cells.get('one').doubleField));\n++cells.get('one').doubleField;\nobservations.add(String.valueOf(cells.get('one').doubleField));\ncells.get('one').doubleField--;\nobservations.add(String.valueOf(cells.get('one').doubleField));\n--cells.get('one').doubleField;\nobservations.add(String.valueOf(cells.get('one').doubleField));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "boxed_double",
+    "body": "Object boxed = 2.0D; Double value = (Double)boxed;\nList<String> observations = new List<String>();\nDouble result0 = value++; observations.add(String.valueOf(result0));\nobservations.add(String.valueOf(value));\nDouble result1 = ++value; observations.add(String.valueOf(result1));\nobservations.add(String.valueOf(value));\nDouble result2 = value--; observations.add(String.valueOf(result2));\nobservations.add(String.valueOf(value));\nDouble result3 = --value; observations.add(String.valueOf(result3));\nobservations.add(String.valueOf(value));\nobservations.add(String.valueOf(boxed));\n",
+    "kind": "runtime"
+  },
+  {
+    "id": "null_local",
+    "body": "List<String> observations = new List<String>();\ntry { Integer value; value++; } catch (Exception ex) { observations.add(ex.getTypeName()+'|'+ex.getMessage()); }",
+    "kind": "runtime"
+  },
+  {
+    "id": "null_field",
+    "body": "List<String> observations = new List<String>();\ntry { OperatorCell cell = new OperatorCell(); cell.integerField=null; cell.integerField++; } catch (Exception ex) { observations.add(ex.getTypeName()+'|'+ex.getMessage()); }",
+    "kind": "runtime"
+  },
+  {
+    "id": "null_list",
+    "body": "List<String> observations = new List<String>();\ntry { List<Integer> values = new List<Integer>{null}; values[0]++; } catch (Exception ex) { observations.add(ex.getTypeName()+'|'+ex.getMessage()); }",
+    "kind": "runtime"
+  },
+  {
+    "id": "integer_overflow",
+    "body": "List<String> observations = new List<String>();\ntry { Integer value=2147483647; value++; observations.add(String.valueOf(value)); value--; observations.add(String.valueOf(value)); } catch (Exception ex) { observations.add(ex.getTypeName()+'|'+ex.getMessage()); }",
+    "kind": "runtime"
+  },
+  {
+    "id": "string_local",
+    "body": "String value='two'; value++;",
+    "kind": "rejection"
+  },
+  {
+    "id": "string_field",
+    "body": "Account value=new Account(Name='two'); value.Name++;",
+    "kind": "rejection"
+  },
+  {
+    "id": "string_list",
+    "body": "List<String> values=new List<String>{'two'}; values[0]++;",
+    "kind": "rejection"
+  },
+  {
+    "id": "map_value",
+    "body": "Map<String,Integer> values=new Map<String,Integer>{'one'=>2}; values.get('one')++;",
+    "kind": "rejection"
+  },
+  {
+    "id": "boxed_object",
+    "body": "Object value=2; value++;",
+    "kind": "rejection"
+  }
+]

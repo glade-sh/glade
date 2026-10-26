@@ -1,0 +1,7 @@
+id	group	route	status	value
+W01	callout_work	istest	runtime	{"endpointRejected":false,"exception":"System.TypeException","pending":false,"testUnsupported":true}
+W02	callout_work	istest	runtime	{"endpointRejected":false,"exception":"System.TypeException","pending":false,"testUnsupported":true}
+W03	callout_work	istest	runtime	{"exception":null,"status":204}
+W04	callout_work	istest	runtime	{"endpointRejected":false,"exception":"System.CalloutException","pending":true,"testUnsupported":false}
+W05	callout_work	istest	runtime	{"endpointRejected":false,"exception":"System.CalloutException","pending":false,"testUnsupported":false}
+W06	callout_work	istest	runtime	{"exception":null,"status":204}

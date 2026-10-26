@@ -1,0 +1,7 @@
+{
+  "packageDirectories": [
+    {"path": "packages/zulu"},
+    {"path": "packages/alpha", "default": true}
+  ],
+  "sourceApiVersion": "62.0"
+}

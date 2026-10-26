@@ -166,9 +166,11 @@ func (a *Analyzer) checkSchemaReferences(index typesys.Index) []diagnostic.Diagn
 					continue
 				}
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
-					Severity: diagnostic.Error,
-					Code:     "GLADESEMA003",
-					Message:  fmt.Sprintf("field %s.%s references unknown SObject %q", object.Name, field.Name, referenceTo),
+					Severity:     diagnostic.Error,
+					Code:         "GLADESEMA003",
+					Message:      fmt.Sprintf("field %s.%s references unknown SObject %q", object.Name, field.Name, referenceTo),
+					File:         field.File,
+					SchemaObject: object.Name,
 				})
 			}
 		}
@@ -1306,6 +1308,9 @@ func semaSOQLNumericAggregateFieldType(fieldType string) bool {
 }
 
 func queryVersionDiagnostics(query soql.Query, ctx queryTextContext, apiVersion int) []diagnostic.Diagnostic {
+	if err := soql.ValidateFormulaVersion(query, fmt.Sprintf("%d.0", apiVersion)); err != nil {
+		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", soql.FormulaWhereVersionMessage, "FORMULA", findQueryIdentifier(ctx.queryText, "FORMULA", 0))}
+	}
 	if apiVersion >= 67 && strings.EqualFold(query.SecurityMode, "SECURITY_ENFORCED") {
 		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.", "SECURITY_ENFORCED", findQueryIdentifier(ctx.queryText, "SECURITY_ENFORCED", 0))}
 	}
@@ -1370,7 +1375,12 @@ func (c querySemanticsChecker) checkSOQLCondition(objectName string, condition s
 	if item, rejected := c.semiJoinOperandDiagnostic(objectName, condition, ctx, cursor); rejected {
 		return []diagnostic.Diagnostic{item}
 	}
-	if condition.Field != "" && !aggregateAliases[strings.ToLower(condition.Field)] {
+	if condition.Formula != nil {
+		for _, field := range []string{condition.Formula.Left, condition.Formula.Right} {
+			diagnostics = append(diagnostics, c.checkSOQLField(objectName, field, ctx, cursor)...)
+			diagnostics = append(diagnostics, c.checkSOQLFieldCapability(objectName, field, "filterable", ctx, cursor)...)
+		}
+	} else if condition.Field != "" && !aggregateAliases[strings.ToLower(condition.Field)] {
 		diagnostics = append(diagnostics, c.checkSOQLField(objectName, condition.Field, ctx, cursor)...)
 		diagnostics = append(diagnostics, c.checkSOQLFieldCapability(objectName, condition.Field, "filterable", ctx, cursor)...)
 	}
@@ -1414,6 +1424,10 @@ func (c querySemanticsChecker) checkSOQLFieldCapability(objectName, fieldPath, c
 }
 
 func (c querySemanticsChecker) checkSOQLField(objectName, fieldPath string, ctx queryTextContext, cursor int) []diagnostic.Diagnostic {
+	return c.checkQueryField(objectName, fieldPath, ctx, cursor, true)
+}
+
+func (c querySemanticsChecker) checkQueryField(objectName, fieldPath string, ctx queryTextContext, cursor int, allowIncompleteStandardParent bool) []diagnostic.Diagnostic {
 	fieldPath = semaSOQLFieldReference(fieldPath)
 	if fieldPath == "" || fieldPath == "COUNT()" || strings.HasPrefix(strings.ToUpper(fieldPath), "FIELDS(") || strings.Contains(fieldPath, "(") {
 		return nil
@@ -1485,6 +1499,9 @@ func (c querySemanticsChecker) checkSOQLField(objectName, fieldPath string, ctx 
 		}
 		current = target
 	}
+	if allowIncompleteStandardParent && storage.IsKnownStandardObject(current) && !c.hasFieldMetadata(current) {
+		return nil
+	}
 	if _, ok := c.field(current, parts[len(parts)-1]); !ok {
 		if c.allowsIncompleteExternalManagedPackageField(current, parts[len(parts)-1]) {
 			return nil
@@ -1538,7 +1555,7 @@ func (c querySemanticsChecker) checkSOSLQuery(query sosl.Query, ctx queryTextCon
 				cursor = maxInt(fieldCursor+len(field.Field), cursor)
 				continue
 			}
-			if strings.Contains(field.Field, ".") && len(c.checkSOQLField(object.Name, field.Field, ctx, cursor)) == 0 {
+			if strings.Contains(field.Field, ".") && len(c.checkQueryField(object.Name, field.Field, ctx, cursor, false)) == 0 {
 				cursor = maxInt(fieldCursor+len(field.Field), cursor)
 				continue
 			}
@@ -2306,10 +2323,10 @@ func semaSOQLLiterals(source string, spans semaCodeSpans) []semaQueryLiteral {
 			continue
 		}
 		raw := source[i+1 : end]
-		trimmed := strings.TrimLeft(raw, " \t\r\n")
-		leading := len(raw) - len(trimmed)
+		leading := semaQueryStart(raw, 0)
+		trimmed := raw[leading:]
 		if startsWithQueryKeyword(trimmed, "SELECT") {
-			out = append(out, semaQueryLiteral{text: strings.TrimSpace(raw), queryOffset: i + 1 + leading})
+			out = append(out, semaQueryLiteral{text: strings.TrimSpace(trimmed), queryOffset: i + 1 + leading})
 		}
 		i = end
 	}
@@ -2327,10 +2344,10 @@ func semaSOSLLiterals(source string, spans semaCodeSpans) []semaQueryLiteral {
 			continue
 		}
 		raw := source[i+1 : end]
-		trimmed := strings.TrimLeft(raw, " \t\r\n")
-		leading := len(raw) - len(trimmed)
+		leading := semaQueryStart(raw, 0)
+		trimmed := raw[leading:]
 		if startsWithQueryKeyword(trimmed, "FIND") {
-			out = append(out, semaQueryLiteral{text: strings.TrimSpace(raw), queryOffset: i + 1 + leading})
+			out = append(out, semaQueryLiteral{text: strings.TrimSpace(trimmed), queryOffset: i + 1 + leading})
 		}
 		i = end
 	}
@@ -2909,7 +2926,8 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 				continue
 			}
 			requirePublic := requirement.sourceKind == "interface" && typ.Range.End.Offset > typ.Range.Start.Offset
-			if hasConcreteMethodSignature(model, typ.Name, requirement.member, requirePublic) {
+			inheritedStaticAsync := semaAsyncInheritedStaticOnly(model, typ, requirement)
+			if hasConcreteMethodSignature(model, typ.Name, requirement.member, requirePublic) && !inheritedStaticAsync {
 				continue
 			}
 			message, nativeHTTP := semaHTTPRequiredMethodMessage(typ.Name, requirement, model)
@@ -2922,7 +2940,7 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 			}
 			// An existing private callback needs the lifecycle
 			// visibility diagnostic, not the async missing-method text.
-			if !hasConcreteMethodSignature(model, typ.Name, requirement.member, false) {
+			if !hasConcreteMethodSignature(model, typ.Name, requirement.member, false) || inheritedStaticAsync {
 				if native := semaAsyncRequirementMessage(typ, requirement); native != "" && !semaProjectTypeShadowsPlatform(model, requirement.owner) {
 					message = native
 					nativeMessage = native
@@ -3317,12 +3335,20 @@ func sameInheritedSemaParameterType(left, right string) bool {
 }
 
 func checkDatabaseBatchableGenericContract(model *semaTypeMemberView, typ typesys.TypeSymbol) []diagnostic.Diagnostic {
-	members, _, ok := semaLookupTypeMembers(model, typ.Name)
-	if !ok {
-		return nil
-	}
 	var diagnostics []diagnostic.Diagnostic
-	for _, iface := range members.interfaces {
+	interfaces := semaBatchableContractInterfaces(model, typ.Name)
+	// platform_batch_superclass/org.tsv:4,11: only a platform superclass's
+	// Batchable is observed to conflict with a second one.
+	if len(interfaces) > 1 && semaBatchableFromPlatformSuperclass(model, typ.Name) {
+		diagnostics = append(diagnostics, diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "GLADESEMA017",
+			Message:  "Generic Interface already implemented: Database.Batchable",
+			File:     typ.File,
+			Range:    &typ.Range,
+		})
+	}
+	for _, iface := range interfaces {
 		base, args := semaGenericBaseAndArgs(iface)
 		if !strings.EqualFold(base, "Database.Batchable") && !strings.EqualFold(base, "Batchable") {
 			continue
@@ -3345,11 +3371,12 @@ func checkDatabaseBatchableGenericContract(model *semaTypeMemberView, typ typesy
 			methods := concreteMethodsByName(model, typ.Name, methodName)
 			if len(methods) == 0 {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
-					Severity: diagnostic.Error,
-					Code:     "GLADESEMA017",
-					Message:  fmt.Sprintf("concrete class %q must implement Database.Batchable<%s> method %q with the matching signature", typ.Name, itemType, methodName),
-					File:     typ.File,
-					Range:    &typ.Range,
+					Severity:      diagnostic.Error,
+					Code:          "GLADESEMA017",
+					Message:       fmt.Sprintf("concrete class %q must implement Database.Batchable<%s> method %q with the matching signature", typ.Name, itemType, methodName),
+					NativeMessage: semaBatchableContractNativeMessage(typ.Name, itemType, methodName),
+					File:          typ.File,
+					Range:         &typ.Range,
 				})
 				continue
 			}
@@ -3377,7 +3404,7 @@ func concreteMethodsByName(model *semaTypeMemberView, typeName, methodName strin
 			return out
 		}
 		for _, method := range members.methods[normalizeName(methodName)] {
-			if !hasModifier(method.Modifiers, "abstract") {
+			if !hasModifier(method.Modifiers, "abstract") && (strings.EqualFold(current, typeName) || !hasModifier(method.Modifiers, "static")) {
 				out = append(out, method)
 			}
 		}

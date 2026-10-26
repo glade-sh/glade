@@ -1,0 +1,10 @@
+id	route	observation
+SP01	istest	{"before":0,"delayed":0,"exception":null,"immediate":1,"interviews":0,"jobs":0,"rows":1}
+SP02	istest	{"before":0,"delayed":0,"exception":null,"immediate":1,"interviews":0,"jobs":0,"rows":1}
+SP03	istest	{"before":0,"delayed":0,"exception":null,"immediate":1,"interviews":0,"jobs":0,"rows":1}
+SP04	istest	{"before":0,"delayed":0,"exception":null,"immediate":1,"interviews":0,"jobs":0,"rows":1}
+SP05	istest	{"before":0,"delayed":0,"exception":null,"immediate":1,"interviews":0,"jobs":0,"rows":1}
+SP06	istest	{"before":0,"delayed":0,"exception":null,"immediate":1,"interviews":0,"jobs":0,"rows":1}
+SP07	istest	{"before":0,"delayed":0,"exception":null,"immediate":0,"interviews":0,"jobs":0,"rows":0}
+SP10	istest	{"delayed":0,"exception":null,"immediate":1,"interviews":0,"jobs":1,"rows":1}
+SP11	istest	{"before":0,"delayed":0,"exception":null,"immediate":1,"interviews":0,"jobs":0,"rows":1}

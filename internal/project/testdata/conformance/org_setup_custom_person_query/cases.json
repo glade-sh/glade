@@ -1,0 +1,98 @@
+[
+  {
+    "route": "staticSelect",
+    "class": "PersonQueryStaticSelect",
+    "want": "0",
+    "feature": true
+  },
+  {
+    "route": "staticWhere",
+    "class": "PersonQueryStaticWhere",
+    "want": "0",
+    "feature": true
+  },
+  {
+    "route": "staticOrder",
+    "class": "PersonQueryStaticOrder",
+    "want": "0",
+    "feature": true
+  },
+  {
+    "route": "staticAggregate",
+    "class": "PersonQueryStaticAggregate",
+    "want": "0",
+    "feature": true
+  },
+  {
+    "route": "staticQualified",
+    "class": "PersonQueryStaticQualified",
+    "want": "0",
+    "feature": true
+  },
+  {
+    "route": "query",
+    "class": "PersonQueryQuery",
+    "want": "0",
+    "feature": true
+  },
+  {
+    "route": "queryWithBinds",
+    "class": "PersonQueryQueryWithBinds",
+    "want": "0",
+    "feature": true
+  },
+  {
+    "route": "getQueryLocator",
+    "class": "PersonQueryGetQueryLocator",
+    "want": "false",
+    "feature": true
+  },
+  {
+    "route": "getQueryLocatorWithBinds",
+    "class": "PersonQueryGetQueryLocatorWithBinds",
+    "want": "false",
+    "feature": true
+  },
+  {
+    "route": "countQuery",
+    "class": "PersonQueryCountQuery",
+    "want": "0",
+    "feature": true
+  },
+  {
+    "route": "countQueryWithBinds",
+    "class": "PersonQueryCountQueryWithBinds",
+    "want": "0",
+    "feature": true
+  },
+  {
+    "route": "staticAlias",
+    "class": "PersonQueryStaticAlias",
+    "want": "0",
+    "feature": false
+  },
+  {
+    "route": "dynamicAlias",
+    "class": "PersonQueryDynamicAlias",
+    "want": "0",
+    "feature": false
+  },
+  {
+    "route": "contactField",
+    "class": "PersonQueryContactField",
+    "want": "0",
+    "feature": false
+  },
+  {
+    "route": "missingField",
+    "class": "PersonQueryMissingField",
+    "want": "missing",
+    "feature": false
+  },
+  {
+    "route": "inertLiteral",
+    "class": "PersonQueryInertLiteral",
+    "want": "inert",
+    "feature": false
+  }
+]

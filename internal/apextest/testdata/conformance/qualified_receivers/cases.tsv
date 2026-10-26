@@ -1,0 +1,37 @@
+case	kind	expression
+standard_schema_static	receiver	Schema.Account.getSObjectType()
+standard_schema_token	receiver	Schema.Account.SObjectType
+standard_schema_token_case	receiver	Schema.Account.sObjectType
+standard_schema_token_field	receiver	Schema.Account.SObjectType.fields.Name.getDescribe()
+standard_object_token_field	receiver	Account.SObjectType.fields.Name.getDescribe()
+standard_sobjecttype_field	receiver	SObjectType.Account.fields.Name.getName()
+standard_fieldset	receiver	SObjectType.Account.fieldSets.Summary.getFields()
+standard_schema_fieldset	receiver	Schema.SObjectType.Account.fieldSets.Summary.getFields()
+standard_schema_sobjecttype	receiver	Schema.SObjectType.Account.getName()
+standard_schema_sobjecttype_fields_map	receiver	Schema.SObjectType.Account.fields.getMap()
+standard_object_fields	receiver	Account.fields.Name.getDescribe()
+standard_schema_fields	receiver	Schema.Account.fields.Name.getDescribe()
+standard_schema_fields_map	known_gap	Schema.Account.fields.getMap()
+custom_schema_static	receiver	Schema.Meadow__c.getSObjectType()
+custom_schema_token	receiver	Schema.Meadow__c.SObjectType
+custom_schema_token_case	receiver	Schema.Meadow__c.sObjectType
+custom_schema_token_field	receiver	Schema.Meadow__c.SObjectType.fields.Flag__c.getDescribe()
+custom_object_token_field	receiver	Meadow__c.SObjectType.fields.Flag__c.getDescribe()
+custom_sobjecttype_field	receiver	SObjectType.Meadow__c.fields.Flag__c.getName()
+custom_fieldset	receiver	SObjectType.Meadow__c.fieldSets.Summary.getFields()
+custom_schema_fieldset	receiver	Schema.SObjectType.Meadow__c.fieldSets.Summary.getFields()
+custom_schema_sobjecttype	receiver	Schema.SObjectType.Meadow__c.getName()
+custom_schema_sobjecttype_fields_map	receiver	Schema.SObjectType.Meadow__c.fields.getMap()
+custom_object_fields	receiver	Meadow__c.fields.Flag__c.getDescribe()
+custom_schema_fields	receiver	Schema.Meadow__c.fields.Flag__c.getDescribe()
+custom_schema_fields_map	negative	Schema.Meadow__c.fields.getMap()
+label_replace	receiver	Label.MeadowCaption.replace('a', 'b')
+system_label_replace	receiver	System.Label.MeadowCaption.replace('a', 'b')
+label_length	receiver	Label.MeadowCaption.length()
+label_argument	receiver	String.format(Label.MeadowCaption, new List<String>{'x'})
+missing_label	known_gap	Label.UnavailableCaption.length()
+missing_system_label	known_gap	System.Label.UnavailableCaption.length()
+invalid_method	known_gap	Schema.Account.unavailableReceiverMethod()
+invalid_token_method	known_gap	Account.SObjectType.unavailableReceiverMethod()
+missing_label_read	negative	Label.UnavailableCaption
+missing_system_label_read	negative	System.Label.UnavailableCaption

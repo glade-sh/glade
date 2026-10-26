@@ -8,10 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 // The dependency-scoped compile gate (roadmap doc-7 D40). A class with a
@@ -35,8 +39,9 @@ import (
 // excluded classes are listed by name (G05, GATE2-13B).
 //
 // A Salesforce source file is one compile unit: every top-level class in a
-// file with an error is invalid. The gate falls back to the whole-project
-// gate when an error is not in a project class file, when it is a class
+// file with an error is invalid. Schema-reference errors are attributed to
+// static users of their structured object identity. The gate falls back to the
+// whole-project gate when an error has no attributable owner, or it is a class
 // metadata error such as an unsupported apiVersion (Salesforce then reports
 // only the -meta.xml file and compiles nothing, GATE2-14F). Invalid triggers
 // and triggers referencing excluded classes are compile exclusions too.
@@ -48,8 +53,13 @@ type compileGate struct {
 	originalErr   error
 	originalCases []TestCase
 	// dependencyProject retains the structured resolver records across reruns.
+	dependencySources *sourceCache
+	dependencyIndex   *typesys.Index
 	dependencyProject *project.Project
 	dependencyErrors  []diagnostic.Diagnostic
+	// projectErrors have structured schema owners but no referencing Apex unit.
+	// They fail the report while unrelated tests still execute.
+	projectErrors []diagnostic.Diagnostic
 	// diagnostics holds the error diagnostics of every level, so a fallback
 	// reports the error that caused it beside the earlier levels' errors.
 	diagnostics   []diagnostic.Diagnostic
@@ -78,19 +88,32 @@ func (g *compileGate) cacheSlot() string {
 // classes by file (compile unit) and by lowercased name, and every type by
 // lowercased full name for name binding.
 type compileGateUnits struct {
-	order     []string
-	classes   map[string][]string
-	fileOf    map[string]string
-	types     map[string]typesys.TypeSymbol
-	namespace string
+	order           []string
+	classes         map[string][]string
+	fileOf          map[string]string
+	types           map[string]typesys.TypeSymbol
+	namespace       string
+	objects         map[string]schema.Object
+	features        []string
+	querySchema     *compileGateQuerySchema
+	schemaObjects   []schema.Object
+	expressionType  vm.ExpressionTypeResolver
+	triggerContexts map[string]compileGateTriggerContext
 }
 
 func newCompileGateUnits(index typesys.Index) compileGateUnits {
 	units := compileGateUnits{
-		classes:   make(map[string][]string),
-		fileOf:    make(map[string]string),
-		types:     make(map[string]typesys.TypeSymbol),
-		namespace: index.Project.Namespace,
+		classes:       make(map[string][]string),
+		fileOf:        make(map[string]string),
+		types:         make(map[string]typesys.TypeSymbol),
+		namespace:     index.Project.Namespace,
+		objects:       make(map[string]schema.Object, len(index.Objects)),
+		features:      index.OrgShapeFeatures,
+		querySchema:   &compileGateQuerySchema{},
+		schemaObjects: index.Objects,
+	}
+	for _, object := range index.Objects {
+		units.objects[strings.ToLower(object.Name)] = object
 	}
 	for _, typ := range index.Types {
 		if !compileGateUnitType(typ) {
@@ -115,6 +138,20 @@ func newCompileGateUnits(index typesys.Index) compileGateUnits {
 		}
 	}
 	compileGateAddTriggerUnits(&units, index)
+	// Trigger bodies need an expression-typing owner too. These private model
+	// symbols never enter the published index or the dependency graph.
+	expressionIndex := index
+	expressionIndex.Types = append([]typesys.TypeSymbol(nil), index.Types...)
+	units.triggerContexts = make(map[string]compileGateTriggerContext)
+	for i, trigger := range index.Triggers {
+		owner := fmt.Sprintf("__GladeCompileGateTrigger%d", i)
+		for units.types[strings.ToLower(owner)].Name != "" {
+			owner += "_"
+		}
+		expressionIndex.Types = append(expressionIndex.Types, typesys.TypeSymbol{Kind: apexast.DeclarationClass, Name: owner, EffectiveAPIVersion: trigger.EffectiveAPIVersion})
+		units.triggerContexts[filepath.Clean(trigger.File)] = compileGateTriggerContext{owner: owner, object: trigger.ObjectName}
+	}
+	units.expressionType = sema.RuntimeExpressionTypeResolver(expressionIndex)
 	return units
 }
 
@@ -165,6 +202,11 @@ func runWithCompileGate(ctx context.Context, index typesys.Index, opts Options, 
 			classEntry:        make(map[string]int),
 			rootProblems:      make(map[string]string),
 		}
+	}
+	if outermost && len(missingDependencyNames(index)) > 0 {
+		original := index
+		gate.dependencyIndex = &original
+		gate.dependencySources = sources
 	}
 	for _, diag := range diagnostics {
 		if diag.Severity == diagnostic.Error {
@@ -554,6 +596,13 @@ func (g *compileGate) merge(cases []TestCase, excluded []bool, nested testreport
 		if len(pending[name]) > 0 {
 			run.Suites = append(run.Suites, testreport.Suite{Name: name, Cases: pending[name]})
 		}
+	}
+	if len(g.projectErrors) > 0 {
+		projectRun := compileErrorRun(nil, indexCompileError(g.projectErrors), g.started, Options{})
+		run.Suites = append(run.Suites, projectRun.Suites...)
+		// The shared gate merges from the deepest subset outward. Its project
+		// result travels with nested suites and must be reported only once.
+		g.projectErrors = nil
 	}
 	return run
 }

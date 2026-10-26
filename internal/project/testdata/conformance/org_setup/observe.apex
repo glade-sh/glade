@@ -1,0 +1,9 @@
+System.debug('ROW|PERSON_FLAG|' + PersonFlagUse.observe());
+System.debug('ROW|PERSON_CONTACT|' + PersonContactUse.observe());
+System.debug('ROW|PERSON_CUSTOM|' + PersonCustomUse.observe());
+System.debug('ROW|CURRENCY|' + CurrencyFieldUse.observe());
+System.debug('ROW|EXPERIENCE_USER|' + ExperienceUserUse.observe());
+System.debug('ROW|EXPERIENCE_TYPE|' + ExperienceTypeUse.observe());
+System.debug('ROW|TERRITORY|' + TerritoryUse.observe());
+System.debug('ROW|RECORD_TYPE_QUERY|' + RecordTypeQueryUse.observe());
+System.debug('ROW|RECORD_TYPE_DESCRIBE|' + RecordTypeDescribeUse.observe());

@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/storage"
@@ -20,9 +21,11 @@ import (
 // It never executes a row on the base. Compilation and semantic analysis remain
 // at the call site so rejected rows retain their existing checks and diagnostics.
 type conformanceRunner struct {
-	base    *vm.VM
-	org     *storage.RuntimeTemplate
-	sources map[string]conformanceSourceGeneration
+	base *vm.VM
+	org  *storage.RuntimeTemplate
+	// The input is frozen for this runner; retain its value before priming.
+	orgSource *storage.OrgState
+	sources   map[string]conformanceSourceGeneration
 }
 
 type conformanceSourceGeneration struct {
@@ -47,6 +50,14 @@ type conformanceRunnerOptions struct {
 	Base *conformanceRunner
 	// Declaration rows use the request compiler rather than the test compiler.
 	RequestRuntime *CompiledProjectRuntime
+}
+
+// The frozen object map identifies the input org. Reject unrelated fixtures
+// before comparing state so a fallback never walks another org's full schema.
+func sameConformanceOrgInput(left, right *storage.OrgState) bool {
+	return left != nil && right != nil &&
+		reflect.ValueOf(left.Objects).Pointer() == reflect.ValueOf(right.Objects).Pointer() &&
+		reflect.DeepEqual(left, right)
 }
 
 func newConformanceRunner(t *testing.T, index typesys.Index, options conformanceRunnerOptions) *conformanceRunner {
@@ -77,11 +88,16 @@ func newConformanceRunner(t *testing.T, index typesys.Index, options conformance
 	}
 	base := vm.New(nil)
 	var include func(typesys.TypeSymbol) bool
+	reuseOrg := options.Base != nil && options.Base.org != nil && sameConformanceOrgInput(options.Base.orgSource, options.Org)
 	if options.Base != nil {
-		base = options.Base.newMachine()
-		// The base never executes. Detach the parent's org and schema caches so
-		// this runner's stamp below never adopts caches built for another schema.
-		base.SetOrg(nil)
+		if reuseOrg {
+			// Keep the primed caches without cloning an org that never executes.
+			base = options.Base.base.CloneRuntimeFrozenShared(nil)
+		} else {
+			base = options.Base.newMachine()
+			// A different row org must not inherit the parent's schema caches.
+			base.SetOrg(nil)
+		}
 		include = func(typ typesys.TypeSymbol) bool {
 			if !typ.HasSourceSnapshot() {
 				return false
@@ -142,6 +158,12 @@ func newConformanceRunner(t *testing.T, index typesys.Index, options conformance
 	}
 	runner := &conformanceRunner{base: base, sources: sources}
 	if options.Org != nil {
+		orgSource := *options.Org
+		runner.orgSource = &orgSource
+		if reuseOrg {
+			runner.org = options.Base.org
+			return runner
+		}
 		template := storage.NewRuntimeTemplate(*options.Org)
 		vm.PrimeRuntimeTemplateSchema(&template)
 		// Same contract as Run: clones of a primed base share describe and
@@ -289,6 +311,9 @@ System.debug(observed);`},
 				t.Fatal(err)
 			}
 			requestRunner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: runner, RequestRuntime: &runtime, Org: &org})
+			if requestRunner.org != runner.org {
+				t.Error("requestRunner rebuilt the unchanged base org template")
+			}
 			var retained vm.Result
 			var retainedVars []byte
 			var retainedDebug []string
@@ -358,11 +383,17 @@ System.debug(observed);`},
 				writeFile(t, namedPath+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
 				namedIndex := loadTestIndex(t, root)
 				namedRunner := newConformanceRunner(t, namedIndex, conformanceRunnerOptions{Base: runner, LinkProject: true, Org: &org})
+				if namedRunner.org != runner.org {
+					t.Error("namedRunner rebuilt the unchanged base org template")
+				}
 				namedRuntime, err := CompileProjectRuntimeForRequestWithSourceDigests(namedIndex, nil)
 				if err != nil {
 					t.Fatal(err)
 				}
 				requestNamedRunner := newConformanceRunner(t, namedIndex, conformanceRunnerOptions{Base: runner, RequestRuntime: &namedRuntime, Org: &org})
+				if requestNamedRunner.org != runner.org {
+					t.Error("requestNamedRunner rebuilt the unchanged base org template")
+				}
 				namedMethods := compileProjectMethods(namedIndex)
 				namedClasses := compileProjectClasses(namedIndex, namedMethods)
 				freshNamed := func() *vm.VM {
@@ -636,6 +667,191 @@ func TestConformanceRunnerDerivedSchemaDoesNotReuseWarmParentCaches(t *testing.T
 			}
 			checkRelationship(child, "ChildChildren__r")
 			checkRelationship(parent, "ParentChildren__r")
+		})
+	}
+}
+
+// Reuse is an org-state contract: an unchanged shallow value copy qualifies,
+// while an absent org or a different fixture must retain the fresh-template path.
+func TestConformanceRunnerBaseOrgRoutes(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			org := storage.NewOrgState()
+			org.APIVersion = api
+			parent := newConformanceRunner(t, typesys.Index{}, conformanceRunnerOptions{Org: &org})
+			same := org
+			different := org
+			different.DomainURL = "https://fixture.example.test"
+			separate := org
+			separate.Objects = make(map[string]storage.ObjectState)
+			for _, route := range []string{"test-compiler", "request-compiler"} {
+				t.Run(route, func(t *testing.T) {
+					for _, tc := range []struct {
+						name  string
+						org   *storage.OrgState
+						reuse bool
+					}{{"same-org", &org, true}, {"shallow-copy", &same, true}, {"equal-but-separate-org", &separate, false}, {"different-state-same-schema", &different, false}, {"no-org", nil, false}} {
+						t.Run(tc.name, func(t *testing.T) {
+							options := conformanceRunnerOptions{Base: parent, Org: tc.org, LinkProject: route == "test-compiler"}
+							if route == "request-compiler" {
+								options.RequestRuntime = &CompiledProjectRuntime{}
+							}
+							child := newConformanceRunner(t, typesys.Index{}, options)
+							if got := child.org == parent.org; got != tc.reuse {
+								t.Errorf("shared base org template = %v, want %v", got, tc.reuse)
+							}
+							if tc.org == nil && child.org != nil {
+								t.Fatal("absent org inherited the base fixture")
+							}
+							if tc.org != nil && child.newOrg().DomainURL != tc.org.DomainURL {
+								t.Fatal("derived org discarded row state")
+							}
+						})
+					}
+				})
+			}
+		})
+	}
+}
+
+// The reuse route must be indistinguishable from the former per-row template
+// route. Each row links its own class onto a shared base, as the conformance
+// families do, and runs once with the base's own org input (reused template)
+// and once with an equal org whose object map is a separate copy (fresh
+// NewRuntimeTemplate and schema priming, the pre-reuse default). Results,
+// errors, debug logs and limits must match on both compiler routes at API 62
+// and 67. The logged timings compare the two routes in one process on one host.
+func TestConformanceRunnerReuseBaseOrgMatchesFreshTemplate(t *testing.T) {
+	rows := []struct{ name, source string }{
+		{"dml-soql-json", `Account a = new Account(Name='reuse-row'); insert a;
+insert new Contact(LastName='reuse-child', AccountId=a.Id);
+Account q = [SELECT Id, Name, (SELECT LastName FROM Contacts) FROM Account WHERE Id = :a.Id];
+System.debug(JSON.serialize(q));
+System.debug([SELECT Account.Name FROM Contact WHERE AccountId = :a.Id].Account.Name);`},
+		{"describe", `Schema.DescribeSObjectResult d = Account.SObjectType.getDescribe();
+System.debug(d.getName() + '|' + d.fields.getMap().containsKey('name') + '|' + (d.getChildRelationships().size() > 0));
+System.debug(Schema.getGlobalDescribe().containsKey('contact'));`},
+		{"settings-and-user", `System.debug(UserInfo.getUserId() == [SELECT Id FROM User WHERE Id = :UserInfo.getUserId()].Id);
+System.debug(RunnerReuseSetting__c.getOrgDefaults().Text__c);`},
+		{"dml-error", `insert new Contact();`},
+		{"after-dirty", `System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'reuse-row']);
+System.debug(Limits.getDmlStatements());`},
+	}
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			project := func(rowClass string) typesys.Index {
+				root := t.TempDir()
+				writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
+				objectPath := filepath.Join(root, "force-app/main/default/objects/RunnerReuseSetting__c")
+				writeFile(t, filepath.Join(objectPath, "RunnerReuseSetting__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Runner Reuse Setting</label><customSettingsType>Hierarchy</customSettingsType><visibility>Public</visibility></CustomObject>`)
+				writeFile(t, filepath.Join(objectPath, "fields/Text__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Text__c</fullName><label>Text</label><length>80</length><type>Text</type></CustomField>`)
+				classes := filepath.Join(root, "force-app/main/default/classes")
+				writeFile(t, filepath.Join(classes, "ReuseBase.cls"), "public class ReuseBase { public static Integer calls = 0; }")
+				writeFile(t, filepath.Join(classes, "ReuseBase.cls-meta.xml"), "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
+				if rowClass != "" {
+					writeFile(t, filepath.Join(classes, rowClass+".cls"), "public class "+rowClass+" { public static String tag(){ ReuseBase.calls++; return '"+rowClass+"|' + ReuseBase.calls; } }")
+					writeFile(t, filepath.Join(classes, rowClass+".cls-meta.xml"), "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
+				}
+				return loadTestIndex(t, root)
+			}
+			baseIndex := project("")
+			org := orgFromIndex(baseIndex)
+			fixture := storage.NewFixture()
+			fixture.Objects = []storage.FixtureObject{{Name: "RunnerReuseSetting__c", Records: []storage.FixtureRecord{{Fields: map[string]storage.Value{"SetupOwnerId": storage.StringValue(org.OrgID), "Text__c": storage.StringValue("reuse seed")}}}}}
+			if err := storage.ApplyFixture(&org, fixture); err != nil {
+				t.Fatal(err)
+			}
+			base := newConformanceRunner(t, baseIndex, conformanceRunnerOptions{LinkProject: true, Org: &org})
+			requestBaseRuntime, err := CompileProjectRuntimeForRequestWithSourceDigests(baseIndex, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			requestBase := newConformanceRunner(t, baseIndex, conformanceRunnerOptions{RequestRuntime: &requestBaseRuntime, Org: &org})
+			// Equal content, separate object map: the former template route.
+			separate := org
+			separate.Objects = make(map[string]storage.ObjectState, len(org.Objects))
+			for name, object := range org.Objects {
+				separate.Objects[name] = object
+			}
+			errorText := func(err error) string {
+				if err == nil {
+					return ""
+				}
+				return fmt.Sprintf("%T|%s", err, err.Error())
+			}
+			type outcome struct {
+				err, vars string
+				debug     []string
+				limits    vm.Limits
+			}
+			// Each row links its own class, as the families do. Indexes, programs
+			// and request runtimes are built once; only derivation is timed.
+			type derivedRow struct {
+				index   typesys.Index
+				program ir.Program
+				runtime CompiledProjectRuntime
+			}
+			derived := make([]derivedRow, len(rows))
+			for i, row := range rows {
+				rowClass := fmt.Sprintf("ReuseRow%d", i)
+				index := project(rowClass)
+				program, err := vm.CompileAnonymousWithOptions(row.source+"\nSystem.debug("+rowClass+".tag());", vm.CompileOptions{APIVersion: api})
+				if err != nil {
+					t.Fatal(err)
+				}
+				runtime, err := CompileProjectRuntimeForRequestWithSourceDigests(index, nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				derived[i] = derivedRow{index, program, runtime}
+			}
+			const reps = 3
+			for _, route := range []string{"test-compiler", "request-compiler"} {
+				t.Run(route, func(t *testing.T) {
+					var elapsed [2]time.Duration
+					run := func(t *testing.T, row derivedRow, rowOrg *storage.OrgState, reuse bool) outcome {
+						options := conformanceRunnerOptions{Base: base, LinkProject: true, Org: rowOrg}
+						parent := base
+						if route == "request-compiler" {
+							parent = requestBase
+							options = conformanceRunnerOptions{Base: requestBase, RequestRuntime: &row.runtime, Org: rowOrg}
+						}
+						program := row.program
+						started := time.Now()
+						runner := newConformanceRunner(t, row.index, options)
+						result, execErr := runner.execute(program)
+						slot := 0
+						if !reuse {
+							slot = 1
+						}
+						elapsed[slot] += time.Since(started)
+						if got := runner.org == parent.org; got != reuse {
+							t.Fatalf("shared base org template = %v, want %v", got, reuse)
+						}
+						vars, err := json.Marshal(result.Vars)
+						if err != nil {
+							t.Fatal(err)
+						}
+						limits := result.Limits
+						// CPUTimeMS measures elapsed execution time, not a deterministic counter.
+						limits.CPUTimeMS = 0
+						return outcome{errorText(execErr), string(vars), result.Debug, limits}
+					}
+					for rep := 0; rep < reps; rep++ {
+						for i, row := range rows {
+							reused := run(t, derived[i], &org, true)
+							fresh := run(t, derived[i], &separate, false)
+							if !reflect.DeepEqual(reused, fresh) {
+								t.Fatalf("%s rep %d: reused template %#v, fresh template %#v", row.name, rep, reused, fresh)
+							}
+							if (row.name == "dml-error") != (reused.err != "") {
+								t.Fatalf("%s: unexpected error state %q", row.name, reused.err)
+							}
+						}
+					}
+					t.Logf("reuse-base-org timing api=%s route=%s rows=%d reuse=%s fresh=%s ratio=%.2f", api, route, reps*len(rows), elapsed[0].Round(time.Millisecond), elapsed[1].Round(time.Millisecond), float64(elapsed[0])/float64(elapsed[1]))
+				})
+			}
 		})
 	}
 }

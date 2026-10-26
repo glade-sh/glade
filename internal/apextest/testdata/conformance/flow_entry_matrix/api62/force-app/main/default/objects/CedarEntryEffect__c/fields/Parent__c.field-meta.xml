@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Parent__c</fullName><label>Parent__c</label><deleteConstraint>SetNull</deleteConstraint><referenceTo>CedarEntry__c</referenceTo><relationshipLabel>Effects</relationshipLabel><relationshipName>Effects</relationshipName><type>Lookup</type></CustomField>

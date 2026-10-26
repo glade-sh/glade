@@ -1,0 +1,4 @@
+id	description
+numeric-address-routes	Split and Matcher.group Integer parsing and range checks
+grapheme-boundary	Literal-looking rewritten grapheme-boundary delimiter
+grapheme-repeated-boundary	Carried native difference for a doubled combining sequence; see CARRIED.txt

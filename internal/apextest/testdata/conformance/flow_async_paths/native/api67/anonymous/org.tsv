@@ -1,0 +1,10 @@
+id	route	observation
+SP01	anonymous	{"before":0,"delayed":0,"exception":null,"immediate":1,"interviews":0,"jobs":0,"rows":1}
+SP02	anonymous	{"exception":"System.FinalException","message":"Method only allowed during testing","uncaught":true}
+SP03	anonymous	{"exception":"System.FinalException","message":"Method only allowed during testing","uncaught":true}
+SP04	anonymous	{"exception":"System.FinalException","message":"Method only allowed during testing","uncaught":true}
+SP05	anonymous	{"exception":"System.FinalException","message":"Method only allowed during testing","uncaught":true}
+SP06	anonymous	{"exception":"System.FinalException","message":"Method only allowed during testing","uncaught":true}
+SP07	anonymous	{"exception":"System.FinalException","message":"Method only allowed during testing","uncaught":true}
+SP10	anonymous	{"exception":"System.FinalException","message":"Method only allowed during testing","uncaught":true}
+SP11	anonymous	{"exception":"System.FinalException","message":"Method only allowed during testing","uncaught":true}

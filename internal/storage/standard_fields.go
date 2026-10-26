@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/glade-sh/glade/internal/apexlang"
 )
 
 const standardFieldsOverlayMarker = "__glade_standard_fields_overlay"
@@ -23,6 +25,9 @@ func EnsureStandardObjectFields(definition *ObjectDefinition) {
 // StandardObjectFieldsNeedWrite reports whether EnsureStandardObjectFields
 // would mutate definition.
 func StandardObjectFieldsNeedWrite(definition ObjectDefinition) bool {
+	if IsChangeEventObject(definition) {
+		return false
+	}
 	return standardObjectFieldsNeedWrite(definition, definition.Metadata[standardFieldsOverlayMarker])
 }
 
@@ -30,7 +35,7 @@ func StandardObjectFieldsNeedWrite(definition ObjectDefinition) bool {
 // overlay without changing its enabled feature profile. Persisted definitions
 // must receive the same updated field facets as prepared describe copies.
 func RefreshStandardObjectFieldOverlay(definition *ObjectDefinition) bool {
-	if definition == nil {
+	if definition == nil || IsChangeEventObject(*definition) {
 		return false
 	}
 	if _, known := ResolveKnownStandardObjectName(definition.APIName); !known {
@@ -48,9 +53,22 @@ func RefreshStandardObjectFieldOverlay(definition *ObjectDefinition) bool {
 // EnsureStandardObjectFieldsForFeatures adds the base standard object overlay,
 // plus feature-gated standard fields and record types for enabled org features.
 func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, features []string) {
-	if definition == nil {
+	// A change event keeps exactly the captured fields EnsureChangeEventObject
+	// installed; the record audit overlay has no native row for events.
+	if definition == nil || IsChangeEventObject(*definition) {
 		return
 	}
+	defer PrepareRelationshipTargets(definition)
+	if isBareStandardDefinition(*definition) {
+		if canonical, ok := ResolveKnownStandardObjectName(definition.APIName); ok && canonical == definition.APIName {
+			*definition = standardCatalogDefinition(canonical, features)
+			return
+		}
+	}
+	ensureStandardObjectFieldsForFeatures(definition, features)
+}
+
+func ensureStandardObjectFieldsForFeatures(definition *ObjectDefinition, features []string) {
 	featureSignature := canonicalFeatureSignature(features)
 	if !standardObjectFieldsNeedWrite(*definition, featureSignature) {
 		return
@@ -121,7 +139,7 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 }
 
 func standardObjectFieldsNeedWrite(definition ObjectDefinition, featureSignature string) bool {
-	if accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) {
+	if accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) {
 		return true
 	}
 	if masterDetailOwnerFieldsNeedRepair(definition) {
@@ -145,7 +163,7 @@ func standardObjectFieldsNeedWrite(definition ObjectDefinition, featureSignature
 // the feature shape, so it cannot by itself tell whether an older cache missed
 // richer field metadata such as picklist entries.
 func standardFieldsOverlayNeedsRefresh(definition ObjectDefinition, featureSignature string) bool {
-	return accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || standardOverlayCheckPlanFor(definition.APIName).needsRefresh(definition, featureSignature)
+	return accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) || standardOverlayCheckPlanFor(definition.APIName).needsRefresh(definition, featureSignature)
 }
 
 func apexClassLengthNillabilityNeedsRepair(definition ObjectDefinition) bool {
@@ -193,6 +211,33 @@ func userLicenseStatusDescribeNeedsRepair(definition ObjectDefinition) bool {
 	}
 	field := definition.Fields[name]
 	return field.Type != FieldPicklist || !strings.EqualFold(field.DisplayType, "PICKLIST") || field.Nillable == nil || *field.Nillable
+}
+
+func groupTypePicklistNeedsRepair(definition ObjectDefinition) bool {
+	if !stringsEqualFold(definition.APIName, "Group") {
+		return false
+	}
+	name, exists := ResolveFieldName(definition, "", "Type")
+	if !exists {
+		return true
+	}
+	field := definition.Fields[name]
+	if field.Type != FieldPicklist || !strings.EqualFold(field.DisplayType, "PICKLIST") {
+		return true
+	}
+	for _, expected := range observedGroupTypePicklistValues() {
+		found := false
+		for _, value := range field.PicklistValues {
+			if strings.EqualFold(value.Value, expected.Value) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return true
+		}
+	}
+	return false
 }
 
 func RemoveCustomSettingUnsupportedFields(definition *ObjectDefinition) {
@@ -440,7 +485,7 @@ func standardFieldsForObject(objectName string) []Field {
 		return []Field{
 			{APIName: "Name", Label: "Group Name", Type: FieldString, Required: true},
 			{APIName: "DeveloperName", Label: "Developer Name", Type: FieldString},
-			{APIName: "Type", Label: "Type", Type: FieldPicklist},
+			{APIName: "Type", Label: "Type", Type: FieldPicklist, DisplayType: "PICKLIST", PicklistValues: observedGroupTypePicklistValues()},
 		}
 	case stringsEqualFold(objectName, "Account"):
 		return withoutPersonAccountFields([]Field{
@@ -717,10 +762,8 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 		state.Definition.KeyPrefix = AssignDeterministicPrefixes([]string{objectName}, nil)[objectName]
 	}
 	org.Objects[objectName] = state
-	stamp := org.RuntimeSchemaStamp
-	org.ClearRuntimeSchemaStamp()
-	if definitionNoop {
-		org.RuntimeSchemaStamp = stamp
+	if !definitionNoop {
+		org.ClearRuntimeSchemaStamp()
 	}
 	if len(state.Definition.RecordTypes) > 0 {
 		ensureRecordTypeObject(org)
@@ -779,7 +822,7 @@ func isKnownStandardObjectExact(objectName string) bool {
 	if _, ok := standardObjectCatalogData[objectName]; ok {
 		return true
 	}
-	if _, ok := standardSObjectStubFieldData[objectName]; ok {
+	if standardSObjectStubHasFieldsExact(objectName) {
 		return true
 	}
 	if canonical, ok := standardDescribeCatalogCanonicalName(objectName); ok && canonical == objectName {
@@ -827,40 +870,7 @@ func initKnownStandardObjectCache() {
 }
 
 func standardObjectLookupKey(name string) string {
-	return strings.ToLower(strings.TrimSpace(name))
-}
-
-var standardSObjectStubLookupCache struct {
-	once               sync.Once
-	objectInfoByLC     map[string]standardSObjectStubObjectInfo
-	fieldsByLC         map[string]map[string]Field
-	readOnlyFieldsByLC map[string][]string
-	relationshipsByLC  map[string][]Relationship
-}
-
-func initStandardSObjectStubLookupCache() {
-	standardSObjectStubLookupCache.once.Do(func() {
-		objectInfoByLC := make(map[string]standardSObjectStubObjectInfo, len(standardSObjectStubObjectData))
-		for name, info := range standardSObjectStubObjectData {
-			objectInfoByLC[standardObjectLookupKey(name)] = info
-		}
-		fieldsByLC := make(map[string]map[string]Field, len(standardSObjectStubFieldData))
-		for name, fields := range standardSObjectStubFieldData {
-			fieldsByLC[standardObjectLookupKey(name)] = fields
-		}
-		readOnlyFieldsByLC := make(map[string][]string, len(standardSObjectStubReadOnlyFieldData))
-		for name, fields := range standardSObjectStubReadOnlyFieldData {
-			readOnlyFieldsByLC[standardObjectLookupKey(name)] = fields
-		}
-		relationshipsByLC := make(map[string][]Relationship, len(standardSObjectStubRelationshipData))
-		for name, relationships := range standardSObjectStubRelationshipData {
-			relationshipsByLC[standardObjectLookupKey(name)] = relationships
-		}
-		standardSObjectStubLookupCache.objectInfoByLC = objectInfoByLC
-		standardSObjectStubLookupCache.fieldsByLC = fieldsByLC
-		standardSObjectStubLookupCache.readOnlyFieldsByLC = readOnlyFieldsByLC
-		standardSObjectStubLookupCache.relationshipsByLC = relationshipsByLC
-	})
+	return apexlang.LowerName(strings.TrimSpace(name))
 }
 
 func buildKnownStandardObjectNameSet() map[string]bool {
@@ -973,8 +983,7 @@ func StandardObjectDefinition(objectName string) (ObjectDefinition, bool) {
 		return ObjectDefinition{}, false
 	}
 	objectName = canonical
-	definition := ObjectDefinition{APIName: objectName}
-	EnsureStandardObjectFields(&definition)
+	definition := standardCatalogDefinition(objectName, nil)
 	if definition.Label == "" {
 		definition.Label = objectName
 	}
@@ -984,6 +993,7 @@ func StandardObjectDefinition(objectName string) (ObjectDefinition, bool) {
 	if definition.KeyPrefix == "" {
 		definition.KeyPrefix = StandardKeyPrefix(objectName)
 	}
+	PrepareRelationshipTargets(&definition)
 	return definition, true
 }
 
@@ -1159,8 +1169,8 @@ func mergeStandardSObjectStubFields(definition *ObjectDefinition, features []str
 		fields = filtered
 	}
 	mergeStandardFields(definition, fields)
-	// Preserve explicit field overrides while filling captured calculated
-	// facets, repairing scalar Time references, and filling missing write flags.
+	// Preserve explicit field overrides while filling captured calculated and
+	// currency facets, repairing scalar Time references, and filling write flags.
 	enrichStandardStubWriteFlagsFromV2Describe(definition)
 	applyStandardSObjectStubReadOnlyFields(definition)
 }
@@ -1177,9 +1187,11 @@ func enrichStandardStubWriteFlagsFromV2Describe(definition *ObjectDefinition) {
 			continue
 		}
 		field := definition.Fields[name]
-		if stub, exists := stubFields[captured.Name]; exists && captured.Calculated &&
+		if stub, exists := stubFields[captured.Name]; exists && (captured.Calculated || stub.Type == FieldDecimal && strings.EqualFold(stub.DisplayType, "DOUBLE") && strings.EqualFold(captured.Type, "currency")) &&
 			field.Type == stub.Type && field.DisplayType == stub.DisplayType && field.Formula == "" {
-			field.Type = FieldCalculated
+			if captured.Calculated {
+				field.Type = FieldCalculated
+			}
 			field.DisplayType = describeDisplayType(captured.Type)
 		}
 		if strings.EqualFold(captured.Type, "time") && standardStubTimeReference(field) {
@@ -1448,6 +1460,7 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 	}
 	applyPermissionSetCheckboxSchema(definition)
 	applyObjectPermissionCheckboxFacets(definition)
+	applyPlatformChildEdgeFields(definition)
 	// R120-R122: these generated identifiers expose the AutoNumber facet at
 	// both source API endpoints, although the generated catalog omits it.
 	if name := standardGeneratedNumberField(definition.APIName); name != "" {
@@ -1497,9 +1510,15 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		// The generated stub overlay only carries the Group target.
 		ensureReferenceTarget(definition, "UserOrGroupId", "User")
 	case stringsEqualFold(definition.APIName, "Group"):
-		// A Group inserted without an explicit Type is a regular public group on
-		// Salesforce. This default is observable when GroupMember queries filter
-		// on Group.Type = 'Regular'.
+		// The SObject stub exposes Group.Type as String and omits its describe
+		// entries. The API 62/67 probe confirms each baseline entry below is
+		// active. Also, an inserted Group without Type is a regular public group.
+		setFieldTypeAndDisplay(definition, "Type", FieldPicklist, "PICKLIST")
+		if name, ok := ResolveFieldName(*definition, "", "Type"); ok {
+			field := definition.Fields[name]
+			field.PicklistValues = mergeObservedGroupTypePicklistValues(field.PicklistValues)
+			definition.Fields[name] = field
+		}
 		ensureFieldDefault(definition, "Type", "Regular")
 	case stringsEqualFold(definition.APIName, "Asset"):
 		ensureField(definition, Field{APIName: "ExternalIdentifier", Label: "External Identifier", Type: FieldString, DisplayType: "STRING", Length: 255, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
@@ -1624,6 +1643,97 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		markFieldCreateable(definition, "PermissionSetGroupId")
 		markFieldCreateable(definition, "PermissionSetId")
 	}
+	for _, field := range standardObjectCompatibilitySupplementFields(definition.APIName) {
+		if name, exists := ResolveFieldName(*definition, "", field.APIName); exists {
+			existing := definition.Fields[name]
+			enrichStandardField(&existing, field)
+			definition.Fields[name] = existing
+		} else {
+			ensureField(definition, field)
+		}
+	}
+}
+
+func standardObjectCompatibilitySupplementFields(objectName string) []Field {
+	var fields []Field
+	switch {
+	case stringsEqualFold(objectName, "Account"):
+		fields = []Field{
+			{APIName: "Tradestyle", Type: FieldString, DisplayType: "STRING", Length: 255},
+			{APIName: "NaicsCode", Type: FieldString, DisplayType: "STRING", Length: 8},
+			{APIName: "NaicsDesc", Type: FieldString, DisplayType: "STRING", Length: 120},
+			{APIName: "YearStarted", Type: FieldString, DisplayType: "STRING", Length: 4},
+			{APIName: "DandbCompanyId", Type: FieldReference, DisplayType: "REFERENCE", Length: 18, ReferenceTo: []string{"DandBCompany"}, RelationshipName: "DandbCompany"},
+		}
+	case stringsEqualFold(objectName, "Contact"):
+		fields = []Field{{APIName: "CleanStatus", Type: FieldPicklist, DisplayType: "PICKLIST", Length: 40}}
+	case stringsEqualFold(objectName, "Order"):
+		fields = []Field{
+			{APIName: "PoNumber", Type: FieldString, DisplayType: "STRING", Length: 80},
+			{APIName: "PoDate", Type: FieldDate, DisplayType: "DATE"},
+			{APIName: "BillToContactId", Type: FieldReference, DisplayType: "REFERENCE", Length: 18, ReferenceTo: []string{"Contact"}, RelationshipName: "BillToContact"},
+			{APIName: "ShipToContactId", Type: FieldReference, DisplayType: "REFERENCE", Length: 18, ReferenceTo: []string{"Contact"}, RelationshipName: "ShipToContact"},
+			{APIName: "CompanyAuthorizedDate", Type: FieldDate, DisplayType: "DATE"},
+			{APIName: "CustomerAuthorizedDate", Type: FieldDate, DisplayType: "DATE"},
+		}
+	case stringsEqualFold(objectName, "Lead"):
+		fields = []Field{
+			{APIName: "CompanyDunsNumber", Type: FieldString, DisplayType: "STRING", Length: 9},
+			{APIName: "CleanStatus", Type: FieldPicklist, DisplayType: "PICKLIST", Length: 40},
+			{APIName: "Fax", Type: FieldString, DisplayType: "PHONE", Length: 40},
+			{APIName: "MobilePhone", Type: FieldString, DisplayType: "PHONE", Length: 40},
+			{APIName: "DandbCompanyId", Type: FieldReference, DisplayType: "REFERENCE", Length: 18, ReferenceTo: []string{"DandBCompany"}, RelationshipName: "DandbCompany"},
+		}
+	}
+	// Granted native describes expose these standard fields at both source API
+	// endpoints. Keep their shared nullable/writeable facets explicit.
+	for i := range fields {
+		field := &fields[i]
+		field.Nillable = BoolFlag(true)
+		field.Createable = BoolFlag(true)
+		field.Updateable = BoolFlag(true)
+		field.Permissionable = BoolFlag(true)
+		field.DefaultedOnCreate = BoolFlag(false)
+		if field.Type == FieldPicklist {
+			field.PicklistValues = []PicklistValue{
+				{Value: "Matched", Label: "In Sync", Active: true},
+				{Value: "Different", Label: "Different", Active: true},
+				{Value: "Acknowledged", Label: "Reviewed", Active: true},
+				{Value: "NotFound", Label: "Not Found", Active: true},
+				{Value: "Inactive", Label: "Inactive", Active: true},
+				{Value: "Pending", Label: "Not Compared", Active: true},
+				{Value: "SelectMatch", Label: "Select Match", Active: true},
+				{Value: "Skipped", Label: "Skipped", Active: true},
+			}
+		}
+	}
+	return fields
+}
+
+func observedGroupTypePicklistValues() []PicklistValue {
+	values := []string{"Queue", "Regular", "Role", "RoleAndSubordinates", "RoleAndSubordinatesInternal"}
+	out := make([]PicklistValue, 0, len(values))
+	for _, value := range values {
+		out = append(out, PicklistValue{Value: value, Label: value, Active: true})
+	}
+	return out
+}
+
+func mergeObservedGroupTypePicklistValues(existing []PicklistValue) []PicklistValue {
+	out := append([]PicklistValue(nil), existing...)
+	for _, expected := range observedGroupTypePicklistValues() {
+		found := false
+		for _, value := range out {
+			if strings.EqualFold(value.Value, expected.Value) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			out = append(out, expected)
+		}
+	}
+	return out
 }
 
 func standardIntegerDigits(objectName string) (string, int) {

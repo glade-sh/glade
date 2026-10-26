@@ -1,0 +1,10 @@
+{
+  "api": "67.0",
+  "route": "scheduledBatch-anonymous",
+  "observation": [
+    "staticBatchExecute",
+    "staticBatchFinish",
+    "staticBatchStart"
+  ],
+  "deploy_id": "0Afhv000000a0uLCAQ"
+}

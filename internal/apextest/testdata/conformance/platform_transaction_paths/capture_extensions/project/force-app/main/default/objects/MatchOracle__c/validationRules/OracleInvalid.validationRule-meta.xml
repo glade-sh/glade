@@ -1,0 +1,1 @@
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>OracleInvalid</fullName><active>true</active><errorConditionFormula>Name = "invalid"</errorConditionFormula><errorMessage>Owned validation rejection</errorMessage></ValidationRule>

@@ -1,0 +1,77 @@
+query_route	case_id	where_clause
+static	datetime_literal	LastName = 'Temporal probe' AND ObservedAt__c > 2020-01-01T08:00:00Z
+static	date_literal	LastName = 'Temporal probe' AND Birthdate > 2020-01-01
+static	datetime_bind	LastName = 'Temporal probe' AND ObservedAt__c = :stamp
+static	date_bind	LastName = 'Temporal probe' AND Birthdate = :day
+static	bind_then_literal	LastName = 'Temporal probe' AND LastName = :label AND ObservedAt__c > 2020-01-01T08:00:00Z
+static	in_datetimes	LastName = 'Temporal probe' AND ObservedAt__c IN :times
+static	in_dates	LastName = 'Temporal probe' AND Birthdate IN :days
+static	null_datetime	LastName = 'Temporal probe' AND ObservedAt__c = :emptyStamp
+static	null_date	LastName = 'Temporal probe' AND Birthdate = :emptyDay
+static	relative_literal	LastName = 'Temporal probe' AND CreatedDate = LAST_N_DAYS:1
+static	datetime_offset	LastName = 'Temporal probe' AND ObservedAt__c > 2020-01-01T13:30:00+05:30
+static	datetime_fraction	LastName = 'Temporal probe' AND ObservedAt__c > 2020-01-01T08:00:00.000Z
+static	datetime_in_literals	LastName = 'Temporal probe' AND ObservedAt__c IN (2020-01-01T08:00:00Z,2020-01-01T08:01:00Z)
+static	date_in_literals	LastName = 'Temporal probe' AND Birthdate IN (2020-01-01,2020-01-02)
+inline	datetime_literal	LastName = 'Temporal probe' AND ObservedAt__c > 2020-01-01T08:00:00Z
+inline	date_literal	LastName = 'Temporal probe' AND Birthdate > 2020-01-01
+inline	datetime_bind	LastName = 'Temporal probe' AND ObservedAt__c = :stamp
+inline	date_bind	LastName = 'Temporal probe' AND Birthdate = :day
+inline	bind_then_literal	LastName = 'Temporal probe' AND LastName = :label AND ObservedAt__c > 2020-01-01T08:00:00Z
+inline	in_datetimes	LastName = 'Temporal probe' AND ObservedAt__c IN :times
+inline	in_dates	LastName = 'Temporal probe' AND Birthdate IN :days
+inline	null_datetime	LastName = 'Temporal probe' AND ObservedAt__c = :emptyStamp
+inline	null_date	LastName = 'Temporal probe' AND Birthdate = :emptyDay
+inline	relative_literal	LastName = 'Temporal probe' AND CreatedDate = LAST_N_DAYS:1
+inline	datetime_offset	LastName = 'Temporal probe' AND ObservedAt__c > 2020-01-01T13:30:00+05:30
+inline	datetime_fraction	LastName = 'Temporal probe' AND ObservedAt__c > 2020-01-01T08:00:00.000Z
+inline	datetime_in_literals	LastName = 'Temporal probe' AND ObservedAt__c IN (2020-01-01T08:00:00Z,2020-01-01T08:01:00Z)
+inline	date_in_literals	LastName = 'Temporal probe' AND Birthdate IN (2020-01-01,2020-01-02)
+query	datetime_literal	LastName = 'Temporal probe' AND ObservedAt__c > 2020-01-01T08:00:00Z
+query	date_literal	LastName = 'Temporal probe' AND Birthdate > 2020-01-01
+query	datetime_bind	LastName = 'Temporal probe' AND ObservedAt__c = :stamp
+query	date_bind	LastName = 'Temporal probe' AND Birthdate = :day
+query	bind_then_literal	LastName = 'Temporal probe' AND LastName = :label AND ObservedAt__c > 2020-01-01T08:00:00Z
+query	in_datetimes	LastName = 'Temporal probe' AND ObservedAt__c IN :times
+query	in_dates	LastName = 'Temporal probe' AND Birthdate IN :days
+query	null_datetime	LastName = 'Temporal probe' AND ObservedAt__c = :emptyStamp
+query	null_date	LastName = 'Temporal probe' AND Birthdate = :emptyDay
+query	relative_literal	LastName = 'Temporal probe' AND CreatedDate = LAST_N_DAYS:1
+query	datetime_offset	LastName = 'Temporal probe' AND ObservedAt__c > 2020-01-01T13:30:00+05:30
+query	datetime_fraction	LastName = 'Temporal probe' AND ObservedAt__c > 2020-01-01T08:00:00.000Z
+query	datetime_in_literals	LastName = 'Temporal probe' AND ObservedAt__c IN (2020-01-01T08:00:00Z,2020-01-01T08:01:00Z)
+query	date_in_literals	LastName = 'Temporal probe' AND Birthdate IN (2020-01-01,2020-01-02)
+queryWithBinds	datetime_literal	LastName = 'Temporal probe' AND ObservedAt__c > 2020-01-01T08:00:00Z
+queryWithBinds	date_literal	LastName = 'Temporal probe' AND Birthdate > 2020-01-01
+queryWithBinds	datetime_bind	LastName = 'Temporal probe' AND ObservedAt__c = :stamp
+queryWithBinds	date_bind	LastName = 'Temporal probe' AND Birthdate = :day
+queryWithBinds	bind_then_literal	LastName = 'Temporal probe' AND LastName = :label AND ObservedAt__c > 2020-01-01T08:00:00Z
+queryWithBinds	in_datetimes	LastName = 'Temporal probe' AND ObservedAt__c IN :times
+queryWithBinds	in_dates	LastName = 'Temporal probe' AND Birthdate IN :days
+queryWithBinds	null_datetime	LastName = 'Temporal probe' AND ObservedAt__c = :emptyStamp
+queryWithBinds	null_date	LastName = 'Temporal probe' AND Birthdate = :emptyDay
+queryWithBinds	relative_literal	LastName = 'Temporal probe' AND CreatedDate = LAST_N_DAYS:1
+queryWithBinds	datetime_offset	LastName = 'Temporal probe' AND ObservedAt__c > 2020-01-01T13:30:00+05:30
+queryWithBinds	datetime_fraction	LastName = 'Temporal probe' AND ObservedAt__c > 2020-01-01T08:00:00.000Z
+queryWithBinds	datetime_in_literals	LastName = 'Temporal probe' AND ObservedAt__c IN (2020-01-01T08:00:00Z,2020-01-01T08:01:00Z)
+queryWithBinds	date_in_literals	LastName = 'Temporal probe' AND Birthdate IN (2020-01-01,2020-01-02)
+staticSearch	datetime_literal	LastName = 'Temporal probe' AND ObservedAt__c > 2020-01-01T08:00:00Z
+staticSearch	date_literal	LastName = 'Temporal probe' AND Birthdate > 2020-01-01
+staticSearch	datetime_bind	LastName = 'Temporal probe' AND ObservedAt__c = :stamp
+staticSearch	date_bind	LastName = 'Temporal probe' AND Birthdate = :day
+staticSearch	bind_then_literal	LastName = 'Temporal probe' AND LastName = :label AND ObservedAt__c > 2020-01-01T08:00:00Z
+staticSearch	in_datetimes	LastName = 'Temporal probe' AND ObservedAt__c IN :times
+staticSearch	in_dates	LastName = 'Temporal probe' AND Birthdate IN :days
+staticSearch	null_datetime	LastName = 'Temporal probe' AND ObservedAt__c = :emptyStamp
+staticSearch	null_date	LastName = 'Temporal probe' AND Birthdate = :emptyDay
+staticSearch	relative_literal	LastName = 'Temporal probe' AND CreatedDate = LAST_N_DAYS:1
+search	datetime_literal	LastName = 'Temporal probe' AND ObservedAt__c > 2020-01-01T08:00:00Z
+search	date_literal	LastName = 'Temporal probe' AND Birthdate > 2020-01-01
+search	datetime_bind	LastName = 'Temporal probe' AND ObservedAt__c = :stamp
+search	date_bind	LastName = 'Temporal probe' AND Birthdate = :day
+search	bind_then_literal	LastName = 'Temporal probe' AND LastName = :label AND ObservedAt__c > 2020-01-01T08:00:00Z
+search	in_datetimes	LastName = 'Temporal probe' AND ObservedAt__c IN :times
+search	in_dates	LastName = 'Temporal probe' AND Birthdate IN :days
+search	null_datetime	LastName = 'Temporal probe' AND ObservedAt__c = :emptyStamp
+search	null_date	LastName = 'Temporal probe' AND Birthdate = :emptyDay
+search	relative_literal	LastName = 'Temporal probe' AND CreatedDate = LAST_N_DAYS:1

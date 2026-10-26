@@ -1,0 +1,42 @@
+[
+  {
+    "method": "directTopLevel",
+    "route": "direct",
+    "schedulable": "top-level"
+  },
+  {
+    "method": "directInnerClass",
+    "route": "direct",
+    "schedulable": "inner"
+  },
+  {
+    "method": "batchFinishTopLevel",
+    "route": "batchFinish",
+    "schedulable": "top-level"
+  },
+  {
+    "method": "batchFinishInnerClass",
+    "route": "batchFinish",
+    "schedulable": "inner"
+  },
+  {
+    "method": "queueableTopLevel",
+    "route": "queueable",
+    "schedulable": "top-level"
+  },
+  {
+    "method": "queueableInnerClass",
+    "route": "queueable",
+    "schedulable": "inner"
+  },
+  {
+    "method": "scheduledCallbackTopLevel",
+    "route": "scheduledCallback",
+    "schedulable": "top-level"
+  },
+  {
+    "method": "scheduledCallbackInnerClass",
+    "route": "scheduledCallback",
+    "schedulable": "inner"
+  }
+]

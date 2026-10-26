@@ -1,0 +1,19 @@
+{
+  "sourceApis": [
+    "62.0",
+    "67.0"
+  ],
+  "routes": [
+    "anonymous",
+    "isTest"
+  ],
+  "cases": [
+    "text",
+    "nullInput",
+    "emptyInput",
+    "megabyte",
+    "megabytePlus",
+    "page",
+    "missingPage"
+  ]
+}

@@ -1,0 +1,12 @@
+id	behavior
+Boundary	64 character local-part boundary
+Disabled	inactive address twin
+Dormant	active address under inactive function
+E001	number of metadata functions
+E002	number of metadata addresses
+E003	distinct generated address domains
+E004	missing local-part query returns no row
+E005	EmailDomainName write rejection
+Enabled	active address fields, function/user links and domain shape
+MailDormant	inactive function fields and handler link
+MailReceiver	active function fields and handler link

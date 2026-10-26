@@ -1,0 +1,190 @@
+name: CodeQL analysis
+
+on:
+  workflow_call:
+    inputs:
+      profile:
+        description: "fast for CI; full for weekly and release scans"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  codeql:
+    name: CodeQL (${{ inputs.profile }})
+    runs-on: ubuntu-latest
+    # Setup and upload are bounded separately from the analysis process.
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Validate profile
+        env:
+          PROFILE: ${{ inputs.profile }}
+        run: '[[ "$PROFILE" == fast || "$PROFILE" == full ]]'
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.26.10"
+          cache: false
+      - name: Restore Go module cache
+        id: restore-go-mod-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-security-codeql-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-
+      - name: Report Go module cache restore
+        env:
+          MATCHED_KEY: ${{ steps.restore-go-mod-cache.outputs.cache-matched-key }}
+        run: |
+          if [[ -n "$MATCHED_KEY" ]]; then
+            echo "[cache] module restored-key=$MATCHED_KEY"
+          else
+            echo "[cache] module miss"
+          fi
+          bytes=0
+          if [[ -d "$HOME/go/pkg/mod" ]]; then
+            bytes="$(du -sb "$HOME/go/pkg/mod" 2>/dev/null | awk '{print $1}')" || bytes=0
+          fi
+          echo "[cache] module bytes=$bytes"
+      - name: Restore Go build cache
+        id: restore-go-build-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-security-codeql-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-
+      - name: Report Go build cache restore
+        env:
+          MATCHED_KEY: ${{ steps.restore-go-build-cache.outputs.cache-matched-key }}
+        run: |
+          if [[ -n "$MATCHED_KEY" ]]; then
+            echo "[cache] build restored-key=$MATCHED_KEY"
+          else
+            echo "[cache] build miss"
+          fi
+          bytes=0
+          if [[ -d "$HOME/.cache/go-build" ]]; then
+            bytes="$(du -sb "$HOME/.cache/go-build" 2>/dev/null | awk '{print $1}')" || bytes=0
+          fi
+          echo "[cache] build bytes=$bytes"
+      - name: Initialize pull request CodeQL
+        id: fast
+        if: inputs.profile == 'fast'
+        uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        with:
+          languages: go
+          db-location: ${{ runner.temp }}/codeql_databases
+          config: |
+            paths-ignore:
+              - '**/*_generated.go'
+            queries:
+              - uses: security-extended
+            query-filters:
+              - exclude:
+                  id:
+                    # These three did not finish in PR diff-informed run
+                    # 31262200837 after 32 of 35 queries completed.
+                    - go/incomplete-hostname-regexp
+                    - go/regex/missing-regexp-anchor
+                    - go/weak-sensitive-data-hashing
+                    # This query alone exceeded 60 minutes in run 29155739678.
+                    - go/allocation-size-overflow
+                    # This query was the only one still running when PR run
+                    # 30205055311 hit its 60-minute job timeout.
+                    - go/incorrect-integer-conversion
+                    # These two never finished in run 39616762308 (25 of 27
+                    # queries done within 3 minutes). The only cookie sink is
+                    # the Visualforce Apex Cookie emulation in
+                    # internal/server/visualforce.go, whose Secure and HttpOnly
+                    # come from the Apex program. Tests pin that sink.
+                    - go/cookie-httponly-not-set
+                    - go/cookie-secure-not-set
+          build-mode: manual
+      - name: Initialize full-branch CodeQL
+        id: full
+        if: inputs.profile == 'full'
+        uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        with:
+          languages: go
+          db-location: ${{ runner.temp }}/codeql_databases
+          config: |
+            paths-ignore:
+              - '**/*_generated.go'
+            queries:
+              - uses: security-extended
+            query-filters:
+              - exclude:
+                  id:
+                    # These three did not finish in PR diff-informed run
+                    # 31262200837 after 32 of 35 queries completed.
+                    - go/incomplete-hostname-regexp
+                    - go/regex/missing-regexp-anchor
+                    - go/weak-sensitive-data-hashing
+                    # This query alone exceeded 60 minutes in run 29155739678.
+                    - go/allocation-size-overflow
+                    # These five did not terminate in isolated four-thread jobs,
+                    # including with a 10 GiB evaluator cache (runs 30133474104
+                    # and 30134359448). PR diff-informed analysis retains them.
+                    - go/reflected-xss
+                    - go/weak-sensitive-data-hashing
+                    - go/bad-redirect-check
+                    - go/incorrect-integer-conversion
+                    - go/uncontrolled-allocation-size
+                    # Both queries hit the 55-minute Analyze limit on separate
+                    # runners in run 38072152005; the other 27 queries completed.
+                    # Small PR diff-informed analysis retains both queries.
+                    - go/unsafe-quoting
+                    - go/unvalidated-url-redirection
+                    # These two never finished in run 39616762308 (25 of 27
+                    # queries done within 3 minutes). The only cookie sink is
+                    # the Visualforce Apex Cookie emulation in
+                    # internal/server/visualforce.go, whose Secure and HttpOnly
+                    # come from the Apex program. Tests pin that sink.
+                    - go/cookie-httponly-not-set
+                    - go/cookie-secure-not-set
+          build-mode: manual
+      - name: Build Glade for CodeQL
+        run: go build -o "${RUNNER_TEMP}/glade-codeql" ./cmd/glade
+      - name: Analyze CodeQL
+        id: analyze
+        timeout-minutes: 6
+        env:
+          CODEQL: ${{ steps.fast.outputs.codeql-path || steps.full.outputs.codeql-path }}
+          PROFILE: ${{ inputs.profile }}
+        run: python3 scripts/ci-codeql.py analyze --profile "$PROFILE" --codeql "$CODEQL" --database "${RUNNER_TEMP}/codeql_databases/go" --output "${RUNNER_TEMP}/codeql-results/go.sarif"
+      - name: Upload completed CodeQL results
+        if: steps.analyze.outputs.completed == 'true'
+        timeout-minutes: 2
+        uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        with:
+          sarif_file: ${{ runner.temp }}/codeql-results/go.sarif
+          category: codeql-go
+          wait-for-processing: true
+      - name: Mark completed CodeQL analysis
+        if: steps.analyze.outputs.completed == 'true'
+        run: echo 'CODEQL_ACTION_ANALYZE_DID_COMPLETE_SUCCESSFULLY=true' >> "$GITHUB_ENV"
+      - name: Fail on CodeQL alerts
+        if: steps.analyze.outputs.completed == 'true'
+        run: python3 scripts/ci-codeql.py check "${RUNNER_TEMP}/codeql-results/go.sarif"
+      - name: Upload failed CodeQL logs
+        if: failure() || steps.analyze.outputs.completed == 'false'
+        timeout-minutes: 2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: codeql-logs-${{ inputs.profile }}
+          path: |
+            ${{ runner.temp }}/codeql_databases/go/log/
+            ${{ runner.temp }}/codeql_databases/log/
+          retention-days: 7

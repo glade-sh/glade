@@ -1,0 +1,11 @@
+api=62.0
+context=istest
+rows=40
+native_complete=true
+deployment_success=true
+captured_utc=2026-10-22T23:55:53.470706+00:00
+transport=System.assert
+source_sha256=force-app/main/default/classes/SavepointWindowObservationTest.cls|28c90fc6e11971962f3356af1477d3cdfe72ccbc5234827b8e18d1da872eacd0
+source_sha256=force-app/main/default/classes/SavepointWindowObservationTest.cls-meta.xml|51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d
+source_sha256=force-app/main/default/classes/SavepointWindowProbe.cls|b1f38f5733ace917bc00d289d9721237970dffb60db3600ddd34511dd055d97c
+source_sha256=force-app/main/default/classes/SavepointWindowProbe.cls-meta.xml|51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d

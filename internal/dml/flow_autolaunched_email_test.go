@@ -8,10 +8,8 @@ import (
 
 // An interview-run Flow resolves Send Email inputs from its own variables and
 // formulas, and records an EmailMessage only when logEmailOnSend is true.
-// No native capture covers the unlogged case; it follows the documented
-// logEmailOnSend input and a public project's passing org tests. A capture
-// would need: logEmailOnSend true/false EmailMessage counts for a direct
-// interview run and for the same action inside a subflow, at API 62 and 67.
+// Native logging rows: flow_text_email/api{62,67}/org.tsv, direct_email_*
+// and subflow_email_*. The BLANKVALUE expression is a local formula variation.
 func TestAutolaunchedFlowEmailSimpleUsesInterviewVariables(t *testing.T) {
 	for _, viaSubflow := range []bool{false, true} {
 		for _, tc := range []struct {

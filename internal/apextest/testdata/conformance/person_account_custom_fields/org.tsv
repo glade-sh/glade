@@ -1,0 +1,105 @@
+api	route	id	value
+62.0	anonymous	missing_query	"System.QueryException"
+62.0	anonymous	missing_put	"System.SObjectException"
+62.0	anonymous	business_write	"INVALID_FIELD_FOR_INSERT_UPDATE"
+62.0	anonymous	business_read	null
+62.0	anonymous	contact_after_clear	null
+62.0	anonymous	flow_trigger	"dynamic"
+62.0	anonymous	flow_direct	"dynamic"
+62.0	anonymous	dynamic_dml	"dynamic"
+62.0	anonymous	dynamic_query	"contact"
+62.0	anonymous	filter	1
+62.0	anonymous	account_after_contact_update	"contact"
+62.0	anonymous	contact_after_account_update	"account"
+62.0	anonymous	contact_after_insert	["seed",true]
+62.0	anonymous	person_insert	["seed",true,true,"Garden Sponsor"]
+62.0	anonymous	missing_describe	false
+62.0	anonymous	describe_Anniversary	["Anniversary__pc","DATE","Anniversary",0,0,0,true,true,false,true,true,null]
+62.0	anonymous	describe_Secret	["Secret__pc","ENCRYPTEDSTRING","Secret",20,0,0,true,true,false,true,true,null]
+62.0	anonymous	describe_Serial	["Serial__pc","STRING","Serial",30,0,0,false,false,false,false,true,null]
+62.0	anonymous	describe_Memo	["Memo__pc","TEXTAREA","Memo",1024,0,0,true,true,false,true,true,null]
+62.0	anonymous	describe_Stage	["Stage__pc","PICKLIST","Stage",255,0,0,true,true,false,true,true,null]
+62.0	anonymous	describe_Sponsor	["Sponsor__pc","REFERENCE","Sponsor",18,0,0,true,true,false,true,true,"Sponsor__pr"]
+62.0	anonymous	describe_Derived	["Derived__pc","STRING","Derived",1300,0,0,false,false,true,true,true,null]
+62.0	anonymous	describe_Score	["Score__pc","DOUBLE","Score",0,10,2,true,true,false,true,true,null]
+62.0	anonymous	describe_OptIn	["OptIn__pc","BOOLEAN","Opt In",0,0,0,true,true,false,false,true,null]
+62.0	anonymous	describe_Note	["Note__pc","STRING","Personal Note",40,0,0,true,true,false,true,true,null]
+62.0	istest	missing_query	"System.QueryException"
+62.0	istest	missing_put	"System.SObjectException"
+62.0	istest	business_write	"INVALID_FIELD_FOR_INSERT_UPDATE"
+62.0	istest	business_read	null
+62.0	istest	contact_after_clear	null
+62.0	istest	flow_trigger	"dynamic"
+62.0	istest	flow_direct	"dynamic"
+62.0	istest	dynamic_dml	"dynamic"
+62.0	istest	dynamic_query	"contact"
+62.0	istest	filter	1
+62.0	istest	account_after_contact_update	"contact"
+62.0	istest	contact_after_account_update	"account"
+62.0	istest	contact_after_insert	["seed",true]
+62.0	istest	person_insert	["seed",true,true,"Garden Sponsor"]
+62.0	istest	missing_describe	false
+62.0	istest	describe_Anniversary	["Anniversary__pc","DATE","Anniversary",0,0,0,true,true,false,true,true,null]
+62.0	istest	describe_Secret	["Secret__pc","ENCRYPTEDSTRING","Secret",20,0,0,true,true,false,true,true,null]
+62.0	istest	describe_Serial	["Serial__pc","STRING","Serial",30,0,0,false,false,false,false,true,null]
+62.0	istest	describe_Memo	["Memo__pc","TEXTAREA","Memo",1024,0,0,true,true,false,true,true,null]
+62.0	istest	describe_Stage	["Stage__pc","PICKLIST","Stage",255,0,0,true,true,false,true,true,null]
+62.0	istest	describe_Sponsor	["Sponsor__pc","REFERENCE","Sponsor",18,0,0,true,true,false,true,true,"Sponsor__pr"]
+62.0	istest	describe_Derived	["Derived__pc","STRING","Derived",1300,0,0,false,false,true,true,true,null]
+62.0	istest	describe_Score	["Score__pc","DOUBLE","Score",0,10,2,true,true,false,true,true,null]
+62.0	istest	describe_OptIn	["OptIn__pc","BOOLEAN","Opt In",0,0,0,true,true,false,false,true,null]
+62.0	istest	describe_Note	["Note__pc","STRING","Personal Note",40,0,0,true,true,false,true,true,null]
+62.0	anonymous	static_rejection	"Field does not exist: Absent__pc on Account"
+67.0	anonymous	missing_query	"System.QueryException"
+67.0	anonymous	missing_put	"System.SObjectException"
+67.0	anonymous	business_write	"INVALID_FIELD_FOR_INSERT_UPDATE"
+67.0	anonymous	business_read	null
+67.0	anonymous	contact_after_clear	null
+67.0	anonymous	flow_trigger	"dynamic"
+67.0	anonymous	flow_direct	"dynamic"
+67.0	anonymous	dynamic_dml	"dynamic"
+67.0	anonymous	dynamic_query	"contact"
+67.0	anonymous	filter	1
+67.0	anonymous	account_after_contact_update	"contact"
+67.0	anonymous	contact_after_account_update	"account"
+67.0	anonymous	contact_after_insert	["seed",true]
+67.0	anonymous	person_insert	["seed",true,true,"Garden Sponsor"]
+67.0	anonymous	missing_describe	false
+67.0	anonymous	describe_Anniversary	["Anniversary__pc","DATE","Anniversary",0,0,0,true,true,false,true,true,null]
+67.0	anonymous	describe_Secret	["Secret__pc","ENCRYPTEDSTRING","Secret",20,0,0,true,true,false,true,true,null]
+67.0	anonymous	describe_Serial	["Serial__pc","STRING","Serial",30,0,0,false,false,false,false,true,null]
+67.0	anonymous	describe_Memo	["Memo__pc","TEXTAREA","Memo",1024,0,0,true,true,false,true,true,null]
+67.0	anonymous	describe_Stage	["Stage__pc","PICKLIST","Stage",255,0,0,true,true,false,true,true,null]
+67.0	anonymous	describe_Sponsor	["Sponsor__pc","REFERENCE","Sponsor",18,0,0,true,true,false,true,true,"Sponsor__pr"]
+67.0	anonymous	describe_Derived	["Derived__pc","STRING","Derived",1300,0,0,false,false,true,true,true,null]
+67.0	anonymous	describe_Score	["Score__pc","DOUBLE","Score",0,10,2,true,true,false,true,true,null]
+67.0	anonymous	describe_OptIn	["OptIn__pc","BOOLEAN","Opt In",0,0,0,true,true,false,false,true,null]
+67.0	anonymous	describe_Note	["Note__pc","STRING","Personal Note",40,0,0,true,true,false,true,true,null]
+67.0	istest	missing_query	"System.QueryException"
+67.0	istest	missing_put	"System.SObjectException"
+67.0	istest	business_write	"INVALID_FIELD_FOR_INSERT_UPDATE"
+67.0	istest	business_read	null
+67.0	istest	contact_after_clear	null
+67.0	istest	flow_trigger	"dynamic"
+67.0	istest	flow_direct	"dynamic"
+67.0	istest	dynamic_dml	"dynamic"
+67.0	istest	dynamic_query	"contact"
+67.0	istest	filter	1
+67.0	istest	account_after_contact_update	"contact"
+67.0	istest	contact_after_account_update	"account"
+67.0	istest	contact_after_insert	["seed",true]
+67.0	istest	person_insert	["seed",true,true,"Garden Sponsor"]
+67.0	istest	missing_describe	false
+67.0	istest	describe_Anniversary	["Anniversary__pc","DATE","Anniversary",0,0,0,true,true,false,true,true,null]
+67.0	istest	describe_Secret	["Secret__pc","ENCRYPTEDSTRING","Secret",20,0,0,true,true,false,true,true,null]
+67.0	istest	describe_Serial	["Serial__pc","STRING","Serial",30,0,0,false,false,false,false,true,null]
+67.0	istest	describe_Memo	["Memo__pc","TEXTAREA","Memo",1024,0,0,true,true,false,true,true,null]
+67.0	istest	describe_Stage	["Stage__pc","PICKLIST","Stage",255,0,0,true,true,false,true,true,null]
+67.0	istest	describe_Sponsor	["Sponsor__pc","REFERENCE","Sponsor",18,0,0,true,true,false,true,true,"Sponsor__pr"]
+67.0	istest	describe_Derived	["Derived__pc","STRING","Derived",1300,0,0,false,false,true,true,true,null]
+67.0	istest	describe_Score	["Score__pc","DOUBLE","Score",0,10,2,true,true,false,true,true,null]
+67.0	istest	describe_OptIn	["OptIn__pc","BOOLEAN","Opt In",0,0,0,true,true,false,false,true,null]
+67.0	istest	describe_Note	["Note__pc","STRING","Personal Note",40,0,0,true,true,false,true,true,null]
+67.0	anonymous	static_rejection	"Field does not exist: Absent__pc on Account"
+62.0	named	static_rejection	"Field does not exist: Absent__pc on Account"
+67.0	named	static_rejection	"Field does not exist: Absent__pc on Account"

@@ -1,0 +1,7 @@
+{
+  "packageDirectories": [
+    {"path": "packages/current"},
+    {"path": "packages/legacy", "default": true}
+  ],
+  "sourceApiVersion": "62.0"
+}

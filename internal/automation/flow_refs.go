@@ -11,6 +11,10 @@ func flowRefsDecisionNeedsLookup(raw flowXML) bool {
 			for _, condition := range rule.Conditions {
 				reference := strings.TrimSpace(condition.LeftValueReference)
 				for _, lookup := range raw.RecordLookups {
+					if len(lookup.OutputAssignments) > 0 && !lookup.StoreOutputAutomatically && strings.TrimSpace(lookup.OutputReference) == "" &&
+						strings.EqualFold(reference, firstNonBlank(lookup.Name, lookup.Label)) && strings.EqualFold(condition.Operator, "IsNull") {
+						return true
+					}
 					if !lookup.StoreOutputAutomatically {
 						continue
 					}

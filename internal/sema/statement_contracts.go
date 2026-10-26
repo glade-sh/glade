@@ -13,6 +13,7 @@ import (
 type irStatementContext struct {
 	loopDepth   int
 	switchDepth int
+	blockDepth  int
 }
 
 func checkCustomExceptionNames(index typesys.Index, model *semaTypeMemberView) []diagnostic.Diagnostic {
@@ -20,14 +21,18 @@ func checkCustomExceptionNames(index typesys.Index, model *semaTypeMemberView) [
 }
 
 func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member typesys.MemberSymbol, instructions []ir.Instruction, scope irSemaScope, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
-	scope = cloneIRStatementScope(scope)
 	nativeReachability := typeUsesAPIVersionAtLeast(typ, 62)
+	enforceReachability := !scope.anonymous || !nativeReachability
+	scope = cloneIRStatementScope(scope)
 	var diagnostics []diagnostic.Diagnostic
 	var walk func([]ir.Instruction, irStatementContext, *irSemaScope)
 	walk = func(items []ir.Instruction, context irStatementContext, currentScope *irSemaScope) {
-		terminated := false
+		context.blockDepth++
+		terminated, terminatedByThrow := false, false
 		for _, inst := range items {
-			if terminated {
+			// Anonymous top-level successors are accepted. A direct throw
+			// inside a nested block still makes its successor unreachable.
+			if terminated && (enforceReachability || terminatedByThrow) {
 				d := statementContractDiagnostic(typ, member, "instruction is unreachable", bodyOffset+inst.Pos, source)
 				if nativeReachability {
 					d.NativeMessage = "Unreachable statement"
@@ -102,7 +107,7 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 							caseScope.declare(binding, resolveNestedTypeReference(model, typ.Name, caseType))
 						}
 					}
-					walk(switchCase.Body, irStatementContext{loopDepth: context.loopDepth, switchDepth: context.switchDepth + 1}, &caseScope)
+					walk(switchCase.Body, irStatementContext{loopDepth: context.loopDepth, switchDepth: context.switchDepth + 1, blockDepth: context.blockDepth}, &caseScope)
 				}
 			case ir.OpWhile, ir.OpDoWhile, ir.OpFor, ir.OpForEach:
 				loopScope := *currentScope
@@ -116,7 +121,7 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 				} else if inst.Op == ir.OpForEach {
 					loopScope.declare(inst.Name, resolveNestedTypeReference(model, typ.Name, inst.Type))
 				}
-				walk(inst.Then, irStatementContext{loopDepth: context.loopDepth + 1, switchDepth: context.switchDepth}, &loopScope)
+				walk(inst.Then, irStatementContext{loopDepth: context.loopDepth + 1, switchDepth: context.switchDepth, blockDepth: context.blockDepth}, &loopScope)
 			case ir.OpIf:
 				thenScope := *currentScope
 				thenScope.push()
@@ -194,6 +199,7 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 			}
 			if terminates && (nativeReachability || inst.Op != ir.OpThrow) {
 				terminated = true
+				terminatedByThrow = inst.Op == ir.OpThrow && context.blockDepth > 1
 			}
 		}
 	}

@@ -41,6 +41,9 @@ type Diagnostic struct {
 	// gate uses it to tell an error caused by an invalid supertype from the
 	// class's own error.
 	RequiredBy string `json:"requiredBy,omitempty"`
+	// SchemaObject identifies the object whose metadata is invalid. Consumers
+	// can attribute static dependencies even when the schema has no source file.
+	SchemaObject string `json:"schemaObject,omitempty"`
 }
 
 type Report struct {

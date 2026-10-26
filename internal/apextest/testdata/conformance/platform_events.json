@@ -2248,13 +2248,15 @@
       "P002": "ACCEPTED",
       "P004": "true",
       "P009": "true",
-      "P006": "true|false|1"
+      "P006": "true|false|1",
+      "P007": "true"
     },
     "67.0": {
       "P001": "ACCEPTED",
       "P002": "ACCEPTED",
       "P004": "true",
-      "P009": "true"
+      "P009": "true",
+      "P007": "true"
     }
   }
 }

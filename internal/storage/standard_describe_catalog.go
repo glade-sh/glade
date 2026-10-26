@@ -108,8 +108,7 @@ func StandardFieldNameFlag(definition ObjectDefinition, fieldName string) (nameF
 	// The shared catalog includes Person Account name components. A standard
 	// object metadata delta can retain those tokens without enabling the org
 	// feature; business Account observations have only Name as the name field.
-	features := strings.Split(definition.Metadata[standardFieldsOverlayMarker], ",")
-	if strings.EqualFold(definition.APIName, "Account") && !hasCanonicalFeature(features, "PersonAccounts") {
+	if strings.EqualFold(definition.APIName, "Account") && !featureSignatureHas(definition.Metadata[standardFieldsOverlayMarker], "PersonAccounts") {
 		return strings.EqualFold(field.Name, "Name"), true
 	}
 	return *field.NameField, true
@@ -239,7 +238,7 @@ func standardObjectCatalogEntryForName(objectName string) (standardObjectCatalog
 	if !ok {
 		return standardObjectCatalogEntry{}, false
 	}
-	if _, ok := standardSObjectStubFieldData[canonical]; ok {
+	if standardSObjectStubHasFieldsExact(canonical) {
 		return standardObjectCatalogEntry{}, false
 	}
 	entry, ok, err := standardDescribeCatalogV2EntryForName(canonical)

@@ -68,6 +68,9 @@
       "github.com/glade-sh/glade/internal/storage",
       "github.com/glade-sh/glade/internal/testdaemon",
       "github.com/glade-sh/glade/internal/testreport",
+      "github.com/glade-sh/glade/internal/testutil/browserapi",
+      "github.com/glade-sh/glade/internal/testutil/enumvaluefixture",
+      "github.com/glade-sh/glade/internal/testutil/toolchaininstall",
       "github.com/glade-sh/glade/internal/trace",
       "github.com/glade-sh/glade/internal/tui",
       "github.com/glade-sh/glade/internal/typesys",
@@ -76,6 +79,7 @@
       "github.com/glade-sh/glade/internal/vm",
       "github.com/glade-sh/glade/internal/watch",
       "github.com/glade-sh/glade/scripts",
+      "github.com/glade-sh/glade/scripts/codeql-budget",
       "github.com/glade-sh/glade/scripts/internal/cicache",
       "github.com/glade-sh/glade/scripts/internal/cishard",
       "github.com/glade-sh/glade/scripts/internal/testlog"

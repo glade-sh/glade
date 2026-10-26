@@ -117,6 +117,7 @@ func runFormulaApexConformance(t *testing.T, cluster string, shapes, cells int) 
 	if observed != cells {
 		t.Fatalf("captured cells %d; expected %d", observed, cells)
 	}
+	bases := newConformanceSchemaCache(t)
 	for _, api := range data.APIVersions {
 		t.Run(api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "FormulaApex"+cluster, api)
@@ -136,9 +137,9 @@ func runFormulaApexConformance(t *testing.T, cluster string, shapes, cells int) 
 							counts.TrackKind(t, route, "exact", 1)
 							want := source.ExpectedByAPI[api]
 							if route == "anonymous" {
-								formulaApexAnonymous(t, api, source, want)
+								formulaApexAnonymous(t, bases, api, source, want)
 							} else {
-								formulaApexTest(t, api, source, want)
+								formulaApexTest(t, bases, api, source, want)
 							}
 						})
 					}
@@ -217,7 +218,7 @@ func formulaApexReject(t *testing.T, api string, source formulaApexSource, items
 	}
 }
 
-func formulaApexAnonymous(t *testing.T, api string, source formulaApexSource, want formulaApexExpected) {
+func formulaApexAnonymous(t *testing.T, bases *conformanceSchemaCache, api string, source formulaApexSource, want formulaApexExpected) {
 	t.Helper()
 	body := []byte(source.Anonymous)
 	declarations := map[string]string{}
@@ -259,18 +260,16 @@ func formulaApexAnonymous(t *testing.T, api string, source formulaApexSource, wa
 	if formulaApexHasErrors(items) || compileErr != nil {
 		t.Fatalf("native executes; anonymous diagnostics=%v compile=%v", items, compileErr)
 	}
-	runtime, err := CompileProjectRuntimeForRequestWithSourceDigests(index, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	org := orgFromIndex(index)
-	org.APIVersion = api
-	runner := newConformanceRunner(t, index, conformanceRunnerOptions{RequestRuntime: &runtime, Org: &org})
+	runtime := conformanceSchemaRequestRuntime(t, index)
+	base := bases.get(t, api, "", nil, func(t *testing.T) *conformanceRunner {
+		return conformanceSchemaBase(t, formulaApexIndex(t, api, nil), api)
+	})
+	runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, RequestRuntime: &runtime, Org: base.orgSource})
 	_, execErr := runner.execute(program)
 	formulaApexValue(t, source.ID, "anonymous", want, execErr)
 }
 
-func formulaApexTest(t *testing.T, api string, source formulaApexSource, want formulaApexExpected) {
+func formulaApexTest(t *testing.T, bases *conformanceSchemaCache, api string, source formulaApexSource, want formulaApexExpected) {
 	t.Helper()
 	index := formulaApexIndex(t, api, source.Classes)
 	analysis := sema.Analyze(index)
@@ -295,9 +294,10 @@ func formulaApexTest(t *testing.T, api string, source formulaApexSource, want fo
 	if methodErrors[key] != nil || programErrors[key] != nil {
 		t.Fatalf("named compile: %v %v", methodErrors[key], programErrors[key])
 	}
-	org := orgFromIndex(index)
-	org.APIVersion = api
-	runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+	base := bases.get(t, api, "", nil, func(t *testing.T) *conformanceRunner {
+		return conformanceSchemaBase(t, formulaApexIndex(t, api, nil), api)
+	})
+	runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, LinkProject: true, Org: base.orgSource})
 	machine := runner.newMachine()
 	if err := machine.RegisterMethod(methods[key]); err != nil {
 		t.Fatal(err)

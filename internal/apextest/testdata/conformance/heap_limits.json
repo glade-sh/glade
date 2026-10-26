@@ -1298,6 +1298,246 @@
           ]
         }
       }
+    },
+    {
+      "ID": "HEAP5-CHECKPOINTS",
+      "Classes": {
+        "HeapLimitProbe": "public class HeapLimitProbe {\n    public static List<String> heldStrings;\n    public static Map<String, String> heldValues;\n    public static List<Blob> heldBlobs;\n    public static Integer startHeap;\n    public static Integer lastHeap;\n    public static Integer heap10;\n    public static Integer heap20;\n    public static Integer heap30;\n    public static Integer heap40;\n    public static Integer heap50;\n    public static Integer count;\n    public static Integer payloadSize;\n    public static Boolean complete;\n\n    public static void grow(String kind, Integer target) {\n        startHeap = Limits.getHeapSize();\n        lastHeap = startHeap;\n        heap10 = null;\n        heap20 = null;\n        heap30 = null;\n        heap40 = null;\n        heap50 = null;\n        count = 0;\n        payloadSize = null;\n        complete = false;\n\n        String chunk = 'x'.repeat(100000);\n        heldStrings = new List<String>();\n        heldValues = new Map<String, String>();\n        heldBlobs = new List<Blob>();\n        Integer used = Limits.getHeapSize();\n        Integer payloadBytes = 0;\n        while (count < 700 && (kind == 'blob' ? payloadBytes : used) < target) {\n            String item = chunk + count;\n            if (kind == 'list') {\n                heldStrings.add(item);\n            } else if (kind == 'map') {\n                heldValues.put(String.valueOf(count), item);\n            } else if (kind == 'blob') {\n                heldBlobs.add(Blob.valueOf(item));\n            }\n            count++;\n            payloadBytes = count * 100000;\n            used = Limits.getHeapSize();\n            lastHeap = used;\n            if (heap10 == null && (used >= 10000000 || kind == 'blob' && payloadBytes >= 10000000)) heap10 = used;\n            if (heap20 == null && (used >= 20000000 || kind == 'blob' && payloadBytes >= 20000000)) heap20 = used;\n            if (heap30 == null && (used >= 30000000 || kind == 'blob' && payloadBytes >= 30000000)) heap30 = used;\n            if (heap40 == null && (used >= 40000000 || kind == 'blob' && payloadBytes >= 40000000)) heap40 = used;\n            if (heap50 == null && (used >= 50000000 || kind == 'blob' && payloadBytes >= 50000000)) heap50 = used;\n        }\n        if (kind == 'list' && !heldStrings.isEmpty()) {\n            count = heldStrings.size();\n            payloadSize = heldStrings[0].length();\n        } else if (kind == 'map' && !heldValues.isEmpty()) {\n            count = heldValues.size();\n            payloadSize = heldValues.get('0').length();\n        } else if (kind == 'blob' && !heldBlobs.isEmpty()) {\n            count = heldBlobs.size();\n            payloadSize = heldBlobs[0].size();\n        }\n        complete = (kind == 'blob' ? payloadBytes : used) >= target;\n    }\n\n    public static String marker(String kind, String route, String stage) {\n        return 'P|HEAP5|kind=' + kind + '|route=' + route + '|stage=' + stage\n            + '|count=' + count + '|start=' + startHeap + '|heap10=' + heap10\n            + '|heap20=' + heap20 + '|heap30=' + heap30 + '|heap40=' + heap40\n            + '|heap50=' + heap50 + '|last=' + lastHeap + '|payload=' + payloadSize\n            + '|complete=' + complete;\n    }\n}\n",
+        "HeapLimitQueueable": "public class HeapLimitQueueable implements Queueable {\n    private String kind;\n    private Integer target;\n\n    public HeapLimitQueueable(String kind, Integer target) {\n        this.kind = kind;\n        this.target = target;\n    }\n\n    public void execute(QueueableContext context) {\n        HeapLimitProbe.grow(kind, target);\n    }\n}\n",
+        "HeapLimitFuture": "public class HeapLimitFuture {\n    @future\n    public static void grow(String kind, Integer target) {\n        HeapLimitProbe.grow(kind, target);\n    }\n}\n",
+        "HeapLimitCheckpointTest": "@IsTest\nprivate class HeapLimitCheckpointTest {\n    @IsTest static void listSync() {\n        HeapLimitProbe.grow('list', 50000000);\n        System.assert(false, HeapLimitProbe.marker('list', 'sync', 'checkpoint'));\n    }\n    @IsTest static void mapSync() {\n        HeapLimitProbe.grow('map', 50000000);\n        System.assert(false, HeapLimitProbe.marker('map', 'sync', 'checkpoint'));\n    }\n    @IsTest static void blobSync() {\n        HeapLimitProbe.grow('blob', 50000000);\n        System.assert(false, HeapLimitProbe.marker('blob', 'sync', 'checkpoint'));\n    }\n    @IsTest static void listQueueable() {\n        Test.startTest();\n        System.enqueueJob(new HeapLimitQueueable('list', 50000000));\n        Test.stopTest();\n        System.assert(false, HeapLimitProbe.marker('list', 'queueable', 'checkpoint'));\n    }\n    @IsTest static void mapQueueable() {\n        Test.startTest();\n        System.enqueueJob(new HeapLimitQueueable('map', 50000000));\n        Test.stopTest();\n        System.assert(false, HeapLimitProbe.marker('map', 'queueable', 'checkpoint'));\n    }\n    @IsTest static void blobQueueable() {\n        Test.startTest();\n        System.enqueueJob(new HeapLimitQueueable('blob', 50000000));\n        Test.stopTest();\n        System.assert(false, HeapLimitProbe.marker('blob', 'queueable', 'checkpoint'));\n    }\n    @IsTest static void listFuture() {\n        Test.startTest();\n        HeapLimitFuture.grow('list', 50000000);\n        Test.stopTest();\n        System.assert(false, HeapLimitProbe.marker('list', 'future', 'checkpoint'));\n    }\n    @IsTest static void mapFuture() {\n        Test.startTest();\n        HeapLimitFuture.grow('map', 50000000);\n        Test.stopTest();\n        System.assert(false, HeapLimitProbe.marker('map', 'future', 'checkpoint'));\n    }\n    @IsTest static void blobFuture() {\n        Test.startTest();\n        HeapLimitFuture.grow('blob', 50000000);\n        Test.stopTest();\n        System.assert(false, HeapLimitProbe.marker('blob', 'future', 'checkpoint'));\n    }\n}\n"
+      },
+      "Tests": [
+        "HeapLimitCheckpointTest"
+      ],
+      "MatchFields": [
+        "kind",
+        "route",
+        "stage"
+      ],
+      "Modes": [
+        "strict"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "listSync",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=list|route=sync|stage=checkpoint|count=499|start=1092|heap10=10001737|heap20=20002444|heap30=30003152|heap40=40003860|heap50=50004568|last=50004568|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "mapSync",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=map|route=sync|stage=checkpoint|count=499|start=1091|heap10=10002320|heap20=20003726|heap30=30005134|heap40=40006542|heap50=50007950|last=50007950|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "blobSync",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=sync|stage=checkpoint|count=500|start=1092|heap10=201955|heap20=202764|heap30=203572|heap40=204380|heap50=205188|last=205188|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "listQueueable",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=list|route=queueable|stage=checkpoint|count=499|start=1249|heap10=10001894|heap20=20002601|heap30=30003309|heap40=40004017|heap50=50004725|last=50004725|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "mapQueueable",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=map|route=queueable|stage=checkpoint|count=499|start=1248|heap10=10002477|heap20=20003883|heap30=30005291|heap40=40006699|heap50=50008107|last=50008107|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "blobQueueable",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=queueable|stage=checkpoint|count=500|start=1249|heap10=202112|heap20=202921|heap30=203729|heap40=204537|heap50=205345|last=205345|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "listFuture",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=list|route=future|stage=checkpoint|count=499|start=1211|heap10=10001856|heap20=20002563|heap30=30003271|heap40=40003979|heap50=50004687|last=50004687|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "mapFuture",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=map|route=future|stage=checkpoint|count=499|start=1210|heap10=10002439|heap20=20003845|heap30=30005253|heap40=40006661|heap50=50008069|last=50008069|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "blobFuture",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=future|stage=checkpoint|count=500|start=1211|heap10=202074|heap20=202883|heap30=203691|heap40=204499|heap50=205307|last=205307|payload=100001|complete=true"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "listSync",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=list|route=sync|stage=checkpoint|count=499|start=1102|heap10=10001747|heap20=20002454|heap30=30003162|heap40=40003870|heap50=50004578|last=50004578|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "mapSync",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=map|route=sync|stage=checkpoint|count=499|start=1101|heap10=10002330|heap20=20003736|heap30=30005144|heap40=40006552|heap50=50007960|last=50007960|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "blobSync",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=sync|stage=checkpoint|count=500|start=1102|heap10=201965|heap20=202774|heap30=203582|heap40=204390|heap50=205198|last=205198|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "listQueueable",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=list|route=queueable|stage=checkpoint|count=499|start=1259|heap10=10001904|heap20=20002611|heap30=30003319|heap40=40004027|heap50=50004735|last=50004735|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "mapQueueable",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=map|route=queueable|stage=checkpoint|count=499|start=1258|heap10=10002487|heap20=20003893|heap30=30005301|heap40=40006709|heap50=50008117|last=50008117|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "blobQueueable",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=queueable|stage=checkpoint|count=500|start=1259|heap10=202122|heap20=202931|heap30=203739|heap40=204547|heap50=205355|last=205355|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "listFuture",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=list|route=future|stage=checkpoint|count=499|start=1221|heap10=10001866|heap20=20002573|heap30=30003281|heap40=40003989|heap50=50004697|last=50004697|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "mapFuture",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=map|route=future|stage=checkpoint|count=499|start=1220|heap10=10002449|heap20=20003855|heap30=30005263|heap40=40006671|heap50=50008079|last=50008079|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitCheckpointTest",
+              "Method": "blobFuture",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=future|stage=checkpoint|count=500|start=1221|heap10=202084|heap20=202893|heap30=203701|heap40=204509|heap50=205317|last=205317|payload=100001|complete=true"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "ID": "HEAP5-THROWS",
+      "Classes": {
+        "HeapLimitThrowTest": "@IsTest\nprivate class HeapLimitThrowTest {\n    @IsTest static void listSync() {\n        HeapLimitProbe.grow('list', 60000000);\n        System.assert(false, HeapLimitProbe.marker('list', 'sync', 'completed'));\n    }\n    @IsTest static void mapSync() {\n        HeapLimitProbe.grow('map', 60000000);\n        System.assert(false, HeapLimitProbe.marker('map', 'sync', 'completed'));\n    }\n    @IsTest static void blobSync() {\n        HeapLimitProbe.grow('blob', 60000000);\n        System.assert(false, HeapLimitProbe.marker('blob', 'sync', 'completed'));\n    }\n    @IsTest static void listQueueable() {\n        Test.startTest();\n        System.enqueueJob(new HeapLimitQueueable('list', 60000000));\n        Test.stopTest();\n        System.assert(false, HeapLimitProbe.marker('list', 'queueable', 'completed'));\n    }\n    @IsTest static void mapQueueable() {\n        Test.startTest();\n        System.enqueueJob(new HeapLimitQueueable('map', 60000000));\n        Test.stopTest();\n        System.assert(false, HeapLimitProbe.marker('map', 'queueable', 'completed'));\n    }\n    @IsTest static void blobQueueable() {\n        Test.startTest();\n        System.enqueueJob(new HeapLimitQueueable('blob', 60000000));\n        Test.stopTest();\n        System.assert(false, HeapLimitProbe.marker('blob', 'queueable', 'completed'));\n    }\n    @IsTest static void listFuture() {\n        Test.startTest();\n        HeapLimitFuture.grow('list', 60000000);\n        Test.stopTest();\n        System.assert(false, HeapLimitProbe.marker('list', 'future', 'completed'));\n    }\n    @IsTest static void mapFuture() {\n        Test.startTest();\n        HeapLimitFuture.grow('map', 60000000);\n        Test.stopTest();\n        System.assert(false, HeapLimitProbe.marker('map', 'future', 'completed'));\n    }\n    @IsTest static void blobFuture() {\n        Test.startTest();\n        HeapLimitFuture.grow('blob', 60000000);\n        Test.stopTest();\n        System.assert(false, HeapLimitProbe.marker('blob', 'future', 'completed'));\n    }\n}\n"
+      },
+      "Tests": [
+        "HeapLimitThrowTest"
+      ],
+      "MatchFields": [
+        "kind",
+        "route",
+        "stage",
+        "count",
+        "payload",
+        "complete"
+      ],
+      "Modes": [
+        "strict"
+      ],
+      "Native": {
+        "62.0": {
+          "Failures": [
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "listSync",
+              "Message": "System.LimitException: Apex heap size too large: 52504747"
+            },
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "mapSync",
+              "Message": "System.LimitException: Apex heap size too large: 52508297"
+            },
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "blobSync",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=sync|stage=completed|count=600|start=1092|heap10=201955|heap20=202764|heap30=203572|heap40=204380|heap50=205188|last=205996|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "listQueueable",
+              "Message": "System.LimitException: Apex heap size too large: 52504904"
+            },
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "mapQueueable",
+              "Message": "System.LimitException: Apex heap size too large: 52508454"
+            },
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "blobQueueable",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=queueable|stage=completed|count=600|start=1249|heap10=202112|heap20=202921|heap30=203729|heap40=204537|heap50=205345|last=206153|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "listFuture",
+              "Message": "System.LimitException: Apex heap size too large: 52504866"
+            },
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "mapFuture",
+              "Message": "System.LimitException: Apex heap size too large: 52508416"
+            },
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "blobFuture",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=future|stage=completed|count=600|start=1211|heap10=202074|heap20=202883|heap30=203691|heap40=204499|heap50=205307|last=206115|payload=100001|complete=true"
+            }
+          ]
+        },
+        "67.0": {
+          "Failures": [
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "listSync",
+              "Message": "System.LimitException: Apex heap size too large: 52504757"
+            },
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "mapSync",
+              "Message": "System.LimitException: Apex heap size too large: 52508307"
+            },
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "blobSync",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=sync|stage=completed|count=600|start=1102|heap10=201965|heap20=202774|heap30=203582|heap40=204390|heap50=205198|last=206006|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "listQueueable",
+              "Message": "System.LimitException: Apex heap size too large: 52504914"
+            },
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "mapQueueable",
+              "Message": "System.LimitException: Apex heap size too large: 52508464"
+            },
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "blobQueueable",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=queueable|stage=completed|count=600|start=1259|heap10=202122|heap20=202931|heap30=203739|heap40=204547|heap50=205355|last=206163|payload=100001|complete=true"
+            },
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "listFuture",
+              "Message": "System.LimitException: Apex heap size too large: 52504876"
+            },
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "mapFuture",
+              "Message": "System.LimitException: Apex heap size too large: 52508426"
+            },
+            {
+              "Class": "HeapLimitThrowTest",
+              "Method": "blobFuture",
+              "Message": "System.AssertException: Assertion Failed: P|HEAP5|kind=blob|route=future|stage=completed|count=600|start=1221|heap10=202084|heap20=202893|heap30=203701|heap40=204509|heap50=205317|last=206125|payload=100001|complete=true"
+            }
+          ]
+        }
+      }
     }
   ]
 }

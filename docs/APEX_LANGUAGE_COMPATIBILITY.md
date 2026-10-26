@@ -13,7 +13,7 @@ The current evidence catalog contains 400 checked language-rule rows:
 
 Every supported catalog row names its Salesforce evidence, expected compiler
 outcome, owning Glade subsystem, exact product regression test, and the full
-Glade commit used for comparison. The catalog and scratch-org comparator live
+Glade commit used for comparison. The catalog and scratch org comparator live
 in the first-party `glade-tools` maintenance repository. The Glade product does
 not depend on that repository at runtime.
 

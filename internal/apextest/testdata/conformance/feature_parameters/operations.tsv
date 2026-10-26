@@ -1,0 +1,9 @@
+source_api	operation	observation
+62.0	set	{"boolean_after_set":false,"integer_after_set":17,"date_after_set":"2020-03-04"}
+62.0	read	{"boolean_after_set":false,"integer_after_set":17,"date_after_set":"2020-03-04"}
+62.0	null_set	{"exception":"System.UnexpectedException"}
+62.0	locked_set	{"exception":"System.UnexpectedException"}
+67.0	set	{"boolean_after_set":false,"integer_after_set":17,"date_after_set":"2020-03-04"}
+67.0	read	{"boolean_after_set":false,"integer_after_set":17,"date_after_set":"2020-03-04"}
+67.0	null_set	{"exception":"System.UnexpectedException"}
+67.0	locked_set	{"exception":"System.UnexpectedException"}

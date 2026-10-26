@@ -1,0 +1,5 @@
+source_api	route	observation
+62.0	anonymous	"{""cachedAverageAfterChildMutation"":48.0,""cachedFirstLastAfterChildMutation"":""Probe Ordered A/Probe Ordered C>Probe Ordered B/Probe Ordered C"",""callbackStaticOverloadSelection"":""specific"",""datedCurrencySelection"":5.5,""parentProjectionAfterIdQuery"":true}"
+62.0	isTest	"{""cachedAverageAfterChildMutation"":48.0,""cachedFirstLastAfterChildMutation"":""Probe Ordered A/Probe Ordered C>Probe Ordered B/Probe Ordered C"",""callbackStaticOverloadSelection"":""specific"",""datedCurrencySelection"":5.5,""parentProjectionAfterIdQuery"":true}"
+67.0	anonymous	"{""cachedAverageAfterChildMutation"":48.0,""cachedFirstLastAfterChildMutation"":""Probe Ordered A/Probe Ordered C>Probe Ordered B/Probe Ordered C"",""callbackStaticOverloadSelection"":""specific"",""datedCurrencySelection"":5.5,""parentProjectionAfterIdQuery"":true}"
+67.0	isTest	"{""cachedAverageAfterChildMutation"":48.0,""cachedFirstLastAfterChildMutation"":""Probe Ordered A/Probe Ordered C>Probe Ordered B/Probe Ordered C"",""callbackStaticOverloadSelection"":""specific"",""datedCurrencySelection"":5.5,""parentProjectionAfterIdQuery"":true}"

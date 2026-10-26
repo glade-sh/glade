@@ -38,7 +38,7 @@ glade editor install vscode --force
 
 The extension adds a `Glade` Activity Bar and a `Glade: Open Home` command for
 the local Apex loop. It does not replace org-backed commands, CodeLens,
-language features, or scratch-org test runs. Glade surfaces use `Glade: ...`
+language features, or scratch org test runs. Glade surfaces use `Glade: ...`
 command titles, `glade.*` command ids, a separate `Glade Apex` Test Explorer
 controller, and CodeLens labels that include `Local`.
 

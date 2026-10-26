@@ -29,11 +29,22 @@ func evaluateFlowCoreStringCriteria(item storage.WorkflowCriteriaItem, record st
 	return strings.HasSuffix(value.String, want), true, true
 }
 
-func evaluateFlowCoreEntryCriteria(item storage.WorkflowCriteriaItem, record storage.Record, definition storage.ObjectDefinition, namespace string, prior *storage.Record, rule storage.FlowRule) (bool, bool) {
+func evaluateFlowCoreEntryCriteria(item storage.WorkflowCriteriaItem, record storage.Record, definition storage.ObjectDefinition, namespace string, prior *storage.Record, rule storage.FlowRule, created bool) (bool, bool) {
 	trigger := strings.TrimSpace(rule.TriggerType)
 	recordTrigger := strings.TrimSpace(rule.RecordTriggerType)
 	if (strings.EqualFold(trigger, "RecordBeforeSave") || strings.EqualFold(trigger, "RecordAfterSave")) &&
 		(strings.EqualFold(recordTrigger, "Create") || strings.EqualFold(recordTrigger, "Update") || strings.EqualFold(recordTrigger, "CreateAndUpdate")) {
+		if created && prior == nil && strings.EqualFold(strings.TrimSpace(item.Operation), "isChanged") {
+			if _, ok := storage.ResolveFieldName(definition, namespace, strings.TrimSpace(item.Field)); !ok {
+				return false, false
+			}
+			switch strings.ToLower(trimFormulaLiteral(item.Value)) {
+			case "false":
+				return true, true
+			case "true":
+				return false, true
+			}
+		}
 		if matches, supported, handled := evaluateFlowCoreStringCriteria(item, record, definition, namespace); handled {
 			return matches, supported
 		}

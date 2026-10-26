@@ -13,6 +13,7 @@ const (
 	FileKindApexClass             FileKind = "apex_class"
 	FileKindApexTrigger           FileKind = "apex_trigger"
 	FileKindObjectMeta            FileKind = "object_metadata"
+	FileKindNetworkMeta           FileKind = "network_metadata"
 	FileKindFieldMeta             FileKind = "field_metadata"
 	FileKindLightningWebComponent FileKind = "lwc_bundle"
 	FileKindAuraBundle            FileKind = "aura_bundle"
@@ -55,6 +56,20 @@ func ClassifyPath(path string) FileClassification {
 			Path:      clean,
 			Kind:      FileKindApexTrigger,
 			Name:      trimSuffixFold(base, ".trigger"),
+			Watchable: true,
+		}
+	case strings.HasSuffix(lowerBase, ".network-meta.xml"):
+		return FileClassification{
+			Path:      clean,
+			Kind:      FileKindNetworkMeta,
+			Name:      trimSuffixFold(base, ".network-meta.xml"),
+			Watchable: true,
+		}
+	case strings.HasSuffix(lowerBase, ".network"):
+		return FileClassification{
+			Path:      clean,
+			Kind:      FileKindNetworkMeta,
+			Name:      trimSuffixFold(base, ".network"),
 			Watchable: true,
 		}
 	case strings.HasSuffix(lowerBase, ".object-meta.xml"):

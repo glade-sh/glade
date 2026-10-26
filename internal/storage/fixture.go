@@ -147,7 +147,9 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 		org.Namespace = fixture.Org.Namespace
 	}
 	if fixture.Org.Features != nil {
-		ApplyOrgShape(org, fixture.Org.Features)
+		// Import identities before adding organization groups so an existing
+		// native group in the fixture is not duplicated by a generated seed.
+		applyOrgShape(org, fixture.Org.Features)
 	}
 	aliases := make(map[string]fixtureAlias)
 	assignedIDs := make([][]ID, len(fixture.Objects))
@@ -243,6 +245,7 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 		org.restoreLegacyFeatureProfile()
 	} else {
 		clearOrganizationFeatureFlagRecords(org)
+		ensureOrganizationGroups(org)
 	}
 	return nil
 }
@@ -301,6 +304,14 @@ func containsString(values []string, want string) bool {
 }
 
 func ApplyOrgShape(org *OrgState, features []string) {
+	if org == nil {
+		return
+	}
+	applyOrgShape(org, features)
+	ensureOrganizationGroups(org)
+}
+
+func applyOrgShape(org *OrgState, features []string) {
 	if org == nil {
 		return
 	}
@@ -375,6 +386,7 @@ func applyPersonAccounts(org *OrgState) {
 		ParentRelationship: "PersonContact",
 	})
 	org.Objects["Account"] = account
+	applyPersonAccountCustomFields(org)
 }
 
 func applyMultiCurrency(org *OrgState) {
@@ -465,22 +477,24 @@ func applySitesAndCommunities(org *OrgState) {
 		"GuestUserId":   {APIName: "GuestUserId", Type: FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "GuestUser"},
 		"IsActive":      {APIName: "IsActive", Type: FieldBoolean},
 	})
-	ensureObject(org, "Network", "0DB", map[string]Field{
-		"Name": {APIName: "Name", Type: FieldString, Required: true},
-		"SelfRegProfileId": {
-			APIName:          "SelfRegProfileId",
-			Type:             FieldReference,
-			ReferenceTo:      []string{"Profile"},
-			RelationshipName: "SelfRegProfile",
-		},
-		"Status":                     {APIName: "Status", Type: FieldString},
-		"UrlPathPrefix":              {APIName: "UrlPathPrefix", Type: FieldString},
-		"OptionsGuestChatterEnabled": {APIName: "OptionsGuestChatterEnabled", Type: FieldBoolean},
-	})
-	ensureObject(org, "NetworkMember", "0NM", map[string]Field{
-		"NetworkId": {APIName: "NetworkId", Type: FieldReference, ReferenceTo: []string{"Network"}, RelationshipName: "Network", Required: true},
-		"MemberId":  {APIName: "MemberId", Type: FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Member", Required: true},
-	})
+	if org.HasFeature("Communities") {
+		ensureObject(org, "Network", "0DB", map[string]Field{
+			"Name": {APIName: "Name", Type: FieldString, Required: true},
+			"SelfRegProfileId": {
+				APIName:          "SelfRegProfileId",
+				Type:             FieldReference,
+				ReferenceTo:      []string{"Profile"},
+				RelationshipName: "SelfRegProfile",
+			},
+			"Status":                     {APIName: "Status", Type: FieldString},
+			"UrlPathPrefix":              {APIName: "UrlPathPrefix", Type: FieldString},
+			"OptionsGuestChatterEnabled": {APIName: "OptionsGuestChatterEnabled", Type: FieldBoolean},
+		})
+		ensureObject(org, "NetworkMember", "0NM", map[string]Field{
+			"NetworkId": {APIName: "NetworkId", Type: FieldReference, ReferenceTo: []string{"Network"}, RelationshipName: "Network", Required: true},
+			"MemberId":  {APIName: "MemberId", Type: FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Member", Required: true},
+		})
+	}
 	ensureLocalSiteRecords(org)
 }
 
@@ -625,18 +639,6 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"MasterLabel":          {APIName: "MasterLabel", Type: FieldString},
 		"LicenseDefinitionKey": {APIName: "LicenseDefinitionKey", Type: FieldString},
 		"TotalLicenses":        {APIName: "TotalLicenses", Type: FieldInteger},
-	})
-	ensureObject(org, "Network", "0DB", map[string]Field{
-		"Name": {APIName: "Name", Type: FieldString, Required: true},
-		"SelfRegProfileId": {
-			APIName:          "SelfRegProfileId",
-			Type:             FieldReference,
-			ReferenceTo:      []string{"Profile"},
-			RelationshipName: "SelfRegProfile",
-		},
-		"Status":                     {APIName: "Status", Type: FieldString},
-		"UrlPathPrefix":              {APIName: "UrlPathPrefix", Type: FieldString},
-		"OptionsGuestChatterEnabled": {APIName: "OptionsGuestChatterEnabled", Type: FieldBoolean},
 	})
 	ensureObject(org, "UserLogin", "0Yw", map[string]Field{
 		"UserId": {
@@ -837,7 +839,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	ensureTaskStatusData(org)
 	ensureTaskPriorityData(org)
 	ensureDefaultBusinessHours(org)
-	ensureDefaultContactDuplicateRules(org)
+	ensureDefaultDuplicateRules(org)
 	putSeedRecord(org, "Organization", Record{
 		ID:     orgID,
 		Object: "Organization",
@@ -920,6 +922,11 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		Object: "Profile",
 		Fields: profileSeedFields("Standard User", salesforceLicenseID),
 	})
+	for _, name := range []string{"Contract Manager", "Solution Manager"} {
+		putDefaultSetupRecord(org, "Profile", "Name", 13, map[string]Value{
+			"Name": StringValue(name), "UserType": StringValue("Standard"), "UserLicenseId": IDValue(salesforceLicenseID),
+		})
+	}
 	putSeedRecord(org, "Profile", Record{
 		ID:     marketingUserProfileID,
 		Object: "Profile",
@@ -929,17 +936,6 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		ID:     customerCommunityLoginProfileID,
 		Object: "Profile",
 		Fields: profileSeedFieldsWithUserType("Customer Community Login User", chatterExternalLicenseID, "CspLitePortal"),
-	})
-	putSeedRecord(org, "Network", Record{
-		ID:     "0DB000000000001",
-		Object: "Network",
-		Fields: map[string]Value{
-			"Name":                       StringValue("Local Community"),
-			"SelfRegProfileId":           IDValue(customerCommunityLoginProfileID),
-			"Status":                     StringValue("Live"),
-			"UrlPathPrefix":              StringValue("local"),
-			"OptionsGuestChatterEnabled": BooleanValue(false),
-		},
 	})
 	putSeedRecord(org, "UserRole", Record{
 		ID:     roleID,
@@ -1028,8 +1024,8 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	})
 	seedProfileOwnedPermissionSet := func(id ID, name string, profileID ID) {
 		fields := map[string]Value{
-			"Name":                           StringValue(name),
-			"Label":                          StringValue(name),
+			"Name":                           StringValue("X" + string(profileID)),
+			"Label":                          StringValue(string(profileID)),
 			"Type":                           StringValue("Profile"),
 			"IsCustom":                       BooleanValue(false),
 			"IsOwnedByProfile":               BooleanValue(true),
@@ -1154,6 +1150,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	}
 	ensureDefaultCommunityLicense(org)
 	ensureDefaultPackageLicenses(org)
+	ensureOrganizationGroups(org)
 }
 
 func displayOrgID(id string) string {
@@ -1388,7 +1385,7 @@ func profileSeedFieldsWithUserType(name string, licenseID ID, userType string) m
 }
 
 // SF193 establishes the default BusinessHours record used by a fresh org.
-// Salesforce's default scratch-org calendar is 24x7 in America/Los_Angeles;
+// Salesforce's default scratch org calendar is 24x7 in America/Los_Angeles;
 // the zero-to-zero day bounds represent a full-day window.
 func ensureDefaultBusinessHours(org *OrgState) {
 	EnsureStandardObject(org, "BusinessHours")
@@ -1471,29 +1468,6 @@ func ensureLocalSiteRecords(org *OrgState) {
 			"IsActive":      BooleanValue(true),
 		},
 	})
-	if _, ok := org.Objects["Network"]; ok {
-		putSeedRecord(org, "Network", Record{
-			ID:     "0DB000000000001",
-			Object: "Network",
-			Fields: map[string]Value{
-				"Name":                       StringValue("Local Community"),
-				"SelfRegProfileId":           IDValue("00e000000000003"),
-				"Status":                     StringValue("Live"),
-				"UrlPathPrefix":              StringValue("local"),
-				"OptionsGuestChatterEnabled": BooleanValue(false),
-			},
-		})
-		if _, ok := org.Objects["NetworkMember"]; ok {
-			putSeedRecord(org, "NetworkMember", Record{
-				ID:     "0NM000000000001",
-				Object: "NetworkMember",
-				Fields: map[string]Value{
-					"NetworkId": IDValue("0DB000000000001"),
-					"MemberId":  IDValue(userID),
-				},
-			})
-		}
-	}
 }
 
 func maxRecordTypeSequence(org OrgState) uint64 {
@@ -1728,10 +1702,23 @@ func ResetNonPlatformData(org *OrgState) {
 		if IsPlatformObject(name) {
 			continue
 		}
+		previous := object.Records
 		object.Records = make(map[ID]Record)
+		if name == "Group" {
+			// Organization groups are setup rows; regular and role groups are data.
+			for id, record := range previous {
+				switch record.Fields["Type"].String {
+				case "Organization", "AllCustomerPortal", "PRMOrganization":
+					object.Records[id] = record.Clone()
+				}
+			}
+		}
 		org.Objects[name] = object
-		delete(org.IDSequences, name)
+		if name != "Group" {
+			delete(org.IDSequences, name)
+		}
 	}
+	ensureOrganizationGroups(org)
 }
 
 func ResetPlatformData(org *OrgState) {
@@ -1962,19 +1949,4 @@ func copySequences(in map[string]uint64) map[string]uint64 {
 		out[key] = value
 	}
 	return out
-}
-
-// The default local platform context exposes the standard Contact rules to tests.
-// Supplied rule rows and nondefault org identities remain authoritative. These
-// rows support manual duplicate sets; they do not enable automatic matching.
-func ensureDefaultContactDuplicateRules(org *OrgState) {
-	if len(org.Objects["DuplicateRule"].Records) != 0 || (org.OrgID != "" && !IDsEqual(ID(org.OrgID), DefaultOrgID)) {
-		return
-	}
-	EnsureStandardObject(org, "DuplicateRule")
-	state := org.Objects["DuplicateRule"]
-	for i, name := range []string{"Standard_Contact_Duplicate_Rule", "Standard_Rule_for_Contacts_with_Duplicate_Leads"} {
-		id := ID(fmt.Sprintf("%s%012d", state.Definition.KeyPrefix, i+1))
-		putSeedRecord(org, "DuplicateRule", Record{ID: id, Object: "DuplicateRule", Fields: map[string]Value{"DeveloperName": StringValue(name), "SobjectType": StringValue("Contact")}})
-	}
 }

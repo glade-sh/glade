@@ -19,6 +19,7 @@ import (
 	"github.com/glade-sh/glade/internal/lwc/compile"
 	"github.com/glade-sh/glade/internal/lwcbrowser"
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/testutil/browserapi"
 )
 
 type l18Case struct {
@@ -132,6 +133,12 @@ func testL18SalesforceConformance(t *testing.T) {
 		}
 	}
 
+	type apiObservation struct{ browser l18BrowserResults }
+	observeAPI := browserapi.Prepare(t, []string{"59.0", "67.0"}, func(t *testing.T, api string) apiObservation {
+
+		browser := l18ObserveBrowser(t, api, runtimeCases, repo, toolchain, playwright)
+		return apiObservation{browser}
+	})
 	var report strings.Builder
 	fmt.Fprintln(&report, "api\tid\tkind\tstatus\tactual\texpected\treason")
 	matches, total, compilerMatches, browserMatches := 0, 0, 0, 0
@@ -169,7 +176,8 @@ func testL18SalesforceConformance(t *testing.T) {
 	}
 	for _, api := range []string{"59.0", "67.0"} {
 		compiled := l18CompileCases(t, api, compilerCases)
-		browser := l18ObserveBrowser(t, api, runtimeCases, repo, toolchain, playwright)
+		result := observeAPI(api)
+		browser := result.browser
 		compilerIndex, apiMatches, localBrowserRows := 0, 0, 0
 		for _, c := range cases {
 			got, want, reason := "", c.Expected[api], ""

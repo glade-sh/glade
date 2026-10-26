@@ -1,0 +1,1 @@
+<PermissionSetGroup xmlns="http://soap.sforce.com/2006/04/metadata"><label>Security Bundle Label</label><permissionSets>SecurityReader</permissionSets></PermissionSetGroup>

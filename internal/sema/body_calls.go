@@ -138,7 +138,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 				if strings.EqualFold(method, "addError") && semaReceiverExprResolvesFieldPath(receiverExpr, scope, model) {
 					continue
 				}
-				if scope[normalizeName(receiverExpr)] == "" && semaKnownPlatformTypeReceiver(receiverExpr) && !semaProjectTypeShadowsPlatform(model, receiverExpr) {
+				if scope[normalizeName(receiverExpr)] == "" && semaKnownPlatformTypeReceiver(receiverExpr) && !semaProjectTypeShadowsPlatform(model, receiverExpr) && semaLexicalShadowingInner(model, typ.Name, receiverExpr) == "" {
 					if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, receiverExpr, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model, "class"); handled {
 						diagnostics = append(diagnostics, platformDiagnostics...)
 						continue
@@ -198,6 +198,9 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 						candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, lookupName, method), "class")
 						if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, semaArgTypes(args, scope, model), model); ok && !semaResolvedMembersAllPlatformBacked(model, candidates) {
 							if staticDiagnostic, blocked := checkSemaStaticAccessWithModel(typ, member, callee, candidate, "class", bodyOffset+match[2], bodyOffset+match[3], source, model); blocked {
+								if semaLexicalShadowingInner(model, typ.Name, receiverExpr) != "" {
+									staticDiagnostic = semaLexicalShadowStaticAccessNative(staticDiagnostic, candidate, "class")
+								}
 								diagnostics = append(diagnostics, staticDiagnostic)
 							}
 							if visibilityDiagnostic, blocked := checkSemaMemberAccess(typ, member, callee, candidate, bodyOffset+match[2], bodyOffset+match[3], source, model); blocked {
@@ -249,6 +252,9 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 				candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, lookupName, method), "class")
 				if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, semaArgTypes(args, scope, model), model); ok && !semaResolvedMembersAllPlatformBacked(model, candidates) {
 					if staticDiagnostic, blocked := checkSemaStaticAccessWithModel(typ, member, callee, candidate, "class", bodyOffset+match[2], bodyOffset+match[3], source, model); blocked {
+						if semaLexicalShadowingInner(model, typ.Name, receiver) != "" {
+							staticDiagnostic = semaLexicalShadowStaticAccessNative(staticDiagnostic, candidate, "class")
+						}
 						diagnostics = append(diagnostics, staticDiagnostic)
 					}
 					if visibilityDiagnostic, blocked := checkSemaMemberAccess(typ, member, callee, candidate, bodyOffset+match[2], bodyOffset+match[3], source, model); blocked {
@@ -278,6 +284,16 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 }
 
 func semaClassMembersForReceiver(model *semaTypeMemberView, current typesys.TypeSymbol, receiver string) (typeMembers, string, bool) {
+	if nested := semaLexicalShadowingInner(model, current.Name, receiver); nested != "" {
+		if members, ok := model.lookupName(nested); ok {
+			return members, nested, true
+		}
+	}
+	if enum := semaLexicalSourceInnerEnum(model, current.Name, receiver); enum != "" {
+		if members, ok := model.lookupName(enum); ok {
+			return members, enum, true
+		}
+	}
 	if members, ok := model.lookup(normalizeName(receiver)); ok {
 		if semaCacheUnrelatedReceiverAlias(model, current, receiver, members) {
 			if model.state != nil && model.state.platform != nil {
@@ -727,6 +743,14 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 		if receiverMode == "implicit" {
 			if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, typ.Name, callee, args, start, end, source, scope, model, "implicit"); handled {
 				return platformDiagnostics
+			}
+		}
+		if receiverExpr, method, ok := splitSemaMethodPath(callee); ok && scope[normalizeName(receiverExpr)] == "" && !strings.Contains(receiverExpr, ".") {
+			if nested := semaLexicalShadowingInner(model, typ.Name, receiverExpr); nested != "" {
+				return []diagnostic.Diagnostic{semaShadowMissingMethod(typ, member, callee, method, nested, argTypes, start, end, source)}
+			}
+			if enum := semaLexicalSourceInnerEnum(model, typ.Name, receiverExpr); enum != "" && !semaEnumTypeHasMethod(model, enum, method) {
+				return []diagnostic.Diagnostic{semaShadowMissingMethod(typ, member, callee, method, enum, argTypes, start, end, source)}
 			}
 		}
 		if receiverExpr, method, ok := splitSemaMethodPath(callee); ok && semaUnshadowedPlatformTypeReceiver(model, scope, receiverExpr) {
@@ -1359,6 +1383,24 @@ func semaTextReceiverExprLooksLikeType(receiverExpr string, scope map[string]str
 	}
 	canonical := semaCanonicalPlatformAlias(receiverExpr)
 	return !strings.EqualFold(canonical, receiverExpr) && semaKnownPlatformTypeReceiver(receiverExpr) && semaModelHasType(model, canonical)
+}
+
+// semaLexicalShadowStaticAccessNative adds the native text for an instance
+// method of a lexical inner type that is called through its type name.
+func semaLexicalShadowStaticAccessNative(d diagnostic.Diagnostic, target resolvedMember, receiverMode string) diagnostic.Diagnostic {
+	if receiverMode != "class" || hasModifier(target.member.Modifiers, "static") || target.owner == "" {
+		return d
+	}
+	params := make([]string, len(target.member.Parameters))
+	for i, parameter := range target.member.Parameters {
+		params[i] = strings.TrimSpace(parameter.Type)
+	}
+	returnType := strings.TrimSpace(target.member.Type)
+	if returnType == "" {
+		returnType = "void"
+	}
+	d.NativeMessage = fmt.Sprintf("Non static method cannot be referenced from a static context: %s %s.%s(%s)", returnType, target.owner, target.member.Name, strings.Join(params, ","))
+	return d
 }
 
 func staticAccessDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee, detail string, start, end int, source string) diagnostic.Diagnostic {
@@ -2316,6 +2358,9 @@ func semaBatchableIterableScopeCaptured(itemType, scopeType string) bool {
 
 // Render the captured start contract and Batchable<Object> execute diagnostics.
 func semaBatchableContractNativeMessage(className, itemType, methodName string) string {
+	if strings.EqualFold(methodName, "finish") {
+		return "Class " + className + " must implement the method: void Database.Batchable<" + itemType + ">.finish(Database.BatchableContext)"
+	}
 	if strings.EqualFold(methodName, "start") {
 		return "Class " + className + " must implement the method: System.Iterable<" + itemType + "> Database.Batchable<" + itemType + ">.start(Database.BatchableContext)"
 	}
@@ -2386,14 +2431,15 @@ func semaPlatformAssignableToType(paramType, argType string, model *semaTypeMemb
 }
 
 func semaStandardExceptionType(typeName string) bool {
-	typeName = strings.TrimPrefix(strings.TrimSpace(typeName), "System.")
-	switch normalizeName(typeName) {
-	case "assertionexception", "assertexception", "aurahandledexception", "asyncexception", "bigobjectexception", "calloutexception", "canvasexception", "dmlexception", "emailexception", "externalobjectexception", "fatalcursorexception", "formulavalidationexception", "illegalargumentexception", "illegalstateexception", "invalidheaderexception", "invalidparametervalueexception", "invalidreadonlyuserdmlexception", "jsonexception", "limitexception", "listexception", "mathexception", "noaccessexception", "nodatafoundexception", "nosuchelementexception", "nullpointerexception", "patternsyntaxexception", "queryexception", "requiredfeaturemissingexception", "searchexception", "securityexception", "sobjectexception", "stringexception", "transientcursorexception", "typeexception", "unexpectedexception", "xmlexception":
+	if _, ok := typesys.StandardExceptionParent(typeName); ok {
 		return true
-	default:
-		base := shortNestedTypeName(typeName)
-		return strings.Contains(typeName, ".") && strings.HasSuffix(normalizeName(base), "exception")
 	}
+	typeName = strings.TrimPrefix(strings.TrimSpace(typeName), "System.")
+	if normalizeName(typeName) == "assertionexception" {
+		return true
+	}
+	base := shortNestedTypeName(typeName)
+	return strings.Contains(typeName, ".") && strings.HasSuffix(normalizeName(base), "exception")
 }
 
 func semaVisualforceComponentType(typeName string) bool {

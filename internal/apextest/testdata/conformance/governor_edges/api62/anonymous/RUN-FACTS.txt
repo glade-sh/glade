@@ -6,4 +6,4 @@ native_complete=true
 deployment_success=true
 helper_class_api=62.0
 helper_source_sha256=4b86e5bca589371793c9f8877316b2520dd9dd99cb14c660fc9032beaf0b3a3d
-transport=successful debug row or uncaught exceptionMessage
+transport=debug-or-terminal

@@ -1,0 +1,3 @@
+id	object	native_scope	routes	apis
+accountFields	AccountChangeEvent	CDC01 object shape only	anonymous,istest	62.0,67.0
+customFields	Parcel__ChangeEvent	CDC14 object shape only	anonymous,istest	62.0,67.0

@@ -1,5 +1,5 @@
 context=istest
-transport=intentional result-bearing assertion; not native test-pass credit
+transport=System.assert
 api=62.0
 source_sha256:62.0:force-app/main/default/classes/CedarBooleanObservationTest.cls=b38af6989319f3f7e2107b57ba53812379780a5d59c2f8a629bfc023c1b32e0c
 source_sha256:62.0:force-app/main/default/classes/CedarBooleanObservationTest.cls-meta.xml=51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d

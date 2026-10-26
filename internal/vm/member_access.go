@@ -92,7 +92,7 @@ func (vm *VM) hasTestVisibleAncestorMember(ownerClass, member string) bool {
 				return true
 			}
 		}
-		if class, ok := vm.Classes[superClass]; ok {
+		if class, ok := vm.classEntry(superClass); ok {
 			for _, field := range class.Fields {
 				if strings.EqualFold(field.Name, memberName) && hasAnyMethodModifier([][]string{field.Modifiers}, "testvisible") {
 					return true
@@ -194,13 +194,13 @@ func (vm *VM) checkClassAccess(ownerClass, member string, modifierSets ...[]stri
 	return fmt.Errorf("%s is not global and not visible from namespace %s", member, callerNS)
 }
 func (vm *VM) currentClassIsTest() bool {
-	class, ok := vm.Classes[vm.currentClass]
+	class, ok := vm.classEntry(vm.currentClass)
 	if ok && class.IsTest {
 		return true
 	}
 	top, nested := lexicalTopLevel(vm.currentClass)
 	if nested {
-		if class, ok := vm.Classes[top]; ok && class.IsTest {
+		if class, ok := vm.classEntry(top); ok && class.IsTest {
 			return true
 		}
 	}

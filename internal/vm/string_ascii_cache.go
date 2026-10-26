@@ -33,7 +33,7 @@ func (vm *VM) stringIsASCII(text string) bool {
 }
 
 func (vm *VM) callCachedStringMember(receiver Value, method string, args []Value) (Value, bool, error) {
-	if strings.EqualFold(method, "length") || strings.EqualFold(method, "charAt") || strings.EqualFold(method, "indexOf") || strings.EqualFold(method, "substring") {
+	if strings.EqualFold(method, "length") || strings.EqualFold(method, "charAt") || strings.EqualFold(method, "indexOf") || strings.EqualFold(method, "substring") || strings.EqualFold(method, "mid") || strings.EqualFold(method, "left") || strings.EqualFold(method, "right") {
 		return callStringMemberWithASCII(receiver, method, args, vm.stringIsASCII(receiver.Text))
 	}
 	return Null, false, nil

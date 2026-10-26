@@ -1,0 +1,35 @@
+apiVersion	route	id	observation
+62.0	isTest	F001	nsx__Size__c|nsx__Size__c|Size;nsx__Owner__r.Name|Name|Full Name;Name|Name|Name
+67.0	isTest	F001	nsx__Size__c|nsx__Size__c|Size;nsx__Owner__r.Name|Name|Full Name;Name|Name|Name
+62.0	isTest	R001	TypeTextStubApi__sfdc_ApexStub:[stubProvider=TypeTextStubProvider:[observedTypes=(), providerFlag=true, providerName=synthetic]]
+67.0	isTest	R001	TypeTextStubApi__sfdc_ApexStub:[stubProvider=TypeTextStubProvider:[observedTypes=(), providerFlag=true, providerName=synthetic]]
+62.0	isTest	R002	TypeTextStubProvider:[observedTypes=(), providerFlag=true, providerName=synthetic]|providerFlag=true|providerName=synthetic
+67.0	isTest	R002	TypeTextStubProvider:[observedTypes=(), providerFlag=true, providerName=synthetic]|providerFlag=true|providerName=synthetic
+62.0	isTest	R003	String|String|List<String>|nsx.TypeTextAnchor|nsx__TypeTextFlag__mdt
+67.0	isTest	R003	String|String|List<String>|nsx.TypeTextAnchor|nsx__TypeTextFlag__mdt
+62.0	isTest	R004	String|String|List<String>|List<String>|nsx.TypeTextAnchor|nsx.TypeTextAnchor
+67.0	isTest	R004	String|String|List<String>|List<String>|nsx.TypeTextAnchor|nsx.TypeTextAnchor
+62.0	isTest	R005	System.TypeException|Invalid conversion from runtime type String to nsx.TypeTextAnchor
+67.0	isTest	R005	System.TypeException|Invalid conversion from runtime type String to nsx.TypeTextAnchor
+62.0	isTest	R006	System.TypeException|Invalid conversion from runtime type List<String> to List<nsx.TypeTextAnchor>
+67.0	isTest	R006	System.TypeException|Invalid conversion from runtime type List<String> to List<nsx.TypeTextAnchor>
+62.0	isTest	R007	nsx__TypeTextFlag__mdt|nsx__TypeTextFlag__mdt
+67.0	isTest	R007	nsx__TypeTextFlag__mdt|nsx__TypeTextFlag__mdt
+62.0	isTest	R008	nsx__typetextitem__c|nsx__typetextitem__changeevent|nsx__typetextitem__share
+67.0	isTest	R008	nsx__typetextitem__c|nsx__typetextitem__changeevent|nsx__typetextitem__share
+62.0	isTest	R009	false
+67.0	isTest	R009	false
+62.0	isTest	R010	null
+67.0	isTest	R010	null
+62.0	isTest	R011	false
+67.0	isTest	R011	false
+62.0	isTest	R012	nsx__Route__c
+67.0	isTest	R012	nsx__Route__c
+62.0	anonymous	F001	nsx__Size__c|nsx__Size__c|Size;nsx__Owner__r.Name|Name|Full Name;Name|Name|Name
+67.0	anonymous	F001	nsx__Size__c|nsx__Size__c|Size;nsx__Owner__r.Name|Name|Full Name;Name|Name|Name
+62.0	anonymous	T001	"{""fieldsetTokenMap"":""nsx__Size__c|nsx__Size__c|Size;nsx__Owner__r.Name|Name|Full Name;Name|Name|Name"",""fieldsetDescribeMap"":""nsx__Size__c|nsx__Size__c|Size;nsx__Owner__r.Name|Name|Full Name;Name|Name|Name"",""contains"":false,""get"":""null"",""keys"":""nsx__typetextitem__c|nsx__typetextitem__changeevent|nsx__typetextitem__share"",""listCast"":""System.TypeException|Invalid conversion from runtime type List<String> to List<nsx.TypeTextAnchor>"",""cast"":""System.TypeException|Invalid conversion from runtime type String to nsx.TypeTextAnchor"",""provider"":""TypeTextStubProvider:[observedTypes=(), providerFlag=true, providerName=synthetic]""}"
+67.0	anonymous	T001	"{""fieldsetTokenMap"":""nsx__Size__c|nsx__Size__c|Size;nsx__Owner__r.Name|Name|Full Name;Name|Name|Name"",""fieldsetDescribeMap"":""nsx__Size__c|nsx__Size__c|Size;nsx__Owner__r.Name|Name|Full Name;Name|Name|Name"",""contains"":false,""get"":""null"",""keys"":""nsx__typetextitem__c|nsx__typetextitem__changeevent|nsx__typetextitem__share"",""listCast"":""System.TypeException|Invalid conversion from runtime type List<String> to List<nsx.TypeTextAnchor>"",""cast"":""System.TypeException|Invalid conversion from runtime type String to nsx.TypeTextAnchor"",""provider"":""TypeTextStubProvider:[observedTypes=(), providerFlag=true, providerName=synthetic]""}"
+62.0	anonymous	T002	"{""foreignGet"":""null"",""qualifiedGet"":""nsx__TypeTextItem__c"",""eventName"":""nsx__TypeTextItem__ChangeEvent"",""shareGet"":""null"",""shareContains"":false}"
+67.0	anonymous	T002	"{""foreignGet"":""null"",""qualifiedGet"":""nsx__TypeTextItem__c"",""eventName"":""nsx__TypeTextItem__ChangeEvent"",""shareGet"":""null"",""shareContains"":false}"
+62.0	anonymous	T003	"{""eventQualifiedKey"":true,""eventLocalKey"":false,""eventQualifiedGet"":""nsx__TypeTextEventItem__ChangeEvent"",""eventQualifiedContains"":true,""eventLocalGet"":""null"",""eventLocalContains"":false}"
+67.0	anonymous	T003	"{""eventQualifiedKey"":true,""eventLocalKey"":false,""eventQualifiedGet"":""nsx__TypeTextEventItem__ChangeEvent"",""eventQualifiedContains"":true,""eventLocalGet"":""null"",""eventLocalContains"":false}"

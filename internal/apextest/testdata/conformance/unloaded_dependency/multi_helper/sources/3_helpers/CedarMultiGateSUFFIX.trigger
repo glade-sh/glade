@@ -1,0 +1,1 @@
+trigger CedarMultiGateSUFFIX on Account (before insert) { for (Account row : Trigger.new) { if (row.Name == 'A') { CedarHelperASUFFIX.apply(row); } if (row.Name == 'B') { CedarHelperBSUFFIX.apply(row); } if (row.Name == 'C') { CedarHelperCSUFFIX.apply(row); }  } }

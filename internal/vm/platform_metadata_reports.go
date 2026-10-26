@@ -427,7 +427,7 @@ func (vm *VM) flowInterviewCreate(args []Value) (Value, error) {
 	if offset == 1 && args[0].Kind == ValueString && args[0].Text != "" {
 		name = args[0].Text + "." + name
 	}
-	if _, found := vm.autolaunchedFlowRule(name); !found {
+	if _, found := vm.interviewFlowRule(name); !found {
 		if _, declared := vm.flowDeclaration(name); !declared {
 			return Null, newExceptionError("System.TypeException", "Invalid type: "+name)
 		}
@@ -1436,7 +1436,8 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 		if permissionSetID.Kind != ValueString && permissionSetID.Kind != ValueNull {
 			return Null, true, fmt.Errorf("AccessLevel.withPermissionSetId expects String")
 		}
-		if permissionSetID.Kind == ValueString && strings.TrimSpace(permissionSetID.Text) != "" {
+		// Null is native-backed (SecurityException); blank strings have no row and keep the base behaviour.
+		if permissionSetID.Kind == ValueNull || strings.TrimSpace(permissionSetID.Text) != "" {
 			if err := vm.validateUserModePermissionSetFeature(); err != nil {
 				return Null, true, err
 			}
@@ -1605,6 +1606,9 @@ func callGeneratedPlatformEnumMember(generated generatedPlatformType, receiver V
 }
 
 func enumValuesEqual(left, right Value) bool {
+	if accessLevelUsesReferenceEquality(left, right) {
+		return left.Equal(right)
+	}
 	if right.Kind != ValueObject {
 		return false
 	}
@@ -1612,6 +1616,9 @@ func enumValuesEqual(left, right Value) bool {
 }
 
 func (vm *VM) resolvedEnumValuesEqual(left, right Value) (bool, bool) {
+	if accessLevelUsesReferenceEquality(left, right) {
+		return left.Equal(right), true
+	}
 	if left.Kind != ValueObject || right.Kind != ValueObject || left.Text == "" || right.Text == "" {
 		return false, false
 	}

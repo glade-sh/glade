@@ -359,9 +359,9 @@ func ProjectScopeWithPrevious(requestedRoot string, p project.Project, previous 
 }
 
 func projectScope(requestedRoot string, p project.Project, previous Scope) Scope {
-	roots := []string{requestedRoot, p.Root}
+	roots := append([]string{requestedRoot, p.Root}, p.ExtraMetadataDirs...)
 	var excludedRoots []string
-	exclusionExceptions := []string{requestedRoot, p.Root}
+	exclusionExceptions := append([]string{requestedRoot, p.Root}, p.ExtraMetadataDirs...)
 	visitedProjects := make(map[*project.Project]bool)
 	configuredSourceRoots := make(map[string]struct{})
 	incompleteSourceRoots := make(map[string]bool)
@@ -379,7 +379,9 @@ func projectScope(requestedRoot string, p project.Project, previous Scope) Scope
 		}
 		roots = append(roots, dependency.SourceRoot)
 		roots = append(roots, dependency.Project.Root)
+		roots = append(roots, dependency.Project.ExtraMetadataDirs...)
 		exclusionExceptions = append(exclusionExceptions, dependency.SourceRoot, dependency.Project.Root)
+		exclusionExceptions = append(exclusionExceptions, dependency.Project.ExtraMetadataDirs...)
 		excludedRoots = appendNestedProjectSources(excludedRoots, *dependency.Project, visitedProjects)
 	}
 	for _, shim := range p.PackageShims {
@@ -396,7 +398,9 @@ func projectScope(requestedRoot string, p project.Project, previous Scope) Scope
 		}
 		roots = append(roots, shim.SourceRoot)
 		roots = append(roots, shim.Project.Root)
+		roots = append(roots, shim.Project.ExtraMetadataDirs...)
 		exclusionExceptions = append(exclusionExceptions, shim.SourceRoot, shim.Project.Root)
+		exclusionExceptions = append(exclusionExceptions, shim.Project.ExtraMetadataDirs...)
 		excludedRoots = appendNestedProjectSources(excludedRoots, *shim.Project, visitedProjects)
 	}
 
@@ -523,6 +527,7 @@ func appendProjectSourceRoots(out []string, sourceRoot string, nested *project.P
 	if strings.TrimSpace(nested.Root) != "" {
 		out = append(out, nested.Root)
 	}
+	out = append(out, nested.ExtraMetadataDirs...)
 	return appendNestedProjectSources(out, *nested, visited)
 }
 

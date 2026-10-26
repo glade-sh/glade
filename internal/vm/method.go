@@ -296,7 +296,7 @@ func (vm *VM) unregisterClassMethods(class Class) {
 }
 
 func (vm *VM) duplicateClassForMerge(class Class) (Class, bool) {
-	existing, ok := vm.Classes[class.Name]
+	existing, ok := vm.classEntry(class.Name)
 	if !ok || existing.Name == "" {
 		return Class{}, false
 	}

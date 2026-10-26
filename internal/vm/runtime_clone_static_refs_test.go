@@ -53,7 +53,7 @@ func TestCloneRuntimeCopiedStaticsCollectOwnRefs(t *testing.T) {
 			if clone.staticValueRefs != nil || clone.staticValueRefFields != nil {
 				t.Fatal("deep-copied statics must collect their newly allocated refs")
 			}
-			if got := clone.Classes["ListRegistry"].StaticFields["Items"].Value.List[0].Ref; got == target.Ref {
+			if got := classValue(clone, "ListRegistry").StaticFields["Items"].Value.List[0].Ref; got == target.Ref {
 				t.Fatal("copied static record retained the template ref")
 			}
 			if err := mutateStaticRefsCloneRecord(clone, "copied"); err != nil {
@@ -83,17 +83,17 @@ func TestCloneRuntimeFrozenSharedStaticRefsDivergentAliases(t *testing.T) {
 	if clone.staticValueRefs != nil || clone.staticValueRefFields != nil {
 		t.Fatal("normalized static aliases must collect their own index")
 	}
-	if !sameMap(clone.Classes["ListRegistry"].StaticFields, clone.Classes["pkg.ListRegistry"].StaticFields) {
+	if !sameMap(classValue(clone, "ListRegistry").StaticFields, classValue(clone, "pkg.ListRegistry").StaticFields) {
 		t.Fatal("planned clone did not normalize static aliases")
 	}
 	if err := mutateStaticRefsCloneRecord(clone, "normalized"); err != nil {
 		t.Fatal(err)
 	}
 	assertStaticRefsMatchFresh(t, clone)
-	if got := template.Classes["ListRegistry"].StaticFields["Items"].Value.List[0].Fields["Name"].Text; got != "divergent" {
+	if got := classValue(template, "ListRegistry").StaticFields["Items"].Value.List[0].Fields["Name"].Text; got != "divergent" {
 		t.Fatalf("short source alias record = %q, want divergent", got)
 	}
-	if got := template.Classes["pkg.ListRegistry"].StaticFields["Items"].Value.List[0].Fields["Name"].Text; got != "seed" {
+	if got := classValue(template, "pkg.ListRegistry").StaticFields["Items"].Value.List[0].Fields["Name"].Text; got != "seed" {
 		t.Fatalf("qualified source alias record = %q, want seed", got)
 	}
 }
@@ -111,7 +111,7 @@ func TestCloneRuntimeSharedStaticRefsWriteIsolation(t *testing.T) {
 			}
 			beforeRefs, beforeFields := observer.collectStaticValueRefs()
 			replacement := List(Object("Replacement"))
-			class := writer.Classes["pkg.ListRegistry"]
+			class := classValue(writer, "pkg.ListRegistry")
 			writer.writeStaticFieldValue("pkg.ListRegistry", "Items", class, class.StaticFields["Items"], replacement)
 			assertStaticRefsMatchFresh(t, writer)
 			if !writer.staticValueRefs[replacement.Ref] {
@@ -121,7 +121,7 @@ func TestCloneRuntimeSharedStaticRefsWriteIsolation(t *testing.T) {
 				t.Fatal("static write changed the other runtime's index")
 			}
 			assertStaticRefsMatchFresh(t, observer)
-			if got := observer.Classes["ListRegistry"].StaticFields["Items"].Value.List[0].Fields["Name"].Text; got != "seed" {
+			if got := classValue(observer, "ListRegistry").StaticFields["Items"].Value.List[0].Fields["Name"].Text; got != "seed" {
 				t.Fatalf("other runtime's static record = %q, want seed", got)
 			}
 		})
@@ -248,14 +248,14 @@ func TestCloneRuntimeSharedStaticRefsCloneChain(t *testing.T) {
 	if err := mutateStaticRefsCloneRecord(second, "second-again"); err != nil {
 		t.Fatal(err)
 	}
-	if got := afterWrite.Classes["ListRegistry"].StaticFields["Items"].Value.List[0].Fields["Name"].Text; got != "second" {
+	if got := classValue(afterWrite, "ListRegistry").StaticFields["Items"].Value.List[0].Fields["Name"].Text; got != "second" {
 		t.Fatalf("source write after cloning changed descendant record: %q", got)
 	}
 	for _, clone := range []*VM{template, first, second, third, afterWrite} {
 		assertStaticRefsMatchFresh(t, clone)
 	}
 	for _, clone := range []*VM{template, first, third} {
-		if got := clone.Classes["ListRegistry"].StaticFields["Items"].Value.List[0].Fields["Name"].Text; got != "seed" {
+		if got := classValue(clone, "ListRegistry").StaticFields["Items"].Value.List[0].Fields["Name"].Text; got != "seed" {
 			t.Fatalf("clone chain leaked static record update: %q", got)
 		}
 	}
@@ -289,11 +289,11 @@ func TestCloneRuntimeSharedStaticRefsRegistrationIsolation(t *testing.T) {
 			updated.Ref = previous.Ref
 			updated.Fields["Name"] = String("updated")
 			writer.propagateAliasSnapshotToStatics(snapshotAlias(previous), updated)
-			if got := writer.Classes["LateRegistry"].StaticFields["Record"].Value.Fields["Name"].Text; got != "updated" {
+			if got := classValue(writer, "LateRegistry").StaticFields["Record"].Value.Fields["Name"].Text; got != "updated" {
 				t.Fatalf("registered record Name = %q, want updated", got)
 			}
 			assertStaticRefsMatchFresh(t, writer)
-			if _, ok := observer.Classes["LateRegistry"]; ok {
+			if _, ok := observer.classEntry("LateRegistry"); ok {
 				t.Fatal("registration changed other runtime's classes")
 			}
 			if !reflect.DeepEqual(observer.staticValueRefs, beforeRefs) || !reflect.DeepEqual(normalizedStaticRefLocations(observer.staticValueRefFields), normalizedStaticRefLocations(beforeFields)) {
@@ -325,7 +325,7 @@ func TestCloneRuntimeSharedStaticRefsRegistrationResetsValues(t *testing.T) {
 			if err := writer.RegisterClass(class); err != nil {
 				t.Fatal(err)
 			}
-			previous := writer.Classes["pkg.RecordRegistry"].StaticFields["Record"].Value
+			previous := classValue(writer, "pkg.RecordRegistry").StaticFields["Record"].Value
 			if previous.Ref == oldRef {
 				t.Fatal("registration did not reset the static record ref")
 			}
@@ -333,7 +333,7 @@ func TestCloneRuntimeSharedStaticRefsRegistrationResetsValues(t *testing.T) {
 			updated.Ref = previous.Ref
 			updated.Fields["Name"] = String("registered-again")
 			writer.propagateAliasSnapshotToStatics(snapshotAlias(previous), updated)
-			if got := writer.Classes["pkg.RecordRegistry"].StaticFields["Record"].Value.Fields["Name"].Text; got != "registered-again" {
+			if got := classValue(writer, "pkg.RecordRegistry").StaticFields["Record"].Value.Fields["Name"].Text; got != "registered-again" {
 				t.Fatalf("registered record Name = %q, want registered-again", got)
 			}
 			assertStaticRefsMatchFresh(t, writer)
@@ -390,12 +390,12 @@ func TestCloneRuntimeSharedStaticRefsConcurrentClones(t *testing.T) {
 			t.Fatal(errs[i])
 		}
 		assertStaticRefsMatchFresh(t, clone)
-		if got, want := clone.Classes["ListRegistry"].StaticFields["Items"].Value.List[0].Fields["Name"].Text, fmt.Sprintf("worker-%d", i); got != want {
+		if got, want := classValue(clone, "ListRegistry").StaticFields["Items"].Value.List[0].Fields["Name"].Text, fmt.Sprintf("worker-%d", i); got != want {
 			t.Fatalf("clone %d record = %q, want %q", i, got, want)
 		}
 	}
 	assertStaticRefsMatchFresh(t, template)
-	if got := template.Classes["ListRegistry"].StaticFields["Items"].Value.List[0].Fields["Name"].Text; got != "seed" {
+	if got := classValue(template, "ListRegistry").StaticFields["Items"].Value.List[0].Fields["Name"].Text; got != "seed" {
 		t.Fatalf("template record = %q, want seed", got)
 	}
 }
@@ -447,7 +447,7 @@ func mutateStaticRefsCloneRecord(machine *VM, name string) error {
 	updated.Ref = previous.Ref
 	updated.Fields["Name"] = String(name)
 	machine.propagateAliasSnapshotToStatics(snapshotAlias(previous), updated)
-	if got := machine.Classes["ListRegistry"].StaticFields["Items"].Value.List[0].Fields["Name"].Text; got != name {
+	if got := classValue(machine, "ListRegistry").StaticFields["Items"].Value.List[0].Fields["Name"].Text; got != name {
 		return fmt.Errorf("static record Name = %q, want %q", got, name)
 	}
 	return nil

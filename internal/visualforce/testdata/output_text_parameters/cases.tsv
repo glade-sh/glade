@@ -1,0 +1,13 @@
+case	format	parameters	escape
+plain	{1}|{0}|{1}	{!caption},{!amount}	true
+integer	{0, number, ###,###,###,##0}	{!amount}	true
+decimal	{0, number, ###,###,###,##0.00}	{!amount}	true
+negative	{0, number, ###,###,###,##0.00}	{!negative}	true
+zero	{0, number, 000,000.00}	{!zero}	true
+tie	{0,number,0}	{!tie}	true
+null	a{0}b{0,number,0.00}c	{!missing}	true
+missing	{0}|{2}	{!caption}	true
+quoted	'{0}' ''{0}''	{!caption}	true
+date	{0,date,dd'.'MM'.'yyyy}	{!day}	true
+datetime	{0,date,yyyy-MM-dd HH:mm:ss}	{!stamp}	true
+raw	&lt;b&gt;{0}&lt;/b&gt;	{!caption}	false

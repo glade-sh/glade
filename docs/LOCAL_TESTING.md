@@ -340,7 +340,11 @@ Unattributed dependency errors retain the whole-project fallback.
 The default local running user uses `America/Los_Angeles`. Local Datetime
 construction, date components, and `format()` follow the current user's time
 zone; GMT methods keep GMT semantics. Set `TimeZoneSidKey` explicitly on users
-you insert for `System.runAs` rather than relying on a default.
+you insert for `System.runAs` rather than relying on a default. Configure the
+default running test user with `test.user.timeZone`, `test.user.locale`,
+`test.user.language`, and `test.user.defaultCurrencyIsoCode`. Set `test.clock.start`
+to an RFC3339 timestamp to choose the initial test date. See
+[the configuration guide](CONFIG.md#test-user-and-clock) for defaults and validation.
 
 The checked Winter '27 `Limits.getLimitHeapSize()` values are 10,000,000 bytes
 for synchronous Apex (including tests and Scheduled Apex) and 25,000,000 for
@@ -432,6 +436,19 @@ methods in the remaining classes. It never exceeds the requested parallelism.
 glade test --project . --parallelism 8 --json
 ```
 
+For repositories with roughly 2,000 tests or more, start with
+`--parallelism 2`, or raise the outer runner's whole-run wall-clock cap to
+allow the selected suite to finish. Choose parallelism within the host's memory
+budget. This whole-run cap is separate from Glade's per-test `--test-timeout`.
+
+Classes run longest-first using recorded durations when available; without
+history, classes with more test methods run first. An outer runner that stops
+the process at its cap can leave smaller classes unobserved. Record the selected
+class list, duration history, parallelism, and class ordering alongside each
+run's results. Keep completed results separate from canceled or unstarted tests;
+a capped run does not establish a verdict for those tests. Use exact class files
+or balanced shards to finish the remaining selection.
+
 ## Split and Balance Test Suites
 
 Use an exact class file when a wrapper already owns selection. It contains one
@@ -490,9 +507,22 @@ GLADE_TEST_TIMEOUT=15m glade test
 GLADE_TEST_TIMEOUT=0 glade test
 ```
 
-On a memory-constrained host,
-`--gc-aggressive` reduces heap growth at the cost of more frequent garbage
-collection.
+With a finite memory limit, `--gc-aggressive` sets `GOGC=off`, making garbage
+collection follow Go's soft memory limit instead of a heap-growth percentage.
+Glade uses a 4 GiB default for `glade test` and honors an explicit `GOMEMLIMIT`.
+Set a limit appropriate for the host and leave room for other processes:
+
+```bash
+GOMEMLIMIT=2GiB glade test --project . --no-serve --gc-aggressive --parallelism 2
+```
+
+Use `--no-serve` to apply these settings to the process executing the tests.
+An existing test server retains its own startup GC settings.
+
+The limit is a soft target for Go runtime memory, not a hard process RSS cap.
+If the effective soft limit is unlimited (`GOMEMLIMIT=off` or Go's maximum
+`int64` limit), `--gc-aggressive` falls back to `GOGC=50` so automatic
+heap-growth collection remains enabled.
 
 ## Run Tests Affected By Local Changes
 

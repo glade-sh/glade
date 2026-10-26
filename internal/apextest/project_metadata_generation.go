@@ -31,8 +31,11 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 			paths := append([]string(nil), loaded.ListViewFiles...)
 			paths = append(paths, resource.LayoutMetadataFiles(loaded)...)
 			paths = append(paths, loaded.FlowFiles...)
+			paths = append(paths, loaded.NetworkFiles...)
 			paths = append(paths, loaded.PermissionSetGroupFiles...)
+			paths = append(paths, resource.FeatureParameterMetadataFiles(loaded)...)
 			paths = append(paths, resource.SetupRecordMetadataFiles(loaded)...)
+			paths = append(paths, project.EmailServiceMetadataFiles(loaded)...)
 			for _, path := range paths {
 				data, err := readProjectMetadataFile(loaded, path)
 				if err != nil {
@@ -129,7 +132,7 @@ func projectSourceRoots(p *project.Project) []string {
 		return nil
 	}
 	roots := []string{p.Root}
-	for _, pkgRoot := range p.PackageRoots() {
+	for _, pkgRoot := range append(p.PackageRoots(), p.ExtraMetadataDirs...) {
 		if _, err := sourceRootPath(p.Root, pkgRoot); err != nil {
 			roots = append(roots, pkgRoot)
 		}

@@ -90,14 +90,14 @@ func cloneQueryForCacheHit(query Query) Query {
 	query.HavingAggregates = append([]Aggregate(nil), query.HavingAggregates...)
 	if query.Where != nil {
 		where := *query.Where
-		if conditionContainsSubquery(where) {
+		if conditionContainsSubquery(where) || conditionHasFormula(&where) {
 			where = cloneCondition(where)
 		}
 		query.Where = &where
 	}
 	if query.Having != nil {
 		having := *query.Having
-		if conditionContainsSubquery(having) {
+		if conditionContainsSubquery(having) || conditionHasFormula(&having) {
 			having = cloneCondition(having)
 		}
 		query.Having = &having
@@ -106,6 +106,10 @@ func cloneQueryForCacheHit(query Query) Query {
 }
 
 func cloneCondition(condition Condition) Condition {
+	if condition.Formula != nil {
+		formula := *condition.Formula
+		condition.Formula = &formula
+	}
 	condition.And = append([]Condition(nil), condition.And...)
 	for i := range condition.And {
 		condition.And[i] = cloneCondition(condition.And[i])
@@ -231,6 +235,12 @@ func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) 
 // ExecuteWithCacheAndContext binds execution state independently of cached query
 // syntax and schema resolution.
 func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *ExecutionCache, context ExecutionContext) (Result, error) {
+	if context.APIVersion != "" {
+		org.APIVersion = context.APIVersion
+	}
+	if err := ValidateFormulaVersion(query, org.APIVersion); err != nil {
+		return Result{}, err
+	}
 	if err := validateSemiAntiQuery(query); err != nil {
 		return Result{}, err
 	}
@@ -1302,7 +1312,7 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 		return !matches(org, definition, record, &Condition{
 			RewrittenAggregate: condition.RewrittenAggregate,
 			And:                condition.And, Or: condition.Or,
-			Field: condition.Field, Op: condition.Op,
+			Field: condition.Field, Formula: condition.Formula, Op: condition.Op,
 			Value: condition.Value, Value2: condition.Value2, Range: condition.Range,
 			DateLiteralTimeZoneID: condition.DateLiteralTimeZoneID,
 			Values:                condition.Values, Subquery: condition.Subquery,
@@ -1324,7 +1334,13 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 		}
 		return false
 	}
-	left, ok := recordValue(org, definition, record, condition.Field)
+	var left storage.Value
+	var ok bool
+	if condition.Formula != nil {
+		left, ok = whereFormulaValue(org, definition, record, condition.Formula), true
+	} else {
+		left, ok = recordValue(org, definition, record, condition.Field)
+	}
 	if !ok {
 		left = storage.NullValue()
 	}
@@ -1422,6 +1438,14 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 func dateLiteralNow(now time.Time, timeZoneID string) time.Time {
 	local := now.UTC().In(dateLiteralLocation(timeZoneID))
 	return time.Date(local.Year(), local.Month(), local.Day(), local.Hour(), local.Minute(), local.Second(), local.Nanosecond(), time.UTC)
+}
+
+// MatchesDateLiteralRange shares parsed calendar-range semantics with SOSL.
+func MatchesDateLiteralRange(left storage.Value, condition *Condition) (bool, bool) {
+	if condition == nil || !condition.Range {
+		return false, false
+	}
+	return matchesDateLiteralRange(left, condition)
 }
 
 // matchesDateLiteralRange applies a date-literal range to the stored field
@@ -2775,6 +2799,9 @@ func validateConditionReferences(org storage.OrgState, definition storage.Object
 		if err := validateConditionReferences(org, definition, &condition.Or[i], mode); err != nil {
 			return err
 		}
+	}
+	if condition.Formula != nil {
+		return validateWhereFormula(org, definition, *condition, mode)
 	}
 	if condition.Field != "" {
 		if expr, ok := parseSelectFieldExpression(condition.Field); ok {

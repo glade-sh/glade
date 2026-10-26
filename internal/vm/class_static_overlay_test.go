@@ -27,11 +27,11 @@ func TestCloneRuntimeSharesStaticTemplatesUntilFirstWrite(t *testing.T) {
 	first := template.CloneRuntimeFrozenShared(nil)
 	second := template.CloneRuntimeFrozenShared(nil)
 
-	templatePointer := reflect.ValueOf(template.Classes["Registry"].StaticFields).Pointer()
-	if got := reflect.ValueOf(first.Classes["Registry"].StaticFields).Pointer(); got != templatePointer {
+	templatePointer := reflect.ValueOf(classValue(template, "Registry").StaticFields).Pointer()
+	if got := reflect.ValueOf(classValue(first, "Registry").StaticFields).Pointer(); got != templatePointer {
 		t.Fatalf("first clone static template pointer = %x, want shared %x", got, templatePointer)
 	}
-	if got := reflect.ValueOf(second.Classes["pkg.Registry"].StaticFields).Pointer(); got != templatePointer {
+	if got := reflect.ValueOf(classValue(second, "pkg.Registry").StaticFields).Pointer(); got != templatePointer {
 		t.Fatalf("second clone static template pointer = %x, want shared %x", got, templatePointer)
 	}
 
@@ -42,17 +42,17 @@ func TestCloneRuntimeSharesStaticTemplatesUntilFirstWrite(t *testing.T) {
 	field := class.StaticFields["Values"]
 	first.writeStaticFieldValue("pkg.Registry", "Values", class, field, List(String("changed")))
 
-	firstPointer := reflect.ValueOf(first.Classes["Registry"].StaticFields).Pointer()
+	firstPointer := reflect.ValueOf(classValue(first, "Registry").StaticFields).Pointer()
 	if firstPointer == templatePointer {
 		t.Fatal("first static write did not detach the shared template")
 	}
-	if got := reflect.ValueOf(first.Classes["pkg.Registry"].StaticFields).Pointer(); got != firstPointer {
+	if got := reflect.ValueOf(classValue(first, "pkg.Registry").StaticFields).Pointer(); got != firstPointer {
 		t.Fatalf("qualified alias pointer = %x, want detached %x", got, firstPointer)
 	}
-	if got := template.Classes["Registry"].StaticFields["Values"].Value.List[0].Text; got != "seed" {
+	if got := classValue(template, "Registry").StaticFields["Values"].Value.List[0].Text; got != "seed" {
 		t.Fatalf("template value = %q, want seed", got)
 	}
-	if got := second.Classes["Registry"].StaticFields["Values"].Value.List[0].Text; got != "seed" {
+	if got := classValue(second, "Registry").StaticFields["Values"].Value.List[0].Text; got != "seed" {
 		t.Fatalf("sibling value = %q, want seed", got)
 	}
 }
@@ -118,13 +118,13 @@ func TestCloneRuntimeDetachesStaticCollectionBeforeMemberMutation(t *testing.T) 
 		t.Fatal(err)
 	}
 	changedKey := mapKey(String("changed"))
-	if _, ok := template.Classes["MapRegistry"].StaticFields["Values"].Value.Map[changedKey]; ok {
+	if _, ok := classValue(template, "MapRegistry").StaticFields["Values"].Value.Map[changedKey]; ok {
 		t.Fatal("member mutation changed template static collection")
 	}
-	if _, ok := second.Classes["MapRegistry"].StaticFields["Values"].Value.Map[changedKey]; ok {
+	if _, ok := classValue(second, "MapRegistry").StaticFields["Values"].Value.Map[changedKey]; ok {
 		t.Fatal("member mutation changed sibling static collection")
 	}
-	if _, ok := first.Classes["MapRegistry"].StaticFields["Values"].Value.Map[changedKey]; !ok {
+	if _, ok := classValue(first, "MapRegistry").StaticFields["Values"].Value.Map[changedKey]; !ok {
 		t.Fatal("member mutation missing from owning runtime")
 	}
 }

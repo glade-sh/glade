@@ -1,0 +1,5 @@
+case	purpose
+adminDefaults	Fresh scratch administrator zone/locale/language compared with Organization defaults
+berlin	Non-default DST zone, British locale, local date across UTC midnight, date/time vs GMT, winter/summer format, TODAY/THIS_WEEK/NEXT_WEEK on Date and Datetime, formula TODAY/NOW
+german	New York DST zone, German locale/language, prior local calendar date, localized default format, same queries/formulas
+utc	GMT control with British locale and the same queries/formulas

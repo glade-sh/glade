@@ -1,0 +1,11 @@
+source_api	route	observation
+62.0	anonymous	"REJECT|Compilation failed at Line 9 column 21 with the error:
+
+FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs."
+67.0	anonymous	"REJECT|Compilation failed at Line 9 column 21 with the error:
+
+FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs."
+68.0	anonymous	OK|1
+68.0	istest	OK|1
+62.0	istest	REJECT|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.
+67.0	istest	REJECT|FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs.

@@ -221,10 +221,12 @@ func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
 	// The broad catalog carries no source-org residue: no custom fields, no
 	// custom reference targets, no custom child rows, no non-master record types,
 	// and only reviewed standard picklist values.
+	// The standard_picklist_values native API 62/67 rows qualify the three
+	// corrected default lists and their ordering in both catalogs.
 	wantDigests := map[string]string{
-		"RAW-BROAD-v1":       "fcb457806c54f1a2fd7f9fc5d7177b7848ab6ee2f97b4516ecf27701c4fa5ee9",
-		"PROJECTED-BROAD-v1": "44968fb8942c59f149326850b8d8b53aa4adef378d3145c491efa121715a0783",
-		"RICH-v1":            "2fead4dbf85b3eaacb82a5fd14bfd558dc6f9d9d97795f4caaa6062859383456",
+		"RAW-BROAD-v1":       "deb1417e7868805b35e667e8e666677626db8aee485fe3f46128fb711c97eea6",
+		"PROJECTED-BROAD-v1": "f5abc3a50aca19d421232abf1c3e68a1418b2e155c483eff9a96a6bc4e816941",
+		"RICH-v1":            "1dbd6dfb605bbbf25e96cc7db83558e678c85e6fe83267cdac0a1514e0a9dc8e",
 		"REVERSE-v1":         "a7010fc13d96f894dfc7c3efd5e8fe9b23e1a40984f78f972cf161fa59a4cf6f",
 	}
 	for _, section := range []string{"RAW-BROAD-v1", "PROJECTED-BROAD-v1", "RICH-v1", "REVERSE-v1"} {
@@ -523,7 +525,7 @@ func TestStandardDescribeCatalogStandardPicklistValues(t *testing.T) {
 		}
 		allowed[value] = true
 	}
-	if len(allowed) != 59042 || len(values) != len(allowed) {
+	if len(allowed) != 59049 || len(values) != len(allowed) {
 		t.Fatalf("allowlist count = %d/%d", len(values), len(allowed))
 	}
 	file, err := standardDescribeCatalogFS.Open("standard_describe_catalog.json.gz")

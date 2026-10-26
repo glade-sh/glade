@@ -48,7 +48,7 @@ func runVisualforceShardFixture(t *testing.T, index, discovery, planner, history
 	}
 	writeApexFixtureExecutable(t, filepath.Join(root, "go"), `#!/usr/bin/env bash
 set -euo pipefail
-if [[ "$*" == "test -list ^Test ./internal/visualforce" ]]; then cat "$FIXTURE_ROOT/discovery"; exit 0; fi
+if [[ "$*" == "test -vet=off -trimpath -list ^Test ./internal/visualforce" ]]; then cat "$FIXTURE_ROOT/discovery"; exit 0; fi
 if [[ "$1" == "test" && "$2" == "-json" ]]; then
   printf '%s\n' "$*" >>"$FIXTURE_ROOT/calls"
   if [[ -s "$FIXTURE_ROOT/events" ]]; then
@@ -152,7 +152,7 @@ func TestCIVisualforceShardsPreserveFullDiscoveryWithRealPlanner(t *testing.T) {
 					}
 				}
 				data, err = os.ReadFile(filepath.Join(filepath.Dir(artifacts), "calls"))
-				want := "test -json -vet=off -count=1 -timeout=70m -run " + selection.Regex + " ./internal/visualforce\n"
+				want := "test -json -vet=off -trimpath -count=1 -timeout=70m -run " + selection.Regex + " ./internal/visualforce\n"
 				if err != nil || string(data) != want {
 					t.Fatalf("native call=%s want=%s err=%v", data, want, err)
 				}

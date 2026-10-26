@@ -87,6 +87,22 @@ For recognized `doctor` flags, setup failures such as a missing project path or
 malformed `glade.yml` still emit the doctor JSON object with `status: "failed"`
 and the matching nonzero `exitCode`.
 
+When source uses undeclared org features or project permission-set assignments,
+the optional `orgSetup` array contains setup advice. It is omitted when there
+are no suggestions. Each entry has:
+
+| Field | Meaning |
+| --- | --- |
+| `kind` | `feature` or `permissionSet`. |
+| `feature` | Feature name for a feature suggestion; otherwise omitted. |
+| `names` | Permission-set API names for a permission-set suggestion; otherwise omitted. |
+| `reason` | Source evidence that prompted the suggestion. |
+| `files` | Up to three project-relative files containing evidence; omitted when empty. |
+| `yaml` | Suggested `glade.yml` block, retaining existing configured entries. |
+
+Suggestions do not enable features or assign permissions, and do not change
+doctor's `status` or `exitCode`. See [setup suggestions](/reference/config#setup-suggestions).
+
 ## Diagnostic object
 
 ```json

@@ -1,0 +1,49 @@
+api	route	case	outcome	diagnostic	runtime_error
+62.0	anonymous	direct_throw	accepted	-	System.IllegalArgumentException: branch
+62.0	istest	direct_throw	rejected	Unreachable statement	-
+62.0	anonymous	if_else_throw	accepted	-	System.IllegalArgumentException: branch
+62.0	istest	if_else_throw	rejected	Unreachable statement	-
+62.0	anonymous	nested_if_throw	accepted	-	System.IllegalArgumentException: branch
+62.0	istest	nested_if_throw	rejected	Unreachable statement	-
+62.0	anonymous	try_catch_throw	accepted	-	System.IllegalArgumentException: branch
+62.0	istest	try_catch_throw	rejected	Unreachable statement	-
+62.0	anonymous	try_finally_throw	accepted	-	System.IllegalArgumentException: branch
+62.0	istest	try_finally_throw	rejected	Unreachable statement	-
+62.0	anonymous	finally_only_throw	accepted	-	System.IllegalArgumentException: branch
+62.0	istest	finally_only_throw	accepted	-	System.IllegalArgumentException: branch
+62.0	anonymous	one_branch_falls_through	accepted	-	-
+62.0	istest	one_branch_falls_through	accepted	-	-
+62.0	anonymous	caught_throw_falls_through	accepted	-	-
+62.0	istest	caught_throw_falls_through	accepted	-	-
+67.0	anonymous	direct_throw	accepted	-	System.IllegalArgumentException: branch
+67.0	istest	direct_throw	rejected	Unreachable statement	-
+67.0	anonymous	if_else_throw	accepted	-	System.IllegalArgumentException: branch
+67.0	istest	if_else_throw	rejected	Unreachable statement	-
+67.0	anonymous	nested_if_throw	accepted	-	System.IllegalArgumentException: branch
+67.0	istest	nested_if_throw	rejected	Unreachable statement	-
+67.0	anonymous	try_catch_throw	accepted	-	System.IllegalArgumentException: branch
+67.0	istest	try_catch_throw	rejected	Unreachable statement	-
+67.0	anonymous	try_finally_throw	accepted	-	System.IllegalArgumentException: branch
+67.0	istest	try_finally_throw	rejected	Unreachable statement	-
+67.0	anonymous	finally_only_throw	accepted	-	System.IllegalArgumentException: branch
+67.0	istest	finally_only_throw	accepted	-	System.IllegalArgumentException: branch
+67.0	anonymous	one_branch_falls_through	accepted	-	-
+67.0	istest	one_branch_falls_through	accepted	-	-
+67.0	anonymous	caught_throw_falls_through	accepted	-	-
+67.0	istest	caught_throw_falls_through	accepted	-	-
+68.0	anonymous	direct_throw	accepted	-	System.IllegalArgumentException: branch
+68.0	istest	direct_throw	rejected	Unreachable statement	-
+68.0	anonymous	if_else_throw	accepted	-	System.IllegalArgumentException: branch
+68.0	istest	if_else_throw	rejected	Unreachable statement	-
+68.0	anonymous	nested_if_throw	accepted	-	System.IllegalArgumentException: branch
+68.0	istest	nested_if_throw	rejected	Unreachable statement	-
+68.0	anonymous	try_catch_throw	accepted	-	System.IllegalArgumentException: branch
+68.0	istest	try_catch_throw	rejected	Unreachable statement	-
+68.0	anonymous	try_finally_throw	accepted	-	System.IllegalArgumentException: branch
+68.0	istest	try_finally_throw	rejected	Unreachable statement	-
+68.0	anonymous	finally_only_throw	accepted	-	System.IllegalArgumentException: branch
+68.0	istest	finally_only_throw	accepted	-	System.IllegalArgumentException: branch
+68.0	anonymous	one_branch_falls_through	accepted	-	-
+68.0	istest	one_branch_falls_through	accepted	-	-
+68.0	anonymous	caught_throw_falls_through	accepted	-	-
+68.0	istest	caught_throw_falls_through	accepted	-	-

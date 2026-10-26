@@ -1,5 +1,481 @@
 # Release Notes
 
+## Unreleased
+
+No unreleased changes.
+
+## v0.3.1
+
+v0.3.1 refines offline Apex, Flow, Visualforce, and LWC behavior against
+captured Salesforce results. It adds change data capture delivery, assignment
+and duplicate rule execution, Person Account field mirroring, and graceful
+test stops. API labels identify the source
+versions a change applies to. The supported windows and hosted boundaries remain
+in [release policy](RELEASE_POLICY.md#salesforce-api-versions).
+
+### Behavior to check when upgrading
+
+- **Duplicate rules (Apex API 62.0-68.0).** The standard duplicate rules are
+  active by default, as in a native scratch org. A project can deactivate a rule
+  for an object by declaring that `DuplicateRule` with `isActive` set to
+  `false`. Inserts and updates that matched no rule before can now fail with
+  `DUPLICATES_DETECTED`.
+- **Stopped test runs (all source API versions).** `glade test` JSON output
+  reports the new status `stopped` when a run is stopped, and watch mode emits a
+  `watch.stopped` event. A stopped run exits with a failing status and keeps the
+  completed cases. Scripts that matched only the earlier status values must
+  accept `stopped`.
+- **Inner types (Apex API 62.0-68.0).** Inner-type names now resolve through
+  their lexical owners. Code that depended on the earlier resolution of a name
+  shared with a platform type should be rechecked.
+- **Test cache.** If an old compile error persists after upgrading, run
+  `glade test clear-cache` once.
+
+### Apex semantics and queries
+
+- **Inner types (Apex API 62.0-68.0).** An undotted name that resolves through
+  lexical or inherited scope to a project inner class, enum, or interface binds
+  to that inner type, including when it shares a name with a `System` or
+  `Schema` type. Other classes keep the platform type. Inner-type method errors
+  are reported before the enclosing type's own, and only genuinely missing
+  inner-enum statics are rejected; `values()`, `valueOf()`, `name()`, and
+  `ordinal()` keep working.
+- **Enum methods (Apex API 62.0-68.0).** Methods called on type-qualified enum
+  constants are validated, and `name()` and `ordinal()` stay visible when a
+  project class shadows the platform enum's name.
+- **Anonymous throw (Apex API 62.0-68.0).** Statements after a top-level
+  `throw` in anonymous Apex remain accepted; nested direct throws keep the
+  unreachable-code diagnostic.
+- **Commerce cart types (Apex API 62.0-68.0).** `CartItem` and
+  `CartDeliveryGroup` inherit `CommerceObject`, and `CartItemList` cannot be
+  constructed directly.
+- **Batchable and Queueable contracts (Apex API 62.0-68.0).** A class that
+  extends a platform superclass is checked against the inherited abstract
+  `Batchable` contract. The duplicate generic rule applies only to platform
+  superclasses, not project `Batchable` hierarchies.
+- **Id values (Apex API 62.0-68.0).** Ids keep their 15- or 18-character
+  display form through async boundaries, typed returns, and Object equality;
+  Id equality does not depend on that form.
+- **Access levels (Apex API 62.0-68.0).** `AccessLevel` values keep their
+  identity across clone and async boundaries, and source enums are
+  distinguished from platform enums.
+- **Blob and describe text (Apex API 62.0-68.0).** User classes that hold Blob
+  fields retain ordinary fields, and namespaced describe and type text follow
+  the native forms.
+- **Regular expressions (Apex API 62.0-68.0).** `String.split` with a plain
+  literal separator no longer depends on the regex engine's clock, preserves
+  grapheme and numeric backreference handling, and keeps its error results.
+- **Dependency artifacts (Apex API 62.0-68.0).** Loaded artifact types retain
+  their declaring owner and inner-class identity.
+- **Reachability (Apex API 62.0-68.0).** Anonymous Apex rejects statements
+  after an unconditional throw and applies its own conditional reachability
+  rules.
+- **Inline queries (Apex API 62.0-68.0).** Leading comments do not hide inline
+  queries, and query keywords used as typed local names remain declarations.
+- **Schema tokens (Apex API 62.0-68.0).** Qualified schema field collections
+  resolve through the semantic checker.
+- **Increment expressions (Apex API 62.0-68.0).** Numeric increment expressions
+  retain their operand types; invalid postfix assignment targets are rejected.
+- **Query timestamps (Apex API 62.0-68.0).** Inline SOQL and SOSL preserve
+  timestamp boundaries instead of treating their colons as bind markers.
+- **SOQL binds (Apex API 62.0-68.0).** Bind expressions accept safe navigation.
+- **SOQL formulas (Apex API 68.0).** `FORMULA('expression')` predicates execute
+  in `WHERE`; source API 62.0-67.0 rejects this syntax.
+- **Relationship projections (Apex API 62.0-68.0).** Parent and grandchild
+  projection keys retain canonical field and relationship casing.
+- **Partial standard parents (Apex API 62.0-68.0).** SOQL keeps the open-field
+  fallback for standard parents extended by partial project metadata. This
+  fallback does not relax SOSL field validation.
+- **Query relationships (Apex API 62.0-68.0).** Relationship names in queries
+  resolve to their schema targets, including `TYPEOF` custom objects, and
+  invalid schema metadata is attributed to the code that depends on it.
+  REST child relationships are ordered by lookup field.
+- **Hierarchy settings (Apex API 62.0-68.0).** User-mode queries of hierarchy
+  custom settings check setting access before row sharing, including the API
+  67.0 source default. `ViewAllCustomSettings` grants are honored.
+- **SOSL dates (Apex API 62.0-68.0).** Scalar filters evaluate numbered date
+  ranges and retain null members in temporal filter lists. The range syntax
+  does not extend to unrelated filter forms.
+- **JSON cycles (Apex API 62.0-68.0).** Public serializers reject circular
+  collection references with `JSONException`.
+- **JSON ids (Apex API 62.0-68.0).** Blank-Id and custom-scope JSON changes are
+  limited to the shapes covered by captured results.
+- **Field metadata queries (Apex API 62.0-68.0).** `FieldDefinition` queries
+  enforce the parent projection required to identify the owning entity.
+- **Generic JSON records (Apex API 62.0-68.0).** Generic SObject decoding
+  initializes the standard schema needed by local Execute Anonymous requests.
+- **Record casts (Apex API 62.0-68.0).** Casting an SObject to a same-named
+  project class raises `TypeException`.
+- **Trigger clones (Apex API 62.0-68.0).** Collection deep clones of read-only
+  trigger records are writable.
+- **Collection identity (Apex API 62.0-68.0).** Record Map views retain their
+  list type tokens, and String-keyed Map `putAll` validates incoming keys.
+- **Set clones (Apex API 62.0-68.0).** Cloning a populated Set isolates its
+  lookup cache from later changes to either Set.
+- **Method access (Apex API 62.0-68.0).** Calls through declared field receivers
+  enforce the declared receiver's access rules.
+- **Exception types (Apex API 62.0-68.0).** System exception declarations,
+  inheritance, catch matching, and read-only trigger faults retain their
+  platform exception identities.
+
+### Runtime, DML, and platform APIs
+
+- **Queue job IDs (Apex API 62.0-68.0).** `System.enqueueJob` returns an
+  18-character Id, including its options overload. Async transactions allocate
+  job identities from shared org state.
+- **Async callbacks (Apex API 62.0-68.0).** Inherited static methods do not
+  satisfy async interface callbacks. A platform superclass can supply required
+  `Batchable` callbacks.
+- **Async depth limits (Apex API 62.0-68.0).** Stack-depth, future-from-future,
+  and `executeBatch`-from-future guards follow the captured rules. A future
+  submitted by a drained Queueable is accepted but not run, schedule nesting and
+  first-level Queueable `stopTest` admission match native results, and uncapped
+  Queueable children are rejected during the test drain. The local
+  inherited-depth error applies to unstopped test contexts only.
+- **Callouts after DML (Apex API 62.0-68.0).** Pending-work guards apply at HTTP
+  and SOAP callouts, are cleared at the test boundary and after `stopTest`, and
+  survive savepoint rollback and release. Enqueue and email callout guards are
+  limited to the captured overloads.
+- **Queue boundaries (Apex API 62.0-68.0).** `Test.stopTest()` rejects child
+  enqueues without an admitted depth limit and reports inherited depth overflow
+  with `AsyncException`. Explicit child depth limits and finalizer children
+  retain their separate admission rules.
+- **Unconfigured endpoints (Apex API 62.0-68.0).** An unmocked HTTP callout in
+  an org with no remote site or endpoint configuration raises a catchable
+  `System.CalloutException` with the native "Unauthorized endpoint" text.
+  Local runs make no network call.
+- **Test-only calls (Apex API 62.0-68.0).** `Test.startTest()` called outside test
+  context raises `FinalException`.
+- **Scheduled tests (Apex API 62.0-68.0).** `Test.stopTest()` does not execute
+  inner-class Schedulables or wait for them to settle.
+- **Aborted schedules (Apex API 62.0-68.0).** Aborting a scheduled job removes
+  its unreferenced job detail without reusing replacement identities.
+- **Mixed DML (Apex API 62.0-68.0).** Anonymous execution enforces the captured
+  setup/non-setup transaction restrictions. Partial Database operations return
+  row failures, and async transactions track their restrictions independently.
+- **Test sharing (Apex API 62.0-68.0).** The actual test entry method determines
+  the sharing context used for execution.
+- **Permission errors (Apex API 62.0-68.0).** User-mode object-denial messages
+  follow the captured query and Visualforce cases. Scoped query denial rules
+  remain distinct from unscoped queries; permissive local defaults remain a
+  known issue below.
+- **Approvals (Apex API 62.0-68.0).** Submission returns missing-process and
+  already-pending errors. Mixed request lists collect failures before atomic
+  rollback; workitem errors and query visibility follow local approval state.
+  Hosted approval routing remains outside local support.
+- **Standard events (Apex API 62.0-68.0).** Publication and insert validation
+  distinguish supported scalar and list cases. Unsupported standard-event
+  operations keep explicit errors.
+- **Task references (Apex API 62.0-68.0).** A missing `Task.WhatId` parent
+  returns `INVALID_CROSS_REFERENCE_KEY`, and a wrong-type parent returns
+  `FIELD_INTEGRITY_EXCEPTION`. A deleted parent still returns
+  `ENTITY_IS_DELETED`.
+- **Email activities (Apex API 62.0-68.0).** `saveAsActivity` persists a
+  completed Email Task for Contact and Lead targets and validates `WhatId`
+  against Task relationships first. A Lead `WhatId` is rejected per message with
+  `INVALID_ID_FIELD`. `EmailMessage` accepts the insertion-only `ToIds` input
+  on insert. Disabled logging and partial or all-or-none sends are unchanged.
+- **Async Flow paths (Apex API 62.0-68.0).** Committed record-triggered Flow
+  paths run in a fresh async transaction against the saved record and are
+  cancelled on rollback. They do not appear as `AsyncApexJob` rows.
+- **Test user calendar and clock (all source API versions).** The test user's
+  calendar and clock can be configured; see the configuration reference.
+- **Feature parameters (Apex API 62.0-68.0).** Declared feature parameters are
+  loaded, and overrides in tests stay isolated from runtime clones.
+- **Heap accounting (Apex API 62.0-68.0).** Heap roots count retained callers,
+  user statics, and shared references once, and async callbacks exclude the
+  submitting frame. The heap limit itself is unchanged.
+- **API availability (Apex API 62.0-68.0).** Availability tables admit
+  `Crypto.verifyHMac` and `AuthProviderTokenResponse.idToken` from API 62.0.
+- **Reflection (Apex API 62.0-68.0).** Reflected `System.UserInfo` values can be
+  constructed. `Limits` and `Finalizer` retain constructor errors, and calls
+  through the `Finalizer` interface reject concrete-only methods.
+- **Knowledge arguments (Apex API 62.0-68.0).** The local article archive call
+  accepts article Id values and null archive dates within its supported
+  signature; this does not provide hosted article publication.
+- **Hosted API errors (Apex API 62.0-68.0).** Local analytics and notification
+  boundaries return captured validation errors without providing hosted
+  delivery or analytics services.
+
+### Change data capture and platform events
+
+- **Change events (Apex API 62.0-68.0).** Successful DML writes feed a
+  rollback-aware change journal. Final record values are delivered to existing
+  change-event subscribers as Automated Process, matching bodies are coalesced,
+  and entities selected in a deployed `ChangeEvents` channel deliver without
+  explicit test enablement. Unconfigured entities stay disabled. Changes made
+  in test setup are replayed into each test method. Anonymous test-only calls
+  throw a catchable `TypeException`.
+- **Delete, merge, and upsert (Apex API 62.0-68.0).** Cascade deletes, merges
+  (each merged duplicate reports a delete), and external-ID upserts deliver
+  change events.
+- **Event field shapes (Apex API 62.0-68.0).** Account change events use the
+  captured field shapes.
+- **Change events (Apex API 62.0-68.0).** Standard and custom change-event
+  schemas expose the captured base fields and accept custom change-event
+  triggers. Schema availability alone does not establish event delivery.
+- **Event-triggered Flows (Apex API 62.0-68.0).** Platform-event Flows run
+  Create, Delete, Loop, Decision, and Chatter elements with the subscriber's
+  Automated Process user scoped to Apex triggers. Anonymous event Flows run
+  after the transaction, not before delivery. This does not establish hosted
+  delivery timing.
+
+### Assignment and duplicate rules
+
+- **Lead and Case assignment rules (Apex API 62.0-68.0).** Source and Metadata
+  API assignment rule files are loaded and run after after-triggers and before
+  workflow and Flow. Default and explicit selection, ordered criteria, formula
+  and boolean filters, per-record options, and the owner-update trigger pass
+  follow the captured results. Unknown rule Ids are ignored; conflicting
+  headers raise the captured `UnexpectedException`.
+- **Assignment and saves (Apex API 62.0-68.0).** Owner updates run in chunks of
+  200 with the original result indices. Before and after `addError` rows return
+  as `SaveResult` failures, and atomic callers roll back. Assigned owners are
+  visible to record-create Flow formulas. `StandardController.save` ignores
+  assignment options set with `setOptions`; later DML on the record applies them.
+- **Duplicate rules (Apex API 62.0-68.0).** Inserts and updates evaluate active
+  duplicate rules after custom validation. The first rule by sort order that
+  finds a match decides: Block fails the row, Allow with Alert fails unless
+  `DuplicateRuleHeader.allowSave` is set, and Allow with Report saves and
+  records a `DuplicateRecordSet` on insert. Failures carry `DUPLICATES_DETECTED`
+  and a `Database.DuplicateError`. Records saved by the same statement are not
+  candidates. The default org seeds the standard duplicate and matching rules.
+  Matching covers Exact items and the captured standard discriminators; fuzzy,
+  cross-object, and Person Account matching are not enforced.
+- **Duplicate queries (Apex API 62.0-68.0).** `Datacloud.FindDuplicates` and
+  `FindDuplicatesByIds` return the active rules' results with match records and
+  raise the native `HandledException` messages for null, empty, mixed-type, and
+  oversized requests.
+- **Duplicate metadata (Apex API 62.0-68.0).** Duplicate and matching rules
+  retain runtime definitions, and references to undeclared matching rules do not
+  produce loader warnings.
+
+### Person Accounts
+
+- **Contact mirrors (Apex API 62.0-68.0).** With `PersonAccounts` enabled,
+  declared Contact custom fields are mirrored onto Account as `__pc` fields with
+  isolated metadata and `__pr` lookups, and declared values stay synchronized.
+  Absent `__pc` constructor fields on partial Account schemas are rejected.
+- **Required fields (Apex API 62.0-68.0).** The Contact Required flag is kept
+  on the mirrors and enforced for Person Account records only; Business Accounts
+  are unaffected and no mirrored Contact defaults reach them.
+- **Formulas (Apex API 62.0-68.0).** Mirrored formulas translate standard
+  Contact references through the Person Account mapping, and calculated reads
+  work in Flow. Placeholders inferred from source never become Person Account
+  fields.
+- **Retrieved projects (Apex API 62.0-68.0).** A project that holds the
+  `PersonAccount` record types retrieved from an org is treated as having
+  `PersonAccounts` enabled, without a scratch-definition feature. A project
+  with no such evidence still rejects Person Account fields.
+
+### Standard field policy
+
+- **Constructor gates (Apex API 62.0-68.0).** Constructors enforce the captured
+  field set on anonymous, named, test, and project routes. Missing
+  double-underscore fields on standard objects are rejected, complete managed
+  and external definitions no longer infer absent fields, and loaded Account
+  metadata cannot bypass Person Account rejection.
+- **Standard fields (Apex API 62.0-68.0).** A 17-field catalog supplement adds
+  missing Account, Lead, Contact, and Order fields with their field attributes.
+  Constructors, dynamic access, queries, DML, and describe share this metadata.
+- **Platform child relationships (Apex API 62.0-68.0).** Custom objects expose
+  additional platform child fields and relationships. Empty queried child
+  accessors resolve correctly, and persisted local orgs receive field repairs.
+- **Native metadata defaults (Apex API 62.0-68.0).** Fresh metadata defaults
+  apply when metadata is stored, the null-versus-false checkbox access split is
+  kept, and declared fields survive generated overlays.
+- **Picklists and currency (Apex API 62.0-68.0).** Standard picklist defaults,
+  `Group.Type` values, and captured currency describe attributes survive schema
+  overlays.
+- **Standard records (Apex API 62.0-68.0).** Dynamic field and relationship
+  access on standard records validates against the standard catalog before
+  schema installation. Each org seeds the `AllInternalUsers` Group; an empty
+  org has at least one Group and the first user-created Group Id ends in `002`.
+  Seeds stay isolated between orgs and survive local data reset.
+
+### Schema, metadata, and projects
+
+- **Email services (Apex API 62.0-68.0).** Project email-service metadata seeds
+  local setup rows. Invalid definitions are skipped with file-specific warnings
+  instead of aborting the project; handler edits invalidate those warnings.
+  This does not receive external email.
+- **Profiles (Apex API 62.0-68.0).** Local org creation seeds standard and
+  community profile identities. Community profile availability remains bounded
+  by the configured local feature shape.
+- **Security setup (Apex API 62.0-68.0).** Project permission metadata supplies
+  additional local grants and administrator setup rows.
+- **Network metadata (Apex API 62.0-68.0).** With Communities enabled, configured
+  Network files supply local Network records. Watch and Git-based test selection
+  recognize these files and supplemental metadata roots. This does not create
+  hosted sites, guest users, or a hosted request context.
+- **Network feature settings (Apex API 62.0-68.0).** An explicit scratch setting
+  of `communitiesSettings.enableNetworksEnabled: false` keeps Networks disabled
+  even when the feature list contains `Communities`.
+- **Site and Network tests (Apex API 62.0-68.0).** `Site.login` and
+  `Network.forwardToAuthPage` return null in test context.
+  `Network.createExternalUserAsync` returns null with Communities enabled and
+  raises `NoAccessException` when disabled; these calls do not provision users.
+- **Malformed tabs (Apex API 62.0-68.0).** Invalid unrelated custom-tab metadata
+  does not prevent custom-tab access fields from loading.
+- **Dependency roots (all source API versions).** Declared local packages
+  resolve from configured dependency paths and retain their manifest package
+  declarations. Metadata generation admits loaded sibling and dependency roots,
+  including package directories outside the project root.
+- **Dependency diagnostics (Apex API 62.0-68.0).** Unloaded dependencies receive
+  specific diagnostics, including `Schema` aliases. Restoring a dependency also
+  restores every reached trigger helper.
+- **Package names (all source API versions).** Declared package names and
+  aliases map to local source, with explicit mapping taking precedence. When two
+  source files declare the same type, every route uses the native winner.
+
+### Flows
+
+- **Entry conditions (Apex API 62.0-68.0).** Before-save and after-save routes
+  evaluate `IsChanged`; missing prior data alone does not turn an update into
+  an insert. Record DML runs record after-save flows, not scheduled-flow bodies.
+- **Record bindings (Apex API 62.0-68.0).** Subflows retain record inputs and
+  outputs, including parent record variables and Get Records outputs used in
+  lookup criteria. Invocable Apex actions can reach the same subflow path.
+- **Scalar bindings (Apex API 62.0-68.0).** Null and scalar subflow inputs use
+  the shared binding path, and formula outputs return to callers.
+- **Text decisions and email (Apex API 62.0-68.0).** Triggered and interview
+  paths retain scalar frames for text comparisons, negation, prefixes, and
+  suffixes. Triggered email logging follows the captured action settings;
+  invocable email boundaries retain their rejection results.
+- **Record expressions (Apex API 62.0-68.0).** Flow formulas retain declared
+  record resources. Parent updates resolve their targets through schema
+  metadata; lookup null checks and scalar update sources retain their values.
+- **Input types (Apex API 62.0-68.0).** Record-value and Apex-action input
+  validation distinguish supported Boolean and Integer inputs. Integer failures
+  use the caller's error envelope instead of a single shared error shape.
+- **Event and scheduled interviews (Apex API 62.0-68.0).** Anonymous event
+  delivery reaches local event flows. Delete and event flows retain supported
+  record effects; scheduled-flow bodies can run through explicit interviews.
+  This does not establish wall-clock scheduling or hosted delivery timing.
+- **Parent audit values (Apex API 62.0-68.0).** A parent-record assignment from
+  the system `LastModifiedDate` of the triggering record sees the system
+  timestamp, as captured. Subflow inputs, lookup criteria and other readers keep
+  returning null for that value.
+- **Unsupported subflows (Apex API 62.0-68.0).** Before-save and platform-event
+  flows reject unsupported Subflow elements during loading.
+- **Deferred paths (Apex API 62.0-68.0).** Loading and cloning retain deferred
+  Flow path graphs and scheduling metadata. This preserves metadata rather than
+  claiming deferred execution.
+
+### Visualforce and LWC
+
+- **Local PDF output (Apex API 62.0-68.0; Visualforce API 59.0-68.0).**
+  `Blob.toPdf` / `PageReference.getContentAsPDF` local stand-in returns a
+  deterministic, valid minimal PDF; it is not Salesforce's renderer; rendering
+  fidelity is not emulated. The text writer preserves option-label spacing.
+  CSS, tables, images, and embedded fonts are not rendered. See
+  [PDF configuration](CONFIG.md#pdf-rendering) for an external renderer.
+- **Page content (Apex API 62.0-68.0; Visualforce API 59.0-68.0).**
+  `PageReference.getContent` returns HTML for pages without `renderAs="pdf"`.
+  `pdf.command` applies to Visualforce rendering; `Blob.toPdf` uses the local
+  writer.
+- **Page content in tests (Apex API 62.0-68.0).** `getContent` and
+  `getContentAsPDF` raise `VisualforceException` in test context, including calls
+  through helpers and triggers. Anonymous rendering remains available.
+- **Output formatting (Visualforce API 59.0-68.0).** `apex:outputText` formats
+  typed parameters and additional number and date patterns across rendering
+  routes. English date-style expansion is limited to `en_US`.
+- **Logger (LWC API 59.0-68.0).** The local host resolves `lightning/logger`; `log()` returns `undefined`
+  without sending Event Monitoring data.
+- **Barcode scanner (LWC API 59.0-68.0).** The desktop scanner API exposes its
+  unavailable-device behavior in the local host; this does not provide camera
+  scanning.
+
+### CLI, doctor, and test daemon
+
+- **Stopped runs (all source API versions).** Stopping `glade test`, a queued
+  request, a daemon-backed run, or a watch loop returns the completed cases
+  with the status `stopped`, the reason, and a failing exit code. Watch mode
+  drains active runs for up to two seconds and emits a final `watch.stopped`
+  event with the completed cases, summary, and exit code. Per-test timeouts stay
+  separate from stopping the whole run, and a stop reports its status even if
+  artifact creation fails. Graceful debug stops stay off the DAP output stream.
+- **Setup advice (all source API versions).** `glade doctor` and failed-test
+  hints explain the org setup and dependencies a project needs, only when the
+  code or metadata shows platform evidence.
+- **Daemon shutdown (all source API versions).** `glade test daemon stop`
+  waits for active-request cleanup before reporting that the server stopped.
+  Stop an old server with its original binary before upgrading.
+- **Aggressive GC (all source API versions).** `glade test --gc-aggressive`
+  uses `GOGC=off` with a finite soft memory limit. With an unlimited memory
+  limit it falls back to `GOGC=50`, so automatic heap collection stays enabled.
+- **Test cache identity (all source API versions).** Semantic caches include
+  executable content in their identity. If an old compile error persists after
+  upgrading, run `glade test clear-cache` once.
+- **Project snapshots (all source API versions).** Daemon and one-shot runs
+  retain the loaded project snapshot and its declared source roots when
+  generating metadata.
+- **First use (all source API versions).** Concurrent first-use requests, in
+  one process or several, share one toolchain installation, including through
+  configured home routes.
+- **Impact reports (all source API versions).** `glade test --impact-json`
+  writes optional per-test execution summaries. The input inventory remains
+  incomplete, so these artifacts cannot authorize skipping tests. See
+  [impact trace limits](test-impact.md).
+
+### Performance
+
+- **Startup and cloning (all source API versions).** Standard-object stubs
+  load from an embedded pack. Runtime clones share frozen schema, describe
+  data, class maps, and derived indexes while isolating mutable state.
+- **Collection and schema work (all source API versions).** Primitive Sets,
+  record alias lookups, map coercions, standard-event checks, and schema
+  overlays avoid repeated work. List writes invalidate alias indexes so later
+  reads see updated values. No new benchmark result is claimed here.
+- **Alias updates (all source API versions).** Updating a record held in
+  several static or scope lists uses an occurrence index instead of rescanning
+  every list. In a synthetic loop of 4,000 records, retired instructions fell
+  from about 39 billion to about 1.6 billion, with identical results.
+- **Relationship targets (all source API versions).** Relationship targets and
+  standard-definition catalog entries are prepared once and reused across
+  clones, and qualified String and List member calls avoid a per-call
+  allocation. No new benchmark result is claimed for these.
+- **Runtime hot paths (all source API versions).** Statement trace payloads are
+  built only when used, XML token positions are counted incrementally, and
+  `mid`, `left`, and `right` reuse ASCII classification. No new benchmark result
+  is claimed here.
+
+### Known issues and verification limits
+
+The permissive custom-object CRUD/FLS defaults described under v0.3.0 remain.
+Do not infer default-deny equivalence from local Standard User tests. The
+captured restricted-user `CREATABLE` stripping and API 67.0 plain `COUNT()`
+denial differences remain relevant.
+
+Committed platform-event delivery timing, deferred Flow execution, fuzzy and
+cross-object duplicate matching, and transaction and callout boundaries beyond
+the captured cases are not established by the changes above. Hosted Experience
+Cloud, approval routing, email delivery, and PDF rendering fidelity remain
+outside the local contract. DataWeave, ConnectApi, and Slack remain excluded and
+unsupported.
+
+Qualified platform type and receiver validation is unchanged from v0.3.0: a
+dotted receiver or type path that names a known first segment followed by an
+unknown tail is still accepted. A stricter rule was withdrawn from this release.
+
+On Linux, a `String.split` or `Pattern.split` that is running when the host
+process is suspended and resumed can return the unsplit input or an empty list
+instead of the parts. The regex engine's coarse clock stays stale after the
+resume and ends the search early. The fix is planned for v0.3.2.
+
+The API 62.0 release-notes inventory gap and anonymous Flow fault `Error ID`
+difference listed under v0.3.0 remain disclosed. Execute Anonymous eligibility
+remains 65.0, 66.0, 67.0, and 68.0; loading older Apex does not extend support.
+
+### Install and verify
+
+Release archives remain supported on macOS and Linux for AMD64 and ARM64.
+Follow [checksum and attestation verification](INSTALL.md#security-verification).
+Upgrade with `glade update`, then run `glade version` and
+`glade doctor --project .`. Check the cache and daemon guidance above before
+rerunning project tests. Publication and artifact verification remain subject
+to the [release gate](RELEASE_POLICY.md#release-gate).
+
 ## v0.3.0
 
 v0.3.0 expands offline Salesforce development support: Apex 62.0-68.0, LWC and
@@ -74,6 +550,11 @@ while LWC-toolchain and local-data health remain independently reported.
   definition Glade reads). Glade no longer infers `PersonAccounts` from field
   references in source, so undeclared use now fails instead of being enabled
   silently.
+- State/country code fields such as `Order.ShippingStateCode` now require the
+  `StateAndCountryPicklist` feature in the scratch definition, matching native
+  Salesforce behavior.
+- Cold standard objects now validate fields on dynamic access; unknown fields
+  raise `SObjectException`.
 - Custom metadata record identity preserves the owner namespace separately
   from the metadata type's namespace, including `NamespacePrefix` and
   `QualifiedApiName`. Owner-qualified lookup strings retain their separately

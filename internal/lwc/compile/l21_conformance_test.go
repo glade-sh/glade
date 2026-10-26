@@ -148,7 +148,7 @@ func l21CapturedControls(t *testing.T, name, bundlePrefix string, count int, act
 		if _, err := gladehome.EnsureRoot(); err != nil {
 			t.Fatal(err)
 		}
-		observations = runBrowserPasses(len(versions), parallel, func(pass int) l21DOMObservation {
+		observations = runBrowserPasses(t, versions, parallel, func(t *testing.T, pass int) l21DOMObservation {
 			return l21ObserveDOM(t, table, versions[pass], dependencyRoot)
 		})
 	}
@@ -344,7 +344,7 @@ func l21SalesforceConformance(t *testing.T) {
 	parallel := browserAPIParallelism(len(versions))
 	var observations []l21DOMObservation
 	if parallel > 1 {
-		observations = runBrowserPasses(len(versions), parallel, func(pass int) l21DOMObservation {
+		observations = runBrowserPasses(t, versions, parallel, func(t *testing.T, pass int) l21DOMObservation {
 			return l21ObserveDOM(t, table, versions[pass], dependencyRoot)
 		})
 	}

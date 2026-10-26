@@ -14,14 +14,22 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 	return vm.eventBusPublishWithNamedSource(args, result, true)
 }
 
-// The named-source capture covers a scalar event and a one-element
-// List<SObject>. Concrete and multi-element lists have no named capture.
-func namedStandardPublishShape(arg Value) bool {
+// Captures cover scalar and erased single publication, plus homogeneous blank
+// standard-event lists. Mixed custom/standard lists retain their earlier path.
+func (vm *VM) namedStandardPublishShape(arg Value) bool {
 	if arg.Kind != ValueList {
 		return true
 	}
 	elementType, _ := collectionElementType(runtimeObjectType(arg))
-	return strings.EqualFold(elementType, "SObject") && len(arg.List) == 1
+	if strings.EqualFold(elementType, "SObject") && len(arg.List) == 1 {
+		return true
+	}
+	for _, record := range arg.List {
+		if record.projectClass || !vm.replayDescribeStandardEvent(record.Type) {
+			return false
+		}
+	}
+	return true
 }
 
 func (vm *VM) eventBusPublishWithNamedSource(args []Value, result *Result, namedSource bool) (Value, error) {
@@ -127,7 +135,7 @@ func (vm *VM) eventBusPublishWithNamedSource(args []Value, result *Result, named
 		// the DML rejection; a genuine List<SObject> returns a row failure.
 		standardMode := 0
 		if len(args) == 1 {
-			if namedSource && namedStandardPublishShape(args[0]) {
+			if namedSource && vm.namedStandardPublishShape(args[0]) {
 				standardMode = vm.namedStandardEventPublishMode(record)
 			}
 			if standardMode == 0 && args[0].Kind == ValueObject {
@@ -255,8 +263,7 @@ func (vm *VM) eventBusPublishWithNamedSource(args []Value, result *Result, named
 			defer func() { vm.isolationJournal = publisherJournal }()
 		}
 		if _, err := vm.withAsyncLimitWindow(func() (Value, error) {
-			_, err := vm.runTriggers(triggerTimingAfter, "insert", triggerRecords, nil, result)
-			return Null, err
+			return Null, vm.deliverPublishedPlatformEventSubscribers(triggerRecords, result)
 		}); err != nil {
 			return Null, err
 		}
@@ -722,9 +729,10 @@ func (vm *VM) clearMetadataCaches() {
 	if vm != nil && vm.Org != nil {
 		vm.Org.ClearRuntimeSchemaStamp()
 	}
-	vm.describeCache = make(map[string]Value)
-	vm.fieldDescribeCache = make(map[string]Value)
+	vm.describeCache = make(map[describeCacheKey]Value)
+	vm.fieldDescribeCache = make(map[describeCacheKey]Value)
 	vm.describeDefCache = make(map[string]storage.ObjectDefinition)
+	vm.describeShare = nil
 	vm.globalDescribeCache = nil
 	vm.describeTabsCache = nil
 	vm.childRelCache = newChildRelationshipCache()
@@ -738,7 +746,7 @@ func (vm *VM) clearMetadataCaches() {
 	vm.summarySideEffectIndex = nil
 	vm.loadedChildRelCache = newLoadedChildRelationshipLookupCache()
 	vm.lazyChildRelCache = newLazyChildRelationshipLookupCache()
-	vm.objectNameCache = make(map[string]objectNameLookup)
+	vm.objectNameCache = make(map[objectNameLookupKey]objectNameLookup)
 	vm.metadataCacheStamp = ""
 	vm.clearCustomDataCache()
 }

@@ -1,0 +1,4 @@
+case_id	shape
+0	populated List<Account> passed to List<SObject>
+1	empty List<Account> passed to List<SObject>
+2	populated List<SObject> passed to List<SObject>

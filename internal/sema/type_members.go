@@ -128,6 +128,8 @@ type semaTypeMemberView struct {
 	hydrated   map[string]typeMembers
 	canonical  *semaCanonicalNames
 	sourceUnit string
+	// lexicalShadows memoizes semaLexicalShadowingInner by owner and name.
+	lexicalShadows map[string]string
 }
 
 func newSemaTypeMemberState(base *semaTypeMemberModel) *semaTypeMemberState {
@@ -409,6 +411,8 @@ const semaInferenceDepthScopeKey = "__glade_inference_depth"
 
 const semaSyntheticStandardSObjectFieldModifier = "__glade_standard_sobject_field"
 
+const semaDeclaredFeatureFieldModifier = "__glade_declared_feature_field"
+
 // semaMemberParameterNames returns the case-insensitive parameter name set for
 // a method or constructor. Locals and nested bindings may not reuse these names.
 func semaMemberParameterNames(member typesys.MemberSymbol) map[string]struct{} {
@@ -491,7 +495,7 @@ func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *
 				}()
 			}
 			workers.Wait()
-			for typeIndex := range index.Types {
+			for _, typeIndex := range semaInnerFirstTypeOrder(index) {
 				result := results[typeIndex]
 				if result.recovered != nil {
 					panic(result.recovered)
@@ -505,6 +509,7 @@ func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *
 		}
 	}
 	workItemIndex := 0
+	byType := make([][]diagnostic.Diagnostic, len(index.Types))
 	for typeIndex, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) {
 			continue
@@ -520,13 +525,43 @@ func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *
 			if !ok {
 				continue
 			}
-			diagnostics = append(diagnostics, a.checkBodyText(itemType, member, item.body, item.bodyOffset, item.source, bodyModel, constructability)...)
+			byType[typeIndex] = append(byType[typeIndex], a.checkBodyText(itemType, member, item.body, item.bodyOffset, item.source, bodyModel, constructability)...)
 		}
+	}
+	for _, typeIndex := range semaInnerFirstTypeOrder(index) {
+		diagnostics = append(diagnostics, byType[typeIndex]...)
 	}
 	if recorder != nil {
 		recorder.endPhase(&recorder.counters.MethodBodies, bodyStarted)
 	}
 	return diagnostics
+}
+
+// semaInnerFirstTypeOrder lists type indices so that the inner types declared
+// in a top-level type's file precede that type. Native deploys report method
+// errors inside inner types before the outer class's own
+// (testdata/inner_error_order/org.tsv). Each group keeps its declaration order.
+func semaInnerFirstTypeOrder(index typesys.Index) []int {
+	order := make([]int, 0, len(index.Types))
+	placed := make([]bool, len(index.Types))
+	for i, typ := range index.Types {
+		if placed[i] {
+			continue
+		}
+		if typ.NestingDepth == 0 && typ.File != "" {
+			prefix := strings.ToLower(typ.Name) + "."
+			for j := i + 1; j < len(index.Types); j++ {
+				inner := index.Types[j]
+				if !placed[j] && inner.NestingDepth > 0 && inner.File == typ.File && strings.HasPrefix(strings.ToLower(inner.Name), prefix) {
+					order = append(order, j)
+					placed[j] = true
+				}
+			}
+		}
+		order = append(order, i)
+		placed[i] = true
+	}
+	return order
 }
 
 // semaTriggerContextTypeKey is the member-model key for the platform `Trigger`
@@ -1361,6 +1396,11 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 	for short, names := range shortAliases {
 		if len(names) == 1 {
 			if _, exists := out[short]; exists {
+				continue
+			}
+			// An inner type named like an implicitly visible platform type is
+			// reachable only lexically; elsewhere the name stays the platform type.
+			if semaImplicitPlatformTypeShortName(short) {
 				continue
 			}
 			out[short] = out[normalizeName(names[0])]
@@ -2296,6 +2336,16 @@ func semaAddSObjectProviderMembers(members *typeMembers, provider semaSObjectFie
 			})
 		}
 	})
+	provider.visitDeclared(func(field schema.Field) {
+		if !storage.StandardObjectFieldRequiresFeature(members.name, field.Name) {
+			return
+		}
+		key := normalizeName(field.Name)
+		if member, exists := members.fields[key]; exists {
+			member.Modifiers = append(member.Modifiers, semaDeclaredFeatureFieldModifier)
+			members.fields[key] = member
+		}
+	})
 }
 
 func semaObjectSupportsRecordTypeRelationship(object schema.Object) bool {
@@ -2736,6 +2786,91 @@ func resolveNestedTypeName(model *semaTypeMemberView, owner, typeName string) st
 		return resolved
 	}
 	return semaCanonicalPlatformAlias(typeName)
+}
+
+var semaImplicitPlatformTypeShortNames struct {
+	once  sync.Once
+	names map[string]bool
+}
+
+// semaImplicitPlatformTypeShortName reports a platform class, enum or
+// interface that Apex code can name without a namespace: the unnamed, System
+// and Schema namespaces. Other namespaces (for example compression.Level)
+// must be qualified, so their simple names never collide with an inner type.
+func semaImplicitPlatformTypeShortName(name string) bool {
+	semaImplicitPlatformTypeShortNames.once.Do(func() {
+		names := make(map[string]bool)
+		for _, symbol := range typesys.StandardPlatformSymbolView() {
+			if strings.Contains(symbol.Name, ".") {
+				continue
+			}
+			switch normalizeName(symbol.Namespace) {
+			case "", "system", "schema":
+			default:
+				continue
+			}
+			switch symbol.Kind {
+			case apexast.DeclarationClass, apexast.DeclarationEnum, apexast.DeclarationInterface:
+				names[normalizeName(symbol.Name)] = true
+			}
+		}
+		semaImplicitPlatformTypeShortNames.names = names
+	})
+	return semaImplicitPlatformTypeShortNames.names[normalizeName(name)]
+}
+
+// semaLexicalShadowingInner returns the source inner class, enum or interface
+// that an undotted, implicitly visible platform type name selects from owner
+// through lexical or inherited scope. Such a name binds to the inner type, not
+// the platform type. Inner enums keep nesting depth 0 in the member model, so
+// they are recognized by their dotted name.
+func semaLexicalShadowingInner(model *semaTypeMemberView, owner, name string) string {
+	name = strings.TrimSpace(name)
+	if model == nil || owner == "" || name == "" || strings.ContainsAny(name, ".<>[]() ") || !semaImplicitPlatformTypeShortName(name) {
+		return ""
+	}
+	key := model.sourceUnit + "\x00" + normalizeName(owner) + "\x00" + normalizeName(name)
+	if nested, ok := model.lexicalShadows[key]; ok {
+		return nested
+	}
+	nested := ""
+	if members, ok := model.lookupName(resolveNestedTypeName(model, owner, name)); ok && !members.platform && !members.dependency && !members.sobject &&
+		(members.nestingDepth > 0 || (members.kind == apexast.DeclarationEnum && strings.Contains(members.name, "."))) {
+		switch members.kind {
+		case apexast.DeclarationClass, apexast.DeclarationEnum, apexast.DeclarationInterface:
+			nested = members.name
+		}
+	}
+	if model.lexicalShadows == nil {
+		model.lexicalShadows = make(map[string]string)
+	}
+	model.lexicalShadows[key] = nested
+	return nested
+}
+
+// semaLexicalSourceInnerEnum returns the source inner enum that an undotted
+// receiver name selects from owner through lexical or inherited scope.
+func semaLexicalSourceInnerEnum(model *semaTypeMemberView, owner, name string) string {
+	name = strings.TrimSpace(name)
+	if model == nil || owner == "" || name == "" || strings.ContainsAny(name, ".<>[]() ") {
+		return ""
+	}
+	members, ok := model.lookupName(resolveNestedTypeName(model, owner, name))
+	if !ok || members.kind != apexast.DeclarationEnum || members.platform || members.dependency || members.sobject || !strings.Contains(members.name, ".") {
+		return ""
+	}
+	return members.name
+}
+
+// semaEnumTypeHasMethod reports a method that every enum type declares: the
+// enum statics values() and valueOf(String), the instance methods name(),
+// ordinal() and toString(), and the Object methods.
+func semaEnumTypeHasMethod(model *semaTypeMemberView, enum, method string) bool {
+	if semaObjectMethodName(method) || strings.EqualFold(method, "getClass") {
+		return true
+	}
+	_, ok := semaEnumMethodSignature(model, enum, method)
+	return ok
 }
 
 // Built-in values use canonical names in operators and collection signatures.

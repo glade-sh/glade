@@ -1,0 +1,25 @@
+case_id	api_version	operation	returned	return_type	return_value	exception_type	exception_message	callouts	queries	dml	emails	cpu_ms_delta	heap_bytes_delta
+blob_to_pdf_62	62.0	Blob.toPdf	true	Blob	974			0	0	0	0	15	311
+page_get_content_as_pdf_62	62.0	PageReference.getContentAsPDF	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	1	492
+custom_notification_send_62	62.0	Messaging.CustomNotification.send	true	void				0	0	0	0	0	317
+app_analytics_62	62.0	IsvPartners.AppAnalytics.logCustomInteraction	true	void				0	0	0	0	1	356
+blob_to_pdf_67	67.0	Blob.toPdf	true	Blob	974			0	0	0	0	13	316
+page_get_content_as_pdf_67	67.0	PageReference.getContentAsPDF	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	1	497
+custom_notification_send_67	67.0	Messaging.CustomNotification.send	true	void				0	0	0	0	0	322
+app_analytics_67	67.0	IsvPartners.AppAnalytics.logCustomInteraction	true	void				0	0	0	0	2	361
+page_constructor_content_62	62.0	PageReference.getContent	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	0	498
+page_constructor_pdf_62	62.0	PageReference.getContentAsPDF	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	0	494
+page_page_constant_content_62	62.0	PageReference.getContent	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	0	500
+page_page_constant_pdf_62	62.0	PageReference.getContentAsPDF	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	0	496
+page_helper_constructor_content_62	62.0	PageReference.getContent	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	0	506
+page_helper_constructor_pdf_62	62.0	PageReference.getContentAsPDF	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	0	502
+page_helper_page_constant_content_62	62.0	PageReference.getContent	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	0	508
+page_helper_page_constant_pdf_62	62.0	PageReference.getContentAsPDF	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	0	504
+page_constructor_content_67	67.0	PageReference.getContent	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	0	503
+page_constructor_pdf_67	67.0	PageReference.getContentAsPDF	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	0	499
+page_page_constant_content_67	67.0	PageReference.getContent	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	0	505
+page_page_constant_pdf_67	67.0	PageReference.getContentAsPDF	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	0	501
+page_helper_constructor_content_67	67.0	PageReference.getContent	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	0	511
+page_helper_constructor_pdf_67	67.0	PageReference.getContentAsPDF	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	0	507
+page_helper_page_constant_content_67	67.0	PageReference.getContent	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	0	513
+page_helper_page_constant_pdf_67	67.0	PageReference.getContentAsPDF	false			System.VisualforceException	Methods defined as TestMethod do not support getContent call	0	0	0	0	0	509

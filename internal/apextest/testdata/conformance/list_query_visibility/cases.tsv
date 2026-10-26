@@ -1,0 +1,15 @@
+source_api	case	question
+62.0	method_dml	Is a row inserted in the test method queryable in that same method?
+67.0	method_dml	Is a row inserted in the test method queryable in that same method?
+62.0	test_setup	Is a row inserted by @TestSetup queryable in the test method?
+67.0	test_setup	Is a row inserted by @TestSetup queryable in the test method?
+62.0	record_type	Does a RecordType.DeveloperName filter select its matching row?
+67.0	record_type	Does a RecordType.DeveloperName filter select its matching row?
+62.0	run_as_with	Does with sharing hide an admin-owned private row from a standard user in runAs?
+67.0	run_as_with	Does with sharing hide an admin-owned private row from a standard user in runAs?
+62.0	run_as_without	Does without sharing expose an admin-owned private row from a standard user in runAs?
+67.0	run_as_without	Does without sharing expose an admin-owned private row from a standard user in runAs?
+62.0	empty_singleton	Does an empty singleton query throw the native QueryException?
+67.0	empty_singleton	Does an empty singleton query throw the native QueryException?
+62.0	see_all_data_false	Can SeeAllData=false read a pre-existing org Account?
+67.0	see_all_data_false	Can SeeAllData=false read a pre-existing org Account?

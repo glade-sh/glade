@@ -35,6 +35,8 @@ type ServerConfig struct {
 	Socket string
 	Watch  bool
 	Warm   bool
+	// RunProgress, when set, observes per-test progress of served runs.
+	RunProgress func(apextest.TestProgress)
 }
 
 type Server struct {
@@ -63,6 +65,7 @@ type Server struct {
 	runAdmission chan struct{}
 	runExecution chan struct{}
 	runRequestV1 func(context.Context, RunRequestV1) (testreport.Run, watch.TestSelection, *ClassShardPlanV1, error)
+	runProgress  func(apextest.TestProgress)
 
 	captureScopeFn         func(watch.Scope) (watch.Snapshot, error)
 	newBackendWatcherFn    func(context.Context, watch.Config, watch.Snapshot) (watch.BackendWatcher, watch.Backend, error)
@@ -120,6 +123,7 @@ func NewServer(cfg ServerConfig) (*Server, error) {
 		pidRoot:       pidRoot,
 		watchOn:       cfg.Watch,
 		defaultSocket: defaultSocket,
+		runProgress:   cfg.RunProgress,
 		warmDone:      make(chan struct{}),
 	}
 	keepPIDRoot = true
@@ -464,26 +468,27 @@ func (s *Server) handleV1(ctx context.Context, request RequestV1) ResponseV1 {
 		}
 		release, err := s.acquireRun(ctx)
 		if err != nil {
-			response.Error = err.Error()
-			return response
+			return runErrorResponseV1(response, testreport.Run{}, err)
 		}
 		defer release()
 		if err := s.waitReady(ctx); err != nil {
-			response.Error = err.Error()
-			return response
+			return runErrorResponseV1(response, testreport.Run{}, err)
 		}
 		runRequest := s.runRequestV1
 		if runRequest == nil {
 			runRequest = s.daemon.runRequestV1
+			if s.runProgress != nil {
+				runRequest = func(ctx context.Context, run RunRequestV1) (testreport.Run, watch.TestSelection, *ClassShardPlanV1, error) {
+					return s.daemon.runRequestV1WithProgress(ctx, run, s.runProgress, nil)
+				}
+			}
 		}
 		if err := ctx.Err(); err != nil {
-			response.Error = err.Error()
-			return response
+			return runErrorResponseV1(response, testreport.Run{}, err)
 		}
 		run, selection, shardPlan, err := runRequest(ctx, *request.Run)
 		if err != nil {
-			response.Error = err.Error()
-			return response
+			return runErrorResponseV1(response, run, err)
 		}
 		response.Op = OpRunResult
 		response.OK = true
@@ -496,6 +501,15 @@ func (s *Server) handleV1(ctx context.Context, request RequestV1) ResponseV1 {
 		response.Error = fmt.Sprintf("unknown op %q", request.Op)
 		return response
 	}
+}
+
+func runErrorResponseV1(response ResponseV1, run testreport.Run, err error) ResponseV1 {
+	response.Error = err.Error()
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		// A stop before execution still has a final run: zero completed tests.
+		response.Run = &run
+	}
+	return response
 }
 
 func (s *Server) acquireRun(ctx context.Context) (func(), error) {

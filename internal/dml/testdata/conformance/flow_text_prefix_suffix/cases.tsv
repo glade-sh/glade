@@ -1,0 +1,15 @@
+id	operator	input_kind	input	comparison	route
+startswith_match	StartsWith	match	Hello World	Hello	trigger_plain
+startswith_mismatch	StartsWith	mismatch	unrelated	Hello	trigger_plain
+startswith_case	StartsWith	case	hELLo wORLd	Hello	trigger_plain
+startswith_null	StartsWith	null	<null>	Hello	trigger_plain
+startswith_empty	StartsWith	empty	<empty>	Hello	trigger_plain
+endswith_match	EndsWith	match	Hello World	World	trigger_plain
+endswith_mismatch	EndsWith	mismatch	unrelated	World	trigger_plain
+endswith_case	EndsWith	case	hELLo wORLd	World	trigger_plain
+endswith_null	EndsWith	null	<null>	World	trigger_plain
+endswith_empty	EndsWith	empty	<empty>	World	trigger_plain
+direct_startswith_null	StartsWith	null	<null>	Hello	interview
+direct_startswith_empty	StartsWith	empty	<empty>	Hello	interview
+direct_endswith_null	EndsWith	null	<null>	World	interview
+direct_endswith_empty	EndsWith	empty	<empty>	World	interview

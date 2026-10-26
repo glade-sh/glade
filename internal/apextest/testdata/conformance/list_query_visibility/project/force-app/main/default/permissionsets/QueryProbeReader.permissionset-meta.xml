@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Query probe reader</label>
+  <objectPermissions>
+    <allowCreate>true</allowCreate><allowDelete>false</allowDelete><allowEdit>false</allowEdit><allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords><object>QueryProbe__c</object><viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+  <recordTypeVisibilities>
+    <recordType>QueryProbe__c.Alpha</recordType><visible>true</visible>
+  </recordTypeVisibilities>
+  <recordTypeVisibilities>
+    <recordType>QueryProbe__c.Beta</recordType><visible>true</visible>
+  </recordTypeVisibilities>
+</PermissionSet>

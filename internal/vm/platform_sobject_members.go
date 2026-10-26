@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/apexlang"
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -122,7 +123,7 @@ func (vm *VM) displayStringValue(value Value, result *Result) (Value, error) {
 	if value.Type == "StatusCode" && value.Text != "" {
 		return String(value.Text), nil
 	}
-	if class, ok := vm.Classes[value.Type]; ok && len(class.EnumValues) > 0 && value.Text != "" {
+	if class, ok := vm.classEntry(value.Type); ok && len(class.EnumValues) > 0 && value.Text != "" {
 		return String(value.Text), nil
 	}
 	if value.Text != "" && strings.Contains(value.Type, ".") {
@@ -167,7 +168,7 @@ func (vm *VM) defaultObjectDisplayString(value Value) string {
 	if value.Kind != ValueObject || vm == nil {
 		return text
 	}
-	if _, ok := vm.Classes[value.Type]; !ok {
+	if _, ok := vm.classEntry(value.Type); !ok {
 		return text
 	}
 	// Ordinary classes expose declared fields in
@@ -211,14 +212,30 @@ func (vm *VM) stubProviderDisplayString(value Value, seen map[uint64]bool) strin
 		seen[value.Ref] = true
 		defer delete(seen, value.Ref)
 	}
-	fields := make([]string, 0, len(value.Fields))
-	for name := range value.Fields {
+	// Native R001/R002 (APIs 62/67): a provider that implements StubProvider
+	// with no superclass shows its declared static state beside the instance
+	// fields. No row covers a provider that extends another class, so that
+	// shape keeps instance fields only. Read the live class view without adding
+	// static fields to the provider object itself.
+	values := make(map[string]Value, len(value.Fields))
+	for name, field := range value.Fields {
+		values[name] = field
+	}
+	if class, ok := vm.lookupClass(value.Type); ok && strings.TrimSpace(class.SuperClass) == "" {
+		for name := range class.StaticFields {
+			if field, _, ok := vm.lookupStaticField(value.Type, name); ok {
+				values[name] = field.Value
+			}
+		}
+	}
+	fields := make([]string, 0, len(values))
+	for name := range values {
 		fields = append(fields, name)
 	}
 	sort.Strings(fields)
 	parts := make([]string, 0, len(fields))
 	for _, name := range fields {
-		parts = append(parts, name+"="+vm.nestedDisplayString(value.Fields[name], seen))
+		parts = append(parts, name+"="+vm.nestedDisplayString(values[name], seen))
 	}
 	return value.Type + ":[" + strings.Join(parts, ", ") + "]"
 }
@@ -331,7 +348,7 @@ func (vm *VM) hasDeclaredOrdinaryClassFields(value Value) bool {
 	if value.Kind != ValueObject || vm == nil {
 		return false
 	}
-	if _, ok := vm.Classes[value.Type]; !ok || generatedPlatformTypeName(value.Type) || sObjectValueType(value.Type) {
+	if _, ok := vm.classEntry(value.Type); !ok || generatedPlatformTypeName(value.Type) || sObjectValueType(value.Type) {
 		return false
 	}
 	for name := range value.Fields {
@@ -1143,6 +1160,9 @@ func (vm *VM) lazyChildRelationshipLookup(parentObject, field string) lazyChildR
 	lookup := lazyChildRelationshipLookup{}
 	childMatches := []string(nil)
 	for childName, childState := range vm.Org.Objects {
+		if storage.IsChangeEventObject(childState.Definition) {
+			continue
+		}
 		for _, relation := range childState.Definition.Relations {
 			if !relationshipTargetsObject(relation, parentObject) || strings.TrimSpace(relation.Field) == "" {
 				continue
@@ -1295,6 +1315,9 @@ func (vm *VM) loadedChildRelationshipLookup(receiverType, parentObject, field st
 		ParentRelationshipExists: vm.sObjectParentRelationshipField(receiverType, field),
 	}
 	for childName, childState := range vm.Org.Objects {
+		if storage.IsChangeEventObject(childState.Definition) {
+			continue
+		}
 		for _, relation := range childState.Definition.Relations {
 			if !relationshipTargetsObject(relation, parentObject) {
 				continue
@@ -1313,6 +1336,16 @@ func (vm *VM) loadedChildRelationshipLookup(receiverType, parentObject, field st
 			}
 			lookup.CandidateNames = appendUniqueStringFold(lookup.CandidateNames, childRelationshipName)
 			lookup.CandidateNames = appendUniqueStringFold(lookup.CandidateNames, field)
+		}
+	}
+	if len(lookup.ChildRelationshipNames) == 0 {
+		for _, child := range vm.contentChildRelationships(parentObject) {
+			name := child.relationship.ChildRelationship
+			if vmRelationshipNameMatches(vm.Org.Namespace, name, field) {
+				lookup.ChildRelationshipNames = appendUniqueStringFold(lookup.ChildRelationshipNames, name)
+				lookup.CandidateNames = appendUniqueStringFold(lookup.CandidateNames, name)
+				lookup.CandidateNames = appendUniqueStringFold(lookup.CandidateNames, field)
+			}
 		}
 	}
 	return vm.loadedChildRelCache.store(key, lookup)
@@ -1560,6 +1593,9 @@ func dmlResultErrors(result dml.Result) []dml.Error {
 }
 
 func databaseErrorValue(err dml.Error) Value {
+	if err.Duplicate != nil {
+		return databaseDuplicateErrorValue(err)
+	}
 	value := Object("Database.Error")
 	value.Fields["message"] = String(err.Message)
 	code := err.StatusCode
@@ -1599,18 +1635,18 @@ func (vm *VM) resolveObjectName(name string) (string, bool) {
 	if vm == nil || vm.Org == nil {
 		return "", false
 	}
-	key := strings.ToLower(strings.TrimSpace(name))
+	key := apexlang.LowerName(strings.TrimSpace(name))
 	if key == "" {
 		return "", false
 	}
 	if prefix, rest, ok := strings.Cut(strings.TrimSpace(name), "."); ok && strings.EqualFold(prefix, "Schema") {
 		name = rest
-		key = strings.ToLower(strings.TrimSpace(name))
+		key = apexlang.LowerName(strings.TrimSpace(name))
 	}
-	namespace := strings.ToLower(strings.TrimSpace(vm.currentCallerNamespace()))
-	cacheKey := namespace + "|" + key
+	namespace := apexlang.LowerName(strings.TrimSpace(vm.currentCallerNamespace()))
+	cacheKey := objectNameLookupKey{Namespace: namespace, Name: key}
 	if vm.objectNameCache == nil {
-		vm.objectNameCache = make(map[string]objectNameLookup)
+		vm.objectNameCache = make(map[objectNameLookupKey]objectNameLookup)
 	}
 	if cached, ok := vm.objectNameCache[cacheKey]; ok {
 		return cached.Name, cached.OK
@@ -1647,11 +1683,35 @@ func (vm *VM) resolveObjectNameInExecutionNamespace(name string) (string, bool) 
 	return "", false
 }
 
+// sObjectDefinitionForRead resolves catalog-only standard objects without adding
+// them to the org. Definitions used by record reads must not change the schema
+// generation shared by runtime clones. Installed org definitions take precedence.
+func (vm *VM) sObjectDefinitionForRead(typeName string) (string, storage.ObjectDefinition, bool) {
+	if vm == nil || vm.Org == nil {
+		return "", storage.ObjectDefinition{}, false
+	}
+	if name, ok := vm.resolveObjectName(typeName); ok {
+		return name, vm.Org.Objects[name].Definition, true
+	}
+	name, ok := storage.ResolveKnownStandardObjectName(typeName)
+	if !ok {
+		return "", storage.ObjectDefinition{}, false
+	}
+	if definition, ok := vm.describeDefCache[strings.ToLower(name)]; ok {
+		return name, definition, true
+	}
+	definition, _ := storage.StandardObjectDefinition(name)
+	if vm.Org.Features != nil {
+		storage.EnsureStandardObjectFieldsForFeatures(&definition, vm.Org.Features)
+	}
+	return name, vm.describePreparedDefinition(name, definition), true
+}
+
 func (vm *VM) resolveSObjectFieldName(typeName, field string) string {
 	if vm.Org == nil {
 		return field
 	}
-	objectName, ok := vm.resolveObjectName(typeName)
+	objectName, definition, ok := vm.sObjectDefinitionForRead(typeName)
 	if !ok {
 		return storage.StripNamespaceToken(vm.Org.Namespace, field)
 	}
@@ -1661,7 +1721,7 @@ func (vm *VM) resolveSObjectFieldName(typeName, field string) string {
 			field = field[dot+1:]
 		}
 	}
-	if canonical, ok := storage.ResolveFieldName(vm.Org.Objects[objectName].Definition, vm.Org.Namespace, field); ok {
+	if canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field); ok {
 		return canonical
 	}
 	return storage.StripNamespaceToken(vm.Org.Namespace, field)
@@ -1717,7 +1777,7 @@ func (vm *VM) sObjectFieldDefinition(typeName, field string) (storage.ObjectDefi
 	if vm.Org == nil {
 		return storage.ObjectDefinition{}, storage.Field{}, false
 	}
-	objectName, ok := vm.resolveObjectName(typeName)
+	objectName, definition, ok := vm.sObjectDefinitionForRead(typeName)
 	if !ok {
 		// Change-event sObjects are standard platform types without ordinary
 		// object-describe entries. Keep their known header field available to
@@ -1728,7 +1788,7 @@ func (vm *VM) sObjectFieldDefinition(typeName, field string) (storage.ObjectDefi
 			return storage.ObjectDefinition{}, storage.Field{}, false
 		}
 	}
-	definition := vm.describePreparedDefinition(objectName, vm.Org.Objects[objectName].Definition)
+	definition = vm.describePreparedDefinition(objectName, definition)
 	fieldName, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field)
 	fieldDefinition, defined := definition.Fields[fieldName]
 	if ok && !defined {
@@ -1864,13 +1924,8 @@ func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, boo
 			return value, true
 		}
 	}
-	if storage.IsCustomMetadataDefinition(definition) {
-		if defaultValue, ok := storage.DefaultValueForField(fieldDef); ok {
-			return vmValueFromStorage(defaultValue), true
-		}
-	}
 	if fieldDef.Type == storage.FieldBoolean {
-		if strings.EqualFold(fieldDef.APIName, "IsDeleted") || storage.IsCustomMetadataDefinition(definition) || storage.IsCustomSettingDefinition(definition) {
+		if strings.EqualFold(fieldDef.APIName, "IsDeleted") || storage.IsCustomSettingDefinition(definition) {
 			return Value{Kind: ValueNull, Type: "Boolean"}, true
 		}
 		return Bool(false), true
@@ -1882,11 +1937,11 @@ func (vm *VM) unknownSObjectFieldError(receiver Value, field string, requireDecl
 	if vm == nil || vm.Org == nil || receiver.Kind != ValueObject {
 		return nil
 	}
-	objectName, ok := vm.resolveObjectName(receiver.Type)
+	objectName, definition, ok := vm.sObjectDefinitionForRead(receiver.Type)
 	if !ok {
 		return nil
 	}
-	definition := vm.describePreparedDefinition(objectName, vm.Org.Objects[objectName].Definition)
+	definition = vm.describePreparedDefinition(objectName, definition)
 	if _, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field); ok {
 		return nil
 	}
@@ -2236,22 +2291,18 @@ func (vm *VM) parentRelationshipValue(receiver Value, relationshipName string) (
 	if vm == nil || vm.Org == nil || receiver.Kind != ValueObject {
 		return Null, false
 	}
-	objectName, ok := vm.resolveObjectName(receiver.Type)
-	if !ok {
-		objectName = receiver.Type
-	}
-	object, ok := vm.Org.Objects[objectName]
+	_, definition, ok := vm.sObjectDefinitionForRead(receiver.Type)
 	if !ok {
 		return Null, false
 	}
-	for _, relation := range object.Definition.Relations {
+	for _, relation := range definition.Relations {
 		if !vmRelationshipNameMatches(vm.Org.Namespace, relation.ParentRelationship, relationshipName) &&
 			!vmParentRelationshipNameMatches(vm.Org.Namespace, relation.Field, relationshipName) {
 			continue
 		}
 		return vm.parentRelationshipValueForRelationName(receiver, relation, relationshipName), true
 	}
-	if relation, ok := vm.syntheticParentRelationship(object.Definition, relationshipName); ok {
+	if relation, ok := vm.syntheticParentRelationship(definition, relationshipName); ok {
 		return vm.parentRelationshipValueForRelationName(receiver, relation, relationshipName), true
 	}
 	return Null, false
@@ -2272,20 +2323,16 @@ func (vm *VM) parentRelationshipForName(receiver Value, relationshipName string)
 	if vm == nil || vm.Org == nil || receiver.Kind != ValueObject {
 		return storage.Relationship{}, false
 	}
-	objectName, ok := vm.resolveObjectName(receiver.Type)
-	if !ok {
-		objectName = receiver.Type
-	}
-	object, ok := vm.Org.Objects[objectName]
+	_, definition, ok := vm.sObjectDefinitionForRead(receiver.Type)
 	if !ok {
 		return storage.Relationship{}, false
 	}
-	for _, relation := range object.Definition.Relations {
+	for _, relation := range definition.Relations {
 		if vmRelationshipNameMatches(vm.Org.Namespace, relation.ParentRelationship, relationshipName) {
 			return relation, true
 		}
 	}
-	return vm.syntheticParentRelationship(object.Definition, relationshipName)
+	return vm.syntheticParentRelationship(definition, relationshipName)
 }
 
 func (vm *VM) hydrateQueriedRecordTypeRelationships(value Value) {
@@ -2613,15 +2660,11 @@ func (vm *VM) parentRelationshipShell(receiver Value, relationshipName string) (
 	if vm == nil || vm.Org == nil || receiver.Kind != ValueObject {
 		return Null, false
 	}
-	objectName, ok := vm.resolveObjectName(receiver.Type)
-	if !ok {
-		objectName = receiver.Type
-	}
-	object, ok := vm.Org.Objects[objectName]
+	_, definition, ok := vm.sObjectDefinitionForRead(receiver.Type)
 	if !ok {
 		return Null, false
 	}
-	for _, relation := range object.Definition.Relations {
+	for _, relation := range definition.Relations {
 		if !vmRelationshipNameMatches(vm.Org.Namespace, relation.ParentRelationship, relationshipName) &&
 			!vmParentRelationshipNameMatches(vm.Org.Namespace, relation.Field, relationshipName) {
 			continue
@@ -2635,7 +2678,7 @@ func (vm *VM) parentRelationshipShell(receiver Value, relationshipName string) (
 		}
 		return Null, false
 	}
-	if relation, ok := vm.syntheticParentRelationship(object.Definition, relationshipName); ok {
+	if relation, ok := vm.syntheticParentRelationship(definition, relationshipName); ok {
 		for _, parentName := range relation.ParentObjects {
 			parentObject, ok := vm.resolveObjectName(parentName)
 			if !ok {

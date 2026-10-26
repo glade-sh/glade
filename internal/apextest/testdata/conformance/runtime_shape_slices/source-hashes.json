@@ -1,0 +1,23 @@
+{
+  "force-app/main/default/classes/RuntimeShapeProbe.cls": "fce30b8863ffa34ea02863b8419a3cedd26583ea831c899769ffce1fc8bb0ec8",
+  "force-app/main/default/classes/RuntimeShapeProbe.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+  "force-app/main/default/classes/RuntimeShapeTest.cls": "3671a2c4f178211f10f4883f9f70f6f4d72d0d3428a3d025e77d79fdb550d569",
+  "force-app/main/default/classes/RuntimeShapeTest.cls-meta.xml": "5aff0ac805ee45a1c43975d09e14b8c91527eb2f1fc25702c4ba9ec9b5ddae86",
+  "force-app/main/default/customMetadata/SliceGroup.Sample.md-meta.xml": "f4cc74e97c80280e295e22805c77c96320e4d7ec22d5eb10ab4048655a69fbbf",
+  "force-app/main/default/customMetadata/SliceRule.First.md-meta.xml": "b29808e1b5256298174974c8e5aa8509c64d1e2a13f20ff0515f43bd8c0962ee",
+  "force-app/main/default/customMetadata/SliceRule.Second.md-meta.xml": "d18dbe9e6e66fd228f3948a2ec3818aa532d8cd48296cfb1e4bb766c85346989",
+  "force-app/main/default/customMetadata/SliceSource.Sample.md-meta.xml": "d10d0b728c1b1a1aa2f6bafa5b93018546cb41ccc7b38cfe6dd241ba06aa9c8f",
+  "force-app/main/default/objects/SliceFlag__c/SliceFlag__c.object-meta.xml": "00cf6646cdee4afa5b66c383d313fe0ff4edd7f1e1b58818e1dbde4c9e08398b",
+  "force-app/main/default/objects/SliceFlag__c/fields/Value__c.field-meta.xml": "4618e9c2629ce306cfa890df8d4fe10278273707489c38b02af3e174ee3bcf2d",
+  "force-app/main/default/objects/SliceGroup__mdt/SliceGroup__mdt.object-meta.xml": "edf19d454063db256842c1d4df54c55b53d4712887c78821a0fd5167ad940532",
+  "force-app/main/default/objects/SliceGroup__mdt/fields/Source__c.field-meta.xml": "213dd56f38be162925502161f2dc406c21725ba8b72bd5897832893f70b69aa7",
+  "force-app/main/default/objects/SlicePreference__c/SlicePreference__c.object-meta.xml": "4fc4e436aeeb98f19e2ebc02341d344203a93e63f9971ceb20e53a7b6d2af370",
+  "force-app/main/default/objects/SlicePreference__c/fields/Disabled__c.field-meta.xml": "2cb280397b192a40a49168575ba70324d69c843c85823397a870be814e119cb8",
+  "force-app/main/default/objects/SliceRecord__c/SliceRecord__c.object-meta.xml": "abdcba338e9ca9172a7c04b376ae19cefc55836263748f3e3e085d6229f58d11",
+  "force-app/main/default/objects/SliceRule__mdt/SliceRule__mdt.object-meta.xml": "2e58f63098a7a7e29f241707bac42c7b5bc13fdc3b5d44f1e36c778b9929ea60",
+  "force-app/main/default/objects/SliceRule__mdt/fields/Group__c.field-meta.xml": "f5df482bcbf7b8cf920b9c9dd30ecce7bb1b95c8b4c019d97c7dd41009c859ad",
+  "force-app/main/default/objects/SliceRule__mdt/fields/Operation__c.field-meta.xml": "830a13dd09f9dcfa2363103cc6c3c547ea0dd3c1c47e535fb80cf92215a48b45",
+  "force-app/main/default/objects/SliceSource__mdt/SliceSource__mdt.object-meta.xml": "13713b8976c58dde5183d0f1d597c9c8f3128376d00322b29d205d2008874dfc",
+  "force-app/main/default/objects/SliceSource__mdt/fields/Entity__c.field-meta.xml": "e0f893540be8da89c65b4d99e09c4cc164649b0e51e272c1fc5ce43394a3d7a6",
+  "sfdx-project.json": "ceec3022dd411c24f0395156e59970b102de1277358f2c5740c9b0e676b6a44c"
+}

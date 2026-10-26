@@ -133,12 +133,12 @@ func TestCronTimezoneNativeConformance(t *testing.T) {
 	if anonymous != 26 || named != 49 {
 		t.Fatalf("route counts: %d/%d", anonymous, named)
 	}
-	clockProgram, err := vm.CompileAnonymous("Long sampleClock = System.currentTimeMillis();")
-	if err != nil {
-		t.Fatal(err)
-	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
+			clockProgram, err := vm.CompileAnonymous("Long sampleClock = System.currentTimeMillis();")
+			if err != nil {
+				t.Fatal(err)
+			}
 			counts := newConformanceCountLog(t, "CronTimezone", api)
 			baseIndex := cronTimezoneIndex(t, api, data.Helpers)
 			if baseIndex.HasErrors() || sema.Analyze(baseIndex).HasErrors() {

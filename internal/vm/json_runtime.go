@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"math"
 	"math/big"
 	"reflect"
@@ -14,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
@@ -22,6 +24,8 @@ import (
 )
 
 const jsonCyclicConversionMessage = "Glade: cyclic object reference cannot be converted to JSON (native behaviour not yet captured)"
+
+var jsonChildRelationshipIndexBuilds atomic.Uint64
 
 // jsonConversionFailure crosses legacy converters and overload scoring whose
 // signatures cannot return an Apex exception. VM execution boundaries recover
@@ -157,6 +161,8 @@ func jsonValueMayRecurse(value Value) bool {
 	}
 }
 
+const jsonListReferenceKind ValueKind = "list-reference"
+
 type jsonSerializationIdentity struct {
 	kind  ValueKind
 	token uint64
@@ -203,15 +209,20 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 	return vm.jsonFromValueForSerializeWithActive(value, suppressObjectNulls, nil)
 }
 
-// Public JSON entry points enforce captured source-class cycle errors. The
-// legacy converter also serves display/DTO APIs whose cycle behavior is separate.
+// Public JSON entry points reject circular collections and source objects.
+// The legacy converter also serves display/DTO APIs with separate behavior.
 func (vm *VM) jsonFromValueForJSONSerialize(value Value, suppressObjectNulls bool) any {
-	return vm.jsonFromValueForSerializeWithState(value, suppressObjectNulls, &jsonSerializationState{rejectClassCycles: true, rejectUnsupportedTypes: true})
+	return vm.jsonFromValueForSerializeWithState(value, suppressObjectNulls, &jsonSerializationState{rejectCycles: true, rejectUnsupportedTypes: true, root: true, rootValue: value})
 }
 
 type jsonSerializationState struct {
 	active                 map[jsonSerializationIdentity]bool
-	rejectClassCycles      bool
+	rejectCycles           bool
+	root                   bool
+	rootValue              Value
+	generator              bool
+	rootKey                string
+	rootIndex              int
 	rejectUnsupportedTypes bool
 }
 
@@ -221,6 +232,23 @@ func (vm *VM) jsonFromValueForSerializeWithActive(value Value, suppressObjectNul
 
 func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNulls bool, state *jsonSerializationState) any {
 	value = value.currentMapKeySet()
+	root := state.root
+	state.root = false
+	// List mutation can leave an earlier slice header inside the same logical
+	// list. Track its reference even when that snapshot has no elements.
+	if state.rejectCycles && value.Kind == ValueList && value.Ref != 0 {
+		identity := jsonSerializationIdentity{kind: jsonListReferenceKind, token: value.Ref}
+		if state.active[identity] {
+			panic(jsonConversionFailure{err: vm.jsonCircularReferenceError(value, state)})
+		}
+		if len(value.List) > 0 {
+			if state.active == nil {
+				state.active = make(map[jsonSerializationIdentity]bool)
+			}
+			state.active[identity] = true
+			defer delete(state.active, identity)
+		}
+	}
 	if encoded, captured := capturedDoubleSingletonJSON(value); captured {
 		return encoded
 	}
@@ -244,17 +272,14 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 			return map[string]any{}
 		}
 	}
-	if identity, ok := jsonSerializationToken(value); ok {
+	// Native collection diagnostics identify the repeated child graph; the
+	// public root container is an envelope around those values.
+	if identity, ok := jsonSerializationToken(value); ok && !(root && value.Kind != ValueObject) {
 		if state.active[identity] {
-			if state.rejectClassCycles && value.Kind == ValueObject && value.classInstance && value.projectClass {
-				// Owned source-class graphs expose this stable native prefix.
-				// Their object-dump suffix remains a diagnostic-text carry.
-				panic(jsonConversionFailure{err: newExceptionError("System.JSONException", "Cycle detected.")})
+			if state.rejectCycles && (value.Kind != ValueObject || value.classInstance && value.projectClass) {
+				panic(jsonConversionFailure{err: vm.jsonCircularReferenceError(value, state)})
 			}
-			// A cyclic Apex object/collection can be constructed through loaded
-			// relationship aliases. Salesforce may surface an internal JSON
-			// failure for that graph, but the local runner must remain usable and
-			// produce a valid JSON value for the surrounding assertion/log path.
+			// Record aliases and legacy display conversion retain their bounded cut.
 			return nil
 		}
 		if state.active == nil {
@@ -266,13 +291,19 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 	switch value.Kind {
 	case ValueList:
 		out := make([]any, 0, len(value.List))
-		for _, item := range value.List {
+		for index, item := range value.List {
+			if root {
+				state.rootIndex = index
+			}
 			out = append(out, vm.jsonFromValueForSerializeWithState(item, suppressObjectNulls, state))
 		}
 		return out
 	case ValueSet:
 		out := make([]any, 0, len(value.Set))
-		for _, item := range value.Set {
+		for index, item := range value.Set {
+			if root {
+				state.rootIndex = index
+			}
 			out = append(out, vm.jsonFromValueForSerializeWithState(item, suppressObjectNulls, state))
 		}
 		return out
@@ -286,6 +317,9 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 					continue
 				}
 				name := vm.jsonMapKeyText(mapStoredKey(value, key))
+				if root {
+					state.rootKey = name
+				}
 				out = append(out, orderedJSONField{name: name, value: vm.jsonFromValueForSerializeWithState(item, suppressObjectNulls, state)})
 				seen[key] = true
 			}
@@ -293,16 +327,34 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 				if seen[key] {
 					continue
 				}
+				if root {
+					state.rootKey = vm.jsonMapKeyText(mapStoredKey(value, key))
+				}
 				out = append(out, orderedJSONField{name: vm.jsonMapKeyText(mapStoredKey(value, key)), value: vm.jsonFromValueForSerializeWithState(value.Map[key], suppressObjectNulls, state)})
 			}
 			return out
 		}
 		out := make(map[string]any, len(value.Map))
 		for key, item := range value.Map {
+			if root {
+				state.rootKey = vm.jsonMapKeyText(mapStoredKey(value, key))
+			}
 			out[vm.jsonMapKeyText(mapStoredKey(value, key))] = vm.jsonFromValueForSerializeWithState(item, suppressObjectNulls, state)
 		}
 		return out
 	case ValueObject:
+		if (state.rejectUnsupportedTypes || state.generator) && isAccessLevelValue(value) && !accessLevelHasCustomScope(value) {
+			message := "Type unsupported in JSON: common.apex.methods.AccessLevelEnum"
+			if state.generator {
+				switch state.rootValue.Kind {
+				case ValueMap:
+					message += fmt.Sprintf(" (through reference chain: java.util.LinkedHashMap[%q])", state.rootKey)
+				case ValueList:
+					message += fmt.Sprintf(" (through reference chain: java.util.ArrayList[%d])", state.rootIndex)
+				}
+			}
+			panic(jsonConversionFailure{err: newExceptionError("System.JSONException", message)})
+		}
 		if state.rejectUnsupportedTypes && !value.classInstance && strings.EqualFold(value.Type, "JSONParser") {
 			panic(jsonConversionFailure{err: newExceptionError("System.JSONException", "Type unsupported in JSON: common.apex.json.ApexJsonParser")})
 		}
@@ -2014,6 +2066,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 				continue
 			}
 			obj.Fields[fieldName] = value
+			vm.fillDuplicateFieldSlots(obj, owner, field, fieldName, value)
 			continue
 		}
 		if fieldType, ok := platformJSONDTOFieldType(typeName, key); ok && platformDTO {
@@ -2185,6 +2238,7 @@ func (vm *VM) jsonObjectBaseValue(typeName string) (Value, error) {
 	// initializers, including ones that throw. Declared fields start at null.
 	obj := Object(typeName)
 	vm.initializeFields(&obj, typeName)
+	obj.pluginBatchableDetached = vm.extendsPluginBatchable(typeName)
 	if strings.EqualFold(typeName, "Invocable.Action.Result") {
 		// The captured row and RDTO01/02: omitted Result properties are null,
 		// including invocationParameters when outputParameters is supplied.
@@ -2265,15 +2319,11 @@ func (vm *VM) markJSONDeserializedSObjectFields(record *Value, typeName string) 
 	if vm == nil || vm.Org == nil {
 		return
 	}
-	objectName, ok := vm.resolveObjectName(typeName)
+	objectName, definition, ok := vm.sObjectDefinitionForRead(typeName)
 	if !ok {
 		return
 	}
-	object, ok := vm.Org.Objects[objectName]
-	if !ok {
-		return
-	}
-	definition := vm.describePreparedDefinition(objectName, object.Definition)
+	definition = vm.describePreparedDefinition(objectName, definition)
 	for name := range definition.Fields {
 		markSetSObjectField(record, name)
 	}
@@ -2306,9 +2356,11 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 		return Null, jsonDeserializeException("Nested object for polymorphic foreign key must have an attributes field before any other fields.")
 	}
 	if vm.Org != nil {
-		if _, known := vm.resolveObjectName(typeName); !known {
+		canonical, _, known := vm.sObjectDefinitionForRead(typeName)
+		if !known {
 			return Null, jsonDeserializeException("")
 		}
+		typeName = canonical
 	}
 	if strict {
 		if err := vm.jsonStrictObjectFieldsError(typeName, raw); err != nil {
@@ -2795,12 +2847,11 @@ func (vm *VM) parentRelationshipValueAliases(typeName, relationshipName string) 
 	if vm == nil || vm.Org == nil {
 		return uniqueNonEmptyStrings(aliases)
 	}
-	objectName, ok := vm.resolveObjectName(typeName)
+	_, definition, ok := vm.sObjectDefinitionForRead(typeName)
 	if !ok {
 		return uniqueNonEmptyStrings(aliases)
 	}
-	object := vm.Org.Objects[objectName]
-	for _, relation := range object.Definition.Relations {
+	for _, relation := range definition.Relations {
 		if !vmRelationshipNameMatches(vm.Org.Namespace, relation.ParentRelationship, relationshipName) &&
 			!vmParentRelationshipNameMatches(vm.Org.Namespace, relation.Field, relationshipName) {
 			continue
@@ -2964,12 +3015,12 @@ func (vm *VM) jsonSObjectFieldType(typeName, fieldName string) (string, bool) {
 	if vm.Org == nil {
 		return "", false
 	}
-	objectName, ok := vm.resolveObjectName(typeName)
+	_, definition, ok := vm.sObjectDefinitionForRead(typeName)
 	if !ok {
 		return "", false
 	}
 	fieldName = vm.resolveSObjectFieldName(typeName, fieldName)
-	field, ok := vm.Org.Objects[objectName].Definition.Fields[fieldName]
+	field, ok := definition.Fields[fieldName]
 	if !ok {
 		return "", false
 	}
@@ -3077,12 +3128,11 @@ func (vm *VM) jsonSObjectParentRelationshipType(typeName, relationshipName strin
 	if vm.Org == nil {
 		return "", false
 	}
-	objectName, ok := vm.resolveObjectName(typeName)
+	_, definition, ok := vm.sObjectDefinitionForRead(typeName)
 	if !ok {
 		return "", false
 	}
-	object := vm.Org.Objects[objectName]
-	for _, relation := range object.Definition.Relations {
+	for _, relation := range definition.Relations {
 		if !vmRelationshipNameMatches(vm.Org.Namespace, relation.ParentRelationship, relationshipName) &&
 			!vmParentRelationshipNameMatches(vm.Org.Namespace, relation.Field, relationshipName) {
 			continue
@@ -3092,7 +3142,7 @@ func (vm *VM) jsonSObjectParentRelationshipType(typeName, relationshipName strin
 		}
 		return relation.ParentObjects[0], true
 	}
-	if relation, ok := vm.syntheticParentRelationship(object.Definition, relationshipName); ok {
+	if relation, ok := vm.syntheticParentRelationship(definition, relationshipName); ok {
 		if len(relation.ParentObjects) == 0 {
 			return "", false
 		}
@@ -3116,7 +3166,7 @@ func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string
 		vm.jsonChildRelTypeCache.store(cacheKey, jsonRelationshipTypeLookup{Type: typeName, OK: ok})
 		return typeName, ok
 	}
-	parentObject, ok := vm.resolveObjectName(typeName)
+	parentObject, _, ok := vm.sObjectDefinitionForRead(typeName)
 	if !ok {
 		return cacheResult("", false)
 	}
@@ -3137,6 +3187,7 @@ func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string
 }
 
 func (vm *VM) buildJSONSObjectChildRelationshipTypeIndex(parentObject string) map[string]jsonRelationshipTypeLookup {
+	jsonChildRelationshipIndexBuilds.Add(1)
 	matchesByName := make(map[string][]string)
 	addMatch := func(childRelationshipName, childName string) {
 		if strings.TrimSpace(childRelationshipName) == "" || strings.TrimSpace(childName) == "" {
@@ -3147,6 +3198,17 @@ func (vm *VM) buildJSONSObjectChildRelationshipTypeIndex(parentObject string) ma
 		}
 	}
 	children := vm.jsonChildRelationshipCandidates(parentObject)
+	// The parent can itself be a child (for example a standard object's parent
+	// lookup). A catalog-only parent participates without being installed in Org.
+	if _, installed := vm.Org.Objects[parentObject]; !installed {
+		if _, definition, ok := vm.sObjectDefinitionForRead(parentObject); ok {
+			children = maps.Clone(children)
+			if children == nil {
+				children = make(map[string]storage.ObjectState)
+			}
+			children[parentObject] = storage.ObjectState{Definition: definition}
+		}
+	}
 	for childName, childState := range children {
 		childRelationshipName := ""
 		for _, relation := range childState.Definition.Relations {
@@ -3195,6 +3257,9 @@ func (vm *VM) jsonChildRelationshipCandidates(parentObject string) map[string]st
 	cache.candidatesOnce.Do(func() {
 		cache.childCandidates = make(map[string][]string)
 		for childName, child := range vm.Org.Objects {
+			if storage.IsChangeEventObject(child.Definition) {
+				continue
+			}
 			parents := make(map[string]bool)
 			add := func(parent string) {
 				for _, key := range jsonRelationshipParentCandidateKeys(parent) {
@@ -3648,8 +3713,8 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 	return Null, false, nil
 }
 
-// jsonChildRelTypeLookupCache memoizes (typeName, relationshipName) -> child
-// type lookups inside one runtime clone.
+// jsonChildRelTypeLookupCache memoizes child types and parent indexes for one
+// org schema generation, shared by runtime clones with that frozen schema.
 type jsonChildRelTypeLookupCache struct {
 	mu              sync.RWMutex
 	entries         map[string]jsonRelationshipTypeLookup
@@ -3832,9 +3897,8 @@ func (vm *VM) jsonAllowedFields(typeName string) map[string]struct{} {
 		return allowed
 	}
 	if vm.Org != nil {
-		if objectName, ok := vm.resolveObjectName(typeName); ok {
-			object := vm.Org.Objects[objectName]
-			definition := vm.describePreparedDefinition(objectName, object.Definition)
+		if objectName, definition, ok := vm.sObjectDefinitionForRead(typeName); ok {
+			definition = vm.describePreparedDefinition(objectName, definition)
 			for name := range definition.Fields {
 				allowed[name] = struct{}{}
 				if vm.Org.Namespace != "" {
@@ -3858,7 +3922,7 @@ func (vm *VM) jsonAllowedFields(typeName string) map[string]struct{} {
 		}
 	}
 	for className := typeName; className != ""; {
-		class, ok := vm.Classes[className]
+		class, ok := vm.classEntry(className)
 		if !ok {
 			break
 		}
@@ -3916,13 +3980,13 @@ func (vm *VM) allowOpenSObjectJSONFields(typeName string) bool {
 	if !vm.isSObjectLikeType(typeName) {
 		return false
 	}
-	if _, ok := vm.Classes[typeName]; ok {
+	if _, ok := vm.classEntry(typeName); ok {
 		return false
 	}
 	if vm.Org == nil {
 		return true
 	}
-	_, ok := vm.resolveObjectName(typeName)
+	_, _, ok := vm.sObjectDefinitionForRead(typeName)
 	return !ok
 }
 
@@ -4009,4 +4073,23 @@ func (vm *VM) qualifiedTextFormulaJSONShadowsLocal(typeName, key string, fields 
 		}
 	}
 	return false
+}
+
+// fillDuplicateFieldSlots copies a deserialized field into the other slots a
+// merged duplicate class keeps for it. When two source units declare the same
+// field with the same type, reads from either unit resolve to their own slot,
+// so every matching slot must hold the value. Slots with a different type keep
+// their own definition.
+func (vm *VM) fillDuplicateFieldSlots(obj Value, owner string, field Field, fieldName string, value Value) {
+	class, ok := vm.lookupClass(owner)
+	if !ok || fieldName == "" {
+		return
+	}
+	prefix := strings.ToLower(fieldName) + "\x00"
+	for slot, candidate := range class.Fields {
+		if !strings.HasPrefix(strings.ToLower(slot), prefix) || !strings.EqualFold(candidate.Type, field.Type) {
+			continue
+		}
+		obj.Fields[slot] = value
+	}
 }

@@ -1,0 +1,11 @@
+source_api	class	diagnostic
+62.0	StaticBatchChild	Class StaticBatchChild must implement the method: System.Iterable<SObject> Database.Batchable<SObject>.start(Database.BatchableContext)
+62.0	StaticBatchChild	Class StaticBatchChild must implement the method: void Database.Batchable<SObject>.execute(Database.BatchableContext, List<SObject>)
+62.0	StaticBatchChild	Class StaticBatchChild must implement the method: void Database.Batchable<SObject>.finish(Database.BatchableContext)
+62.0	StaticQueueChild	Class StaticQueueChild must implement the method: void System.Queueable.execute(System.QueueableContext)
+62.0	StaticScheduleChild	Class StaticScheduleChild must implement the method: void System.Schedulable.execute(System.SchedulableContext)
+67.0	StaticBatchChild	Class StaticBatchChild must implement the method: System.Iterable<SObject> Database.Batchable<SObject>.start(Database.BatchableContext)
+67.0	StaticBatchChild	Class StaticBatchChild must implement the method: void Database.Batchable<SObject>.execute(Database.BatchableContext, List<SObject>)
+67.0	StaticBatchChild	Class StaticBatchChild must implement the method: void Database.Batchable<SObject>.finish(Database.BatchableContext)
+67.0	StaticQueueChild	Class StaticQueueChild must implement the method: void System.Queueable.execute(System.QueueableContext)
+67.0	StaticScheduleChild	Class StaticScheduleChild must implement the method: void System.Schedulable.execute(System.SchedulableContext)

@@ -1,0 +1,13 @@
+    Object newRows = Trigger.new;
+    Object oldRows = Trigger.old;
+    Object newIds = Trigger.newMap;
+    Object oldIds = Trigger.oldMap;
+    Boolean executing = Trigger.isExecuting;
+    Boolean inserting = Trigger.isInsert;
+    Boolean updating = Trigger.isUpdate;
+    Boolean deleting = Trigger.isDelete;
+    Boolean undeleting = Trigger.isUndelete;
+    Boolean beforeEvent = Trigger.isBefore;
+    Boolean afterEvent = Trigger.isAfter;
+    Integer size = Trigger.size;
+    System.TriggerOperation operation = Trigger.operationType;

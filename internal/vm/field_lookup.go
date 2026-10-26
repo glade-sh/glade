@@ -23,7 +23,7 @@ func (vm *VM) lookupFieldForReceiver(typeName, fieldName string, preferDependenc
 }
 func (vm *VM) lookupReceiverField(typeName, fieldName string) (Field, string, bool) {
 	if vm.currentClass != "" && (strings.EqualFold(typeName, vm.currentClass) || vm.isSubclass(typeName, vm.currentClass)) {
-		if class, ok := vm.Classes[vm.currentClass]; ok {
+		if class, ok := vm.classEntry(vm.currentClass); ok {
 			if field, ok := vm.lookupFieldInMapWithOptions(class.Fields, fieldName, vm.currentMethod.Dependency); ok {
 				return field, runtimeClassName(class), true
 			}
@@ -132,7 +132,7 @@ func staticFieldStorageName(requested string, field Field) string {
 	return requested
 }
 func (vm *VM) staticFieldWritebackKey(owner, requested string, field Field) string {
-	class, ok := vm.Classes[owner]
+	class, ok := vm.classEntry(owner)
 	if ok {
 		if storageName := strings.TrimSpace(field.StorageName); storageName != "" {
 			if _, exists := class.StaticFields[storageName]; exists {

@@ -61,7 +61,7 @@ func TestInheritedFinalTypesOrgConformance(t *testing.T) {
 		t.Fatalf("route counts=%v; native=%v", routes, data.RouteRowCounts)
 	}
 	for _, api := range data.APIVersions {
-		t.Run(api, func(t *testing.T) {
+		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			counts := newConformanceCountLog(t, "InheritedFinalTypes", api)
 			for _, row := range data.Rows {
 				kind := "exact"

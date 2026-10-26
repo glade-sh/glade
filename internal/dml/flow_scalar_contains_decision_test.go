@@ -8,10 +8,9 @@ import (
 
 // A scalar String input compared with the Contains operator, run through the
 // Flow.Interview path (InvocableFlow unset). Contains is false when the left
-// side is null and true on a substring match. Salesforce documents Flow text
-// comparisons as case-insensitive; the mixed-case rows follow that
-// documentation and have no native capture yet. Native rows for the operator on
-// record fields: TestInvocableFlowActionContainsDecisionRows (API 62.0).
+// side is null and true on a substring match, ignoring case. Native scalar rows:
+// flow_text_email/api{62,67}/org.tsv, direct_A through direct_D. The address
+// strings here are local variations of those native text comparisons.
 func TestAutolaunchedFlowScalarContainsDecision(t *testing.T) {
 	rule := storage.FlowRule{
 		Name: "ScalarContains", Active: true, ProcessType: "AutoLaunchedFlow",

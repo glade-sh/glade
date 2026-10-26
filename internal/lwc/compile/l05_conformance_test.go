@@ -18,6 +18,7 @@ import (
 	"unicode/utf16"
 
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/testutil/browserapi"
 )
 
 type l05Case struct {
@@ -117,6 +118,17 @@ func TestL05SalesforceConformance(t *testing.T) {
 		}
 	}
 
+	type apiObservation struct {
+		dom               map[string]json.RawMessage
+		domErrors         map[string]string
+		runtimeCompileErr error
+		browserErr        error
+	}
+	observeAPI := browserapi.Prepare(t, versions, func(t *testing.T, api string) apiObservation {
+
+		dom, domErrors, runtimeCompileErr, browserErr := l05ObserveDOM(t, api, runtimeCases, roots.DependencyRoot)
+		return apiObservation{dom, domErrors, runtimeCompileErr, browserErr}
+	})
 	var report strings.Builder
 	fmt.Fprintln(&report, "api\tid\tkind\tstatus\tactual\texpected\treason")
 	matches, total, compileMatches, domMatches, carried := 0, 0, 0, 0, 0
@@ -143,7 +155,8 @@ func TestL05SalesforceConformance(t *testing.T) {
 			caseIndex := compileIndices[index]
 			l05WriteBundle(t, root, fmt.Sprintf("familyL05Compile%03d", caseIndex), cases[caseIndex], api)
 		})
-		dom, domErrors, runtimeCompileErr, browserErr := l05ObserveDOM(t, api, runtimeCases, roots.DependencyRoot)
+		result := observeAPI(api)
+		dom, domErrors, runtimeCompileErr, browserErr := result.dom, result.domErrors, result.runtimeCompileErr, result.browserErr
 		apiMatches, localDOMRows, apiCarried := 0, 0, 0
 		compileIndex := 0
 		for _, c := range cases {

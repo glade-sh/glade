@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -163,6 +164,50 @@ func TestPersonAccountWithoutFeatureNativeConformance(t *testing.T) {
 			if len(reported) == 0 || reported[0] != nativeMessage {
 				t.Fatalf("native constructor rejection <%s>; Glade diagnostics=%v", nativeMessage, reported)
 			}
+			t.Run("named", func(t *testing.T) {
+				// org.tsv ACCOUNT_CTOR_CLASS/<api> rejects both name fields.
+				class := "AccountPersonConstructorProbe"
+				body, err := os.ReadFile(filepath.Join(dir, "native/project/force-app/main/default/classes/"+class+".cls"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, filepath.Join(root, "force-app/main/default/classes/"+class+".cls"), string(body))
+				// An empty schema infers constructor fields from source. Supply
+				// a complete standard baseline to exercise field validation.
+				writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/Account.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><fields><fullName>Name</fullName><type>Text</type></fields></CustomObject>`)
+				named := loadTestIndex(t, root)
+				result := sema.Analyze(named)
+				if !result.HasErrors() {
+					t.Fatalf("native named constructor was rejected; Glade diagnostics=%v", result.Diagnostics)
+				}
+				// Check each captured field separately as well: diagnostics for
+				// the same constructor location can collapse to its first error.
+				for _, field := range []string{"FirstName", "LastName"} {
+					probe := filepath.Join(root, "force-app/main/default/classes/Reject"+field+".cls")
+					writeFile(t, probe, "public class Reject"+field+" { public static void observe() { Account row = new Account("+field+"='Ari'); } }")
+					result := sema.Analyze(loadTestIndex(t, root))
+					want := "Field does not exist: " + field + " on Account"
+					found := false
+					for _, d := range result.Diagnostics {
+						found = found || d.File == probe && (d.NativeMessage == want || d.Message == want)
+					}
+					if !found {
+						t.Errorf("native named rejection %q; Glade diagnostics=%v", want, result.Diagnostics)
+					}
+				}
+				t.Run("test-runner", func(t *testing.T) {
+					class := "PersonNameConstructorTest"
+					writeFile(t, filepath.Join(root, "force-app/main/default/classes/"+class+".cls"), "@IsTest private class "+class+" { @IsTest static void observe() { "+string(nativeConstructor)+" } }")
+					run := Run(loadTestIndex(t, root), Options{SelectedClasses: []string{class}, SelectedMethod: "observe", NoDiskCache: true, Parallelism: 1})
+					if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 {
+						t.Fatalf("test runner did not select one method: %+v", run)
+					}
+					got := run.Suites[0].Cases[0]
+					if got.Status != testreport.StatusCompileError || got.Problem == nil || !strings.Contains(got.Problem.Message, nativeMessage) {
+						t.Fatalf("native rejected %q; test runner: %+v", nativeMessage, got)
+					}
+				})
+			})
 			// The DML source reaches the same fields dynamically, which compiles
 			// on both sides and fails when the field is written.
 			if analysis := sema.AnalyzeAnonymous(index, string(source), api); analysis.HasErrors() {

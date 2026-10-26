@@ -62,7 +62,7 @@ func flowCoreValidateProjectEntries(p project.Project, idx *Index) error {
 			variables := flowVariableMap(raw.Variables)
 			for _, assignment := range raw.Assignments {
 				for _, item := range assignment.Items {
-					if flowCoreScalarVariableReference(item.AssignToReference, variables) {
+					if flowCoreScalarVariableReference(item.AssignToReference, variables) || invocableFlowActionBooleanAssignment(item, variables) != "" {
 						continue
 					}
 					field := flowRecordFieldReference(item.AssignToReference)

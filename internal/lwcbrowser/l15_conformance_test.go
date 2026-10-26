@@ -22,6 +22,7 @@ import (
 	"github.com/glade-sh/glade/internal/lwc/compile"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/resource"
+	"github.com/glade-sh/glade/internal/testutil/browserapi"
 )
 
 type l15Case struct {
@@ -131,18 +132,28 @@ func TestL15SalesforceConformance(t *testing.T) {
 		}
 	}
 
+	type apiObservation struct {
+		browser       map[string]json.RawMessage
+		browserErrors map[string]string
+		runtimeErr    error
+	}
+	observeAPI := browserapi.Prepare(t, versions, func(t *testing.T, api string) apiObservation {
+		runtimeProject, ok := runtimeProjects[api]
+		if !ok || runtimeProject.Page == "" || len(runtimeProject.Files) != 12 {
+			t.Fatalf("missing complete captured runtime project at API %s", api)
+		}
+		t.Logf("L15 API %s: preparing %d DOM rows", api, len(runtimeCases))
+		browser, browserErrors, runtimeErr := l15ObserveDOM(t, api, runtimeCases, runtimeProject, repo, dependencies)
+		return apiObservation{browser, browserErrors, runtimeErr}
+	})
 	var report strings.Builder
 	matches, total, compilerMatches, browserMatches, localBrowserRows := 0, 0, 0, 0, 0
 	diagnosticMatches, diagnosticTotal, diagnosticCarried, carried := 0, 0, 0, 0
 	for _, api := range versions {
 		t.Logf("L15 API %s: compiling %d source fixtures", api, len(compilerCases))
 		compiled := l15CompileRows(t, api, cases)
-		runtimeProject, ok := runtimeProjects[api]
-		if !ok || runtimeProject.Page == "" || len(runtimeProject.Files) != 12 {
-			t.Fatalf("missing complete captured runtime project at API %s", api)
-		}
-		t.Logf("L15 API %s: source fixtures compiled; preparing %d DOM rows", api, len(runtimeCases))
-		browser, browserErrors, runtimeErr := l15ObserveDOM(t, api, runtimeCases, runtimeProject, repo, dependencies)
+		result := observeAPI(api)
+		browser, browserErrors, runtimeErr := result.browser, result.browserErrors, result.runtimeErr
 		apiMatches := 0
 		for index, c := range cases {
 			want, got, reason := c.Expected[api], "COMPILE_OK", ""

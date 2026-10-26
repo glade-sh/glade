@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Entity__c</fullName><label>Entity__c</label><type>MetadataRelationship</type><referenceTo>EntityDefinition</referenceTo><relationshipName>SliceSources</relationshipName></CustomField>

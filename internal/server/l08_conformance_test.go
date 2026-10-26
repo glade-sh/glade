@@ -25,6 +25,7 @@ import (
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/testutil/browserapi"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -158,18 +159,38 @@ func TestL08SalesforceConformance(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	type apiObservation struct {
+		dom    map[string]json.RawMessage
+		errors map[string]string
+		err    error
+	}
+	observeFixture := func(t *testing.T, api string, table l08Table) apiObservation {
+		var runtimeCases []l08Case
+		for _, c := range table.Cases {
+			if c.Kind == "runtime" {
+				runtimeCases = append(runtimeCases, c)
+			}
+		}
+		dom, errors, err := l08ObserveDOM(t, table, api, runtimeCases, repo)
+		return apiObservation{dom, errors, err}
+	}
+	var observeAPI func(string) map[string]apiObservation
+	if browserapi.Parallelism(len(versions)) > 1 {
+		observeAPI = browserapi.Prepare(t, versions, func(t *testing.T, api string) map[string]apiObservation {
+			results := make(map[string]apiObservation, len(fixtures))
+			for _, table := range fixtures {
+				results[table.ClassPrefix] = observeFixture(t, api, table)
+			}
+			return results
+		})
+	}
 	var report strings.Builder
 	matches, total, nativeDOMRows, localDOMRows, carried := 0, 0, 0, 0, 0
 	diagnosticMatches, diagnosticTotal := 0, 0
 	for _, api := range versions {
 		apiMatches := 0
+		var observed map[string]apiObservation
 		for _, table := range fixtures {
-			runtimeCases := []l08Case{}
-			for _, c := range table.Cases {
-				if c.Kind == "runtime" {
-					runtimeCases = append(runtimeCases, c)
-				}
-			}
 			fixtureMatches := 0
 			baseRoot := t.TempDir()
 			l08WriteProject(t, baseRoot, api)
@@ -178,7 +199,16 @@ func TestL08SalesforceConformance(t *testing.T) {
 			if baseErr == nil {
 				_, baseErr = l08Index(baseProject)
 			}
-			dom, domErrors, domErr := l08ObserveDOM(t, table, api, runtimeCases, repo)
+			var result apiObservation
+			if observeAPI == nil {
+				result = observeFixture(t, api, table)
+			} else {
+				if observed == nil {
+					observed = observeAPI(api)
+				}
+				result = observed[table.ClassPrefix]
+			}
+			dom, domErrors, domErr := result.dom, result.errors, result.err
 			compileErrs := l08CompileRows(t, table, api)
 			// Runtime-source compiler outcomes are distinct rows in the table.
 			for _, c := range table.Cases {

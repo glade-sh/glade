@@ -1,0 +1,9 @@
+source_api	method	observation
+62.0	dynamicLabel	"{""label"":""Visible Alpha""}"
+62.0	emptyLabel	"{""count"":0}"
+62.0	invalidField	"{""rejected"":true}"
+62.0	staticLabel	"{""label"":""Visible Alpha"",""name"":""Alpha""}"
+67.0	dynamicLabel	"{""label"":""Visible Alpha""}"
+67.0	emptyLabel	"{""count"":0}"
+67.0	invalidField	"{""rejected"":true}"
+67.0	staticLabel	"{""label"":""Visible Alpha"",""name"":""Alpha""}"

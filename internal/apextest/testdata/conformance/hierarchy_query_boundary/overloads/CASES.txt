@@ -1,0 +1,9 @@
+Synthetic hierarchy-setting ordinary query overload routes, source APIs 62/67.
+Anonymous administrator; @IsTest Standard User with/without ViewAllCustomSettings.
+Each user runs through with sharing and without sharing classes.
+Database.query: default, AccessLevel.USER_MODE, AccessLevel.SYSTEM_MODE.
+Database.queryWithBinds: USER_MODE, SYSTEM_MODE.
+Database.countQuery: default, AccessLevel.USER_MODE, AccessLevel.SYSTEM_MODE.
+Database.countQueryWithBinds: USER_MODE, SYSTEM_MODE.
+Project twins: anonymous request runtime, named VM, @IsTest runner (cold/cached parallel).
+Direct VM twins execute each named route independently against the exported row.

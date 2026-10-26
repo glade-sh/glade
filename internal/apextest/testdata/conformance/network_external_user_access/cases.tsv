@@ -1,0 +1,5 @@
+case	expression
+empty	Network.createExternalUserAsync(new User(), new Contact(), new Account())
+populated	Network.createExternalUserAsync(new User(Username='visitor@example.invalid', Email='visitor@example.invalid', LastName='Visitor', Alias='visit'), new Contact(LastName='Visitor'), new Account(Name='Visitor account'))
+null	Network.createExternalUserAsync(null, null, null)
+qualified_empty	System.Network.createExternalUserAsync(new User(), new Contact(), new Account())

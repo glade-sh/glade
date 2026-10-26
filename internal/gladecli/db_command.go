@@ -865,7 +865,7 @@ func orgStateFromIndex(root string, p project.Project, index typesys.Index) (sto
 	if err := storage.ApplyCustomMetadataRecords(&org, index.CustomMetadataRecords); err != nil {
 		return storage.OrgState{}, err
 	}
-	if err := resource.ApplyProject(&org, p); err != nil {
+	if _, err := resource.ApplyProjectTolerant(&org, p); err != nil {
 		return storage.OrgState{}, err
 	}
 	if automationIndex, err := automation.LoadProject(p); err == nil {
@@ -873,6 +873,9 @@ func orgStateFromIndex(root string, p project.Project, index typesys.Index) (sto
 	}
 	storage.EnsureDeterministicPlatformData(&org)
 	storage.ApplyOrgShape(&org, project.OrgShapeFeatures(root))
+	if err := resource.ApplyProjectNetworks(&org, p); err != nil {
+		return storage.OrgState{}, err
+	}
 	if err := resource.ApplyProjectRoles(&org, p); err != nil {
 		return storage.OrgState{}, err
 	}

@@ -1,0 +1,11 @@
+case	source_apis	routes	observations
+enqueue-default	62.0,67.0	anonymous,named,isTest	Object runtime Id/String tests; raw and Id-converted lengths; getSObjectType; SOQL Id length and identity comparison
+enqueue-integer	62.0,67.0	anonymous,named,isTest	Object runtime Id/String tests; raw and Id-converted lengths; getSObjectType; SOQL Id length and identity comparison
+enqueue-options	62.0,67.0	anonymous,named,isTest	Object runtime Id/String tests; raw and Id-converted lengths; getSObjectType; SOQL Id length and identity comparison
+batch-default	62.0,67.0	anonymous,named,isTest	Object runtime Id/String tests; raw and Id-converted lengths; getSObjectType; SOQL Id length and identity comparison
+batch-scope	62.0,67.0	anonymous,named,isTest	Object runtime Id/String tests; raw and Id-converted lengths; getSObjectType; SOQL Id length and identity comparison
+boxed-controls	62.0,67.0	anonymous,named,isTest	String.valueOf: typed Id, Object-boxed Id, cast Id, ordinary String, null controls
+direct-controls	62.0,67.0	anonymous,named,isTest	Direct valueOf, concatenation, enqueue getSObjectType, Id/String overload selection
+member-controls	62.0,67.0	anonymous,named,isTest	Direct/Object-held String casts, equals, to15, direct/Object-held JSON serialization
+typed-return-controls	62.0,67.0	anonymous,named,isTest	Submitted Id variable and helper argument/return: String assignment, valueOf, concat, cast, JSON
+object-equality-controls	62.0,67.0	anonymous,named,isTest	Object versus String equality for ordinary 15/18-character ID-shaped text and nonmatching controls

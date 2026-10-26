@@ -50,9 +50,13 @@ func StandardFieldAssignmentRequiresNamedCode(objectName, fieldName string) bool
 		strings.EqualFold(objectName, "EventLogFile") && strings.EqualFold(fieldName, "LogDate")
 }
 
-// Dynamic put follows the RTEM field's describe permissions even though its
-// Apex setter accepts assignment. Record identity retains its ordinary rule.
+// Dynamic put rejects generated email domains and follows RTEM fields' describe
+// permissions even though their Apex setters accept assignment. Record identity
+// retains its ordinary rule.
 func StandardFieldDynamicPutReadOnly(objectName, fieldName string) bool {
+	if strings.EqualFold(objectName, "EmailServicesAddress") && strings.EqualFold(fieldName, "EmailDomainName") {
+		return true
+	}
 	if !standardRTEMEventAssignable(objectName) {
 		return false
 	}

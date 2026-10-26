@@ -1,0 +1,9 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>Aa__c</fullName>
+  <deleteConstraint>SetNull</deleteConstraint>
+  <label>Aa Label</label>
+  <referenceTo>Contact</referenceTo>
+  <relationshipLabel>Cmp Rows</relationshipLabel>
+  <relationshipName>Cmp</relationshipName>
+  <type>Lookup</type>
+</CustomField>

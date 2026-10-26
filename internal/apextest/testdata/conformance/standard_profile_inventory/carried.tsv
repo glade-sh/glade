@@ -1,0 +1,25 @@
+source_api	configuration	route	case_id	reason
+62.0	communities	anonymous	inventory	Setup profiles: local seed inventory and license relationships differ from the fresh Developer inventory.
+62.0	communities	anonymous	limited	Setup profiles: native Profile ORDER BY Name LIMIT 1 selects System Administrator; local selects Chatter External User.
+62.0	communities	isTest	inventory	Setup profiles: local seed inventory and license relationships differ from the fresh Developer inventory.
+62.0	communities	isTest	limited	Setup profiles: native Profile ORDER BY Name LIMIT 1 selects System Administrator; local selects Chatter External User.
+62.0	communities_feature	anonymous	inventory	Setup profiles: local seed inventory and license relationships differ from the feature-provisioned Developer inventory.
+62.0	communities_feature	anonymous	limited	Setup profile LIMIT ordering: local first profile differs from the recorded initial native sample; within-version native variation is retained in limit-ordering-recheck.tsv.
+62.0	communities_feature	isTest	inventory	Setup profiles: local seed inventory and license relationships differ from the feature-provisioned Developer inventory.
+62.0	communities_feature	isTest	limited	Setup profile LIMIT ordering: local first profile differs from the recorded initial native sample; within-version native variation is retained in limit-ordering-recheck.tsv.
+62.0	plain	anonymous	inventory	Setup profiles: local seed inventory and license relationships differ from the fresh Developer inventory.
+62.0	plain	anonymous	limited	Setup profiles: native Profile ORDER BY Name LIMIT 1 selects System Administrator; local selects Chatter External User.
+62.0	plain	isTest	inventory	Setup profiles: local seed inventory and license relationships differ from the fresh Developer inventory.
+62.0	plain	isTest	limited	Setup profiles: native Profile ORDER BY Name LIMIT 1 selects System Administrator; local selects Chatter External User.
+67.0	communities	anonymous	inventory	Setup profiles: local seed inventory and license relationships differ from the fresh Developer inventory.
+67.0	communities	anonymous	limited	Setup profiles: native Profile ORDER BY Name LIMIT 1 selects System Administrator; local selects Chatter External User.
+67.0	communities	isTest	inventory	Setup profiles: local seed inventory and license relationships differ from the fresh Developer inventory.
+67.0	communities	isTest	limited	Setup profiles: native Profile ORDER BY Name LIMIT 1 selects System Administrator; local selects Chatter External User.
+67.0	communities_feature	anonymous	inventory	Setup profiles: local seed inventory and license relationships differ from the feature-provisioned Developer inventory.
+67.0	communities_feature	anonymous	limited	Setup profile LIMIT ordering: local first profile differs from the recorded initial native sample; within-version native variation is retained in limit-ordering-recheck.tsv.
+67.0	communities_feature	isTest	inventory	Setup profiles: local seed inventory and license relationships differ from the feature-provisioned Developer inventory.
+67.0	communities_feature	isTest	limited	Setup profile LIMIT ordering: local first profile differs from the recorded initial native sample; within-version native variation is retained in limit-ordering-recheck.tsv.
+67.0	plain	anonymous	inventory	Setup profiles: local seed inventory and license relationships differ from the fresh Developer inventory.
+67.0	plain	anonymous	limited	Setup profiles: native Profile ORDER BY Name LIMIT 1 selects System Administrator; local selects Chatter External User.
+67.0	plain	isTest	inventory	Setup profiles: local seed inventory and license relationships differ from the fresh Developer inventory.
+67.0	plain	isTest	limited	Setup profiles: native Profile ORDER BY Name LIMIT 1 selects System Administrator; local selects Chatter External User.

@@ -3961,9 +3961,11 @@ func TestClassStaticFieldWinsOverSyntheticSObjectFieldToken(t *testing.T) {
 	}
 }
 
-func TestExecDescribeMapsMatchUnqualifiedNamespaceTokens(t *testing.T) {
+func TestExecDescribeFieldMapsFromQualifiedNamespaceGlobalToken(t *testing.T) {
 	program, err := CompileAnonymous(`
-Schema.SObjectType objectType = Schema.getGlobalDescribe().get('Widget__c');
+System.assertEquals(null, Schema.getGlobalDescribe().get('Widget__c'));
+Schema.SObjectType objectType = Schema.getGlobalDescribe().get('pkg__Widget__c');
+System.assertNotEquals(null, objectType);
 Map<String, Schema.SObjectField> fields = objectType.getDescribe().fields.getMap();
 System.assert(fields.containsKey('Thing__c'));
 System.assertEquals('pkg__Thing__c', fields.get('Thing__c').getDescribe().getName());

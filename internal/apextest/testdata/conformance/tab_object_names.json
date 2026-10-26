@@ -8,7 +8,7 @@
     "anonymous",
     "istest"
   ],
-  "source": "Owned plain Developer scratch-org observations, 2026-10-14.",
+  "source": "Owned plain Developer example-org observations, 2026-10-14.",
   "notes": [
     "Synthetic fixture names are renamed consistently. Native field values and incomplete cells are retained.",
     "The opaque deployed page identity is compared by its observed 15-character 066 prefix; local identity linkage has a separate unit regression.",

@@ -1,0 +1,20 @@
+context	route	boundary
+istest	event_explicit	explicit subscriber delivery
+istest	event_stop	stopTest subscriber delivery
+istest	scheduled_stop	stopTest does not launch schedule-triggered interviews
+istest	scheduled_direct	explicit scheduled interview
+istest	scheduled_subflow	explicit scheduled interview through subflow
+anonymous	event_publish	publication acknowledged
+anonymous	event_committed	separate transaction observes subscriber record update
+anonymous	scheduled_direct	explicit scheduled interview
+anonymous	scheduled_subflow	explicit scheduled interview through subflow
+istest	scheduled_direct_static	explicit scheduled interview via direct_static
+istest	scheduled_subflow_static	explicit scheduled interview via subflow_static
+istest	scheduled_direct_namespace	explicit scheduled interview via direct_namespace
+istest	scheduled_subflow_namespace	explicit scheduled interview via subflow_namespace
+anonymous	scheduled_direct_static	explicit scheduled interview via direct_static
+anonymous	scheduled_subflow_static	explicit scheduled interview via subflow_static
+anonymous	scheduled_direct_namespace	explicit scheduled interview via direct_namespace
+anonymous	scheduled_subflow_namespace	explicit scheduled interview via subflow_namespace
+scheduler	Direct	wall-clock native delivery; body replayed through Interview.start in CI
+scheduler	Nested	wall-clock native delivery through subflow; body replayed through Interview.start in CI

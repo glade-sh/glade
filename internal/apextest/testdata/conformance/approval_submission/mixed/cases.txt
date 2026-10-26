@@ -1,0 +1,13 @@
+# Approval request routes
+
+Each group runs at API 62 and 67 through anonymous Apex and an `@IsTest` method.
+Each group covers base and concrete request types with omitted, true and false allOrNone.
+
+| Group | Shape | Observations |
+| --- | --- | --- |
+| mixed_late / mixed_early | Four submissions, alternating valid and invalid definitions | Failure ordering, diagnostics, partial success and atomic rollback |
+| mixed_success | Four valid submissions | Instance, workitem and step counts |
+| mixed_workitems / mixed_reject | Four workitems, alternating Approve or Reject and Invalid | Error status/message/fields, pending/approved/rejected state, live workitem counts and rollback |
+| single_approve / single_reject / single_invalid | One workitem through single-request overloads | Same fields and query counts without list aggregation |
+
+The native observation assertion is intentional; it transports JSON and does not count as a passing Salesforce test.

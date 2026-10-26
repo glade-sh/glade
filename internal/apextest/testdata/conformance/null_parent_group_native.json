@@ -173,7 +173,7 @@
         }
       },
       "evidenceSha256": "425f30eaa968430b9923bf05d276d8e9a41de22e2b41c50511a00468e6746777",
-      "command": "apex run --target-org scratch-org --api-version 62.0 --file native-capture --json",
+      "command": "apex run --target-org example-org --api-version 62.0 --file native-capture --json",
       "native": {
         "status": 0,
         "success": true,
@@ -242,7 +242,7 @@
         }
       },
       "evidenceSha256": "e026d2fca41f05cf0e8cabc3b2d7202ae6eae874258f5ae4b1ac64817ffd690b",
-      "command": "apex run test --target-org scratch-org --api-version 62.0 --class-names ParentTallyNativeTest --synchronous --json",
+      "command": "apex run test --target-org example-org --api-version 62.0 --class-names ParentTallyNativeTest --synchronous --json",
       "native": {
         "status": 100,
         "outcome": "Fail",
@@ -310,7 +310,7 @@
         }
       },
       "evidenceSha256": "16841da2faaaf35cf121657f3024d87adb3d68e97650e2f901a7a25c46d5e658",
-      "command": "apex run --target-org scratch-org --api-version 67.0 --file native-capture --json",
+      "command": "apex run --target-org example-org --api-version 67.0 --file native-capture --json",
       "native": {
         "status": 0,
         "success": true,
@@ -379,7 +379,7 @@
         }
       },
       "evidenceSha256": "9a1b1b336b35432d27448f7dc7a7631f9cb1638de45f55cfbd048ee0626d3f9f",
-      "command": "apex run test --target-org scratch-org --api-version 67.0 --class-names ParentTallyNativeTest --synchronous --json",
+      "command": "apex run test --target-org example-org --api-version 67.0 --class-names ParentTallyNativeTest --synchronous --json",
       "native": {
         "status": 100,
         "outcome": "Fail",
@@ -447,7 +447,7 @@
         }
       },
       "evidenceSha256": "a99d4fdf164eab8df4010d96e7404c4fa471da4be34104f2a2f3a165b9bfbdce",
-      "command": "apex run --target-org scratch-org --api-version 68.0 --file native-capture --json",
+      "command": "apex run --target-org example-org --api-version 68.0 --file native-capture --json",
       "native": {
         "status": 0,
         "success": true,
@@ -516,7 +516,7 @@
         }
       },
       "evidenceSha256": "ee68b615230dcbce0542152099eae3204d0998f4be3a9edddbfa35cdede95a2a",
-      "command": "apex run test --target-org scratch-org --api-version 68.0 --class-names ParentTallyNativeTest --synchronous --json",
+      "command": "apex run test --target-org example-org --api-version 68.0 --class-names ParentTallyNativeTest --synchronous --json",
       "native": {
         "status": 100,
         "outcome": "Fail",
@@ -527,8 +527,8 @@
   "d7Evidence": {
     "observationsTsv": "row\tapi\tcontext\tvalue\nNPG_62_anon\t62\tanonymous\t{\"textWidths\":[15,18],\"textGroups\":2,\"nullCounts\":[1,2],\"unchanged\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"clearOld\":{\"stored\":0,\"counts\":[],\"groups\":0,\"flat\":0},\"transferNew\":{\"stored\":1,\"counts\":[1],\"groups\":1,\"flat\":1},\"transferOld\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"assigned\":{\"stored\":3,\"counts\":[3],\"groups\":1,\"flat\":3},\"initial\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2}}\nNPG_62_test\t62\tistest\t{\"textWidths\":[15,18],\"textGroups\":2,\"nullCounts\":[1,2],\"unchanged\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"clearOld\":{\"stored\":0,\"counts\":[],\"groups\":0,\"flat\":0},\"transferNew\":{\"stored\":1,\"counts\":[1],\"groups\":1,\"flat\":1},\"transferOld\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"assigned\":{\"stored\":3,\"counts\":[3],\"groups\":1,\"flat\":3},\"initial\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2}}\nNPG_67_anon\t67\tanonymous\t{\"textWidths\":[15,18],\"textGroups\":2,\"nullCounts\":[1,2],\"unchanged\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"clearOld\":{\"stored\":0,\"counts\":[],\"groups\":0,\"flat\":0},\"transferNew\":{\"stored\":1,\"counts\":[1],\"groups\":1,\"flat\":1},\"transferOld\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"assigned\":{\"stored\":3,\"counts\":[3],\"groups\":1,\"flat\":3},\"initial\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2}}\nNPG_67_test\t67\tistest\t{\"textWidths\":[15,18],\"textGroups\":2,\"nullCounts\":[1,2],\"unchanged\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"clearOld\":{\"stored\":0,\"counts\":[],\"groups\":0,\"flat\":0},\"transferNew\":{\"stored\":1,\"counts\":[1],\"groups\":1,\"flat\":1},\"transferOld\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"assigned\":{\"stored\":3,\"counts\":[3],\"groups\":1,\"flat\":3},\"initial\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2}}\nNPG_68_anon\t68\tanonymous\t{\"textWidths\":[15,18],\"textGroups\":2,\"nullCounts\":[1,2],\"unchanged\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"clearOld\":{\"stored\":0,\"counts\":[],\"groups\":0,\"flat\":0},\"transferNew\":{\"stored\":1,\"counts\":[1],\"groups\":1,\"flat\":1},\"transferOld\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"assigned\":{\"stored\":3,\"counts\":[3],\"groups\":1,\"flat\":3},\"initial\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2}}\nNPG_68_test\t68\tistest\t{\"textWidths\":[15,18],\"textGroups\":2,\"nullCounts\":[1,2],\"unchanged\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"clearOld\":{\"stored\":0,\"counts\":[],\"groups\":0,\"flat\":0},\"transferNew\":{\"stored\":1,\"counts\":[1],\"groups\":1,\"flat\":1},\"transferOld\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2},\"assigned\":{\"stored\":3,\"counts\":[3],\"groups\":1,\"flat\":3},\"initial\":{\"stored\":2,\"counts\":[2],\"groups\":1,\"flat\":2}}\n",
     "orgTsvSha256": "fbe490210d6e3bf56de5e04329485f9ef8a9034f26fb4160517fc0461ebfd3c6",
-    "runMetadata": "Owned Developer scratch scratch-org from scratch-org, duration3days, existing administrator. Every sf command prefixed HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true. Only synthetic classes+trigger/Account/Contact data; no namespace/package/grant/sharing/settings changes.\nOrg id SHA256 3349b406302f468ac181def25ec205d1710529415bff4a28747eb3721c41a0bd\nCreate: sf org create scratch --target-dev-hub scratch-org --alias scratch-org --duration-days 3 --edition developer --wait 15 --json; status0.\nPerAPI deploy exact owned classes+trigger with all metadata set to cellAPI, then anonymous and named captures before next redeploy. Ignore-conflicts affects only this owned scratch/component set. Anonymous data rollback uses savepoint; named uses automatic test rollback. Earlier named savepoint-crossing-startTest setup failed and is excluded; raw-savepoint-context-failure retained.\ncwd=<worktree>/probe/null_parent_group/source62 sf project deploy start --source-dir force-app --target-org scratch-org --wait 15 --ignore-conflicts --json; status0; raw deploy62.json SHA256 e3005d8f97d0400315de2b45834f376d6f866849f26a9681a3ffb416d148c721\nsf apex run --target-org scratch-org --api-version 62.0 --file native-capture --json; observedstatus 0\nsf apex run test --target-org scratch-org --api-version 62.0 --class-names ParentTallyNativeTest --synchronous --json; observedstatus 100\ncwd=<worktree>/probe/null_parent_group/source67 sf project deploy start --source-dir force-app --target-org scratch-org --wait 15 --ignore-conflicts --json; status0; raw deploy67.json SHA256 52aa5bbf577796ff613541d4e7a8b75fd6024063a17eaf0e6d4ac8bffa52ab26\nsf apex run --target-org scratch-org --api-version 67.0 --file native-capture --json; observedstatus 0\nsf apex run test --target-org scratch-org --api-version 67.0 --class-names ParentTallyNativeTest --synchronous --json; observedstatus 100\ncwd=<worktree>/probe/null_parent_group/source68 sf project deploy start --source-dir force-app --target-org scratch-org --wait 15 --ignore-conflicts --json; status0; raw deploy68.json SHA256 024d1e8c7830d04a0c2dcccfe0fc54984a5b5d59bd5f2717101f02a50bd8afcc\nsf apex run --target-org scratch-org --api-version 68.0 --file native-capture --json; observedstatus 0\nsf apex run test --target-org scratch-org --api-version 68.0 --class-names ParentTallyNativeTest --synchronous --json; observedstatus 100\nCleanup: sf org delete scratch --target-org scratch-org --no-prompt --json status0; sf alias list --json status0, ownalias absent. Raw delete SHA256 c4ca9b86ce0601e1fe6c0bcdacdd4f6fe081faafdc1af1d16e0d8ebccf8fcc7f; aliases SHA256 09da5ad5958103cef81f6aa8748f047ce475516564f59cacbdcf0bb31323cae7\n",
-    "orgRunSha256": "fafa0e622a08121e6cabbf715878d61a1d7f664892f9bb7bed43b18437f04931",
+    "runMetadata": "Owned Developer scratch example-org from example-org, duration3days, existing administrator. Every sf command prefixed HOME=<scratch-auth-home> SF_USE_GENERIC_UNIX_KEYCHAIN=true. Only synthetic classes+trigger/Account/Contact data; no namespace/package/grant/sharing/settings changes.\nOrg id SHA256 3349b406302f468ac181def25ec205d1710529415bff4a28747eb3721c41a0bd\nCreate: sf org create scratch --target-dev-hub example-org --alias example-org --duration-days 3 --edition developer --wait 15 --json; status0.\nPerAPI deploy exact owned classes+trigger with all metadata set to cellAPI, then anonymous and named captures before next redeploy. Ignore-conflicts affects only this owned scratch/component set. Anonymous data rollback uses savepoint; named uses automatic test rollback. Earlier named savepoint-crossing-startTest setup failed and is excluded; raw-savepoint-context-failure retained.\ncwd=<worktree>/probe/null_parent_group/source62 sf project deploy start --source-dir force-app --target-org example-org --wait 15 --ignore-conflicts --json; status0; raw deploy62.json SHA256 e3005d8f97d0400315de2b45834f376d6f866849f26a9681a3ffb416d148c721\nsf apex run --target-org example-org --api-version 62.0 --file native-capture --json; observedstatus 0\nsf apex run test --target-org example-org --api-version 62.0 --class-names ParentTallyNativeTest --synchronous --json; observedstatus 100\ncwd=<worktree>/probe/null_parent_group/source67 sf project deploy start --source-dir force-app --target-org example-org --wait 15 --ignore-conflicts --json; status0; raw deploy67.json SHA256 52aa5bbf577796ff613541d4e7a8b75fd6024063a17eaf0e6d4ac8bffa52ab26\nsf apex run --target-org example-org --api-version 67.0 --file native-capture --json; observedstatus 0\nsf apex run test --target-org example-org --api-version 67.0 --class-names ParentTallyNativeTest --synchronous --json; observedstatus 100\ncwd=<worktree>/probe/null_parent_group/source68 sf project deploy start --source-dir force-app --target-org example-org --wait 15 --ignore-conflicts --json; status0; raw deploy68.json SHA256 024d1e8c7830d04a0c2dcccfe0fc54984a5b5d59bd5f2717101f02a50bd8afcc\nsf apex run --target-org example-org --api-version 68.0 --file native-capture --json; observedstatus 0\nsf apex run test --target-org example-org --api-version 68.0 --class-names ParentTallyNativeTest --synchronous --json; observedstatus 100\nCleanup: sf org delete scratch --target-org example-org --no-prompt --json status0; sf alias list --json status0, ownalias absent. Raw delete SHA256 c4ca9b86ce0601e1fe6c0bcdacdd4f6fe081faafdc1af1d16e0d8ebccf8fcc7f; aliases SHA256 09da5ad5958103cef81f6aa8748f047ce475516564f59cacbdcf0bb31323cae7\n",
+    "orgRunSha256": "7f519999bfe9798506061cee40e037d956c2c38b1ffffedda84399a3df0ec712",
     "rawOrgRunSha256": "7f757e5851948e3d0e48567b340e74992f0cc90d957c20fa9255b0b8f499713f",
     "normalization": "Only authentication HOME/worktree paths replaced by stable placeholders; raw D7 digest retained."
   }

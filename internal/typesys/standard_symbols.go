@@ -190,6 +190,13 @@ func buildStandardPlatformSymbols() []TypeSymbol {
 		known[key] = struct{}{}
 		specs = append(specs, StandardSymbolSpec{Name: name, Kind: apexast.DeclarationClass})
 	}
+	// Generated stubs preserve the exception surface but often flatten its base
+	// to Object. Apply the shared hierarchy after all declaration overlays.
+	for i := range specs {
+		if parent, ok := StandardExceptionParent(specs[i].Name); ok {
+			specs[i].SuperClass = parent
+		}
+	}
 	return StandardSymbolsFromSpecs(specs)
 }
 
@@ -1341,6 +1348,9 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "SObject", Methods: []StandardMethodSpec{{Name: "addError", ReturnType: "void", ParameterSpecs: []StandardParameterSpec{{Name: "exceptionError", Type: "Exception"}, {Name: "escape", Type: "Boolean"}}}}},
 	// Native API 62/67 compilation retains these overridable entry points and
 	// abstract types. CartCalculate's delegation helpers remain non-virtual.
+	{Name: "CartExtension.CartItemList", ReplaceConstructors: true},
+	{Name: "CartExtension.CartDeliveryGroup", SuperClass: "CartExtension.CommerceObject"},
+	{Name: "CartExtension.CartItem", SuperClass: "CartExtension.CommerceObject"},
 	{Name: "CartExtension.CartCalculate", Modifiers: []string{"virtual"}, Methods: []StandardMethodSpec{
 		{Name: "calculate", ReturnType: "void", Parameters: []string{"CartExtension.CartCalculateOrchestratorRequest"}, Modifiers: []string{"virtual"}},
 	}},
@@ -1407,11 +1417,11 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "UserProvisioning.CommittingBatchable", Interfaces: []string{"Database.Batchable<SObject>"}},
 	{Name: "UserProvisioning.DeletingBatchable", Interfaces: []string{"Database.Batchable<SObject>"}},
 	{Name: "UserProvisioning.LinkingBatchable", Interfaces: []string{"Database.Batchable<SObject>"}},
-	{Name: "UserProvisioning.PluginBatchable", Modifiers: []string{"abstract"}, Interfaces: []string{"Database.Batchable<UserProvisioningRequest>"}, Methods: []StandardMethodSpec{
-		{Name: "flowInputPreprocessing", ReturnType: "Map<String,Object>", Parameters: []string{"Map<String,Object>"}, Modifiers: []string{"virtual"}},
-		{Name: "flowPostProcessing", ReturnType: "void", Parameters: []string{"UserProvisioning.ProvisioningProcessHandlerOutput", "SObject"}, Modifiers: []string{"virtual"}},
-		{Name: "getEventPrefix", ReturnType: "String", Modifiers: []string{"virtual"}},
-		{Name: "postBatchProcessing", ReturnType: "void", Modifiers: []string{"virtual"}},
+	{Name: "UserProvisioning.PluginBatchable", Modifiers: []string{"abstract"}, Interfaces: []string{"Database.Batchable<SObject>"}, Methods: []StandardMethodSpec{
+		{Name: "flowInputPreprocessing", ReturnType: "Map<String,Object>", Parameters: []string{"Map<String,Object>"}, Modifiers: []string{"abstract"}},
+		{Name: "flowPostProcessing", ReturnType: "void", Parameters: []string{"UserProvisioning.ProvisioningProcessHandlerOutput", "SObject"}, Modifiers: []string{"abstract"}},
+		{Name: "getEventPrefix", ReturnType: "String", Modifiers: []string{"abstract"}},
+		{Name: "postBatchProcessing", ReturnType: "void", Modifiers: []string{"abstract"}},
 	}},
 	{Name: "UserProvisioning.ProvisioningBatchable", Interfaces: []string{"Database.Batchable<UserProvisioningRequest>"}},
 	{Name: "UserProvisioning.RequestingBatchable", Interfaces: []string{"Database.Batchable<UserProvisioningRequest>"}},
@@ -1463,6 +1473,8 @@ var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "StatusCode", EnumHashBase: standardEnumHashBase(674160322)},
 	{Name: "Metadata.StatusCode", EnumHashBase: standardEnumHashBase(-369369150)},
 	{Name: "Exception", Modifiers: []string{"abstract"}, ReplaceConstructors: true},
+	{Name: "ListException", Modifiers: []string{"virtual"}},
+	{Name: "AuraHandledException", SuperClass: "Exception", Constructors: [][]string{{"String"}}},
 	// Package.Version is a platform value type; API 67 exposes no Apex
 	// constructor even though the generated stub includes a default one.
 	{Name: "Package.Version", ReplaceConstructors: true},

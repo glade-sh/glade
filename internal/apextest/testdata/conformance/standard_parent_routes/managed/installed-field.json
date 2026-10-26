@@ -1,0 +1,71 @@
+{
+  "captures": [
+    {
+      "source_api": "62.0",
+      "subscriber_namespace": "gladens003",
+      "field": {
+        "DeveloperName": "ParentRouteValue",
+        "NamespacePrefix": "gladens001",
+        "ManageableState": "installed",
+        "TableEnumOrId": "Contact"
+      },
+      "package": {
+        "NamespacePrefix": "gladens001",
+        "IsManaged": true,
+        "IsBeta": true,
+        "MajorVersion": 1,
+        "MinorVersion": 0,
+        "PatchVersion": 0,
+        "BuildNumber": 3
+      },
+      "classes": [
+        {
+          "Name": "ManagedParentRouteProbe",
+          "NamespacePrefix": "gladens003",
+          "ApiVersion": 62
+        },
+        {
+          "Name": "ManagedParentRouteProbeTest",
+          "NamespacePrefix": "gladens003",
+          "ApiVersion": 62
+        }
+      ]
+    },
+    {
+      "source_api": "67.0",
+      "subscriber_namespace": "gladens003",
+      "field": {
+        "DeveloperName": "ParentRouteValue",
+        "NamespacePrefix": "gladens001",
+        "ManageableState": "installed",
+        "TableEnumOrId": "Contact"
+      },
+      "package": {
+        "NamespacePrefix": "gladens001",
+        "IsManaged": true,
+        "IsBeta": true,
+        "MajorVersion": 1,
+        "MinorVersion": 0,
+        "PatchVersion": 0,
+        "BuildNumber": 3
+      },
+      "classes": [
+        {
+          "Name": "ManagedParentRouteProbe",
+          "NamespacePrefix": "gladens003",
+          "ApiVersion": 67
+        },
+        {
+          "Name": "ManagedParentRouteProbeTest",
+          "NamespacePrefix": "gladens003",
+          "ApiVersion": 67
+        }
+      ]
+    }
+  ],
+  "source_sha256": {
+    "anonymous.apex": "cb26ac07d0e8677bc9727e09f7d80a7bd99cc36ff63e4b662f1278e8d7fea9d1",
+    "project/force-app/main/default/classes/ManagedParentRouteProbe.cls": "2cb37024597be1cb934c3e6c6aa629b5551bb8dbf54186fdf274fd4fcaf34ae5",
+    "project/force-app/main/default/classes/ManagedParentRouteProbeTest.cls": "5358ec02681d05e553c77e22bd9c6886e03f139f204811b0b8ee63a059640de6"
+  }
+}

@@ -1,0 +1,1 @@
+public class PersonQueryFieldMetadata { public static String observe() { return String.valueOf(Account.SObjectType.getDescribe().fields.getMap().containsKey('Loyalty__pc')) + '/' + String.valueOf(Contact.SObjectType.getDescribe().fields.getMap().containsKey('Loyalty__c')); } }

@@ -1,0 +1,34 @@
+# Platform path oracle extensions
+
+Case table written before native capture. Only missing observations are added.
+The sibling family `api*/native/{anonymous,istest}` rows remain authoritative.
+All new cases use source APIs 62.0 and 67.0 on anonymous and named test routes.
+Native results, including test-only rejections, are recorded without inferred expectations.
+
+| Feature | Design rows needed | Existing evidence at both APIs | New case IDs |
+|---|---|---|---|
+| Async paths | SP01-SP11 | F01=SP01; F02=SP02; F03/F04=future schedule; F06=direct-interview rejection; delivery F07-F09=committed effects | SP03-SP11 |
+| CDC journal | CDC01-CDC17 | C01=CDC02; C02/C03=delivery counts only; anonymous C01-C04=CDC16 test-only rejection; C04=empty bus | CDC01,CDC03-CDC15,CDC17 |
+| Duplicate enforcement | DR01-DR17 | D02=basic DR01 status; D03=DR05; D04=NullNotAllowed half of DR09; D05=DR08; D01=distinct control | DR01-DR04,DR06,DR07,DR09-DR16; DR17 is DR01 anonymous |
+| Assignment rules | AR01-AR16 | A01=AR01; A02=AR02/anonymous AR16; A03=AR06; A04=active explicit ID; A05=invalid ID half of AR05 | AR03-AR05,AR07-AR15 |
+
+See `cases.tsv` for individual synthetic slices. Shared new project metadata is
+under `project`; each family owns its new native rows. Existing rows are reused,
+not recaptured. Rejection and boundary twins include SP07/F06, CDC11/CDC16,
+DR15/DR09, and AR05/AR14. Capture completion and any unknowns are recorded below.
+
+Captured: 200 observations (50 cases x two source APIs x anonymous/IsTest).
+Rows live in `{family}/native/api{62,67}/{anonymous,istest}/org.tsv` with
+`ORG-RUN.txt`; both APIs agree. The assertions transport observations and
+are intentionally failing native tests, rather than test-pass evidence.
+The setup-DML case uses a separate test class. Update/delete/undelete cases
+flush baseline changes before observing the operation under test.
+
+Native details: stopTest leaves these flow paths pending; identical CDC
+inserts merge and insert/update coalesces; CDC enablement exposes earlier test
+DML; assignment may re-fire an update trigger; default Contact rules block
+Apex duplicates. The per-row payloads are authoritative.
+
+Remaining unknowns: committed async snapshot/fault behavior and real timer
+delivery; duplicate Report artifacts after commit. The requested CDC and
+assignment slices are complete. Existing committed flow rows remain unchanged.

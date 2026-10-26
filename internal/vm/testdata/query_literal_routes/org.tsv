@@ -1,0 +1,253 @@
+source_api	context	shape	route	outcome	detail
+62.0	anonymous	colon_offset	count_query	accept	accepted
+62.0	anonymous	colon_offset	database_query	accept	accepted
+62.0	anonymous	colon_offset	query_locator	accept	accepted
+62.0	anonymous	colon_offset	query_with_binds	accept	accepted
+62.0	anonymous	colon_offset	search_query	accept	accepted
+62.0	anonymous	colon_offset	static_soql	accept	accepted
+62.0	anonymous	colon_offset	static_sosl	accept	accepted
+62.0	anonymous	compact_offset	count_query	accept	accepted
+62.0	anonymous	compact_offset	database_query	accept	accepted
+62.0	anonymous	compact_offset	query_locator	accept	accepted
+62.0	anonymous	compact_offset	query_with_binds	accept	accepted
+62.0	anonymous	compact_offset	search_query	accept	accepted
+62.0	anonymous	compact_offset	static_soql	accept	accepted
+62.0	anonymous	compact_offset	static_sosl	accept	accepted
+62.0	anonymous	date_only	count_query	accept	accepted
+62.0	anonymous	date_only	database_query	accept	accepted
+62.0	anonymous	date_only	query_locator	accept	accepted
+62.0	anonymous	date_only	query_with_binds	accept	accepted
+62.0	anonymous	date_only	search_query	accept	accepted
+62.0	anonymous	date_only	static_soql	accept	accepted
+62.0	anonymous	date_only	static_sosl	accept	accepted
+62.0	anonymous	fractional_compact_offset	count_query	accept	accepted
+62.0	anonymous	fractional_compact_offset	database_query	accept	accepted
+62.0	anonymous	fractional_compact_offset	query_locator	accept	accepted
+62.0	anonymous	fractional_compact_offset	query_with_binds	accept	accepted
+62.0	anonymous	fractional_compact_offset	search_query	accept	accepted
+62.0	anonymous	fractional_compact_offset	static_soql	accept	accepted
+62.0	anonymous	fractional_compact_offset	static_sosl	accept	accepted
+62.0	anonymous	fractional_no_offset	count_query	reject	System.QueryException|unexpected token: ':'
+62.0	anonymous	fractional_no_offset	database_query	reject	System.QueryException|unexpected token: ':'
+62.0	anonymous	fractional_no_offset	query_locator	reject	System.QueryException|unexpected token: ':'
+62.0	anonymous	fractional_no_offset	query_with_binds	reject	System.QueryException|unexpected token: ':'
+62.0	anonymous	fractional_no_offset	search_query	reject	System.QueryException|line 1:139 no viable alternative at character ')'
+62.0	anonymous	fractional_no_offset	static_soql	compile_reject	Invalid DateTime '2020-01-01T08:00:00.000'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+62.0	anonymous	fractional_no_offset	static_sosl	compile_reject	Invalid DateTime '2020-01-01T08:00:00.000'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+62.0	anonymous	fractional_z	count_query	accept	accepted
+62.0	anonymous	fractional_z	database_query	accept	accepted
+62.0	anonymous	fractional_z	query_locator	accept	accepted
+62.0	anonymous	fractional_z	query_with_binds	accept	accepted
+62.0	anonymous	fractional_z	search_query	accept	accepted
+62.0	anonymous	fractional_z	static_soql	accept	accepted
+62.0	anonymous	fractional_z	static_sosl	accept	accepted
+62.0	anonymous	invalid_offset	count_query	reject	System.QueryException|Invalid datetime: 2020-01-01T08:00:00.000+2500
+62.0	anonymous	invalid_offset	database_query	reject	System.QueryException|Invalid datetime: 2020-01-01T08:00:00.000+2500
+62.0	anonymous	invalid_offset	query_locator	reject	System.QueryException|Invalid datetime: 2020-01-01T08:00:00.000+2500
+62.0	anonymous	invalid_offset	query_with_binds	reject	System.QueryException|Invalid datetime: 2020-01-01T08:00:00.000+2500
+62.0	anonymous	invalid_offset	search_query	reject	System.QueryException|line 1:141 mismatched character '5' expecting set '0'..'3'
+62.0	anonymous	invalid_offset	static_soql	compile_reject	Invalid DateTime '2020-01-01T08:00:00.000+2'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+62.0	anonymous	invalid_offset	static_sosl	compile_reject	Invalid DateTime '2020-01-01T08:00:00.000+2'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+62.0	anonymous	no_offset	count_query	reject	System.QueryException|unexpected token: ':'
+62.0	anonymous	no_offset	database_query	reject	System.QueryException|unexpected token: ':'
+62.0	anonymous	no_offset	query_locator	reject	System.QueryException|unexpected token: ':'
+62.0	anonymous	no_offset	query_with_binds	reject	System.QueryException|unexpected token: ':'
+62.0	anonymous	no_offset	search_query	reject	System.QueryException|line 1:135 no viable alternative at character ')'
+62.0	anonymous	no_offset	static_soql	compile_reject	Invalid DateTime '2020-01-01T08:00:00'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+62.0	anonymous	no_offset	static_sosl	compile_reject	Invalid DateTime '2020-01-01T08:00:00'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+62.0	anonymous	utc_z	count_query	accept	accepted
+62.0	anonymous	utc_z	database_query	accept	accepted
+62.0	anonymous	utc_z	query_locator	accept	accepted
+62.0	anonymous	utc_z	query_with_binds	accept	accepted
+62.0	anonymous	utc_z	search_query	accept	accepted
+62.0	anonymous	utc_z	static_soql	accept	accepted
+62.0	anonymous	utc_z	static_sosl	accept	accepted
+62.0	istest	colon_offset	count_query	accept	asserted accept in native test method
+62.0	istest	colon_offset	database_query	accept	asserted accept in native test method
+62.0	istest	colon_offset	query_locator	accept	asserted accept in native test method
+62.0	istest	colon_offset	query_with_binds	accept	asserted accept in native test method
+62.0	istest	colon_offset	search_query	accept	asserted accept in native test method
+62.0	istest	colon_offset	static_soql	accept	accepted
+62.0	istest	colon_offset	static_sosl	accept	accepted
+62.0	istest	compact_offset	count_query	accept	asserted accept in native test method
+62.0	istest	compact_offset	database_query	accept	asserted accept in native test method
+62.0	istest	compact_offset	query_locator	accept	asserted accept in native test method
+62.0	istest	compact_offset	query_with_binds	accept	asserted accept in native test method
+62.0	istest	compact_offset	search_query	accept	asserted accept in native test method
+62.0	istest	compact_offset	static_soql	accept	accepted
+62.0	istest	compact_offset	static_sosl	accept	accepted
+62.0	istest	date_only	count_query	accept	asserted accept in native test method
+62.0	istest	date_only	database_query	accept	asserted accept in native test method
+62.0	istest	date_only	query_locator	accept	asserted accept in native test method
+62.0	istest	date_only	query_with_binds	accept	asserted accept in native test method
+62.0	istest	date_only	search_query	accept	asserted accept in native test method
+62.0	istest	date_only	static_soql	accept	accepted
+62.0	istest	date_only	static_sosl	accept	accepted
+62.0	istest	fractional_compact_offset	count_query	accept	asserted accept in native test method
+62.0	istest	fractional_compact_offset	database_query	accept	asserted accept in native test method
+62.0	istest	fractional_compact_offset	query_locator	accept	asserted accept in native test method
+62.0	istest	fractional_compact_offset	query_with_binds	accept	asserted accept in native test method
+62.0	istest	fractional_compact_offset	search_query	accept	asserted accept in native test method
+62.0	istest	fractional_compact_offset	static_soql	accept	accepted
+62.0	istest	fractional_compact_offset	static_sosl	accept	accepted
+62.0	istest	fractional_no_offset	count_query	reject	asserted reject in native test method
+62.0	istest	fractional_no_offset	database_query	reject	asserted reject in native test method
+62.0	istest	fractional_no_offset	query_locator	reject	asserted reject in native test method
+62.0	istest	fractional_no_offset	query_with_binds	reject	asserted reject in native test method
+62.0	istest	fractional_no_offset	search_query	reject	asserted reject in native test method
+62.0	istest	fractional_no_offset	static_soql	compile_reject	Invalid DateTime '2020-01-01T08:00:00.000'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+62.0	istest	fractional_no_offset	static_sosl	compile_reject	Invalid DateTime '2020-01-01T08:00:00.000'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+62.0	istest	fractional_z	count_query	accept	asserted accept in native test method
+62.0	istest	fractional_z	database_query	accept	asserted accept in native test method
+62.0	istest	fractional_z	query_locator	accept	asserted accept in native test method
+62.0	istest	fractional_z	query_with_binds	accept	asserted accept in native test method
+62.0	istest	fractional_z	search_query	accept	asserted accept in native test method
+62.0	istest	fractional_z	static_soql	accept	accepted
+62.0	istest	fractional_z	static_sosl	accept	accepted
+62.0	istest	invalid_offset	count_query	reject	asserted reject in native test method
+62.0	istest	invalid_offset	database_query	reject	asserted reject in native test method
+62.0	istest	invalid_offset	query_locator	reject	asserted reject in native test method
+62.0	istest	invalid_offset	query_with_binds	reject	asserted reject in native test method
+62.0	istest	invalid_offset	search_query	reject	asserted reject in native test method
+62.0	istest	invalid_offset	static_soql	compile_reject	Invalid DateTime '2020-01-01T08:00:00.000+2'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+62.0	istest	invalid_offset	static_sosl	compile_reject	Invalid DateTime '2020-01-01T08:00:00.000+2'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+62.0	istest	no_offset	count_query	reject	asserted reject in native test method
+62.0	istest	no_offset	database_query	reject	asserted reject in native test method
+62.0	istest	no_offset	query_locator	reject	asserted reject in native test method
+62.0	istest	no_offset	query_with_binds	reject	asserted reject in native test method
+62.0	istest	no_offset	search_query	reject	asserted reject in native test method
+62.0	istest	no_offset	static_soql	compile_reject	Invalid DateTime '2020-01-01T08:00:00'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+62.0	istest	no_offset	static_sosl	compile_reject	Invalid DateTime '2020-01-01T08:00:00'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+62.0	istest	utc_z	count_query	accept	asserted accept in native test method
+62.0	istest	utc_z	database_query	accept	asserted accept in native test method
+62.0	istest	utc_z	query_locator	accept	asserted accept in native test method
+62.0	istest	utc_z	query_with_binds	accept	asserted accept in native test method
+62.0	istest	utc_z	search_query	accept	asserted accept in native test method
+62.0	istest	utc_z	static_soql	accept	accepted
+62.0	istest	utc_z	static_sosl	accept	accepted
+67.0	anonymous	colon_offset	count_query	accept	accepted
+67.0	anonymous	colon_offset	database_query	accept	accepted
+67.0	anonymous	colon_offset	query_locator	accept	accepted
+67.0	anonymous	colon_offset	query_with_binds	accept	accepted
+67.0	anonymous	colon_offset	search_query	accept	accepted
+67.0	anonymous	colon_offset	static_soql	accept	accepted
+67.0	anonymous	colon_offset	static_sosl	accept	accepted
+67.0	anonymous	compact_offset	count_query	accept	accepted
+67.0	anonymous	compact_offset	database_query	accept	accepted
+67.0	anonymous	compact_offset	query_locator	accept	accepted
+67.0	anonymous	compact_offset	query_with_binds	accept	accepted
+67.0	anonymous	compact_offset	search_query	accept	accepted
+67.0	anonymous	compact_offset	static_soql	accept	accepted
+67.0	anonymous	compact_offset	static_sosl	accept	accepted
+67.0	anonymous	date_only	count_query	accept	accepted
+67.0	anonymous	date_only	database_query	accept	accepted
+67.0	anonymous	date_only	query_locator	accept	accepted
+67.0	anonymous	date_only	query_with_binds	accept	accepted
+67.0	anonymous	date_only	search_query	accept	accepted
+67.0	anonymous	date_only	static_soql	accept	accepted
+67.0	anonymous	date_only	static_sosl	accept	accepted
+67.0	anonymous	fractional_compact_offset	count_query	accept	accepted
+67.0	anonymous	fractional_compact_offset	database_query	accept	accepted
+67.0	anonymous	fractional_compact_offset	query_locator	accept	accepted
+67.0	anonymous	fractional_compact_offset	query_with_binds	accept	accepted
+67.0	anonymous	fractional_compact_offset	search_query	accept	accepted
+67.0	anonymous	fractional_compact_offset	static_soql	accept	accepted
+67.0	anonymous	fractional_compact_offset	static_sosl	accept	accepted
+67.0	anonymous	fractional_no_offset	count_query	reject	System.QueryException|unexpected token: ':'
+67.0	anonymous	fractional_no_offset	database_query	reject	System.QueryException|unexpected token: ':'
+67.0	anonymous	fractional_no_offset	query_locator	reject	System.QueryException|unexpected token: ':'
+67.0	anonymous	fractional_no_offset	query_with_binds	reject	System.QueryException|unexpected token: ':'
+67.0	anonymous	fractional_no_offset	search_query	reject	System.QueryException|line 1:139 no viable alternative at character ')'
+67.0	anonymous	fractional_no_offset	static_soql	compile_reject	Invalid DateTime '2020-01-01T08:00:00.000'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+67.0	anonymous	fractional_no_offset	static_sosl	compile_reject	Invalid DateTime '2020-01-01T08:00:00.000'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+67.0	anonymous	fractional_z	count_query	accept	accepted
+67.0	anonymous	fractional_z	database_query	accept	accepted
+67.0	anonymous	fractional_z	query_locator	accept	accepted
+67.0	anonymous	fractional_z	query_with_binds	accept	accepted
+67.0	anonymous	fractional_z	search_query	accept	accepted
+67.0	anonymous	fractional_z	static_soql	accept	accepted
+67.0	anonymous	fractional_z	static_sosl	accept	accepted
+67.0	anonymous	invalid_offset	count_query	reject	System.QueryException|Invalid datetime: 2020-01-01T08:00:00.000+2500
+67.0	anonymous	invalid_offset	database_query	reject	System.QueryException|Invalid datetime: 2020-01-01T08:00:00.000+2500
+67.0	anonymous	invalid_offset	query_locator	reject	System.QueryException|Invalid datetime: 2020-01-01T08:00:00.000+2500
+67.0	anonymous	invalid_offset	query_with_binds	reject	System.QueryException|Invalid datetime: 2020-01-01T08:00:00.000+2500
+67.0	anonymous	invalid_offset	search_query	reject	System.QueryException|line 1:141 mismatched character '5' expecting set '0'..'3'
+67.0	anonymous	invalid_offset	static_soql	compile_reject	Invalid DateTime '2020-01-01T08:00:00.000+2'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+67.0	anonymous	invalid_offset	static_sosl	compile_reject	Invalid DateTime '2020-01-01T08:00:00.000+2'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+67.0	anonymous	no_offset	count_query	reject	System.QueryException|unexpected token: ':'
+67.0	anonymous	no_offset	database_query	reject	System.QueryException|unexpected token: ':'
+67.0	anonymous	no_offset	query_locator	reject	System.QueryException|unexpected token: ':'
+67.0	anonymous	no_offset	query_with_binds	reject	System.QueryException|unexpected token: ':'
+67.0	anonymous	no_offset	search_query	reject	System.QueryException|line 1:135 no viable alternative at character ')'
+67.0	anonymous	no_offset	static_soql	compile_reject	Invalid DateTime '2020-01-01T08:00:00'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+67.0	anonymous	no_offset	static_sosl	compile_reject	Invalid DateTime '2020-01-01T08:00:00'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+67.0	anonymous	utc_z	count_query	accept	accepted
+67.0	anonymous	utc_z	database_query	accept	accepted
+67.0	anonymous	utc_z	query_locator	accept	accepted
+67.0	anonymous	utc_z	query_with_binds	accept	accepted
+67.0	anonymous	utc_z	search_query	accept	accepted
+67.0	anonymous	utc_z	static_soql	accept	accepted
+67.0	anonymous	utc_z	static_sosl	accept	accepted
+67.0	istest	colon_offset	count_query	accept	asserted accept in native test method
+67.0	istest	colon_offset	database_query	accept	asserted accept in native test method
+67.0	istest	colon_offset	query_locator	accept	asserted accept in native test method
+67.0	istest	colon_offset	query_with_binds	accept	asserted accept in native test method
+67.0	istest	colon_offset	search_query	accept	asserted accept in native test method
+67.0	istest	colon_offset	static_soql	accept	accepted
+67.0	istest	colon_offset	static_sosl	accept	accepted
+67.0	istest	compact_offset	count_query	accept	asserted accept in native test method
+67.0	istest	compact_offset	database_query	accept	asserted accept in native test method
+67.0	istest	compact_offset	query_locator	accept	asserted accept in native test method
+67.0	istest	compact_offset	query_with_binds	accept	asserted accept in native test method
+67.0	istest	compact_offset	search_query	accept	asserted accept in native test method
+67.0	istest	compact_offset	static_soql	accept	accepted
+67.0	istest	compact_offset	static_sosl	accept	accepted
+67.0	istest	date_only	count_query	accept	asserted accept in native test method
+67.0	istest	date_only	database_query	accept	asserted accept in native test method
+67.0	istest	date_only	query_locator	accept	asserted accept in native test method
+67.0	istest	date_only	query_with_binds	accept	asserted accept in native test method
+67.0	istest	date_only	search_query	accept	asserted accept in native test method
+67.0	istest	date_only	static_soql	accept	accepted
+67.0	istest	date_only	static_sosl	accept	accepted
+67.0	istest	fractional_compact_offset	count_query	accept	asserted accept in native test method
+67.0	istest	fractional_compact_offset	database_query	accept	asserted accept in native test method
+67.0	istest	fractional_compact_offset	query_locator	accept	asserted accept in native test method
+67.0	istest	fractional_compact_offset	query_with_binds	accept	asserted accept in native test method
+67.0	istest	fractional_compact_offset	search_query	accept	asserted accept in native test method
+67.0	istest	fractional_compact_offset	static_soql	accept	accepted
+67.0	istest	fractional_compact_offset	static_sosl	accept	accepted
+67.0	istest	fractional_no_offset	count_query	reject	asserted reject in native test method
+67.0	istest	fractional_no_offset	database_query	reject	asserted reject in native test method
+67.0	istest	fractional_no_offset	query_locator	reject	asserted reject in native test method
+67.0	istest	fractional_no_offset	query_with_binds	reject	asserted reject in native test method
+67.0	istest	fractional_no_offset	search_query	reject	asserted reject in native test method
+67.0	istest	fractional_no_offset	static_soql	compile_reject	Invalid DateTime '2020-01-01T08:00:00.000'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+67.0	istest	fractional_no_offset	static_sosl	compile_reject	Invalid DateTime '2020-01-01T08:00:00.000'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+67.0	istest	fractional_z	count_query	accept	asserted accept in native test method
+67.0	istest	fractional_z	database_query	accept	asserted accept in native test method
+67.0	istest	fractional_z	query_locator	accept	asserted accept in native test method
+67.0	istest	fractional_z	query_with_binds	accept	asserted accept in native test method
+67.0	istest	fractional_z	search_query	accept	asserted accept in native test method
+67.0	istest	fractional_z	static_soql	accept	accepted
+67.0	istest	fractional_z	static_sosl	accept	accepted
+67.0	istest	invalid_offset	count_query	reject	asserted reject in native test method
+67.0	istest	invalid_offset	database_query	reject	asserted reject in native test method
+67.0	istest	invalid_offset	query_locator	reject	asserted reject in native test method
+67.0	istest	invalid_offset	query_with_binds	reject	asserted reject in native test method
+67.0	istest	invalid_offset	search_query	reject	asserted reject in native test method
+67.0	istest	invalid_offset	static_soql	compile_reject	Invalid DateTime '2020-01-01T08:00:00.000+2'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+67.0	istest	invalid_offset	static_sosl	compile_reject	Invalid DateTime '2020-01-01T08:00:00.000+2'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+67.0	istest	no_offset	count_query	reject	asserted reject in native test method
+67.0	istest	no_offset	database_query	reject	asserted reject in native test method
+67.0	istest	no_offset	query_locator	reject	asserted reject in native test method
+67.0	istest	no_offset	query_with_binds	reject	asserted reject in native test method
+67.0	istest	no_offset	search_query	reject	asserted reject in native test method
+67.0	istest	no_offset	static_soql	compile_reject	Invalid DateTime '2020-01-01T08:00:00'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+67.0	istest	no_offset	static_sosl	compile_reject	Invalid DateTime '2020-01-01T08:00:00'. Apex DateTimes must be of the form YYYY-mm-DDtHH:MM:SS.NNNzOFFSET. YYYY must be a year (AD) 0001-9999. mm must be a month 01-12. DD must be a day 01-31. HH must be 00-23, MM must be 00-59, and SS must be 00-59. .NNN is optional and is the milliseconds within the second 000-999. OFFSET is the timezone offset and has an optional + or - followed by HHMM or HH:MM.
+67.0	istest	utc_z	count_query	accept	asserted accept in native test method
+67.0	istest	utc_z	database_query	accept	asserted accept in native test method
+67.0	istest	utc_z	query_locator	accept	asserted accept in native test method
+67.0	istest	utc_z	query_with_binds	accept	asserted accept in native test method
+67.0	istest	utc_z	search_query	accept	asserted accept in native test method
+67.0	istest	utc_z	static_soql	accept	accepted
+67.0	istest	utc_z	static_sosl	accept	accepted

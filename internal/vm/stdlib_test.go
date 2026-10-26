@@ -3721,15 +3721,18 @@ System.assert(childType.isAssignableFrom(childType));
 }
 
 func TestExecBlobToPDFStaticCallCasing(t *testing.T) {
-	// The String signature is observed by R064. Non-null PDF rendering is hosted.
+	// blob_pdf_rendering/org.tsv plain_text pins local PDF envelope behavior.
 	program, err := CompileAnonymous(`
-Blob pdf = Blob.ToPDF('glade');
+Blob pdf = Blob.ToPDF('Hello PDF world');
+System.assert(pdf.size() > 0);
+System.assert(EncodingUtil.convertToHex(pdf).startsWith('255044462d312e34'));
+System.assert(EncodingUtil.base64Encode(pdf).startsWith('JVBERi0x'));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "Blob.toPdf hosted PDF rendering") {
-		t.Fatalf("hosted PDF boundary: %v", err)
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -4377,14 +4380,17 @@ System.assert(stamp.formatLong().contains('2024'));
 String gmt = String.valueOfGmt(stamp);
 System.assert(gmt.startsWith('2024-02-29 23:59:58'));
 
-Blob pdf = Blob.valueOf('glade').toPdf('stub');
+Blob pdf = Blob.valueOf('glade').toPdf('Hello PDF world');
+System.assert(pdf.size() > 0);
+System.assert(EncodingUtil.convertToHex(pdf).startsWith('255044462d312e34'));
+System.assert(EncodingUtil.base64Encode(pdf).startsWith('JVBERi0x'));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// R064 observes the String signature; non-null rendering is a hosted boundary.
-	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "Blob.toPdf hosted PDF rendering") {
-		t.Fatalf("hosted PDF boundary: %v", err)
+	// blob_pdf_rendering/org.tsv plain_text covers the instance route.
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 

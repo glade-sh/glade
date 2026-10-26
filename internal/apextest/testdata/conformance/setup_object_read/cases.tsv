@@ -1,0 +1,4 @@
+case	shape
+roles	Three admin-created roles read by list, count, dynamic, grouped, user mode and security enforced queries
+setup	Creator-owned setup data queried by admin, Standard User and Minimum Access user
+groups	Organization group availability before and after enabling Communities

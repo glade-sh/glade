@@ -1,0 +1,13 @@
+source_api	method	observation
+62.0	describeStatic	"{""value"":""PICKLIST:40:true:true:true""}"
+62.0	describeDynamic	"{""value"":""PICKLIST:40:true:true:true""}"
+62.0	queryLanguage	"{""value"":""en_US""}"
+62.0	instanceLanguage	"{""value"":""en_US""}"
+62.0	allLanguage	"{""value"":""en_US""}"
+62.0	constructedLanguage	"{""value"":""fr""}"
+67.0	describeStatic	"{""value"":""PICKLIST:40:true:true:true""}"
+67.0	describeDynamic	"{""value"":""PICKLIST:40:true:true:true""}"
+67.0	queryLanguage	"{""value"":""en_US""}"
+67.0	instanceLanguage	"{""value"":""en_US""}"
+67.0	allLanguage	"{""value"":""en_US""}"
+67.0	constructedLanguage	"{""value"":""fr""}"

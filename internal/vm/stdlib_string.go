@@ -505,11 +505,14 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		if length < 0 {
 			return String(""), true, nil
 		}
-		units := apexStringLength(receiver.Text)
+		units := len(receiver.Text)
+		if !ascii {
+			units = apexStringLength(receiver.Text)
+		}
 		if length > units {
 			length = units
 		}
-		return substring(receiver.Text, []Value{Int(0), Int(int64(length))})
+		return substringWithASCII(receiver.Text, []Value{Int(0), Int(int64(length))}, ascii)
 	case "right":
 		length, err := stringIntArg("String.right", args)
 		if err != nil {
@@ -518,11 +521,14 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		if length < 0 {
 			return String(""), true, nil
 		}
-		units := apexStringLength(receiver.Text)
+		units := len(receiver.Text)
+		if !ascii {
+			units = apexStringLength(receiver.Text)
+		}
 		if length > units {
 			length = units
 		}
-		return substring(receiver.Text, []Value{Int(int64(units - length)), Int(int64(units))})
+		return substringWithASCII(receiver.Text, []Value{Int(int64(units - length)), Int(int64(units))}, ascii)
 	// The helpers count runes; adjust default and single-unit pad widths to UTF-16.
 	case "leftPad":
 		if len(args) == 2 && args[1].Kind == ValueNull {
@@ -573,7 +579,10 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		if start < 0 {
 			start = 0
 		}
-		units := apexStringLength(receiver.Text)
+		units := len(receiver.Text)
+		if !ascii {
+			units = apexStringLength(receiver.Text)
+		}
 		if start > units || length <= 0 {
 			return String(""), true, nil
 		}
@@ -581,7 +590,7 @@ func callStringMemberWithASCII(receiver Value, method string, args []Value, asci
 		if length <= units-start {
 			end = start + length
 		}
-		return substring(receiver.Text, []Value{Int(int64(start)), Int(int64(end))})
+		return substringWithASCII(receiver.Text, []Value{Int(int64(start)), Int(int64(end))}, ascii)
 	case "reverse":
 		runes := []rune(receiver.Text)
 		for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {

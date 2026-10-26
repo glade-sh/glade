@@ -96,13 +96,31 @@ func TestProjectGroupMetadataPreservesExistingRegularIdentity(t *testing.T) {
 	storage.EnsureDeterministicPlatformData(&org)
 	id := storage.ID("00G000000000008EAA")
 	state := org.Objects["Group"]
+	if _, _, occupied := storage.LookupRecordByID(state.Records, id); occupied {
+		t.Fatal("existing regular group fixture ID is already occupied")
+	}
+	seeded := state.Clone()
 	state.Records[id] = storage.Record{ID: id, Object: "Group", Fields: map[string]storage.Value{"DeveloperName": storage.StringValue("Owned"), "Name": storage.StringValue("Previous"), "Type": storage.StringValue("Regular")}}
 	org.Objects["Group"] = state
+	before := org.Clone()
 	if err := ApplyProjectGroups(&org, project.Project{GroupFiles: []string{path}}); err != nil {
 		t.Fatal(err)
 	}
-	if len(org.Objects["Group"].Records) != 1 || org.Objects["Group"].Records[id].Fields["Name"].String != "Owned Label" {
-		t.Fatal("existing regular group identity changed")
+	groups := org.Objects["Group"].Records
+	if want := len(before.Objects["Group"].Records); len(groups) != want {
+		t.Errorf("existing regular group identity changed: group count=%d, want %d; seeded=%d", len(groups), want, len(seeded.Records))
+	}
+	group, exists := groups[id]
+	if !exists || group.ID != id || group.Fields["DeveloperName"].String != "Owned" || group.Fields["Name"].String != "Owned Label" || group.Fields["Type"].String != "Regular" || !group.Fields["DoesIncludeBosses"].Boolean {
+		t.Errorf("existing regular group was replaced or not hydrated: %+v", group)
+	}
+	for seedID, seed := range seeded.Records {
+		if !reflect.DeepEqual(seed, groups[seedID]) {
+			t.Errorf("metadata changed seeded group %s", seedID)
+		}
+	}
+	if !reflect.DeepEqual(before.IDSequences, org.IDSequences) {
+		t.Error("updating an existing regular group advanced ID counters")
 	}
 }
 

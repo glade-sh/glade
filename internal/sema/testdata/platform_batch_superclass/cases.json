@@ -1,0 +1,37 @@
+[
+  {
+    "ID": "PlatformInheritedBatch",
+    "Name": "PlatformInheritedBatch",
+    "Source": "public class PlatformInheritedBatch extends UserProvisioning.PluginBatchable { public PlatformInheritedBatch() { super(new List<SObject>()); } }"
+  },
+  {
+    "ID": "PlatformHookBatch",
+    "Name": "PlatformHookBatch",
+    "Source": "public class PlatformHookBatch extends UserProvisioning.PluginBatchable {\n public PlatformHookBatch() { super(new List<SObject>()); }\n public override Map<String,Object> flowInputPreprocessing(Map<String,Object> values) { values.put('hook',true); return values; }\n public override void postBatchProcessing() { insert new Account(Name='Platform batch hook'); }\n}"
+  },
+  {
+    "ID": "PlatformExplicitBatch",
+    "Name": "PlatformExplicitBatch",
+    "Source": "public class PlatformExplicitBatch extends UserProvisioning.PluginBatchable implements Database.Batchable<UserProvisioningRequest> { public PlatformExplicitBatch() { super(new List<SObject>()); } }"
+  },
+  {
+    "ID": "PlatformMissingConstructor",
+    "Name": "PlatformMissingConstructor",
+    "Source": "public class PlatformMissingConstructor extends UserProvisioning.PluginBatchable {}"
+  },
+  {
+    "ID": "PlatformCompleteBatch",
+    "Name": "PlatformCompleteBatch",
+    "Source": "public class PlatformCompleteBatch extends UserProvisioning.PluginBatchable {\n public PlatformCompleteBatch() { super(new List<SObject>()); }\n\n public override String getEventPrefix() { return 'owned'; }\n public override Map<String,Object> flowInputPreprocessing(Map<String,Object> values) { values.put('hook',true); return values; }\n public override void flowPostProcessing(UserProvisioning.ProvisioningProcessHandlerOutput output,SObject row) {}\n public override void postBatchProcessing() {}\n public void finish(Database.BatchableContext context) { insert new Account(Name='Platform batch finish'); }\n}"
+  },
+  {
+    "ID": "PlatformMissingFinish",
+    "Name": "PlatformMissingFinish",
+    "Source": "public class PlatformMissingFinish extends UserProvisioning.PluginBatchable {\n public PlatformMissingFinish() { super(new List<SObject>()); }\n\n public override String getEventPrefix() { return 'owned'; }\n public override Map<String,Object> flowInputPreprocessing(Map<String,Object> values) { values.put('hook',true); return values; }\n public override void flowPostProcessing(UserProvisioning.ProvisioningProcessHandlerOutput output,SObject row) {}\n public override void postBatchProcessing() {}\n}"
+  },
+  {
+    "ID": "PlatformMissingHook",
+    "Name": "PlatformMissingHook",
+    "Source": "public class PlatformMissingHook extends UserProvisioning.PluginBatchable {\n public PlatformMissingHook() { super(new List<SObject>()); }\n\n public override Map<String,Object> flowInputPreprocessing(Map<String,Object> values) { values.put('hook',true); return values; }\n public override void flowPostProcessing(UserProvisioning.ProvisioningProcessHandlerOutput output,SObject row) {}\n public override void postBatchProcessing() {}\n public void finish(Database.BatchableContext context) { insert new Account(Name='Platform batch finish'); }\n}"
+  }
+]

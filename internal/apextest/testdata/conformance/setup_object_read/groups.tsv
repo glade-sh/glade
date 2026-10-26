@@ -1,0 +1,5 @@
+api	shape	observation
+62.0	plain	[{"DeveloperName":"AllInternalUsers","Name":null,"Type":"Organization"}]
+67.0	plain	[{"DeveloperName":"AllInternalUsers","Name":null,"Type":"Organization"}]
+62.0	communities	[{"DeveloperName":"AllCustomerPortalUsers","Name":null,"Type":"AllCustomerPortal"},{"DeveloperName":"AllInternalUsers","Name":null,"Type":"Organization"},{"DeveloperName":"AllPartnerUsers","Name":null,"Type":"PRMOrganization"}]
+67.0	communities	[{"DeveloperName":"AllCustomerPortalUsers","Name":null,"Type":"AllCustomerPortal"},{"DeveloperName":"AllInternalUsers","Name":null,"Type":"Organization"},{"DeveloperName":"AllPartnerUsers","Name":null,"Type":"PRMOrganization"}]

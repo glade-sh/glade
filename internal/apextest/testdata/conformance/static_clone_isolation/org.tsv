@@ -1,0 +1,9 @@
+api_version	class_name	method_name	status	observation
+62.0	StaticIsolation62Test	aWrites	pass	initial=3;trace=field,block;written=11
+62.0	StaticIsolation62Test	bReads	pass	initial=3;trace=field,block
+62.0	StaticIsolation62Test	cInitializesOnce	pass	trace=field,block;second=field,block
+62.0	StaticIsolation62Test	dWritesCollection	pass	initial_size=2;written_size=0
+67.0	StaticIsolation67Test	aWrites	pass	initial=3;trace=field,block;written=11
+67.0	StaticIsolation67Test	bReads	pass	initial=3;trace=field,block
+67.0	StaticIsolation67Test	cInitializesOnce	pass	trace=field,block;second=field,block
+67.0	StaticIsolation67Test	dWritesCollection	pass	initial_size=2;written_size=0

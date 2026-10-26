@@ -1,0 +1,1283 @@
+[
+  {
+    "id": "inherited_static",
+    "shape": "1",
+    "classes": {
+      "CapStaticBase": "public virtual class CapStaticBase { public static Integer twice(Integer x){ return x*2; } }\n",
+      "CapStatic": "public class CapStatic { public class Calc extends CapStaticBase {} public static Integer value(){ return Calc.twice(2)+CapStatic.Calc.twice(3); } }\n"
+    },
+    "body": "System.debug('OBS|'+JSON.serialize(CapStatic.value()));\n",
+    "testClass": "CapShapesTest",
+    "testMethod": "inherited_static",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "testClasses": {
+      "CapStaticBase": "public virtual class CapStaticBase { public static Integer twice(Integer x){ return x*2; } }\n",
+      "CapStatic": "public class CapStatic { public class Calc extends CapStaticBase {} public static Integer value(){ return Calc.twice(2)+CapStatic.Calc.twice(3); } }\n",
+      "CapShapesTest": "@IsTest private class CapShapesTest {\n@IsTest static void inherited_static(){\nSystem.assert(false,'OBS|'+JSON.serialize(CapStatic.value()));\n}\n}\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "10",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:06.909172+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|10"
+      },
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "10",
+        "command": "sf apex run --file inherited_static.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:09.575211+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "10",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:54.336731+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|10"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "10",
+        "command": "sf apex run --file inherited_static.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:59.025109+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "enum_receivers",
+    "shape": "2,3",
+    "classes": {
+      "CapLog": "public class CapLog { public enum Level {NONE,ERROR} public static Level cur = Level.NONE;\n  public static String a(){ return Level.NONE.name()+Level.ERROR.ordinal()+CapLog.Level.ERROR.name()+cur.name()+Level.values().size()+Level.valueOf('ERROR'); }\n  public class Sib { public String b(){ return Level.ERROR.name(); } } }\n"
+    },
+    "body": "System.debug('OBS|'+JSON.serialize(CapLog.a()));\n",
+    "testClass": "CapShapesTest",
+    "testMethod": "enum_receivers",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "testClasses": {
+      "CapLog": "public class CapLog { public enum Level {NONE,ERROR} public static Level cur = Level.NONE;\n  public static String a(){ return Level.NONE.name()+Level.ERROR.ordinal()+CapLog.Level.ERROR.name()+cur.name()+Level.values().size()+Level.valueOf('ERROR'); }\n  public class Sib { public String b(){ return Level.ERROR.name(); } } }\n",
+      "CapShapesTest": "@IsTest private class CapShapesTest {\n@IsTest static void enum_receivers(){\nSystem.assert(false,'OBS|'+JSON.serialize(CapLog.a()));\n}\n}\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"NONE1ERRORNONE2ERROR\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:06.910170+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"NONE1ERRORNONE2ERROR\""
+      },
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"NONE1ERRORNONE2ERROR\"",
+        "command": "sf apex run --file enum_receivers.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:10.907821+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"NONE1ERRORNONE2ERROR\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:54.337474+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"NONE1ERRORNONE2ERROR\""
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"NONE1ERRORNONE2ERROR\"",
+        "command": "sf apex run --file enum_receivers.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:00.343965+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "enum_sibling",
+    "shape": "6",
+    "classes": {
+      "CapLog": "public class CapLog { public enum Level {NONE,ERROR} public static Level cur = Level.NONE;\n  public static String a(){ return Level.NONE.name()+Level.ERROR.ordinal()+CapLog.Level.ERROR.name()+cur.name()+Level.values().size()+Level.valueOf('ERROR'); }\n  public class Sib { public String b(){ return Level.ERROR.name(); } } }\n"
+    },
+    "body": "System.debug('OBS|'+JSON.serialize(new CapLog.Sib().b()));\n",
+    "testClass": "CapShapesTest",
+    "testMethod": "enum_sibling",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "testClasses": {
+      "CapLog": "public class CapLog { public enum Level {NONE,ERROR} public static Level cur = Level.NONE;\n  public static String a(){ return Level.NONE.name()+Level.ERROR.ordinal()+CapLog.Level.ERROR.name()+cur.name()+Level.values().size()+Level.valueOf('ERROR'); }\n  public class Sib { public String b(){ return Level.ERROR.name(); } } }\n",
+      "CapShapesTest": "@IsTest private class CapShapesTest {\n@IsTest static void enum_sibling(){\nSystem.assert(false,'OBS|'+JSON.serialize(new CapLog.Sib().b()));\n}\n}\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"ERROR\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:06.910533+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"ERROR\""
+      },
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"ERROR\"",
+        "command": "sf apex run --file enum_sibling.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:11.715180+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"ERROR\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:54.338036+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"ERROR\""
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"ERROR\"",
+        "command": "sf apex run --file enum_sibling.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:01.663538+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "enum_comparison_switch",
+    "shape": "2",
+    "classes": {
+      "CapLog": "public class CapLog { public enum Level {NONE,ERROR} public static Level cur = Level.NONE;\n  public static String a(){ return Level.NONE.name()+Level.ERROR.ordinal()+CapLog.Level.ERROR.name()+cur.name()+Level.values().size()+Level.valueOf('ERROR'); }\n  public class Sib { public String b(){ return Level.ERROR.name(); } } }\n",
+      "CapSwitch": "public class CapSwitch { public static String value(){ CapLog.Level x=CapLog.Level.ERROR; String s=String.valueOf(x==CapLog.Level.ERROR); switch on x { when ERROR { s+='E'; } when else { s+='N'; } } return s; } }\n"
+    },
+    "body": "System.debug('OBS|'+JSON.serialize(CapSwitch.value()));\n",
+    "testClass": "CapShapesTest",
+    "testMethod": "enum_comparison_switch",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "testClasses": {
+      "CapLog": "public class CapLog { public enum Level {NONE,ERROR} public static Level cur = Level.NONE;\n  public static String a(){ return Level.NONE.name()+Level.ERROR.ordinal()+CapLog.Level.ERROR.name()+cur.name()+Level.values().size()+Level.valueOf('ERROR'); }\n  public class Sib { public String b(){ return Level.ERROR.name(); } } }\n",
+      "CapSwitch": "public class CapSwitch { public static String value(){ CapLog.Level x=CapLog.Level.ERROR; String s=String.valueOf(x==CapLog.Level.ERROR); switch on x { when ERROR { s+='E'; } when else { s+='N'; } } return s; } }\n",
+      "CapShapesTest": "@IsTest private class CapShapesTest {\n@IsTest static void enum_comparison_switch(){\nSystem.assert(false,'OBS|'+JSON.serialize(CapSwitch.value()));\n}\n}\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"trueE\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:06.910868+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"trueE\""
+      },
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"trueE\"",
+        "command": "sf apex run --file enum_comparison_switch.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:13.029370+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"trueE\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:54.338593+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"trueE\""
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"trueE\"",
+        "command": "sf apex run --file enum_comparison_switch.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:04.001040+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "system_named_types",
+    "shape": "2b,13",
+    "classes": {
+      "CapSys": "public class CapSys { public class Request {} public enum Type {A,B}\n  public static String c(){ return Type.B.name()+Type.values().size()+String.valueOf(Request.class)+new List<Request>{new Request()}.size(); } }\n"
+    },
+    "body": "System.debug('OBS|'+JSON.serialize(CapSys.c()));\n",
+    "testClass": "CapShapesTest",
+    "testMethod": "system_named_types",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "testClasses": {
+      "CapSys": "public class CapSys { public class Request {} public enum Type {A,B}\n  public static String c(){ return Type.B.name()+Type.values().size()+String.valueOf(Request.class)+new List<Request>{new Request()}.size(); } }\n",
+      "CapShapesTest": "@IsTest private class CapShapesTest {\n@IsTest static void system_named_types(){\nSystem.assert(false,'OBS|'+JSON.serialize(CapSys.c()));\n}\n}\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"B2CapSys.Request1\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:06.911179+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"B2CapSys.Request1\""
+      },
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"B2CapSys.Request1\"",
+        "command": "sf apex run --file system_named_types.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:13.849083+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"B2CapSys.Request1\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:54.339155+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"B2CapSys.Request1\""
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"B2CapSys.Request1\"",
+        "command": "sf apex run --file system_named_types.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:06.346286+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "system_enum_constant",
+    "shape": "2b",
+    "classes": {
+      "CapBus": "public class CapBus { public enum EventBus {publish,other} public static String value(){ return EventBus.publish.name(); } }\n"
+    },
+    "body": "System.debug('OBS|'+JSON.serialize(CapBus.value()));\n",
+    "testClass": "CapShapesTest",
+    "testMethod": "system_enum_constant",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "testClasses": {
+      "CapBus": "public class CapBus { public enum EventBus {publish,other} public static String value(){ return EventBus.publish.name(); } }\n",
+      "CapShapesTest": "@IsTest private class CapShapesTest {\n@IsTest static void system_enum_constant(){\nSystem.assert(false,'OBS|'+JSON.serialize(CapBus.value()));\n}\n}\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"publish\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:06.911493+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"publish\""
+      },
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"publish\"",
+        "command": "sf apex run --file system_enum_constant.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:14.748382+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"publish\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:54.339665+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"publish\""
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"publish\"",
+        "command": "sf apex run --file system_enum_constant.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:07.676657+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "qualified_enum_factories",
+    "shape": "3",
+    "classes": {
+      "CapLog": "public class CapLog { public enum Level {NONE,ERROR} public static Level cur = Level.NONE;\n  public static String a(){ return Level.NONE.name()+Level.ERROR.ordinal()+CapLog.Level.ERROR.name()+cur.name()+Level.values().size()+Level.valueOf('ERROR'); }\n  public class Sib { public String b(){ return Level.ERROR.name(); } } }\n"
+    },
+    "body": "System.debug('OBS|'+JSON.serialize(String.valueOf(CapLog.Level.values().size())+CapLog.Level.valueOf('ERROR').name()));\n",
+    "testClass": "CapShapesTest",
+    "testMethod": "qualified_enum_factories",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "testClasses": {
+      "CapLog": "public class CapLog { public enum Level {NONE,ERROR} public static Level cur = Level.NONE;\n  public static String a(){ return Level.NONE.name()+Level.ERROR.ordinal()+CapLog.Level.ERROR.name()+cur.name()+Level.values().size()+Level.valueOf('ERROR'); }\n  public class Sib { public String b(){ return Level.ERROR.name(); } } }\n",
+      "CapShapesTest": "@IsTest private class CapShapesTest {\n@IsTest static void qualified_enum_factories(){\nSystem.assert(false,'OBS|'+JSON.serialize(String.valueOf(CapLog.Level.values().size())+CapLog.Level.valueOf('ERROR').name()));\n}\n}\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"2ERROR\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:06.911817+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"2ERROR\""
+      },
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"2ERROR\"",
+        "command": "sf apex run --file qualified_enum_factories.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:16.067788+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"2ERROR\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:54.340170+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"2ERROR\""
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"2ERROR\"",
+        "command": "sf apex run --file qualified_enum_factories.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:09.011555+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "static_field_chain",
+    "shape": "4",
+    "classes": {
+      "CapCfg": "public class CapCfg { public class S { public String l='A'; } public static S D = new S(); public static String d(){ return CapCfg.D.l.toUpperCase(); } }\n"
+    },
+    "body": "System.debug('OBS|'+JSON.serialize(CapCfg.d()));\n",
+    "testClass": "CapShapesTest",
+    "testMethod": "static_field_chain",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "testClasses": {
+      "CapCfg": "public class CapCfg { public class S { public String l='A'; } public static S D = new S(); public static String d(){ return CapCfg.D.l.toUpperCase(); } }\n",
+      "CapShapesTest": "@IsTest private class CapShapesTest {\n@IsTest static void static_field_chain(){\nSystem.assert(false,'OBS|'+JSON.serialize(CapCfg.d()));\n}\n}\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"A\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:06.912126+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"A\""
+      },
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"A\"",
+        "command": "sf apex run --file static_field_chain.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:16.946337+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"A\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:54.340685+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"A\""
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"A\"",
+        "command": "sf apex run --file static_field_chain.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:09.827715+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "simple_instanceof",
+    "shape": "5",
+    "classes": {
+      "CapA": "public abstract class CapA { public Boolean g(){ return this instanceof Leaf; } public class Leaf extends CapA {} }\n"
+    },
+    "body": "System.debug('OBS|'+JSON.serialize(new CapA.Leaf().g()));\n",
+    "testClass": "CapShapesTest",
+    "testMethod": "simple_instanceof",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "testClasses": {
+      "CapA": "public abstract class CapA { public Boolean g(){ return this instanceof Leaf; } public class Leaf extends CapA {} }\n",
+      "CapShapesTest": "@IsTest private class CapShapesTest {\n@IsTest static void simple_instanceof(){\nSystem.assert(false,'OBS|'+JSON.serialize(new CapA.Leaf().g()));\n}\n}\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "true",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:06.912436+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|true"
+      },
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "true",
+        "command": "sf apex run --file simple_instanceof.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:18.333141+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "true",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:54.341177+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|true"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "true",
+        "command": "sf apex run --file simple_instanceof.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:10.622472+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "simple_cast",
+    "shape": "5b",
+    "classes": {
+      "CapCast": "public abstract class CapCast { public class Leaf extends CapCast {} public static Boolean value(CapCast c){ return ((Leaf)c) != null; } }\n"
+    },
+    "body": "System.debug('OBS|'+JSON.serialize(CapCast.value(new CapCast.Leaf())));\n",
+    "testClass": "CapShapesTest",
+    "testMethod": "simple_cast",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "testClasses": {
+      "CapCast": "public abstract class CapCast { public class Leaf extends CapCast {} public static Boolean value(CapCast c){ return ((Leaf)c) != null; } }\n",
+      "CapShapesTest": "@IsTest private class CapShapesTest {\n@IsTest static void simple_cast(){\nSystem.assert(false,'OBS|'+JSON.serialize(CapCast.value(new CapCast.Leaf())));\n}\n}\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "true",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:06.912751+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|true"
+      },
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "true",
+        "command": "sf apex run --file simple_cast.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:19.216893+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "true",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:54.341681+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|true"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "true",
+        "command": "sf apex run --file simple_cast.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:11.418047+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "qualified_instanceof_cast",
+    "shape": "5c",
+    "classes": {
+      "CapA": "public abstract class CapA { public Boolean g(){ return this instanceof Leaf; } public class Leaf extends CapA {} }\n",
+      "CapUse": "public class CapUse { public static Boolean h(Object o){ return o instanceof CapA.Leaf && ((CapA.Leaf) o) != null; } }\n"
+    },
+    "body": "System.debug('OBS|'+JSON.serialize(CapUse.h(new CapA.Leaf())));\n",
+    "testClass": "CapShapesTest",
+    "testMethod": "qualified_instanceof_cast",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "testClasses": {
+      "CapA": "public abstract class CapA { public Boolean g(){ return this instanceof Leaf; } public class Leaf extends CapA {} }\n",
+      "CapUse": "public class CapUse { public static Boolean h(Object o){ return o instanceof CapA.Leaf && ((CapA.Leaf) o) != null; } }\n",
+      "CapShapesTest": "@IsTest private class CapShapesTest {\n@IsTest static void qualified_instanceof_cast(){\nSystem.assert(false,'OBS|'+JSON.serialize(CapUse.h(new CapA.Leaf())));\n}\n}\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "true",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:06.913277+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|true"
+      },
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "true",
+        "command": "sf apex run --file qualified_instanceof_cast.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:20.790033+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "true",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:54.342188+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|true"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "true",
+        "command": "sf apex run --file qualified_instanceof_cast.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:12.216818+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "inherited_inner",
+    "shape": "7",
+    "classes": {
+      "CapParent": "public virtual class CapParent { public virtual class Node {} public enum Kind {ONE} }\n",
+      "CapChild": "public class CapChild extends CapParent { public static String value(){ Node n=new Node(); Object x=n; Kind k=Kind.ONE; return String.valueOf(x instanceof Node)+k.name(); } }\n"
+    },
+    "body": "System.debug('OBS|'+JSON.serialize(CapChild.value()));\n",
+    "testClass": "CapShapesTest",
+    "testMethod": "inherited_inner",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "testClasses": {
+      "CapParent": "public virtual class CapParent { public virtual class Node {} public enum Kind {ONE} }\n",
+      "CapChild": "public class CapChild extends CapParent { public static String value(){ Node n=new Node(); Object x=n; Kind k=Kind.ONE; return String.valueOf(x instanceof Node)+k.name(); } }\n",
+      "CapShapesTest": "@IsTest private class CapShapesTest {\n@IsTest static void inherited_inner(){\nSystem.assert(false,'OBS|'+JSON.serialize(CapChild.value()));\n}\n}\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"trueONE\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:06.913602+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"trueONE\""
+      },
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"trueONE\"",
+        "command": "sf apex run --file inherited_inner.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:22.185271+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"trueONE\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:54.342790+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"trueONE\""
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"trueONE\"",
+        "command": "sf apex run --file inherited_inner.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:13.527519+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "unrelated_system_receiver",
+    "shape": "8b",
+    "classes": {
+      "CapForeign": "public class CapForeign { public class EventBus {} }\n",
+      "CapPublisher": "public class CapPublisher { public static Integer value(){ return EventBus.publish(new List<SObject>()).size(); } }\n"
+    },
+    "body": "System.debug('OBS|'+JSON.serialize(String.valueOf(CapPublisher.value())+':'+EventBus.publish(new List<SObject>()).size()));\n",
+    "testClass": "CapShapesTest",
+    "testMethod": "unrelated_system_receiver",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "testClasses": {
+      "CapForeign": "public class CapForeign { public class EventBus {} }\n",
+      "CapPublisher": "public class CapPublisher { public static Integer value(){ return EventBus.publish(new List<SObject>()).size(); } }\n",
+      "CapShapesTest": "@IsTest private class CapShapesTest {\n@IsTest static void unrelated_system_receiver(){\nSystem.assert(false,'OBS|'+JSON.serialize(String.valueOf(CapPublisher.value())+':'+EventBus.publish(new List<SObject>()).size()));\n}\n}\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"0:0\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:06.913938+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"0:0\""
+      },
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"0:0\"",
+        "command": "sf apex run --file unrelated_system_receiver.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:22.998975+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"0:0\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:54.343305+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"0:0\""
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"0:0\"",
+        "command": "sf apex run --file unrelated_system_receiver.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:14.852124+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "schema_short_type",
+    "shape": "8c",
+    "classes": {
+      "CapMeta": "public class CapMeta { public class PicklistEntry {} }\n",
+      "CapMetaUse": "public class CapMetaUse { public static Integer e(){ List<PicklistEntry> p = Account.Industry.getDescribe().getPicklistValues(); return p.size(); } }\n"
+    },
+    "body": "System.debug('OBS|'+JSON.serialize(CapMetaUse.e()));\n",
+    "testClass": "CapShapesTest",
+    "testMethod": "schema_short_type",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "testClasses": {
+      "CapMeta": "public class CapMeta { public class PicklistEntry {} }\n",
+      "CapMetaUse": "public class CapMetaUse { public static Integer e(){ List<PicklistEntry> p = Account.Industry.getDescribe().getPicklistValues(); return p.size(); } }\n",
+      "CapShapesTest": "@IsTest private class CapShapesTest {\n@IsTest static void schema_short_type(){\nSystem.assert(false,'OBS|'+JSON.serialize(CapMetaUse.e()));\n}\n}\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "32",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:06.914261+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|32"
+      },
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "32",
+        "command": "sf apex run --file schema_short_type.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:24.309398+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "32",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:54.343822+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|32"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "32",
+        "command": "sf apex run --file schema_short_type.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:15.660365+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "field_enum_collision",
+    "shape": "8d",
+    "classes": {
+      "CapCart": "public class CapCart { public enum Level {LOW} public static Level level = Level.LOW; public static String f(){ return level.name(); } }\n"
+    },
+    "body": "public class CapCart { public enum Level {LOW} public static Level level = Level.LOW; public static String f(){ return level.name(); } }\n",
+    "testClass": "CapCart",
+    "testMethod": "observe",
+    "routes": [
+      "named",
+      "anonymous",
+      "isTest"
+    ],
+    "compileOnly": true,
+    "testClasses": {
+      "CapCart": "@IsTest private class CapCart { public enum Level {LOW} public static Level level = Level.LOW; public static String f(){ return level.name(); }  @IsTest static void observe(){ System.debug(f()); } }\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "command": "sf apex run --file field_enum_collision.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:25.119357+00:00",
+        "diagnosticLocation": {
+          "line": "1",
+          "column": "31"
+        }
+      },
+      {
+        "api": "62.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Illegal forward reference: level",
+        "command": "sf project deploy start --source-dir reject-field_enum_collision-named --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:31.775432+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Illegal forward reference: level",
+        "command": "sf project deploy start --source-dir reject-field_enum_collision-isTest --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:34.135198+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "command": "sf apex run --file field_enum_collision.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:16.456425+00:00",
+        "diagnosticLocation": {
+          "line": "1",
+          "column": "31"
+        }
+      },
+      {
+        "api": "67.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Illegal forward reference: level",
+        "command": "sf project deploy start --source-dir reject-field_enum_collision-named --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:23.077447+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Illegal forward reference: level",
+        "command": "sf project deploy start --source-dir reject-field_enum_collision-isTest --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:25.436730+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported. The unchanged design snippet rejects natively with Illegal forward reference: level; it was not repaired for the capture."
+  },
+  {
+    "id": "duplicate_inner_names",
+    "shape": "9",
+    "classes": {
+      "CapA": "public abstract class CapA { public Boolean g(){ return this instanceof Leaf; } public class Leaf extends CapA {} }\n",
+      "CapB": "public abstract class CapB { public Boolean g(){ return this instanceof Leaf; } public class Leaf extends CapB {} }\n"
+    },
+    "body": "System.debug('OBS|'+JSON.serialize(String.valueOf(new CapA.Leaf().g())+':'+new CapB.Leaf().g()));\n",
+    "testClass": "CapShapesTest",
+    "testMethod": "duplicate_inner_names",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "testClasses": {
+      "CapA": "public abstract class CapA { public Boolean g(){ return this instanceof Leaf; } public class Leaf extends CapA {} }\n",
+      "CapB": "public abstract class CapB { public Boolean g(){ return this instanceof Leaf; } public class Leaf extends CapB {} }\n",
+      "CapShapesTest": "@IsTest private class CapShapesTest {\n@IsTest static void duplicate_inner_names(){\nSystem.assert(false,'OBS|'+JSON.serialize(String.valueOf(new CapA.Leaf().g())+':'+new CapB.Leaf().g()));\n}\n}\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"true:true\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:06.914590+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"true:true\""
+      },
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"true:true\"",
+        "command": "sf apex run --file duplicate_inner_names.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:26.435640+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"true:true\"",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:54.344364+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|\"true:true\""
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "\"true:true\"",
+        "command": "sf apex run --file duplicate_inner_names.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:17.248208+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "inner_interface",
+    "shape": "11",
+    "classes": {
+      "CapVisitor": "public class CapVisitor { public interface Visitor {} public class V implements CapVisitor.Visitor {} public static Boolean value(Object x){ return x instanceof Visitor; } }\n"
+    },
+    "body": "System.debug('OBS|'+JSON.serialize(CapVisitor.value(new CapVisitor.V())));\n",
+    "testClass": "CapShapesTest",
+    "testMethod": "inner_interface",
+    "routes": [
+      "anonymous",
+      "isTest"
+    ],
+    "testClasses": {
+      "CapVisitor": "public class CapVisitor { public interface Visitor {} public class V implements CapVisitor.Visitor {} public static Boolean value(Object x){ return x instanceof Visitor; } }\n",
+      "CapShapesTest": "@IsTest private class CapShapesTest {\n@IsTest static void inner_interface(){\nSystem.assert(false,'OBS|'+JSON.serialize(CapVisitor.value(new CapVisitor.V())));\n}\n}\n"
+    },
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "true",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:06.914972+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|true"
+      },
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "true",
+        "command": "sf apex run --file inner_interface.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:27.805642+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "true",
+        "command": "sf apex run test --class-names CapShapesTest --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:54.344950+00:00",
+        "nativeTestOutcome": "Fail",
+        "nativeTestMessage": "System.AssertException: Assertion Failed: OBS|true"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": true,
+        "success": true,
+        "outcome": "true",
+        "command": "sf apex run --file inner_interface.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:18.567153+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "test_inner_subclass",
+    "shape": "12",
+    "classes": {
+      "CapA": "public abstract class CapA { public Boolean g(){ return this instanceof Leaf; } public class Leaf extends CapA {} }\n",
+      "CapT": "@IsTest private class CapT { private enum Mode {A} private class Fake extends CapA {}\n  @IsTest static void t(){ CapA x = new Fake(); System.assert(x instanceof Fake); System.assertEquals('A', Mode.A.name()); } }\n"
+    },
+    "testClass": "CapT",
+    "testMethod": "t",
+    "routes": [
+      "isTest"
+    ],
+    "anonymousUnavailable": "The captured private @IsTest class and method are callable only by the test runner.",
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "Pass",
+        "command": "sf apex run test --class-names CapT --synchronous --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:08.246960+00:00",
+        "nativeTestOutcome": "Pass",
+        "nativeTestMessage": ""
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": true,
+        "success": true,
+        "outcome": "Pass",
+        "command": "sf apex run test --class-names CapT --synchronous --api-version 67.0",
+        "capturedAt": "2026-10-22T22:28:56.674259+00:00",
+        "nativeTestOutcome": "Pass",
+        "nativeTestMessage": ""
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "lexical_type_reject",
+    "shape": "8a",
+    "classes": {
+      "CapRej": "public class CapRej { public enum Type {A} void r(){ Type.forName('X'); } }\n"
+    },
+    "body": "public class CapRej { public enum Type {A} void r(){ Type.forName('X'); } }\n",
+    "testClasses": {
+      "CapRejTest": "@IsTest private class CapRejTest { public enum Type {A} @IsTest static void observe(){ Type.forName('X'); } }\n"
+    },
+    "testClass": "CapRejTest",
+    "testMethod": "observe",
+    "routes": [
+      "named",
+      "anonymous",
+      "isTest"
+    ],
+    "compileOnly": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "command": "sf apex run --file lexical_type_reject.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:28.620284+00:00",
+        "diagnosticLocation": {
+          "line": "1",
+          "column": "30"
+        }
+      },
+      {
+        "api": "62.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void forName(String) from the type CapRej.Type",
+        "command": "sf project deploy start --source-dir reject-lexical_type_reject-named --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:36.498970+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void forName(String) from the type CapRejTest.Type",
+        "command": "sf project deploy start --source-dir reject-lexical_type_reject-isTest --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:38.849600+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "command": "sf apex run --file lexical_type_reject.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:19.379413+00:00",
+        "diagnosticLocation": {
+          "line": "1",
+          "column": "30"
+        }
+      },
+      {
+        "api": "67.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void forName(String) from the type CapRej.Type",
+        "command": "sf project deploy start --source-dir reject-lexical_type_reject-named --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:28.809567+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void forName(String) from the type CapRejTest.Type",
+        "command": "sf project deploy start --source-dir reject-lexical_type_reject-isTest --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:31.159580+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  },
+  {
+    "id": "lexical_enum_publish_reject",
+    "shape": "8a",
+    "classes": {
+      "CapEnumRej": "public class CapEnumRej { public enum EventBus {A} void r(){ EventBus.publish(new List<SObject>()); } }\n"
+    },
+    "body": "public class CapEnumRej { public enum EventBus {A} void r(){ EventBus.publish(new List<SObject>()); } }\n",
+    "testClasses": {
+      "CapEnumRejTest": "@IsTest private class CapEnumRejTest { public enum EventBus {A} @IsTest static void observe(){ EventBus.publish(new List<SObject>()); } }\n"
+    },
+    "testClass": "CapEnumRejTest",
+    "testMethod": "observe",
+    "routes": [
+      "named",
+      "anonymous",
+      "isTest"
+    ],
+    "compileOnly": true,
+    "captures": [
+      {
+        "api": "62.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "command": "sf apex run --file lexical_enum_publish_reject.apex --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:29.420915+00:00",
+        "diagnosticLocation": {
+          "line": "1",
+          "column": "34"
+        }
+      },
+      {
+        "api": "62.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void publish(List<SObject>) from the type CapEnumRej.EventBus",
+        "command": "sf project deploy start --source-dir reject-lexical_enum_publish_reject-named --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:43.214430+00:00"
+      },
+      {
+        "api": "62.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void publish(List<SObject>) from the type CapEnumRejTest.EventBus",
+        "command": "sf project deploy start --source-dir reject-lexical_enum_publish_reject-isTest --api-version 62.0",
+        "capturedAt": "2026-10-22T22:28:46.652183+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "anonymous",
+        "compiled": false,
+        "success": false,
+        "outcome": "Inner types are not allowed to have inner types",
+        "command": "sf apex run --file lexical_enum_publish_reject.apex --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:20.713981+00:00",
+        "diagnosticLocation": {
+          "line": "1",
+          "column": "34"
+        }
+      },
+      {
+        "api": "67.0",
+        "route": "named",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void publish(List<SObject>) from the type CapEnumRej.EventBus",
+        "command": "sf project deploy start --source-dir reject-lexical_enum_publish_reject-named --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:33.527103+00:00"
+      },
+      {
+        "api": "67.0",
+        "route": "isTest",
+        "compiled": false,
+        "success": false,
+        "outcome": "Method does not exist or incorrect signature: void publish(List<SObject>) from the type CapEnumRejTest.EventBus",
+        "command": "sf project deploy start --source-dir reject-lexical_enum_publish_reject-isTest --api-version 67.0",
+        "capturedAt": "2026-10-22T22:29:35.897277+00:00"
+      }
+    ],
+    "captureNote": "Owned synthetic source captured 2026-10-22 in one fresh unmanaged one-day Developer scratch org. Source metadata and request API were both the row API. Anonymous debug logs were HTML-decoded once. isTest value observations use deliberate AssertException OBS transport; nativeTestOutcome and nativeTestMessage retain the exact test result. The private CapT test runs normally. Each replay test wrapper retains the captured selected method and omits unrelated observation methods. Invalid declarations were deployed independently; anonymous inline declarations record the route restriction. No credentials or org identity are exported."
+  }
+]

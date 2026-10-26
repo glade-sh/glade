@@ -1,0 +1,5 @@
+case	shape
+constructed	project lookup to partially declared standard parent, custom field read
+queried	inline SOQL parent custom field projection and read
+dynamic_rejection	unknown standard-parent field rejected by dynamic SOQL
+null_boundary	null lookup parent stays null after query

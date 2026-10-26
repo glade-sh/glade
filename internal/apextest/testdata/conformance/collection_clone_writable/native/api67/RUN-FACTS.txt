@@ -1,0 +1,5 @@
+captured_utc=2026-10-21T04:32:33.196100+00:00
+source_api=67.0
+named_observations=39
+anonymous_observations=29
+native_complete=true

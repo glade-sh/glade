@@ -4404,10 +4404,7 @@ func TestGLADEStateEndpointReportsSummaryAndResetSupport(t *testing.T) {
 }
 
 func TestGLADEResetScopesPreserveAndClearExpectedState(t *testing.T) {
-	// Ten profiles: the eight standard seeds, the captured Chatter Free profile
-	// (storage a recorded revision), plus the identity-only Automated
-	// Process profile that derived from the captured non-null event-callback
-	// ProfileId (storage a recorded revision). Its name, license and grants are unobserved.
+	// Reset keeps the setup catalog across every supported REST request form.
 	tests := []struct {
 		name         string
 		scope        string
@@ -4416,34 +4413,58 @@ func TestGLADEResetScopesPreserveAndClearExpectedState(t *testing.T) {
 		wantProfiles int
 		wantNoOps    string
 	}{
-		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 10},
-		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 10},
-		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 10},
-		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 10},
-		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 10, wantNoOps: "limits,async"},
+		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 14},
+		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 14},
+		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 14},
+		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 14},
+		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 14, wantNoOps: "limits,async"},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			org := resetScopeTestOrg()
-			handler := New(&org)
+	for _, api := range storage.SupportedRESTAPIVersions {
+		t.Run(api, func(t *testing.T) {
+			for _, route := range []string{"path", "query", "body"} {
+				t.Run(route, func(t *testing.T) {
+					for _, tt := range tests {
+						t.Run(tt.name, func(t *testing.T) {
+							org := resetScopeTestOrg()
+							org.APIVersion = api
+							store := &memoryStore{}
+							handler := NewWithStore(&org, store)
 
-			reset := httptest.NewRecorder()
-			handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/glade/reset?scope="+tt.scope, nil))
-			if reset.Code != http.StatusOK {
-				t.Fatalf("reset status = %d body=%s", reset.Code, reset.Body.String())
-			}
-			summary := storage.InspectOrg("", org)
-			if summary.ByObject["Account"] != tt.wantAccounts || summary.Users != tt.wantUsers || summary.Profiles != tt.wantProfiles {
-				t.Fatalf("summary = %#v", summary)
-			}
-			var payload struct {
-				NoOpScopes []string `json:"noOpScopes"`
-			}
-			if err := json.Unmarshal(reset.Body.Bytes(), &payload); err != nil {
-				t.Fatal(err)
-			}
-			if got := strings.Join(payload.NoOpScopes, ","); got != tt.wantNoOps {
-				t.Fatalf("no-op scopes = %q, want %q", got, tt.wantNoOps)
+							reset := httptest.NewRecorder()
+							path, body := "/services/data/v"+api+"/glade/reset", ""
+							switch route {
+							case "path":
+								path += "/" + tt.scope
+							case "query":
+								path += "?scope=" + tt.scope
+							case "body":
+								body = `{"scope":"` + tt.scope + `"}`
+							}
+							handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, path, strings.NewReader(body)))
+							if reset.Code != http.StatusOK {
+								t.Fatalf("reset status = %d body=%s", reset.Code, reset.Body.String())
+							}
+							if store.saves != 1 {
+								t.Fatalf("reset saves=%d, want 1", store.saves)
+							}
+							for name, state := range map[string]storage.OrgState{"memory": org, "persisted": store.last} {
+								summary := storage.InspectOrg("", state)
+								if summary.ByObject["Account"] != tt.wantAccounts || summary.Users != tt.wantUsers || summary.Profiles != tt.wantProfiles {
+									t.Fatalf("%s summary: accounts=%d users=%d profiles=%d; want %d/%d/%d", name, summary.ByObject["Account"], summary.Users, summary.Profiles, tt.wantAccounts, tt.wantUsers, tt.wantProfiles)
+								}
+							}
+							var payload struct {
+								NoOpScopes []string `json:"noOpScopes"`
+							}
+							if err := json.Unmarshal(reset.Body.Bytes(), &payload); err != nil {
+								t.Fatal(err)
+							}
+							if got := strings.Join(payload.NoOpScopes, ","); got != tt.wantNoOps {
+								t.Fatalf("no-op scopes = %q, want %q", got, tt.wantNoOps)
+							}
+						})
+					}
+				})
 			}
 		})
 	}

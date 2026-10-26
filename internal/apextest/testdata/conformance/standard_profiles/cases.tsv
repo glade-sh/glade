@@ -1,0 +1,5 @@
+case	routes	apis	shapes	observation
+profiles	anonymous,isTest	62.0,67.0	Developer,Communities	Requested standard profiles, user types and linked license identities
+missing	anonymous,isTest	62.0,67.0	Developer,Communities	Unknown profile count zero and singleton QueryException
+boundary	anonymous,isTest	62.0,67.0	Developer,Communities	Existing administrator and standard-user profiles remain available
+catalog	query	62.0,67.0	Developer,Communities	Full fresh profile/license catalog; only requested identities are asserted

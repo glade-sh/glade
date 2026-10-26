@@ -334,6 +334,11 @@ func callUserProvisioningBatchableMember(vm *VM, receiver Value, method string, 
 		if len(args) != 1 {
 			return Null, receiver, false, true, fmt.Errorf("%s.start expects BatchableContext", receiver.Type)
 		}
+		// platform_batch_runtime org.tsv:4-5,8,13-14,17: the inherited
+		// callbacks of a detached subclass dereference unset platform state.
+		if receiver.pluginBatchableDetached {
+			return Null, receiver, false, true, newNullDereferenceError("")
+		}
 		locator := Object("Database.QueryLocator")
 		locator.Fields["Records"] = typedList("List<SObject>")
 		locator.Fields["Query"] = String("")
@@ -341,6 +346,10 @@ func callUserProvisioningBatchableMember(vm *VM, receiver Value, method string, 
 	case "execute":
 		if len(args) != 2 {
 			return Null, receiver, false, true, fmt.Errorf("%s.execute expects BatchableContext and scope", receiver.Type)
+		}
+		// platform_batch_runtime org.tsv:6-7,15-16.
+		if receiver.pluginBatchableDetached {
+			return Null, receiver, false, true, newNullDereferenceError("")
 		}
 		return Null, receiver, false, true, nil
 	case "finish":
@@ -423,6 +432,42 @@ func (vm *VM) isUserProvisioningBatchableType(typeName string) bool {
 		}
 		current = next
 	}
+}
+
+// extendsPluginBatchable reports a source class below the platform
+// PluginBatchable superclass.
+func (vm *VM) extendsPluginBatchable(typeName string) bool {
+	seen := map[string]bool{}
+	for current := typeName; current != ""; {
+		key := strings.ToLower(strings.TrimSpace(current))
+		if seen[key] {
+			return false
+		}
+		seen[key] = true
+		class, ok := vm.lookupClass(current)
+		if !ok || class.PlatformType {
+			return false
+		}
+		superName := strings.TrimSpace(class.SuperClass)
+		if strings.EqualFold(superName, "UserProvisioning.PluginBatchable") {
+			return true
+		}
+		current = superName
+	}
+	return false
+}
+
+// pluginBatchableSuperConstructorError reports the native fault of the
+// PluginBatchable constructor for an empty row list
+// (platform_batch_runtime org.tsv:9-10,18-19).
+func pluginBatchableSuperConstructorError(superName string, args []Value) error {
+	if !strings.EqualFold(strings.TrimSpace(superName), "UserProvisioning.PluginBatchable") {
+		return nil
+	}
+	if len(args) == 1 && args[0].Kind == ValueList && len(args[0].List) == 0 {
+		return listIndexException(0)
+	}
+	return nil
 }
 
 func userProvisioningBatchableType(typeName string) bool {

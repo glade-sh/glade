@@ -7,7 +7,7 @@ import (
 )
 
 // Standard objects come from a describe export of one clean org. Standard
-// fields that export omits (for example Account.Tradestyle) must still be
+// fields that export omits (for example Campaign.CampaignImageId) must still be
 // accepted as constructor initializers, in any letter case.
 func TestStandardObjectConstructorAcceptsStandardFieldMissingFromCatalog(t *testing.T) {
 	index := typesys.Index{Project: typesys.ProjectInfo{SourceAPIVersion: "67.0"}}
@@ -15,6 +15,9 @@ func TestStandardObjectConstructorAcceptsStandardFieldMissingFromCatalog(t *test
 		"Account a = new Account(Name = 'x', Tradestyle = 'y');",
 		"Account a = (Account) new Account(Name = 'x', TradeStyle = 'y');",
 		"Account a = new Account(Name = 'x', TRADESTYLE = 'y');",
+		"Campaign c = new Campaign(Name = 'x', CampaignImageId = null);",
+		"Campaign c = (Campaign) new Campaign(Name = 'x', CampaignImageID = null);",
+		"Campaign c = new Campaign(Name = 'x', CAMPAIGNIMAGEID = null);",
 	} {
 		if result := AnalyzeAnonymous(index, source, "67.0"); result.HasErrors() {
 			t.Errorf("%q: %v", source, result.Diagnostics)

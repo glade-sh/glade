@@ -1,0 +1,2 @@
+api	context	id	outcome	value
+67.0	anonymous	queueable_batch_finalizer	observation	"{""account"": 4, ""completed"": 4, ""failed"": 0, ""permissionSet"": 4}"

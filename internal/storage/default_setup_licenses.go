@@ -13,6 +13,17 @@ func ensureDefaultCommunityLicense(org *OrgState) {
 	putDefaultSetupRecord(org, "Profile", "Name", 12, map[string]Value{
 		"Name": StringValue("Customer Community User"), "UserType": StringValue("CspLitePortal"), "UserLicenseId": IDValue(licenseID),
 	})
+	for _, seed := range []struct{ license, key, profile, userType string }{
+		{"Customer Community Plus", "PID_Customer_Community_Plus", "Customer Community Plus User", "PowerCustomerSuccess"},
+		{"Partner Community", "PID_Partner_Community", "Partner Community User", "PowerPartner"},
+	} {
+		licenseID := putDefaultSetupRecord(org, "UserLicense", "LicenseDefinitionKey", 7, map[string]Value{
+			"Name": StringValue(seed.license), "LicenseDefinitionKey": StringValue(seed.key),
+		})
+		putDefaultSetupRecord(org, "Profile", "Name", 13, map[string]Value{
+			"Name": StringValue(seed.profile), "UserType": StringValue(seed.userType), "UserLicenseId": IDValue(licenseID),
+		})
+	}
 }
 
 // Developer orgs expose these entitlement records without an installed package.

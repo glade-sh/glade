@@ -1,0 +1,8 @@
+route	template
+static_soql	static_soql.apex.tmpl
+database_query	database_query.apex.tmpl
+query_with_binds	query_with_binds.apex.tmpl
+query_locator	query_locator.apex.tmpl
+count_query	count_query.apex.tmpl
+static_sosl	static_sosl.apex.tmpl
+search_query	search_query.apex.tmpl

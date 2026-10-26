@@ -1183,7 +1183,7 @@ func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args 
 		if !hadKey {
 			current.MapOrder = append(current.MapOrder, encoded)
 		}
-		invocations.List[len(invocations.List)-1] = current
+		vm.setListElement(invocations, len(invocations.List)-1, current)
 		receiver.Fields["invocations"] = invocations
 		return receiver, true
 	case strings.EqualFold(methodName, "setInvocations"):

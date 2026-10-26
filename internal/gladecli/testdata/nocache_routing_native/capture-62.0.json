@@ -1,0 +1,37 @@
+{
+  "source_api": "62.0",
+  "transport_api": "62.0",
+  "captured_at": "2026-10-21T09:46:45.639763+00:00",
+  "deployment": {
+    "id": "0AfQL00000t5w0T0AQ",
+    "status": "Succeeded",
+    "success": true,
+    "numberComponentErrors": 0,
+    "numberComponentsDeployed": 4
+  },
+  "anonymous": {
+    "compiled": true,
+    "success": true,
+    "compileProblem": "",
+    "exceptionMessage": ""
+  },
+  "observation": "OBSERVED|assertions|4",
+  "isTest": [
+    {
+      "case": "GammaTest.passes",
+      "outcome": "Pass"
+    },
+    {
+      "case": "AlphaTest.passes",
+      "outcome": "Pass"
+    },
+    {
+      "case": "DeltaTest.passes",
+      "outcome": "Pass"
+    },
+    {
+      "case": "BetaTest.passes",
+      "outcome": "Pass"
+    }
+  ]
+}

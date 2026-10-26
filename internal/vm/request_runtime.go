@@ -932,6 +932,14 @@ func (vm *VM) validateKbPublishingServiceArgs(callee string, args []Value) error
 		return fmt.Errorf("%s expects %d arguments", callee, len(want))
 	}
 	for i, kind := range want {
+		if callee == "KbManagement.PublishingService.archiveOnlineArticle" {
+			if i == 0 && args[i].Kind == ValueObject && strings.EqualFold(args[i].Type, "Id") {
+				continue
+			}
+			if i == 1 && args[i].Kind == ValueNull {
+				continue
+			}
+		}
 		if kind == ValueObject && args[i].Kind == ValueObject && args[i].Type == "Datetime" {
 			continue
 		}

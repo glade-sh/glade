@@ -13,7 +13,7 @@
   "knownRows": 6,
   "marker": "ANNOTATED_METHOD_OBSERVATION|",
   "orgIdSha256": "21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70",
-  "devHubAlias": "scratch-org",
+  "devHubAlias": "example-org",
   "receiptPathPolicy": "Only personal command, environment and ORG-RUN paths are replaced with explicit placeholders. Original raw receipt SHA256 hashes, source bytes and complete native payloads are unchanged. Named and helper-setup source manifests are unchanged; anonymous source manifests are explicitly labeled owned-source subsets, with the original raw manifest SHA256 retained and non-source SDK bookkeeping omitted.",
   "pendingCoverage": [
     "API68 callers are unobserved.",
@@ -79,7 +79,7 @@
         }
       },
       "rawSHA256": {
-        "ORG-RUN.txt": "f8702bb9637995dea997672db22001544dc300a58b714b13d6eb48c0ee88fd46",
+        "ORG-RUN.txt": "d360d9b4b98e555cc3a3090294e5ed8b6cad21c46a78c905285959e87171e8c7",
         "deploy.command.json": "b04fa5f5a1a73613ab2760f920cbe17745db422606a41ffb2c75cd5f5be530b9",
         "deploy.json": "694980a43efcb72c1244807a65dfdcec230c03fe23f7d7bfbfa3b40f73eb85b2",
         "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -88,7 +88,7 @@
         "org.tsv": "15f4ffb26c03e2598c5485f9379f888025a141c870fe75b70c6e849e3562853a",
         "source-digests.json": "4d0bb03ba72d03b372e087907a8861130f2b54d151bf4ad451d369abe4a09597"
       },
-      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\nsourceApi=61.0\ncallerApi=61.0\ntransportApi=62.0\ncontext=@IsTest\nhelperApi=67.0\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"AnnotatedMethodObservation\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T19:55:26Z\nexitCode=1\ndeploymentId=0Af000000000wvHCAQ\nobservedRows=1\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T19:55:29Z\n",
+      "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\nsourceApi=61.0\ncallerApi=61.0\ntransportApi=62.0\ncontext=@IsTest\nhelperApi=67.0\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"AnnotatedMethodObservation\", \"--target-org\", \"example-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T19:55:26Z\nexitCode=1\ndeploymentId=0Af000000000wvHCAQ\nobservedRows=1\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T19:55:29Z\n",
       "command": {
         "environment": {
           "HOME": "<capture-home>",
@@ -107,7 +107,7 @@
           "--tests",
           "AnnotatedMethodObservation",
           "--target-org",
-          "scratch-org",
+          "example-org",
           "--api-version",
           "62.0",
           "--wait",
@@ -217,7 +217,7 @@
         "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "source-digests.json": "098b562a55e3a0bb33641fd8f31b17acb503d5cddf485d61121044cc61ed15e4"
       },
-      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\ncontext=anonymous\nsourceApi=61.0\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=61.0\nnamespace=none\nmutation=none; pure synthetic method dispatch\nhelperSetupDeploymentId=0Af000000000rRjCAI\ncleanupOwner=k6\nstart=2026-10-15T19:58:23.565158+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/annotated_method_comments/api61/anonymous/source.apex\", \"--target-org\", \"scratch-org\", \"--api-version\", \"61.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nrows=1\nend=2026-10-15T19:58:24.808474+00:00\n",
+      "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\ncontext=anonymous\nsourceApi=61.0\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=61.0\nnamespace=none\nmutation=none; pure synthetic method dispatch\nhelperSetupDeploymentId=0Af000000000rRjCAI\ncleanupOwner=k6\nstart=2026-10-15T19:58:23.565158+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/annotated_method_comments/api61/anonymous/source.apex\", \"--target-org\", \"example-org\", \"--api-version\", \"61.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nrows=1\nend=2026-10-15T19:58:24.808474+00:00\n",
       "command": {
         "command": [
           "sf",
@@ -226,7 +226,7 @@
           "--file",
           "<worktree>/probe/annotated_method_comments/api61/anonymous/source.apex",
           "--target-org",
-          "scratch-org",
+          "example-org",
           "--api-version",
           "61.0",
           "--json"
@@ -331,7 +331,7 @@
         }
       },
       "rawSHA256": {
-        "ORG-RUN.txt": "aafa5854ac7124bdcba1666736e0e76236488256c1a6361f965ce41777286204",
+        "ORG-RUN.txt": "50d6f8eff39cb4c2d3ba30a771efbe798c4c6a132109434b9290c52b8730b157",
         "deploy.command.json": "b04fa5f5a1a73613ab2760f920cbe17745db422606a41ffb2c75cd5f5be530b9",
         "deploy.json": "a13f6ca0a45bb34095b958f4d278a4f99220f8c278efd6231a5479b386c43384",
         "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -340,7 +340,7 @@
         "org.tsv": "7a3b7cef3c20f2429da9a8026b01857f4d39e2de71d4c7fab35b831c304de7bc",
         "source-digests.json": "ddd56d19e8f0ed3211ce2f8a3e8a91a1ecdf996189939c1438c65d44dd7269c5"
       },
-      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\nsourceApi=62.0\ncallerApi=62.0\ntransportApi=62.0\ncontext=@IsTest\nhelperApi=67.0\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"AnnotatedMethodObservation\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T19:55:29Z\nexitCode=1\ndeploymentId=0Af000000000pSsCAI\nobservedRows=1\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T19:55:33Z\n",
+      "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\nsourceApi=62.0\ncallerApi=62.0\ntransportApi=62.0\ncontext=@IsTest\nhelperApi=67.0\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"AnnotatedMethodObservation\", \"--target-org\", \"example-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T19:55:29Z\nexitCode=1\ndeploymentId=0Af000000000pSsCAI\nobservedRows=1\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T19:55:33Z\n",
       "command": {
         "environment": {
           "HOME": "<capture-home>",
@@ -359,7 +359,7 @@
           "--tests",
           "AnnotatedMethodObservation",
           "--target-org",
-          "scratch-org",
+          "example-org",
           "--api-version",
           "62.0",
           "--wait",
@@ -469,7 +469,7 @@
         "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "source-digests.json": "0a64e2df2136a866161ee8e21fcae10c321e3f8f861ea887dbddae529cfada38"
       },
-      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\ncontext=anonymous\nsourceApi=62.0\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=62.0\nnamespace=none\nmutation=none; pure synthetic method dispatch\nhelperSetupDeploymentId=0Af000000000rRjCAI\ncleanupOwner=k6\nstart=2026-10-15T19:58:24.817663+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/annotated_method_comments/api62/anonymous/source.apex\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nrows=1\nend=2026-10-15T19:58:26.057823+00:00\n",
+      "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\ncontext=anonymous\nsourceApi=62.0\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=62.0\nnamespace=none\nmutation=none; pure synthetic method dispatch\nhelperSetupDeploymentId=0Af000000000rRjCAI\ncleanupOwner=k6\nstart=2026-10-15T19:58:24.817663+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/annotated_method_comments/api62/anonymous/source.apex\", \"--target-org\", \"example-org\", \"--api-version\", \"62.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nrows=1\nend=2026-10-15T19:58:26.057823+00:00\n",
       "command": {
         "command": [
           "sf",
@@ -478,7 +478,7 @@
           "--file",
           "<worktree>/probe/annotated_method_comments/api62/anonymous/source.apex",
           "--target-org",
-          "scratch-org",
+          "example-org",
           "--api-version",
           "62.0",
           "--json"
@@ -583,7 +583,7 @@
         }
       },
       "rawSHA256": {
-        "ORG-RUN.txt": "43c1e67e360e0e1549d55f3e92a9a7971c640c65074b78c91f8bb220bf454146",
+        "ORG-RUN.txt": "c95df437bce95851419b011eb2aea66258b94745516c230a9ffb571e6ac5756c",
         "deploy.command.json": "b04fa5f5a1a73613ab2760f920cbe17745db422606a41ffb2c75cd5f5be530b9",
         "deploy.json": "8ee670d1d9aec4c70854ee0be4214b4245737f0937ed5a7d9819e547f6d75aa4",
         "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -592,7 +592,7 @@
         "org.tsv": "4debb74fc80fc39f04434896e278f3d7ab349f4c717b42eca1b0d03c1b34b290",
         "source-digests.json": "b2cc85cadaad0e7413ceafd7171db4a9532431217ab648459d85a3fba65837a0"
       },
-      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\nsourceApi=67.0\ncallerApi=67.0\ntransportApi=62.0\ncontext=@IsTest\nhelperApi=67.0\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"AnnotatedMethodObservation\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T19:54:15Z\nexitCode=1\ndeploymentId=0Af000000000dtQCAQ\nobservedRows=1\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T19:54:18Z\n",
+      "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\nsourceApi=67.0\ncallerApi=67.0\ntransportApi=62.0\ncontext=@IsTest\nhelperApi=67.0\nnamespace=none\ncleanupOwner=k6; check-only then delete owned scratch org when finished\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--dry-run\", \"--source-dir\", \"force-app\", \"--test-level\", \"RunSpecifiedTests\", \"--tests\", \"AnnotatedMethodObservation\", \"--target-org\", \"example-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\nstart=2026-10-15T19:54:15Z\nexitCode=1\ndeploymentId=0Af000000000dtQCAQ\nobservedRows=1\nstatus=Failed\ncheckOnly=True\nend=2026-10-15T19:54:18Z\n",
       "command": {
         "environment": {
           "HOME": "<capture-home>",
@@ -611,7 +611,7 @@
           "--tests",
           "AnnotatedMethodObservation",
           "--target-org",
-          "scratch-org",
+          "example-org",
           "--api-version",
           "62.0",
           "--wait",
@@ -721,7 +721,7 @@
         "run.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "source-digests.json": "e5e865149a39a6efa0a9c3398bbfa5c24625fae7431da94477aff99797ca9921"
       },
-      "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\ncontext=anonymous\nsourceApi=67.0\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=67.0\nnamespace=none\nmutation=none; pure synthetic method dispatch\nhelperSetupDeploymentId=0Af000000000rRjCAI\ncleanupOwner=k6\nstart=2026-10-15T19:58:22.306789+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/annotated_method_comments/api67/anonymous/source.apex\", \"--target-org\", \"scratch-org\", \"--api-version\", \"67.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nrows=1\nend=2026-10-15T19:58:23.554648+00:00\n",
+      "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\ncontext=anonymous\nsourceApi=67.0\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=67.0\nnamespace=none\nmutation=none; pure synthetic method dispatch\nhelperSetupDeploymentId=0Af000000000rRjCAI\ncleanupOwner=k6\nstart=2026-10-15T19:58:22.306789+00:00\ncommand=[\"sf\", \"apex\", \"run\", \"--file\", \"<worktree>/probe/annotated_method_comments/api67/anonymous/source.apex\", \"--target-org\", \"example-org\", \"--api-version\", \"67.0\", \"--json\"]\nexitCode=0\ncompiled=True\nsuccess=True\nrows=1\nend=2026-10-15T19:58:23.554648+00:00\n",
       "command": {
         "command": [
           "sf",
@@ -730,7 +730,7 @@
           "--file",
           "<worktree>/probe/annotated_method_comments/api67/anonymous/source.apex",
           "--target-org",
-          "scratch-org",
+          "example-org",
           "--api-version",
           "67.0",
           "--json"
@@ -796,7 +796,7 @@
       "sfdx-project.json": "04f8afb8b8814e0dda84814a9c4d81d7ee8661a5105fa2549aa19d298164a9b3"
     },
     "rawSHA256": {
-      "ORG-RUN.txt": "bc4f635defc771aa716e25b5fdfba7acaa184f3f0477f4ad95d4600ea44a00e3",
+      "ORG-RUN.txt": "cfd9e468bba6c485863e6f6be8fc09dbb096c9ab1d42cd7502256eb880a8ce1a",
       "deploy.command.json": "2efcd605b1fbcc7436356828a8f75c0aa07356852011add85d8180b700775ae6",
       "deploy.json": "577a523cd4cb6f46ae53c45b15ca048145c63f50de92034cabc32313117540e0",
       "deploy.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -804,7 +804,7 @@
       "errors.json": "51151021e18b06f24fbbb85f86bb752a69ef3c20492f822aed7175654bfe6365",
       "source-digests.json": "805003f2628cbdf52bcbf97e1186cccd317006d521aafff622d8e2df5c747ca0"
     },
-    "runMetadata": "orgAlias=scratch-org\ndevHubAlias=scratch-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\ncontext=synthetic-helper-setup\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=62.0\ncleanupOwner=k6\nstart=2026-10-15T19:58:18.911782+00:00\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--source-dir\", \"force-app\", \"--test-level\", \"NoTestRun\", \"--target-org\", \"scratch-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\ndeploymentId=0Af000000000rRjCAI\nexitCode=0\nend=2026-10-15T19:58:22.297154+00:00\n",
+    "runMetadata": "orgAlias=example-org\ndevHubAlias=example-org\norgIdSha256=21e7786cdb7840ddfac00e102b263096c78afb00aadbb54f583a6b6d55879a70\ncontext=synthetic-helper-setup\nhelperApi=67.0\nprojectApi=62.0\ntransportApi=62.0\ncleanupOwner=k6\nstart=2026-10-15T19:58:18.911782+00:00\ncommand=[\"sf\", \"project\", \"deploy\", \"start\", \"--source-dir\", \"force-app\", \"--test-level\", \"NoTestRun\", \"--target-org\", \"example-org\", \"--api-version\", \"62.0\", \"--wait\", \"1\", \"--json\"]\ndeploymentId=0Af000000000rRjCAI\nexitCode=0\nend=2026-10-15T19:58:22.297154+00:00\n",
     "command": {
       "command": [
         "sf",
@@ -816,7 +816,7 @@
         "--test-level",
         "NoTestRun",
         "--target-org",
-        "scratch-org",
+        "example-org",
         "--api-version",
         "62.0",
         "--wait",

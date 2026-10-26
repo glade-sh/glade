@@ -14,27 +14,33 @@ import (
 
 func residualObservationObserve(t *testing.T, api, route string, source nativeBoundaryRoute, want nativeObservationExpected, pages ...string) {
 	t.Helper()
-	residualObservationObserveCore(t, api, route, source, want, true, pages...)
+	residualObservationObserveCore(t, api, route, source, want, true, nil, pages...)
 }
 
 func residualObservationObserveExact(t *testing.T, api, route string, source nativeBoundaryRoute, want nativeObservationExpected, pages ...string) {
 	t.Helper()
-	residualObservationObserveCore(t, api, route, source, want, false, pages...)
+	residualObservationObserveCore(t, api, route, source, want, false, nil, pages...)
 }
 
-func residualObservationObserveCore(t *testing.T, api, route string, source nativeBoundaryRoute, want nativeObservationExpected, sanitizeKeys bool, pages ...string) {
+func residualObservationObserveCore(t *testing.T, api, route string, source nativeBoundaryRoute, want nativeObservationExpected, sanitizeKeys bool, base *conformanceRunner, pages ...string) {
 	t.Helper()
 	index := nativeBoundaryIndex(t, api, source.Classes, nil)
 	if len(pages) != 0 {
 		index.VisualforcePageNames = pages
 		index.VisualforcePagesKnown = true
 	}
-	org := orgFromIndex(index)
-	org.APIVersion = api
-	if source.RuntimeAPIVersion != "" {
-		org.APIVersion = source.RuntimeAPIVersion
+	options := conformanceRunnerOptions{Base: base, LinkProject: true}
+	if base != nil {
+		options.Org = base.orgSource
+	} else {
+		org := orgFromIndex(index)
+		org.APIVersion = api
+		if source.RuntimeAPIVersion != "" {
+			org.APIVersion = source.RuntimeAPIVersion
+		}
+		options.Org = &org
 	}
-	runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+	runner := newConformanceRunner(t, index, options)
 	machine := runner.newMachine()
 	for _, page := range pages {
 		machine.RegisterPageReference(page)

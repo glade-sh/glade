@@ -24,6 +24,7 @@ import (
 	"github.com/glade-sh/glade/internal/resource"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/server"
+	"github.com/glade-sh/glade/internal/testutil/browserapi"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -190,13 +191,25 @@ func l12SalesforceConformance(t *testing.T) {
 			t.Fatal(err) // Missing tooling must never count as a native rejection.
 		}
 	}
+	type apiObservation struct {
+		dom        map[string]json.RawMessage
+		domErrors  map[string]string
+		productErr error
+		browserErr error
+	}
+	observeAPI := browserapi.Prepare(t, versions, func(t *testing.T, api string) apiObservation {
+
+		dom, domErrors, productErr, browserErr := l12ObserveDOM(t, api, runtimeCases, dependencyRoot)
+		return apiObservation{dom, domErrors, productErr, browserErr}
+	})
 	var report strings.Builder
 	fmt.Fprintln(&report, "api\tid\tkind\tstatus\tactual\texpected\treason\tactual_diagnostic\texpected_diagnostic")
 	matches, total, compileMatches, domMatches, localDOMRows := 0, 0, 0, 0, 0
 	diagnosticMatches, diagnosticTotal := 0, 0
 	for _, api := range versions {
 		compiled := l12CompileCases(t, api, compileCases)
-		dom, domErrors, productErr, browserErr := l12ObserveDOM(t, api, runtimeCases, dependencyRoot)
+		result := observeAPI(api)
+		dom, domErrors, productErr, browserErr := result.dom, result.domErrors, result.productErr, result.browserErr
 		if browserErr != nil {
 			t.Fatalf("L12 browser environment: %v", browserErr)
 		}

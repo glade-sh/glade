@@ -285,7 +285,7 @@ func (vm *VM) setStandardSetFilter(receiver Value, filter Value, result *Result)
 	receiver.Fields["filterId"] = filter
 	records := standardSetCopyList(receiver.Fields["records"])
 	for i, record := range records.List {
-		records.List[i] = vm.mergeSObjectAliasFields(record)
+		vm.setListElement(records, i, vm.mergeSObjectAliasFields(record))
 	}
 	if standardSetRecordSnapshot(records) != receiver.Fields["__glade_record_snapshot"].Text {
 		return Null, receiver, true, true, newExceptionError("VisualforceException", "Modified rows exist in the records collection!")
@@ -369,7 +369,7 @@ func (vm *VM) saveStandardSetController(receiver Value, result *Result) (Value, 
 	// their current field values while detaching the DML write-back identities.
 	current := standardSetCopyList(records)
 	for i, record := range current.List {
-		current.List[i] = vm.mergeSObjectAliasFields(record)
+		vm.setListElement(current, i, vm.mergeSObjectAliasFields(record))
 	}
 	saved := cloneValue(current)
 	results, err := vm.applyDML("upsert", saved, true, "", dml.Options{}, result)

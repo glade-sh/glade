@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/glade-sh/glade/internal/soql"
 )
 
 type Window struct {
@@ -39,16 +41,18 @@ type SelectExpr struct {
 }
 
 type Condition struct {
-	Field       string
-	Operator    string
-	Value       string
-	Values      []string
-	ValueIsNull bool
-	ValueQuoted bool
-	Bind        string
-	Not         bool
-	And         []Condition
-	Or          []Condition
+	Field        string
+	Operator     string
+	Value        string
+	Values       []string
+	ValueIsNull  bool
+	ValueQuoted  bool
+	RelativeDate bool
+	NullInList   bool
+	Bind         string
+	Not          bool
+	And          []Condition
+	Or           []Condition
 }
 
 type OrderSpec struct {
@@ -577,17 +581,23 @@ func (p *parser) parseConditionLeaf() (Condition, error) {
 			return Condition{}, p.errorf("expected SOSL WHERE IN values")
 		}
 		var values []string
+		containsNull := false
 		for !p.accept(tokenRParen) {
-			value, bind, _, err := p.parseValue("SOSL WHERE IN value")
+			quoted := p.peek().kind == tokenString
+			value, bind, nullValue, err := p.parseValue("SOSL WHERE IN value")
 			if err != nil || bind != "" {
 				return Condition{}, p.errorf("expected SOSL WHERE IN value")
 			}
-			values = append(values, value)
+			if nullValue && !quoted {
+				containsNull = true
+			} else {
+				values = append(values, value)
+			}
 			if !p.accept(tokenComma) && p.peek().kind != tokenRParen {
 				return Condition{}, p.errorf("expected SOSL WHERE IN comma or end")
 			}
 		}
-		return Condition{Field: field.text, Operator: operation, Values: values}, nil
+		return Condition{Field: field.text, Operator: operation, Values: values, NullInList: containsNull}, nil
 	}
 	quoted := p.peek().kind == tokenString
 	value, bind, nullValue, err := p.parseValue("SOSL WHERE value")
@@ -598,7 +608,7 @@ func (p *parser) parseConditionLeaf() (Condition, error) {
 	if nullValue && !quoted && (operation == "<" || operation == "<=" || operation == ">" || operation == ">=") {
 		return Condition{}, contract("QueryException", "invalid operator")
 	}
-	return Condition{Field: field.text, Operator: operation, Value: value, Bind: bind, ValueIsNull: nullValue && !quoted, ValueQuoted: quoted}, nil
+	return Condition{Field: field.text, Operator: operation, Value: value, Bind: bind, ValueIsNull: nullValue && !quoted, ValueQuoted: quoted, RelativeDate: !quoted && value != "" && !isDigit(value[0]) && strings.Contains(value, ":")}, nil
 }
 
 func (p *parser) parseOrderBy() ([]OrderSpec, error) {
@@ -660,6 +670,18 @@ func (p *parser) parseValue(clause string) (string, string, bool, error) {
 	tok := p.next()
 	if tok.kind != tokenString && tok.kind != tokenWord && tok.kind != tokenNumber {
 		return "", "", false, p.errorf("expected %s", clause)
+	}
+	if tok.kind == tokenWord && clause == "SOSL WHERE value" && p.accept(tokenColon) {
+		count := p.next()
+		if count.kind != tokenNumber {
+			return "", "", false, p.errorf("expected date literal count")
+		}
+		literal := tok.text + ":" + count.text
+		query, err := soql.Parse("SELECT Id FROM SObject WHERE Value = " + literal)
+		if err != nil || query.Where == nil || !query.Where.Range {
+			return "", "", false, p.errorf("invalid relative date literal %q", literal)
+		}
+		return literal, "", false, nil
 	}
 	return tok.text, "", strings.EqualFold(tok.text, "NULL"), nil
 }
@@ -1024,13 +1046,20 @@ func isoDateValueEnd(input string, start int) int {
 		end++
 	}
 	literal := input[start:end]
+	parseText := literal
+	if len(literal) >= 24 {
+		offset := literal[len(literal)-5:]
+		if offset[0] == '+' || offset[0] == '-' {
+			parseText = literal[:len(literal)-2] + ":" + literal[len(literal)-2:]
+		}
+	}
 	layout := time.RFC3339
 	if len(literal) == 10 {
 		layout = "2006-01-02"
-	} else if !isoDateTimeValueShape(literal) {
+	} else if !isoDateTimeValueShape(parseText) {
 		return start
 	}
-	if _, err := time.Parse(layout, literal); err != nil {
+	if _, err := time.Parse(layout, parseText); err != nil {
 		return start
 	}
 	return end

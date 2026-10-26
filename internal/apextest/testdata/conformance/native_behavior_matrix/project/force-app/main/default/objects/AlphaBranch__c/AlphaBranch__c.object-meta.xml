@@ -1,0 +1,7 @@
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <deploymentStatus>Deployed</deploymentStatus>
+  <label>Alpha Branch</label>
+  <nameField><label>Alpha Branch Name</label><type>Text</type></nameField>
+  <pluralLabel>Alpha Branches</pluralLabel>
+  <sharingModel>ReadWrite</sharingModel>
+</CustomObject>

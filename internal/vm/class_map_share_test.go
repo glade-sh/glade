@@ -79,7 +79,7 @@ func registerClassMapShareClasses(machine *VM, n int) error {
 	return nil
 }
 
-func TestCloneRuntimeFrozenSharedSharesClassMapUntilWrite(t *testing.T) {
+func TestCloneRuntimeFrozenSharedSharesClassMapUntilRegistration(t *testing.T) {
 	base := classMapShareBase(t, 64)
 	baseMap := classMapPointer(base.Classes)
 	baseSnapshot := snapshotClassMap(base.Classes)
@@ -98,8 +98,18 @@ func TestCloneRuntimeFrozenSharedSharesClassMapUntilWrite(t *testing.T) {
 	if value.Int != 1 {
 		t.Fatalf("Registry.bump = %#v, want 1", value)
 	}
-	if got := classMapPointer(first.Classes); got == baseMap {
-		t.Fatal("static write did not give the clone its own class map")
+	// A static write keeps the shared map. The written class goes to the
+	// clone's overlay under both of its aliases.
+	if got := classMapPointer(first.Classes); got != baseMap {
+		t.Fatal("static write copied the shared class map")
+	}
+	if got := len(first.classValueOverlay); got != 2 {
+		t.Fatalf("clone overlay holds %d entries, want the two Registry aliases", got)
+	}
+	for _, name := range []string{"Registry", "pkg.Registry"} {
+		if got := classValue(first, name).StaticFields["Count"].Value.Int; got != 1 {
+			t.Fatalf("clone %s Count = %d, want 1", name, got)
+		}
 	}
 	if got := classMapPointer(base.Classes); got != baseMap {
 		t.Fatalf("base class map = %x after clone write, want %x", got, baseMap)
@@ -123,6 +133,21 @@ func TestCloneRuntimeFrozenSharedSharesClassMapUntilWrite(t *testing.T) {
 	}
 	if _, ok := first.lookupClass("pkg.Added"); !ok {
 		t.Fatal("clone registration missing")
+	}
+	// Registration gives the clone its own map, which keeps the overlay values.
+	if got := classMapPointer(first.Classes); got == baseMap {
+		t.Fatal("registration did not give the clone its own class map")
+	}
+	if first.classValueOverlay != nil {
+		t.Fatal("registration kept the clone's overlay")
+	}
+	for _, name := range []string{"Registry", "pkg.Registry"} {
+		if got := first.Classes[name].StaticFields["Count"].Value.Int; got != 1 {
+			t.Fatalf("clone %s Count after registration = %d, want 1", name, got)
+		}
+	}
+	if value, err := first.CallStatic("Registry.get", nil); err != nil || value.Int != 1 {
+		t.Fatalf("clone Registry.get after registration = %#v, %v; want 1", value, err)
 	}
 	assertClassMapUnchanged(t, "base after clone registration", base.Classes, baseSnapshot)
 	if _, ok := base.lookupClass("pkg.Added"); ok {

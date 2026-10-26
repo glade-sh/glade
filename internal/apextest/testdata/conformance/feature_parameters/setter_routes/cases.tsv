@@ -1,0 +1,9 @@
+source_api	route	operation	case
+62.0	isTest	setValues	Boolean/Integer/Date mixed-case setters and same-method reads
+62.0	isTest	defaults	Sibling test method retains declared defaults
+62.0	isTest	nullSet	Null Integer setter name
+62.0	isTest	lockedSet	LmoToSubscriber Boolean setter and same-method read
+67.0	isTest	setValues	Boolean/Integer/Date mixed-case setters and same-method reads
+67.0	isTest	defaults	Sibling test method retains declared defaults
+67.0	isTest	nullSet	Null Integer setter name
+67.0	isTest	lockedSet	LmoToSubscriber Boolean setter and same-method read

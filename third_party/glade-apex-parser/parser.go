@@ -185,7 +185,7 @@ func (p *Parser) ParseSourceAST(path, source string) ASTFile {
 }
 
 func normalizeApexSource(source string) string {
-	return normalizeInlineSOSL(normalizeExplicitConstructorInvocations(normalizePackageQualifiedReferences(normalizeTriggerContextReferences(normalizeVoidIdentifiers(source)))))
+	return normalizeInlineQueryOffsets(normalizeInlineSOQLFormula(normalizeInlineSOSL(normalizeExplicitConstructorInvocations(normalizePackageQualifiedReferences(normalizeTriggerContextReferences(normalizeVoidIdentifiers(source)))))))
 }
 
 // The upstream tree grammar rejects SOSL forms that Apex accepts before runtime
@@ -968,8 +968,15 @@ func treeSitterASTNode(node *tree_sitter.Node, source string, lineMap LineMap) A
 		Kind:  node.Kind(),
 		Range: treeSitterRange(node, lineMap),
 	}
+	if out.Kind == "date_time" {
+		out.Range = originalCompactQueryOffsetRange(out.Range, source, lineMap)
+	}
 	for _, child := range namedChildren(node) {
-		out.Children = append(out.Children, treeSitterASTNode(&child, source, lineMap))
+		converted := treeSitterASTNode(&child, source, lineMap)
+		out.Children = append(out.Children, converted)
+		if converted.Range.End.Offset > out.Range.End.Offset {
+			out.Range.End = converted.Range.End
+		}
 	}
 	return out
 }

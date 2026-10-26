@@ -2879,7 +2879,7 @@ System.assertEquals(null, child.Parent__c);
 
 func TestExecAssignedNamespacedParentRelationshipDoesNotPopulateLookupField(t *testing.T) {
 	program, err := CompileAnonymous(`
-DeferredSchedule__c deferredSchedule = new DeferredSchedule__c(Id = 'a010000000000001AAA');
+DeferredSchedule__c deferredSchedule = new DeferredSchedule__c(Id = 'a01000000000001');
 Transaction__c transactionRecord = new Transaction__c();
 transactionRecord.DeferredSchedule__r = deferredSchedule;
 System.assertEquals(deferredSchedule, transactionRecord.DeferredSchedule__r);
@@ -4629,7 +4629,7 @@ System.assertEquals(1, decision.getRecords().size());
 }
 
 func TestExecSecurityStripInaccessiblePermissionSetScoped(t *testing.T) {
-	program, err := CompileAnonymous(`
+	setup, err := CompileAnonymous(`
 PermissionSet ps = new PermissionSet(Name = 'ScopedStrip', Label = 'Scoped Strip');
 insert ps;
 insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true);
@@ -4637,6 +4637,12 @@ insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Contact', Permissi
 insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Account', Field = 'Account.Phone', PermissionsEdit = true);
 insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Contact', Field = 'Contact.Title', PermissionsEdit = true);
 
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+PermissionSet ps = [SELECT Id FROM PermissionSet WHERE Name = 'ScopedStrip'];
 Account source = new Account(Name = 'Acme', Phone = '415-555-0100', Secret__c = 'Hidden');
 insert source;
 insert new Contact(AccountId = source.Id, LastName = 'Child', Title = 'Child Title', Email = 'hidden@example.invalid');
@@ -4646,7 +4652,7 @@ Account row = [
 	WHERE Id = :source.Id
 ];
 
-// A non-null local scope models the enabled ApexUserModeWithPermset scratch-org path.
+// A non-null local scope models the enabled ApexUserModeWithPermset example-org path.
 SObjectAccessDecision decision = Security.stripInaccessible(
 	AccessType.CREATABLE,
 	new List<Account>{ row },
@@ -4685,6 +4691,10 @@ System.assert(removed.get('Contact').contains('Email'), 'recursive field reporte
 	org.Objects["Account"] = account
 	machine := New(nil)
 	machine.SetOrg(&org)
+	// Permission metadata is committed separately from data DML.
+	if _, err := machine.Execute(setup); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -11631,7 +11641,7 @@ Database.queryWithBinds('SELECT Id, Hidden__c FROM Account', new Map<String,Obje
 	machine := New(nil)
 	machine.SetOrg(&org)
 	machine.executionUser = user
-	if _, err := machine.Execute(plainProgram); err == nil || !strings.Contains(err.Error(), "sObject type 'Account' is not supported by USER_MODE") {
+	if _, err := machine.Execute(plainProgram); err == nil || !strings.Contains(err.Error(), soql.MissingObjectMessage("Account")) {
 		t.Fatalf("err = %v, want Account access denial", err)
 	}
 
@@ -11683,6 +11693,11 @@ Database.queryWithBinds('SELECT Id, Hidden__c FROM Account', new Map<String,Obje
 	machine.executionUser = user
 	if _, err := machine.Execute(unknownProgram); err == nil || !strings.Contains(err.Error(), "sObject type 'Account' is not supported by USER_MODE") {
 		t.Fatalf("err = %v, want scoped Account access denial", err)
+	} else {
+		var issue *RuntimeError
+		if !errors.As(err, &issue) || issue.Type != "QueryException" {
+			t.Fatalf("scoped denial changed exception type: %T: %v", err, err)
+		}
 	}
 }
 

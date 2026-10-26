@@ -25,7 +25,10 @@ def identity():
 
 def digest(path):
     with path.open("rb") as source:
-        return hashlib.file_digest(source, "sha256").hexdigest()
+        result = hashlib.sha256()
+        for chunk in iter(lambda: source.read(64 * 1024), b""):
+            result.update(chunk)
+        return result.hexdigest()
 
 
 def build(directory, mode, packages):
@@ -41,7 +44,7 @@ def build(directory, mode, packages):
     for index, package in enumerate(packages):
         info = json.loads(output("go", "list", "-json", package))
         path = directory / f"{index}.test"
-        command = [GO, "test", "-vet=off", "-c", "-o", str(path)]
+        command = [GO, "test", "-trimpath", "-vet=off", "-c", "-o", str(path)]
         if mode == "race":
             command.append("-race")
         subprocess.run([*command, package], check=True)
@@ -91,7 +94,7 @@ def test(args):
                 index += 1
                 value = args[index]
             flags.append(f"-test.{key[1:]}={value}")
-        elif flag in ("-vet=off", "-p=1"):
+        elif flag in ("-trimpath", "-vet=off", "-p=1"):
             pass
         else:
             raise ValueError(f"unsupported shared binary argument: {flag}")

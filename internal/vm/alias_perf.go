@@ -66,6 +66,9 @@ type StaticAliasPerfCounters struct {
 	CollectCalls    uint64 `json:"collectCalls,omitempty"`
 	CollectNS       int64  `json:"collectNs,omitempty"`
 	RefScanVisits   uint64 `json:"refScanVisits,omitempty"`
+	// ReplacementVisits includes indexed-list construction, preflight and slot
+	// patches. Shared index invalidation is counted by ScopeAlias.ShortcutVisits.
+	ReplacementVisits uint64 `json:"replacementVisits,omitempty"`
 }
 
 type StaticAliasFieldPerf struct {
@@ -92,19 +95,20 @@ type DMLPerfCounters struct {
 // measurements produced by its worker clones.
 type PerfRecorder struct {
 	staticAlias struct {
-		calls           atomic.Uint64
-		refMisses       atomic.Uint64
-		locationVisits  atomic.Uint64
-		childHintHits   atomic.Uint64
-		directChildHits atomic.Uint64
-		changed         atomic.Uint64
-		noChange        atomic.Uint64
-		durationNS      atomic.Int64
-		collectCalls    atomic.Uint64
-		collectNS       atomic.Int64
-		refScanVisits   atomic.Uint64
-		mu              sync.Mutex
-		fields          map[string]*StaticAliasFieldPerf
+		calls             atomic.Uint64
+		refMisses         atomic.Uint64
+		locationVisits    atomic.Uint64
+		childHintHits     atomic.Uint64
+		directChildHits   atomic.Uint64
+		changed           atomic.Uint64
+		noChange          atomic.Uint64
+		durationNS        atomic.Int64
+		collectCalls      atomic.Uint64
+		collectNS         atomic.Int64
+		refScanVisits     atomic.Uint64
+		replacementVisits atomic.Uint64
+		mu                sync.Mutex
+		fields            map[string]*StaticAliasFieldPerf
 	}
 	scopeAlias struct {
 		calls                     atomic.Uint64
@@ -257,6 +261,12 @@ func (recorder *PerfRecorder) recordScopeAliasProbe(probe scopeAliasProbe, durat
 	recorder.scopeAlias.durationNS.Add(duration.Nanoseconds())
 }
 
+func (recorder *PerfRecorder) recordScopeAliasShortcutVisits(visits uint64) {
+	if recorder != nil && visits != 0 {
+		recorder.scopeAlias.shortcutVisits.Add(visits)
+	}
+}
+
 func (recorder *PerfRecorder) recordScopeAliasElisionFallback() {
 	if recorder != nil {
 		recorder.scopeAlias.elisionFallbackWalks.Add(1)
@@ -282,17 +292,18 @@ func (recorder *PerfRecorder) recordScopeAliasMutationEpoch(epoch uint64) {
 
 func (recorder *PerfRecorder) snapshotStaticAlias() StaticAliasPerfCounters {
 	return StaticAliasPerfCounters{
-		Calls:           recorder.staticAlias.calls.Load(),
-		RefMisses:       recorder.staticAlias.refMisses.Load(),
-		LocationVisits:  recorder.staticAlias.locationVisits.Load(),
-		ChildHintHits:   recorder.staticAlias.childHintHits.Load(),
-		DirectChildHits: recorder.staticAlias.directChildHits.Load(),
-		Changed:         recorder.staticAlias.changed.Load(),
-		NoChange:        recorder.staticAlias.noChange.Load(),
-		DurationNS:      recorder.staticAlias.durationNS.Load(),
-		CollectCalls:    recorder.staticAlias.collectCalls.Load(),
-		CollectNS:       recorder.staticAlias.collectNS.Load(),
-		RefScanVisits:   recorder.staticAlias.refScanVisits.Load(),
+		Calls:             recorder.staticAlias.calls.Load(),
+		RefMisses:         recorder.staticAlias.refMisses.Load(),
+		LocationVisits:    recorder.staticAlias.locationVisits.Load(),
+		ChildHintHits:     recorder.staticAlias.childHintHits.Load(),
+		DirectChildHits:   recorder.staticAlias.directChildHits.Load(),
+		Changed:           recorder.staticAlias.changed.Load(),
+		NoChange:          recorder.staticAlias.noChange.Load(),
+		DurationNS:        recorder.staticAlias.durationNS.Load(),
+		CollectCalls:      recorder.staticAlias.collectCalls.Load(),
+		CollectNS:         recorder.staticAlias.collectNS.Load(),
+		RefScanVisits:     recorder.staticAlias.refScanVisits.Load(),
+		ReplacementVisits: recorder.staticAlias.replacementVisits.Load(),
 	}
 }
 

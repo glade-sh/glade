@@ -47,8 +47,8 @@ func (vm *VM) copySObjectListToMap(mapType string, list Value, validateRecords b
 		// putAll validates each actual record; construction can retain an
 		// unchecked declared list view. Keep null, kind and Id checks in
 		// their original element order.
-		if validateRecords {
-			if _, mismatch := vm.mapRecordValueMismatch(mapType, item); mismatch {
+		if validateRecords && (strings.EqualFold(keyType, "Id") || strings.EqualFold(keyType, "String")) {
+			if _, mismatch := vm.mapRecordValueTypeMismatch(valueType, item); mismatch {
 				sourceType := list.Type
 				if collectionBase(list.Runtime) == "List" {
 					sourceType = list.Runtime

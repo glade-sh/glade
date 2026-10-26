@@ -45,8 +45,8 @@ func (e *Engine) seedFlowDecisionPrior(flowName string, record storage.Record, d
 	}
 }
 
-// Prior decisions cover identity-null checks and direct Boolean equality.
-// Missing prior records are null, including Boolean fields on insert.
+// Prior decisions read a direct prior field under equality, inequality or
+// null checks. Missing prior records are null, including Boolean fields on insert.
 func flowPriorDecisionValue(item storage.WorkflowCriteriaItem, definition storage.ObjectDefinition, namespace string, frame *flowFrame) (storage.Value, bool) {
 	reference := strings.TrimSpace(item.Field)
 	if frame == nil || !frame.priorDecisions || !strings.HasPrefix(reference, "$Record__Prior.") {
@@ -61,12 +61,9 @@ func flowPriorDecisionValue(item storage.WorkflowCriteriaItem, definition storag
 		return storage.Value{}, false
 	}
 	switch strings.ToLower(strings.TrimSpace(item.Operation)) {
-	case "equals":
-		if definition.Fields[name].Type != storage.FieldBoolean || !strings.EqualFold(trimFormulaLiteral(item.Value), "true") {
-			return storage.Value{}, false
-		}
+	case "equals", "notequal", "notequals":
 	case "isnull":
-		if name != "Id" || !strings.EqualFold(trimFormulaLiteral(item.Value), "true") {
+		if name == "Id" && !strings.EqualFold(trimFormulaLiteral(item.Value), "true") {
 			return storage.Value{}, false
 		}
 	default:

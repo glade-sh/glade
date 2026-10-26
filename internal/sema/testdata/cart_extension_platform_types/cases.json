@@ -1,0 +1,42 @@
+[
+  {
+    "id": "sales_item_enum",
+    "name": "GardenSalesItemEnumProbe",
+    "source": "public class GardenSalesItemEnumProbe { public List<CartExtension.SalesItemTypeEnum> values() { return CartExtension.SalesItemTypeEnum.values(); } public CartExtension.SalesItemTypeEnum product() { return CartExtension.SalesItemTypeEnum.valueOf('PRODUCT'); } }\n"
+  },
+  {
+    "id": "cart_item_constructor",
+    "name": "GardenCartItemProbe",
+    "source": "public class GardenCartItemProbe { public CartExtension.CartItem create(CartExtension.CartDeliveryGroup deliveryGroup) { return new CartExtension.CartItem(CartExtension.SalesItemTypeEnum.PRODUCT, deliveryGroup, 'Garden item'); } public CartExtension.SalesItemTypeEnum typeOf(CartExtension.CartItem item) { return item.getType(); } }\n"
+  },
+  {
+    "id": "cart_item_list_constructor",
+    "name": "GardenListConstructorProbe",
+    "source": "public class GardenListConstructorProbe { public CartExtension.CartItemList create() { return new CartExtension.CartItemList(); } }\n"
+  },
+  {
+    "id": "cart_item_list_calls",
+    "name": "GardenListCallsProbe",
+    "source": "public class GardenListCallsProbe { public void use(CartExtension.Cart cart, CartExtension.CartDeliveryGroup deliveryGroup) { CartExtension.CartItemList items = cart.getCartItems(); Iterator<CartExtension.CartItem> itemIterator = items.iterator(); CartExtension.CartItem item = itemIterator.next(); items.add(deliveryGroup); items.remove(deliveryGroup); items.clear(); } }\n"
+  },
+  {
+    "id": "cart_item_list_commerce_argument",
+    "name": "GardenListCommerceArgumentProbe",
+    "source": "public class GardenListCommerceArgumentProbe { public void use(CartExtension.CartItemList items, CartExtension.CartDeliveryGroup deliveryGroup) { items.add(deliveryGroup); items.remove(deliveryGroup); } }\n"
+  },
+  {
+    "id": "commerce_object_assignability",
+    "name": "GardenCommerceObjectProbe62",
+    "source": "public class GardenCommerceObjectProbe62 { public CartExtension.CommerceObject groupAsCommerce(CartExtension.CartDeliveryGroup deliveryGroup) { return deliveryGroup; } public CartExtension.CommerceObject itemAsCommerce(CartExtension.CartItem item) { return item; } }\n"
+  },
+  {
+    "id": "cart_item_list_wrong_argument",
+    "name": "GardenCartListStringArgument62",
+    "source": "public class GardenCartListStringArgument62 { public static void appendString(CartExtension.CartItemList items, String value) { items.add(value); items.remove(value); } }\n"
+  },
+  {
+    "id": "cart_item_list_iteration",
+    "name": "GardenListForEachProbe",
+    "source": "public class GardenListForEachProbe { public Integer count(CartExtension.CartItemList items) { Integer itemCount = 0; for (CartExtension.CartItem item : items) { itemCount++; } return itemCount; } }\n"
+  }
+]

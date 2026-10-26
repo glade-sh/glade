@@ -209,6 +209,25 @@ func TestStandardOverlayCheckPlanObservesEveryFieldMutation(t *testing.T) {
 	}
 }
 
+func TestStandardOverlayCheckPlanRepairsGroupTypePicklist(t *testing.T) {
+	definition := enrichedStandardOverlayDefinition("Group", nil)
+	name, ok := ResolveFieldName(definition, "", "Type")
+	if !ok {
+		t.Fatal("enriched Group definition has no Type field")
+	}
+	values := observedGroupTypePicklistValues()
+	if len(values) < 2 {
+		t.Fatalf("observed Group.Type picklist has %d values, want at least 2", len(values))
+	}
+	field := definition.Fields[name]
+	field.PicklistValues = values[:1]
+	definition.Fields[name] = field
+
+	if !standardOverlayCheckPlanFor("Group").needsRefresh(definition, "") {
+		t.Fatal("check plan did not detect missing Group.Type picklist values")
+	}
+}
+
 // TestStandardOverlayCheckPlanFollowsInstalledDescribeCache proves the only
 // plan invalidation path: installing a different describe cache.
 func TestStandardOverlayCheckPlanFollowsInstalledDescribeCache(t *testing.T) {

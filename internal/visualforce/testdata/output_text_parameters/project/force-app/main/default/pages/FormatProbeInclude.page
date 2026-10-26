@@ -1,0 +1,2 @@
+<apex:page showHeader="false" sidebar="false" standardStylesheets="false" language="en_US">
+<apex:include pageName="FormatProbeDirect"/></apex:page>

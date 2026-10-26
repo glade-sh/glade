@@ -1,0 +1,25 @@
+{
+  "status": 1,
+  "failures": [
+    {
+      "class": "StaticBatchChild",
+      "problem": "Class StaticBatchChild must implement the method: System.Iterable<SObject> Database.Batchable<SObject>.start(Database.BatchableContext)"
+    },
+    {
+      "class": "StaticBatchChild",
+      "problem": "Class StaticBatchChild must implement the method: void Database.Batchable<SObject>.execute(Database.BatchableContext, List<SObject>)"
+    },
+    {
+      "class": "StaticBatchChild",
+      "problem": "Class StaticBatchChild must implement the method: void Database.Batchable<SObject>.finish(Database.BatchableContext)"
+    },
+    {
+      "class": "StaticQueueChild",
+      "problem": "Class StaticQueueChild must implement the method: void System.Queueable.execute(System.QueueableContext)"
+    },
+    {
+      "class": "StaticScheduleChild",
+      "problem": "Class StaticScheduleChild must implement the method: void System.Schedulable.execute(System.SchedulableContext)"
+    }
+  ]
+}

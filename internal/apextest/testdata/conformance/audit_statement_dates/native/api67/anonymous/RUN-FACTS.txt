@@ -1,0 +1,12 @@
+api=67.0
+class_api=67.0
+context=anonymous
+rows=17
+native_complete=true
+deployment_success=true
+captured_utc=2026-10-20T22:08:46.921289+00:00
+transport=USER_DEBUG
+source_sha256[CedarAuditChild.trigger]=4306de9df09e813f44713e32913a536013be0b3d6e9c47de819b5568d779d9cd
+source_sha256[CedarAuditProbe.cls]=8f55ab81bcf43d62edf48a4b3bdfa8c07e12d74feb79af25673b309406bb5ac7
+source_sha256[CedarAuditProbeTest.cls]=a5aabd09328f45bc59dec631c86d4acba785052f858060dd59adb4fa66bf872a
+source_sha256[anonymous.apex]=a221b139d44d13f26301ee30c7c59f17509f7065a35af17287e9231128b9ff1a

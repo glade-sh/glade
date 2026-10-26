@@ -246,7 +246,7 @@ func TestTypeSymbolPreservesOwnerAndNesting(t *testing.T) {
 	}
 }
 
-func TestBuildIndexAllowsDuplicateTypesAcrossPackageDirectories(t *testing.T) {
+func TestBuildIndexSelectsLaterDuplicateClassAcrossPackageDirectories(t *testing.T) {
 	root := t.TempDir()
 	first := filepath.Join(root, "packages/one/classes/Shared.cls")
 	second := filepath.Join(root, "packages/two/classes/Shared.cls")
@@ -264,8 +264,8 @@ func TestBuildIndexAllowsDuplicateTypesAcrossPackageDirectories(t *testing.T) {
 	if idx.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
 	}
-	if len(idx.Types) != 2 {
-		t.Fatalf("types = %#v", idx.Types)
+	if len(idx.Types) != 1 || idx.Types[0].File != second {
+		t.Fatalf("types = %#v, want only the later source", idx.Types)
 	}
 }
 

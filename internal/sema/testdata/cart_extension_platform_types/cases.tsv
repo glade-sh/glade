@@ -1,0 +1,10 @@
+id	api_versions	behavior	observation
+sales_item_enum	62.0,67.0	PRODUCT and CHARGE values, valueOf, ordinal, and string conversion	PRODUCT ordinal 0; CHARGE ordinal 1
+cart_item_constructor	62.0,67.0	CartItem constructor accepts SalesItemTypeEnum and getType returns the same type	Constructed type PRODUCT; name Garden item
+cart_item_list_constructor	62.0,67.0	Direct CartItemList construction	Rejected: Constructor not defined
+cart_item_list_calls	62.0,67.0	CartItemList add, get, indexOf, iterator, size, isEmpty, remove, and clear through Cart.getCartItems()	Initial size 1; add gives size 2; remove leaves size 1; clear gives size 0
+cart_item_list_commerce_argument	62.0,67.0	CartItemList add and remove accept CartDeliveryGroup arguments	Accepted at compile time
+commerce_object_assignability	62.0,67.0	CartItem and CartDeliveryGroup are assignable to CommerceObject	Accepted at compile time
+cart_item_list_wrong_argument	62.0,67.0	CartItemList add and remove reject String arguments	Rejected: no matching method signature
+cart_item_list_iteration	62.0,67.0	Iterator<CartItem> assignment and typed next calls work; enhanced-for is rejected	Iterator works; enhanced-for rejected
+cart_calculate_override	62.0,67.0	Reuse existing native CartCalculate override and dispatch rows from cart_extension_surface	captured in internal/sema/testdata/cart_extension_surface

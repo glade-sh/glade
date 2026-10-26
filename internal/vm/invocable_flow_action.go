@@ -10,7 +10,7 @@ import (
 )
 
 // Local action shapes share the Flow interpreter for scalar record and primitive
-// variables, assignments, decisions, lookups, updates and supported creates.
+// variables, assignments, decisions, lookups, subflows, updates and supported creates.
 // Collections, fault connectors and other steps retain an explicit boundary.
 func invocableFlowActionSupported(rule storage.FlowRule) bool {
 	if !strings.EqualFold(rule.ProcessType, "AutoLaunchedFlow") || len(rule.Variables) == 0 || len(rule.Steps) == 0 {
@@ -24,6 +24,9 @@ func invocableFlowActionSupported(rule storage.FlowRule) bool {
 			continue
 		}
 		if strings.EqualFold(variable.DataType, "String") {
+			continue
+		}
+		if strings.EqualFold(variable.DataType, "Date") && !variable.IsInput && !variable.IsOutput {
 			continue
 		}
 		if !strings.EqualFold(variable.DataType, "SObject") || strings.TrimSpace(variable.ObjectType) == "" {
@@ -86,7 +89,10 @@ func invocableFlowActionStepsSupportedWithTargets(steps []storage.FlowStep, targ
 					}
 				}
 			case "recordLookup":
-				if !step.RecordLookup.GetFirstRecordOnly || !step.RecordLookup.StoreOutputAutomatically {
+				lookup := step.RecordLookup
+				automatic := lookup.GetFirstRecordOnly && lookup.StoreOutputAutomatically
+				explicit := len(lookup.OutputAssignments) > 0 && !lookup.StoreOutputAutomatically && strings.TrimSpace(lookup.OutputReference) == ""
+				if !automatic && !explicit {
 					return false
 				}
 			case "recordCreate":
@@ -95,7 +101,11 @@ func invocableFlowActionStepsSupportedWithTargets(steps []storage.FlowStep, targ
 				if !scalarObject || create.InputReference != "" {
 					return false
 				}
-			case "recordUpdate":
+			case "recordUpdate", "subflow":
+			case "action":
+				if !strings.EqualFold(step.Action.ActionType, "apex") || strings.TrimSpace(step.Action.ClassName) == "" {
+					return false
+				}
 			default:
 				return false
 			}
@@ -182,7 +192,7 @@ func (vm *VM) invokeInvocableFlowAction(action, invocation Value, executionResul
 	for _, variable := range rule.Variables {
 		// An omitted SObject input is an empty record, as for the Flow interview.
 		if variable.IsInput && !strings.EqualFold(variable.DataType, "String") && !strings.EqualFold(variable.DataType, "SObject") && !(strings.EqualFold(variable.DataType, "Number") && variable.DefaultValue != nil) {
-			if _, supplied := invocation.Map[mapKey(String(variable.Name))]; !supplied {
+			if _, supplied := invocation.Map[mapKey(String(variable.Name))]; !supplied && !invocableFlowBooleanAssignedBeforeUse(rule, variable) {
 				return Null, false, unsupportedCallError("Invocable.Action.invoke hosted Flow action " + name)
 			}
 		}

@@ -1,0 +1,25 @@
+api	route	case	compiled	observation
+62.0	anonymous	missing_prefix_known_type	false	Variable does not exist: missingns.KnownType
+62.0	anonymous	unknown_dotted_receiver	false	Variable does not exist: a.b.c
+62.0	anonymous	missing_prefix_known_nested_type	false	Variable does not exist: missingns.KnownType.Instance
+62.0	trigger	missing_prefix_known_type	false	Variable does not exist: missingns.KnownType
+62.0	named_class	missing_prefix_known_type	false	Variable does not exist: missingns.KnownType
+62.0	istest	missing_prefix_known_type	false	Variable does not exist: missingns.KnownType
+62.0	trigger	unknown_dotted_receiver	false	Variable does not exist: a.b.c
+62.0	named_class	unknown_dotted_receiver	false	Variable does not exist: a.b.c
+62.0	istest	unknown_dotted_receiver	false	Variable does not exist: a.b.c
+62.0	trigger	missing_prefix_known_nested_type	false	Variable does not exist: missingns.KnownType.Instance
+62.0	named_class	missing_prefix_known_nested_type	false	Variable does not exist: missingns.KnownType.Instance
+62.0	istest	missing_prefix_known_nested_type	false	Variable does not exist: missingns.KnownType.Instance
+67.0	anonymous	missing_prefix_known_type	false	Variable does not exist: missingns.KnownType
+67.0	anonymous	unknown_dotted_receiver	false	Variable does not exist: a.b.c
+67.0	anonymous	missing_prefix_known_nested_type	false	Variable does not exist: missingns.KnownType.Instance
+67.0	trigger	missing_prefix_known_type	false	Variable does not exist: missingns.KnownType
+67.0	named_class	missing_prefix_known_type	false	Variable does not exist: missingns.KnownType
+67.0	istest	missing_prefix_known_type	false	Variable does not exist: missingns.KnownType
+67.0	trigger	unknown_dotted_receiver	false	Variable does not exist: a.b.c
+67.0	named_class	unknown_dotted_receiver	false	Variable does not exist: a.b.c
+67.0	istest	unknown_dotted_receiver	false	Variable does not exist: a.b.c
+67.0	trigger	missing_prefix_known_nested_type	false	Variable does not exist: missingns.KnownType.Instance
+67.0	named_class	missing_prefix_known_nested_type	false	Variable does not exist: missingns.KnownType.Instance
+67.0	istest	missing_prefix_known_nested_type	false	Variable does not exist: missingns.KnownType.Instance

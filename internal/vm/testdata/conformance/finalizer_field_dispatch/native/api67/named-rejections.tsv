@@ -1,0 +1,2 @@
+api	context	source	outcome	message
+67.0	istest	RejectedFinalizerCall.cls	compile_reject	Method does not exist or incorrect signature: void add(Integer) from the type System.Finalizer

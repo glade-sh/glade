@@ -1,0 +1,11 @@
+source_api	route	case
+62.0	anonymous	assertions
+62.0	isTest	AlphaTest.passes
+62.0	isTest	BetaTest.passes
+62.0	isTest	GammaTest.passes
+62.0	isTest	DeltaTest.passes
+67.0	anonymous	assertions
+67.0	isTest	AlphaTest.passes
+67.0	isTest	BetaTest.passes
+67.0	isTest	GammaTest.passes
+67.0	isTest	DeltaTest.passes

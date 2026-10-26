@@ -272,6 +272,15 @@ func renderApexOutput(node *MarkupNode, ctx *RenderContext, outputField bool) (s
 	if literalValue && !escape {
 		renderedValue = html.EscapeString(value)
 	}
+	if !outputField && hasValue {
+		formatted, hasParams, err := renderOutputTextParameters(node, ctx, value, literalValue, escape)
+		if err != nil {
+			return "", err
+		}
+		if hasParams {
+			renderedValue = formatted
+		}
+	}
 	attrs := outputTextSpanAttrs(node, ctx)
 	if !outputField {
 		var err error

@@ -102,12 +102,27 @@ func (e *Engine) flowStringAssignmentValue(assignment storage.FlowAssignment, fr
 	return e.flowRefsRelationshipValue(strings.Join(parts[1:], "."), source, e.Org.Objects[objectName].Definition)
 }
 
-// The captured assignment's scalar String output is written to a Text field
-// without converting its value through formula or literal syntax. A real
-// source field keeps precedence over an identically named interview scalar.
+// Text field updates evaluate scalar formulas in their interview frame.
+// Direct String scalar writes preserve the source-field precedence rule.
 func (e *Engine) flowTextScalarFieldUpdateValue(update storage.WorkflowFieldUpdate, field storage.Field, definition storage.ObjectDefinition, frame *flowFrame) (storage.Value, bool) {
-	if e == nil || e.Org == nil || frame == nil || !frame.beforeSaveDecisions ||
-		field.Type != storage.FieldString || strings.TrimSpace(update.Formula) != "" {
+	if e == nil || e.Org == nil || frame == nil || field.Type != storage.FieldString {
+		return storage.Value{}, false
+	}
+	if strings.TrimSpace(update.Formula) != "" {
+		if !flowCoreFormulaUsesScalars(update.Formula, frame) {
+			return storage.Value{}, false
+		}
+		value, ok := flowFrameFormulaValue(update.Formula, frame)
+		if e.InvocableFlow {
+			value, ok = e.flowContextFormulaValue(update.Formula, frame)
+		}
+		return value, ok && (value.Kind == storage.ValueString || value.Kind == storage.ValueNull)
+	}
+	// Captured Create routes include before-save assignments and after-save
+	// writes from a subflow or scalar decision chain. Update-only boundaries
+	// remain separate from the before-save CreateAndUpdate matrix.
+	createSave := frame.saveDecisions && !frame.priorDecisions
+	if !frame.beforeSaveDecisions && !createSave {
 		return storage.Value{}, false
 	}
 	source := strings.TrimSpace(update.SourceField)
@@ -119,12 +134,54 @@ func (e *Engine) flowTextScalarFieldUpdateValue(update storage.WorkflowFieldUpda
 	}
 	key := flowFrameKey(source)
 	variable, declared := frame.variables[key]
-	if !declared || variable.IsCollection || !strings.EqualFold(strings.TrimSpace(variable.DataType), "String") || !frame.assigned[key] {
+	if !declared || variable.IsCollection || !strings.EqualFold(strings.TrimSpace(variable.DataType), "String") || (!frame.assigned[key] && !createSave) {
 		return storage.Value{}, false
 	}
 	value, assigned := frame.scalars[key]
+	// A missing lookup output is null; subflow outputs already reside in
+	// scalars even when no assignment node ran in the parent interview.
+	if !assigned && createSave {
+		return storage.NullValue(), true
+	}
 	if !assigned || (value.Kind != storage.ValueString && value.Kind != storage.ValueNull) {
 		return storage.Value{}, false
 	}
 	return value.Clone(), true
+}
+
+// A Number interview variable holding a whole number is written to an Integer
+// field unchanged in a before-save Create or CreateAndUpdate Flow (API 62.0
+// and 67.0). Fractional values and other field types keep their boundary.
+func (e *Engine) flowIntegerScalarFieldUpdateValue(update storage.WorkflowFieldUpdate, field storage.Field, definition storage.ObjectDefinition, frame *flowFrame) (storage.Value, bool) {
+	if e == nil || e.Org == nil || frame == nil || !frame.scalarBeforeSave ||
+		field.Type != storage.FieldInteger || strings.TrimSpace(update.Formula) != "" {
+		return storage.Value{}, false
+	}
+	source := strings.TrimSpace(update.SourceField)
+	if source == "" || strings.Contains(source, ".") {
+		return storage.Value{}, false
+	}
+	if _, modeled := storage.ResolveFieldName(definition, e.Org.Namespace, source); modeled {
+		return storage.Value{}, false
+	}
+	key := flowFrameKey(source)
+	variable, declared := frame.variables[key]
+	if !declared || variable.IsCollection || !strings.EqualFold(strings.TrimSpace(variable.DataType), "Number") || !frame.assigned[key] {
+		return storage.Value{}, false
+	}
+	value, assigned := frame.scalars[key]
+	if !assigned {
+		return storage.Value{}, false
+	}
+	switch value.Kind {
+	case storage.ValueInteger:
+		return value.Clone(), true
+	case storage.ValueDecimal:
+		rational, ok := new(big.Rat).SetString(strings.TrimSpace(value.Decimal))
+		if !ok || !rational.IsInt() || !rational.Num().IsInt64() {
+			return storage.Value{}, false
+		}
+		return storage.IntegerValue(rational.Num().Int64()), true
+	}
+	return storage.Value{}, false
 }

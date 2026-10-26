@@ -1,0 +1,4 @@
+case	question
+nested_date	Configured parent date survives SObject JSON roundtrip and selects a dated DTO window
+date_mapping	Static lazy path-map override chooses parent CloseDate instead of ServiceDate
+cached_conversion	Deep clone and JSON field replacement preserve the original content hash and cached converted value

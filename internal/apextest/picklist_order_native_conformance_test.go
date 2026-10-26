@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -287,6 +288,7 @@ type picklistOrderReplayContext struct {
 
 func TestPicklistOrderNativeConformance(t *testing.T) {
 	data := loadPicklistOrderNativeFixture(t)
+	bases := newConformanceSchemaCache(t)
 	for _, capture := range data.Captures {
 		context := picklistOrderReplayContext{
 			sourceAPI: capture.API, transportAPI: capture.TransportAPI, metadata: capture.Metadata,
@@ -297,12 +299,13 @@ func TestPicklistOrderNativeConformance(t *testing.T) {
 				context.rows = append(context.rows, picklistOrderReplayRow{id: row.ID, route: row.Route, native: row.Native})
 			}
 		}
-		runPicklistOrderNativeReplay(t, data, context)
+		runPicklistOrderNativeReplay(t, bases, data, context)
 	}
 }
 
 func TestPicklistOrderSourcePolicyNativeConformance(t *testing.T) {
 	data := loadPicklistOrderNativeFixture(t)
+	bases := newConformanceSchemaCache(t)
 	for _, probe := range data.VersionProbes {
 		context := picklistOrderReplayContext{
 			sourceAPI: probe.API, transportAPI: probe.TransportAPI, metadata: probe.Metadata,
@@ -311,23 +314,30 @@ func TestPicklistOrderSourcePolicyNativeConformance(t *testing.T) {
 		for _, row := range probe.Rows {
 			context.rows = append(context.rows, picklistOrderReplayRow{id: row.ID, route: probe.Route, native: row.Native})
 		}
-		runPicklistOrderNativeReplay(t, data, context)
+		runPicklistOrderNativeReplay(t, bases, data, context)
 	}
 }
 
-func runPicklistOrderNativeReplay(t *testing.T, data picklistOrderNativeFixture, context picklistOrderReplayContext) {
+func picklistOrderReplayIndex(t *testing.T, data picklistOrderNativeFixture, context picklistOrderReplayContext, source bool) typesys.Index {
 	t.Helper()
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), data.ProjectSource)
 	for path, source := range data.MetadataFiles {
 		writeFile(t, filepath.Join(root, path), source)
 	}
-	for name, source := range context.sources {
-		path := filepath.Join(root, "force-app/main/default/classes", name+".cls")
-		writeFile(t, path, source)
-		writeFile(t, path+"-meta.xml", context.metadata)
+	if source {
+		for name, source := range context.sources {
+			path := filepath.Join(root, "force-app/main/default/classes", name+".cls")
+			writeFile(t, path, source)
+			writeFile(t, path+"-meta.xml", context.metadata)
+		}
 	}
-	index := loadTestIndex(t, root)
+	return loadTestIndex(t, root)
+}
+
+func runPicklistOrderNativeReplay(t *testing.T, bases *conformanceSchemaCache, data picklistOrderNativeFixture, context picklistOrderReplayContext) {
+	t.Helper()
+	index := picklistOrderReplayIndex(t, data, context, true)
 	analysis := sema.Analyze(index)
 	if index.HasErrors() || analysis.HasErrors() {
 		t.Fatalf("native accepted; local diagnostics=%v %v", index.Diagnostics, analysis.Diagnostics)
@@ -338,11 +348,12 @@ func runPicklistOrderNativeReplay(t *testing.T, data picklistOrderNativeFixture,
 	}
 	methods, methodErrors := compileTestMethods(cases)
 	programs, programErrors := compileTestInvokePrograms(cases)
+	base := bases.get(t, context.transportAPI, "", data.MetadataFiles, func(t *testing.T) *conformanceRunner {
+		return conformanceSchemaBase(t, picklistOrderReplayIndex(t, data, context, false), context.transportAPI)
+	})
 	for _, row := range context.rows {
 		t.Run(context.sourceAPI+"/"+context.transportAPI+"/"+row.route+"/"+row.id, func(t *testing.T) {
-			org := orgFromIndex(index)
-			org.APIVersion = context.transportAPI
-			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+			runner := newConformanceRunner(t, index, conformanceRunnerOptions{Base: base, LinkProject: true, Org: base.orgSource})
 			machine := runner.newMachine()
 			marker := "PICKLIST_ORDER|" + row.id + "|"
 			payload := ""

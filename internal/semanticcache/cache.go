@@ -33,6 +33,7 @@ type Identity struct {
 	ProjectContentSHA256 string `json:"projectContentSHA256"`
 	SchemaContentSHA256  string `json:"schemaContentSHA256"`
 	DependencySHA256     string `json:"dependencySHA256"`
+	BuildFingerprint     string `json:"buildFingerprint"`
 	SemanticABI          string `json:"semanticABI"`
 	PlatformABI          string `json:"platformABI"`
 	OptionsFingerprint   string `json:"optionsFingerprint"`
@@ -229,6 +230,7 @@ func (identity Identity) equalInputs(other Identity) bool {
 	return identity.ProjectContentSHA256 == other.ProjectContentSHA256 &&
 		identity.SchemaContentSHA256 == other.SchemaContentSHA256 &&
 		identity.DependencySHA256 == other.DependencySHA256 &&
+		identity.BuildFingerprint == other.BuildFingerprint &&
 		identity.SemanticABI == other.SemanticABI &&
 		identity.PlatformABI == other.PlatformABI
 }
@@ -241,6 +243,7 @@ func (identity Identity) validate() error {
 		{name: "project content SHA-256", value: identity.ProjectContentSHA256},
 		{name: "schema content SHA-256", value: identity.SchemaContentSHA256},
 		{name: "dependency SHA-256", value: identity.DependencySHA256},
+		{name: "build fingerprint", value: identity.BuildFingerprint},
 		{name: "semantic ABI", value: identity.SemanticABI},
 		{name: "platform ABI", value: identity.PlatformABI},
 		{name: "options fingerprint", value: identity.OptionsFingerprint},

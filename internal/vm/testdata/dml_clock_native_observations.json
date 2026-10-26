@@ -36,7 +36,7 @@
         "createdNotFuture": true,
         "modifiedNotFuture": true
       },
-      "command": "HOME=\"$SCRATCH_HOME\" SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --tests AuditClockObservation --api-version 67.0 --target-org scratch-org --wait 10 --result-format json --json",
+      "command": "HOME=\"$SCRATCH_HOME\" SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run test --tests AuditClockObservation --api-version 67.0 --target-org example-org --wait 10 --result-format json --json",
       "exitCode": 100
     },
     {
@@ -70,7 +70,7 @@
         "createdNotFuture": true,
         "modifiedNotFuture": true
       },
-      "command": "HOME=\"$SCRATCH_HOME\" SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --file native-capture --api-version 61.0 --target-org scratch-org --json",
+      "command": "HOME=\"$SCRATCH_HOME\" SF_USE_GENERIC_UNIX_KEYCHAIN=true sf apex run --file native-capture --api-version 61.0 --target-org example-org --json",
       "exitCode": 0
     }
   ]

@@ -1,18 +1,45 @@
 package semanticcache
 
 import (
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"sort"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/typesys"
 )
+
+var buildFingerprint = captureBuildFingerprint()
+
+// Retain the startup executable so an atomic upgrade cannot redirect lazy
+// hashing to a different binary. Identical binaries share disk entries even
+// without release versions or VCS metadata. Unreadable binaries get a unique
+// process identity, preserving execution without trusting another process's cache.
+func captureBuildFingerprint() func() string {
+	var file *os.File
+	if path, err := os.Executable(); err == nil {
+		file, _ = os.Open(path)
+	}
+	return sync.OnceValue(func() string {
+		if file != nil {
+			defer file.Close()
+			hash := sha256.New()
+			if _, err := io.Copy(hash, file); err == nil {
+				return hex.EncodeToString(hash.Sum(nil))
+			}
+		}
+		return "process:" + rand.Text()
+	})
+}
 
 type capturedSourceIdentity struct {
 	Kind           string `json:"kind"`
@@ -29,8 +56,8 @@ type capturedSourceIdentity struct {
 }
 
 // IdentityForBuild derives every semantic proof component from one immutable
-// index and its matching captured build artifacts. It performs no filesystem
-// reads and rejects incomplete generations.
+// index and its matching captured build artifacts, plus the running binary.
+// It never rereads project inputs and rejects incomplete generations.
 func IdentityForBuild(index typesys.Index, artifacts *typesys.BuildArtifacts, options sema.AnalyzeOptions) (Identity, error) {
 	if artifacts == nil || artifacts.Sources == nil || artifacts.SourceDigests == nil || artifacts.ApexMetadataInputs == nil {
 		return Identity{}, errors.New("semantic identity requires complete build artifacts")
@@ -75,6 +102,7 @@ func IdentityForBuild(index typesys.Index, artifacts *typesys.BuildArtifacts, op
 		ProjectContentSHA256: projectDigest,
 		SchemaContentSHA256:  schemaDigest,
 		DependencySHA256:     dependencyDigest,
+		BuildFingerprint:     buildFingerprint(),
 		SemanticABI:          sema.SemanticABI,
 		PlatformABI:          sema.PlatformABI,
 		OptionsFingerprint:   sema.AnalyzeOptionsFingerprint(options),

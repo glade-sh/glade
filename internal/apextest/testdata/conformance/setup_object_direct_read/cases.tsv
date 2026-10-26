@@ -1,0 +1,3 @@
+case	shape
+ordinary_roles	Admin and Standard User read three inserted roles by ordinary list, count, dynamic and grouped SOQL at API 62/67
+setup_siblings	Creator-owned permission set group, queue mapping and group membership queried inside runAs

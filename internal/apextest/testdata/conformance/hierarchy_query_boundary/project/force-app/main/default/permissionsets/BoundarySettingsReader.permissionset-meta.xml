@@ -1,0 +1,1 @@
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>Boundary Settings Reader</label><userPermissions><enabled>true</enabled><name>ViewAllCustomSettings</name></userPermissions></PermissionSet>

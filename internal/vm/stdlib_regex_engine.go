@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/dlclark/regexp2"
 	"github.com/dlclark/regexp2/syntax"
@@ -709,11 +710,30 @@ func splitRegexRegexp2(name, pattern, text string, limit int64) ([]string, error
 	if limit == 1 {
 		return []string{text}, nil
 	}
+	if parts, ok := splitLiteralRegexPlan(plan, text, limit); ok {
+		return parts, nil
+	}
+	// A resumed process can advance regexp2's approximate clock between
+	// deadline creation and its first check. Retry that premature timeout once
+	// with a fresh deadline; a search that spent its budget keeps the base
+	// handling. Native ipv4_validation/literal_splits/org.tsv:2-5 pin the
+	// escaped-dot results this restores.
+	find := func(previous *regexp2.Match) (*regexp2.Match, error) {
+		search := func() (*regexp2.Match, error) {
+			if previous == nil {
+				return plan.findValidStartingAt(text, 0)
+			}
+			return plan.findNextValid(text, previous)
+		}
+		return retryPrematureRegexTimeout(plan.re.MatchTimeout, search)
+	}
 	textRunes := []rune(text)
 	var parts []string
 	lastEnd := 0
 	splits := int64(0)
-	match, err := plan.findValidStartingAt(text, 0)
+	// No native row covers a first search that exhausts its budget; keep the
+	// base result (unsplit input). Only a premature timeout is retried above.
+	match, err := find(nil)
 	for match != nil {
 		if limit > 0 && splits >= limit-1 {
 			break
@@ -721,14 +741,14 @@ func splitRegexRegexp2(name, pattern, text string, limit int64) ([]string, error
 		matchStart := match.Index
 		matchEnd := match.Index + match.Length
 		if match.Length == 0 && matchStart == 0 {
-			match, err = plan.findNextValid(text, match)
+			match, err = find(match)
 			if err != nil {
 				return nil, err
 			}
 			continue
 		}
 		if matchStart < lastEnd {
-			match, err = plan.findNextValid(text, match)
+			match, err = find(match)
 			if err != nil {
 				return nil, err
 			}
@@ -740,7 +760,7 @@ func splitRegexRegexp2(name, pattern, text string, limit int64) ([]string, error
 		if matchStart == len(textRunes) {
 			break
 		}
-		match, err = plan.findNextValid(text, match)
+		match, err = find(match)
 		if err != nil {
 			return nil, err
 		}
@@ -755,6 +775,47 @@ func splitRegexRegexp2(name, pattern, text string, limit int64) ([]string, error
 		}
 	}
 	return parts, nil
+}
+
+// retryPrematureRegexTimeout reruns search once when regexp2 reports a timeout
+// before half of its budget has elapsed. Only a stale approximate clock after
+// process suspension produces that; a search that spent its budget, and every
+// other error, is returned unchanged.
+func retryPrematureRegexTimeout(budget time.Duration, search func() (*regexp2.Match, error)) (*regexp2.Match, error) {
+	started := time.Now()
+	match, err := search()
+	if err != nil && time.Since(started) < budget/2 && strings.HasPrefix(err.Error(), "match timeout after ") {
+		return search()
+	}
+	return match, err
+}
+
+// Only unescaped, printable ASCII literals can bypass the full matcher. Use
+// the original pattern: Go literal parsing and translated sources can disagree
+// with the matcher's Unicode folding, octal escapes and private assertions.
+func splitLiteralRegexPlan(plan *regexp2Plan, text string, limit int64) ([]string, bool) {
+	literal := plan.originalSource
+	if len(plan.internalGroupNames) != 0 || regexContainsNumericBackreference(plan.source) ||
+		literal == "" || literal != plan.source || !utf8.ValidString(text) {
+		return nil, false
+	}
+	for i := 0; i < len(literal); i++ {
+		c := literal[i]
+		if c < 0x20 || c > 0x7e || strings.ContainsRune(`\.^$|?*+()[]{}`, rune(c)) {
+			return nil, false
+		}
+	}
+	n := -1
+	if limit > 0 && limit <= int64(len(text)) {
+		n = int(limit)
+	}
+	parts := strings.SplitN(text, literal, n)
+	if limit == 0 && len(parts) > 1 {
+		for len(parts) > 0 && parts[len(parts)-1] == "" {
+			parts = parts[:len(parts)-1]
+		}
+	}
+	return parts, true
 }
 
 func regexContainsNumericBackreference(source string) bool {

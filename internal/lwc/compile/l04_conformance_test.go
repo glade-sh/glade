@@ -19,6 +19,7 @@ import (
 	"unicode/utf16"
 
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/testutil/browserapi"
 )
 
 type l04Case struct {
@@ -116,11 +117,22 @@ func TestL04SalesforceConformance(t *testing.T) {
 		}
 	}
 
+	type apiObservation struct {
+		dom       map[string]json.RawMessage
+		domErrors map[string]string
+		domErr    error
+	}
+	observeAPI := browserapi.Prepare(t, versions, func(t *testing.T, api string) apiObservation {
+
+		dom, domErrors, domErr := l04ObserveDOM(t, api, runtimeCases, roots.DependencyRoot, roots.ScriptRoot)
+		return apiObservation{dom, domErrors, domErr}
+	})
 	var report strings.Builder
 	matches, total, compileMatches, nativeDOMRows, localDOMRows, carried := 0, 0, 0, 0, 0, 0
 	diagnosticMatches, diagnosticTotal := 0, 0
 	for _, api := range versions {
-		dom, domErrors, domErr := l04ObserveDOM(t, api, runtimeCases, roots.DependencyRoot, roots.ScriptRoot)
+		result := observeAPI(api)
+		dom, domErrors, domErr := result.dom, result.domErrors, result.domErr
 		compiled := compileConformanceBatch(t, api, len(cases), func(root string, index int) {
 			l04WriteBundle(t, root, fmt.Sprintf("familyL04%03d", index), cases[index], api)
 		})
