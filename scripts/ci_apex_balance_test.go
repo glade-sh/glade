@@ -46,8 +46,16 @@ func assertApexProjectHistoryRebalances(t *testing.T, planner, output string, di
 		}
 	}
 	t.Setenv("GITHUB_EVENT_NAME", "push")
+	// The same skew under a history-driven plan is a planner failure.
+	setPlanHistoryUsed(t, dirs, true)
 	if out, err := runNShardHistory(t, "cli", output, dirs); err == nil || !strings.Contains(out, "exceeds 1.5x") {
-		t.Fatalf("main refresh must reject the skewed project: %v\n%s", err, out)
+		t.Fatalf("main refresh must reject the skewed history-planned project: %v\n%s", err, out)
+	}
+	// The project ran from the deterministic fallback plan, so main keeps its
+	// measured durations with an advisory.
+	setPlanHistoryUsed(t, dirs, false)
+	if out, err := runNShardHistory(t, "cli", output, dirs); err != nil || !strings.Contains(out, "timing advisory:") {
+		t.Fatalf("main must retain measured fallback-planned project durations: %v\n%s", err, out)
 	}
 	t.Setenv("GITHUB_EVENT_NAME", "pull_request")
 	if out, err := runNShardHistory(t, "cli", output, dirs); err != nil || !strings.Contains(out, "timing advisory:") {
@@ -143,8 +151,12 @@ func TestCIApexNShardBalanceTimingRoutes(t *testing.T) {
 		}
 		for _, entry := range entries {
 			for _, event := range []string{"pull_request", "push", "schedule", "workflow_dispatch", ""} {
-				for _, timing := range []string{"zero", "balanced", "boundary", "above"} {
+				for _, timing := range []string{"zero", "balanced", "boundary", "above", "above-fallback"} {
 					t.Run(fmt.Sprintf("%d/%s/%s/%s", count, entry, event, timing), func(t *testing.T) {
+						fallback := timing == "above-fallback"
+						if fallback {
+							timing = "above"
+						}
 						t.Setenv("GITHUB_EVENT_NAME", event)
 						elapsed := make([]float64, count)
 						for i := range elapsed {
@@ -162,15 +174,17 @@ func TestCIApexNShardBalanceTimingRoutes(t *testing.T) {
 							}
 						}
 						output, dirs := nShardHistoryFixture(t, elapsed)
+						setPlanHistoryUsed(t, dirs, !fallback)
 						if err := os.WriteFile(output, []byte("stale"), 0600); err != nil {
 							t.Fatal(err)
 						}
 						out, err := runNShardHistory(t, entry, output, dirs)
-						wantErr := timing == "above" && event != "pull_request"
+						// A fallback plan splits by count, so its timing is advisory.
+						wantErr := timing == "above" && event != "pull_request" && !fallback
 						if (err != nil) != wantErr {
 							t.Fatalf("refresh error = %v, wantErr %v\n%s", err, wantErr, out)
 						}
-						if strings.Contains(out, "timing advisory:") != (timing == "above" && event == "pull_request") {
+						if strings.Contains(out, "timing advisory:") != (timing == "above" && !wantErr) {
 							t.Fatalf("incorrect timing advisory\n%s", out)
 						}
 						if timing == "above" && !strings.Contains(out, fmt.Sprintf("1.5x %d-shard median", count)) {

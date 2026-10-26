@@ -175,6 +175,30 @@ if phase == 'interpret-results':
 			if err != nil {
 				t.Fatal(err)
 			}
+			// The evaluator's default Java heap ran out on hosted runners; pin
+			// an explicit RAM budget below the 16 GB runner limit.
+			var queryArgs []string
+			if err := json.Unmarshal(body, &queryArgs); err != nil {
+				t.Fatal(err)
+			}
+			ram := 0
+			for _, arg := range queryArgs {
+				if strings.HasPrefix(arg, "--ram=") || arg == "--ram" || arg == "-M" {
+					ram++
+				}
+			}
+			if ram != 1 || !strings.Contains(string(body), `"--ram=8192"`) || !strings.Contains(string(body), `"--threads=0"`) {
+				t.Fatalf("run-queries must pass --threads=0 and exactly one --ram=8192: %s", body)
+			}
+			for _, phase := range []string{"finalize", "interpret-results"} {
+				other, err := os.ReadFile(filepath.Join(dir, phase+".json"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				if strings.Contains(string(other), "--ram") {
+					t.Fatalf("%s must keep its existing options: %s", phase, other)
+				}
+			}
 			interpret, _ := os.ReadFile(filepath.Join(dir, "interpret-results.json"))
 			if strings.Contains(string(interpret), "--sarif-run-property=incrementalMode=diff-informed") != route.pack {
 				t.Fatalf("diff SARIF marker: %s", interpret)

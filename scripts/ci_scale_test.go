@@ -290,6 +290,24 @@ func TestCIScaleSemaPullRequestHistoryRoute(t *testing.T) {
 	}
 }
 
+func TestCIScaleSemaFirstRunHistoryRoute(t *testing.T) {
+	// The first run has no history, so its plan is the deterministic fallback.
+	for _, event := range []string{"push", "schedule", "workflow_dispatch", "", "pull_request"} {
+		t.Run(event, func(t *testing.T) {
+			fixture := scaleSemaHistoryFixture(t)
+			cmd := exec.Command("bash", "ci-go-test.sh", "sema-history-refresh", fixture.shards[0], fixture.shards[1], fixture.output)
+			cmd.Env = append(os.Environ(), "GITHUB_EVENT_NAME="+event)
+			out, err := cmd.CombinedOutput()
+			if err != nil || !strings.Contains(string(out), "::warning::") {
+				t.Fatalf("validated first-run imbalance must warn and refresh: %v\n%s", err, out)
+			}
+			if data, err := os.ReadFile(fixture.output); err != nil || !json.Valid(data) {
+				t.Fatalf("first-run refresh must publish valid timing data: %v %s", err, data)
+			}
+		})
+	}
+}
+
 func TestCIScaleSemaStrictAndCorruptHistoryRouteTwins(t *testing.T) {
 	for _, tc := range []struct{ event, corrupt string }{
 		{"push", ""}, {"schedule", ""}, {"workflow_dispatch", ""}, {"", ""},
@@ -298,6 +316,8 @@ func TestCIScaleSemaStrictAndCorruptHistoryRouteTwins(t *testing.T) {
 	} {
 		t.Run(tc.event+"/"+tc.corrupt, func(t *testing.T) {
 			fixture := scaleSemaHistoryFixture(t)
+			// Enforcement applies to plans built from duration history.
+			setPlanHistoryUsed(t, fixture.shards[:], true)
 			switch tc.corrupt {
 			case "missing shard":
 				fixture.shards[1] = filepath.Join(fixture.root, "missing")
