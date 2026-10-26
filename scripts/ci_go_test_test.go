@@ -719,16 +719,19 @@ func TestCIApexDurationHistoryAcceptsExactAggregateLimit(t *testing.T) {
 func TestCIApexDurationHistoryImbalanceGuard(t *testing.T) {
 	t.Setenv("GITHUB_EVENT_NAME", "push")
 	for _, tc := range []struct {
-		name    string
-		elapsed [2]float64
-		wantErr bool
+		name     string
+		elapsed  [2]float64
+		wantErr  bool
+		fallback bool
 	}{
 		{name: "balanced", elapsed: [2]float64{1, 1}},
 		{name: "exact 1.5 median boundary", elapsed: [2]float64{3, 1}},
 		{name: "above 1.5 median", elapsed: [2]float64{3.001, 1}, wantErr: true},
+		{name: "above 1.5 median with fallback plan", elapsed: [2]float64{3.001, 1}, fallback: true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			fixture := newApexHistoryFixture(t, tc.elapsed)
+			setPlanHistoryUsed(t, fixture.shards[:], !tc.fallback)
 			out, err := runApexHistoryRefresh(t, fixture)
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("refresh error = %v, wantErr %v\n%s", err, tc.wantErr, out)
@@ -799,6 +802,9 @@ func TestCIDurationHistoryTimingEventRoutes(t *testing.T) {
 						packageName = semaFixturePackage
 					}
 					fixture := durationHistoryRouteFixture(t, packageName, tc.elapsed)
+					// History-planned evidence; fallback plans are covered by
+					// TestCIDurationHistoryFallbackPlanTimingAdvisory.
+					setPlanHistoryUsed(t, fixture.shards[:], true)
 					out, err := runDurationHistoryRoute(t, route, entry, fixture)
 					if (err != nil) != tc.wantErr {
 						t.Fatalf("refresh error = %v, wantErr %v\n%s", err, tc.wantErr, out)

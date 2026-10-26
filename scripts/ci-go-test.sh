@@ -1513,16 +1513,22 @@ try:
     # PR runner timing is advisory after all evidence checks pass; retain
     # observed durations for scheduling without failing a PR on runner noise.
     # The advisory is a ::warning:: annotation. Apex and sema enforce balance
-    # at every shard count outside PRs.
+    # at every shard count outside PRs when duration history drove the plan.
     # LWC's indivisible long tests can exceed 1.5x its eight-shard median
     # even with an optimal plan;
     # rejecting that evidence would prevent the next run from balancing it.
+    # The same holds for a deterministic fallback plan, which splits by test
+    # count rather than duration. Its timing is advisory on every event, so
+    # the refresh saves durations and the next plan, built from that history,
+    # is enforced again.
     if PACKAGE in ("github.com/glade-sh/glade/internal/apextest", "github.com/glade-sh/glade/internal/sema"):
         for index, elapsed in enumerate(shard_elapsed):
             if elapsed > 1.5 * median:
                 message = f"shard {index} elapsed {elapsed:.6f}s exceeds 1.5x {SHARD_COUNT}-shard median {median:.6f}s"
                 if os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
                     print(f"::warning::[ci] {LABEL} duration history timing advisory: {message}", file=sys.stderr)
+                elif plan["historyUsed"] is not True:
+                    print(f"::warning::[ci] {LABEL} duration history timing advisory: {message}; plan used the deterministic fallback", file=sys.stderr)
                 else:
                     reject(message)
 
