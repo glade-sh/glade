@@ -13,6 +13,11 @@ import subprocess
 import sys
 import time
 
+# Total evaluator RAM in MB for run-queries. Without it the CLI's default Java
+# heap (about 1 GiB) ran out on hosted runners. GitHub's ubuntu-latest runner
+# has 16 GB; this leaves about half for the OS, the runner and other processes.
+RUN_QUERIES_RAM_MB = 8192
+
 
 def action_output(completed):
     if path := os.environ.get("GITHUB_OUTPUT"):
@@ -91,7 +96,7 @@ def analyze(args):
     sarif_options = ["--sarif-run-property=incrementalMode=diff-informed"] if pack else []
     phases = [
         ("finalize", ["--threads=0"]),
-        ("run-queries", ["--threads=0", "--verbose", *query_options]),
+        ("run-queries", ["--threads=0", f"--ram={RUN_QUERIES_RAM_MB}", "--verbose", *query_options]),
         ("interpret-results", ["--threads=0", "--format=sarifv2.1.0", f"--output={output}", "--sarif-category=codeql-go", *sarif_options]),
     ]
     try:
