@@ -458,6 +458,11 @@ Qualified platform type and receiver validation is unchanged from v0.3.0: a
 dotted receiver or type path that names a known first segment followed by an
 unknown tail is still accepted. A stricter rule was withdrawn from this release.
 
+On Linux, a `String.split` or `Pattern.split` that is running when the host
+process is suspended and resumed can return the unsplit input or an empty list
+instead of the parts. The regex engine's coarse clock stays stale after the
+resume and ends the search early. The fix is planned for v0.3.2.
+
 The API 62.0 release-notes inventory gap and anonymous Flow fault `Error ID`
 difference listed under v0.3.0 remain disclosed. Execute Anonymous eligibility
 remains 65.0, 66.0, 67.0, and 68.0; loading older Apex does not extend support.

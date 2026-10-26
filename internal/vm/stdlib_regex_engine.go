@@ -778,14 +778,13 @@ func splitRegexRegexp2(name, pattern, text string, limit int64) ([]string, error
 }
 
 // retryPrematureRegexTimeout reruns search once when regexp2 reports a timeout
-// before half of its budget has elapsed. Let the approximate clock's pending
-// update run before creating the new deadline. A search that spent its budget,
-// and every other error, is returned unchanged.
+// before half of its budget has elapsed. Only a stale approximate clock after
+// process suspension produces that; a search that spent its budget, and every
+// other error, is returned unchanged.
 func retryPrematureRegexTimeout(budget time.Duration, search func() (*regexp2.Match, error)) (*regexp2.Match, error) {
 	started := time.Now()
 	match, err := search()
 	if err != nil && time.Since(started) < budget/2 && strings.HasPrefix(err.Error(), "match timeout after ") {
-		time.Sleep(regexp2.DefaultClockPeriod)
 		return search()
 	}
 	return match, err
