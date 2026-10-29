@@ -172,11 +172,20 @@ async function searchPresence(page, frame, id, roles, term) {
       const spec = cfg.mapping[id];
       const url = new URL('/apex/' + spec.page, cfg.url);
       url.searchParams.set('ownedCase', id);
-      await page.goto(url.href, {waitUntil: 'domcontentloaded'});
-      try {
-        const frame = await rowFrame(page, id);
-        output[id] = spec.search_term ? await searchPresence(page, frame, id, cfg.roles, spec.search_term) : spec.mode === 'Lookup' ? await lookupClick(page, frame, id, cfg.roles) : await dateClick(frame, id, cfg.roles);
-      } catch (_) { output[id] = {status: 'unobserved', reason: 'LOCAL_WIDGET_CLICK_NOT_OBSERVED'}; }
+      // A local widget click can miss its popup on a busy runner; retry the whole case on a fresh page
+      // load before reporting it unobserved, and keep each swallowed error visible on stderr.
+      output[id] = {status: 'unobserved', reason: 'LOCAL_WIDGET_CLICK_NOT_OBSERVED'};
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        await page.goto(url.href, {waitUntil: 'domcontentloaded'});
+        try {
+          const frame = await rowFrame(page, id);
+          output[id] = spec.search_term ? await searchPresence(page, frame, id, cfg.roles, spec.search_term) : spec.mode === 'Lookup' ? await lookupClick(page, frame, id, cfg.roles) : await dateClick(frame, id, cfg.roles);
+          break;
+        } catch (error) {
+          process.stderr.write(`v09 ${id} attempt ${attempt}: ${String(error && error.message || error).split('\n')[0]}\n`);
+        }
+        await page.goto('about:blank');
+      }
       await page.goto('about:blank');
     }
   } finally { await browser.close(); }
